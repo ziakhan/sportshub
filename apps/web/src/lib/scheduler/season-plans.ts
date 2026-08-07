@@ -186,6 +186,11 @@ export const planWorldSchema = z.object({
   gamesPerTeam: z.number().min(0).max(200).optional(),
   gyms: z.array(gymSchema).max(40).optional(),
   courtBuffer: z.number().int().min(0).max(10).optional(),
+  /** Team-exclude (owner ruling 8, 2026-08-07): specific team submissions
+   *  this plan leaves out of its own calendar. Ids only — sanitizePlanWorld
+   *  below clamps them to real submissions of this season, same as every
+   *  other id this schema accepts. */
+  excludedTeamIds: z.array(z.string()).max(500).optional(),
   gameSlotMinutes: z.number().int().min(10).max(240).optional(),
   fridayStart: z.string().regex(/^\d{1,2}:\d{2}$/).optional(),
   fridayEnd: z.string().regex(/^\d{1,2}:\d{2}$/).optional(),
@@ -195,6 +200,13 @@ export const planSettingsSchema = z.object({
   capturedAt: z.string().max(40).optional(),
   state: planWorldSchema,
 })
+
+/** Team-exclude (owner ruling 8, 2026-08-07) widens PlanWorld with the one
+ *  field this ruling adds. Declared locally rather than in plan-documents.ts —
+ *  that file is the client's own, in flight the same day — so this module
+ *  stays self-contained; a zod-parsed world structurally satisfies it either
+ *  way. */
+export type PlanWorldWithExclusions = PlanWorld & { excludedTeamIds?: string[] }
 
 /**
  * A world the operator edited, clamped to things this season actually has
@@ -208,15 +220,19 @@ export const planSettingsSchema = z.object({
  */
 export async function sanitizePlanWorld(
   seasonId: string,
-  world: PlanWorld
-): Promise<PlanWorld> {
-  const [sessions, seasonVenues, divisions] = await Promise.all([
+  world: PlanWorldWithExclusions
+): Promise<PlanWorldWithExclusions> {
+  const [sessions, seasonVenues, divisions, teamSubmissions] = await Promise.all([
     (prisma as any).seasonSession.findMany({ where: { seasonId }, select: { id: true } }),
     (prisma as any).seasonVenue.findMany({
       where: { seasonId },
       select: { id: true, venueId: true },
     }),
     (prisma as any).division.findMany({ where: { seasonId }, select: { id: true, ageGroup: true } }),
+    // Ruling 8's clamp set: the season's own team submissions, id only, no
+    // status filter — mirrors validSessions/validGrades below, which clamp
+    // to "belongs to this season", not to any particular status.
+    (prisma as any).teamSubmission.findMany({ where: { seasonId }, select: { id: true } }),
   ])
   const validSessions = new Set<string>(sessions.map((s: any) => s.id))
   const seasonVenueOf = new Map<string, string>(
@@ -228,6 +244,7 @@ export async function sanitizePlanWorld(
     const key = `age:${d.ageGroup}`
     divisionsOf.set(key, [...(divisionsOf.get(key) ?? []), d.id])
   }
+  const validTeamSubmissions = new Set<string>(teamSubmissions.map((ts: any) => ts.id))
 
   const gyms = (world.gyms ?? [])
     .filter((g) => seasonVenueOf.has(g.venueId))
@@ -255,6 +272,10 @@ export async function sanitizePlanWorld(
         .filter((w) => validSessions.has(w.sessionId))
         .map((w) => ({ ...w, venues: (w.venues ?? []).filter((v) => rosterIds.has(v.venueId)) })),
     })),
+    // Ruling 8: only ids that are real team submissions of this season
+    // survive. Absent stays absent — a plan that never named an exclusion
+    // list keeps not having one.
+    excludedTeamIds: world.excludedTeamIds?.filter((id) => validTeamSubmissions.has(id)),
   }
 }
 

@@ -1,7 +1,6 @@
 "use client"
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
-import { Button } from "@/components/ui"
 import {
   currentAssignment,
   gradeAbbrev,
@@ -12,8 +11,9 @@ import {
   type PlannerSuggestion,
 } from "@/lib/scheduler/planner-core"
 import type { PlanHeaderInfo } from "./teams-step"
-import { BTN_MD, BTN_QUIET, BTN_SECONDARY, BTN_SM } from "./plan-shared"
+import { BTN_MD, BTN_PRIMARY, BTN_QUIET, BTN_SECONDARY, BTN_SM } from "./plan-shared"
 import { NoticeSlot } from "./plan-ui"
+import { PlanStepPointer, usePlanSession } from "./plan-session"
 
 /**
  * Step 5, schedule (owner-approved mock, 2026-08-02). Scheduling is the
@@ -27,8 +27,12 @@ import { NoticeSlot } from "./plan-ui"
  * ones the planner already writes, so amber here means what amber means
  * there.
  *
- * Generating is a doorway, not a new engine: both buttons open the scheduling
- * screens this season already has, and they arrive with the plan filled in.
+ * Generating is one press now (owner ruling 2026-08-07, THE ONE BUTTON): the
+ * button applies the open plan to the season and builds the schedule in the
+ * same call, then lands on the summary screen this season already has. No
+ * second door — with no plan open there is nothing yet to press, so the
+ * screen points back to where one is chosen instead of offering a shortcut
+ * that skips it.
  */
 
 const LOCKED_STATUSES = ["FINALIZED", "IN_PROGRESS", "COMPLETED"]
@@ -49,7 +53,7 @@ const COPY = {
   noEstimate:
     "This season never saved an estimate, so nothing is planned for these grades yet. These bars are the teams that registered. Set a number per grade in step 1 and the plan follows it.",
   waiting:
-    "You can wait for entries to lock, or schedule now with the teams already in. Either way the gyms, hours, weekends and groupings come from steps 2 and 3.",
+    "You can wait for entries to lock, or use this calendar now with the teams already in. Either way the gyms, hours, weekends and groupings come from steps 2 and 3.",
   ready:
     "Your grades are at or past what you planned for. One button turns everything already entered into a schedule.",
   final:
@@ -60,7 +64,7 @@ const COPY = {
     "This season was finalized without a kept calendar, so there is nothing here to measure against. These bars are the teams that registered.",
   reuse: "uses your plan, nothing to re-enter",
   footer:
-    "After generating you get preview, fairness report and publish. Those are the scheduling screens you already have, reached from here instead of found in a tab.",
+    "Generating writes the games straight onto this season and lands you on the summary screen you already have for reading them.",
 }
 
 const clockTime = (at: number) =>
@@ -83,6 +87,10 @@ export function ScheduleStep({
   const [checkedAt, setCheckedAt] = useState<number | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [showOptions, setShowOptions] = useState(false)
+  // THE ONE BUTTON (owner ruling 2026-08-07, #3): which plan this wizard
+  // visit has open, so the button knows what to press "use" onto the season.
+  const { planId } = usePlanSession()
+  const [genBusy, setGenBusy] = useState(false)
 
   // The page header is named once. A poll every half minute must not hand it
   // a fresh object and re-render the whole wizard for nothing.
@@ -134,6 +142,42 @@ export function ScheduleStep({
     }
   }, [load, locked])
 
+  /**
+   * THE ONE BUTTON, pressed (owner ruling 2026-08-07, #3 and #5). One POST
+   * makes the open plan the season and builds its schedule; the only thing it
+   * may ask first is the two sufficiency questions the preflight already
+   * checked against what this board showed. `confirmed` is the SECOND call,
+   * made only after the operator has read those sentences and said "anyway".
+   */
+  const runGenerate = useCallback(
+    async (confirmed: boolean) => {
+      if (!planId) return
+      setGenBusy(true)
+      setError(null)
+      const res = await fetch(`/api/seasons/${seasonId}/plans/${planId}/generate`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(confirmed ? { confirm: true } : {}),
+      }).catch(() => null)
+      const data = res ? await res.json().catch(() => null) : null
+      if (!res?.ok) {
+        setGenBusy(false)
+        setError(data?.error ?? "Couldn't generate the schedule. Try again.")
+        return
+      }
+      if (data?.needsConfirm) {
+        setGenBusy(false)
+        const findings = (data.findings ?? []) as string[]
+        if (window.confirm(`${findings.join("\n")}\n\nGenerate anyway?`)) void runGenerate(true)
+        return
+      }
+      // A hard navigation: the summary screen needs the games this call just
+      // wrote, not whatever a client cache remembers from before it ran.
+      window.location.href = `/manage/leagues/${leagueId}/seasons/${seasonId}/manage?tab=schedule`
+    },
+    [planId, seasonId, leagueId]
+  )
+
   const bars = useMemo(() => registrationBars(state?.units ?? []), [state])
   const attention = useMemo(
     () => (state ? weekendsNeedingAttention(state, currentAssignment(state)) : []),
@@ -174,7 +218,6 @@ export function ScheduleStep({
     return <p className="text-ink-500 p-6 text-sm">{error ?? "Loading your registration…"}</p>
   }
 
-  const scheduleHref = `/manage/leagues/${leagueId}/seasons/${seasonId}/manage?tab=schedule`
   const shownLines = showOptions ? lines : lines.slice(0, ALERT_PREVIEW)
   const hasAlert = Boolean(lead) || lines.length > 0
   // Scheduling stops being early once every grade that HAD an estimate has
@@ -329,17 +372,31 @@ export function ScheduleStep({
           </p>
         )}
 
-        {/* The doorway. Same destination, two moments. */}
+        {/* THE ONE DOOR (owner ruling 2026-08-07, #3): one press makes the
+            open plan the season and builds its schedule. It needs a plan
+            open to know which one; with none, the wizard's own pointer back
+            to step 1 stands rather than a shortcut that skips it. */}
         <p className="text-ink-600 mt-5 max-w-2xl text-sm">
           {locked ? COPY.final : allIn ? COPY.ready : COPY.waiting}
         </p>
         <div className="mt-2.5 flex flex-wrap items-center gap-2.5">
-          <Button href={scheduleHref} size="sm" tone="court">
-            Generate schedule
-          </Button>
-          <Button href={scheduleHref} size="sm" variant="subtle">
-            Schedule now with current teams
-          </Button>
+          {planId ? (
+            <button
+              type="button"
+              data-testid="step5-generate"
+              disabled={genBusy}
+              onClick={() => void runGenerate(false)}
+              className={`${BTN_PRIMARY} ${BTN_MD}`}
+            >
+              {genBusy ? "Generating…" : "Use this calendar and generate the schedule"}
+            </button>
+          ) : (
+            <PlanStepPointer
+              detail="Generating turns an open plan's calendar into real games. Open one in step 1 first."
+              onGoToStep={onGoToStep}
+              testId="step5-plan-pointer"
+            />
+          )}
           <span className="border-ink-100 bg-ink-50 text-ink-500 rounded-full border px-2.5 py-0.5 text-[11px] font-bold">
             {COPY.reuse}
           </span>

@@ -21,6 +21,13 @@ export interface LoadSchedulerOptions {
    * the cross-league simulation (earlier seasons' placed games).
    */
   extraBusyBookings?: Array<{ courtId: string; start: string; end: string }>
+  /**
+   * Team-exclude (owner ruling 8, 2026-08-07): submission ids a plan names as
+   * left out. Filtered out of every division's teams after the season's full
+   * roster is built, so generation covers exactly "the N teams in this plan."
+   * A division left under 2 teams simply schedules nothing — no special case.
+   */
+  excludedTeamIds?: string[]
 }
 
 /** Blackout DATE columns are date-only (UTC midnight) — key them by their
@@ -246,6 +253,19 @@ export async function loadSchedulerInput(
         })),
       })),
     })),
+  }
+
+  // Team-exclude (owner ruling 8, 2026-08-07): drop the plan's named teams
+  // out of the roster the generator sees, after it's built off the season's
+  // full APPROVED list above — every earlier lookup (blackouts, requests,
+  // weekend style) still resolved off the real submission, only who reaches
+  // the generator changes. Nothing downstream in this function derives its
+  // own team list from divisions[].teams, so this is the only filter needed.
+  if (options?.excludedTeamIds?.length) {
+    const excluded = new Set(options.excludedTeamIds)
+    for (const division of input.divisions) {
+      division.teams = division.teams.filter((t) => !excluded.has(t.submissionId))
+    }
   }
 
   // Shared venues (owner 2026-07-31): leagues each get their own windows,

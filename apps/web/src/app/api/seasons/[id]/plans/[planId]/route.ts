@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
 import { prisma } from "@youthbasketballhub/db"
-import { applyAssignment } from "@/lib/scheduler/planner"
 import { seasonPlannerAuth } from "@/lib/scheduler/planner-auth"
 import { isSeasonLocked, SEASON_LOCKED_MESSAGE } from "@/lib/seasons/season-lock"
 import {
@@ -14,8 +13,6 @@ import {
   planSettingsSchema,
   sanitizePlanWorld,
   venuesSchema,
-  type PlanAssignment,
-  type PlanVenues,
 } from "@/lib/scheduler/season-plans"
 import { settingsOf, withHealedGyms, worldGyms } from "@/lib/scheduler/plan-world"
 
@@ -26,11 +23,12 @@ const bodySchema = z.object({
   assignment: assignmentSchema.optional(),
   venues: venuesSchema.optional(),
   /**
-   * THE PLAN'S OWN WORLD (owner ruling 2026-08-05). Steps 1 and 2 edit THIS on
-   * a plan the season does not run: the grade estimates and which grades are in,
-   * the gyms with their roles, courts and hours, which weekends the plan runs
-   * and which gym it has on each. The season's rows do not move until the plan
-   * is activated.
+   * THE PLAN'S OWN WORLD (owner ruling 2026-08-05; write-through died
+   * 2026-08-07). Steps 1 and 2 edit THIS on every plan, active included: the
+   * grade estimates and which grades are in, the gyms with their roles,
+   * courts and hours, which weekends the plan runs and which gym it has on
+   * each. The season's rows never move from here — only the generate button,
+   * a separate endpoint, does that.
    */
   settings: planSettingsSchema.optional(),
 })
@@ -39,11 +37,15 @@ const bodySchema = z.object({
  *  onto the board. `settings` rides along: the world the plan was saved in, so
  *  the board can draw it under its own numbers and name the drift.
  *
- *  THE ACTIVE PLAN IS THE SEASON, so its world is read LIVE rather than out of
- *  the column (owner ruling 2026-08-05, "one truth"): steps 1 and 2 write
- *  through to the season on the active plan, and a stored snapshot would start
- *  disagreeing with the rows it just wrote. That also makes its drift empty by
- *  construction, which is the truth. */
+ *  EVERY PLAN READS ITS OWN STORED SETTINGS NOW, the active plan included
+ *  (write-through died, owner ruling 2026-08-07: plans are sandboxes, full
+ *  stop). The active plan used to be read LIVE off the season's own rows,
+ *  because steps 1 and 2 wrote straight through to them and a stored snapshot
+ *  would have started disagreeing with the rows it had just written. Now every
+ *  step writes the plan's own document and nothing else, so the active plan is
+ *  a plan like any other: it reads what was saved, same as every plan below
+ *  it in the list. The season only takes on a plan's world through the
+ *  generate button, never through this route. */
 export async function GET(_request: NextRequest, { params }: { params: { id: string; planId: string } }) {
   try {
     const gate = await seasonPlannerAuth(params.id)
@@ -51,9 +53,6 @@ export async function GET(_request: NextRequest, { params }: { params: { id: str
 
     const plan = await findOwnedPlan(params.id, params.planId)
     if (!plan) return NextResponse.json({ error: "Not found" }, { status: 404 })
-    if (plan.isActive) {
-      return NextResponse.json({ plan: { ...plan, settings: await currentSettings(params.id) } })
-    }
     /**
      * A PLAN SAVED BEFORE PLANS HAD A ROSTER IS HEALED ON OPEN (owner ruling
      * 2026-08-06), the same way its grades are.
@@ -79,14 +78,17 @@ export async function GET(_request: NextRequest, { params }: { params: { id: str
     }
     /**
      * A PLAN WITH NO WORLD AT ALL IS GIVEN ONE THE SAME WAY (2026-08-06 wave,
-     * A2). Documents from before plans owned a world open onto steps that have
-     * nothing to draw: step 1 hangs on "opening this plan's numbers" and step 2
-     * quietly shows the season's buildings under the plan's name. The nearest
-     * record of the world those plans were drawn in IS the season's — the same
-     * answer PATCH has always given a null-settings plan on its first content
-     * write — so it is recorded here once and saved forward. The reference plan
-     * included: this is the system writing down what it already knows, not an
-     * operator rewriting the published record.
+     * A2; extended 2026-08-07 to the active plan too, now that write-through
+     * has died and an active plan is exactly as likely to arrive here with
+     * nothing saved as any other). Documents from before plans owned a world
+     * open onto steps that have nothing to draw: step 1 hangs on "opening this
+     * plan's numbers" and step 2 quietly shows the season's buildings under
+     * the plan's name. The nearest record of the world those plans were drawn
+     * in IS the season's — the same answer PATCH has always given a
+     * null-settings plan on its first content write — so it is recorded here
+     * once and saved forward. The reference plan included: this is the system
+     * writing down what it already knows, not an operator rewriting the
+     * published record.
      */
     const settings = await currentSettings(params.id)
     await (prisma as any).seasonPlan.update({ where: { id: plan.id }, data: { settings } })
@@ -133,12 +135,16 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
     }
 
     /**
-     * WHOSE WORLD THE PLAN KEEPS (owner ruling 2026-08-05). Three cases:
+     * WHOSE WORLD THE PLAN KEEPS (owner ruling 2026-08-05; the active-plan
+     * case retired 2026-08-07). Two cases now:
      *
-     *  - the operator SENT a world (steps 1 and 2 on a plan the season does not
-     *    run): that is the plan's world now, clamped to ids this season has.
-     *  - the plan is ACTIVE, or it predates worlds entirely: the season's world
-     *    IS its world, so it is re-snapshotted.
+     *  - the operator SENT a world: that is the plan's world now, clamped to
+     *    ids this season has. Every plan takes this path the same way, the
+     *    active plan included — plans are sandboxes, full stop, so an active
+     *    plan's steps write its own document exactly like any other plan's.
+     *  - the plan predates worlds entirely (settings still null): the
+     *    season's world is snapshotted once, so the plan has something to
+     *    compare and draw rather than nothing.
      *  - anything else: LEFT ALONE. A plan that owns its world must not have it
      *    quietly replaced by this month's season just because its calendar was
      *    saved — that was the bug the whole ruling is about.
@@ -146,7 +152,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
     const settings =
       sent !== undefined
         ? settingsOf(await sanitizePlanWorld(params.id, sent.state))
-        : rewritesContent && (plan.isActive || plan.settings == null)
+        : rewritesContent && plan.settings == null
           ? await currentSettings(params.id)
           : undefined
 
@@ -160,17 +166,12 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
       },
     })
 
-    // The active plan IS the season's sessions (owner's ruling). Editing it
-    // without writing through would leave the season running a calendar no
-    // document describes, so the write-through happens here too — the same
-    // applyAssignment the activate route makes.
-    if ((assignment !== undefined || venues !== undefined) && updated.isActive) {
-      await applyAssignment(
-        params.id,
-        updated.assignment as PlanAssignment,
-        updated.venues as PlanVenues
-      )
-    }
+    // WRITE-THROUGH DIED HERE (owner ruling 2026-08-07, #2): editing a plan's
+    // calendar or world never touches the season's own sessions any more, the
+    // active plan included. The season is always "the last plan generated
+    // from", never "whatever plan was touched most recently" — it takes on a
+    // plan's calendar and world only through the generate button, a separate
+    // endpoint this route no longer calls.
 
     return NextResponse.json({ plan: updated })
   } catch (error) {

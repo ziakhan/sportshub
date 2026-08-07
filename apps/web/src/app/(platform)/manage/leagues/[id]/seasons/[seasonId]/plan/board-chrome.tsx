@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { useParams } from "next/navigation"
 import type { PlannerUnit, PlannerWeekend } from "@/lib/scheduler/planner-core"
 import { PLAN_COPY, isReferencePlan, type PlanRow } from "@/lib/scheduler/plan-documents"
 import {
@@ -35,11 +36,63 @@ import { COPY, nameList, type BoardSnapshot } from "./board-shared"
  */
 
 /**
+ * THE ONE BUTTON, from wherever the operator already is (owner ruling
+ * 2026-08-07, #3). The board is where a calendar gets finished, so it wears
+ * the same press schedule-step does rather than sending the operator away to
+ * find it — one POST, one confirm if the preflight found something, one more
+ * POST to go ahead, then the summary screen this season already has. Kept as
+ * a hook rather than inline JSX because BOTH surfaces need the exact same
+ * three-step dance and neither owns the other.
+ */
+function useGenerateSeason(
+  seasonId: string,
+  planId: string | null,
+  /** Flush a pending autosave first: a chip dragged and generated inside the
+   *  debounce window must be in the document the endpoint reads (seam fix,
+   *  2026-08-07). */
+  onBeforeGenerate?: () => Promise<void>
+) {
+  const params = useParams()
+  const leagueId = params?.id as string
+  const [busy, setBusy] = useState(false)
+
+  const run = async (confirmed: boolean) => {
+    if (!planId) return
+    setBusy(true)
+    if (!confirmed) await onBeforeGenerate?.().catch(() => {})
+    const res = await fetch(`/api/seasons/${seasonId}/plans/${planId}/generate`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(confirmed ? { confirm: true } : {}),
+    }).catch(() => null)
+    const data = res ? await res.json().catch(() => null) : null
+    if (!res?.ok) {
+      setBusy(false)
+      window.alert(data?.error ?? "Couldn't generate the schedule. Try again.")
+      return
+    }
+    if (data?.needsConfirm) {
+      setBusy(false)
+      const findings = (data.findings ?? []) as string[]
+      if (window.confirm(`${findings.join("\n")}\n\nGenerate anyway?`)) void run(true)
+      return
+    }
+    // A hard navigation: the summary screen needs the games this call just
+    // wrote, not whatever a client cache remembers from before it ran.
+    window.location.href = `/manage/leagues/${leagueId}/seasons/${seasonId}/manage?tab=schedule`
+  }
+
+  return { busy, press: () => void run(false) }
+}
+
+/**
  * THE SCREEN HEAD: which plan is on the board, one step back, the whole
  * calendar back from the solver, the two views, and the loudest true thing
  * about the plan as a pill.
  */
 export function BoardHead({
+  onBeforeGenerate,
+  seasonId,
   planId,
   dirty,
   interactive,
@@ -57,6 +110,11 @@ export function BoardHead({
   onFillFromPool,
   onViewChange,
 }: {
+  /** So the header can press the same generate endpoint the board is already
+   *  reading everything else from (owner ruling 2026-08-07, THE ONE BUTTON). */
+  seasonId: string
+  /** Flush the board's pending autosave before generating (seam fix). */
+  onBeforeGenerate?: () => Promise<void>
   planId: string | null
   dirty: boolean
   interactive: boolean
@@ -81,6 +139,7 @@ export function BoardHead({
   onFillFromPool: () => void
   onViewChange: (next: "board" | "strip") => void
 }) {
+  const generate = useGenerateSeason(seasonId, planId, onBeforeGenerate)
   return (
     <div className="border-ink-200 bg-ink-50/60 flex flex-wrap items-center justify-between gap-3 border-b px-5 py-4">
       <div>
@@ -223,6 +282,23 @@ export function BoardHead({
             >
               {pill.text}
             </span>
+          )}
+          {/* THE ONE BUTTON, here too (owner ruling 2026-08-07, #3): the
+              rightmost primary in the row, so the operator's next move after
+              reading the plan's name and its verdict is right beside both. */}
+          {planId && interactive && (
+            <button
+              type="button"
+              data-testid="generate-season"
+              disabled={generate.busy}
+              onClick={(e) => {
+                e.stopPropagation()
+                generate.press()
+              }}
+              className={`${BTN_PRIMARY} ${BTN_MD}`}
+            >
+              {generate.busy ? "Generating…" : "Use this calendar and generate the schedule"}
+            </button>
           )}
         </div>
         {/* Said before anybody tries to save onto it, not after. */}

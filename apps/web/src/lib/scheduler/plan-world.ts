@@ -2215,3 +2215,19 @@ export function planGridFrom(seasonGrid: VenueGrid, world: PlanWorld): VenueGrid
 
 /** Re-export for callers that only want the gym shape. */
 export type { PlannerGym }
+
+/**
+ * REMOVE FROM THIS PLAN, ENTIRELY (owner ruling 2026-08-07, #8 first half:
+ * removal, two levels). Stronger than withUnitIncluded: that keeps the row,
+ * out, with its number intact for one tap to restore. This drops the unit
+ * object outright, so the grade falls back to the season's own fold-in row —
+ * "Not in this plan yet" — with no leftover estimate to explain, and the
+ * add-a-grade stepper is the restore path. The season's division is
+ * untouched; only this plan forgets it ever had a number for that grade.
+ */
+export function withUnitRemoved(world: PlanWorld, key: string): PlanWorld {
+  return {
+    ...world,
+    units: (world.units ?? []).filter((u) => u.key !== key),
+  }
+}

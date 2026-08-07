@@ -2,29 +2,22 @@
 
 import { useCallback, useEffect, useRef, useState } from "react"
 import { createPortal } from "react-dom"
-import {
-  isReferencePlan,
-  PLAN_COPY,
-  PLAN_NAME_MAX,
-  planMarkers,
-  type PlanRow,
-} from "@/lib/scheduler/plan-documents"
-import { BTN_MD, BTN_PRIMARY, BTN_SECONDARY } from "./plan-shared"
+import { isReferencePlan, PLAN_COPY, planMarkers, type PlanRow } from "@/lib/scheduler/plan-documents"
 
 /**
- * The two controls plans as documents adds to the wizard (owner 2026-08-02,
- * moved to step 1 by the 2026-08-05 entry ruling).
+ * THE PICKER (owner 2026-08-02, moved to step 1 by the 2026-08-05 entry
+ * ruling). The wizard works in ONE named plan, and this says which one and
+ * swaps it. A plan that drives the season says "active"; the league's own
+ * imported calendar says "reference", and says it in the list rather than
+ * waiting for somebody to try saving onto it. Making a plan is a sibling
+ * button (PlanChooser), not a row hidden inside this list.
  *
- *  1. THE PICKER. The wizard works in ONE named plan, and this says which one
- *     and swaps it. A plan that drives the season says "active"; the league's
- *     own imported calendar says "reference", and says it in the list rather
- *     than waiting for somebody to try saving onto it. Making a plan is a
- *     sibling button now (PlanChooser), not a row hidden inside this list.
- *  2. THE SAVE CONTROLS. One way to persist: save these changes to the plan
- *     you are in, or save them as a plan of your own. Applying a plan to the
- *     season is a separate, quieter button, because it is a separate decision.
- *
- * Both are drawn here and driven from the step that owns the state.
+ * Every row carries three quiet actions now (owner ruling 2026-08-07, #4,
+ * autosave): rename, save a copy, delete. Saving what is ON the board is no
+ * longer a decision anybody makes here — the board saves itself — so the
+ * save controls this file used to hold (PlanSaveControls) are gone with the
+ * buttons that drove them; "save a copy" is what is left of that row, moved
+ * into the picker beside rename and delete.
  */
 
 /* ------------------------------ the picker ------------------------------- */
@@ -77,6 +70,27 @@ function PencilMark() {
   )
 }
 
+/** Two overlapping squares: "save a copy", kept apart from the pencil and the
+ *  bin so a row of three still reads as three different verbs at a glance
+ *  (owner ruling 2026-08-07, #4). */
+function CopyMark() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+      className="h-3.5 w-3.5"
+    >
+      <rect x="8" y="8" width="12" height="12" rx="2" />
+      <path d="M4 16V6a2 2 0 0 1 2-2h10" />
+    </svg>
+  )
+}
+
 /** A bin. Same reasoning: the row is a name, not a sentence of verbs. */
 function TrashMark() {
   return (
@@ -106,6 +120,7 @@ export function PlanPicker({
   canWrite = false,
   onSelect,
   onRename,
+  onCopy,
   onDelete,
 }: {
   plans: PlanRow[]
@@ -125,6 +140,9 @@ export function PlanPicker({
   canWrite?: boolean
   onSelect: (planId: string) => void
   onRename?: (planId: string) => void
+  /** "Save a copy" (owner ruling 2026-08-07, #4): duplicate this row's stored
+   *  document under a new name. Any row, open or not. */
+  onCopy?: (planId: string) => void
   onDelete?: (planId: string) => void
 }) {
   const [open, setOpen] = useState(false)
@@ -289,6 +307,23 @@ export function PlanPicker({
                         <PencilMark />
                       </button>
                     )}
+                    {canWrite && onCopy && (
+                      <button
+                        type="button"
+                        data-testid="plan-copy-open"
+                        data-plan-id={plan.id}
+                        title={`Save a copy of ${plan.name}`}
+                        aria-label={`Save a copy of ${plan.name}`}
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setOpen(false)
+                          onCopy(plan.id)
+                        }}
+                        className="text-ink-400 hover:text-ink-800 hover:bg-ink-100 flex h-7 w-7 shrink-0 cursor-pointer items-center justify-center rounded-md"
+                      >
+                        <CopyMark />
+                      </button>
+                    )}
                     {canWrite && onDelete && (
                       <button
                         type="button"
@@ -316,174 +351,5 @@ export function PlanPicker({
           document.body
         )}
     </>
-  )
-}
-
-/* --------------------------- the save controls --------------------------- */
-
-/**
- * One way to persist the board (owner 2026-08-02). What is offered depends on
- * the plan you are standing in, and nothing else:
- *
- *  - the imported reference, changed → save it as a plan of your own, because
- *    the reference is the only record of what the league published
- *  - your own plan, changed → save to it, and say out loud when that writes
- *    straight through to the season's calendar
- *  - any plan of your own → save a copy, changed or not
- *  - a plan the season is not running → use it for the season, once the board
- *    has nothing unsaved to lose
- */
-export function PlanSaveControls({
-  plans,
-  selected,
-  dirty,
-  busy,
-  naming,
-  onNamingChange,
-  onStartNaming,
-  onCancelNaming,
-  onSaveNew,
-  onSavePlan,
-  onActivate,
-}: {
-  plans: PlanRow[]
-  selected: PlanRow | null
-  dirty: boolean
-  /** The step's one busy key, so every button here goes quiet together. */
-  busy: string | null
-  /** What is in the name box, or null while the box is shut. */
-  naming: string | null
-  onNamingChange: (name: string) => void
-  onStartNaming: () => void
-  onCancelNaming: () => void
-  onSaveNew: () => void
-  onSavePlan: () => void
-  onActivate: () => void
-}) {
-  const reference = isReferencePlan(selected)
-  /** No plan drives this season yet, so the first one saved has to. */
-  const takesOver = !plans.some((p) => p.isActive)
-  const canSaveHere = Boolean(selected) && !reference && dirty
-  /** Always offered: it is the only route out of the reference plan, and on a
-   *  calendar with nothing changed yet it is how an operator takes the
-   *  league's plan and makes it their own (owner 2026-08-02: "when I do it
-   *  fresh it should be our own"). */
-  const newLabel = takesOver ? "Save this calendar" : dirty ? "Save as new plan" : "Save a copy"
-  /** Loud only when it is the way out: unsaved work that cannot be saved where
-   *  it stands. Copying a plan you already saved is a quiet errand. */
-  const newIsPrimary = dirty && !canSaveHere
-  const working = busy !== null
-
-  return (
-    <div className="flex flex-col items-end gap-1">
-      <div className="flex flex-wrap items-center justify-end gap-2">
-        {selected && !selected.isActive && (
-          <button
-            type="button"
-            data-testid="activate-plan"
-            disabled={working || dirty}
-            title={dirty ? PLAN_COPY.saveFirst : undefined}
-            onClick={(e) => {
-              e.stopPropagation()
-              onActivate()
-            }}
-            className={`${BTN_SECONDARY} ${BTN_MD}`}
-          >
-            {busy === "activate" ? "Switching…" : "Use for the season"}
-          </button>
-        )}
-        <button
-          type="button"
-          data-testid="save-as-new"
-          disabled={working}
-          aria-expanded={naming !== null}
-          onClick={(e) => {
-            e.stopPropagation()
-            if (naming === null) onStartNaming()
-            else onCancelNaming()
-          }}
-          className={newIsPrimary ? `${BTN_PRIMARY} ${BTN_MD}` : `${BTN_SECONDARY} ${BTN_MD}`}
-        >
-          {newLabel}
-        </button>
-        {canSaveHere && (
-          <button
-            type="button"
-            data-testid="save-plan"
-            disabled={working}
-            onClick={(e) => {
-              e.stopPropagation()
-              onSavePlan()
-            }}
-            className={`${BTN_PRIMARY} ${BTN_MD}`}
-          >
-            {busy === "save-plan" ? "Saving…" : `Save to ${selected?.name}`}
-          </button>
-        )}
-      </div>
-
-      {/* What the buttons above do NOT say on their faces. */}
-      {canSaveHere && selected?.isActive && (
-        <p className="text-ink-400 text-[11px]" data-testid="write-through-note">
-          {PLAN_COPY.writeThrough}
-        </p>
-      )}
-      {selected && !selected.isActive && dirty && (
-        <p className="text-ink-400 text-[11px]">{PLAN_COPY.saveFirst}</p>
-      )}
-
-      {naming !== null && (
-        <div
-          className="mt-1 flex flex-wrap items-center justify-end gap-2"
-          data-testid="plan-name-row"
-        >
-          <label htmlFor="plan-name" className="text-ink-500 text-[11px] font-semibold">
-            Call it
-          </label>
-          <input
-            id="plan-name"
-            data-testid="plan-name-input"
-            value={naming}
-            maxLength={PLAN_NAME_MAX}
-            autoFocus
-            onClick={(e) => e.stopPropagation()}
-            onChange={(e) => onNamingChange(e.target.value)}
-            onKeyDown={(e) => {
-              e.stopPropagation()
-              if (e.key === "Enter" && naming.trim().length > 0) onSaveNew()
-              if (e.key === "Escape") onCancelNaming()
-            }}
-            className="border-ink-200 focus:border-play-400 w-48 rounded-lg border px-2.5 py-1.5 text-xs font-semibold outline-none"
-          />
-          <button
-            type="button"
-            data-testid="save-new-confirm"
-            disabled={working || naming.trim().length === 0}
-            onClick={(e) => {
-              e.stopPropagation()
-              onSaveNew()
-            }}
-            className={`${BTN_PRIMARY} ${BTN_MD}`}
-          >
-            {busy === "save-new" ? "Saving…" : "Save plan"}
-          </button>
-          <button
-            type="button"
-            data-testid="save-new-cancel"
-            disabled={working}
-            onClick={(e) => {
-              e.stopPropagation()
-              onCancelNaming()
-            }}
-            className={`${BTN_SECONDARY} ${BTN_MD}`}
-          >
-            Cancel
-          </button>
-          {takesOver && (
-            <p className="text-ink-400 w-full text-right text-[11px]">{PLAN_COPY.takesOver}</p>
-          )}
-        </div>
-      )}
-    </div>
   )
 }

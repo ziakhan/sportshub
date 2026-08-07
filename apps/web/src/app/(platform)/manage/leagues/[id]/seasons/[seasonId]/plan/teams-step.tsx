@@ -1,14 +1,9 @@
 "use client"
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
-import {
-  expectedTeamUpdates,
-  planningTeams,
-  type PlannerState,
-  type PlannerUnit,
-} from "@/lib/scheduler/planner-core"
+import { planningTeams, type PlannerState, type PlannerUnit } from "@/lib/scheduler/planner-core"
 import { isReferencePlan, PLAN_COPY, type PlanWorld } from "@/lib/scheduler/plan-documents"
-import { unitIncluded, withUnitIncluded, withUnitTeams } from "@/lib/scheduler/plan-world"
+import { unitIncluded, withUnitIncluded, withUnitRemoved, withUnitTeams } from "@/lib/scheduler/plan-world"
 import { PlanChooser, PlanEmptyState, usePlanSession } from "./plan-session"
 import { BTN_MD, BTN_SECONDARY, BTN_SM } from "./plan-shared"
 import { NoticeSlot } from "./plan-ui"
@@ -29,21 +24,31 @@ import { NoticeSlot } from "./plan-ui"
  *     silent bigger plan: that is the gold chip on the row, and the bars on
  *     step 5.
  *
- * A PLAN OWNS ITS WORLD (owner ruling 2026-08-05, the architecture). These
- * numbers belong to the PLAN, not the season, so where they are written depends
- * on which plan is open and nothing else:
+ * A PLAN OWNS ITS WORLD (owner ruling 2026-08-05, the architecture; write-
+ * through died 2026-08-07). These numbers belong to the PLAN, not the season,
+ * so where they are written depends on which plan is open and nothing else:
  *
- *   - a plan of the operator's own → the plan document's own world. The
- *     season's divisions do not move until that plan is activated.
- *   - the ACTIVE plan → the season's rows, as always: it IS the season, and one
- *     truth beats two.
+ *   - any chosen plan that is not the read-only reference, the active plan
+ *     included → the plan document's own world. The season's divisions never
+ *     move from here; only the generate button, elsewhere, takes a plan's
+ *     numbers on for the season.
  *   - the imported reference → read only. It is the record of what the league
  *     published, estimates included.
- *   - nothing open → the season's rows, because there is no plan to write to.
+ *   - nothing open → the season's rows, READ ONLY: there is no plan to write
+ *     to, and there is no season write path left either (see `worldReadOnly`).
+ *     Add-a-grade is the one exception, a season fact untouched by sandboxing.
  *
  * IN OR OUT is part of it (owner: "grade estimates + in/out"). A grade taken out
  * of a plan asks for no games and places no chip on step 3, and it keeps its
- * number so putting it back costs nothing.
+ * number so putting it back costs nothing. REMOVE is the stronger sibling
+ * (owner ruling 2026-08-07, #8 first half): it drops the grade from the
+ * plan's units entirely, and the grade comes back as the ordinary
+ * "not planned yet" season fold-in row — the ADD path is the restore path.
+ *
+ * TEAM-EXCLUDE (owner ruling 2026-08-07, #8 second half) is the other half of
+ * removal: a plan can keep a grade but leave specific REGISTERED teams out of
+ * it. `world.excludedTeamIds` carries the list; see the Manage teams
+ * disclosure on each grade row.
  */
 
 const LOCKED_STATUSES = ["FINALIZED", "IN_PROGRESS", "COMPLETED"]
@@ -89,7 +94,37 @@ interface GradeRow {
    * minus-to-0 bounced back to the registration count after the save landed.
    */
   hasEstimate: boolean
+  /**
+   * IS THIS ROW REALLY A UNIT OBJECT IN THE PLAN'S WORLD (owner ruling
+   * 2026-08-07, #8 first half), or is it here only because it folded in from
+   * the season? "Remove from this plan" only makes sense on the former — a
+   * folded-in row has nothing of the plan's to remove yet.
+   */
+  inPlanUnits: boolean
 }
+
+/** A registered team, as the exclude picker needs it: who it is and which
+ *  grade cluster it belongs to. Read off `GET /api/seasons/[id]`'s own
+ *  `teamSubmissions` — the same field the console's teams tab already reads —
+ *  because there is no dedicated per-grade roster endpoint, and this file may
+ *  not add one. */
+interface RegisteredTeam {
+  teamId: string
+  name: string
+  divisionId: string | null
+}
+
+/**
+ * TEAM-EXCLUDE (owner ruling 2026-08-07, #8 second half) widens PlanWorld
+ * with the one field this ruling adds. Declared locally rather than in
+ * plan-documents.ts — that file is not this file's to touch, and the other
+ * agent building the server contract declared the very same shape locally in
+ * season-plans.ts for the same reason. A zod-parsed world structurally
+ * satisfies it either way, and passing one to `session.saveWorld` (typed
+ * `PlanWorld`) is fine: an object with one extra optional property is still
+ * a `PlanWorld`.
+ */
+type PlanWorldWithExclusions = PlanWorld & { excludedTeamIds?: string[] }
 
 export function TeamsStep({
   seasonId,
@@ -109,6 +144,13 @@ export function TeamsStep({
   const [newGrade, setNewGrade] = useState("")
   const [addingGrade, setAddingGrade] = useState(false)
   const [addError, setAddError] = useState<string | null>(null)
+  /** Registered teams for the exclude picker (owner ruling 2026-08-07, #8
+   *  second half): the season's own teamSubmissions, read only, independent
+   *  of which plan is open. */
+  const [teams, setTeams] = useState<RegisteredTeam[]>([])
+  /** Which grade's "Manage teams" disclosure is open, one at a time — the
+   *  same pattern step 2's bookings picker uses. */
+  const [teamsOpenFor, setTeamsOpenFor] = useState<string | null>(null)
 
   /**
    * WHOSE NUMBERS THESE ARE. The plan ROW decides it and is known the instant
@@ -119,14 +161,25 @@ export function TeamsStep({
    */
   /**
    * TWO QUESTIONS, NOT ONE (the old-plan fix, 2026-08-06 wave): whose numbers
-   * are DRAWN, and whose are WRITTEN. Any non-active plan with a world draws
-   * it — the read-only reference included, so this step and the board can
-   * never show two different plans. Only the operator's own plan writes it.
+   * are DRAWN, and whose are WRITTEN. Any chosen plan with a world draws it,
+   * the active plan and the read-only reference both included, so this step
+   * and the board can never show two different plans. Only a plan that is not
+   * the reference writes it.
    */
   const readsWorld = session.readsPlanWorld
   const pending = session.editsPlanWorld && session.world === null
   const editsWorld = session.editsPlanWorld && session.world !== null
   const readOnly = locked || isReferencePlan(session.chosen) || pending
+  /**
+   * THE STEPPER NEEDS A PLAN'S WORLD TO WRITE INTO (owner ruling 2026-08-07,
+   * #1 and #2: plans are sandboxes, full stop, and write-through died). With
+   * nothing open there is no season fallback any more, so the numbers still
+   * SHOW the season's own (readsWorld is false, so `rows` already falls back
+   * to the live season units) but cannot be typed into until a plan is
+   * chosen. Add-a-grade is exempt — it is a season fact, not sandboxed
+   * content, so it keeps the plainer `readOnly` gate below.
+   */
+  const worldReadOnly = readOnly || !session.planId
 
   // Refs so the debounced save always sends the LATEST numbers without
   // re-arming itself on every keystroke of the stepper.
@@ -158,6 +211,29 @@ export function TeamsStep({
     setLastSeason(data.lastSeasonTeams ?? null)
     setLocked(LOCKED_STATUSES.includes(data.seasonStatus))
     onLoaded?.({ leagueName: data.leagueName, seasonLabel: data.seasonLabel })
+
+    /**
+     * REGISTERED TEAMS, FOR THE EXCLUDE PICKER (owner ruling 2026-08-07, #8
+     * second half). No dedicated per-grade roster endpoint exists, so this
+     * reads the same season payload the console's own teams tab already
+     * builds `teams` from (`GET /api/seasons/[id]` → `teamSubmissions`).
+     * Read only, and optional: a failed read just leaves the disclosure with
+     * nothing to list, which is honest rather than blocking the screen.
+     */
+    const seasonRes = await fetch(`/api/seasons/${seasonId}`, { cache: "no-store" }).catch(
+      () => null
+    )
+    const seasonData = seasonRes?.ok ? await seasonRes.json().catch(() => null) : null
+    const submissions = (seasonData?.teamSubmissions ?? []) as Array<{
+      status: string
+      divisionId: string | null
+      team: { id: string; name: string }
+    }>
+    setTeams(
+      submissions
+        .filter((s) => s.status === "APPROVED")
+        .map((s) => ({ teamId: s.team.id, name: s.team.name, divisionId: s.divisionId }))
+    )
   }, [seasonId, onLoaded])
 
   useEffect(() => {
@@ -165,13 +241,15 @@ export function TeamsStep({
   }, [load])
 
   /**
-   * THE ROWS THIS SCREEN EDITS. On a plan of the operator's own they are the
-   * plan's units; on the active plan or with nothing open they are the season's.
+   * THE ROWS THIS SCREEN EDITS. On any chosen plan, active included, they are
+   * the plan's units; with nothing open they are the season's, read only.
    *
    * Either way the season's live grades are folded in, so a grade added to the
    * season after the plan was made shows up here as a row the operator can put a
    * number on rather than as something they have to go and find. It arrives OUT
-   * of the plan, because a plan never placed a grade it has not heard of.
+   * of the plan, because a plan never placed a grade it has not heard of. A
+   * grade REMOVED from the plan (withUnitRemoved) folds in the very same way —
+   * that fold-in IS the restore path.
    */
   const rows: GradeRow[] = useMemo(() => {
     const live = state?.units ?? []
@@ -184,6 +262,7 @@ export function TeamsStep({
         approved: u.approved,
         included: u.expected > 0,
         hasEstimate: u.source === "expected",
+        inPlanUnits: false,
       }))
     }
     const world = session.world as PlanWorld
@@ -207,6 +286,7 @@ export function TeamsStep({
         // Older documents never stamped `source`, so a positive number is its
         // own proof; a zero counts only when the write stamped it.
         hasEstimate: inPlan ? inPlan.source === "expected" || inPlan.teams > 0 : false,
+        inPlanUnits: Boolean(inPlan),
       }
     })
   }, [state, readsWorld, session.world])
@@ -246,80 +326,61 @@ export function TeamsStep({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [session.planId, session.docVersion, state])
 
-  /** Send every grade touched since the last flush. A grade cluster can span
-   *  several divisions, so on the season's rows each one expands to per-division
-   *  writes; on a plan's own world it is one PATCH of the whole world. */
+  /**
+   * Send every grade touched since the last flush, into the plan's own
+   * world. One PATCH of the whole world, whichever plan is open.
+   *
+   * THE SEASON PATCH BRANCH IS GONE (owner ruling 2026-08-07, #1 and #2:
+   * plans are sandboxes, full stop, and write-through died). It used to write
+   * expected-team updates straight onto the season's divisions, for the
+   * active plan and for "nothing open" alike; there is no plan world to write
+   * into in either of those states any more that the season may stand in
+   * for, so with nothing open the stepper is disabled (`worldReadOnly`) and
+   * this function is simply never called.
+   */
   const flush = useCallback(async () => {
     const keys = [...dirtyRef.current]
     dirtyRef.current.clear()
     if (keys.length === 0) return
-    // The plan's world has not arrived, so there is nothing to write it into —
-    // and the season is NOT the fallback.
+    // The plan's world has not arrived, so there is nothing to write it into.
     if (pending) return
+    // Nothing open, or the reference plan: no plan world exists to hold
+    // this. The stepper is disabled in that state (worldReadOnly), so this
+    // guard should not normally be reached.
+    if (!editsWorld) return
 
-    if (editsWorld) {
-      let world = worldRef.current ?? session.world
-      if (!world) return
-      for (const key of keys) {
-        const teams = countsRef.current[key] ?? 0
-        // A grade the plan has never held has to be added before it can be
-        // numbered, or the edit would land on nothing.
-        if (!(world.units ?? []).some((u) => u.key === key)) {
-          const row = unitsRef.current.find((u) => u.key === key)
-          world = {
-            ...world,
-            units: [
-              ...(world.units ?? []),
-              {
-                key,
-                label: row?.label ?? key.replace(/^age:/, ""),
-                divisionIds: row?.divisionIds ?? [],
-                teams: 0,
-                approved: row?.approved ?? 0,
-                expected: 0,
-                source: "none",
-                included: false,
-              },
-            ],
-          }
+    let world = worldRef.current ?? session.world
+    if (!world) return
+    for (const key of keys) {
+      const teams = countsRef.current[key] ?? 0
+      // A grade the plan has never held has to be added before it can be
+      // numbered, or the edit would land on nothing.
+      if (!(world.units ?? []).some((u) => u.key === key)) {
+        const row = unitsRef.current.find((u) => u.key === key)
+        world = {
+          ...world,
+          units: [
+            ...(world.units ?? []),
+            {
+              key,
+              label: row?.label ?? key.replace(/^age:/, ""),
+              divisionIds: row?.divisionIds ?? [],
+              teams: 0,
+              approved: row?.approved ?? 0,
+              expected: 0,
+              source: "none",
+              included: false,
+            },
+          ],
         }
-        world = withUnitTeams(world, key, teams)
       }
-      worldRef.current = world
-      const ok = await session.saveWorld(world)
-      setSaving(ok ? "saved" : "idle")
-      setError(ok ? null : "That didn't save. Try again.")
-      return
+      world = withUnitTeams(world, key, teams)
     }
-
-    const updates = keys.flatMap((key) => {
-      const unit = unitsRef.current.find((u) => u.key === key)
-      return unit ? expectedTeamUpdates(unit.divisionIds, countsRef.current[key] ?? 0) : []
-    })
-    // The season path is only for the season: a plan that draws its own
-    // world (the reference included) must never fall through to it.
-    if (updates.length === 0 || readsWorld) return
-    const res = await fetch(`/api/seasons/${seasonId}/planner`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ expected: updates }),
-    }).catch(() => null)
-    if (!res?.ok) {
-      setSaving("idle")
-      setError("That didn't save. Try again.")
-      return
-    }
-    // The save answers with the whole planner state, so the rows learn which
-    // estimates are really saved (and stop saying "not in the plan yet")
-    // without a second round trip. Counts stay as typed: the operator may
-    // have moved a stepper again while this was in flight.
-    const data = await res.json().catch(() => null)
-    if (data?.state) setState(data.state as PlannerState)
-    // The active plan IS the season, so its document has just changed too.
-    if (session.planId) void session.refreshDoc()
-    setError(null)
-    setSaving("saved")
-  }, [seasonId, editsWorld, readsWorld, pending, session])
+    worldRef.current = world
+    const ok = await session.saveWorld(world)
+    setSaving(ok ? "saved" : "idle")
+    setError(ok ? null : "That didn't save. Try again.")
+  }, [editsWorld, pending, session])
 
   /** Save whatever is pending right now, ahead of anything that reloads the
    *  season from the server. */
@@ -345,7 +406,7 @@ export function TeamsStep({
   )
 
   const bump = (row: GradeRow, delta: number) => {
-    if (readOnly) return
+    if (worldReadOnly) return
     setCounts((prev) => {
       const now = Math.min(MAX_PER_GRADE, Math.max(0, (prev[row.key] ?? 0) + delta))
       return { ...prev, [row.key]: now }
@@ -378,13 +439,79 @@ export function TeamsStep({
   }
 
   /**
+   * REMOVE FROM THIS PLAN, ENTIRELY (owner ruling 2026-08-07, #8 first half).
+   * Stronger than the in/out toggle: this drops the unit object outright, so
+   * the grade falls back to the ordinary "not planned yet" season fold-in row
+   * — add-a-grade's stepper is the restore path, and confirming re-adds it
+   * with a fresh number, not the one just discarded. Confirmed first when
+   * there is a real number to lose.
+   */
+  const removeGrade = async (row: GradeRow) => {
+    if (readOnly || !editsWorld || !row.inPlanUnits) return
+    const value = countsRef.current[row.key] ?? row.expected
+    if (
+      value > 0 &&
+      !window.confirm(
+        `Remove ${row.label} from this plan? It is set to ${value} team${value === 1 ? "" : "s"}, and this plan will forget that number. You can add it back any time.`
+      )
+    ) {
+      return
+    }
+    // A pending stepper edit for this grade is about to be discarded with
+    // the row itself, so it must not fire afterward and quietly re-add what
+    // was just removed.
+    if (timerRef.current) {
+      clearTimeout(timerRef.current)
+      timerRef.current = null
+    }
+    dirtyRef.current.delete(row.key)
+    const world = worldRef.current ?? session.world
+    if (!world) return
+    setSaving("saving")
+    const next = withUnitRemoved(world, row.key)
+    worldRef.current = next
+    const ok = await session.saveWorld(next)
+    setSaving(ok ? "saved" : "idle")
+    if (!ok) setError("That didn't save. Try again.")
+  }
+
+  /**
+   * TEAM-EXCLUDE (owner ruling 2026-08-07, #8 second half): the registered
+   * teams one grade cluster has, and which of the plan's excluded ids they
+   * carry. `excludedTeamIds` only means anything inside a plan's own world,
+   * so it reads null outside `readsWorld`.
+   */
+  const gradeTeams = useCallback(
+    (divisionIds: string[]) => teams.filter((t) => t.divisionId && divisionIds.includes(t.divisionId)),
+    [teams]
+  )
+  const excludedTeamIds = useMemo(() => {
+    const world = readsWorld ? (session.world as PlanWorldWithExclusions | null) : null
+    return new Set(world?.excludedTeamIds ?? [])
+  }, [readsWorld, session.world])
+  const toggleExcludedTeam = async (teamId: string) => {
+    if (!editsWorld || readOnly) return
+    const world = (worldRef.current ?? session.world) as PlanWorldWithExclusions | null
+    if (!world) return
+    const current = new Set(world.excludedTeamIds ?? [])
+    if (current.has(teamId)) current.delete(teamId)
+    else current.add(teamId)
+    const next: PlanWorldWithExclusions = { ...world, excludedTeamIds: [...current] }
+    worldRef.current = next
+    setSaving("saving")
+    const ok = await session.saveWorld(next)
+    setSaving(ok ? "saved" : "idle")
+    if (!ok) setError("That didn't save. Try again.")
+  }
+
+  /**
    * One tap that turns the teams already in into an estimate, for the grades
    * that have no estimate at all. Still the operator's decision, and still
    * their number after: a grade they already put a number on is left exactly
    * as they left it, even when more teams than that have registered.
    */
   const startFromRegistrations = () => {
-    if (readOnly) return
+    if (worldReadOnly) return
     const next = { ...countsRef.current }
     for (const r of rows) {
       if (r.approved <= 0 || r.hasEstimate) continue
@@ -485,7 +612,7 @@ export function TeamsStep({
           <PlanEmptyState
             locked={locked}
             heading="Which plan are you working in?"
-            detail="A plan is one named calendar for this season. Open one of yours, or start a new one and the planner builds a balanced calendar you can change. The numbers below stay editable either way."
+            detail="A plan is one named calendar for this season. Open one of yours, or start a new one and the planner builds a balanced calendar you can change. The numbers below are read only until you do — every plan is its own sandbox now, so there is no season fallback to write into."
             testId="step1-plan-empty"
           />
         </div>
@@ -494,16 +621,14 @@ export function TeamsStep({
         <p
           className="border-ink-100 bg-court-50/60 text-court-900 border-b px-5 py-2 text-[12px]"
           data-testid="step1-plan-line"
-          data-world={pending ? "loading" : readsWorld ? "plan" : "season"}
+          data-world={pending ? "loading" : "plan"}
         >
           Working in <b>{session.chosen?.name ?? "your plan"}</b>.{" "}
           {isReferencePlan(session.chosen)
             ? "This is the imported reference, so its numbers are read only. Start a plan of your own to change them."
             : pending
               ? "Opening this plan's numbers…"
-              : readsWorld
-                ? "These numbers belong to this plan. The season keeps its own until you use this plan for the season."
-                : "This is the plan the season runs, so these numbers are the season's own."}
+              : "These numbers belong to this plan."}
         </p>
       )}
 
@@ -524,8 +649,9 @@ export function TeamsStep({
         <NoticeSlot testId="step1-notice" error={error} className="mb-4" />
 
         {/* Entries are in and nothing is planned. Offer the shortcut once,
-            as a suggestion the operator commits with one tap. */}
-        {!readOnly && unplanned.length > 0 && (
+            as a suggestion the operator commits with one tap. Needs a plan's
+            world to write into, same as the steppers (worldReadOnly). */}
+        {!worldReadOnly && unplanned.length > 0 && (
           <div
             data-testid="start-from-registrations"
             className="border-court-200 bg-court-50 mb-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border px-4 py-3"
@@ -610,7 +736,7 @@ export function TeamsStep({
                       >
                         <button
                           type="button"
-                          disabled={readOnly || out || value <= 0}
+                          disabled={worldReadOnly || out || value <= 0}
                           onClick={() => bump(row, -1)}
                           aria-label={`One fewer ${row.label} team`}
                           className="text-ink-700 hover:bg-ink-100 hover:text-ink-900 h-full w-9 cursor-pointer rounded-l-lg text-base font-bold transition-colors disabled:cursor-not-allowed disabled:opacity-40"
@@ -626,7 +752,7 @@ export function TeamsStep({
                         <button
                           type="button"
                           id={plusId}
-                          disabled={readOnly || out || value >= MAX_PER_GRADE}
+                          disabled={worldReadOnly || out || value >= MAX_PER_GRADE}
                           onClick={() => bump(row, 1)}
                           aria-label={`One more ${row.label} team`}
                           className="text-ink-700 hover:bg-ink-100 hover:text-ink-900 h-full w-9 cursor-pointer rounded-r-lg text-base font-bold transition-colors disabled:cursor-not-allowed disabled:opacity-40"
@@ -655,6 +781,23 @@ export function TeamsStep({
                             }`}
                           >
                             {out ? "Not in this plan" : "In this plan"}
+                          </button>
+                        )}
+                        {/* REMOVE FROM THIS PLAN, ENTIRELY (owner ruling
+                            2026-08-07, #8 first half). Stronger than the
+                            in/out toggle above: that keeps the row and its
+                            number for a free restore, this drops the unit
+                            object outright. Only offered on a row that IS a
+                            unit in the plan's world — a folded-in season row
+                            has nothing of the plan's to remove yet. */}
+                        {editsWorld && !readOnly && row.inPlanUnits && (
+                          <button
+                            type="button"
+                            data-testid="grade-remove"
+                            onClick={() => void removeGrade(row)}
+                            className="text-ink-400 hover:text-hoop-700 cursor-pointer text-[11px] font-semibold underline decoration-dotted underline-offset-2"
+                          >
+                            Remove from this plan
                           </button>
                         )}
                         {/* Planning currency, and nothing else: what this
@@ -693,7 +836,7 @@ export function TeamsStep({
                           * NOTHING about the plan; it puts the cursor on the
                           * control that always did the work.
                           */}
-                        {notPlanned && !out && !readOnly && (
+                        {notPlanned && !out && !worldReadOnly && (
                           <button
                             type="button"
                             data-testid="not-planned"
@@ -709,7 +852,7 @@ export function TeamsStep({
                             Not in the plan yet · add an estimate
                           </button>
                         )}
-                        {notPlanned && !out && readOnly && (
+                        {notPlanned && !out && worldReadOnly && (
                           <span data-testid="not-planned" className="text-ink-400 text-xs">
                             Not in the plan yet
                           </span>
@@ -721,6 +864,24 @@ export function TeamsStep({
                           </span>
                         )}
                       </div>
+                      {/* TEAM-EXCLUDE (owner ruling 2026-08-07, #8 second
+                          half): a plan can keep a grade but leave specific
+                          registered teams out of it. Only meaningful inside a
+                          plan's own world, so only offered while readsWorld —
+                          and only when this grade actually has registered
+                          teams to manage. */}
+                      {readsWorld && gradeTeams(row.divisionIds).length > 0 && (
+                        <TeamsDisclosure
+                          teams={gradeTeams(row.divisionIds)}
+                          excluded={excludedTeamIds}
+                          canEdit={editsWorld && !readOnly}
+                          open={teamsOpenFor === row.key}
+                          onToggleOpen={() =>
+                            setTeamsOpenFor(teamsOpenFor === row.key ? null : row.key)
+                          }
+                          onToggleTeam={(teamId) => void toggleExcludedTeam(teamId)}
+                        />
+                      )}
                     </td>
                   </tr>
                 )
@@ -797,6 +958,81 @@ export function TeamsStep({
           {saving === "saving" ? "Saving…" : saving === "saved" ? "Saved." : ""}
         </p>
       </div>
+    </div>
+  )
+}
+
+/**
+ * "MANAGE TEAMS (N)" — collapsed, one grade at a time (owner ruling
+ * 2026-08-07, #8 second half). A plan can keep a grade but leave specific
+ * registered teams out of the calendar it draws; this lists them by name
+ * with an exclude toggle each. Excluded teams read struck through, with
+ * "not in this plan" — the same honesty the grade row's own out state wears.
+ */
+function TeamsDisclosure({
+  teams,
+  excluded,
+  canEdit,
+  open,
+  onToggleOpen,
+  onToggleTeam,
+}: {
+  teams: RegisteredTeam[]
+  excluded: Set<string>
+  /** False while nothing is open, on the reference, or while a chosen plan's
+   *  world is still loading — the toggle is shown but goes quiet. */
+  canEdit: boolean
+  open: boolean
+  onToggleOpen: () => void
+  onToggleTeam: (teamId: string) => void
+}) {
+  return (
+    <div className="mt-1.5 w-full">
+      <button
+        type="button"
+        data-testid="manage-teams-open"
+        onClick={onToggleOpen}
+        className="text-ink-500 hover:text-ink-800 cursor-pointer text-[11px] font-bold underline underline-offset-2"
+      >
+        {open ? "Hide teams" : `Manage teams (${teams.length})`}
+      </button>
+      {open && (
+        <ul
+          data-testid="manage-teams-list"
+          className="border-ink-100 mt-1.5 flex flex-col gap-1 rounded-lg border bg-white p-2"
+        >
+          {teams.map((t) => {
+            const isOut = excluded.has(t.teamId)
+            return (
+              <li key={t.teamId} className="flex items-center justify-between gap-2 text-[12px]">
+                <span className={isOut ? "text-ink-400 line-through" : "text-ink-800"}>
+                  {t.name}
+                  {isOut && (
+                    <span className="text-ink-400 ml-1.5 text-[10.5px] no-underline">
+                      not in this plan
+                    </span>
+                  )}
+                </span>
+                <button
+                  type="button"
+                  data-testid="team-exclude-toggle"
+                  data-team-id={t.teamId}
+                  data-excluded={isOut ? "1" : "0"}
+                  disabled={!canEdit}
+                  onClick={() => onToggleTeam(t.teamId)}
+                  className={`min-h-[24px] shrink-0 cursor-pointer rounded-full border px-2 text-[10.5px] font-bold disabled:cursor-not-allowed disabled:opacity-50 ${
+                    isOut
+                      ? "border-court-200 bg-court-50 text-court-800 hover:border-court-400"
+                      : "border-ink-300 text-ink-600 hover:border-ink-400 hover:bg-ink-50 bg-white"
+                  }`}
+                >
+                  {isOut ? "Include" : "Exclude"}
+                </button>
+              </li>
+            )
+          })}
+        </ul>
+      )}
     </div>
   )
 }

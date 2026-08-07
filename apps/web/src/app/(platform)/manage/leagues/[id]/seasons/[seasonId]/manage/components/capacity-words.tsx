@@ -19,9 +19,12 @@ export function ScheduleReadiness({
   divisions: any[]
   scheduleGamesCount: number
 }) {
-  const [cap, setCap] = useState<{ needed: number; provided: number; sessions: number } | null>(
-    null
-  )
+  const [cap, setCap] = useState<{
+    needed: number
+    provided: number
+    sessions: number
+    running: number
+  } | null>(null)
 
   useEffect(() => {
     let alive = true
@@ -34,6 +37,11 @@ export function ScheduleReadiness({
           needed: sessions.reduce((sum, s) => sum + (s.gamesNeededAll ?? 0), 0),
           provided: sessions.reduce((sum, s) => sum + (s.slotsTotal ?? 0), 0),
           sessions: sessions.length,
+          // Honest denominator (owner ruling 7, 2026-08-07): this report is
+          // already REGULAR-phase only, but a session row can still exist
+          // with no gym attached yet. "Running" = it actually has courts —
+          // the only count worth putting in front of the operator.
+          running: sessions.filter((s) => (s.courts ?? 0) > 0).length,
         })
       })
       .catch(() => {})
@@ -77,7 +85,7 @@ export function ScheduleReadiness({
           <span className="text-court-700 font-bold">✓ You can generate the season&apos;s
           schedule.</span>{" "}
           <span className="text-ink-600">
-            Your {cap!.sessions} regular-season session{cap!.sessions === 1 ? "" : "s"} provide{" "}
+            Your {cap!.running} regular-season session{cap!.running === 1 ? "" : "s"} provide{" "}
             {cap!.provided} game slots for the {cap!.needed} needed
             {scheduleGamesCount > 0
               ? ` · ${scheduleGamesCount} game${scheduleGamesCount === 1 ? "" : "s"} committed so far`

@@ -54,6 +54,7 @@ import {
   withGymOnWeekend,
   withGymRole,
   withUnitIncluded,
+  withUnitRemoved,
   withUnitTeams,
   withWeekendChosen,
   withWeekendGymHours,
@@ -338,6 +339,14 @@ describe("editing a plan's world", () => {
     expect(unitIncluded(out.units[0])).toBe(false)
     const back = withUnitIncluded(out, "age:Grade 7", true)
     expect(back.units.find((u) => u.key === "age:Grade 7")?.teams).toBe(14)
+  })
+
+  it("removes a grade from the plan entirely, unlike in/out which keeps its number", () => {
+    const next = withUnitRemoved(withUnitTeams(world(), "age:Grade 7", 14), "age:Grade 7")
+    expect(next.units.find((u) => u.key === "age:Grade 7")).toBeUndefined()
+    // The other grade is untouched, and nothing else about the world moves.
+    expect(next.units.map((u) => u.key)).toEqual(["age:Grade 8"])
+    expect(next.windows).toEqual(world().windows)
   })
 })
 

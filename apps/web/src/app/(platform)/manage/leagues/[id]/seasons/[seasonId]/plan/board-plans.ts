@@ -1,10 +1,11 @@
 "use client"
 
-import { useEffect } from "react"
+import { useEffect, useRef } from "react"
 import { currentAssignment, type PlannerState } from "@/lib/scheduler/planner-core"
 import {
   activateConfirmText,
   canWriteToPlan,
+  isReferencePlan,
   suggestPlanName,
   PLAN_COPY,
   type PlanDocument,
@@ -19,17 +20,32 @@ import {
 import { plural, savedVenueMap } from "./board-shared"
 import type { BoardModel } from "./board-state"
 
+/** How long the working copy sits quiet before autosave writes it (owner
+ *  ruling 2026-08-07, #4). */
+const AUTOSAVE_DEBOUNCE_MS = 1000
+
 /**
  * THE PLAN AS A DOCUMENT (owner 2026-08-02: "we can have multiple plans, we can
  * save them, we can name them"). Opening one onto the board, saving the board
- * back onto it, taking a copy, and making the season run it.
+ * back onto it (now on a debounce — autosave, owner ruling 2026-08-07, #4),
+ * and taking a copy.
  *
- * Every write the working copy owes the SEASON rather than the plan lives here
- * too — where a rental stands, a gym that gave fewer courts, a backup gym
- * somebody asserted — because all three are only true of the plan the season
- * actually runs, and that rule is easiest to keep in one place.
+ * WRITE-THROUGH DIED HERE TOO (owner ruling 2026-08-07, #2): this file used to
+ * also own every write the working copy owed the SEASON rather than the
+ * plan — where a rental stood, a gym that gave fewer courts, a backup gym
+ * somebody asserted — for whichever plan happened to be the season's active
+ * one. Plans are sandboxes, full stop, so that whole category of write is
+ * gone; see the note above worldWithAssertions for what still travels with a
+ * save and what, for now, only lives in the working copy.
  */
 export function useBoardPlans(m: BoardModel) {
+  /** The latest pending-save closure, for the unmount flush below. */
+  const flushRef = useRef<{
+    dirty: boolean
+    planId: string | null
+    selectedPlan: import("@/lib/scheduler/plan-documents").PlanRow | null
+    savePlan: () => Promise<void> | void
+  }>({ dirty: false, planId: null, selectedPlan: null, savePlan: () => {} })
   const {
     seasonId,
     session,
@@ -55,7 +71,6 @@ export function useBoardPlans(m: BoardModel) {
     shown,
     blockStatus,
     setBlockStatus,
-    courtOverrides,
     setCourtOverrides,
     hourOverrides,
     setHourOverrides,
@@ -65,6 +80,7 @@ export function useBoardPlans(m: BoardModel) {
     setFridays,
     setEmptyGyms,
     setUndoStack,
+    dirty,
     setDirty,
     fromLever,
     setFromLever,
@@ -75,7 +91,6 @@ export function useBoardPlans(m: BoardModel) {
     setGhosts,
     setKept,
     setKeptVenues,
-    setVenueGrid,
     setBusy,
     setError,
     setNotice,
@@ -93,19 +108,20 @@ export function useBoardPlans(m: BoardModel) {
 
   /**
    * Open a plan on the board: its calendar, its gyms, its WORLD, and a clean
-   * slate. The working copy is thrown away, so an operator who has unsaved work
-   * is asked first — unless they asked for this themselves ("Undo changes").
+   * slate. The working copy is thrown away — autosave means there is rarely
+   * more than a second of it to lose (owner ruling 2026-08-07, #4).
    *
-   * A plan the season does not run is drawn under the settings it was SAVED
-   * with, so every fraction, meter and idea on screen is the one the operator
-   * saw when they saved it. The plan the season runs is drawn under the
-   * season's own world, because that world is the one it is running in.
+   * Every plan is drawn under the settings it was SAVED with now, the active
+   * plan included (write-through died, owner ruling 2026-08-07): every
+   * fraction, meter and idea on screen is the one the operator saw when they
+   * saved it. The `liveState` fallback below only matters for the rare
+   * pre-heal instant before a plan has any settings of its own at all.
    */
   const openPlan = (plan: PlanDocument) => {
     drawnPlan.current = `${plan.id}|${planVersion}`
     setError(null)
     const settings = plan.settings ?? null
-    const ownWorld = Boolean(settings) && !plan.isActive
+    const ownWorld = Boolean(settings)
     setPlanSettings(settings)
     setOnPlanWorld(ownWorld)
     // The plan's own world, read the one shared way. A plan the season RUNS is
@@ -137,7 +153,7 @@ export function useBoardPlans(m: BoardModel) {
     setNaming(null)
     setNotice(
       session.lastCreatedId === plan.id
-        ? `${plan.name} is a fresh calendar from the planner. Adjust anything, then use it for the season.`
+        ? `${plan.name} is a fresh calendar from the planner. Adjust anything — every change saves on its own.`
         : plan.isActive
           ? `${plan.name} is on the board. This is the calendar the season runs.`
           : ownWorld
@@ -181,42 +197,6 @@ export function useBoardPlans(m: BoardModel) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [planId, planVersion, planDoc, liveState])
 
-  /**
-   * WHERE "ASSUMED" IS WRITTEN DOWN (the 2026-08-03 wiring decision, and the
-   * one place this file writes anything about a booking).
-   *
-   * A plan document holds a calendar and its gyms; where a BOOKING stands lives
-   * on the gym's attachment to the weekend (SeasonSessionDayVenue.bookingStatus),
-   * which is step 2's own truth and what the grid reads back. So:
-   *
-   *  - while an operator is thinking, the statuses live in the working copy;
-   *  - they are written through only for the plan the season actually RUNS,
-   *    where "this rented weekend is not booked yet" is a true fact about the
-   *    season. A plan the season does not run must never mark anybody's gym;
-   *  - the grid is re-read afterwards, so the base every status falls back to
-   *    is the one the season just recorded.
-   */
-  const writeBookingStatus = async () => {
-    const rows = Object.entries(blockStatus)
-    if (rows.length === 0) return
-    await Promise.all(
-      rows.map(([key, bookingStatus]) => {
-        const [sessionId, venueId] = key.split("|")
-        if (!sessionId || !venueId) return Promise.resolve(null)
-        return fetch(`/api/seasons/${seasonId}/sessions/${sessionId}/venues/${venueId}`, {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ bookingStatus }),
-        }).catch(() => null)
-      })
-    )
-    const res = await fetch(`/api/seasons/${seasonId}/planner/venues`, { cache: "no-store" }).catch(
-      () => null
-    )
-    const data = res?.ok ? await res.json().catch(() => null) : null
-    if (data?.grid) setVenueGrid(data.grid)
-  }
-
   /** Back to what the selected plan says, re-read from the server so "undo my
    *  changes" cannot land on a document that moved while the board was open. */
   const revert = async () => {
@@ -231,14 +211,23 @@ export function useBoardPlans(m: BoardModel) {
     await load()
   }
 
-  /** Save the board as a NEW plan. Nothing is applied: the plan lands beside
-   *  the others until somebody uses it for the season — except on a season
-   *  that runs nothing yet, where the first plan saved IS the calendar.
+  /**
+   * Save the board as a NEW plan, and nothing else moves (owner ruling
+   * 2026-08-07, #2 and #3: write-through died, and the single generate
+   * button is the only door into the season now). This used to also make the
+   * first plan a season ever saved its calendar automatically — that was
+   * write-through wearing a different hat, a save silently becoming the
+   * season's driver, and it goes with the rest of it. A season with nothing
+   * generated yet simply has nothing generated yet.
    *
-   *  The world it records is the season's, read on the server at save time. So
-   *  a copy taken while an older plan's world was on the board comes back in
-   *  today's world, and the board follows it there rather than keeping numbers
-   *  the new plan does not claim. */
+   * This is "Save a copy" now: the reference plan's only escape, offered on
+   * the board, and the same machinery the picker's row menu's copy action
+   * reaches for when the plan being duplicated is the one already open.
+   *
+   * The world it records is the season's, read on the server at save time. So
+   * a copy taken while an older plan's world was on the board comes back in
+   * today's world, and the board follows it there rather than keeping numbers
+   * the new plan does not claim. */
   const saveAsNew = async () => {
     const name = (naming ?? "").trim()
     if (!name) return
@@ -279,19 +268,6 @@ export function useBoardPlans(m: BoardModel) {
       return
     }
     const plan = data.plan as PlanDocument
-    const takesOver = !plans.some((p) => p.isActive)
-    let fresh: PlannerState | null = null
-    if (takesOver) {
-      await fetch(`/api/seasons/${seasonId}/plans/${plan.id}/activate`, { method: "POST" }).catch(
-        () => null
-      )
-      // The season runs this calendar now, so where its rentals stand and which
-      // gyms gave fewer courts are facts about the season, not only about the
-      // board. Both are written through here and nowhere else.
-      fresh = await writeSeasonFacts()
-      setKept(assignment)
-      setKeptVenues(shown.venues)
-    }
     const wasOnPlanWorld = onPlanWorld
     // The board is ALREADY drawing this plan, so the wizard is told which plan
     // it is in without the open-on-choice effect redrawing it underneath.
@@ -302,23 +278,15 @@ export function useBoardPlans(m: BoardModel) {
     setPlanSettings(plan.settings ?? null)
     // A copy that carried its world keeps drawing that world; one saved in the
     // season's world goes back to the season's numbers.
-    setOnPlanWorld(Boolean(plan.settings) && wasOnPlanWorld && !takesOver)
-    // A correction the save just wrote moved the season's own capacity, so THAT
-    // is the world the board lands in. Without this the stale live world would
-    // quietly put the courts back.
-    if (wasOnPlanWorld && !takesOver && plan.settings) {
+    setOnPlanWorld(Boolean(plan.settings) && wasOnPlanWorld)
+    if (wasOnPlanWorld && plan.settings) {
       const own = planStateFrom(seasonId, plan)
       if (own) setState(own)
-    } else if (fresh) setState(fresh)
-    else if (liveState) setState(liveState)
+    } else if (liveState) setState(liveState)
     setVenues(shown.venues)
     setBlockStatus({})
-    // A plan the season does not run never marked anybody's gym, so its
-    // corrections are still only the board's opinion and they stay on it.
-    if (takesOver) setCourtOverrides({})
-    // The new plan's world carries the assertions and the per-date hours (or the
-    // season does, where this save took over), so the working copy hands them
-    // over.
+    // The new plan's world carries the assertions and the per-date hours, so
+    // the working copy hands them over.
     setAssertedGyms({})
     setEmptyGyms({})
     setFridays({})
@@ -331,16 +299,27 @@ export function useBoardPlans(m: BoardModel) {
     setArmedVenue(null)
     setBusy(null)
     setNotice(
-      takesOver
-        ? `Saved as ${plan.name}. It is the calendar this season runs.`
-        : wasOnPlanWorld
-          ? `Saved as ${plan.name}, with the gyms and estimates this plan was drawn in.`
-          : `Saved as ${plan.name}. Use it for the season when you are ready.`
+      wasOnPlanWorld
+        ? `Saved as ${plan.name}, with the gyms and estimates this plan was drawn in.`
+        : `Saved as ${plan.name}.`
     )
   }
 
-  /** Save the board onto the plan it came from. On the plan the season runs,
-   *  the server writes it through to the calendar everyone sees. */
+  /**
+   * SAVE THE BOARD ONTO THE PLAN IT CAME FROM — THE PLAN DOCUMENT ONLY (owner
+   * ruling 2026-08-07, #1 and #2: plans are sandboxes, full stop, and
+   * write-through died). This used to write straight through to the season's
+   * own sessions on the plan the season runs; it never does that any more,
+   * the active plan included. Every plan's calendar and world land in its
+   * own document, the same way, and the season only takes on a plan's world
+   * through the generate button, elsewhere.
+   *
+   * This is what autosave calls, on a debounce, every time the working copy
+   * goes dirty (see the effect below). Nothing here is a user-visible "save" —
+   * the plan-state line says so quietly, and errors still surface through
+   * `error`/`notice` because a save that silently failed is worse than one
+   * that never ran.
+   */
   const savePlan = async () => {
     const plan = selectedPlan
     if (!plan) return
@@ -361,10 +340,11 @@ export function useBoardPlans(m: BoardModel) {
     }
     setBusy("save-plan")
     setError(null)
-    // A gym the operator asserted travels with the calendar, EXCEPT on the plan
-    // the season runs: there it is the season's own attachment, written through
-    // by writeSeasonFacts below.
-    const assertedWorld = plan.isActive ? null : worldWithAssertions()
+    // Every plan keeps its own world now, the active plan included: the
+    // asserted gyms, the per-date hours and any Friday the operator added are
+    // always part of what gets saved, not only on a plan the season does not
+    // run.
+    const assertedWorld = worldWithAssertions()
     const res = await fetch(`/api/seasons/${seasonId}/plans/${plan.id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
@@ -389,54 +369,37 @@ export function useBoardPlans(m: BoardModel) {
       return
     }
     const saved = data.plan as PlanDocument
-    const wasOnPlanWorld = onPlanWorld
-    // The active plan IS the season's calendar, so where its rentals stand and
-    // any gym it corrected are written through with it. A plan the season does
-    // not run leaves the gyms alone (writeBookingStatus explains why).
-    const fresh = plan.isActive ? await writeSeasonFacts() : null
     /**
-     * THE PLAN KEEPS ITS OWN WORLD (owner ruling 2026-08-05). Saving a calendar
-     * onto a plan used to re-snapshot the season over the plan's world, which
-     * silently moved every number on the board; the server leaves it alone now,
-     * so the board stays in the world the operator was working in.
+     * THE PLAN KEEPS ITS OWN WORLD (owner ruling 2026-08-05, the active case
+     * retired 2026-08-07). Saving a calendar onto a plan never re-snapshots
+     * the season over the plan's world; the board stays in the world the
+     * operator was working in, whichever plan that is.
      */
     skipRedraw.current = true
     session.setDoc(saved)
     setPlanSettings(saved.settings ?? null)
-    setOnPlanWorld(Boolean(saved.settings) && !plan.isActive)
-    if (!plan.isActive && saved.settings) {
+    setOnPlanWorld(Boolean(saved.settings))
+    if (saved.settings) {
       const own = planStateFrom(seasonId, saved)
       if (own) setState(own)
-    } else if (fresh) setState(fresh)
-    else if (liveState) setState(liveState)
+    } else if (liveState) setState(liveState)
     setVenues(shown.venues)
     setBlockStatus({})
-    if (plan.isActive) setCourtOverrides({})
-    // The assertion and the hours are written down now, in the plan's world or on
-    // the season's attachment, so the working copy stops carrying them.
+    // The assertion and the hours are written down now, in the plan's own
+    // world, so the working copy stops carrying them.
     setAssertedGyms({})
     setEmptyGyms({})
     setHourOverrides({})
     setUndoStack([])
+    // Quietly: autosave has nothing to announce beyond clearing dirty, which
+    // is what turns the plan-state line back to "Every change saves to
+    // <name>." (BoardTools reads `dirty`, not this function's return).
     setDirty(false)
     setFromLever(false)
     setArmed(null)
     setArmedVenue(null)
     setArmedSection(null)
     await session.refresh()
-    if (plan.isActive) {
-      // The write-through happened, so this is what every later comparison is
-      // against.
-      setKept(assignment)
-      setKeptVenues(shown.venues)
-    }
-    setNotice(
-      plan.isActive
-        ? `Saved to ${plan.name}. Everything after this step follows this calendar.`
-        : wasOnPlanWorld
-          ? `Saved to ${plan.name}, in its own gyms and estimates.`
-          : `Saved to ${plan.name}.`
-    )
   }
 
   /**
@@ -444,6 +407,12 @@ export function useBoardPlans(m: BoardModel) {
    * moves: the season keeps its own gyms, hours and estimates, so a plan drawn
    * in an older world is asked about first, with the differences named, and the
    * confirmation says plainly what will not change.
+   *
+   * NO CONTROL IN THIS FILE CALLS THIS ANY MORE (owner ruling 2026-08-07, #3:
+   * one door into the season, the single generate button elsewhere). Kept
+   * exported so that button's own client can reuse the same machinery rather
+   * than a second copy of it; "activate" itself has already left every
+   * user-facing string this file owns.
    */
   const activatePlan = async () => {
     const plan = selectedPlan
@@ -509,102 +478,31 @@ export function useBoardPlans(m: BoardModel) {
   }
 
   /**
-   * WHAT THE WORKING COPY OWES THE SEASON on save: where its rentals stand, and
-   * any gym it corrected. Both are facts about the SEASON rather than about a
-   * calendar, so both are written only for the plan the season actually runs
-   * (writeBookingStatus explains why), and both are re-read afterwards so the
-   * board's base is the one the season just recorded.
+   * COURT CORRECTIONS AND BOOKING STATUSES HAVE NO SEASON WRITE PATH ANY MORE
+   * (owner ruling 2026-08-07, #1 and #2). This file used to keep four
+   * functions here — writeCourtCaps, writeAssertedGyms, writeWeekendHours,
+   * writeBookingStatus, bundled as writeSeasonFacts — that wrote the working
+   * copy's corrections onto the SEASON's own rows, but only for the plan the
+   * season ran. That whole notion of "the plan the season runs" writing
+   * somewhere different from every other plan is exactly the write-through
+   * ruling 2 kills, so they are gone with it.
+   *
+   * `assertedGyms`, `hourOverrides` and `fridays` still travel with every
+   * save, in the plan's own world (worldWithAssertions, below) — that part
+   * already worked the same way for every non-active plan. `courtOverrides`
+   * and `blockStatus`, the per-weekend court corrections and booking-status
+   * annotations, have no equivalent in-world representation to travel in:
+   * they stay working-copy state, same as they already were on every plan
+   * that was never the season's active one. Giving them a real home is
+   * outside this file's reach this wave (plan-world.ts is locked to one
+   * appended function, spent on withUnitRemoved).
    */
-  const writeCourtCaps = async (): Promise<PlannerState | null> => {
-    const rows = Object.entries(courtOverrides)
-    if (rows.length === 0) return null
-    await Promise.all(
-      rows.map(([key, courts]) => {
-        const [sessionId, venueId] = key.split("|")
-        if (!sessionId || !venueId) return Promise.resolve(null)
-        return fetch(`/api/seasons/${seasonId}/sessions/${sessionId}/venues/${venueId}`, {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ courts }),
-        }).catch(() => null)
-      })
-    )
-    // Capacity moved, so the season's own world moved with it.
-    const res = await fetch(`/api/seasons/${seasonId}/planner`, { cache: "no-store" }).catch(
-      () => null
-    )
-    const data = res?.ok ? await res.json().catch(() => null) : null
-    const fresh = (data?.state ?? null) as PlannerState | null
-    if (fresh) setLiveState(fresh)
-    return fresh
-  }
 
   /**
-   * THE BACKUP GYMS THE OPERATOR ASSERTED, written onto the SEASON (owner ruling
-   * 2026-08-05, #1). Only for the plan the season runs, where "we have Haber that
-   * Saturday" is a fact about the season's own gym time — the same attachment
-   * step 2 makes when a cell is turned on. A plan the season does not run keeps
-   * its assertion in its own world instead (see savePlan).
-   */
-  const writeAssertedGyms = async () => {
-    const pairs = Object.entries(assertedGyms).flatMap(([sessionId, venueIds]) =>
-      (venueIds ?? []).map((venueId) => ({ sessionId, venueId }))
-    )
-    if (pairs.length === 0) return
-    await Promise.all(
-      pairs.map(({ sessionId, venueId }) =>
-        fetch(`/api/seasons/${seasonId}/sessions/${sessionId}/venues/${venueId}`, {
-          method: "POST",
-        }).catch(() => null)
-      )
-    )
-  }
-
-  /**
-   * THE PER-DATE HOURS, written onto the SEASON (owner ruling 2026-08-06, #5).
-   * The same one-weekend exception step 2's grid cell writes, and only for the
-   * plan the season runs: on any other plan the hours are the plan's own and
-   * travel in its world (see worldWithAssertions).
-   */
-  const writeWeekendHours = async () => {
-    const rows = Object.entries(hourOverrides)
-    if (rows.length === 0) return
-    await Promise.all(
-      rows.map(([key, window]) => {
-        const [sessionId, venueId] = key.split("|")
-        if (!sessionId || !venueId) return Promise.resolve(null)
-        return fetch(
-          `/api/seasons/${seasonId}/sessions/${sessionId}/venues/${venueId}/hours`,
-          {
-            method: "PATCH",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(window),
-          }
-        ).catch(() => null)
-      })
-    )
-  }
-
-  /**
-   * Everything the working copy owes the season, in one errand, handing back
-   * the season's world if a correction moved it. The caller decides which world
-   * the board lands in, so a stale `liveState` can never overwrite a capacity
-   * the save just changed.
-   */
-  const writeSeasonFacts = async (): Promise<PlannerState | null> => {
-    // The gyms first: a correction to a gym the season did not have yet would
-    // otherwise be written against nothing.
-    await writeAssertedGyms()
-    await writeWeekendHours()
-    await writeBookingStatus()
-    return writeCourtCaps()
-  }
-
-  /**
-   * THE PLAN'S WORLD, WITH THE ASSERTIONS IN IT (owner ruling 2026-08-05, #1).
-   * What a save sends for a plan the season does not run: the world the board has
-   * been drawing, plus every backup gym the operator put on a weekend, so
-   * reopening the plan finds that gym really there.
+   * THE PLAN'S WORLD, WITH THE ASSERTIONS IN IT (owner ruling 2026-08-05, #1;
+   * every plan since 2026-08-07). What a save sends now, for every plan alike:
+   * the world the board has been drawing, plus every backup gym the operator
+   * put on a weekend, so reopening the plan finds that gym really there.
    *
    * A plan that never remembered a world gets one built from the state on screen.
    * That is not a new claim: the server already re-snapshots the season over a
@@ -630,6 +528,46 @@ export function useBoardPlans(m: BoardModel) {
       fridays
     )
   }
+
+  /**
+   * AUTOSAVE (owner ruling 2026-08-07, #4: "no Save/Save-as on the default
+   * path, the board saves itself"). The moment the working copy goes dirty, a
+   * debounced write lands it on the OPEN plan; a further edit inside the
+   * window re-arms the timer, because `shown` and `blockStatus` — the
+   * derived and raw state every save reads from — get new identities on
+   * every meaningful change, and both sit in the dependency array below.
+   * Never for the read-only reference, which has no world of its own to
+   * take it, and never with nothing open, where there is no plan to hold it.
+   */
+  useEffect(() => {
+    if (!dirty || !planId || !selectedPlan || isReferencePlan(selectedPlan)) return
+    const timer = setTimeout(() => {
+      void savePlan()
+    }, AUTOSAVE_DEBOUNCE_MS)
+    return () => clearTimeout(timer)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dirty, planId, selectedPlan, shown, blockStatus])
+
+  /**
+   * THE LAST SECOND IS NEVER LOST (seam fix, 2026-08-07). The debounce above
+   * dies with the board: an edit made and then immediately walked away from —
+   * "Next: Publish" inside the one-second window — would vanish with the
+   * unmount. The ref carries the latest save closure so THIS effect can be
+   * mount-empty and still flush the real pending state on the way out. It is
+   * unmount-only on purpose: a cleanup on the debounce effect itself would
+   * fire on every re-arm and save every keystroke.
+   */
+  flushRef.current = { dirty, planId, selectedPlan, savePlan }
+  useEffect(
+    () => () => {
+      const last = flushRef.current
+      if (last.dirty && last.planId && last.selectedPlan && !isReferencePlan(last.selectedPlan)) {
+        void last.savePlan()
+      }
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    []
+  )
 
   return { openPlan, revert, saveAsNew, savePlan, activatePlan, writable }
 }

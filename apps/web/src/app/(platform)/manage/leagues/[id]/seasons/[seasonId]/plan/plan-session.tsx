@@ -67,16 +67,20 @@ export interface PlanSession {
    * 2026-08-05, #4 — the staleness fix).
    */
   docVersion: number
-  /** True while the plan's own world is what the steps are editing: any plan of
-   *  the operator's own that the season does not run. On the ACTIVE plan the
-   *  steps write through to the season instead, because it IS the season. */
+  /** True while the plan's own world is what the steps are editing: any
+   *  chosen plan that is not the read-only reference (owner ruling 2026-08-07,
+   *  #1 and #2: plans are sandboxes, full stop, and write-through died). The
+   *  ACTIVE plan is INCLUDED now — it is a plan like any other, and it only
+   *  becomes the season through the generate button, never through steps 1
+   *  and 2 writing through to it. */
   editsPlanWorld: boolean
   /**
-   * True while the plan's own world is what the steps DRAW: any non-active
-   * plan that has one, the read-only reference included. The board has always
-   * drawn those worlds; steps 1 and 2 read the same document or the walk shows
-   * one plan on the calendar and a different one on its own numbers (the
-   * old-plan step-2 bug, fixed 2026-08-06 wave).
+   * True while the plan's own world is what the steps DRAW: any chosen plan
+   * that has one, the active plan and the read-only reference both included
+   * (owner ruling 2026-08-07). The board has always drawn those worlds; steps
+   * 1 and 2 read the same document or the walk shows one plan on the calendar
+   * and a different one on its own numbers (the old-plan step-2 bug, fixed
+   * 2026-08-06 wave).
    */
   readsPlanWorld: boolean
   /** The plan the season actually runs. It drives everything downstream of the
@@ -106,6 +110,15 @@ export interface PlanSession {
   suggestName: () => string
   rename: (planId: string, name: string) => Promise<boolean>
   remove: (planId: string) => Promise<{ ok: boolean; error?: string }>
+  /**
+   * SAVE A COPY, FROM THE ROW ITSELF (owner ruling 2026-08-07, #4: the
+   * picker's row menu, next to rename and delete). A plain duplicate of the
+   * plan's own STORED document, so it works on any row, open or not — the
+   * same reach rename and delete already have. Autosave keeps a plan's
+   * document within about a second of its board, so there is no working copy
+   * this needs to reach into.
+   */
+  duplicate: (planId: string, name: string) => Promise<PlanRow | null>
   /** Write the plan's own world. Steps 1 and 2 call this and nothing else. */
   saveWorld: (world: PlanWorld) => Promise<boolean>
   /** Re-read the open document (after a season-side edit on the active plan). */
@@ -336,10 +349,53 @@ export function PlanSessionProvider({
   )
 
   /**
-   * WRITE THE PLAN'S OWN WORLD. This is what steps 1 and 2 do on any plan the
-   * season does not run: the estimates, the gyms, the courts, the hours, the
-   * weekends and the buffer, all in the plan document and nowhere near the
-   * season's rows.
+   * SAVE A COPY, FROM THE ROW ITSELF (owner ruling 2026-08-07, #4). A plain
+   * duplicate of the plan's own stored document — read it, then post it back
+   * under a new name. Works on any row in the picker, open or not.
+   */
+  const duplicate = useCallback(
+    async (id: string, name: string) => {
+      const wanted = name.trim().slice(0, PLAN_NAME_MAX)
+      if (!wanted) {
+        setError("Give the plan a name.")
+        return null
+      }
+      setError(null)
+      const source = await fetchDoc(id)
+      if (!source) {
+        setError("Couldn't read that plan. Try again.")
+        return null
+      }
+      const res = await fetch(`/api/seasons/${seasonId}/plans`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: wanted,
+          assignment: source.assignment ?? {},
+          venues: source.venues ?? {},
+          source: "manual",
+          ...(source.settings ? { settings: source.settings } : {}),
+        }),
+      }).catch(() => null)
+      const data = res ? await res.json().catch(() => null) : null
+      if (!res?.ok || !data?.plan) {
+        setError(data?.error ?? "That plan didn't save. Try again.")
+        return null
+      }
+      const plan = data.plan as PlanDocument
+      const rows = await refresh()
+      return rows.find((p) => p.id === plan.id) ?? null
+    },
+    [seasonId, refresh, fetchDoc]
+  )
+
+  /**
+   * WRITE THE PLAN'S OWN WORLD. This is what steps 1 and 2 do on any chosen
+   * plan that is not the read-only reference, the active plan included
+   * (write-through died, owner ruling 2026-08-07): the estimates, the gyms,
+   * the courts, the hours, the weekends and the buffer, all in the plan
+   * document and nowhere near the season's rows. The season only takes on a
+   * plan's world through the generate button, elsewhere.
    */
   const saveWorld = useCallback(
     async (world: PlanWorld) => {
@@ -375,15 +431,14 @@ export function PlanSessionProvider({
       docFailed,
       openState: planOpenState(planId, doc, docFailed),
       docVersion,
-      // The active plan IS the season, so its edits go to the season's rows. The
-      // reference plan is content-locked, so its world is read only too.
-      editsPlanWorld: Boolean(chosen) && !chosen?.isActive && !isReferencePlan(chosen),
-      // Any non-active plan with a world of its own is DRAWN from it — writing
-      // is a separate, narrower right.
-      readsPlanWorld:
-        Boolean(chosen) &&
-        !chosen?.isActive &&
-        Boolean(doc && doc.id === planId && doc.settings?.state),
+      // The active plan is a plan like any other now (write-through died,
+      // owner ruling 2026-08-07): only the reference is locked, because it is
+      // the only record of what the league actually published.
+      editsPlanWorld: Boolean(chosen) && !isReferencePlan(chosen),
+      // Any chosen plan with a world of its own is DRAWN from it, the active
+      // plan and the reference both included — writing is a separate,
+      // narrower right.
+      readsPlanWorld: Boolean(chosen) && Boolean(doc && doc.id === planId && doc.settings?.state),
       active: plans.find((p) => p.isActive) ?? null,
       loading,
       docBusy,
@@ -398,6 +453,7 @@ export function PlanSessionProvider({
       suggestName: () => suggestPlanName(plans),
       rename,
       remove,
+      duplicate,
       saveWorld,
       refreshDoc,
       refresh,
@@ -418,6 +474,7 @@ export function PlanSessionProvider({
     createNew,
     rename,
     remove,
+    duplicate,
     saveWorld,
     refreshDoc,
     refresh,
@@ -461,8 +518,12 @@ function PlusMark() {
  * an operator will come back to and compare against three others, so it gets a
  * name at birth rather than "Our plan 6". The box arrives with a suggestion in
  * it, so nobody who does not care has to think.
+ *
+ * Exported so the board's own naming box (BoardTools, the reference plan's
+ * "Save a copy") reuses this instead of a second version of the same three
+ * controls (owner ruling 2026-08-07, #4).
  */
-function NameBox({
+export function NameBox({
   value,
   busy,
   confirmLabel,
@@ -566,6 +627,12 @@ export function PlanChooser({
   const session = usePlanSession()
   const [naming, setNaming] = useState<string | null>(null)
   const [renaming, setRenaming] = useState<string | null>(null)
+  /** Which plan "Save a copy" is naming, and the box's draft (owner ruling
+   *  2026-08-07, #4: the copy control moved into this row menu, next to
+   *  rename and delete). */
+  const [copying, setCopying] = useState<string | null>(null)
+  const [copyName, setCopyName] = useState("")
+  const [copyBusy, setCopyBusy] = useState(false)
   const working = session.creating
   const chosen = session.chosen
 
@@ -580,8 +647,16 @@ export function PlanChooser({
         onSelect={(id) => session.choose(id)}
         onRename={(id) => {
           setNaming(null)
+          setCopying(null)
           setRenaming(session.plans.find((p) => p.id === id)?.name ?? "")
           if (id !== session.planId) session.choose(id)
+        }}
+        onCopy={(id) => {
+          setNaming(null)
+          setRenaming(null)
+          const plan = session.plans.find((p) => p.id === id)
+          setCopying(id)
+          setCopyName(suggestPlanName(session.plans, plan ? `${plan.name} copy` : "Our plan"))
         }}
         onDelete={async (id) => {
           const plan = session.plans.find((p) => p.id === id)
@@ -607,7 +682,26 @@ export function PlanChooser({
         />
       )}
 
-      {!locked && naming === null && renaming === null && (
+      {/* Save a copy of whichever row's icon was pressed — open or not,
+          the same reach rename and delete already have. */}
+      {copying !== null && !locked && (
+        <NameBox
+          value={copyName}
+          busy={copyBusy}
+          confirmLabel="Save copy"
+          testId="plan-copy"
+          onChange={setCopyName}
+          onConfirm={async () => {
+            setCopyBusy(true)
+            const made = await session.duplicate(copying, copyName)
+            setCopyBusy(false)
+            if (made) setCopying(null)
+          }}
+          onCancel={() => setCopying(null)}
+        />
+      )}
+
+      {!locked && naming === null && renaming === null && copying === null && (
         <button
           type="button"
           data-testid="plan-new"

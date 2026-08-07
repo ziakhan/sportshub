@@ -1,87 +1,106 @@
 "use client"
 
-import { Button } from "@/components/ui"
-import { isReferencePlan, planStateLine, suggestPlanName, type PlanRow } from "@/lib/scheduler/plan-documents"
-import { PlanSaveControls } from "./plan-picker"
+import { useEffect, useRef, useState } from "react"
+import { isReferencePlan, suggestPlanName, type PlanRow } from "@/lib/scheduler/plan-documents"
+import { NameBox, PLAN_BTN_PRIMARY } from "./plan-session"
 
 /**
- * THE ROW UNDER THE CALENDAR: what this board is, and the one set of controls
- * that persists it onto a plan.
+ * THE ROW UNDER THE CALENDAR: what this board is, and the one thing left to
+ * do about it by hand.
  *
- * IT USED TO HIDE THREE THINGS (owner ruling 2026-08-06, #6), and all three are
- * gone rather than moved down:
- *  - "Adjust grouping rules" opened a row of levers. Three of the four are the
- *    same answer Redraw already gives; the fourth is a button beside Redraw now.
- *  - "Change the hours" moved every gym on every weekend by an hour, which is not
- *    a thing anybody negotiates. Hours are agreed one building and one date at a
- *    time, in the ⋯ menu on the section they are about.
- *  - "Compare with the kept plan" repainted every chip against the saved
- *    calendar. The strip shows both calendars whole, side by side, which is the
- *    reading an operator actually does.
+ * AUTOSAVE ATE THE REST OF THIS ROW (owner ruling 2026-08-07, #4). "Save to
+ * <plan>", "Save as new plan" and "Undo changes" are gone: the board saves
+ * itself about a second after the working copy goes quiet, and the undo
+ * stack in the header covers a mistake better than reverting to a save point
+ * that autosave keeps almost-now anyway. "Use for the season" is gone too —
+ * that used to be the whole point of activating a plan, but the single
+ * generate button elsewhere is the one door into the season now (ruling
+ * 2026-08-07, #3), and no control in this file may open a second one.
  *
- * What is left is what the row was always for: saving.
+ * What is left: the line that says whose plan this is and whether it just
+ * saved, and — on the read-only reference only — "Save a copy", its one
+ * escape into a plan of your own.
  */
 export function BoardTools({
   busy,
   dirty,
   plans,
   selectedPlan,
-  activePlan,
   naming,
   setNaming,
-  onRevert,
   onSaveNew,
-  onSavePlan,
-  onActivate,
 }: {
   busy: string | null
   dirty: boolean
   plans: PlanRow[]
   selectedPlan: PlanRow | null
-  activePlan: PlanRow | null
+  /** What is in the copy's name box, or null while it is shut. */
   naming: string | null
   setNaming: (name: string | null) => void
-  onRevert: () => void
   onSaveNew: () => void
-  onSavePlan: () => void
-  onActivate: () => void
 }) {
+  const reference = isReferencePlan(selectedPlan)
+
+  /** "Saved just now", briefly, the moment autosave clears dirty — the one
+   *  thing this row still has to announce, and only for a moment (owner
+   *  ruling 2026-08-07, #4). */
+  const [justSaved, setJustSaved] = useState(false)
+  const wasDirty = useRef(dirty)
+  useEffect(() => {
+    const was = wasDirty.current
+    wasDirty.current = dirty
+    if (!was || dirty) return
+    setJustSaved(true)
+    const t = setTimeout(() => setJustSaved(false), 2000)
+    return () => clearTimeout(t)
+  }, [dirty])
+
+  const line = !selectedPlan
+    ? ""
+    : reference
+      ? "Reference plan, read only. Save a copy to change it."
+      : dirty
+        ? "Saving…"
+        : justSaved
+          ? "Saved just now."
+          : `Every change saves to ${selectedPlan.name}.`
+
   return (
     <div className="mt-4 flex flex-wrap items-center justify-end gap-2">
       {/* The rentals behind this plan are counted in the work rail (owner ruling
           2026-08-04): everything that describes what is LEFT belongs in the
           column that stays on screen. */}
       <span className="text-ink-400 mr-auto text-xs" data-testid="plan-state">
-        {planStateLine({ selected: selectedPlan, active: activePlan, dirty })}
+        {line}
       </span>
-      {dirty && (
-        <Button size="sm" variant="secondary" disabled={busy !== null} onClick={onRevert}>
-          Undo changes
-        </Button>
+      {/* THE REFERENCE PLAN'S ONE ESCAPE (owner ruling 2026-08-07, #4). It is
+          read only, so there is nothing here to autosave — this is the only
+          board control the reference keeps. */}
+      {reference && naming === null && (
+        <button
+          type="button"
+          data-testid="save-as-new"
+          disabled={busy !== null}
+          onClick={(e) => {
+            e.stopPropagation()
+            setNaming(suggestPlanName(plans, `${selectedPlan?.name ?? "Our plan"} copy`))
+          }}
+          className={PLAN_BTN_PRIMARY}
+        >
+          Save a copy
+        </button>
       )}
-      {/* The one way to persist this board: onto a plan. */}
-      <PlanSaveControls
-        plans={plans}
-        selected={selectedPlan}
-        dirty={dirty}
-        busy={busy}
-        naming={naming}
-        onNamingChange={setNaming}
-        onStartNaming={() =>
-          setNaming(
-            suggestPlanName(
-              plans,
-              selectedPlan && !isReferencePlan(selectedPlan) && !dirty
-                ? `${selectedPlan.name} copy`
-                : "Our plan"
-            )
-          )
-        }
-        onCancelNaming={() => setNaming(null)}
-        onSaveNew={onSaveNew}
-        onSavePlan={onSavePlan}
-        onActivate={onActivate}
-      />
+      {reference && naming !== null && (
+        <NameBox
+          value={naming}
+          busy={busy === "save-new"}
+          confirmLabel="Save plan"
+          testId="save-as-new"
+          onChange={setNaming}
+          onConfirm={onSaveNew}
+          onCancel={() => setNaming(null)}
+        />
+      )}
     </div>
   )
 }

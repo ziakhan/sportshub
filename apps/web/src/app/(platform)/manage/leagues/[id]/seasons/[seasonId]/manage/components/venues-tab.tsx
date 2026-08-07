@@ -54,6 +54,21 @@ export function VenuesTab({
     sessions.filter((s: any) => (s.venueSelections ?? []).some((v: any) => v.venueId === venueId))
       .length
 
+  // Honest denominator (owner ruling 7, 2026-08-07): "used by N of M sessions"
+  // measured against EVERY session row — including playoff weekends and
+  // weekends nobody has attached a court to yet — shames a deliberately
+  // compact calendar. A weekend "runs" when it's REGULAR-phase and isUsable
+  // (some gym has courts on it), same test the sessions API already applies;
+  // that is the only fair denominator.
+  const runningSessions = sessions.filter(
+    (s: any) => (s.phase ?? "REGULAR") === "REGULAR" && s.isUsable
+  )
+  const runningCount = runningSessions.length
+  const runningSessionsUsing = (venueId: string) =>
+    runningSessions.filter((s: any) =>
+      (s.venueSelections ?? []).some((v: any) => v.venueId === venueId)
+    ).length
+
   const clearSelection = () => {
     setSelectedVenueId("")
     setSelectedVenueName("")
@@ -130,6 +145,7 @@ export function VenuesTab({
           const courtCountHave = v.venue.courtList?.length ?? 0
           const using = sessionsUsing(v.venue.id)
           const gap = sessionCount - using
+          const runningUsing = runningSessionsUsing(v.venue.id)
           return (
             <div
               key={v.id}
@@ -145,17 +161,16 @@ export function VenuesTab({
                     {courtCountHave > 0
                       ? `${courtCountHave} court${courtCountHave !== 1 ? "s" : ""}`
                       : "No courts defined"}
-                    {sessionCount > 0 && (
-                      <>
-                        {" · "}
-                        {using === sessionCount ? (
-                          <span className="text-court-700">used by all {sessionCount} sessions</span>
-                        ) : (
-                          <span className="text-amber-700">
-                            used by {using} of {sessionCount} sessions
-                          </span>
-                        )}
-                      </>
+                    {" · "}
+                    {runningCount === 0 ? (
+                      <span className="text-ink-400">no weekends set up yet</span>
+                    ) : runningUsing === 0 ? (
+                      <span className="text-ink-400">not used yet</span>
+                    ) : (
+                      <span className="text-ink-500">
+                        used on {runningUsing} of the {runningCount} weekend
+                        {runningCount === 1 ? "" : "s"} this season runs
+                      </span>
                     )}
                   </div>
                   {gap > 0 && (

@@ -43,11 +43,14 @@ import { BoardTools } from "./board-tools"
  *
  * PLANS AS DOCUMENTS (owner 2026-08-02: "we can have multiple plans, we can
  * save them, we can name them ... when I do it fresh it should be our own").
- * The board is a working copy of ONE named plan, chosen in the picker. Saving
- * writes to that plan and nowhere else, which is why the direct planner/apply
- * call is gone: a plan the season runs is written through on save, a plan it
- * does not run waits for "Use for the season", and the league's own imported
- * calendar is read only so there is always something to compare against.
+ * The board is a working copy of ONE named plan, chosen in the picker.
+ * WRITE-THROUGH DIED 2026-08-07 (ruling #2): saving writes to that plan's own
+ * document and nowhere else, the plan the season is running included — there
+ * is no more special case where saving writes straight through to the
+ * season's rows. The board saves itself now (autosave, ruling #4); the league's
+ * own imported calendar stays read only, its one escape "Save a copy". The
+ * season only ever takes on a plan's calendar and world through the single
+ * generate button (ruling #3), a separate control this step does not own.
  *
  * A PLAN REMEMBERS ITS WORLD (owner 2026-08-02: "a new plan also could have
  * different venues. It could have different settings, so how are you going to
@@ -58,12 +61,9 @@ import { BoardTools } from "./board-tools"
  * not this month's. Where the season has since moved on, the board says so
  * above the calendar instead of quietly re-drawing the plan under new numbers.
  *
- * Two things follow from that, and both are deliberate:
- *  - the levers and the hours chips are DISABLED on a plan drawn in its own
- *    saved world. They solve against the season as it stands, so their answer
- *    would be in a different world from the board it landed on.
- *  - activating still applies the CALENDAR only. The season keeps its own
- *    gyms, hours and estimates, and the confirmation says so out loud.
+ * The levers and the hours chips are DISABLED on a plan drawn in its own
+ * saved world. They solve against the season as it stands, so their answer
+ * would be in a different world from the board it landed on.
  */
 
 /**
@@ -145,7 +145,6 @@ export function CalendarStep({
     session,
     openState,
     selectedPlan,
-    activePlan,
     gone,
     stranded,
     strandedAt,
@@ -174,7 +173,12 @@ export function CalendarStep({
     fridayFits,
     ghostRoom,
   } = m
-  const { revert, saveAsNew, savePlan, activatePlan } = planDocs
+  // Only "save a copy" is still called from this file (owner ruling
+  // 2026-08-07, #4: autosave ate the rest of the save-control row).
+  // savePlan now runs only from the autosave effect inside useBoardPlans, and
+  // activatePlan is kept exported there for the generate button's endpoint,
+  // not called from any control here.
+  const { saveAsNew, savePlan } = planDocs
   const {
     endMoveMarks,
     undoMove,
@@ -283,6 +287,10 @@ export function CalendarStep({
     >
       {/* Screen head */}
       <BoardHead
+        seasonId={seasonId}
+        onBeforeGenerate={async () => {
+          if (dirty) await savePlan()
+        }}
         planId={planId}
         dirty={dirty}
         interactive={interactive}
@@ -549,13 +557,9 @@ export function CalendarStep({
                 dirty={dirty}
                 plans={plans}
                 selectedPlan={selectedPlan}
-                activePlan={activePlan}
                 naming={naming}
                 setNaming={setNaming}
-                onRevert={revert}
                 onSaveNew={saveAsNew}
-                onSavePlan={savePlan}
-                onActivate={activatePlan}
               />
             )}
 
