@@ -1,5 +1,6 @@
 "use client"
 
+import { useState } from "react"
 import { Badge, PanelHeader } from "@/components/ui"
 import type { ScheduleFairnessReport, TeamFairness } from "@/lib/scheduler/report"
 
@@ -12,45 +13,67 @@ import type { ScheduleFairnessReport, TeamFairness } from "@/lib/scheduler/repor
  * read.
  */
 
+/** How many games short of the season's guarantee, floored at zero. Zero
+ *  target (no guarantee configured) means the number never applies. */
+function gamesShort(t: TeamFairness, gamesTarget: number): number {
+  return gamesTarget > 0 ? Math.max(0, gamesTarget - t.games) : 0
+}
+
 /**
- * A team's problem count: the fairness signals that are unambiguously bad
- * (back-to-backs, big gaps, split-venue days, and any preference/request
- * misses). Court concentration and early/late tip-off counts are
- * informational, not counted here, since having some early or late games
- * is not itself a problem for a team.
+ * A team's problem count: games short of the guarantee is the loudest
+ * signal (a team that isn't getting its games), counted first, then the
+ * fairness signals that are unambiguously bad (back-to-backs, big gaps,
+ * split-venue days, and any preference/request misses). Court
+ * concentration and early/late tip-off counts are informational, not
+ * counted here, since having some early or late games is not itself a
+ * problem for a team.
  */
-function problemCount(t: TeamFairness): number {
+function problemCount(t: TeamFairness, gamesTarget: number): number {
   const preferenceMisses = t.preferenceHonored
     ? t.preferenceHonored.total - t.preferenceHonored.ok
     : 0
   const requestMisses = t.requestsHonored
     ? t.requestsHonored.total - t.requestsHonored.ok
     : 0
-  return t.backToBacks + t.bigGapDays + t.splitVenueDays + preferenceMisses + requestMisses
+  return (
+    gamesShort(t, gamesTarget) +
+    t.backToBacks +
+    t.bigGapDays +
+    t.splitVenueDays +
+    preferenceMisses +
+    requestMisses
+  )
 }
 
-export function redFlagTeamCount(report: ScheduleFairnessReport): number {
-  return report.teams.filter((t) => problemCount(t) > 0).length
+export function redFlagTeamCount(report: ScheduleFairnessReport, gamesTarget: number): number {
+  return report.teams.filter((t) => problemCount(t, gamesTarget) > 0).length
 }
+
+const ISSUES_COLLAPSED_LIMIT = 5
 
 /**
  * Verdict header: teams, games scheduled vs expected, red-flag teams, and
  * open issues, in one row. Tone escalates from clean to "something needs a
- * look" to "games couldn't be placed."
+ * look" to "games couldn't be placed." Issues past the first five collapse
+ * behind a toggle — per-team games-short lines never reach this list at
+ * all, they live in the fairness table's "Games short" column instead.
  */
 export function ScheduleVerdictHeader({
   report,
   scheduledCount,
   expectedCount,
+  gamesTarget,
   warnings,
 }: {
   report: ScheduleFairnessReport
   scheduledCount: number
   expectedCount: number
+  gamesTarget: number
   warnings: string[]
 }) {
+  const [expanded, setExpanded] = useState(false)
   const unscheduledCount = Math.max(0, expectedCount - scheduledCount)
-  const redFlagCount = redFlagTeamCount(report)
+  const redFlagCount = redFlagTeamCount(report, gamesTarget)
   const issueCount = warnings.length
   const tone =
     unscheduledCount > 0 ? "hoop" : redFlagCount > 0 || issueCount > 0 ? "gold" : "court"
@@ -60,6 +83,10 @@ export function ScheduleVerdictHeader({
       : tone === "gold"
         ? "border-gold-200 bg-gold-50"
         : "border-court-200 bg-court-50"
+  const shownWarnings =
+    expanded || warnings.length <= ISSUES_COLLAPSED_LIMIT
+      ? warnings
+      : warnings.slice(0, ISSUES_COLLAPSED_LIMIT)
 
   return (
     <div data-testid="schedule-verdict" className={`rounded-2xl border p-4 ${toneClass}`}>
@@ -78,13 +105,25 @@ export function ScheduleVerdictHeader({
         </Badge>
       </div>
       {warnings.length > 0 && (
-        <ul className="mt-2 space-y-0.5">
-          {warnings.map((w, i) => (
-            <li key={i} className="text-amber-700 text-xs">
-              • {w}
-            </li>
-          ))}
-        </ul>
+        <>
+          <ul className="mt-2 space-y-0.5">
+            {shownWarnings.map((w, i) => (
+              <li key={i} className="text-amber-700 text-xs">
+                • {w}
+              </li>
+            ))}
+          </ul>
+          {warnings.length > ISSUES_COLLAPSED_LIMIT && (
+            <button
+              type="button"
+              data-testid="issues-toggle"
+              onClick={() => setExpanded((v) => !v)}
+              className="text-amber-800 mt-1 text-xs font-semibold hover:underline"
+            >
+              {expanded ? "Show fewer" : `Show all ${warnings.length} issues`}
+            </button>
+          )}
+        </>
       )}
     </div>
   )
@@ -92,22 +131,31 @@ export function ScheduleVerdictHeader({
 
 /**
  * Per-team fairness counts, worst first. Every numeric column the report
- * computes per team; preference/request columns only appear when the
- * report actually carries that data (most reports don't have requests
- * wired up yet).
+ * computes per team, plus games short of the season's guarantee (the
+ * loudest column, sorted first); preference/request columns only appear
+ * when the report actually carries that data (most reports don't have
+ * requests wired up yet).
  */
 export function FairnessSummaryTable({
   report,
+  gamesTarget,
   onSelectTeam,
 }: {
   report: ScheduleFairnessReport
+  gamesTarget: number
   onSelectTeam: (teamId: string) => void
 }) {
   const hasPreference = report.teams.some((t) => t.preferenceHonored)
   const hasRequests = report.teams.some((t) => t.requestsHonored)
-  const rows = [...report.teams].sort(
-    (a, b) => problemCount(b) - problemCount(a) || a.teamName.localeCompare(b.teamName)
-  )
+  const showGamesShort = gamesTarget > 0
+  const rows = [...report.teams].sort((a, b) => {
+    const shortDiff = gamesShort(b, gamesTarget) - gamesShort(a, gamesTarget)
+    if (shortDiff !== 0) return shortDiff
+    return (
+      problemCount(b, gamesTarget) - problemCount(a, gamesTarget) ||
+      a.teamName.localeCompare(b.teamName)
+    )
+  })
 
   return (
     <div>
@@ -121,6 +169,7 @@ export function FairnessSummaryTable({
             <tr>
               <th className="px-2 py-1.5 text-left">Team</th>
               <th className="px-2 py-1.5 text-right">Games</th>
+              {showGamesShort && <th className="px-2 py-1.5 text-right">Games short</th>}
               <th className="px-2 py-1.5 text-right">Back-to-backs</th>
               <th className="px-2 py-1.5 text-right">Early starts</th>
               <th className="px-2 py-1.5 text-right">Late endings</th>
@@ -133,7 +182,8 @@ export function FairnessSummaryTable({
           </thead>
           <tbody>
             {rows.map((t) => {
-              const flagged = problemCount(t) > 0
+              const short = gamesShort(t, gamesTarget)
+              const flagged = problemCount(t, gamesTarget) > 0
               const preferenceMisses = t.preferenceHonored
                 ? t.preferenceHonored.total - t.preferenceHonored.ok
                 : null
@@ -155,6 +205,13 @@ export function FairnessSummaryTable({
                 >
                   <td className="text-ink-900 px-2 py-1 font-medium">{t.teamName}</td>
                   <td className="px-2 py-1 text-right">{t.games}</td>
+                  {showGamesShort && (
+                    <td
+                      className={`px-2 py-1 text-right ${short > 0 ? "text-hoop-700 font-semibold" : ""}`}
+                    >
+                      {short}
+                    </td>
+                  )}
                   <td
                     className={`px-2 py-1 text-right ${t.backToBacks > 0 ? "text-amber-700 font-semibold" : ""}`}
                   >

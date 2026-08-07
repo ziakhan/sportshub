@@ -573,6 +573,19 @@ export function ScheduleTab({
     [boardGames, drillDownTeamId]
   )
 
+  // The season's per-team games guarantee — same source the scheduler's own
+  // per-team shortfall warnings use (lib/scheduler/generate.ts falls back to
+  // this exact field), and already read this way for gapTeams above.
+  const gamesTarget: number = league?.gamesGuaranteed ?? 0
+  // Per-team shortfall lines ("X has N games (target M)") move into the
+  // fairness table's Games short column instead of padding this list —
+  // at 140 teams they were the whole wall of text. Everything structural
+  // (capacity, skipped sessions, unplaced count) still lists here.
+  const structuralWarnings = useMemo(() => {
+    const perTeamShortfallPattern = /has \d+ games? \(target \d+\)/
+    return (preview?.warnings ?? []).filter((w) => !perTeamShortfallPattern.test(w))
+  }, [preview])
+
   return (
     <div className="space-y-6">
       <div className={`reveal ${panelClass}`}>
@@ -1016,7 +1029,8 @@ export function ScheduleTab({
                   report={report}
                   scheduledCount={report.totals.games}
                   expectedCount={report.totals.games + (preview?.unscheduled.length ?? 0)}
-                  warnings={preview?.warnings ?? []}
+                  gamesTarget={gamesTarget}
+                  warnings={structuralWarnings}
                 />
                 <div className={`mt-3 ${panelClass}`}>
                   {drillDownTeamId ? (
@@ -1053,7 +1067,11 @@ export function ScheduleTab({
                     </div>
                   ) : (
                     <>
-                      <FairnessSummaryTable report={report} onSelectTeam={setDrillDownTeamId} />
+                      <FairnessSummaryTable
+                        report={report}
+                        gamesTarget={gamesTarget}
+                        onSelectTeam={setDrillDownTeamId}
+                      />
                       <button
                         data-testid="show-all-games"
                         onClick={() => setShowAllGames((v) => !v)}
