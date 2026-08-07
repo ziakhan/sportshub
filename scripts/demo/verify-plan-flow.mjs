@@ -69,36 +69,29 @@ if (!user) {
   process.exit(1)
 }
 
-// ── The Plan Your Season tab ──────────────────────────────────────────────
+// ── The Plan Your Season tab is a DOOR (owner 2026-08-07, double-rail
+// collapse): no stage-rail home screen between the console and the wizard.
+// A cold ?tab=plan URL — old bookmarks — redirects straight into the wizard,
+// which still opens on STEP 1 (owner ruling 2026-08-05 #1 stands).
 await page.goto(`${BASE}/manage/leagues/${LEAGUE}/seasons/${SEASON}/manage?tab=plan`)
-// A generous timeout: this tab's data includes buildPlannerState, and a
-// concurrent seed on the same box can push a cold render well past 30s.
-await page.waitForSelector('[data-testid="plan-tab-rail"]', { timeout: 90000 })
-const railText = await page.locator('[data-testid="plan-tab-rail"]').innerText()
+await page.waitForSelector('[data-testid="wizard-nav"]', { timeout: 90000 })
 ok(
-  "plan tab rail shows the five stages",
-  ["Plan", "Publish", "Watch registration", "Schedule", "Live"].every((s) => railText.includes(s))
+  "?tab=plan walks straight into the wizard",
+  page.url().includes(`/seasons/${SEASON}/plan`),
+  page.url()
 )
-ok("plan tab has a CTA", (await page.locator('[data-testid="plan-tab-cta"]').count()) === 1)
-// NEW 2026-08-05 (owner ruling #1): launching the planner from outside lands on
-// STEP 1, never on the board. The rail's Plan stage is that door, and no link
-// on this tab may point an operator into step 3 as their entry.
-const planStageHref = await page
-  .locator('[data-testid="plan-tab-rail"] a')
-  .first()
-  .getAttribute("href")
+const stepRail = await page.locator('ol[class*="rounded-2xl"]').first().innerText()
 ok(
-  "the tab's door into the planner opens step 1",
-  /[?&]step=1$/.test(planStageHref ?? ""),
-  planStageHref ?? "missing"
+  "one rail: the wizard's five steps",
+  ["Teams", "Your buildings", "Your calendar", "Publish", "Schedule"].every((s) =>
+    stepRail.includes(s)
+  )
 )
-const ctaHref = await page.locator('[data-testid="plan-tab-cta"] a').getAttribute("href")
 ok(
-  "and the primary CTA never drops you straight on the board",
-  !/[?&]step=3$/.test(ctaHref ?? ""),
-  ctaHref ?? "no href (this stage uses a tab switch)"
+  "the walk starts on step 1",
+  (await page.locator('[aria-current="step"]').first().innerText()).includes("Teams")
 )
-await page.locator('[data-testid="plan-tab-rail"] a').first().click()
+// Already inside the wizard (the tab IS the door now); just wait for step 1.
 await page.waitForSelector('[data-testid="step1-plan-empty"]', { timeout: 90000 })
 // RE-PINNED 2026-08-06 wave (owner's B2 ruling): exactly ONE chooser lives on
 // step 1 at a time. With nothing open the empty-state card is it, and the

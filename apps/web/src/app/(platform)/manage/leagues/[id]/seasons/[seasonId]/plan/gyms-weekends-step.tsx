@@ -408,7 +408,27 @@ export function GymsWeekendsStep({
    * model of a gym is: attaching it to the weekend IS the confirmed availability.
    */
   const toggleBooking = async (venue: VenueGridRow, sessionId: string, on: boolean) => {
-    if (readOnly || !editsWorld) return
+    if (readOnly) return
+    /**
+     * ON THE PLAN THE SEASON RUNS, A BOOKING IS A SEASON FACT (owner's
+     * 2026-08-07 seam report: the picker vanished on the one plan he cared
+     * about). The same control, the same meaning — confirmed availability,
+     * full day, every court — written where this plan's truth lives: the
+     * season's own attachment, through the endpoint the board uses.
+     */
+    if (!editsWorld) {
+      if (readsWorld) return
+      const url = `/api/seasons/${seasonId}/sessions/${sessionId}/venues/${venue.venueId}`
+      await call(
+        url,
+        on ? json({ bookingStatus: "confirmed" }) : { method: "DELETE" },
+        `${venue.seasonVenueId}:booking:${sessionId}`,
+        on
+          ? `${venue.name} is booked that weekend on the season's own calendar, full day, all courts.`
+          : `${venue.name} is not booked that weekend any more.`
+      )
+      return
+    }
     /**
      * THE ARGUMENTS ARE (world, sessionId, venueId) AND THEY WERE THE WRONG WAY
      * ROUND (owner bug report 2026-08-06: the cells would not select).
@@ -1025,7 +1045,12 @@ export function GymsWeekendsStep({
                 * hand back a call list — so the affordance has to say that out
                 * loud, or an operator reads a date grid as homework.
                 */}
-              {!isHome && editsWorld && !readOnly && (
+              {/* Offered on any surface whose bookings this screen may write:
+                  a plan of the operator's own (the plan document) and the
+                  season path — the active plan included, where hiding it was
+                  the seam the owner hit on 2026-08-07. Only the read-only
+                  reference goes without. */}
+              {!isHome && !readOnly && (editsWorld || !readsWorld) && (
                 <div className="border-ink-100 mt-2.5 border-t pt-2.5">
                   <button
                     type="button"

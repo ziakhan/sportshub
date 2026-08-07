@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useParams } from "next/navigation"
+import { useParams, useRouter } from "next/navigation"
 import Link from "next/link"
 import { Button, Badge, SmartBack, toneForStatus } from "@/components/ui"
 import { SeasonCloseOut } from "./components/overview-tab"
@@ -14,7 +14,6 @@ import { SeasonReport } from "./components/season-report"
 import { ScheduleReadiness } from "./components/capacity-words"
 import { SessionsTab } from "./components/sessions-tab"
 import { VenuesTab } from "./components/venues-tab"
-import { PlanTab } from "./components/plan-tab"
 import { ScheduleTab } from "./components/schedule-tab"
 import { StandingsTab } from "./components/standings-tab"
 import { PlayoffsTab } from "./components/playoffs-tab"
@@ -62,6 +61,7 @@ const LEGACY_TABS: Record<string, { tab: TabKey; anchor?: string }> = {
 
 export default function LeagueManagePage() {
   const params = useParams()
+  const router = useRouter()
   const leagueId = params?.id as string
   const seasonId = params?.seasonId as string
   const [league, setLeague] = useState<any>(null)
@@ -79,6 +79,13 @@ export default function LeagueManagePage() {
   useEffect(() => {
     const t = new URLSearchParams(window.location.search).get("tab")
     if (!t) return
+    // The Plan tab is a door, not a panel (owner 2026-08-07, the double-rail
+    // collapse): a cold ?tab=plan URL — old bookmarks, old links — walks
+    // straight into the wizard the tab now opens.
+    if (t === "plan") {
+      router.replace(`/manage/leagues/${leagueId}/seasons/${seasonId}/plan`)
+      return
+    }
     if (TABS.some((x) => x.key === t)) {
       setActiveTab(t as TabKey)
     } else if (LEGACY_TABS[t]) {
@@ -256,7 +263,16 @@ export default function LeagueManagePage() {
                 key={t.key}
                 role="tab"
                 aria-selected={selected}
-                onClick={() => selectTab(t.key)}
+                // ONE PROGRESSION, NOT TWO (owner 2026-08-07: two five-item
+                // rails sharing two names read as broken). The Plan Your
+                // Season tab is a door straight into the wizard, whose own
+                // five steps are the only rail; the old stage-rail home
+                // screen between them is gone.
+                onClick={() =>
+                  t.key === "plan"
+                    ? router.push(`/manage/leagues/${leagueId}/seasons/${seasonId}/plan`)
+                    : selectTab(t.key)
+                }
                 className={`relative -mb-px whitespace-nowrap px-3 py-2.5 text-sm font-semibold transition-colors ${
                   selected ? "text-play-600" : "text-ink-500 hover:text-ink-800"
                 }`}
@@ -311,17 +327,6 @@ export default function LeagueManagePage() {
           <TeamsTab seasonId={seasonId} leagueId={leagueId} league={league} refresh={fetchAll} />
         )}
 
-        {activeTab === "plan" && (
-          <PlanTab
-            leagueId={leagueId}
-            seasonId={seasonId}
-            league={league}
-            divisions={divisions}
-            sessions={sessions}
-            scheduleGames={scheduleGames}
-            onGoToTab={(t) => selectTab(t as TabKey)}
-          />
-        )}
 
         {activeTab === "schedule" && (
           <div className="space-y-6">

@@ -108,9 +108,12 @@ function PlanWizard() {
   return (
     <PlanSessionProvider seasonId={seasonId} initialPlanId={planFromUrl}>
       <div className={wide ? "w-full px-3 py-3" : "mx-auto max-w-5xl px-4 py-6"}>
+        {/* The Plan tab is a door straight into this wizard now (owner
+            2026-08-07, the double-rail collapse), so falling back to it
+            would bounce right back here. Cold entry lands on the season. */}
         <SmartBack
-          fallback={`/manage/leagues/${leagueId}/seasons/${seasonId}/manage?tab=plan`}
-          fallbackLabel="Back to Plan Your Season"
+          fallback={`/manage/leagues/${leagueId}/seasons/${seasonId}/manage?tab=overview`}
+          fallbackLabel="Back to the season"
         />
 
         {/* On the board step the title and the step rail share one line, so the
