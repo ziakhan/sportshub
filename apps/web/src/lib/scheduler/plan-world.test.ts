@@ -1924,8 +1924,13 @@ describe("the Friday evening suggestion", () => {
     expect(fit?.startTime).toBe("18:00")
     expect(fit?.endTime).toBe("22:00")
     expect(fit?.gender).toBe("boys")
-    expect(fridaySentence(fit as never)).toBe(
-      "Add Friday evening (2 courts, 6-10 PM) at The Playground - fits everything in one session, no extra gym."
+    /**
+     * RE-PINNED 2026-08-06 (the copy fix). "Fits everything in one session"
+     * described the wrong thing: the cohort is ALREADY in this session. What the
+     * Friday does is fit them into a gym the league already books.
+     */
+    expect(fridaySentence(fit as never, ["Grade 9 Boys"])).toBe(
+      "Grade 9 Boys already play this weekend. Add Friday evening (2 of 3 courts, 6-10 PM) at The Playground to fit them into the gym you already book - no third gym."
     )
   })
 
@@ -1975,5 +1980,67 @@ describe("the Friday evening suggestion", () => {
     expect(oct2?.venues[0].fridayCourts).toBe(2)
     const off = withFridayBlock(on, "w-oct", "v-home", 0)
     expect(worldWeekends(off).find((w) => w.sessionId === "w-oct")?.capacityGames).toBe(72)
+  })
+})
+
+/**
+ * THE GENDER LAW, HARDENED (owner ruling 2026-08-06).
+ *
+ * It is not enough that the absorbed group is one gender. The group JOINS
+ * whoever is already in that building, so the gym-day the Friday creates has to
+ * be gender-consistent too. If the only building big enough would mix them, the
+ * answer is silence.
+ */
+describe("a Friday may never make a mixed gym-day", () => {
+  const stateOf = (w: PlanWorld) =>
+    planStateFrom("s1", { settings: { capturedAt: "x", state: w } }) as PlannerState
+  const oct = (s: PlannerState) => s.windows[0].weekends[0]
+
+  /** The home gym holds the girls; the rented one holds one small boys cohort. */
+  function mixedWeekend(): PlannerState {
+    const w: PlanWorld = {
+      ...world(),
+      units: [
+        { key: "age:Junior Girls", label: "Junior Girls", divisionIds: ["g"], teams: 30, included: true },
+        { key: "age:Grade 4 Boys", label: "Grade 4 Boys", divisionIds: ["b"], teams: 4, included: true },
+      ],
+    }
+    return stateOf(withGymOnWeekend(w, "w-oct", "v-pool", true))
+  }
+
+  it("stays silent when the only gym that fits already holds the other side", () => {
+    // The boys cohort is alone in a rented building, which is exactly the
+    // "extra building" trigger. The home gym could hold them on a Friday, and it
+    // is full of girls, so there is no answer here and the rail says nothing.
+    const state = mixedWeekend()
+    const fit = fridayFit(state, oct(state), ["age:Junior Girls", "age:Grade 4 Boys"], {
+      "age:Junior Girls": "v-home",
+      "age:Grade 4 Boys": "v-pool",
+    })
+    expect(fit).toBeNull()
+  })
+
+  it("takes the same move when the host gym is the same side of the league", () => {
+    // Identical shape, boys in both buildings: now the Friday at the home gym
+    // is a boys evening joining a boys weekend, and it is offered.
+    const w: PlanWorld = {
+      ...world(),
+      units: [
+        { key: "age:Grade 9 Boys", label: "Grade 9 Boys", divisionIds: ["a"], teams: 30, included: true },
+        { key: "age:Grade 4 Boys", label: "Grade 4 Boys", divisionIds: ["b"], teams: 4, included: true },
+      ],
+    }
+    const state = stateOf(withGymOnWeekend(w, "w-oct", "v-pool", true))
+    const fit = fridayFit(state, oct(state), ["age:Grade 9 Boys", "age:Grade 4 Boys"], {
+      "age:Grade 9 Boys": "v-home",
+      "age:Grade 4 Boys": "v-pool",
+    })
+    expect(fit?.gender).toBe("boys")
+    expect(fit?.venueId).toBe("v-home")
+    expect(fit?.unitKeys).toEqual(["age:Grade 4 Boys"])
+    expect(fridaySentence(fit as never, ["Grade 4 Boys"])).toContain(
+      "Grade 4 Boys already play this weekend"
+    )
+    expect(fridaySentence(fit as never, ["Grade 4 Boys"])).toContain("no third gym")
   })
 })

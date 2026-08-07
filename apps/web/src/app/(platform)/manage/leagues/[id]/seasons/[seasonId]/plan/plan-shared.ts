@@ -15,6 +15,43 @@ import {
  * and a gym has to be the same colour in both.
  */
 
+/**
+ * THE THREE BUTTONS THIS WIZARD HAS (owner ruling 2026-08-06, after two sweeps
+ * failed to reach him).
+ *
+ * The last pass gave every control a solid border and a dark label and left the
+ * BACKGROUND white. On a screen of white cards that is still a label: the eye
+ * has nothing to catch, and the owner walked past the bookings picker twice.
+ * The repo's design CLI says the same thing twice over — 4.5:1 minimum contrast,
+ * and never carry meaning on a hairline alone — so the fix is real colour, not
+ * a heavier grey.
+ *
+ * `play` is the action colour (indigo 600/700), which is what the CLI's own
+ * SaaS palette recommends and what this product already uses for its verbs.
+ * Three levels, and every actionable control on steps 1 to 3 is one of them:
+ *
+ *  - PRIMARY: filled indigo, white label. The one thing to do on this screen.
+ *  - SECONDARY: white, INDIGO border and INDIGO label. Unmistakably pressable,
+ *    still quieter than the primary. This is what a grey-bordered white button
+ *    should have been.
+ *  - QUIET: for rows of small verbs that must not shout, but still carries an
+ *    ink border and a dark label, never grey-on-grey.
+ *
+ * All three: cursor-pointer, a real hover, a transition, and a disabled state
+ * the CLI asks for by name (opacity + not-allowed).
+ */
+const BTN_BASE =
+  "inline-flex cursor-pointer items-center justify-center gap-1.5 rounded-lg border font-bold transition-colors disabled:cursor-not-allowed disabled:opacity-50"
+
+export const BTN_PRIMARY = `${BTN_BASE} border-play-700 bg-play-600 text-white shadow-sm hover:bg-play-700 hover:border-play-800`
+export const BTN_SECONDARY = `${BTN_BASE} border-play-300 bg-white text-play-700 shadow-sm hover:bg-play-50 hover:border-play-500`
+export const BTN_QUIET = `${BTN_BASE} border-ink-300 bg-white text-ink-700 shadow-sm hover:bg-ink-50 hover:border-ink-400 hover:text-ink-900`
+
+/** The sizes those three come in, so a row of verbs lines up. */
+export const BTN_SM = "min-h-[32px] px-2.5 text-[11.5px]"
+export const BTN_MD = "min-h-[36px] px-3 text-[12.5px]"
+export const BTN_LG = "min-h-[44px] px-4 text-[13.5px]"
+
 /** A grade picked up and waiting for somewhere to go. */
 export interface Armed {
   unitKey: string

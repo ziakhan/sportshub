@@ -8,7 +8,17 @@ import {
   type StrandedPlacement,
   type WorldGap,
 } from "@/lib/scheduler/plan-world"
-import { PILL_TONE, type Armed, type ArmedBlock, type ArmedSection } from "./plan-shared"
+import {
+  BTN_LG,
+  BTN_MD,
+  BTN_PRIMARY,
+  BTN_SECONDARY,
+  BTN_SM,
+  PILL_TONE,
+  type Armed,
+  type ArmedBlock,
+  type ArmedSection,
+} from "./plan-shared"
 import { WhyPopover } from "./plan-ui"
 import { PlanBadge } from "./plan-session"
 import { Segmented } from "./season-strip"
@@ -106,7 +116,7 @@ export function BoardHead({
                 e.stopPropagation()
                 onUndo()
               }}
-              className="border-ink-300 text-ink-800 hover:border-ink-400 hover:bg-ink-100 inline-flex min-h-[36px] cursor-pointer items-center gap-1.5 rounded-lg border bg-white px-3 text-[12.5px] font-bold transition-colors disabled:cursor-not-allowed disabled:opacity-50"
+              className={`${BTN_SECONDARY} ${BTN_MD}`}
             >
               <svg
                 viewBox="0 0 24 24"
@@ -137,7 +147,7 @@ export function BoardHead({
                 e.stopPropagation()
                 onRedraw()
               }}
-              className="border-ink-300 text-ink-800 hover:border-ink-400 hover:bg-ink-100 inline-flex min-h-[36px] cursor-pointer items-center gap-1.5 rounded-lg border bg-white px-3 text-[12.5px] font-bold transition-colors disabled:cursor-not-allowed disabled:opacity-50"
+              className={`${BTN_SECONDARY} ${BTN_MD}`}
             >
               <svg
                 viewBox="0 0 24 24"
@@ -167,7 +177,7 @@ export function BoardHead({
                 e.stopPropagation()
                 onRedrawSpread()
               }}
-              className="border-ink-300 text-ink-700 hover:border-ink-400 hover:bg-ink-100 inline-flex min-h-[36px] cursor-pointer items-center rounded-lg border bg-white px-2.5 text-[12px] font-bold transition-colors disabled:cursor-not-allowed disabled:opacity-50"
+              className={`${BTN_SECONDARY} ${BTN_SM}`}
             >
               {COPY.redrawSpread}
             </button>
@@ -185,7 +195,7 @@ export function BoardHead({
                 e.stopPropagation()
                 onFillFromPool()
               }}
-              className="border-play-600 bg-play-600 hover:bg-play-700 inline-flex min-h-[36px] cursor-pointer items-center rounded-lg border px-3 text-[12.5px] font-bold text-white transition-colors disabled:cursor-not-allowed disabled:opacity-50"
+              className={`${BTN_PRIMARY} ${BTN_MD}`}
             >
               {COPY.fillFromPool}
             </button>
@@ -194,7 +204,7 @@ export function BoardHead({
               ruling 2026-08-06). The compact switcher lived here and could swap
               the plan out from under a calendar somebody was in the middle of;
               choosing a plan is step 1's job, and this links back to it. */}
-          <PlanBadge onGoToStep={onGoToStep} testId="board-plan-badge" />
+          <PlanBadge testId="board-plan-badge" />
           {planId && (
             <Segmented
               label="How to view the calendar"
@@ -492,7 +502,7 @@ export function StrandedBanner({
               e.stopPropagation()
               onResolve()
             }}
-            className="border-hoop-600 bg-hoop-600 hover:bg-hoop-700 inline-flex min-h-[36px] cursor-pointer items-center rounded-lg border px-3 text-[12.5px] font-bold text-white transition-colors disabled:cursor-not-allowed disabled:opacity-50"
+            className={`${BTN_PRIMARY} ${BTN_MD} border-hoop-700 bg-hoop-600 hover:bg-hoop-700 hover:border-hoop-800`}
           >
             Re-solve in this world
           </button>
@@ -506,7 +516,7 @@ export function StrandedBanner({
                 e.stopPropagation()
                 onMoveStranded()
               }}
-              className="border-hoop-300 text-hoop-900 hover:border-hoop-400 hover:bg-hoop-100 inline-flex min-h-[36px] cursor-pointer items-center rounded-lg border bg-white px-3 text-[12.5px] font-bold transition-colors disabled:cursor-not-allowed disabled:opacity-50"
+              className={`${BTN_SECONDARY} ${BTN_MD} border-hoop-300 text-hoop-900 hover:bg-hoop-50 hover:border-hoop-500`}
             >
               Move these games to {strandedMove.to.label}
             </button>
@@ -561,7 +571,7 @@ export function DrawHero({
             data-testid="draw-calendar"
             disabled={busy}
             onClick={onDraw}
-            className="border-court-700 bg-court-600 hover:bg-court-700 inline-flex min-h-[48px] cursor-pointer items-center gap-2 rounded-xl border px-6 text-[15px] font-bold text-white shadow-sm transition-colors disabled:cursor-not-allowed disabled:opacity-50"
+            className={`${BTN_PRIMARY} min-h-[48px] gap-2 rounded-xl px-6 text-[15px]`}
           >
             <svg
               viewBox="0 0 24 24"
@@ -601,7 +611,7 @@ export function DrawHero({
             type="button"
             data-testid="world-first"
             onClick={() => onGoToStep?.(2)}
-            className="border-court-700 bg-court-600 hover:bg-court-700 mt-3 inline-flex min-h-[40px] cursor-pointer items-center rounded-xl border px-4 text-[13px] font-bold text-white shadow-sm transition-colors"
+            className={`${BTN_PRIMARY} ${BTN_LG} mt-3 rounded-xl`}
           >
             {COPY.worldFirstLink}
           </button>

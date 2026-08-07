@@ -3,7 +3,13 @@
 import { useCallback, useEffect, useId, useRef, useState } from "react"
 import { createPortal } from "react-dom"
 import type { PlacementReason, RentalAsk } from "@/lib/scheduler/planner-core"
-import { FRACTION_TONE, hueFor, type FractionTone } from "./plan-shared"
+import {
+  BTN_QUIET,
+  BTN_SECONDARY,
+  FRACTION_TONE,
+  hueFor,
+  type FractionTone,
+} from "./plan-shared"
 import { armAfterDragStarts } from "./board-shared"
 
 /**
@@ -515,7 +521,7 @@ export function ActionPopover({
  */
 export function QuietAction({ children }: { children: React.ReactNode }) {
   return (
-    <span className="border-ink-400 text-ink-900 hover:border-court-500 hover:bg-court-50 inline-flex min-h-[32px] cursor-pointer items-center rounded-md border bg-white px-2 text-[10.5px] font-bold shadow-sm transition-colors">
+    <span className={`${BTN_QUIET} min-h-[32px] rounded-md px-2 text-[10.5px]`}>
       {children}
     </span>
   )
@@ -1154,10 +1160,11 @@ export function MoveMenu({
           type="button"
           data-testid="move-menu-trigger"
           aria-pressed={armed}
-          className={`inline-flex min-h-[28px] cursor-pointer items-center rounded-md border px-2 text-[10.5px] font-bold shadow-sm transition-colors ${
-            armed
-              ? "border-play-500 bg-play-50 text-play-700 ring-play-400 ring-2"
-              : "border-ink-300 text-ink-700 hover:border-ink-400 hover:bg-ink-100 hover:text-ink-900 bg-white"
+          /* MOVE IS A VERB, SO IT WEARS THE ACTION COLOUR (owner ruling
+             2026-08-06). Armed adds the ring; the resting state is still
+             unmistakably a button. */
+          className={`${BTN_SECONDARY} min-h-[32px] rounded-md px-2 text-[10.5px] ${
+            armed ? "ring-play-400 bg-play-50 ring-2" : ""
           }`}
         >
           Move

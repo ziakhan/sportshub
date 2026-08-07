@@ -12,6 +12,7 @@ import {
   type PlannerSuggestion,
 } from "@/lib/scheduler/planner-core"
 import type { PlanHeaderInfo } from "./teams-step"
+import { BTN_MD, BTN_QUIET, BTN_SECONDARY, BTN_SM } from "./plan-shared"
 
 /**
  * Step 5, schedule (owner-approved mock, 2026-08-02). Scheduling is the
@@ -230,7 +231,7 @@ export function ScheduleStep({
               <button
                 type="button"
                 onClick={() => onGoToStep(1)}
-                className="text-play-700 hover:text-play-800 mt-2 text-sm font-semibold"
+                className={`${BTN_SECONDARY} ${BTN_MD} mt-2`}
               >
                 Go to step 1 &rarr;
               </button>
@@ -306,7 +307,7 @@ export function ScheduleStep({
                 data-testid="see-options"
                 onClick={() => setShowOptions((v) => !v)}
                 aria-expanded={showOptions}
-                className="border-ink-200 text-ink-700 hover:bg-ink-50 shrink-0 rounded-lg border bg-white px-3 py-1.5 text-xs font-semibold"
+                className={`${BTN_QUIET} ${BTN_SM} shrink-0`}
               >
                 {showOptions ? "Fewer options" : "See options"}
               </button>
@@ -323,7 +324,7 @@ export function ScheduleStep({
               <button
                 type="button"
                 onClick={() => onGoToStep(3)}
-                className="text-play-700 hover:text-play-800 font-semibold"
+                className={`${BTN_SECONDARY} ${BTN_SM}`}
               >
                 Go to step 3 &rarr;
               </button>

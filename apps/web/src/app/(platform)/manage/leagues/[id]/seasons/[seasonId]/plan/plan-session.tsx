@@ -20,6 +20,7 @@ import {
   type PlanWorld,
 } from "@/lib/scheduler/plan-documents"
 import { PlanPicker } from "./plan-picker"
+import { BTN_MD, BTN_PRIMARY, BTN_SECONDARY } from "./plan-shared"
 
 /**
  * WHICH PLAN THE WIZARD IS WORKING IN (owner rulings 2026-08-05, #1 and #2).
@@ -382,10 +383,14 @@ export function PlanSessionProvider({
 
 /** A real button, so a control never reads as a caption (2026-08-05 clarity
  *  pass): filled for the one that makes something, outlined for the rest. */
-export const PLAN_BTN_PRIMARY =
-  "border-play-600 bg-play-600 text-white hover:bg-play-700 hover:border-play-700 inline-flex min-h-[36px] cursor-pointer items-center gap-1.5 rounded-lg border px-3 text-[12.5px] font-bold transition-colors disabled:cursor-not-allowed disabled:opacity-50"
-export const PLAN_BTN_QUIET =
-  "border-ink-300 bg-white text-ink-800 hover:border-ink-400 hover:bg-ink-50 inline-flex min-h-[36px] cursor-pointer items-center gap-1.5 rounded-lg border px-3 text-[12.5px] font-bold transition-colors disabled:cursor-not-allowed disabled:opacity-50"
+/**
+ * ONE BUTTON SYSTEM FOR THE WHOLE WIZARD (owner ruling 2026-08-06). These two
+ * predate it and are kept as names, because the plan controls import them by
+ * name, but they ARE the shared tiers now: a second definition of "primary" is
+ * how a screen ends up with two greys that nearly match.
+ */
+export const PLAN_BTN_PRIMARY = `${BTN_PRIMARY} ${BTN_MD}`
+export const PLAN_BTN_QUIET = `${BTN_SECONDARY} ${BTN_MD}`
 
 function PlusMark() {
   return (
@@ -486,42 +491,26 @@ function NameBox({
  * Steps 2 to 5 state which plan they are in and link back to step 1 to change
  * it, which is the one place that also creates, renames and deletes them.
  */
-export function PlanBadge({
-  onGoToStep,
-  testId = "plan-badge",
-}: {
-  /** Back to step 1, where plans are chosen. Absent leaves the badge a label. */
-  onGoToStep?: (step: number) => void
-  testId?: string
-}) {
+export function PlanBadge({ testId = "plan-badge" }: { testId?: string }) {
   const session = usePlanSession()
   const name = session.chosen?.name
   if (!name) return null
-  const words = `Plan: ${name}`
-  if (!onGoToStep) {
-    return (
-      <span
-        data-testid={testId}
-        className="border-ink-200 text-ink-700 rounded-lg border bg-white px-2.5 py-1 text-[12px] font-bold"
-      >
-        {words}
-      </span>
-    )
-  }
+  /**
+   * A LABEL, NOT A CONTROL (owner ruling 2026-08-06). It said "Change in step 1"
+   * and linked there, which made it one more thing to press on a screen that is
+   * already asking for decisions. They know where plans are chosen. This states
+   * which plan they are in and stops.
+   *
+   * Solid ink-100 with a dark label: clearly visible, and clearly not a button,
+   * which is the whole point of the distinction the sweep is drawing.
+   */
   return (
-    <button
-      type="button"
+    <span
       data-testid={testId}
-      title="Plans are chosen on step 1"
-      onClick={(e) => {
-        e.stopPropagation()
-        onGoToStep(1)
-      }}
-      className="border-ink-400 text-ink-900 hover:border-court-500 hover:bg-court-50 inline-flex min-h-[36px] cursor-pointer items-center gap-1.5 rounded-lg border bg-white px-3 text-[12px] font-bold shadow-sm transition-colors"
+      className="bg-ink-100 text-ink-900 border-ink-200 inline-flex min-h-[32px] items-center rounded-lg border px-2.5 text-[12px] font-bold"
     >
-      {words}
-      <span className="text-ink-500 text-[10.5px] font-semibold">Change in step 1</span>
-    </button>
+      Plan: {name}
+    </span>
   )
 }
 

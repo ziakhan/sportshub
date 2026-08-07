@@ -6,6 +6,7 @@ import { SmartBack } from "@/components/ui"
 import { CalendarStep } from "./calendar-step"
 import { GymsWeekendsStep } from "./gyms-weekends-step"
 import { PlanSessionProvider } from "./plan-session"
+import { BTN_LG, BTN_PRIMARY, BTN_SECONDARY } from "./plan-shared"
 import { PublishStep } from "./publish-step"
 import { ScheduleStep } from "./schedule-step"
 import { TeamsStep, type PlanHeaderInfo } from "./teams-step"
@@ -204,7 +205,7 @@ function PlanWizard() {
               type="button"
               data-testid="wizard-prev"
               onClick={() => setStep(step - 1)}
-              className="border-ink-400 text-ink-900 hover:border-court-500 hover:bg-court-50 inline-flex min-h-[40px] cursor-pointer items-center gap-1.5 rounded-xl border bg-white px-3 text-[12.5px] font-bold shadow-sm transition-colors"
+              className={`${BTN_SECONDARY} ${BTN_LG} rounded-xl`}
             >
               <span aria-hidden>←</span>
               Back: {STEPS[step - 2].label}
@@ -217,7 +218,7 @@ function PlanWizard() {
               type="button"
               data-testid="wizard-next"
               onClick={() => setStep(step + 1)}
-              className="border-court-700 bg-court-600 hover:bg-court-700 inline-flex min-h-[40px] cursor-pointer items-center gap-1.5 rounded-xl border px-4 text-[12.5px] font-bold text-white shadow-sm transition-colors"
+              className={`${BTN_PRIMARY} ${BTN_LG} rounded-xl`}
             >
               Next: {STEPS[step].label}
               <span aria-hidden>→</span>

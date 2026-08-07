@@ -658,6 +658,8 @@ export interface FridayFit {
   venueName: string
   /** Courts the Friday block needs: right-sized, never the whole building. */
   courts: number
+  /** Courts the host building has, so the sentence can say "2 of 6". */
+  hostCourts: number
   startTime: string
   endTime: string
   /** Games it takes off the rest of the weekend. */
@@ -715,24 +717,49 @@ export function fridayFit(
   if (!gender) return null
 
   /**
-   * NO NEW GYM (owner ruling 2026-08-06). The Friday goes at a building this
-   * session is ALREADY using, and the biggest one, so it needs the fewest
-   * courts. A gym nobody is using this weekend would be a new booking, which is
-   * exactly what this suggestion exists to avoid.
+   * NO NEW GYM, AND NO MIXED GYM-DAY (owner rulings 2026-08-06, the gender law
+   * hardened).
+   *
+   * The Friday goes at a building this session is ALREADY using — a gym nobody
+   * is using this weekend would be a new booking, which is the thing this
+   * suggestion exists to avoid. But "already using" is exactly what makes the
+   * second rule bite: the absorbed group joins whoever is ALREADY in that
+   * building, so the host's own grades have to be the same side of the league.
+   *
+   * A boys cohort moved into a gym holding girls produces a mixed gym-day, which
+   * is not a scheduling detail to sort out later: it is the thing the league does
+   * not do. If the only building big enough would mix them, the answer is
+   * silence, not a suggestion with a problem inside it.
    */
-  const inUse = weekend.venues.filter((v) => byVenue.has(v.venueId))
   const perCourt = fridayGamesPerCourt(state.gameSlotMinutes)
-  if (perCourt <= 0 || inUse.length === 0) return null
-  const host = [...inUse].sort((a, b) => courtsWiredAt(b) - courtsWiredAt(a))[0]
+  if (perCourt <= 0) return null
   const courts = Math.ceil(need / perCourt)
-  // It has to fit in the building we already have. Anything more is a new gym.
-  if (courts > courtsWiredAt(host)) return null
+  /** The building the absorbed group is in now. Folding it into ITSELF removes
+   *  no gym, so on the extra-building trigger that one cannot be the host: the
+   *  whole point is that the rental goes away. */
+  const from = because === "extra-building" ? playsIn[unitKeys[0]] : null
+  const hosts = weekend.venues
+    .filter((v) => byVenue.has(v.venueId) && v.venueId !== from)
+    // It has to fit in a building we already have. Anything more is a new gym.
+    .filter((v) => courts <= courtsWiredAt(v))
+    .filter((v) => {
+      // Everyone already in that gym that weekend, plus the group moving in.
+      const theirs = (byVenue.get(v.venueId) ?? []).filter((k) => !unitKeys.includes(k))
+      const together = [...theirs, ...unitKeys]
+        .map((k) => unitBy.get(k))
+        .filter(Boolean) as PlannerUnit[]
+      return sharedGender(together) === gender
+    })
+    .sort((a, b) => courtsWiredAt(b) - courtsWiredAt(a))
+  const host = hosts[0]
+  if (!host) return null
 
   return {
     sessionId: weekend.sessionId,
     venueId: host.venueId,
     venueName: host.name,
     courts,
+    hostCourts: courtsWiredAt(host),
     startTime: FRIDAY_START,
     endTime: FRIDAY_END,
     games: need,
@@ -742,10 +769,27 @@ export function fridayFit(
   }
 }
 
-/** The Friday suggestion, in the operator's own words. */
-export function fridaySentence(fit: FridayFit): string {
-  const wired = fit.courts === 1 ? "1 court" : `${fit.courts} courts`
-  return `Add Friday evening (${wired}, 6-10 PM) at ${venueShortLabel(fit.venueName)} - fits everything in one session, no extra gym.`
+/**
+ * THE FRIDAY SUGGESTION, IN THE OPERATOR'S OWN WORDS (owner ruling 2026-08-06,
+ * the copy fix).
+ *
+ * It used to read "fits everything in one session", which describes the wrong
+ * thing: the cohort is ALREADY in this session — nobody is being moved between
+ * weekends. What the Friday does is fit them into a gym the league is ALREADY
+ * booking, by adding evening capacity there, so a third building never has to be
+ * rented. The sentence says that, and names who it is about.
+ */
+export function fridaySentence(fit: FridayFit, unitLabels: string[] = []): string {
+  const who = unitLabels.length > 0 ? nameThem(unitLabels) : "Those grades"
+  const wired = `${fit.courts} of ${fit.hostCourts} courts`
+  return `${who} already play this weekend. Add Friday evening (${wired}, 6-10 PM) at ${venueShortLabel(fit.venueName)} to fit them into the gym you already book - no third gym.`
+}
+
+/** "Grade 9 Girls", or "Grade 9 Girls and Grade 10 Girls". */
+function nameThem(labels: string[]): string {
+  if (labels.length === 1) return labels[0]
+  if (labels.length === 2) return `${labels[0]} and ${labels[1]}`
+  return `${labels.slice(0, -1).join(", ")} and ${labels[labels.length - 1]}`
 }
 
 /** A gym in the words a rail row has room for. */

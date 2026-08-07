@@ -27,6 +27,7 @@ import {
   DEFAULT_DAY_COUNT,
 } from "@/lib/scheduler/plan-world"
 import { PlanBadge, PlanEmptyState, usePlanSession } from "./plan-session"
+import { BTN_MD, BTN_PRIMARY, BTN_SECONDARY, BTN_SM } from "./plan-shared"
 
 /**
  * Step 2, YOUR BUILDINGS (owner ruling 2026-08-06). This screen used to be two
@@ -574,7 +575,7 @@ export function GymsWeekendsStep({
           {/* WHICH PLAN THIS SCREEN IS ABOUT (owner ruling 2026-08-06). It used
               to be a switcher, which changed every card below it from a control
               that read like a filter. Plans are chosen at step 1. */}
-          <PlanBadge onGoToStep={onGoToStep} testId="step2-plan-badge" />
+          <PlanBadge testId="step2-plan-badge" />
           <span className="border-ink-200 text-ink-600 rounded-full border bg-white px-2.5 py-0.5 text-[11px] font-bold">
             Step 2 of 5
           </span>
@@ -726,11 +727,12 @@ export function GymsWeekendsStep({
                                 : "off, tap to fill it first"
                             }`}
                             onClick={() => runWeekend(w, !on)}
-                            className={`min-h-[44px] w-[62px] cursor-pointer rounded-lg border px-1 text-[10.5px] font-bold transition-colors disabled:cursor-not-allowed disabled:opacity-60 ${
-                              on
-                                ? "border-court-500 bg-court-100 text-court-900 hover:border-court-600"
-                                : "border-ink-400 text-ink-900 hover:border-court-500 hover:bg-court-50 bg-white"
-                            }`}
+                            /* The weekend chooser is a row of buttons, so it
+                               wears the same two tiers as everything else on
+                               this step (owner ruling 2026-08-06): chosen is
+                               filled, unchosen is indigo-outlined, and neither
+                               is white-on-white. */
+                            className={`${on ? BTN_PRIMARY : BTN_SECONDARY} min-h-[44px] w-[62px] flex-col gap-0 px-1 text-[10.5px]`}
                           >
                             <span className="block leading-tight">{w.dayLabel}</span>
                             <span className="block text-[9.5px] font-semibold">
@@ -873,7 +875,7 @@ export function GymsWeekendsStep({
                       onClick={() => void moveGym(venue, "up")}
                       aria-label={`Rent from ${venue.name} sooner`}
                       title={`Rent from ${venue.name} sooner`}
-                      className="text-ink-700 hover:bg-ink-100 hover:text-ink-900 h-full min-w-[44px] cursor-pointer rounded-l-lg text-base font-bold transition-colors disabled:cursor-not-allowed disabled:opacity-40"
+                      className="text-play-700 hover:bg-play-50 hover:text-play-900 h-full min-w-[44px] cursor-pointer rounded-l-lg text-base font-bold transition-colors disabled:cursor-not-allowed disabled:opacity-40"
                     >
                       ↑
                     </button>
@@ -888,7 +890,7 @@ export function GymsWeekendsStep({
                       onClick={() => void moveGym(venue, "down")}
                       aria-label={`Rent from ${venue.name} later`}
                       title={`Rent from ${venue.name} later`}
-                      className="text-ink-700 hover:bg-ink-100 hover:text-ink-900 h-full min-w-[44px] cursor-pointer rounded-r-lg text-base font-bold transition-colors disabled:cursor-not-allowed disabled:opacity-40"
+                      className="text-play-700 hover:bg-play-50 hover:text-play-900 h-full min-w-[44px] cursor-pointer rounded-r-lg text-base font-bold transition-colors disabled:cursor-not-allowed disabled:opacity-40"
                     >
                       ↓
                     </button>
@@ -900,7 +902,7 @@ export function GymsWeekendsStep({
                     data-testid="make-home"
                     disabled={busy !== null}
                     onClick={() => makeHome(venue)}
-                    className="border-ink-300 text-ink-800 hover:border-ink-400 hover:bg-ink-50 ml-auto inline-flex min-h-[32px] cursor-pointer items-center rounded-lg border bg-white px-2.5 text-xs font-bold transition-colors disabled:cursor-not-allowed disabled:opacity-50"
+                    className={`${BTN_SECONDARY} ${BTN_SM} ml-auto`}
                   >
                     {busy === `${venue.seasonVenueId}:role` ? "Working…" : "Make this the home gym"}
                   </button>
@@ -1032,7 +1034,10 @@ export function GymsWeekendsStep({
                         bookingsFor === venue.seasonVenueId ? null : venue.seasonVenueId
                       )
                     }
-                    className="border-ink-400 text-ink-900 hover:border-court-500 hover:bg-court-50 inline-flex min-h-[36px] cursor-pointer items-center gap-1.5 rounded-lg border bg-white px-3 text-xs font-bold shadow-sm transition-colors"
+                    /* SECONDARY, IN REAL COLOUR (owner ruling 2026-08-06). A
+                       white button with a grey hairline is a label; this one
+                       carries the action colour on its border and its text. */
+                    className={`${BTN_SECONDARY} ${BTN_MD}`}
                   >
                     {bookingsFor === venue.seasonVenueId
                       ? "Close booked dates"
@@ -1074,11 +1079,7 @@ export function GymsWeekendsStep({
                                    2026-08-06, the affordance sweep): solidly
                                    outlined, dark label, hover. Dashed grey is
                                    for empty states, and this is a control. */
-                                className={`inline-flex min-h-[36px] cursor-pointer items-center rounded-lg border px-2.5 text-[11.5px] font-bold shadow-sm transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
-                                  on
-                                    ? "border-court-600 bg-court-600 text-white"
-                                    : "border-ink-400 text-ink-900 hover:border-court-500 hover:bg-court-50 bg-white"
-                                }`}
+                                className={`${BTN_SM} ${on ? BTN_PRIMARY : BTN_SECONDARY}`}
                               >
                                 {w.label}
                               </button>

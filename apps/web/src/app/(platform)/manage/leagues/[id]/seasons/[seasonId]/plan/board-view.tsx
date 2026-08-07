@@ -10,6 +10,7 @@ import {
 } from "@/lib/scheduler/planner-core"
 import type { BoardColumn, BuildingRoom, GhostDate } from "@/lib/scheduler/plan-world"
 import type { WindowPhase } from "@/lib/scheduler/plan-documents"
+import { BTN_SECONDARY } from "./plan-shared"
 import type { Armed, ArmedBlock, ArmedSection, GhostChip } from "./plan-shared"
 import { GLYPH_LEGEND, ReasonGlyph, type BlockStatus, type SplitAxis } from "./plan-ui"
 import {
@@ -265,7 +266,7 @@ export function BoardView({
                       onFenceWindow(win.label, win.fenced ? "regular" : "playoffs")
                     }}
                     /* A CONTROL, NOT A CAPTION (owner ruling 2026-08-06). */
-                    className="border-ink-400 text-ink-900 hover:border-court-500 hover:bg-court-50 inline-flex min-h-[32px] cursor-pointer items-center rounded-lg border bg-white px-2 text-[10.5px] font-bold normal-case tracking-normal shadow-sm transition-colors"
+                    className={`${BTN_SECONDARY} min-h-[32px] px-2 text-[10.5px] normal-case tracking-normal`}
                   >
                     {win.fenced ? "Mark as regular season" : "Mark as playoffs"}
                   </button>

@@ -10,6 +10,7 @@ import {
 import { isReferencePlan, PLAN_COPY, type PlanWorld } from "@/lib/scheduler/plan-documents"
 import { unitIncluded, withUnitIncluded, withUnitTeams } from "@/lib/scheduler/plan-world"
 import { PlanChooser, PlanEmptyState, usePlanSession } from "./plan-session"
+import { BTN_SECONDARY, BTN_SM } from "./plan-shared"
 
 /**
  * Step 1, teams (owner-approved mock, 2026-08-02). The flow opens where the
@@ -674,7 +675,7 @@ export function TeamsStep({
                                occurrence). Dashed grey is for EMPTY STATES; a
                                control that reads as one is a control nobody
                                presses. */
-                            className="border-ink-400 text-ink-900 hover:border-court-500 hover:bg-court-50 hover:text-court-900 inline-flex min-h-[32px] cursor-pointer items-center rounded-full border bg-white px-2.5 py-0.5 text-[11px] font-bold shadow-sm transition-colors"
+                            className={`${BTN_SECONDARY} ${BTN_SM} rounded-full`}
                           >
                             Not in the plan yet · add an estimate
                           </button>

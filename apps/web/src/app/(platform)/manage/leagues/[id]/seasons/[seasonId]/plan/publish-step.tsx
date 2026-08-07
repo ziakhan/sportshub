@@ -8,6 +8,7 @@ import {
   type PlannerState,
 } from "@/lib/scheduler/planner-core"
 import type { PlanHeaderInfo } from "./teams-step"
+import { BTN_MD, BTN_QUIET, BTN_SECONDARY, BTN_SM } from "./plan-shared"
 
 /**
  * Step 4, publish (owner-approved mock, 2026-08-02). The calendar lives on
@@ -201,7 +202,7 @@ export function PublishStep({
                   <button
                     type="button"
                     onClick={() => onGoToStep(3)}
-                    className="text-play-700 hover:text-play-800 mt-3 text-sm font-semibold"
+                    className={`${BTN_SECONDARY} ${BTN_MD} mt-3`}
                   >
                     Go to step 3 &rarr;
                   </button>
@@ -274,7 +275,10 @@ export function PublishStep({
                 data-testid="unpublish-plan"
                 disabled={busy !== null}
                 onClick={() => setPublished("DELETE")}
-                className="text-ink-400 hover:text-hoop-700 self-start px-1 text-xs font-semibold disabled:opacity-50"
+                /* A CONTROL, NOT A FOOTNOTE (owner ruling 2026-08-06). Taking
+                   a published calendar down is one of the loudest things this
+                   wizard can do, and it was grey text at the bottom of a card. */
+                className={`${BTN_QUIET} ${BTN_SM} self-start border-hoop-300 text-hoop-800 hover:border-hoop-500 hover:bg-hoop-50 hover:text-hoop-900`}
               >
                 {busy === "DELETE" ? "Taking it down…" : "Take the calendar down"}
               </button>
