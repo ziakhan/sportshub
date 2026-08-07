@@ -129,6 +129,23 @@ export function venueOnWeekend(
 
 /* ---------------------------- reading a world ---------------------------- */
 
+/**
+ * THE LEAGUE'S OWN ORDER, off the roster (owner ruling 2026-08-06: "select the
+ * home, then the next one, and the following one").
+ *
+ * The ARRAY ORDER is the order. Nothing new is stored: the home gym is always
+ * first, and the pool follows in the order the operator arranged on step 2, so a
+ * world written before any of this existed keeps whatever order it was saved in
+ * and behaves exactly as it did.
+ *
+ * It is a preference and never a gate. Occupancy is the only gate.
+ */
+export function gymRanks(gyms: Array<Pick<PlanWorldGym, "venueId" | "role">>): Map<string, number> {
+  const home = gyms.filter((g) => g.role === "home").map((g) => g.venueId)
+  const pool = gyms.filter((g) => g.role !== "home").map((g) => g.venueId)
+  return new Map([...home, ...pool].map((venueId, i) => [venueId, i]))
+}
+
 /** The gyms a world knows about, healed: an explicit roster when it has one,
  *  else whatever its weekends mention (a snapshot from before rosters). */
 export function worldGyms(world: PlanWorld): PlanWorldGym[] {
@@ -198,6 +215,7 @@ export function planStateFrom(
   const assignment = plan.assignment ?? {}
   const venues = plan.venues ?? {}
   const gyms = worldGyms(world)
+  const ranks = gymRanks(gyms)
   const included = (world.units ?? []).filter(unitIncluded)
   const liveKeys = new Set(included.map((u) => u.key))
 
@@ -229,6 +247,14 @@ export function planStateFrom(
                 return {
                   venueId: v.venueId,
                   name: v.name ?? gym?.name ?? v.venueId,
+                  // The league's own order travels with the row, so the solver
+                  // and every list read the same one (owner ruling 2026-08-06).
+                  rank: ranks.get(v.venueId),
+                  // A gym the PLAN really holds on this weekend is a booking the
+                  // league has made: declared on step 2, or placed by hand. The
+                  // objective treats leaving it empty as waste (owner ruling
+                  // 2026-08-06, confirmed bookings are obligations).
+                  booked: true,
                   capacityGames: v.capacityGames ?? 0,
                   role: v.role ?? gym?.role ?? (v.fillOrder === 0 ? "home" : "pool"),
                   fillOrder: v.fillOrder ?? 1,
@@ -347,12 +373,12 @@ export function windowFenced(window: Pick<PlannerWindow, "phase">): boolean {
 function drawableGyms(state: PlannerState): Record<string, string[]> {
   const roster = state.gyms ?? []
   if (roster.length === 0) return {}
-  // The building the league owns first, then the rest by name, so a draw of the
-  // same world twice puts the same gyms on the table in the same order.
+  // THE LEAGUE'S OWN ORDER (owner ruling 2026-08-06): the building it owns, then
+  // the pool as the operator arranged it on step 2. It was by NAME, which is how
+  // a draw came back having booked Haber over Six Park for no reason.
+  const ranks = gymRanks(roster)
   const order = [...roster].sort(
-    (a, b) =>
-      (a.role === "home" ? 0 : 1) - (b.role === "home" ? 0 : 1) ||
-      a.name.localeCompare(b.name, "en")
+    (a, b) => (ranks.get(a.venueId) ?? 0) - (ranks.get(b.venueId) ?? 0)
   )
   const out: Record<string, string[]> = {}
   for (const win of state.windows) {
@@ -399,7 +425,10 @@ function drawableGyms(state: PlannerState): Record<string, string[]> {
  * so the season's own board pays nothing for any of this.
  */
 export function solvableState(state: PlannerState): PlannerState {
-  const filled = withAssertedGyms(state, drawableGyms(state))
+  // The rooms the draw MAY book are candidates, not bookings: passing false is
+  // what keeps "already booked" and "could be booked" apart in the objective
+  // (owner ruling 2026-08-06, confirmed bookings are obligations).
+  const filled = withAssertedGyms(state, drawableGyms(state), false)
   const runs = (w: PlannerWeekend) => w.chosen !== false && w.capacityGames > 0
   if (filled.windows.every((win) => !windowFenced(win) && win.weekends.every(runs))) return filled
   return {
@@ -425,10 +454,43 @@ export function solvableState(state: PlannerState): PlannerState {
  * Weekends the draw left empty get nothing: a building on a date nobody plays on
  * is a booking the league never made.
  */
+/**
+ * WHERE A BOOKING CAME FROM, AND THEREFORE WHAT IT IS (owner ruling 2026-08-06,
+ * the status inversion).
+ *
+ * Two sources, two answers, and they are opposites on purpose:
+ *
+ *  - THE DRAW put it down, so nobody has phoned that gym: ASSUMED. It wears the
+ *    gold chip and the ask sheet asks about it, because it is a promise the
+ *    league has not made yet and the operator has to go and make it.
+ *  - THE OPERATOR put it down — a drag, a tap, a tick on step 2 — so by his
+ *    standing rule they checked: CONFIRMED. It is silent. Marking it gold would
+ *    be the board asking them to confirm the thing they just told it.
+ *
+ * ONE KEYING SCHEME for all of it: "<sessionId>|<venueId>", which is what
+ * courtCapKey builds and what blockKey builds. They are the same string by
+ * construction — one gym, one weekend — so the court corrections, the hours
+ * exceptions and the booking statuses are all looked up the same way and can
+ * never drift into two vocabularies.
+ */
+export type BookingSource = "draw" | "operator"
+
+export function bookingStatusFor(source: BookingSource): "assumed" | "confirmed" {
+  return source === "draw" ? "assumed" : "confirmed"
+}
+
 export interface DrawnGyms {
   /** sessionId → the venueIds the draw put there, for the board's assertion
    *  mechanism, so the sections, meters and blocks are real. */
   added: Record<string, string[]>
+  /**
+   * The rentals the draw SPENT rather than invented: gym time the league had
+   * already booked and the calendar actually used (owner ruling 2026-08-06,
+   * confirmed bookings are obligations). Nothing to assert and nothing to phone
+   * about — it is here so the notice can say the operator's own bookings were
+   * filled before anything was assumed beyond them.
+   */
+  booked: Array<{ sessionId: string; venueId: string }>
   /**
    * The ones the league has NOT booked: every rented building the solver put
    * down itself. They land assumed (owner ruling 2026-08-06), which is what the
@@ -448,6 +510,18 @@ export function drawnGyms(
   const roleOf = new Map((state.gyms ?? []).map((g) => [g.venueId, g.role]))
   const added: Record<string, string[]> = {}
   const assumed: Array<{ sessionId: string; venueId: string }> = []
+  const booked: Array<{ sessionId: string; venueId: string }> = []
+  // The rentals the league had already made and this calendar really used.
+  for (const win of state.windows) {
+    for (const w of win.weekends) {
+      const used = new Set(Object.values(venues[w.sessionId] ?? {}))
+      for (const v of w.venues) {
+        if (v.role === "pool" && used.has(v.venueId)) {
+          booked.push({ sessionId: w.sessionId, venueId: v.venueId })
+        }
+      }
+    }
+  }
   for (const [sessionId, mayBook] of Object.entries(drawable)) {
     if ((assignment[sessionId] ?? []).length === 0) continue
     // Only the buildings a grade really landed in. A gym the solve was offered
@@ -460,7 +534,7 @@ export function drawnGyms(
       if (roleOf.get(venueId) !== "home") assumed.push({ sessionId, venueId })
     }
   }
-  return { added, assumed }
+  return { added, assumed, booked }
 }
 
 /**
@@ -521,10 +595,14 @@ export function worldReadiness(state: PlannerState | null): WorldReadiness {
 function plannerVenueOn(
   gym: PlanWorldGym,
   weekend: { dayCount?: number },
-  world: Pick<PlanWorld, "courtBuffer" | "gameSlotMinutes">
+  world: Pick<PlanWorld, "courtBuffer" | "gameSlotMinutes"> & { gyms?: PlanWorldGym[] }
 ): PlannerVenue {
   const venue = venueOnWeekend(gym, weekend, world)
-  return { ...venue, role: venue.role ?? gym.role }
+  return {
+    ...venue,
+    role: venue.role ?? gym.role,
+    rank: world.gyms ? gymRanks(world.gyms).get(gym.venueId) : undefined,
+  }
 }
 
 export interface BuildingRoom {
@@ -674,9 +752,10 @@ export function weekendRooms(
    * a gym with no courts at all, or one a court correction has closed outright,
    * genuinely holds nothing.
    */
+  const ranks = gymRanks(roster)
   const others = roster
     .filter((g) => !attachedBy.has(g.venueId))
-    .sort((a, b) => a.name.localeCompare(b.name, "en"))
+    .sort((a, b) => (ranks.get(a.venueId) ?? 0) - (ranks.get(b.venueId) ?? 0))
   for (const gym of others) {
     const room = roomFor(gym, null)
     if (room.capacityGames <= 0) continue
@@ -699,7 +778,14 @@ export function weekendRooms(
  */
 export function withAssertedGyms(
   state: PlannerState,
-  asserted: Record<string, string[]>
+  asserted: Record<string, string[]>,
+  /**
+   * Is this a booking the league HAS, or a room the solver may book? A gym the
+   * operator dropped by hand is theirs by his standing rule (a drag means they
+   * checked), so it defaults to a booking. solvableState passes false: the rooms
+   * it puts on the table are candidates, and the draw books them as assumed.
+   */
+  booked = true
 ): PlannerState {
   const rows = Object.entries(asserted).filter(([, venueIds]) => (venueIds ?? []).length > 0)
   if (rows.length === 0) return state
@@ -716,7 +802,7 @@ export function withAssertedGyms(
         if (w.venues.some((v) => v.venueId === venueId)) continue
         const gym = roster.find((g) => g.venueId === venueId)
         if (!gym) continue
-        add.push(plannerVenueOn(gym, { dayCount: w.dayCount }, state))
+        add.push({ ...plannerVenueOn(gym, { dayCount: w.dayCount }, state), booked })
       }
       if (add.length === 0) return w
       touchedWindow = true
@@ -889,6 +975,39 @@ export function withGymRole(world: PlanWorld, venueId: string, role: VenueRole):
         : g
   )
   return rebuild({ ...world, gyms })
+}
+
+/**
+ * THE ORDER THE LEAGUE RENTS IN (owner ruling 2026-08-06: "select the home, then
+ * the next one, and the following one").
+ *
+ * The roster ARRAY is the order, so this is a move within it and nothing new is
+ * stored. The home gym is not in the ordering at all — it is always first,
+ * because the league owns it — so moving a pool gym walks it past the other pool
+ * gyms only.
+ *
+ * It is a preference, never a gate. Occupancy is the only gate: this decides
+ * which building the draw reaches for when two of them cost the same, and the
+ * order every list on the screen is drawn in.
+ */
+export function withGymOrder(
+  world: PlanWorld,
+  venueId: string,
+  /** One step either way, or an absolute seat among the pool gyms. */
+  to: "up" | "down" | number
+): PlanWorld {
+  const gyms = worldGyms(world)
+  const home = gyms.filter((g) => g.role === "home")
+  const pool = gyms.filter((g) => g.role !== "home")
+  const at = pool.findIndex((g) => g.venueId === venueId)
+  if (at < 0) return world
+  const want = to === "up" ? at - 1 : to === "down" ? at + 1 : Math.floor(to)
+  const seat = Math.max(0, Math.min(pool.length - 1, want))
+  if (seat === at) return world
+  const next = [...pool]
+  const [moved] = next.splice(at, 1)
+  next.splice(seat, 0, moved)
+  return rebuild({ ...world, gyms: [...home, ...next] })
 }
 
 /** How many courts this gym gives this plan. */
@@ -1750,11 +1869,17 @@ export function planGridFrom(seasonGrid: VenueGrid, world: PlanWorld): VenueGrid
       seasonVenueId: v.seasonVenueId,
     }))
 
+  // THE LEAGUE'S OWN ORDER (owner ruling 2026-08-06): the building it owns, then
+  // the pool as the operator arranged it. Gyms the season grew after this plan
+  // was made have no seat yet, so they land after the ones that do.
+  const ranks = gymRanks(roster)
   const rows: VenueGridRow[] = [...roster, ...extra]
     .filter((gym) => byId.has(gym.venueId))
     .sort(
       (a, b) =>
         (a.role === "home" ? 0 : 1) - (b.role === "home" ? 0 : 1) ||
+        (ranks.get(a.venueId) ?? Number.MAX_SAFE_INTEGER) -
+          (ranks.get(b.venueId) ?? Number.MAX_SAFE_INTEGER) ||
         a.name.localeCompare(b.name, "en")
     )
     .map((gym) => {

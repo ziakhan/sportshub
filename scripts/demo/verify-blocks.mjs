@@ -1901,21 +1901,31 @@ try {
   )
 
   /* ---- ruling #3: the same verb, with its name on it ---- */
-  // Six dots are a handle for somebody who already suspects there is one. Every
-  // gym section now carries a button that says what it does, and it arms exactly
-  // what the grip arms.
+  /**
+   * RE-PINNED 2026-08-06 (the move/dots restructure). "Move all…" is gone: it
+   * named a scope rather than a verb, and it hid the two places a block can
+   * actually go. Every gym section carries a MOVE button now, with exactly two
+   * rows behind it — another gym this weekend, or another weekend — and the
+   * second one arms the section exactly the way the grip does.
+   */
   const moveAll = at.locator(
-    `[data-testid="weekend-gym-section"][data-venue-id="${poolVenue.venueId}"] [data-testid="move-all"]`
+    `[data-testid="weekend-gym-section"][data-venue-id="${poolVenue.venueId}"] [data-testid="move-menu-trigger"]`
   )
   ok(
-    "every gym section carries an explicit Move all button beside its other verbs",
+    "every gym section carries an explicit Move button beside its other verbs",
     (await moveAll.count()) === 1,
     ((await moveAll.first().textContent().catch(() => "")) ?? "").trim()
   )
-  await moveAll.click()
-  await page.waitForTimeout(350)
+  /** Open Move and take the "another weekend" row, which is the arming path. */
+  const armViaMove = async () => {
+    await moveAll.click()
+    await page.waitForTimeout(250)
+    await page.locator('[data-testid="move-to-weekend"]').first().click()
+    await page.waitForTimeout(350)
+  }
+  await armViaMove()
   ok(
-    "tapping it arms the section exactly the way the grip does",
+    "its 'to another weekend' row arms the section exactly the way the grip does",
     (await page.locator('[data-testid="armed-section"]').count()) === 1 &&
       (await moveAll.getAttribute("aria-pressed")) === "true",
     (((await page.locator('[data-testid="armed-section"]').textContent()) ?? "").trim() || "").slice(0, 100)
@@ -1927,7 +1937,7 @@ try {
     "Escape puts it down again, the same as the grip",
     (await page.locator('[data-testid="armed-section"]').count()) === 0
   )
-  await moveAll.click()
+  await armViaMove()
   await page.waitForTimeout(350)
   const buttonDest = card(scene.other.sessionId).locator('[data-testid="move-section-here"]')
   ok("the destinations light up for it too", (await buttonDest.count()) === 1)

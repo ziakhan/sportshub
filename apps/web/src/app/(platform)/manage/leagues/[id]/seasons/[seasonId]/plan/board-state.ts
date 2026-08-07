@@ -25,6 +25,7 @@ import {
 import {
   bareWeekend,
   boardColumns,
+  gymRanks,
   strandedPlacements,
   weekendRooms,
   weekendGymHours,
@@ -774,8 +775,20 @@ export function useBoardState({
      * weekends, and the tray draws that as unpickable and says why.
      */
     const onSeason = new Map((venueGrid?.venues ?? []).map((v) => [v.venueId, v]))
+    /**
+     * THE LEAGUE'S OWN ORDER (owner ruling 2026-08-06). The colour order comes
+     * off the SEASON's grid, which knows nothing about how this plan ranked its
+     * pool; the plan's roster does, and it is the order the draw rents in, so it
+     * is the order the list is read in. Home first, always.
+     */
+    const rank = gymRanks(board?.gyms ?? [])
     return gyms.order
       .filter((g) => seen.has(g.venueId) || onSeason.has(g.venueId))
+      .sort(
+        (a, b) =>
+          (rank.get(a.venueId) ?? Number.MAX_SAFE_INTEGER) -
+          (rank.get(b.venueId) ?? Number.MAX_SAFE_INTEGER)
+      )
       .map((g) => {
         const row = onSeason.get(g.venueId)
         return {
@@ -790,7 +803,7 @@ export function useBoardState({
             | "pool",
         }
       })
-  }, [gyms.order, weekendById, venueGrid, fillsFirst])
+  }, [gyms.order, weekendById, venueGrid, fillsFirst, board])
 
   /**
    * The gyms in the roster that no weekend of this plan has (owner ruling

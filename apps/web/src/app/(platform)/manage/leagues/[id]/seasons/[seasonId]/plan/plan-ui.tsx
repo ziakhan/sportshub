@@ -1090,12 +1090,157 @@ export interface MoveTarget {
   /** What moving there would be: a booking the league has, one the solver
    *  assumed, or a claim the operator is making by choosing it. */
   status: "booked" | "assumed" | "asserts"
+  /** What this building is doing on this weekend, in the operator's words: what
+   *  it is already holding, or what taking it would mean. */
+  note: string
+  /** The games already in it leave no room. The ONE reason a row is refused
+   *  (owner ruling 2026-08-06): occupancy, never availability. */
+  full: boolean
 }
 
 const MOVE_STATUS: Record<MoveTarget["status"], { words: string; tone: string }> = {
   booked: { words: "booked", tone: "border-court-200 bg-court-50 text-court-800" },
   assumed: { words: "assumed", tone: "border-gold-400 bg-gold-50 text-ink-800" },
-  asserts: { words: "asserts availability", tone: "border-ink-200 bg-ink-50 text-ink-500" },
+  asserts: { words: "new booking", tone: "border-ink-200 bg-ink-50 text-ink-500" },
+}
+
+/**
+ * THE BUTTON MOVES THINGS; THE DOTS DESCRIBE THEM (owner ruling 2026-08-06).
+ *
+ * One control, two rows, and they are the only two places a block can go:
+ *
+ *  - ANOTHER GYM, THIS WEEKEND. Every gym in the roster, because availability
+ *    stopped being a gate: the ones this weekend already has show what they are
+ *    holding, and the ones it does not say what taking them would mean. Only
+ *    occupancy can grey a row out.
+ *  - ANOTHER WEEKEND. Not a list — a list of every Saturday times every gym is
+ *    not a menu — so it arms the section and the board lights the dates that can
+ *    take it. Tapping one lands it, exactly as the drag always did.
+ *
+ * It replaces "Move all…", which said what it did only if you already knew.
+ */
+export function MoveMenu({
+  gymName,
+  weekendLabel,
+  armed,
+  targets,
+  onMoveTo,
+  onArmForWeekend,
+}: {
+  gymName: string
+  weekendLabel: string
+  /** This section is already picked up and waiting for a date. */
+  armed: boolean
+  /** Worked out when the menu opens, so it never offers a room that has since
+   *  filled. Every roster gym, with what taking it would be. */
+  targets: () => MoveTarget[]
+  onMoveTo: (venueId: string) => void
+  onArmForWeekend: () => void
+}) {
+  return (
+    <ActionPopover
+      label={`Move the ${gymName} block on ${weekendLabel}`}
+      testId="move-menu"
+      width={300}
+      trigger={
+        <button
+          type="button"
+          data-testid="move-menu-trigger"
+          aria-pressed={armed}
+          className={`inline-flex min-h-[28px] cursor-pointer items-center rounded-md border px-2 text-[10.5px] font-bold shadow-sm transition-colors ${
+            armed
+              ? "border-play-500 bg-play-50 text-play-700 ring-play-400 ring-2"
+              : "border-ink-300 text-ink-700 hover:border-ink-400 hover:bg-ink-100 hover:text-ink-900 bg-white"
+          }`}
+        >
+          Move
+        </button>
+      }
+    >
+      {(close) => (
+        <MoveMenuBody
+          gymName={gymName}
+          targets={targets()}
+          onMoveTo={(venueId) => {
+            onMoveTo(venueId)
+            close()
+          }}
+          onArmForWeekend={() => {
+            onArmForWeekend()
+            close()
+          }}
+        />
+      )}
+    </ActionPopover>
+  )
+}
+
+function MoveMenuBody({
+  gymName,
+  targets,
+  onMoveTo,
+  onArmForWeekend,
+}: {
+  gymName: string
+  targets: MoveTarget[]
+  onMoveTo: (venueId: string) => void
+  onArmForWeekend: () => void
+}) {
+  return (
+    <div>
+      <p className="text-ink-500 mb-1.5 text-[11px] font-bold uppercase tracking-[0.06em]">
+        To another gym, this weekend
+      </p>
+      {targets.length === 0 ? (
+        <p className="text-ink-500 text-[11.5px]" data-testid="move-to-empty">
+          No other gym has room this weekend. Move it to another weekend instead, or add gym time.
+        </p>
+      ) : (
+        <div className="flex flex-col gap-1">
+          {targets.map((t) => (
+            <button
+              key={t.venueId}
+              type="button"
+              data-testid="move-to-option"
+              data-venue-id={t.venueId}
+              data-status={t.status}
+              disabled={t.full}
+              onClick={() => onMoveTo(t.venueId)}
+              className="border-ink-200 hover:border-court-400 hover:bg-court-50 flex min-h-[40px] w-full cursor-pointer items-center gap-2 rounded-lg border bg-white px-2 text-left transition-colors disabled:cursor-not-allowed disabled:opacity-45 disabled:hover:border-ink-200 disabled:hover:bg-white"
+            >
+              <span className="min-w-0 flex-1">
+                <span className="text-ink-900 block truncate text-[12px] font-bold">{t.name}</span>
+                <span className="text-ink-500 block text-[10.5px]">{t.note}</span>
+              </span>
+              <span
+                className={`shrink-0 rounded-full border px-1.5 py-0.5 text-[10.5px] font-bold ${MOVE_STATUS[t.status].tone}`}
+              >
+                {MOVE_STATUS[t.status].words}
+              </span>
+            </button>
+          ))}
+        </div>
+      )}
+      <div className="border-ink-100 mt-2.5 border-t pt-2.5">
+        <p className="text-ink-500 mb-1.5 text-[11px] font-bold uppercase tracking-[0.06em]">
+          To another weekend
+        </p>
+        <button
+          type="button"
+          data-testid="move-to-weekend"
+          onClick={onArmForWeekend}
+          className="border-ink-200 hover:border-court-400 hover:bg-court-50 flex min-h-[40px] w-full cursor-pointer items-center rounded-lg border bg-white px-2 text-left text-[12px] font-bold transition-colors"
+        >
+          <span>
+            Pick a date for the {gymName} block
+            <span className="text-ink-500 block text-[10.5px] font-semibold">
+              The dates that can take it light up. Tap one to land it.
+            </span>
+          </span>
+        </button>
+      </div>
+    </div>
+  )
 }
 
 export function GymMenu({
@@ -1106,11 +1251,9 @@ export function GymMenu({
   usedCourts,
   hours,
   hoursOverridden,
-  moveTargets,
   onCourts,
   onHours,
   onResetHours,
-  onMoveTo,
 }: {
   gymName: string
   weekendLabel: string
@@ -1124,17 +1267,13 @@ export function GymMenu({
   hours: { startTime: string; endTime: string }
   /** True when those hours are this date's own, not the gym's usual range. */
   hoursOverridden: boolean
-  /** The other buildings this block could move into on THIS weekend, worked out
-   *  when the menu opens so it never offers a room that has since filled. */
-  moveTargets?: () => MoveTarget[]
   onCourts: (courts: number) => void
   onHours: (startTime: string, endTime: string) => void
   onResetHours: () => void
-  onMoveTo?: (venueId: string) => void
 }) {
   return (
     <ActionPopover
-      label={`${gymName} on ${weekendLabel}: move it, or set its hours and courts`}
+      label={`${gymName} on ${weekendLabel}: its hours and its courts`}
       testId="gym-menu"
       width={284}
       trigger={
@@ -1154,14 +1293,6 @@ export function GymMenu({
           usedCourts={usedCourts}
           hours={hours}
           hoursOverridden={hoursOverridden}
-          moveTargets={moveTargets}
-          onMoveTo={
-            onMoveTo &&
-            ((venueId) => {
-              onMoveTo(venueId)
-              close()
-            })
-          }
           onCourts={(n) => {
             onCourts(n)
             close()
@@ -1188,11 +1319,9 @@ function GymMenuBody({
   usedCourts,
   hours,
   hoursOverridden,
-  moveTargets,
   onCourts,
   onHours,
   onResetHours,
-  onMoveTo,
 }: {
   gymName: string
   weekendLabel: string
@@ -1212,48 +1341,19 @@ function GymMenuBody({
   const [end, setEnd] = useState(hours.endTime)
   const step = (delta: number) => setHeld((n) => Math.max(0, Math.min(wired, n + delta)))
   const badWindow = start >= end
-  const targets = moveTargets ? moveTargets() : []
   return (
     <div>
-      {/* MOVE IT, FIRST (owner ruling 2026-08-06, #4). Same weekend only: every
-          other building in the roster with room for these games, priced in the
-          courts it would take and honest about what booking it would be. */}
-      {onMoveTo && (
-        <div className="border-ink-100 mb-2.5 border-b pb-2.5" data-testid="move-to">
-          <p className="text-ink-500 mb-1.5 text-[11px] font-bold uppercase tracking-[0.06em]">
-            Move to another gym
-          </p>
-          {targets.length === 0 ? (
-            <p className="text-ink-500 text-[11.5px]" data-testid="move-to-empty">
-              No other gym has room this weekend. Drag to another weekend, or add gym time.
-            </p>
-          ) : (
-            <div className="flex flex-col gap-1">
-              {targets.map((t) => (
-                <button
-                  key={t.venueId}
-                  type="button"
-                  data-testid="move-to-option"
-                  data-venue-id={t.venueId}
-                  data-status={t.status}
-                  onClick={() => onMoveTo(t.venueId)}
-                  className="border-ink-200 hover:border-court-400 hover:bg-court-50 flex min-h-[36px] cursor-pointer items-center gap-2 rounded-lg border bg-white px-2 text-left transition-colors"
-                >
-                  <span className="text-ink-900 text-[12px] font-bold">{t.name}</span>
-                  <span className="text-ink-500 text-[11px] tabular-nums">
-                    {courtsWord(t.courts)}
-                  </span>
-                  <span
-                    className={`ml-auto rounded-full border px-1.5 py-0.5 text-[10.5px] font-bold ${MOVE_STATUS[t.status].tone}`}
-                  >
-                    {MOVE_STATUS[t.status].words}
-                  </span>
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
+      {/* THE DOTS DESCRIBE THINGS; THE BUTTON MOVES THEM (owner ruling
+          2026-08-06). Move used to live in here, which put a verb inside a menu
+          of facts and left the operator hunting for it. It is its own control on
+          the section header now, and everything left here is about this gym on
+          this date and changes nothing about where anything plays. */}
+      <p
+        className="text-ink-400 mb-1.5 text-[11px] font-bold uppercase tracking-[0.06em]"
+        data-testid="gym-menu-group"
+      >
+        This gym, this date
+      </p>
       <p className="text-ink-900 text-[12.5px] font-bold">
         {gymName} on {weekendLabel}
       </p>

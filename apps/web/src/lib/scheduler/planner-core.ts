@@ -112,6 +112,27 @@ export function planningSource(
 export type VenueRole = "home" | "pool"
 
 export interface PlannerVenue {
+  /**
+   * WHERE THIS BUILDING SITS IN THE LEAGUE'S OWN ORDER (owner ruling
+   * 2026-08-06): 0 is the gym it owns, then the pool in the order the operator
+   * put them in on step 2. It is a PREFERENCE, never a gate — occupancy is the
+   * only gate — and it decides two things: which building the solver reaches for
+   * when the money ties, and the order gyms are drawn in everywhere.
+   *
+   * Absent on a world nobody has ordered, where it reads as "after everything
+   * ranked", so an older plan behaves exactly as it did.
+   */
+  rank?: number
+  /**
+   * THIS IS A BOOKING THE LEAGUE HAS (owner ruling 2026-08-06: confirmed
+   * bookings are OBLIGATIONS). True when the plan really holds this gym on this
+   * weekend — declared on step 2, or placed by the operator's own hand — as
+   * opposed to a room the solver is merely allowed to book.
+   *
+   * The league is already paying for it, so the objective treats leaving it
+   * empty as a real cost. Absent means "a room, not a booking".
+   */
+  booked?: boolean
   venueId: string
   name: string
   capacityGames: number
@@ -208,10 +229,23 @@ function venueOf(venues: PlannerVenue[], venueId: string): PlannerVenue | undefi
  * as a preference (2026-08-03) — this is presentation and determinism, not a
  * fill rule, and the packer never reads it.
  */
+export const UNRANKED = Number.MAX_SAFE_INTEGER
+
+/** The league's own order for one building, or "after everything ranked". */
+export const rankOf = (venue: Pick<PlannerVenue, "rank">): number => venue.rank ?? UNRANKED
+
+/**
+ * THE LEAGUE'S OWN ORDER (owner ruling 2026-08-06: "select the home, then the
+ * next one, and the following one"). Home first, then the rank the operator put
+ * the pool in on step 2, and only then the old fallbacks for a world nobody has
+ * ordered. Alphabetical is gone as anything but a last resort: it is why a draw
+ * booked Haber over Six Park for no reason anybody could name.
+ */
 export function orderedVenues(venues: PlannerVenue[]): PlannerVenue[] {
   return [...venues].sort(
     (a, b) =>
       (a.role === "home" ? 0 : 1) - (b.role === "home" ? 0 : 1) ||
+      rankOf(a) - rankOf(b) ||
       b.capacityGames - a.capacityGames ||
       a.name.localeCompare(b.name, "en") ||
       (a.venueId < b.venueId ? -1 : a.venueId > b.venueId ? 1 : 0)
@@ -842,17 +876,33 @@ export function expectedTeamUpdates(
  * The order the terms outrank each other, and WHY each gap is the size it is:
  *
  *   1. overflow            1,000,000 a game   a game with no court is not a plan
- *   2. a weekend used        100,000 a weekend bundle the month up
- *   3. A RENTAL BOOKING       25,000 a booking one big rental, not three small
- *   4. a rented court-day      1,000 a court-day then buy the cheapest rooms
- *   5. back-to-back weekends  10,000 a grade   never two Saturdays in a row
- *   6. peak games                100 a game    then keep the busiest day sane
- *   7. the two giants apart        40          then the small courtesies
- *   8. a residency switch            5
+ *   2. AN IDLE CONFIRMED BOOKING 150,000 a booking  you are paying for it already
+ *   3. a weekend used        100,000 a weekend bundle the month up
+ *   4. A RENTAL BOOKING       25,000 a booking one big rental, not three small
+ *   5. AN EMPTY CONFIRMED COURT-DAY 3,000 a court-day fill what you booked first
+ *   6. a rented court-day      1,000 a court-day then buy the cheapest rooms
+ *   7. back-to-back weekends  10,000 a grade   never two Saturdays in a row
+ *   8. peak games                100 a game    then keep the busiest day sane
+ *   9. the two giants apart        40          then the small courtesies
+ *  10. a residency switch            5
  *
- * (5 sits out of numeric order on purpose: it is ranked between a booking and
+ * (7 sits out of numeric order on purpose: it is ranked between a booking and
  * a court-day by INTENT — it may spend courts to separate two weekends, never a
  * booking — and its number only has to beat the tiebreaks under it.)
+ *
+ * WHY THE TWO CONFIRMED TERMS SIT WHERE THEY DO (owner ruling 2026-08-06:
+ * "confirmed bookings are obligations"). A booking the league has already made
+ * is money out of the door whether anybody plays in it or not, so an empty one
+ * is not a saving, it is waste:
+ *
+ *  - AN IDLE CONFIRMED BOOKING (2) outranks a weekend, so no lever — spread
+ *    included — may strand a booked weekend to lay the season out flat. It sits
+ *    UNDER overflow, because a game nobody can play is still worse than a room
+ *    nobody used.
+ *  - AN EMPTY CONFIRMED COURT-DAY (5) outranks a rented one (6) three to one, so
+ *    the search fills space it has paid for before it rents any more, and sits
+ *    UNDER a booking (4) so it can never buy one. That is "consume confirmed
+ *    capacity before creating an assumed booking", as arithmetic.
  */
 
 /**
@@ -905,6 +955,50 @@ const RENTED_COURT_DAY_COST = 1_000
  *      let the operator split it later if the gym asks them to.
  */
 const RENTAL_BLOCK_COST = 25_000
+
+/**
+ * A CONFIRMED BOOKING WITH NOTHING IN IT (owner ruling 2026-08-06). The league
+ * phoned that gym, holds that Saturday and is paying for it. Leaving it idle to
+ * play somewhere else is the one waste the operator can see on their own bank
+ * statement, so it costs more than opening a weekend (100,000) and less than a
+ * game nobody can play (1,000,000).
+ *
+ * This is what makes SPREAD safe: laying the season out flat may rearrange the
+ * grades inside the weekends the league has booked, and may never walk away from
+ * one to use a Saturday it has not.
+ */
+const IDLE_CONFIRMED_BOOKING_COST = 150_000
+
+/**
+ * THE RENTALS THIS WEEKEND HAS ALREADY BOOKED (owner ruling 2026-08-06). Pool
+ * gyms the plan really holds here — declared on step 2, or placed by the
+ * operator's own hand — with the court-days behind them.
+ *
+ * The home gym is deliberately not in it: the league owns that building, there
+ * is no booking to waste, and its court-days cost nothing either way.
+ */
+function confirmedRentals(weekend: Pick<PlannerWeekend, "venues">): {
+  venues: Array<{ venueId: string; courtDays: number }>
+  bookings: number
+  courtDays: number
+} {
+  const venues = weekend.venues
+    .filter((v) => v.booked === true && v.role === "pool")
+    .map((v) => ({ venueId: v.venueId, courtDays: v.courtDays ?? 0 }))
+  return {
+    venues,
+    bookings: venues.length,
+    courtDays: venues.reduce((sum, v) => sum + v.courtDays, 0),
+  }
+}
+
+/**
+ * A CONFIRMED COURT-DAY NOBODY USED (owner ruling 2026-08-06). Three times what
+ * renting a fresh one costs (1,000), so the search always fills space the league
+ * has paid for before it books anything new — and well under a booking (25,000),
+ * so it can never buy one of those to avoid a little slack.
+ */
+const UNUSED_CONFIRMED_COURT_DAY_COST = 3_000
 
 /**
  * What a residency switch costs now: a tiebreak, and nothing more. Five is
@@ -1278,6 +1372,7 @@ export function packWeekendVenues(
     let pick = -1
     let pickCost = Infinity
     let pickResident = false
+    let pickRank = UNRANKED
     let pickName = ""
     for (let k = 0; k < venues.length; k++) {
       const venue = venues[k]
@@ -1293,16 +1388,30 @@ export function packWeekendVenues(
       const marginal = courtDaysNeeded(venue, load[k] + games) - courtDaysNeeded(venue, load[k])
       const cost = marginal * RENTED_COURT_DAY_COST + (opened[k] ? 0 : RENTAL_BLOCK_COST)
       const isResident = wasIndex === k
+      const rank = rankOf(venue)
+      /**
+       * SAME MONEY, THE LEAGUE'S OWN ORDER (owner ruling 2026-08-06). Residency
+       * first, because moving a grade costs it something real; then the gym the
+       * operator ranked higher on step 2.
+       *
+       * This used to break ties on the gym's NAME, which is how a draw came back
+       * having booked Haber over Six Park: identical capacity, identical cost,
+       * and H sorts before S. Rank never beats money — a cheaper booking still
+       * wins outright — it only decides which of two equal answers to take.
+       */
       const better =
         cost < pickCost ||
-        // Same money: honour residency, then the gym whose name sorts first, so
-        // the answer never wobbles.
         (cost === pickCost &&
-          (isResident !== pickResident ? isResident : venue.name.localeCompare(pickName, "en") < 0))
+          (isResident !== pickResident
+            ? isResident
+            : rank !== pickRank
+              ? rank < pickRank
+              : venue.name.localeCompare(pickName, "en") < 0))
       if (pick < 0 || better) {
         pick = k
         pickCost = cost
         pickResident = isResident
+        pickRank = rank
         pickName = venue.name
       }
     }
@@ -2391,14 +2500,46 @@ export function proposePlan(state: PlannerState, lever: PlannerLever): Record<st
       let venueCost = 0
       if (venueAware) {
         for (let k = 0; k < n; k++) {
-          if (buckets[k].length === 0) continue
+          /**
+           * A CONFIRMED BOOKING IS AN OBLIGATION (owner ruling 2026-08-06). It is
+           * charged whether this candidate uses the weekend or not: a month that
+           * leaves a booked Saturday empty is a month wasting money the league has
+           * already spent, and that has to be visible to the search even when the
+           * bucket is empty. This is what stops SPREAD from walking away from a
+           * booking to lay the season out flat.
+           */
+          const owed = confirmedRentals(win.weekends[k])
+          if (buckets[k].length === 0) {
+            venueCost += owed.bookings * IDLE_CONFIRMED_BOOKING_COST
+            venueCost += owed.courtDays * UNUSED_CONFIRMED_COURT_DAY_COST
+            continue
+          }
           const packed = packWeekendVenues(buckets[k], win.weekends[k], resident)
           // A booking is one rented building on one weekend. The empty block —
           // demand with no building at all — is not one: it is already charged
           // as overflow, and billing it twice would let the search buy its way
           // out of a hole by leaving games homeless.
           const bookings = packed.blocks.reduce((sum, b) => sum + (b.venueId ? 1 : 0), 0)
+          /**
+           * What this weekend used of the space it had already booked, so the
+           * rest can be charged as the waste it is. A confirmed building the
+           * packing never opened is an IDLE booking; one it opened and half
+           * filled leaves empty court-days behind.
+           */
+          let usedConfirmedCourtDays = 0
+          let idleConfirmed = 0
+          for (const rental of owed.venues) {
+            const block = packed.blocks.find((b) => b.venueId === rental.venueId)
+            if (!block) {
+              idleConfirmed++
+              continue
+            }
+            usedConfirmedCourtDays += Math.min(rental.courtDays, block.courtDays)
+          }
           venueCost +=
+            idleConfirmed * IDLE_CONFIRMED_BOOKING_COST +
+            Math.max(0, owed.courtDays - usedConfirmedCourtDays) *
+              UNUSED_CONFIRMED_COURT_DAY_COST +
             bookings * RENTAL_BLOCK_COST +
             packed.rentedCourtDays * RENTED_COURT_DAY_COST +
             packed.violations * RESIDENCY_SWITCH_COST

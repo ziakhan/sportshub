@@ -34,6 +34,7 @@ import {
   BlockStatusMark,
   Fraction,
   GymMenu,
+  MoveMenu,
   type MoveTarget,
   SplitMenu,
   WhyPopover,
@@ -281,8 +282,15 @@ export function WeekendCard({
         ])
       )
     )
+    /**
+     * EVERY GYM IN THE ROSTER (owner ruling 2026-08-06). The ones this weekend
+     * already has say what they are holding; the ones it does not say what
+     * taking them would mean. Nothing is hidden for being unbooked — that is
+     * availability, and availability is not a gate — and the only row that
+     * cannot be tapped is one whose games leave no room.
+     */
     return free
-      .filter((r) => r.venueId !== fromVenueId && r.freeGames >= games)
+      .filter((r) => r.venueId !== fromVenueId)
       .map((r) => {
         const venue = weekend.venues.find((v) => v.venueId === r.venueId)
         const status: MoveTarget["status"] = !venue
@@ -290,11 +298,16 @@ export function WeekendCard({
           : statusOf(weekend.sessionId, r.venueId) === "assumed"
             ? "assumed"
             : "booked"
+        const perCourt = Math.max(1, r.capacityGames / Math.max(1, r.courts))
         return {
           venueId: r.venueId,
           name: venueShortName(r.name),
-          courts: venue ? courtsNeeded(venue, games) : Math.max(1, Math.ceil(games / Math.max(1, r.capacityGames / Math.max(1, r.courts)))),
+          courts: venue ? courtsNeeded(venue, games) : Math.max(1, Math.ceil(games / perCourt)),
           status,
+          note: venue
+            ? `${plural(r.usedGames, "game", "games")} here now, room for ${r.freeGames} more`
+            : "New booking, placing asserts availability",
+          full: r.freeGames < games,
         }
       })
   }
@@ -982,29 +995,27 @@ export function WeekendCard({
                  * whatever else was held, which is the board's standing rule of
                  * one thing at a time.
                  */}
+                {/* THE BUTTON MOVES THINGS (owner ruling 2026-08-06). It
+                    replaces "Move all…", which named a scope rather than a verb
+                    and hid the two destinations behind knowing to press it. */}
                 {canMoveAll && (
-                  <button
-                    type="button"
-                    data-testid="move-all"
-                    aria-pressed={Boolean(armedHere)}
-                    aria-label={`Move all ${section.unitKeys.length} grades at ${venueShortName(section.name)} on ${weekend.label}`}
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      onArmSection(armedHere ? null : asArmed())
-                    }}
-                    className={`inline-flex min-h-[28px] cursor-pointer items-center rounded-md border px-2 text-[10.5px] font-bold shadow-sm transition-colors ${
-                      armedHere
-                        ? "border-play-500 bg-play-50 text-play-700 ring-play-400 ring-2"
-                        : "border-ink-300 text-ink-700 hover:border-ink-400 hover:bg-ink-100 hover:text-ink-900 bg-white"
-                    }`}
-                  >
-                    {/* The label only swaps for the TAP path. Mid-drag it must
-                        not: a wider word here re-wraps this row, the card grows,
-                        and every weekend under it slides out from under the
-                        cursor that is dragging onto them (owner ruling
-                        2026-08-05, #1 — the same reason the offers stay shut). */}
-                    {armedHere && !dragging ? "Pick somewhere" : "Move all…"}
-                  </button>
+                  <MoveMenu
+                    gymName={venueShortName(section.name)}
+                    weekendLabel={weekend.label}
+                    armed={Boolean(armedHere)}
+                    targets={() =>
+                      moveTargetsFor(section.venueId, section.unitKeys, games)
+                    }
+                    onMoveTo={(venueId) =>
+                      onMoveSection(
+                        section.unitKeys,
+                        weekend.sessionId,
+                        weekend.sessionId,
+                        venueId
+                      )
+                    }
+                    onArmForWeekend={() => onArmSection(armedHere ? null : asArmed())}
+                  />
                 )}
                 {/* EVERYTHING ABOUT THIS GYM ON THIS DATE (owner ruling
                     2026-08-06, #5): its hours and its courts, both ways, in a ⋯
@@ -1020,24 +1031,6 @@ export function WeekendCard({
                     usedCourts={usedCourts}
                     hours={hoursHere}
                     hoursOverridden={hoursHere.custom}
-                    /* SOMEWHERE ELSE THIS WEEKEND (owner ruling 2026-08-06, #4).
-                       Worked out when the menu opens, off the same rooms
-                       arithmetic every drop is measured against, so it can never
-                       offer a building the move would then refuse. */
-                    moveTargets={() =>
-                      moveTargetsFor(section.venueId, section.unitKeys, games)
-                    }
-                    onMoveTo={
-                      section.unitKeys.length > 0
-                        ? (venueId) =>
-                            onMoveSection(
-                              section.unitKeys,
-                              weekend.sessionId,
-                              weekend.sessionId,
-                              venueId
-                            )
-                        : undefined
-                    }
                     onCourts={(n) => onCorrectCourts(weekend.sessionId, section.venueId, n)}
                     onHours={(startTime, endTime) =>
                       onSetHours(weekend.sessionId, section.venueId, { startTime, endTime })

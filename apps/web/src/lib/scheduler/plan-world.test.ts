@@ -1,14 +1,19 @@
 import { describe, expect, it } from "vitest"
 import type { PlanWorld, PlanWorldGym } from "./plan-documents"
 import {
+  courtCapKey,
   packPlanVenues,
   planRentalBlocks,
   proposePlan,
   rentalAsk,
   type PlannerState,
+  type PlannerWeekend,
 } from "./planner-core"
 import {
+  bookingStatusFor,
   drawnGyms,
+  gymRanks,
+  withGymOrder,
   fencedWindowLabels,
   windowFenced,
   withWindowPhase,
@@ -1587,5 +1592,202 @@ describe("availability is not a restriction", () => {
     // The home gym is never "assumed": nobody phones their own building.
     expect(drawn.assumed).toEqual([{ sessionId: "w-oct", venueId: "v-pool" }])
     expect(drawn.added["w-oct"]).toEqual(["v-pool"])
+  })
+})
+
+/**
+ * THE ORDER THE LEAGUE RENTS IN (owner ruling 2026-08-06, after he watched a
+ * draw book Haber for no reason he could name).
+ *
+ * The solver used to break equal bookings on the gym's NAME, so "Haber" beat
+ * "Six Park" every time regardless of what the league wanted. Rank replaces
+ * that: the home gym first, then the pool in the order the operator arranged.
+ * It is a preference and never a gate — occupancy is the only gate — and it must
+ * never buy a worse booking.
+ */
+describe("the order the league rents in", () => {
+  const HABER: PlanWorldGym = {
+    venueId: "v-haber",
+    name: "Haber Recreation Centre",
+    role: "pool",
+    courts: 6,
+    openTime: "08:00",
+    closeTime: "20:00",
+  }
+  /** Home, then two pool gyms of IDENTICAL capacity: the owner's own case, where
+   *  nothing but the order can decide. */
+  function twoPool(): PlanWorld {
+    return { ...world(), gyms: [HOME, HABER, { ...POOL, courts: 6 }] }
+  }
+  const stateOf = (w: PlanWorld) =>
+    planStateFrom("s1", { settings: { capturedAt: "x", state: w } }) as PlannerState
+
+  it("ranks the home gym first and the pool in its stored order", () => {
+    expect([...gymRanks(twoPool().gyms as PlanWorldGym[]).entries()]).toEqual([
+      ["v-home", 0],
+      ["v-haber", 1],
+      ["v-pool", 2],
+    ])
+    // Home is never in the ordering: it is first because the league owns it.
+    const flipped = { ...twoPool(), gyms: [HABER, { ...POOL, courts: 6 }, HOME] }
+    expect(gymRanks(flipped.gyms as PlanWorldGym[]).get("v-home")).toBe(0)
+  })
+
+  it("moves a gym up and down the list, and stops at the ends", () => {
+    const up = withGymOrder(twoPool(), "v-pool", "up")
+    expect(worldGyms(up).map((g) => g.venueId)).toEqual(["v-home", "v-pool", "v-haber"])
+    // Already top of the pool: nothing to do, and the same object comes back.
+    expect(withGymOrder(up, "v-pool", "up")).toBe(up)
+    const down = withGymOrder(up, "v-pool", "down")
+    expect(worldGyms(down).map((g) => g.venueId)).toEqual(["v-home", "v-haber", "v-pool"])
+    expect(withGymOrder(down, "v-pool", "down")).toBe(down)
+    // An absolute seat works too, and the home gym is never displaced.
+    expect(worldGyms(withGymOrder(down, "v-pool", 0)).map((g) => g.venueId)).toEqual([
+      "v-home",
+      "v-pool",
+      "v-haber",
+    ])
+    // A gym this plan does not have is not a move.
+    expect(withGymOrder(down, "v-nope", "up")).toBe(down)
+  })
+
+  /** THE OWNER'S CASE, pinned both ways round. */
+  it("breaks an equal booking on rank, not on the gym's name", () => {
+    // 100 teams is 100 games; the home gym holds 72, so exactly one pool gym
+    // gets booked and the two of them are worth precisely the same.
+    const big = (w: PlanWorld) => withUnitTeams(w, "age:Grade 7", 100)
+    const bookedIn = (w: PlanWorld) => {
+      const state = stateOf(big(w))
+      const runs = solvableState(state)
+      const assignment = proposePlan(runs, "balance")
+      const venues = packPlanVenues(runs, assignment)
+      return drawnGyms(state, assignment, venues).assumed.map((a) => a.venueId)
+    }
+    // Six Park ranked above Haber: Six Park takes the booking, even though
+    // "Haber" sorts first alphabetically.
+    expect(bookedIn(withGymOrder(twoPool(), "v-pool", "up"))).toEqual(["v-pool"])
+    // And the other way round, so this is the order and not a coincidence.
+    expect(bookedIn(twoPool())).toEqual(["v-haber"])
+  })
+
+  it("never buys a worse booking for the sake of rank", () => {
+    // Six Park is ranked FIRST but holds almost nothing; Haber can take the
+    // whole spill in one booking. Money outranks preference, so Haber wins.
+    const small = { ...POOL, courts: 1 }
+    const w: PlanWorld = { ...world(), gyms: [HOME, small, HABER] }
+    const state = stateOf(withUnitTeams(w, "age:Grade 7", 100))
+    const runs = solvableState(state)
+    const assignment = proposePlan(runs, "balance")
+    const venues = packPlanVenues(runs, assignment)
+    const booked = new Set(Object.values(venues["w-oct"] ?? {}))
+    expect(booked.has("v-haber")).toBe(true)
+  })
+
+  it("survives a save and a reopen", () => {
+    const ordered = withGymOrder(twoPool(), "v-pool", "up")
+    const saved = worldFromState(stateOf(ordered))
+    expect(worldGyms(saved).map((g) => g.venueId)).toEqual(["v-home", "v-pool", "v-haber"])
+    // And the rank reaches the rows the solver reads.
+    const reopened = stateOf(saved)
+    expect(reopened.windows[0].weekends[0].venues[0].rank).toBe(0)
+  })
+})
+
+/**
+ * CONFIRMED BOOKINGS ARE OBLIGATIONS (owner ruling 2026-08-06).
+ *
+ * A weekend the league has already booked is money out of the door whether
+ * anybody plays in it or not. So the solve fills what is paid for BEFORE it
+ * assumes anything new, and no lever — spread included — may walk away from a
+ * booking to use a Saturday the league has not booked.
+ */
+describe("confirmed bookings are obligations", () => {
+  const HABER: PlanWorldGym = {
+    venueId: "v-haber",
+    name: "Haber Recreation Centre",
+    role: "pool",
+    courts: 6,
+    openTime: "08:00",
+    closeTime: "20:00",
+  }
+  /**
+   * Two weekends in one month, both chosen. Six Park is BOOKED on the second
+   * one and nowhere else; Haber is in the roster and booked nowhere at all.
+   */
+  function booked(): PlanWorld {
+    const base: PlanWorld = {
+      ...world(),
+      gyms: [HOME, { ...POOL, courts: 6 }, HABER],
+      units: [
+        { key: "age:Grade 7", label: "Grade 7", divisionIds: ["d7"], teams: 100, included: true },
+      ],
+    }
+    // Both weekends run; the second carries the confirmed Six Park booking.
+    return withGymOnWeekend(withWeekendChosen(base, "w-nov", true), "w-nov", "v-pool", true)
+  }
+  const stateOf = (w: PlanWorld) =>
+    planStateFrom("s1", { settings: { capturedAt: "x", state: w } }) as PlannerState
+  const drawWith = (w: PlanWorld, lever: "balance" | "spread") => {
+    const state = stateOf(w)
+    const runs = solvableState(state)
+    const assignment = proposePlan(runs, lever)
+    const venues = packPlanVenues(runs, assignment)
+    return { state, assignment, venues, drawn: drawnGyms(state, assignment, venues) }
+  }
+
+  it("marks what the plan holds as booked, and what the draw may take as not", () => {
+    const runs = solvableState(stateOf(booked()))
+    const nov = runs.windows[0].weekends.find((w) => w.sessionId === "w-nov") as PlannerWeekend
+    const six = nov.venues.find((v) => v.venueId === "v-pool")
+    const haber = nov.venues.find((v) => v.venueId === "v-haber")
+    expect(six?.booked).toBe(true)
+    expect(haber?.booked).toBeFalsy()
+  })
+
+  it("fills the booked weekend rather than assuming a new gym beside it", () => {
+    const { assignment, venues, drawn } = drawWith(booked(), "balance")
+    // The booked weekend is used.
+    expect(assignment["w-nov"] ?? []).toContain("age:Grade 7")
+    // And Six Park, which is paid for, is where the spill went: Haber is never
+    // assumed while booked time sits idle.
+    expect(Object.values(venues["w-nov"] ?? {})).toContain("v-pool")
+    expect(drawn.assumed.map((a) => a.venueId)).not.toContain("v-haber")
+  })
+
+  it("spread never abandons a confirmed booking for an unbooked weekend", () => {
+    const { assignment } = drawWith(booked(), "spread")
+    // Spread lays the season out flat, and the booked Saturday is not the one
+    // it is allowed to drop to do it.
+    expect((assignment["w-nov"] ?? []).length).toBeGreaterThan(0)
+  })
+})
+
+/**
+ * THE STATUS INVERSION (owner ruling 2026-08-06). Who put the booking down
+ * decides what it is, and the two answers are opposites.
+ */
+describe("who booked it decides what it is", () => {
+  it("marks what the DRAW booked as assumed, and what the OPERATOR did as confirmed", () => {
+    expect(bookingStatusFor("draw")).toBe("assumed")
+    expect(bookingStatusFor("operator")).toBe("confirmed")
+  })
+
+  it("keys a booking the same way the courts and the hours are keyed", () => {
+    // One gym, one weekend, one string. courtCapKey is the scheme; the board's
+    // blockKey builds the identical thing, so the three working-copy maps can
+    // never drift into two vocabularies.
+    expect(courtCapKey("w-oct", "v-pool")).toBe("w-oct|v-pool")
+  })
+
+  it("never calls the league's own building an assumption", () => {
+    // The home gym is not a rental, so a draw that fills it has nobody to phone.
+    const state = planStateFrom("s1", {
+      settings: { capturedAt: "x", state: world() },
+    }) as PlannerState
+    const runs = solvableState(state)
+    const assignment = proposePlan(runs, "balance")
+    const venues = packPlanVenues(runs, assignment)
+    const drawn = drawnGyms(state, assignment, venues)
+    expect(drawn.assumed.map((a) => a.venueId)).not.toContain("v-home")
   })
 })

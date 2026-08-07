@@ -19,6 +19,7 @@ import {
   withGymCourts,
   withGymHours,
   withGymOnWeekend,
+  withGymOrder,
   withGymRole,
   withWeekend,
   withWeekendChosen,
@@ -360,6 +361,24 @@ export function GymsWeekendsStep({
           names || "a court"
         } because a game is already scheduled there.`
       }
+    )
+  }
+
+  /**
+   * THE ORDER THE LEAGUE RENTS IN (owner ruling 2026-08-06: "select the home,
+   * then the next one, and the following one").
+   *
+   * A preference, never a gate. When two gyms would cost the draw the same, it
+   * takes the one nearer the top of this list; before this, it took whichever
+   * name sorted first, which is how a plan came back having booked Haber over
+   * Six Park for no reason anybody could name.
+   */
+  const moveGym = async (venue: VenueGridRow, direction: "up" | "down") => {
+    if (readOnly || !onPlanWorld) return
+    await saveWorld(
+      withGymOrder(world(), venue.venueId, direction),
+      `${venue.seasonVenueId}:rank`,
+      `${venue.name} moved ${direction} your rental order.`
     )
   }
 
@@ -791,6 +810,11 @@ export function GymsWeekendsStep({
               .map((c) => c.sessionId as string)
           )
           const bookedCount = bookedSessions.size
+          /** Where this gym sits in the league's rental order, among the POOL
+           *  only: the home gym is not in the ordering, it is simply first. */
+          const poolRows = grid.venues.filter((v) => v.role !== "home")
+          const poolAt = poolRows.findIndex((v) => v.venueId === venue.venueId)
+          const canRank = onPlanWorld && !readOnly && !isHome && poolRows.length > 1
 
           return (
             <div
@@ -815,6 +839,44 @@ export function GymsWeekendsStep({
                 >
                   {isHome ? "Home gym" : "In the pool"}
                 </span>
+                {/* THE ORDER THE LEAGUE RENTS IN (owner ruling 2026-08-06).
+                    Two 44px controls on the card they are about, because the
+                    thing being ordered is the card. */}
+                {canRank && (
+                  <span
+                    role="group"
+                    aria-label={`Where ${venue.name} sits in your rental order`}
+                    className="border-ink-300 inline-flex h-9 items-center rounded-lg border bg-white shadow-sm"
+                  >
+                    <button
+                      type="button"
+                      data-testid="gym-rank-up"
+                      data-venue-id={venue.venueId}
+                      disabled={busy !== null || poolAt <= 0}
+                      onClick={() => void moveGym(venue, "up")}
+                      aria-label={`Rent from ${venue.name} sooner`}
+                      title={`Rent from ${venue.name} sooner`}
+                      className="text-ink-700 hover:bg-ink-100 hover:text-ink-900 h-full min-w-[44px] cursor-pointer rounded-l-lg text-base font-bold transition-colors disabled:cursor-not-allowed disabled:opacity-40"
+                    >
+                      ↑
+                    </button>
+                    <span className="text-ink-500 min-w-[26px] text-center text-[11px] font-bold tabular-nums">
+                      {poolAt + 1}
+                    </span>
+                    <button
+                      type="button"
+                      data-testid="gym-rank-down"
+                      data-venue-id={venue.venueId}
+                      disabled={busy !== null || poolAt >= poolRows.length - 1}
+                      onClick={() => void moveGym(venue, "down")}
+                      aria-label={`Rent from ${venue.name} later`}
+                      title={`Rent from ${venue.name} later`}
+                      className="text-ink-700 hover:bg-ink-100 hover:text-ink-900 h-full min-w-[44px] cursor-pointer rounded-r-lg text-base font-bold transition-colors disabled:cursor-not-allowed disabled:opacity-40"
+                    >
+                      ↓
+                    </button>
+                  </span>
+                )}
                 {!isHome && !readOnly && (
                   <button
                     type="button"
@@ -832,6 +894,11 @@ export function GymsWeekendsStep({
                   ? "You own this one. Its games cost you nothing, so it gets used before anything you rent."
                   : "In the pool. You rent it by the court when a weekend needs the space."}
               </p>
+              {canRank && (
+                <p className="text-ink-400 mt-0.5 text-[11.5px]" data-testid="rank-hint">
+                  The planner rents from the top of this list first.
+                </p>
+              )}
 
               {/* Courts stay a fact; hours are ONE range for the whole season. */}
               <div
@@ -966,8 +1033,8 @@ export function GymsWeekendsStep({
                     <div data-testid="bookings-picker" className="mt-2.5">
                       <p className="text-ink-500 mb-2 text-[11.5px]">
                         Tick the weekends you have already booked at {venue.name}. Each one is the
-                        full day and every court, and the planner will use them before it books
-                        anything new.
+                        full day and every court. These count as confirmed bookings. The planner
+                        treats them as paid for and fills them first.
                       </p>
                       <div className="flex flex-wrap gap-1.5">
                         {weekends

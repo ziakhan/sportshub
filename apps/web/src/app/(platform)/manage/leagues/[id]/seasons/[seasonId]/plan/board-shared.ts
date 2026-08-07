@@ -79,6 +79,10 @@ export const COPY = {
    *  2026-08-06), so the gold blocks that appeared are never a surprise. */
   drawnAssumed: (gyms: string) =>
     `It booked ${gyms} where your own gym ran out. Those are assumed until you confirm them.`,
+  /** Said when the draw used gym time the league had ALREADY booked, so the
+   *  operator can see their own bookings being spent before anything new is
+   *  assumed (owner ruling 2026-08-06, confirmed bookings are obligations). */
+  drawnBooked: (gyms: string) => `It filled the time you have booked at ${gyms} first.`,
   redrawn:
     "Redrawn from your weekends and your gyms. The plan you saved has not changed until you save this.",
   resolved:

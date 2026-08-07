@@ -21,6 +21,7 @@ import {
 } from "@/lib/scheduler/planner-core"
 import type { WindowPhase } from "@/lib/scheduler/plan-documents"
 import {
+  bookingStatusFor,
   drawnGyms,
   solvableState,
   weekendRooms,
@@ -676,7 +677,12 @@ export function useBoardVerbs(m: BoardModel) {
       setBlockStatus((prev) => ({
         ...prev,
         ...Object.fromEntries(
-          asserted.map((venueId) => [blockKey(toSessionId, venueId), "confirmed" as BlockStatus])
+          // The OPERATOR moved this, so they checked (owner ruling 2026-08-06,
+          // the status inversion): confirmed, and silent.
+          asserted.map((venueId) => [
+            blockKey(toSessionId, venueId),
+            bookingStatusFor("operator") as BlockStatus,
+          ])
         ),
       }))
     }
@@ -770,7 +776,10 @@ export function useBoardVerbs(m: BoardModel) {
     // the league's own gym is not in the list, because nobody phones their own.
     setBlockStatus(
       Object.fromEntries(
-        next.drawn.assumed.map((a) => [blockKey(a.sessionId, a.venueId), "assumed" as BlockStatus])
+        next.drawn.assumed.map((a) => [
+          blockKey(a.sessionId, a.venueId),
+          bookingStatusFor("draw") as BlockStatus,
+        ])
       )
     )
     setAssertedGyms((prev) =>
@@ -797,11 +806,21 @@ export function useBoardVerbs(m: BoardModel) {
     // The sections that just appeared on weekends that were empty are the
     // league's own building, and the notice says so rather than leaving it to be
     // worked out from the colours.
+    /**
+     * WHAT IT SPENT, AND WHAT IT ASSUMED (owner ruling 2026-08-06). Booked time
+     * first, because that is the league's own money being used, then the gyms it
+     * had to assume beyond it.
+     */
     const rented = new Set(next.drawn.assumed.map((a) => a.venueId))
+    const spent = new Set(next.drawn.booked.map((b) => b.venueId))
     setNotice(
-      rented.size > 0
-        ? `${said} ${COPY.drawnAssumed(nameList([...rented].map(gymShort)))}`
-        : said
+      [
+        said,
+        spent.size > 0 ? COPY.drawnBooked(nameList([...spent].map(gymShort))) : null,
+        rented.size > 0 ? COPY.drawnAssumed(nameList([...rented].map(gymShort))) : null,
+      ]
+        .filter(Boolean)
+        .join(" ")
     )
   }
 
@@ -1107,7 +1126,10 @@ export function useBoardVerbs(m: BoardModel) {
       remember(`placing ${short} on ${weekend.label}`)
       if (backup) setAssertedGyms((prev) => withAssertion(prev, sessionId, venueId))
       setEmptyGyms((prev) => withAssertion(prev, sessionId, venueId))
-      setBlockStatus((prev) => ({ ...prev, [blockKey(sessionId, venueId)]: "confirmed" }))
+      setBlockStatus((prev) => ({
+        ...prev,
+        [blockKey(sessionId, venueId)]: bookingStatusFor("operator") as BlockStatus,
+      }))
       setArmed(null)
       setDirty(true)
       setFromLever(false)
@@ -1142,7 +1164,10 @@ export function useBoardVerbs(m: BoardModel) {
       for (const key of unitKeys) next[sessionId][key] = venueId
       return next
     })
-    setBlockStatus((prev) => ({ ...prev, [blockKey(sessionId, venueId)]: "confirmed" }))
+    setBlockStatus((prev) => ({
+      ...prev,
+      [blockKey(sessionId, venueId)]: bookingStatusFor("operator") as BlockStatus,
+    }))
     setArmed(null)
     setDirty(true)
     setFromLever(false)
