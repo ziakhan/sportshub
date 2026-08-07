@@ -522,16 +522,24 @@ describe("the world a plan remembers", () => {
    * THE ACTIVE PLAN IS THE SEASON (owner ruling 2026-08-05, "one truth"). Its
    * world is read live rather than out of the column, so steps 1 and 2 writing
    * through to the season cannot leave its snapshot describing a season that no
-   * longer exists — and its drift is empty by construction, which is true.
+   * longer exists. RETIRED 2026-08-07: the active plan is a sandbox like any
+   * other now and reads stored settings; the test below pins the new truth.
    */
-  it("reads the ACTIVE plan's world live, so it never disagrees with the season", async () => {
+  it("keeps the ACTIVE plan's own stored world: sandboxes, full stop", async () => {
+    // Write-through died (owner ruling 2026-08-07): the active plan reads its
+    // STORED settings like any other plan, so a season-side change is allowed
+    // to disagree with it — that difference is honest drift, said at
+    // generation, not silently erased by a live re-read.
     actAs(ownerId)
     const imported = await read(importedPlanId)
     const grade8 = imported.settings.state.units.find((u: any) => u.key === "age:Grade 8")
-    // The season now expects 9, and the plan the season RUNS says 9.
-    expect(grade8.teams).toBe(9)
+    // The season moved to 9 earlier in this suite; the stored snapshot keeps
+    // the number it was captured with rather than tracking the season.
+    expect(grade8.teams).toBe(0)
     const live = await currentSettings(seasonId)
-    expect(planDrift(imported.settings.state, live.state)).toEqual([])
+    expect(
+      planDrift(imported.settings.state, live.state).length
+    ).toBeGreaterThan(0)
   })
 })
 

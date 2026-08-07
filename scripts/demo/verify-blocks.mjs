@@ -1422,7 +1422,48 @@ try {
         .then((r) => r.json())
         .catch(() => null))?.plan
     : null
-  const world = activeDoc?.settings?.state ?? null
+  /**
+   * RE-PINNED 2026-08-07 (one-calendar wave, write-through dies): GET
+   * plans/[planId] now serves the STORED settings for the active plan too
+   * (it used to re-read the season live, "because the active plan IS the
+   * season"). A plan's stored snapshot is only ever as fresh as its last
+   * save, and nothing keeps it in step with the season any more — that is
+   * the ruling, not a bug. So the shape and the roster still come from the
+   * active plan's own document (its gyms, its units), but every venue's
+   * capacityGames is refreshed from the season's live planner state before
+   * this scene is built: the scenario needs real room to fit "two grades
+   * home, five in the rented gym" in, and a stale snapshot's numbers are no
+   * longer a promise that room is still there.
+   */
+  const liveVenueByKey = new Map()
+  for (const win of plannerRes?.state?.windows ?? []) {
+    for (const w of win.weekends ?? []) {
+      for (const v of w.venues ?? []) liveVenueByKey.set(`${w.sessionId}|${v.venueId}`, v)
+    }
+  }
+  const world = activeDoc?.settings?.state
+    ? {
+        ...activeDoc.settings.state,
+        windows: (activeDoc.settings.state.windows ?? []).map((win) => ({
+          ...win,
+          weekends: (win.weekends ?? []).map((w) => ({
+            ...w,
+            venues: (w.venues ?? []).map((v) => {
+              const fresh = liveVenueByKey.get(`${w.sessionId}|${v.venueId}`)
+              return fresh
+                ? {
+                    ...v,
+                    capacityGames: fresh.capacityGames,
+                    courts: fresh.courts ?? v.courts,
+                    courtDays: fresh.courtDays ?? v.courtDays,
+                    hoursPerCourtDay: fresh.hoursPerCourtDay ?? v.hoursPerCourtDay,
+                  }
+                : v
+            }),
+          })),
+        })),
+      }
+    : null
   const homeId = (world?.gyms ?? []).find((g) => g.role === "home")?.venueId ?? null
   /** A month with two weekends that have a rented gym and one that has only the
    *  home gym: the successful group move needs the first, the partial-fit refusal
@@ -1635,11 +1676,25 @@ try {
 
   // Any grade on this weekend will do: the point is that SOME building offers to
   // take it and no impossible one does.
-  const allChips = at.locator('[data-testid="grade-chip"]')
+  //
+  // RE-PINNED 2026-08-07 (one-calendar wave): now that the scene above is built
+  // from LIVE capacity, the two home grades run bigger than the pool's spare
+  // room, and a plain first-chip-with-an-offer pick can land on one of them —
+  // a real, allowed move (the board does not refuse an overflow, it offers a
+  // place to send it, same as the stranded-prompt elsewhere in this file), but
+  // one that leaves an overflow banner on screen this section never reads or
+  // dismisses. Smallest grade first sidesteps that without changing what the
+  // check is actually pinning: that SOME building offers to take the held
+  // grade and nowhere impossible does.
+  const bySize = new Map(units.map((u) => [u.key, games(u)]))
+  const orderedKeys = [...homeKeys, ...poolKeys].sort(
+    (a, b) => (bySize.get(a) ?? 0) - (bySize.get(b) ?? 0)
+  )
   let movedUnit = null
   let held = null
-  for (let i = 0; i < (await allChips.count()); i++) {
-    const chip = allChips.nth(i)
+  for (const key of orderedKeys) {
+    const chip = at.locator(`[data-testid="grade-chip"][data-unit="${key}"]`)
+    if ((await chip.count()) === 0) continue
     await chip.locator("button").first().click()
     await page.waitForTimeout(300)
     const report = await heldReport()
@@ -1767,6 +1822,16 @@ try {
     (await at.locator('[data-testid="move-ghost"]').count()) === 0 &&
       (await at.locator('[data-testid="grade-chip"][data-flash="1"]').count()) === 0
   )
+  /**
+   * RE-PINNED 2026-08-07: the ghost/flash check just above never scrolls, so
+   * the page is still where the "scrolled 570px down" float-undo check above
+   * left it — off the top of the header `undo-last` lives in. Playwright's
+   * own auto-scroll usually covers this, but under load its actionability
+   * retries can lose that race; scrolling it into view explicitly is the
+   * same fix `.scrollIntoViewIfNeeded()` already uses everywhere else in this
+   * file before a click, not a new mechanic.
+   */
+  await page.locator('[data-testid="undo-last"]').scrollIntoViewIfNeeded()
   await page.locator('[data-testid="undo-last"]').click()
   await page.waitForTimeout(500)
   ok(

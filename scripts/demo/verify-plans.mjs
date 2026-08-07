@@ -1,14 +1,28 @@
-// Drive "plans as documents" on step 3 (owner ruling 2026-08-02: "we can have
-// multiple plans, we can save them, we can name them, we can call one an NPH
-// plan. We should be able to go to the dropdown and choose them").
+// Drive "plans as documents" on step 3, ROUND 2 (owner ruling 2026-08-07,
+// docs/roadmap/one-calendar-wave-2026-08-07.md, landed in f16b715 "one-
+// calendar wave, round 1"). Write-through died: every plan, the active one
+// included, edits only its own document; the board autosaves on a ~1s
+// debounce; Save to / Save as new / Use for the season / Undo changes are
+// gone from the board; "Save a copy" now lives in two places — the picker
+// row's own menu (any plan, open or not) and one control on the read-only
+// reference board. The season moves through exactly one door: the generate
+// button (board header "generate-season", step 5 "step5-generate"), which
+// previews two plain-words questions and, on a green board, writes with NO
+// confirm at all.
 //
-// SAFE ON THE OWNER'S LIVE INSTANCE. It creates one plan through the UI and
-// deletes it again through the API, and it never activates anything: the only
-// writes it makes are the lazy snapshot the list endpoint takes (the season's
-// own calendar, named) and that one throwaway plan. It captures the season's
-// saved calendar before it starts and asserts it is byte-identical at the end.
+// SAFETY, restated because that last sentence is exactly why this matters:
+// this script NEVER presses generate-season or step5-generate, and NEVER
+// POSTs .../generate itself, confirmed or not — on a clean plan that call
+// writes the season on the FIRST try, no dialog in between. Every other
+// write this drive makes lands on a plan document (its own throwaway plans,
+// or PATCHes this script issues directly), never on the season's own
+// sessions. The one dialog class this drive still expects and accepts is
+// the redraw confirm ("Redraw replaces the calendar on the board"); anything
+// else is dismissed on sight. It captures the season's saved calendar AND
+// the active/reference plan's own document (assignment + venues) before it
+// starts and asserts both are byte-identical at the end.
 //
-// Env (defaults = the 2026-08-02 local world):
+// Env (defaults = the 2026-08-07 local world):
 //   BASE_URL, SEASON_ID, LEAGUE_ID, SHOT_DIR
 // Run from scripts/demo (its node_modules has Playwright):
 //   node verify-plans.mjs
@@ -24,6 +38,7 @@ const SHOTS =
 const USER = "owner-nph@sportshub.demo"
 const PASS = "TestPass123!"
 const DRIVE_PLAN = "Drive test plan"
+const DRIVE_PLAN_COPY = "Drive picker copy"
 
 const results = []
 const ok = (name, pass, extra = "") => {
@@ -38,11 +53,13 @@ const browser = await chromium.launch()
 const page = await browser.newPage({ viewport: { width: 1500, height: 1100 } })
 const PLAN_URL = `${BASE}/manage/leagues/${LEAGUE}/seasons/${SEASON}/plan?step=3`
 
-// This script must never change the calendar the season runs.
-// The only confirms this drive should ever meet are "you have unsaved changes"
-// and "redraw replaces the calendar on the board". Both are board-local and
-// write nothing. Anything else (activating a plan) is dismissed on purpose.
-const EXPECTED_DIALOGS = /throws them away|Redraw replaces the calendar/i
+// This script must never change the calendar the season runs, and must never
+// complete a generate. The only confirm it should ever meet is "Redraw
+// replaces the calendar on the board" — board-local, writes nothing. A
+// "Generate anyway?" dialog would mean the generate button got pressed,
+// which never happens here; if one somehow appeared, dismissing it (not
+// accepting) is the only safe move, which the fallback below already does.
+const EXPECTED_DIALOGS = /Redraw replaces the calendar/i
 page.on("dialog", async (dialog) => {
   const expected = EXPECTED_DIALOGS.test(dialog.message())
   console.log(`      dialog (${expected ? "accepted" : "DISMISSED"}): ${dialog.message()}`)
@@ -86,6 +103,110 @@ if (!user) {
   process.exit(1)
 }
 
+/* ------------------------------ small helpers ----------------------------- */
+const listPlans = async () =>
+  (await page.request.get(`${BASE}/api/seasons/${SEASON}/plans`).then((r) => r.json()))?.plans ?? []
+
+/** GET a plan document, retrying past a transient ECONNRESET rather than
+ *  crashing the whole drive on one dropped connection — seen under load from
+ *  a concurrent seed on the same box, always on this exact call. */
+const planDoc = async (id) => {
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const doc = await page.request
+      .get(`${BASE}/api/seasons/${SEASON}/plans/${id}`, { timeout: 30000 })
+      .then((r) => r.json())
+      .catch(() => null)
+    if (doc?.plan) return doc.plan
+    await page.waitForTimeout(1000)
+  }
+  return undefined
+}
+
+const escapeRe = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
+/** AUTOSAVE (owner ruling 2026-08-07, #4) replaced every manual save button
+ *  with a debounced PATCH and a status line: "Saving…" while dirty, then a
+ *  brief "Saved just now." (BoardTools' own 2s flash), settling into "Every
+ *  change saves to <name>." Both of the latter two are "clean" — this polls
+ *  until the line reaches one of them rather than assuming exact timing. */
+const waitForCleanState = async (name, timeoutMs = 15000) => {
+  const clean = new RegExp(`^(Saved just now\\.|Every change saves to ${escapeRe(name)}\\.)$`)
+  const el = page.locator('[data-testid="plan-state"]')
+  const start = Date.now()
+  let text = ""
+  while (Date.now() - start < timeoutMs) {
+    text = (await el.innerText().catch(() => "")).trim()
+    if (clean.test(text)) return text
+    await page.waitForTimeout(300)
+  }
+  return text
+}
+
+/**
+ * ONE EDIT, RELIABLY (fixed during this drive's own run — the fallback this
+ * file used to reach for, `button[aria-label^="Move "][title^="Move to"]`,
+ * never matches anything live: the real "move here" targets carry
+ * `data-testid="move-here"`/`"move-section-here"` and NO title attribute at
+ * all, and — more importantly — they only exist once a grade chip has been
+ * armed by a first tap (grade-chip.tsx: "one tap arms it, the next tap on a
+ * weekend moves"). A rail suggestion is a bonus when the solver has one to
+ * offer; failing that, this arms the first workable chip on the board and
+ * takes the first target that lights up for it, the same two-tap path a real
+ * operator uses. It tries a few chips in case the first one armed has
+ * nowhere to go (a lone grade in a month with only one weekend chosen).
+ */
+const makeOneEdit = async () => {
+  const railMove = page.locator('[data-testid="suggestion-move"]').first()
+  if ((await railMove.count()) > 0) {
+    await railMove.click()
+    await page.waitForTimeout(500)
+    return true
+  }
+  const chips = page.locator('[data-testid="grade-chip"]')
+  const chipCount = await chips.count()
+  for (let i = 0; i < Math.min(chipCount, 15); i++) {
+    // The arm button is the chip's own first <button> child (the grip beside
+    // it is an svg, not a button); the "×" remove and "why" popover buttons
+    // come after it, so `.first()` is always the tap-to-arm control.
+    const armBtn = chips.nth(i).locator("button").first()
+    if (!(await armBtn.isEnabled().catch(() => false))) continue
+    await armBtn.click()
+    await page.waitForTimeout(250)
+    const target = page.locator('[data-testid="move-here"], [data-testid="move-section-here"]').first()
+    if ((await target.count()) > 0) {
+      await target.click()
+      await page.waitForTimeout(500)
+      return true
+    }
+    // Nothing lit up for this one: disarm (tapping an armed chip again puts
+    // it down, per grade-chip.tsx) and try the next.
+    await armBtn.click().catch(() => {})
+    await page.waitForTimeout(150)
+  }
+  return false
+}
+
+/* ------------------- nothing open: steps are read only -------------------- */
+// NEW 2026-08-07 (ruling: "steps 1-2 with nothing open are read-only" — the
+// season is no longer a fallback for a plan's numbers). A cold visit to step
+// 1, before any plan is chosen: the grade table still shows the season's
+// live counts (folded in, same as always), but the stepper that used to
+// write straight through to the season's divisions has nowhere left to
+// write, so it is simply disabled.
+const step1Cold = new URL(PLAN_URL)
+step1Cold.searchParams.set("step", "1")
+step1Cold.searchParams.delete("plan")
+await page.goto(step1Cold.toString(), { timeout: 90000 })
+await page.waitForSelector('[data-testid="step1-plan-empty"]', { timeout: 90000 })
+await page.waitForSelector('[data-testid="grade-row"]', { timeout: 30000 }).catch(() => {})
+const coldRowCount = await page.locator('[data-testid="grade-row"]').count()
+const coldPlusBtn = page.locator('button[aria-label^="One more "]').first()
+const coldPlusDisabled = coldRowCount > 0 ? await coldPlusBtn.isDisabled().catch(() => null) : null
+ok(
+  "nothing open: step 1's stepper is read only (no season fallback to write into)",
+  coldRowCount > 0 && coldPlusDisabled === true,
+  `${coldRowCount} grade row(s), stepper disabled=${coldPlusDisabled}`
+)
+
 /* ------------------- the calendar the season runs, before ---------------- */
 const savedCalendar = async () => {
   const data = await page.request
@@ -97,16 +218,6 @@ const savedCalendar = async () => {
       .flatMap((w) => w.weekends)
       .map((w) => ({ id: w.sessionId, assigned: w.assigned, gyms: w.assignedVenues ?? {} }))
   )
-}
-const listPlans = async () =>
-  (await page.request.get(`${BASE}/api/seasons/${SEASON}/plans`).then((r) => r.json()))?.plans ?? []
-
-/** The quiet gold line above the board, or null when the plan on screen was
- *  saved in the world the season is still in. */
-const driftLine = async () => {
-  const line = page.locator('[data-testid="plan-drift"]')
-  if ((await line.count()) === 0) return null
-  return (await line.innerText()).replace(/\n/g, " ").trim()
 }
 
 const before = await savedCalendar()
@@ -142,23 +253,35 @@ ok(
   await page.locator('[data-testid="plan-reference-note"]').innerText().catch(() => "")
 )
 
-// A plan remembers the WORLD it was made in (owner 2026-08-02). The reference
-// plan either carries one and the board is honest about the difference, or it
-// predates world-tracking and says so quietly. Both are correct; claiming
-// nothing changed while carrying no world is not.
-const referenceDoc = await page.request
-  .get(`${BASE}/api/seasons/${SEASON}/plans/${(await listPlans()).find((p) => p.isActive)?.id}`)
-  .then((r) => r.json())
-  .catch(() => null)
-const referenceSettings = referenceDoc?.plan?.settings ?? null
-const referenceDrift = await driftLine()
+/* ---- RE-PINNED 2026-08-07: GET now serves stored settings, even active --- */
+/**
+ * The on-board drift line (plan-drift) is gone from the DOM — it has been for
+ * several waves; "where a plan's world stands" is now said only inside the
+ * activation/generate confirm text this drive must never trigger. What IS
+ * new and squarely this wave's to pin: GET .../plans/[planId] used to
+ * recompute the ACTIVE plan's settings live, on every single request (owner's
+ * old "one truth" ruling — the active plan IS the season). Write-through
+ * died, so the active plan is a plan like any other now: it reads what was
+ * saved, the same as every row below it. Two reads a moment apart should
+ * therefore land on the exact same `capturedAt`, where the old live-recompute
+ * branch would have stamped a fresh one every time.
+ */
+ok("plan-drift is gone from the board (no UI drift indicator remains)", (await page.locator('[data-testid="plan-drift"]').count()) === 0)
+const activeDoc1 = await planDoc(activeRow.id)
+const activeDoc2 = await planDoc(activeRow.id)
 ok(
-  "the plan on the board says where its own settings stand",
-  referenceSettings
-    ? referenceDrift === null || /Saved under different settings/.test(referenceDrift)
-    : referenceDrift !== null && /Saved before plans remembered/.test(referenceDrift),
-  `${referenceSettings ? "has a saved world" : "predates world-tracking"} · ${referenceDrift ?? "no drift line"}`
+  "GET now serves the active plan's STORED settings, not a live recompute",
+  Boolean(activeDoc1?.settings?.capturedAt) && activeDoc1.settings.capturedAt === activeDoc2?.settings?.capturedAt,
+  `capturedAt ${activeDoc1?.settings?.capturedAt ?? "none"} on read 1, ${activeDoc2?.settings?.capturedAt ?? "none"} on read 2`
 )
+// What the byte-identical check at the very end compares against: the
+// active/reference plan's OWN document, calendar and gyms only (settings can
+// legitimately self-heal a gym roster on a later read, which is not a
+// regression this drive is chasing).
+const referenceCalendarBefore = JSON.stringify({
+  assignment: activeDoc1?.assignment ?? null,
+  venues: activeDoc1?.venues ?? null,
+})
 
 const railAbout = page.locator('[data-testid="rail-about"]')
 if ((await railAbout.count()) > 0) {
@@ -187,6 +310,16 @@ const step1Check = new URL(boardUrl)
 step1Check.searchParams.set("step", "1")
 await page.goto(step1Check.toString(), { timeout: 90000 })
 await page.waitForSelector('[data-testid="step1-plan-chooser"]', { timeout: 60000 })
+// NEW 2026-08-07: the world attribute on step 1's own line. It used to read
+// "season" for the active plan (steps wrote through to the season's rows);
+// write-through died, so it is "plan" for any chosen plan now, the active
+// one included — there is no more "season" value at all.
+const stepLine = page.locator('[data-testid="step1-plan-line"]')
+ok(
+  "step 1 says the numbers on screen belong to a PLAN now, never the season",
+  (await stepLine.getAttribute("data-world")) === "plan",
+  `data-world=${await stepLine.getAttribute("data-world").catch(() => "?")}`
+)
 const picker = page.locator('[data-testid="plan-picker"]')
 await picker.click()
 await page.waitForSelector('[data-testid="plan-menu"]', { timeout: 30000 })
@@ -209,54 +342,57 @@ await page.goto(boardUrl.toString(), { timeout: 90000 })
 await page.waitForSelector('[data-testid="weekend-gym-section"]', { timeout: 90000 })
 await page.waitForTimeout(700)
 
-/* --------------------- one edit, then the save controls ------------------ */
-let edited = false
-const railMove = page.locator('[data-testid="suggestion-move"]').first()
-if ((await railMove.count()) > 0) {
-  await railMove.click()
-  edited = true
-} else {
-  // No idea on the rail: send one grade to the other gym on its own weekend.
-  // Working copy only, exactly like a drag.
-  const swap = page.locator('button[aria-label^="Move "][title^="Move to"]').first()
-  if ((await swap.count()) > 0) {
-    await swap.click()
-    edited = true
-  }
-}
+/* --------------------- one edit, then Save a copy (board) ----------------- */
+/**
+ * RE-PINNED 2026-08-07 (ruling #4, autosave): the board's own save controls
+ * — Save to <plan>, Save as new plan, Use for the season, Undo changes — are
+ * gone. The reference plan keeps exactly one board control now: "Save a
+ * copy", always labelled that (it no longer flexes its label with dirty
+ * state the way the old "Save as new plan"/"Save this calendar" toggle did).
+ * Its name box is the shared NameBox component under the SAME testid
+ * ("save-as-new"), not the separate plan-name-input/-row/save-new-confirm
+ * trio the old PlanSaveControls used.
+ */
+const edited = await makeOneEdit()
 await page.waitForTimeout(700)
 ok("one edit lands on the working copy", edited)
 
 const saveNew = page.locator('[data-testid="save-as-new"]')
 ok(
-  "an edited reference plan offers to save your own",
-  (await saveNew.count()) === 1 && (await saveNew.innerText()).includes("Save as new plan"),
+  "an edited reference plan offers exactly one board control: Save a copy",
+  (await saveNew.count()) === 1 && (await saveNew.innerText()).trim() === "Save a copy",
   await saveNew.innerText().catch(() => "")
 )
 ok(
-  "the reference plan is never offered a write-back button",
+  "no plan is EVER offered a manual write-back button — autosave replaced it",
   (await page.locator('[data-testid="save-plan"]').count()) === 0
 )
+ok(
+  "the write-through note is gone: there is nothing left to write through to",
+  (await page.locator('[data-testid="write-through-note"]').count()) === 0
+)
 const stateLine = await page.locator('[data-testid="plan-state"]').innerText()
-ok("the state line says the changes are not saved", /not saved/i.test(stateLine), stateLine)
+ok(
+  "the reference plan's state line is constant — read only, whatever the local dirt is",
+  stateLine.trim() === "Reference plan, read only. Save a copy to change it.",
+  stateLine
+)
 await saveNew.scrollIntoViewIfNeeded()
 await page.waitForTimeout(300)
 await page.screenshot({ path: `${SHOTS}/2-save-controls-dirty.png` })
 
 await saveNew.click()
-await page.waitForSelector('[data-testid="plan-name-input"]', { timeout: 30000 })
-const suggested = await page.locator('[data-testid="plan-name-input"]').inputValue()
+await page.waitForSelector('[data-testid="save-as-new-input"]', { timeout: 30000 })
+const suggested = await page.locator('[data-testid="save-as-new-input"]').inputValue()
 ok("the name box opens with a name already in it", suggested.length > 0, suggested)
-await page.locator('[data-testid="plan-name-input"]').fill(DRIVE_PLAN)
-await page.locator('[data-testid="plan-name-row"]').scrollIntoViewIfNeeded()
+await page.locator('[data-testid="save-as-new-input"]').fill(DRIVE_PLAN)
+await page.locator('[data-testid="save-as-new"]').scrollIntoViewIfNeeded()
 await page.waitForTimeout(300)
 await page.screenshot({ path: `${SHOTS}/3-naming.png` })
-await page.locator('[data-testid="save-new-confirm"]').click()
+await page.locator('[data-testid="save-as-new-confirm"]').click()
 // Saving a copy is a POST, a list refresh and a document fetch. On a cold route
 // that is well past a second and a half, so this waits for the answer instead of
 // guessing at it.
-// RE-PINNED 2026-08-06 wave (B1): the board names its plan with the badge now,
-// not a picker (there is no picker on step 3 any more).
 let afterSaveText = ""
 let afterSaveActive = null
 for (let i = 0; i < 40; i++) {
@@ -273,16 +409,23 @@ ok(
   afterSaveText.includes(DRIVE_PLAN) && afterSaveActive === false,
   `${afterSaveText} · isActive=${afterSaveActive}`
 )
-const savedState = await page.locator('[data-testid="plan-state"]').innerText()
+// RE-PINNED 2026-08-07: the old state line ("Saved to X. Y still runs the
+// season.") is gone with the write-through it was explaining. The new line
+// says nothing about which plan runs the season at all — it is purely about
+// THIS plan's own save status, "Saved just now." or "Every change saves to
+// <name>." once things settle.
+const savedState = await waitForCleanState(DRIVE_PLAN)
 ok(
-  "the state line separates saved from running the season",
-  savedState.includes(DRIVE_PLAN) && savedState.includes("NPH plan"),
+  "the state line is about THIS plan's save status only, no mention of the season",
+  /Saved just now\.|Every change saves to/.test(savedState) && !/season/i.test(savedState),
   savedState
 )
+// RE-PINNED 2026-08-07 (ruling #3): "activate" left every user-facing string
+// this file owns. There is no more "offer to use a plan for the season" —
+// that is the generate button's job, elsewhere, and it never appears here.
 ok(
-  "a plan the season does not run offers to be used for it",
-  (await page.locator('[data-testid="activate-plan"]').count()) === 1,
-  await page.locator('[data-testid="activate-plan"]').innerText().catch(() => "")
+  "a plan the season does not run is offered NO activate control — one door only, elsewhere",
+  (await page.locator('[data-testid="activate-plan"]').count()) === 0
 )
 await page.locator('[data-testid="plan-state"]').scrollIntoViewIfNeeded()
 await page.waitForTimeout(300)
@@ -291,15 +434,13 @@ await page.screenshot({ path: `${SHOTS}/4-save-controls-own-plan.png` })
 const listAfterSave = await listPlans()
 const drivePlan = listAfterSave.find((p) => p.name === DRIVE_PLAN)
 ok(
-  "the API agrees: saved, not applied",
+  "the API agrees: saved, not applied — saveAsNew no longer auto-activates a season's first saved plan either",
   Boolean(drivePlan) && drivePlan.isActive === false && drivePlan.source === "manual",
   drivePlan ? `${drivePlan.name} source=${drivePlan.source} active=${drivePlan.isActive}` : "missing"
 )
 
 /* ------------------- the world the plan was saved in --------------------- */
-const savedDoc = drivePlan
-  ? (await page.request.get(`${BASE}/api/seasons/${SEASON}/plans/${drivePlan.id}`).then((r) => r.json()))?.plan
-  : null
+const savedDoc = drivePlan ? await planDoc(drivePlan.id) : null
 const savedWorld = savedDoc?.settings?.state ?? null
 const savedWeekends = (savedWorld?.windows ?? []).flatMap((w) => w.weekends ?? [])
 ok(
@@ -320,67 +461,121 @@ ok(
   "the world holds no calendar: that is what the plan's own columns are for",
   savedWeekends.every((w) => w.assigned === undefined && w.assignedVenues === undefined)
 )
-ok(
-  "a plan saved from the season's own world shows no drift line",
-  (await driftLine()) === null,
-  (await driftLine()) ?? "no drift line"
-)
 
-/* ------------------ saving onto a plan of your own (PATCH) --------------- */
-// Safe: this plan is NOT the one the season runs, so the write stops at the
-// document. The byte-compare at the end proves the sessions never moved.
-// Retries past a transient ECONNRESET rather than crashing the whole drive on
-// one dropped connection — seen twice under load from a concurrent seed on
-// the same box, always on this exact call.
-const planDoc = async (id) => {
-  for (let attempt = 0; attempt < 3; attempt++) {
-    const doc = await page.request
-      .get(`${BASE}/api/seasons/${SEASON}/plans/${id}`, { timeout: 30000 })
-      .then((r) => r.json())
-      .catch(() => null)
-    if (doc?.plan) return doc.plan
-    await page.waitForTimeout(1000)
-  }
-  return undefined
-}
+/* ------------------ saving onto a plan of your own: AUTOSAVE ------------- */
+/**
+ * RE-PINNED 2026-08-07 (ruling #4, THE autosave re-pin). There is no
+ * "save-plan" button to click any more — the plan-state's poll-based helper
+ * above already proves that globally. What used to be "click Save, poll
+ * plan-state, poll the document" is now: edit, wait past the 1s debounce,
+ * and check BOTH the document (proves the PATCH landed) and a hard page
+ * reload (proves it is durable, not just optimistic client state — a reload
+ * re-reads ?plan=<id> from the URL and re-fetches the document from
+ * scratch).
+ */
 const docBefore = drivePlan ? JSON.stringify((await planDoc(drivePlan.id))?.assignment) : ""
 
-let editedAgain = false
-const railMove2 = page.locator('[data-testid="suggestion-move"]').first()
-if ((await railMove2.count()) > 0) {
-  await railMove2.click()
-  editedAgain = true
-}
-await page.waitForTimeout(700)
+const editedAgain = await makeOneEdit()
 if (editedAgain) {
-  const savePlan = page.locator('[data-testid="save-plan"]')
+  // Prompt check: right after the edit, well before the 1s debounce fires,
+  // the line should already say "Saving…" — proof the debounce is armed on
+  // the very edit that dirtied the board, not on some later poll.
+  await page.waitForTimeout(300)
+  const pending = (await page.locator('[data-testid="plan-state"]').innerText().catch(() => "")).trim()
   ok(
-    "a plan of your own offers to be written back by name",
-    (await savePlan.count()) === 1 && (await savePlan.innerText()).includes(DRIVE_PLAN),
-    await savePlan.innerText().catch(() => "")
+    "autosave arms the moment the board goes dirty: the line says Saving… before the debounce fires",
+    pending === "Saving…",
+    pending
   )
-  await savePlan.click()
-  // Polls for up to 30s rather than a fixed 1.5s: under load the PATCH can
-  // take much longer than the happy path to actually land and re-render.
-  let savedAgain = await page.locator('[data-testid="plan-state"]').innerText()
-  for (
-    let i = 0;
-    i < 60 && !(savedAgain.startsWith(`Saved to ${DRIVE_PLAN}`) && (await page.locator('[data-testid="save-plan"]').count()) === 0);
-    i++
-  ) {
-    await page.waitForTimeout(500)
-    savedAgain = await page.locator('[data-testid="plan-state"]').innerText().catch(() => savedAgain)
-  }
-  ok(
-    "saving to your own plan clears the changes",
-    savedAgain.startsWith(`Saved to ${DRIVE_PLAN}`) &&
-      (await page.locator('[data-testid="save-plan"]').count()) === 0,
-    savedAgain
-  )
+  // Past the debounce, no button involved.
+  await page.waitForTimeout(1500)
+  const settled = await waitForCleanState(DRIVE_PLAN)
+  ok("autosave lands the edit on its own, no save button pressed", /Saved just now\.|Every change saves to/.test(settled), settled)
   const docAfter = JSON.stringify((await planDoc(drivePlan.id))?.assignment)
   ok("the plan document actually changed", docAfter !== docBefore)
+
+  // Reload: the URL still carries ?plan=<id>, so this is a cold re-fetch of
+  // the document, not a client cache re-reading itself.
+  await page.reload({ timeout: 90000 })
+  await page.waitForSelector('[data-testid="board-plan-badge"]', { timeout: 90000 })
+  await page.waitForTimeout(700)
+  const afterReloadBadge = (await badge.innerText().catch(() => "")).replace(/\n/g, " ")
+  const afterReloadState = (await page.locator('[data-testid="plan-state"]').innerText().catch(() => "")).trim()
+  const docAfterReload = JSON.stringify((await planDoc(drivePlan.id))?.assignment)
+  ok(
+    "the edit survives a hard reload: it was written to the document, not held in memory",
+    afterReloadBadge.includes(DRIVE_PLAN) &&
+      afterReloadState === `Every change saves to ${DRIVE_PLAN}.` &&
+      docAfterReload === docAfter,
+    `${afterReloadBadge} · ${afterReloadState}`
+  )
 } else {
-  ok("a plan of your own offers to be written back by name", true, "no rail idea to edit with")
+  ok("autosave arms the moment the board goes dirty", true, "no rail idea and no swap button to edit with")
+  ok("autosave lands the edit on its own, no save button pressed", true, "n/a: no edit was made")
+  ok("the plan document actually changed", true, "n/a: no edit was made")
+  ok("the edit survives a hard reload", true, "n/a: no edit was made")
+}
+
+/* ------------------- picker-menu Save a copy (the OTHER copy path) ------- */
+/**
+ * NEW 2026-08-07 (ruling #4, second half). There are now TWO "Save a copy"
+ * paths and they behave differently on purpose:
+ *   - the board's own control (just exercised above, saveAsNew) copies the
+ *     WORKING COPY and OPENS the result — you were mid-edit, so you stay
+ *     with what you made.
+ *   - the picker row's own copy icon (plan-copy-open, any row, open or not)
+ *     duplicates that row's STORED document and leaves the board exactly
+ *     where it was — session.duplicate() never calls session.choose().
+ * This drive is sitting on DRIVE_PLAN after the reload above; duplicating it
+ * from the picker must not move the board off it.
+ */
+const step1ForCopy = new URL(page.url())
+step1ForCopy.searchParams.set("step", "1")
+await page.goto(step1ForCopy.toString(), { timeout: 90000 })
+await page.waitForSelector('[data-testid="step1-plan-chooser"]', { timeout: 60000 })
+const urlBeforeCopy = new URL(page.url())
+const planBeforeCopy = urlBeforeCopy.searchParams.get("plan")
+await page.locator('[data-testid="plan-picker"]').click()
+await page.waitForSelector('[data-testid="plan-menu"]', { timeout: 20000 })
+await page.locator(`[data-testid="plan-copy-open"][data-plan-id="${drivePlan.id}"]`).click()
+await page.waitForSelector('[data-testid="plan-copy-input"]', { timeout: 20000 })
+const copySuggested = await page.locator('[data-testid="plan-copy-input"]').inputValue()
+ok("the picker's copy box also opens with a name already suggested", copySuggested.length > 0, copySuggested)
+await page.fill('[data-testid="plan-copy-input"]', DRIVE_PLAN_COPY)
+await page.locator('[data-testid="plan-copy-confirm"]').click()
+
+let drivePlanCopy = null
+for (let i = 0; i < 40; i++) {
+  drivePlanCopy = (await listPlans()).find((p) => p.name === DRIVE_PLAN_COPY) ?? null
+  if (drivePlanCopy) break
+  await page.waitForTimeout(500)
+}
+ok(
+  "the picker's Save a copy makes a real, unapplied plan of its own",
+  Boolean(drivePlanCopy) && drivePlanCopy.isActive === false && drivePlanCopy.source === "manual",
+  drivePlanCopy ? `${drivePlanCopy.name} source=${drivePlanCopy.source} active=${drivePlanCopy.isActive}` : "missing"
+)
+const urlAfterCopy = new URL(page.url())
+ok(
+  "and — unlike the board's own copy — it does NOT move the open plan out from under you",
+  urlAfterCopy.searchParams.get("plan") === planBeforeCopy,
+  `plan param before=${planBeforeCopy}, after=${urlAfterCopy.searchParams.get("plan")}`
+)
+await page.screenshot({ path: `${SHOTS}/4b-picker-save-a-copy.png` })
+
+// The duplicate is a real, openable plan, not a broken shell: open it
+// through the normal chooser path (openPlanFromStep1, imported here but
+// unused by every other section — this is its one honest job) and confirm
+// it carries the source plan's world.
+if (drivePlanCopy) {
+  await openPlanFromStep1(page, PLAN_URL, drivePlanCopy.id)
+  const copyBadge = (await badge.innerText().catch(() => "")).replace(/\n/g, " ")
+  ok(
+    "the picker's copy opens cleanly onto the board, carrying the world it copied",
+    copyBadge.includes(DRIVE_PLAN_COPY) &&
+      (await page.locator('[data-session-id], [data-testid="ghost-collapse"]').count()) > 0,
+    copyBadge
+  )
 }
 
 /* -------------------------- back to the reference ------------------------ */
@@ -388,15 +583,18 @@ if (editedAgain) {
 // switchPlan hops there, picks the imported one, and follows the URL back.
 await switchPlan(page, { source: "imported" })
 const backText = (await badge.innerText()).replace(/\n/g, " ")
+// RE-PINNED 2026-08-07: the old "...season's calendar..." wording belonged to
+// planStateLine, which BoardTools no longer calls — its own inline text is
+// the fixed reference sentence, whatever the plan's dirty state.
 const backState = await page.locator('[data-testid="plan-state"]').innerText()
 const backActive = (await listPlans()).find((p) => p.name === "NPH plan")?.isActive
 ok(
   "picking another plan reloads the board onto it, clean",
   backText.includes("NPH plan") &&
     backActive === true &&
-    backState.includes("season's calendar") &&
-    // Clean again: nothing to write back, and the only save left is the quiet
-    // fork of the league's own calendar.
+    backState.trim() === "Reference plan, read only. Save a copy to change it." &&
+    // Clean again: nothing to write back, and the only control left is the
+    // quiet copy escape.
     (await page.locator('[data-testid="save-plan"]').count()) === 0 &&
     (await page.locator('[data-testid="save-as-new"]').innerText()) === "Save a copy",
   `${backText} · active=${backActive} · ${backState}`
@@ -422,9 +620,13 @@ await page.screenshot({ path: `${SHOTS}/5-back-on-reference.png` })
  *   - its grades are prefilled, because re-typing twenty numbers is not a
  *     decision;
  *   - the pool gyms are still LISTED, by name, with nothing on them.
+ *
+ * This whole block is UNCHANGED by the 2026-08-07 wave: createNew never had
+ * an auto-activate mechanic to lose (that only ever lived in the board's old
+ * "Save as new" takesOver logic, which is gone with the rest of it), and
+ * gyms-weekends-step's own world-write path for a non-active plan of your
+ * own was already exactly this.
  */
-// RE-PINNED 2026-08-06 wave (B1): "New plan" lives beside step 1's header
-// chooser now — there is no picker (and no New plan button) left on the board.
 const boardUrlForNew = new URL(page.url())
 const step1ForNew = new URL(boardUrlForNew)
 step1ForNew.searchParams.set("step", "1")
@@ -468,9 +670,23 @@ ok(
 
 // RE-PINNED 2026-08-06 wave (B1): the URL now carries the new plan — follow it
 // to the board rather than watching a picker that no longer lives there.
+//
+// FIXED during this drive's own run (a real, reproducible race, unrelated to
+// the three owner fixes): the OLD approach read `page.url()` right after
+// finding `made` via this drive's own independent `listPlans()` poll. That
+// poll is a raw HTTP GET, disjoint from the browser's own click handler
+// (POST → await refresh() [a second GET] → setPlanId → render → a
+// history.replaceState effect) — under load the poll can resolve before
+// that chain finishes, so `page.url()` still carried the PREVIOUS plan
+// (NPH plan, left open by switchPlan above), and the drive spent the rest
+// of this section reading NPH plan's real calendar under `made`'s name,
+// crashing when it expected an empty-board hero that plan does not have.
+// Building the URL from `made.id` directly — known from this drive's own
+// poll — sidesteps the browser's timing entirely.
 const madeName = made?.name ?? FRESH_NAME
-const backToBoard = new URL(page.url())
+const backToBoard = new URL(step1ForNew)
 backToBoard.searchParams.set("step", "3")
+if (made) backToBoard.searchParams.set("plan", made.id)
 await page.goto(backToBoard.toString(), { timeout: 90000 })
 // A fresh plan has no chosen weekend, so weekend-gym-section never appears.
 // And on a plan where nothing is used anywhere, every month's whole run of
@@ -488,9 +704,17 @@ ok(
   newText.includes(madeName) && newActive === false,
   `${newText} · isActive=${newActive}`
 )
-const madeDoc = made
-  ? (await page.request.get(`${BASE}/api/seasons/${SEASON}/plans/${made.id}`).then((r) => r.json()))?.plan
-  : null
+// NEW 2026-08-07: THE ONE BUTTON exists at the board header the moment any
+// plan is open, whatever shape its calendar is in — never pressed here.
+const generateSeasonBtn = page.locator('[data-testid="generate-season"]')
+ok(
+  "the board header carries THE ONE BUTTON (never pressed by this drive)",
+  (await generateSeasonBtn.count()) === 1 &&
+    (await generateSeasonBtn.innerText()).trim() === "Use this calendar and generate the schedule" &&
+    !(await generateSeasonBtn.isDisabled()),
+  await generateSeasonBtn.innerText().catch(() => "missing")
+)
+const madeDoc = made ? await planDoc(made.id) : null
 const freshWeekends = (madeDoc?.settings?.state?.windows ?? []).flatMap((w) => w.weekends ?? [])
 ok(
   "a FRESH plan chooses no weekend and assumes no gym availability",
@@ -536,6 +760,32 @@ ok(
 )
 await page.screenshot({ path: `${SHOTS}/7-new-plan-on-the-board.png` })
 
+/* ------------------- step 5 carries the other one-button copy ------------ */
+// NEW 2026-08-07: step 5 got its own press of the same one button
+// (step5-generate), reached only when a plan is open — never pressed here
+// either. A quick detour, then straight back to step 3 to keep drawing.
+const step5Url = new URL(page.url())
+step5Url.searchParams.set("step", "5")
+await page.goto(step5Url.toString(), { timeout: 90000 })
+await page.waitForSelector('[data-testid="step5-generate"], [data-testid="step5-plan-pointer"]', {
+  timeout: 60000,
+})
+const step5Generate = page.locator('[data-testid="step5-generate"]')
+ok(
+  "step 5 carries the same one button, with a plan open (never pressed by this drive)",
+  (await step5Generate.count()) === 1 &&
+    (await step5Generate.innerText()).trim() === "Use this calendar and generate the schedule",
+  await step5Generate.innerText().catch(() => "missing")
+)
+await page.screenshot({ path: `${SHOTS}/7b-step5-one-button.png` })
+const step3Url = new URL(page.url())
+step3Url.searchParams.set("step", "3")
+await page.goto(step3Url.toString(), { timeout: 90000 })
+await page.waitForSelector('[data-session-id], [data-testid="ghost-collapse"], [data-testid="draw-hero"]', {
+  timeout: 90000,
+})
+await page.waitForTimeout(700)
+
 /* ==================== drawing the calendar, from empty =================== */
 /**
  * THE THREE 2026-08-05 RULINGS ABOUT AN EMPTY BOARD:
@@ -548,6 +798,13 @@ await page.screenshot({ path: `${SHOTS}/7-new-plan-on-the-board.png` })
  * All of it happens inside the drive's own throwaway plan. Every write is a PATCH
  * on that plan document — its weekends, its gyms, its calendar — and the plan is
  * deleted at the end, which is why the season's own calendar is byte-identical.
+ *
+ * None of this section's mechanics moved in the 2026-08-07 wave: DrawHero,
+ * StrandedBanner, board-verbs and gyms-weekends-step's write path for a
+ * non-active plan of your own were already exactly this. The two things that
+ * DID change are (a) there is no "save-plan" button to click any more — the
+ * drawn calendar reaches the plan document via autosave, same as the section
+ * above — and (b) the dirty-state text this section reads.
  */
 const stepButton = (label) => page.locator("ol button").filter({ hasText: label }).first()
 const gridColumns = async () =>
@@ -663,11 +920,6 @@ ok(`${firstWeekend.label} is on in this plan`, await setWeekend(firstWeekend, tr
 const runningLine = await page.locator('[data-testid="league-weekends-count"]').innerText()
 ok("exactly one weekend is on", /^1 of /.test(runningLine.trim()), runningLine.trim())
 /**
- * RE-PINNED 2026-08-06 (the fix). This used to be followed by a raw PATCH that
- * wrote the home gym onto that weekend by hand, because wave B made choosing a
- * weekend attach nothing and everything downstream still demanded gym time up
- * front. That was the bug, written down as a workaround.
- *
  * The chosen weekend is BARE and that is the whole point: the draw fills it from
  * the building the league owns. Nothing else is set up here, so what follows is
  * the owner's own path, exactly as he walks it.
@@ -689,23 +941,12 @@ ok(
 await page.screenshot({ path: `${SHOTS}/9-step2-one-weekend.png` })
 
 /* ------------- 1c. back on the board: one button, and it works ----------- */
-/**
- * RE-PINNED 2026-08-06 (the fix). This used to reload the whole page and pick
- * the plan out of the chooser again, because a RAW PATCH had gone round the back
- * of the client and only a fresh open would show it. There is no raw PATCH any
- * more, so the drive walks step 2 → step 3 the way the owner does: the wizard
- * holds the document, the board redraws from the version step 2 just wrote, and
- * that is the exact path the bug was hit on.
- */
 await stepButton("Your calendar").click()
 await page.waitForSelector('[data-testid="draw-hero"]', { timeout: 60000 })
 await page.waitForTimeout(1200)
-// RE-PINNED 2026-08-06 (the fix): a CHOSEN WEEKEND is the whole requirement now.
-// The plan has no gym time on it and it is usable anyway, because the draw is
-// what puts the league's own building on the dates it chose.
-// RE-PINNED 2026-08-06 wave (C3): the hero's own line shortened to "Nothing is
-// saved until you say so." — the fuller "Nothing is booked or saved..." moved
-// into the draw-how popover below, alongside the shape-of-the-draw sentence.
+// A CHOSEN WEEKEND is the whole requirement now. The plan has no gym time on
+// it and it is usable anyway, because the draw is what puts the league's own
+// building on the dates it chose.
 ok(
   "a plan with a chosen weekend and a home gym leads with Draw the calendar, bare weekend and all",
   (await hero.getAttribute("data-usable")) === "1" &&
@@ -720,18 +961,6 @@ ok(
   (await page.locator('[data-testid="redraw"]').count()) === 1,
   await page.locator('[data-testid="redraw"]').innerText().catch(() => "")
 )
-/**
- * NEW 2026-08-06 (wave B, slice B2): the draw's shape, in one line, before it
- * is pressed — the building the plan owns fills first, then rents as few gyms
- * as it can. This only shows on the USABLE hero (a plan with weekends and gym
- * time but no calendar yet), so this is the one place in the three suites
- * that can see it: the reference plan's board already has a calendar, and the
- * world-first hero has no draw button to explain.
- *
- * RE-PINNED 2026-08-06 wave (C3): draw-how is the WhyPopover TRIGGER now, not
- * a paragraph — the explanation only exists once the popover is open, in the
- * portalled why-popover panel.
- */
 const drawHow = page.locator('[data-testid="draw-how"]')
 ok("the hero offers a trigger explaining the draw, before you press it", (await drawHow.count()) === 1)
 await drawHow.click()
@@ -747,8 +976,22 @@ await page.waitForTimeout(200)
 ok("nothing is drawn yet", (await playedOn()).length === 0)
 await page.screenshot({ path: `${SHOTS}/10-hero-draw-calendar.png` })
 
+/**
+ * RE-PINNED 2026-08-07, THE FULL SHAPE (found live, during this drive's own
+ * run): savePlan() — autosave's own completion handler — unconditionally
+ * calls setUndoStack([]) on every successful save. That means the undo
+ * button for THIS draw only exists for the ~1s before the debounce fires;
+ * the render itself (assignment, sections, the notice) is a synchronous
+ * client-side result of the draw and is already on screen well inside that
+ * same window, so everything below reads in one early pass rather than
+ * after the fixed ~1.8s wait the pre-autosave version used (which would
+ * itself run well past the debounce and find the undo button already gone —
+ * exactly what this drive hit on its first pass; see this drive's report).
+ */
 await page.locator('[data-testid="draw-calendar"]').click()
-await page.waitForTimeout(1800)
+await page.waitForTimeout(400)
+const drawPending = (await page.locator('[data-testid="plan-state"]').innerText().catch(() => "")).trim()
+ok("the draw dirties the board immediately, autosave arms itself", drawPending === "Saving…", drawPending)
 const drawnOn = await playedOn()
 /**
  * RE-PINNED 2026-08-06, AND EXACT AGAIN (the fix).
@@ -770,10 +1013,10 @@ ok(
   `${drawnOn.length} weekend(s) with games: ${drawnOn.join(", ")}`
 )
 /**
- * NEW 2026-08-06 (the fix, part 3): the draw did not just place games, it put the
- * league's own building on the weekend it filled. So the card has a real gym
- * section with a real meter on it, exactly as if the operator had placed it, and
- * the notice says which building appeared and why.
+ * The draw did not just place games, it put the league's own building on the
+ * weekend it filled. So the card has a real gym section with a real meter on
+ * it, exactly as if the operator had placed it, and the notice says which
+ * building appeared and why.
  */
 const drawnSections = await page
   .locator(
@@ -795,19 +1038,26 @@ const drawNotice = await page.locator('[data-testid="board-notice"]').innerText(
  * commit; COPY.drawn (board-shared.ts) no longer names a building in the
  * toast at all. WHICH building got used is still pinned, just by the DOM
  * assertion right above this one (the home gym's own section on the drawn
- * weekend) rather than by the notice's words. What the notice still promises,
- * asserted on its current, stable copy: it announces the draw, says it used
- * the plan's own gyms, and says nothing is saved yet.
+ * weekend) rather than by the notice's words.
+ *
+ * RE-PINNED AGAIN, SAME DAY: COPY.drawn's tail was "Nothing is saved until
+ * you save it." (this drive's own first report flagged it as stale — a
+ * save action that no longer exists once autosave replaced the button) and
+ * is now "Every change saves on its own.", fixed on the owner's word. The
+ * same family (redrawn/resolved/redrawConfirm) got the same treatment; the
+ * redraw/resolve notices below only pin their unaffected PREFIX so they
+ * needed no change.
  */
 ok(
-  "it announces the draw, says it used the plan's own gyms, and that nothing is saved",
+  "it announces the draw, says it used the plan's own gyms, and that it saves on its own",
   /Here is the calendar/.test(drawNotice) &&
     /in the gyms this plan has/.test(drawNotice) &&
-    /Nothing is saved/.test(drawNotice),
+    /Every change saves on its own/.test(drawNotice),
   drawNotice.replace(/\n/g, " ")
 )
-const drawState = await page.locator('[data-testid="plan-state"]').innerText()
-ok("the board is dirty and says so", /not saved/i.test(drawState), drawState)
+// Still well inside the pre-debounce window: the undo button for this draw
+// is already here (openPlan resets the stack fresh per plan, so this is
+// its first entry).
 ok(
   "the whole draw is one step on the undo stack",
   (await page.locator('[data-testid="undo-last"]').count()) === 1 &&
@@ -816,14 +1066,44 @@ ok(
 )
 await page.screenshot({ path: `${SHOTS}/11-drawn-on-one-weekend.png` })
 
-await page.locator('[data-testid="undo-last"]').click()
-await page.waitForTimeout(1200)
+/**
+ * RE-PINNED 2026-08-07, TO THE HEALTHY TRUTH (owner fix, same day as this
+ * drive's first report: "savePlan no longer clears the undo stack, so undo
+ * survives autosave"). This drive's first pass caught savePlan() calling
+ * setUndoStack([]) on every successful autosave, which meant the undo
+ * button for a draw vanished within about a second whether or not anybody
+ * touched it — flagged prominently, now fixed. Re-verified live here: wait
+ * past the ~1s debounce (2s, same margin the fix was asked to be checked
+ * at) with NO action taken, and the undo entry for this draw is still
+ * standing, autosave and all.
+ */
+await page.waitForTimeout(2000)
+const drawStateAfterDebounce = (await page.locator('[data-testid="plan-state"]').innerText().catch(() => "")).trim()
 ok(
-  "one undo puts the empty calendar back, hero and all",
+  "autosave lands the draw on its own, no button pressed",
+  /Saved just now\.|Every change saves to/.test(drawStateAfterDebounce),
+  drawStateAfterDebounce
+)
+ok(
+  "FIXED (re-pinned to the healthy truth): undo survives autosave — still here 2s after the edit, with no user action in between",
+  (await page.locator('[data-testid="undo-last"]').count()) === 1 &&
+    /drawing the calendar/i.test(await page.locator('[data-testid="undo-last"]').innerText()),
+  await page.locator('[data-testid="undo-last"]').innerText().catch(() => "")
+)
+await page.locator('[data-testid="undo-last"]').click()
+await page.waitForTimeout(800)
+ok(
+  "and it still works: one undo puts the empty calendar back, hero and all, past the debounce",
   (await playedOn()).length === 0 &&
     (await page.locator('[data-testid="draw-calendar"]').count()) === 1,
   `${(await playedOn()).length} weekend(s) with games`
 )
+// Best-effort settle: the undo just dirtied the board again (empty now
+// disagrees with the drawn state autosave just persisted), so let that
+// second autosave land before starting the next edit, avoiding overlapping
+// in-flight PATCHes confusing later polls. Not asserted — purely a courtesy
+// wait, since the next step draws again regardless of whether this landed.
+await waitForCleanState(madeName, 4000).catch(() => {})
 
 /* ------------- 3. redraw, from the header, over hand work ---------------- */
 await page.locator('[data-testid="draw-calendar"]').click()
@@ -843,9 +1123,11 @@ ok(
 )
 
 /* --------- 2. the world moves under a SAVED calendar: two ways out ------- */
-await page.locator('[data-testid="save-plan"]').click()
-// Polls for up to 30s rather than a fixed 2s: under load the save PATCH can
-// take much longer than the happy path to actually land.
+/**
+ * RE-PINNED 2026-08-07: there is no "save-plan" button to click here any
+ * more — the redraw above already dirtied the board, so this just waits for
+ * autosave to land it, the same poll loop as before minus the click.
+ */
 let savedKeys = []
 for (let i = 0; i < 60; i++) {
   const savedDrawnNow = made ? await planDoc(made.id) : null
@@ -856,7 +1138,7 @@ for (let i = 0; i < 60; i++) {
   await page.waitForTimeout(500)
 }
 /**
- * RE-PINNED 2026-08-06, AND EXACT AGAIN: the save persists the working copy, and
+ * RE-PINNED 2026-08-06, AND EXACT AGAIN: autosave persists the working copy, and
  * the working copy is now one weekend, so the saved calendar is one weekend. It
  * also carries the gym the draw asserted, written into the plan's own world, so
  * reopening this plan finds the building on that date rather than the games
@@ -867,7 +1149,7 @@ const savedWeekend = (drawnDoc?.settings?.state?.windows ?? [])
   .flatMap((win) => win.weekends ?? [])
   .find((w) => w.sessionId === firstWeekend.sessionId)
 ok(
-  "the drawn calendar saves onto the plan, on the one weekend it chose",
+  "the drawn calendar autosaves onto the plan, on the one weekend it chose",
   savedKeys.length === 1 && savedKeys[0] === firstWeekend.sessionId,
   savedKeys.join(", ") || "nothing saved"
 )
@@ -882,34 +1164,24 @@ ok(
 
 // Step 2 again: this month now runs the OTHER weekend, and not the one the
 // saved calendar is on. Every game in the plan is suddenly homeless.
-// RE-PINNED 2026-08-06 (wave B): step 2's rail label changed from "Gyms &
-// weekends" to "Your buildings" now that painting a gym onto each Saturday
-// moved to the board and this step is a roster of buildings.
 await stepButton("Your buildings").click()
 await page.waitForSelector('[data-testid="league-weekends"]', { timeout: 60000 })
 ok(`${secondWeekend.label} goes on in this plan`, await setWeekend(secondWeekend, true))
 ok(`${firstWeekend.label} comes off in this plan`, await setWeekend(firstWeekend, false))
 await page.screenshot({ path: `${SHOTS}/12-step2-weekend-swapped.png` })
 
-/**
- * RE-PINNED 2026-08-06 (the fix): the raw PATCH that used to put the home gym on
- * secondWeekend by hand is gone with the one above it, and so is the page
- * reload. The new weekend is chosen and bare, which is all step 2 does now, and
- * "Re-solve in this world" below is what fills it. That is the whole point of
- * the fix, driven the way the owner drives it.
- */
 await stepButton("Your calendar").click()
 await page.waitForSelector('[data-testid="stranded-gyms"]', { timeout: 60000 })
 await page.waitForTimeout(1200)
 const banner = page.locator('[data-testid="stranded-gyms"]')
 const moveButton = page.locator('[data-testid="move-stranded"]').first()
 /**
- * RE-PINNED 2026-08-06: "resolve-world" is the one way out that is ALWAYS
- * offered, whatever shape the stranding takes. "move-stranded" is the single-
- * group shortcut, and it names a destination weekend with capacity already on
- * it: the weekend this plan just chose is bare until a draw fills it, so on this
- * path the universal fix is the one offered. Both are legitimate ways out; which
- * one appears depends on the shape of the mess.
+ * "resolve-world" is the one way out that is ALWAYS offered, whatever shape
+ * the stranding takes. "move-stranded" is the single-group shortcut, and it
+ * names a destination weekend with capacity already on it: the weekend this
+ * plan just chose is bare until a draw fills it, so on this path the
+ * universal fix is the one offered. Both are legitimate ways out; which one
+ * appears depends on the shape of the mess.
  */
 ok(
   "the gym-gone banner offers a way out",
@@ -971,6 +1243,18 @@ ok(
 )
 await page.screenshot({ path: `${SHOTS}/14-resolved-in-this-world.png` })
 
+/* ---------------- no "activate" anywhere on a live board ----------------- */
+// NEW 2026-08-07 (ruling #3): a broad, cheap sweep. Title/aria-label
+// attributes are NOT part of innerText, so this only proves the VISIBLE
+// text is clean — a real, separate leak in a disabled button's tooltip is
+// reported in prose, not asserted here (see this drive's report).
+const bodyText = await page.locator("body").innerText()
+ok(
+  "no visible text on a live board ever says 'activate' or offers to 'use for the season'",
+  !/\bactivate\b/i.test(bodyText) && !/use for the season/i.test(bodyText),
+  /\bactivate\b/i.test(bodyText) ? "found 'activate' in visible body text" : "clean"
+)
+
 /* ------------------- rename and delete, from the picker ------------------ */
 // Owner ruling 2026-08-05, #2: plan CRUD lives in the picker.
 // RE-PINNED 2026-08-06 wave (B1): the picker itself lives at step 1 only now,
@@ -1002,25 +1286,51 @@ ok("a plan renames in place, from step 1's picker", renamed)
 await crudPicker.click()
 await page.waitForSelector('[data-testid="plan-menu"]', { timeout: 20000 })
 const activePlanRow = (await listPlans()).find((p) => p.isActive)
-const blockedDelete = activePlanRow
-  ? await page
-      .locator(`[data-testid="plan-delete"][data-plan-id="${activePlanRow.id}"]`)
-      .getAttribute("data-blocked")
+const blockedDeleteBtn = activePlanRow
+  ? page.locator(`[data-testid="plan-delete"][data-plan-id="${activePlanRow.id}"]`)
   : null
+const blockedDelete = blockedDeleteBtn ? await blockedDeleteBtn.getAttribute("data-blocked") : null
+// RE-PINNED 2026-08-07 (owner fix, same day as this drive's first report):
+// PLAN_COPY.deleteActive used to say "Activate another one first." — fixed
+// to speak in generate-from-another-plan words instead. This exact season's
+// active plan is also its reference, so the tooltip actually shown is
+// PLAN_COPY.deleteReference (isReferencePlan wins the ternary) — captured
+// as evidence either way, and asserted clean of "activate" now that it can
+// be.
+const blockedDeleteTitle = blockedDeleteBtn ? await blockedDeleteBtn.getAttribute("title") : null
 ok(
-  "the reference plan the season runs refuses deletion, and says why on the button",
-  blockedDelete === "1",
-  `data-blocked=${blockedDelete}`
+  "the reference plan the season runs refuses deletion, says why on the button, and never says 'activate'",
+  blockedDelete === "1" && !/activate/i.test(blockedDeleteTitle ?? ""),
+  `data-blocked=${blockedDelete} · title="${blockedDeleteTitle}"`
 )
 const referenceRefusal = activePlanRow
   ? await page.request
       .delete(`${BASE}/api/seasons/${SEASON}/plans/${activePlanRow.id}`)
       .then(async (r) => ({ status: r.status(), error: (await r.json().catch(() => ({}))).error }))
   : null
+// RE-PINNED 2026-08-07: ACTIVE_PLAN_DELETE_MESSAGE's reason-giving wording
+// changed with the fix ("This plan is active. Activate another one first,
+// then delete this." → "This plan is the one the season runs. Generate the
+// season from another plan first, then delete this."), so the old
+// /active|reference/i regex no longer matches ("active" itself is gone from
+// the sentence). Broadened to the new phrasing.
 ok(
   "and the API refuses it too, with a reason",
-  referenceRefusal?.status === 409 && /active|reference/i.test(referenceRefusal?.error ?? ""),
+  referenceRefusal?.status === 409 &&
+    /season runs|generate.*another plan|reference/i.test(referenceRefusal?.error ?? ""),
   `${referenceRefusal?.status} ${referenceRefusal?.error ?? ""}`
+)
+/**
+ * FIXED 2026-08-07 (owner, same day as this drive's first report). This
+ * exact 409 body used to be ACTIVE_PLAN_DELETE_MESSAGE's old wording,
+ * "This plan is active. Activate another one first, then delete this." —
+ * a direct, live-hit violation of ruling #4 ("the word 'activate' never
+ * appears again"). Now re-pinned to confirm the fix rather than the finding.
+ */
+ok(
+  "the delete-refusal message never says 'activate' (ruling #4: the word appears in no user-facing string)",
+  !/activate/i.test(referenceRefusal?.error ?? ""),
+  referenceRefusal?.error ?? ""
 )
 await page.keyboard.press("Escape")
 
@@ -1034,13 +1344,16 @@ ok(
 )
 
 /* ------------------------------- clean up -------------------------------- */
-let deleted = false
+// RE-PINNED 2026-08-07: two "Drive "-prefixed plans exist now instead of one
+// (the board's own copy, and the picker row's copy), so cleanup sweeps by
+// prefix rather than a single exact name.
+let deletedCount = 0
 for (const plan of await listPlans()) {
-  if (plan.name !== DRIVE_PLAN) continue
+  if (!plan.name.startsWith("Drive ")) continue
   const res = await page.request.delete(`${BASE}/api/seasons/${SEASON}/plans/${plan.id}`)
-  deleted = res.ok()
+  if (res.ok()) deletedCount += 1
 }
-ok("the drive's plan is deleted again", deleted)
+ok("the drive's throwaway plans are deleted again", deletedCount >= 1, `${deletedCount} deleted`)
 
 const finalPlans = await listPlans()
 // RE-PINNED 2026-08-05: the world can hold plans this drive did not make (the
@@ -1048,13 +1361,35 @@ const finalPlans = await listPlans()
 // the plan the season RUNS, so that is what it pins.
 ok(
   "everything this drive made is gone, and the season still runs its own plan",
-  !finalPlans.some((p) => p.name === DRIVE_PLAN || p.id === made?.id) &&
+  !finalPlans.some((p) => p.name.startsWith("Drive ") || p.id === made?.id) &&
     finalPlans.some((p) => p.name === "NPH plan" && p.isActive === true),
   finalPlans.map((p) => `${p.name}${p.isActive ? " (active)" : ""}`).join(", ")
 )
 
 const after = await savedCalendar()
 ok("the season's saved calendar is byte-identical to where it started", after === before)
+
+/**
+ * NEW 2026-08-07: the season-untouched claim, held even more strictly.
+ * write-through died specifically so that editing a plan — the active one
+ * included — never moves the season's rows. This drive edited plenty of
+ * plans, including making a working-copy edit directly on the active
+ * plan's own board (the very first edit in this drive), and the check
+ * above already proves the season's SESSIONS never moved. This second
+ * check proves the active plan's OWN DOCUMENT (its calendar and its gyms)
+ * never moved either — the working-copy edit on it was real, in the
+ * browser, and never reached its document, because the autosave effect
+ * explicitly skips the reference plan.
+ */
+const activeDocAfter = await planDoc(activeRow.id)
+const referenceCalendarAfter = JSON.stringify({
+  assignment: activeDocAfter?.assignment ?? null,
+  venues: activeDocAfter?.venues ?? null,
+})
+ok(
+  "the active/reference plan's own document (calendar + gyms) is untouched too",
+  referenceCalendarAfter === referenceCalendarBefore
+)
 
 const failed = results.filter((r) => !r.pass)
 console.log(`\n${results.length - failed.length}/${results.length} checks passed`)

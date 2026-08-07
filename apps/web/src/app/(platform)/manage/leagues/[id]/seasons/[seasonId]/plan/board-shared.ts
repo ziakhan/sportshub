@@ -71,7 +71,7 @@ export const COPY = {
   worldFirstLink: "Go to step 2",
   /** Said once the solver has answered, whichever button asked it. */
   drawn:
-    "Here is the calendar. Every grade is on one of the weekends you chose, in the gyms this plan has. Nothing is saved until you save it.",
+    "Here is the calendar. Every grade is on one of the weekends you chose, in the gyms this plan has. Every change saves on its own.",
   /** Added when the draw booked gyms the league has not phoned (owner ruling
    *  2026-08-06), so the gold blocks that appeared are never a surprise. */
   drawnAssumed: (gyms: string) =>
@@ -81,12 +81,12 @@ export const COPY = {
    *  assumed (owner ruling 2026-08-06, confirmed bookings are obligations). */
   drawnBooked: (gyms: string) => `It filled the time you have booked at ${gyms} first.`,
   redrawn:
-    "Redrawn from your weekends and your gyms. The plan you saved has not changed until you save this.",
+    "Redrawn from your weekends and your gyms. The plan you saved has not changed and it saves on its own.",
   resolved:
-    "Redrawn in this plan's world, so nothing is left in a gym this plan does not have. Nothing is saved until you save it.",
+    "Redrawn in this plan's world, so nothing is left in a gym this plan does not have. Every change saves on its own.",
   /** Before a redraw throws away hand work. */
   redrawConfirm:
-    "Redraw replaces the calendar on the board. Your saved plan is untouched until you save.",
+    "Redraw replaces the calendar on the board, and the new one saves on its own. Undo brings the old one back.",
   redraw: "Redraw calendar",
 }
 

@@ -46,6 +46,11 @@ export function useBoardPlans(m: BoardModel) {
     selectedPlan: import("@/lib/scheduler/plan-documents").PlanRow | null
     savePlan: () => Promise<void> | void
   }>({ dirty: false, planId: null, selectedPlan: null, savePlan: () => {} })
+  /** The board as it stands THIS render, for savePlan's staleness guard. */
+  const liveBoardRef = useRef<{ shown: unknown; assignment: unknown }>({
+    shown: null,
+    assignment: null,
+  })
   const {
     seasonId,
     session,
@@ -370,6 +375,25 @@ export function useBoardPlans(m: BoardModel) {
     }
     const saved = data.plan as PlanDocument
     /**
+     * THE BOARD MAY HAVE MOVED WHILE THIS SAVE FLEW (the container-fill data
+     * loss, 2026-08-07 — root-caused live by the drive). This response
+     * describes the board as it stood when the request left. Applying it over
+     * a NEWER board silently reverts whatever was edited in between — the
+     * grade the notice said went to Six Park was yanked home by the resolving
+     * save's snapshot, and the next autosave then wrote the reverted board
+     * down for good. Identity is the staleness test: every edit rebuilds
+     * `shown` and `assignment`, so same identities = nothing happened
+     * mid-flight. When stale, apply NOTHING: dirty is still true from the
+     * newer edit, its debounce is already armed, and the next save carries
+     * the newer truth to the server and back.
+     */
+    if (
+      liveBoardRef.current.shown !== shown ||
+      liveBoardRef.current.assignment !== assignment
+    ) {
+      return
+    }
+    /**
      * THE PLAN KEEPS ITS OWN WORLD (owner ruling 2026-08-05, the active case
      * retired 2026-08-07). Saving a calendar onto a plan never re-snapshots
      * the season over the plan's world; the board stays in the world the
@@ -390,7 +414,12 @@ export function useBoardPlans(m: BoardModel) {
     setAssertedGyms({})
     setEmptyGyms({})
     setHourOverrides({})
-    setUndoStack([])
+    // THE UNDO STACK SURVIVES A SAVE (drive finding, 2026-08-07). Autosave
+    // fires a second after every edit; clearing here meant undo vanished
+    // before anybody could press it — and undo is the whole answer this wave
+    // gave for "I made a mistake" after the revert control died. Undoing past
+    // a save is fine: the board goes back, dirty goes true, and the next
+    // autosave writes the undone state down like any other edit.
     // Quietly: autosave has nothing to announce beyond clearing dirty, which
     // is what turns the plan-state line back to "Every change saves to
     // <name>." (BoardTools reads `dirty`, not this function's return).
@@ -558,6 +587,7 @@ export function useBoardPlans(m: BoardModel) {
    * fire on every re-arm and save every keystroke.
    */
   flushRef.current = { dirty, planId, selectedPlan, savePlan }
+  liveBoardRef.current = { shown, assignment }
   useEffect(
     () => () => {
       const last = flushRef.current

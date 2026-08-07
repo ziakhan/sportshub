@@ -262,9 +262,12 @@ export async function loadSchedulerInput(
   // the generator changes. Nothing downstream in this function derives its
   // own team list from divisions[].teams, so this is the only filter needed.
   if (options?.excludedTeamIds?.length) {
+    // TEAM ids, not submission ids (evidence-pass bug, 2026-08-07): the plan
+    // records the Team.id the step-1 roster shows, and games reference the
+    // same id, so the whole exclude pipeline speaks Team.id or nothing.
     const excluded = new Set(options.excludedTeamIds)
     for (const division of input.divisions) {
-      division.teams = division.teams.filter((t) => !excluded.has(t.submissionId))
+      division.teams = division.teams.filter((t) => !excluded.has(t.teamId))
     }
   }
 

@@ -285,14 +285,27 @@ if ((await page.locator('[data-testid="suggestion-move"]').count()) > 0) {
 /* ------------------------- capacity honesty ------------------------------ */
 // Owner ruling 2026-08-05 (#4): a weekend's capacity is the home gym plus the
 // courts this calendar RENTS. Never the full wiring of a pool building nobody
-// has phoned. Recomputed here from the planner API and the rented court counts
-// the card itself prints, so the screen is checked against the packing rather
-// than against itself.
-const plannerState = await page.request
-  .get(`${BASE}/api/seasons/${SEASON}/planner`)
-  .then((r) => r.json())
-  .then((d) => d?.state ?? null)
-  .catch(() => null)
+// has phoned. Recomputed here from the rented court counts the card itself
+// prints, so the screen is checked against the packing rather than against
+// itself.
+//
+// RE-PINNED 2026-08-07 (write-through died, ruling #2; GET plans/[planId] now
+// serves stored settings for the OPEN plan, active plan included). This used
+// to read `/api/seasons/:id/planner` as ground truth, back when steps 1-2
+// wrote the active plan straight through to the season's own rows, so the
+// season's live world and the open plan's board always agreed. They no longer
+// do: a plan is a sandbox now, and the season's planner state only reflects
+// the last plan GENERATED from, not whatever plan is open on the board. The
+// open plan's OWN document — the same one GET plans/[planId] hands the board
+// — is the only ground truth left that isn't the screen checking itself.
+const openPlanId = new URL(page.url()).searchParams.get("plan")
+const plannerState = openPlanId
+  ? await page.request
+      .get(`${BASE}/api/seasons/${SEASON}/plans/${openPlanId}`)
+      .then((r) => r.json())
+      .then((d) => d?.plan?.settings?.state ?? null)
+      .catch(() => null)
+  : null
 const shownCards = await page.evaluate(() =>
   [...document.querySelectorAll("[data-session-id]")].map((card) => ({
     sessionId: card.getAttribute("data-session-id"),

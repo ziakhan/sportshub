@@ -55,7 +55,7 @@ export const IMPORTED_PLAN_READONLY_MESSAGE =
 /** Deleting the active plan would leave the season's sessions holding a
  *  calendar no document describes. */
 export const ACTIVE_PLAN_DELETE_MESSAGE =
-  "This plan is active. Activate another one first, then delete this."
+  "This plan is the one the season runs. Generate the season from another plan first, then delete this."
 
 /** The imported reference is the only record of what the league published, so
  *  it is the one plan that cannot be thrown away (owner ruling 2026-08-05). */
@@ -232,7 +232,7 @@ export async function sanitizePlanWorld(
     // Ruling 8's clamp set: the season's own team submissions, id only, no
     // status filter — mirrors validSessions/validGrades below, which clamp
     // to "belongs to this season", not to any particular status.
-    (prisma as any).teamSubmission.findMany({ where: { seasonId }, select: { id: true } }),
+    (prisma as any).teamSubmission.findMany({ where: { seasonId }, select: { teamId: true } }),
   ])
   const validSessions = new Set<string>(sessions.map((s: any) => s.id))
   const seasonVenueOf = new Map<string, string>(
@@ -244,7 +244,12 @@ export async function sanitizePlanWorld(
     const key = `age:${d.ageGroup}`
     divisionsOf.set(key, [...(divisionsOf.get(key) ?? []), d.id])
   }
-  const validTeamSubmissions = new Set<string>(teamSubmissions.map((ts: any) => ts.id))
+  // TEAM ids: the id space the step-1 roster shows and games reference
+  // (evidence-pass bug, 2026-08-07 — validating submission ids silently
+  // dropped every exclusion the UI ever sent).
+  const validTeamIds = new Set<string>(
+    teamSubmissions.map((ts: any) => ts.teamId).filter(Boolean)
+  )
 
   const gyms = (world.gyms ?? [])
     .filter((g) => seasonVenueOf.has(g.venueId))
@@ -275,7 +280,7 @@ export async function sanitizePlanWorld(
     // Ruling 8: only ids that are real team submissions of this season
     // survive. Absent stays absent — a plan that never named an exclusion
     // list keeps not having one.
-    excludedTeamIds: world.excludedTeamIds?.filter((id) => validTeamSubmissions.has(id)),
+    excludedTeamIds: world.excludedTeamIds?.filter((id) => validTeamIds.has(id)),
   }
 }
 

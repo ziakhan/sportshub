@@ -224,9 +224,21 @@ ok(
     step2
   )
 )
+/**
+ * RE-PINNED 2026-08-07 (one-calendar wave, docs/roadmap/one-calendar-wave-
+ * 2026-08-07.md rulings #1+#2: write-through died, and steps 1-2 with nothing
+ * open are read only). make-home is a WRITE control. Before this wave, "nothing
+ * open" on step 2 fell back to writing the season's own buildings straight
+ * through, so the button rendered on a cold visit; that fallback is gone and
+ * there is nowhere left for the click to land, so the roster renders read
+ * only and offers no make-home button at all. OLD: "offers make-home on every
+ * gym that is not home" (season fallback). NEW: offers none, with nothing
+ * open.
+ */
 ok(
-  "step 2 offers make-home on every gym that is not home",
-  (await page.locator('[data-testid="make-home"]').count()) === gymCards - homeCards
+  "with nothing open, step 2 offers no make-home button (no season fallback to write into any more)",
+  (await page.locator('[data-testid="make-home"]').count()) === 0,
+  `${gymCards - homeCards} gym(s) could have offered one under the old write-through`
 )
 ok(
   "step 2 has no reorder arrows",
@@ -272,13 +284,18 @@ ok(
   `${leagueOn} weekends on`
 )
 /**
- * NEW 2026-08-06 (wave B): this section navigated straight to ?step=2 without
- * opening a plan, so it is in the "active plan, or nothing open" state — the
- * row can only read the season's own weekends back, and it has to say it is
- * read only rather than let a tap mean nothing. The editable half of this
- * contract (a non-active plan of the operator's own) is driven later in the
- * "A PLAN OWNS ITS WORLD" section below, where the row starts at 0 of N and a
- * click really turns one on.
+ * NEW 2026-08-06 (wave B), reworded 2026-08-07: this section navigated
+ * straight to ?step=2 without opening a plan, so it is truly the
+ * nothing-open state — the row can only read the season's own weekends back,
+ * and it has to say it is read only rather than let a tap mean nothing. Before
+ * the one-calendar wave this state and "the active plan is open" behaved
+ * identically (both wrote through to the season); write-through's death
+ * (ruling #1) makes them two different states now — an open active plan is a
+ * sandbox like any other (driven in the courtBuffer/drift section and the
+ * autosave section below), and nothing-open is the one that stays read only.
+ * The editable half of this contract (a plan of the operator's own, chosen)
+ * is driven later in the "A PLAN OWNS ITS WORLD" section below, where the row
+ * starts at 0 of N and a click really turns one on.
  */
 ok(
   "with no plan of the operator's own open, the row says it is read only",
@@ -305,7 +322,18 @@ ok(
   "step 2 has no paint grid and no Booked-it rows left",
   !/Booked it/.test(step2) && !/assumed, not booked yet/.test(step2)
 )
-ok("step 2 still edits courts", (await page.getByLabel(/ courts$/).count()) >= gymCards)
+/**
+ * RE-PINNED 2026-08-07 (write-through died, same ruling as make-home above).
+ * The courts INPUT is a write control too, so with nothing open it is gone
+ * along with make-home: the roster falls back to a read-only "<b>N</b>
+ * courts" badge. OLD: "step 2 still edits courts" (the season-fallback write
+ * path). NEW: nothing open means no editable input anywhere on the roster.
+ */
+ok(
+  "with nothing open, step 2 shows courts read only (no input, no season fallback to write into)",
+  (await page.getByLabel(/ courts$/).count()) === 0 && gymCards > 0,
+  `0 editable input(s) among ${gymCards} gym(s)`
+)
 ok(
   "step 2 notice slot is mounted even when empty",
   (await page.locator('[data-testid="step2-notice"]').count()) === 1
@@ -505,10 +533,14 @@ if ((await stripToggle.count()) > 0) {
 }
 
 // ── The court buffer: courts the league holds back ────────────────────────
-// Owner ruling 2026-08-03. This is the ONE write this script makes, and it
-// puts it straight back: set the buffer to 1, read the capacity and the
-// board's own sentence, then restore 0 and check the season is exactly as it
-// was found. Nothing else here persists anything.
+// Owner ruling 2026-08-03. This is the ONE season-level write this script
+// makes outside any plan's own document, and it puts it straight back: set
+// the buffer to 1, read the LIVE capacity, then (RE-PINNED 2026-08-07, ruling
+// #5) confirm the ACTIVE plan's board does NOT pick it up — GET
+// plans/[planId] answers from stored settings now, the active plan included,
+// so a season-level change made outside any plan's sandbox is drift the plan
+// cannot see until it is re-generated. Restore 0 and check the season is
+// exactly as it was found.
 const capacityOf = (planner) =>
   (planner?.state?.windows ?? [])
     .flatMap((w) => w.weekends)
@@ -517,14 +549,40 @@ const plannerNow = () =>
   page.request.get(`${BASE}/api/seasons/${SEASON}/planner`).then((r) => r.json())
 const setBuffer = (courtBuffer) =>
   page.request.patch(`${BASE}/api/seasons/${SEASON}/planner/venues`, { data: { courtBuffer } })
+/** Hoisted above the drift check below (and reused later, in "A PLAN OWNS ITS
+ *  WORLD"): the plan list and one plan's whole document. */
+const plansOf = async () =>
+  (await page.request.get(`${BASE}/api/seasons/${SEASON}/plans`).then((r) => r.json()))?.plans ?? []
+const docOf = async (id) =>
+  (await page.request.get(`${BASE}/api/seasons/${SEASON}/plans/${id}`).then((r) => r.json()))?.plan
 
 const capBefore = capacityOf(await plannerNow())
+/**
+ * THE ACTIVE PLAN'S OWN "BEFORE", read from ITS document, not the season's.
+ * This is a long-lived demo world that other drives have run against, so the
+ * active plan's stored settings may already disagree with the season's
+ * current live numbers for reasons that have nothing to do with this test —
+ * that pre-existing disagreement IS the "active plans can show drift" ruling
+ * in the wild, but it means the fair comparison for THIS test is the plan's
+ * own before-and-after, not the plan's stored value against the season's.
+ */
+const plans = await plansOf()
+const activePlanRow = plans.find((p) => p.isActive) ?? null
+ok(
+  "the season has an active plan to test drift against",
+  Boolean(activePlanRow),
+  activePlanRow ? `${activePlanRow.name} (${activePlanRow.source})` : "no active plan"
+)
+const activeCapStoredBefore = activePlanRow
+  ? capacityOf({ state: (await docOf(activePlanRow.id))?.settings?.state })
+  : null
+
 const saved = await setBuffer(1)
 ok("the court buffer saves", saved.ok(), `HTTP ${saved.status()}`)
 const withBuffer = await plannerNow()
 const capHeld = capacityOf(withBuffer)
 ok(
-  "holding one court back drops the season's capacity",
+  "holding one court back drops the season's LIVE capacity",
   capHeld < capBefore,
   `${capBefore} games → ${capHeld}`
 )
@@ -532,19 +590,56 @@ const venuesHeld = (withBuffer?.state?.windows ?? [])
   .flatMap((w) => w.weekends)
   .flatMap((w) => w.venues)
 ok(
-  "every gym reports the court it is holding",
+  "every gym reports the court it is holding, on the live grid",
   venuesHeld.length > 0 && venuesHeld.every((v) => (v.courtsHeld ?? 0) === 1),
   `${venuesHeld.filter((v) => (v.courtsHeld ?? 0) > 0).length} of ${venuesHeld.length} gym-weekends`
 )
-// The weekend's sentence lives behind its "why" chip, so the check opens one
-// the way an operator would. The panel portals to body, so read the document.
+
+/**
+ * RE-PINNED 2026-08-07 (ruling #5: "GET plans/[planId] returns STORED
+ * settings for the active plan now — no live season read; active plans can
+ * show drift"). Before this wave the active plan's GET read the season's rows
+ * LIVE (write-through's mirror image), so this exact season-level buffer
+ * write would have shown up on its board immediately — the OLD version of
+ * this check clicked the board's "why" chips looking for "held back" and
+ * expected to find it, because the active plan WAS the season. Now the active
+ * plan reads what it last had SAVED, so a change made outside any plan's
+ * document is invisible to it until the plan is re-generated: that is the
+ * drift the ruling names, not a bug.
+ *
+ * capacityGames is already a field stored per weekend inside the plan's own
+ * settings.state — the identical shape `capacityOf` already reads off the
+ * live planner endpoint — so the same helper proves the point two ways: the
+ * active plan's STORED total does not move when the season's does (compared
+ * against ITS OWN before, captured above), and it now visibly disagrees with
+ * the LIVE total.
+ */
+const activeCapStoredAfter = activePlanRow
+  ? capacityOf({ state: (await docOf(activePlanRow.id))?.settings?.state })
+  : null
+ok(
+  "the active plan's GET reads STORED settings, unmoved by the season's live buffer change",
+  activePlanRow ? activeCapStoredAfter === activeCapStoredBefore : true,
+  `stored ${activeCapStoredBefore} → ${activeCapStoredAfter} (live moved ${capBefore} → ${capHeld})`
+)
+ok(
+  "so the active plan now visibly DRIFTS from the live season — exactly the shape ruling #5 describes",
+  activePlanRow ? activeCapStoredAfter !== capHeld : true,
+  `stored ${activeCapStoredAfter} ≠ live ${capHeld}`
+)
+
+// The board itself, opened on the active plan: RE-PINNED — it must NOT have
+// picked up a change that never touched its document. The OLD check here
+// asserted the opposite (that the board's "why" chip said "held back"),
+// which was only ever true because the active plan used to be read live.
 await openBoard(page, `${BASE}/manage/leagues/${LEAGUE}/seasons/${SEASON}/plan?step=3`)
 await page.waitForSelector('[data-testid="gym-list"]', { timeout: 60000 })
 await page.waitForTimeout(1200)
 /**
- * RE-PINNED 2026-08-05: only a weekend that HAS a gym can be holding a court
- * back, so the check opens the chips in turn rather than assuming the first
- * weekend of the season is one of them.
+ * RE-PINNED 2026-08-05, still true: only a weekend that HAS a gym could ever
+ * be holding a court back, so the check opens the chips in turn rather than
+ * assuming the first weekend of the season is one of them. What changed
+ * 2026-08-07 is the expected OUTCOME of opening them (see above).
  */
 const whyChips = page.locator('[data-testid="weekend-why"]')
 const whyCount = await whyChips.count()
@@ -561,11 +656,13 @@ for (let i = 0; i < Math.min(whyCount, 6); i++) {
   await page.waitForTimeout(200)
 }
 ok(
-  "the board says a court is held back",
-  /held back/i.test(boardHeld),
-  whyCount === 0 ? "no weekend-why chip on the board" : `checked ${Math.min(whyCount, 6)} weekend(s)`
+  "RE-PINNED: the active plan's board does NOT say a court is held back (its document was never touched)",
+  !/held back/i.test(boardHeld),
+  whyCount === 0
+    ? "no weekend-why chip on the board"
+    : `checked ${Math.min(whyCount, 6)} weekend(s), none mentioned it`
 )
-await page.screenshot({ path: `${SHOTS}/6-court-buffer.png`, fullPage: true })
+await page.screenshot({ path: `${SHOTS}/6-court-buffer-drift.png`, fullPage: true })
 
 const restored = await setBuffer(0)
 const capRestored = capacityOf(await plannerNow())
@@ -590,8 +687,7 @@ ok(
  * Self-restoring: the plan it creates is deleted at the end.
  */
 const planUrl = (step) => `${BASE}/manage/leagues/${LEAGUE}/seasons/${SEASON}/plan?step=${step}`
-const plansOf = async () =>
-  (await page.request.get(`${BASE}/api/seasons/${SEASON}/plans`).then((r) => r.json()))?.plans ?? []
+// plansOf and docOf are hoisted above, in the court-buffer/drift section.
 
 /** The season's own gym grid and saved calendar, in one comparable string. This
  *  is what must not move while a plan of the operator's own is edited. */
@@ -629,8 +725,6 @@ const madeRes = await page.request.post(`${BASE}/api/seasons/${SEASON}/plans`, {
 const worldPlan = madeRes.ok() ? (await madeRes.json()).plan : null
 ok("a fresh plan is created for the world drive", Boolean(worldPlan), `HTTP ${madeRes.status()}`)
 
-const docOf = async (id) =>
-  (await page.request.get(`${BASE}/api/seasons/${SEASON}/plans/${id}`).then((r) => r.json()))?.plan
 const weekendsIn = (doc) =>
   (doc?.settings?.state?.windows ?? []).flatMap((w) => w.weekends ?? [])
 
@@ -910,6 +1004,79 @@ if (worldPlan) {
     `HTTP ${gymAttached.status()}`
   )
 
+  /**
+   * ── AUTOSAVE, on the board (owner ruling 2026-08-07, #4) ─────────────────
+   * RE-PINS the old "Save to <plan>" round trip: there is no Save button any
+   * more on a plan the operator owns, so persistence has to be proven by
+   * editing, waiting out the debounce, and reloading — never by pressing a
+   * control that no longer exists. Reopens fresh so the browser sees the gym
+   * this script just attached by API, then makes ONE real client-side edit
+   * (Redraw, a genuine working-copy change, safe here because the board was
+   * just freshly loaded and so is not dirty — Redraw only confirms when it
+   * would overwrite unsaved hand work) and watches it land with no button
+   * anywhere in reach.
+   */
+  await openPlanFromStep1(page, planUrl(3), worldPlan.id)
+  await page.waitForSelector('[data-testid="gym-list"]', { timeout: 60000 })
+  await page.waitForTimeout(500)
+  const planStateLine = page.locator('[data-testid="plan-state"]')
+  ok(
+    "before any edit, the plan-state line already says autosave owns it — no Save button anywhere",
+    /Every change saves to/.test((await planStateLine.innerText().catch(() => "")).trim()),
+    (await planStateLine.innerText().catch(() => "")).trim()
+  )
+  ok(
+    "RE-PINNED: Save to plan, Save as new plan, Use for the season and Undo changes are all gone from the board",
+    (await page.getByRole("button", { name: /^Save to /i }).count()) === 0 &&
+      (await page.getByRole("button", { name: /^Save as new/i }).count()) === 0 &&
+      (await page.getByRole("button", { name: /Use for the season/i }).count()) === 0 &&
+      (await page.getByRole("button", { name: /^Undo changes/i }).count()) === 0
+  )
+  const assignmentBeforeRedraw = (await docOf(worldPlan.id))?.assignment ?? {}
+  const redrawBtn = page.locator('[data-testid="redraw"]')
+  ok(
+    "Redraw is offered now that the plan's world can hold a calendar",
+    (await redrawBtn.count()) === 1
+  )
+  await redrawBtn.click()
+  // `dirty` flips synchronously on click, well before the 1s autosave
+  // debounce fires — "Saving…" should show almost immediately.
+  const autosaveStates = new Set()
+  for (let i = 0; i < 20; i++) {
+    autosaveStates.add((await planStateLine.innerText().catch(() => "")).trim())
+    await page.waitForTimeout(150)
+  }
+  ok(
+    "clicking Redraw goes dirty and the line says Saving…, with no button to press to make it happen",
+    [...autosaveStates].some((s) => s === "Saving…"),
+    [...autosaveStates].join(" → ")
+  )
+  // The debounce is ~1s; wait it out with margin, then poll the DOCUMENT
+  // itself — not just the DOM — for the write actually landing on the server.
+  let assignmentAfterRedraw = assignmentBeforeRedraw
+  for (let i = 0; i < 20; i++) {
+    await page.waitForTimeout(150)
+    assignmentAfterRedraw = (await docOf(worldPlan.id))?.assignment ?? {}
+    if (JSON.stringify(assignmentAfterRedraw) !== JSON.stringify(assignmentBeforeRedraw)) break
+  }
+  ok(
+    "~1.5s after the edit, autosave has written the redraw to the plan document with no Save press",
+    JSON.stringify(assignmentAfterRedraw) !== JSON.stringify(assignmentBeforeRedraw),
+    `${Object.keys(assignmentBeforeRedraw).length} weekend(s) assigned before → ${Object.keys(assignmentAfterRedraw).length} after`
+  )
+  // RELOAD — a hard navigation, not a client cache — and the edit survives:
+  // this is the autosave round trip that replaces the old save-to-plan one.
+  await page.reload({ waitUntil: "load" })
+  await page.waitForSelector('[data-testid="gym-list"]', { timeout: 60000 })
+  await page.waitForTimeout(700)
+  const assignmentAfterReload = (await docOf(worldPlan.id))?.assignment ?? {}
+  ok(
+    "RE-PINNED: reloading the page confirms the autosave round trip persisted (replaces the old save-to-plan round trip)",
+    JSON.stringify(assignmentAfterReload) === JSON.stringify(assignmentAfterRedraw) &&
+      JSON.stringify(assignmentAfterReload) !== JSON.stringify(assignmentBeforeRedraw),
+    `${Object.keys(assignmentAfterReload).length} weekend(s) assigned after reload`
+  )
+
   /* ── take the gym away: the placements strand, loudly ────────────────── */
   // Place a grade on the first chosen weekend, now that it really has a gym,
   // then turn that weekend off in step 2 and come back.
@@ -968,6 +1135,177 @@ if (worldPlan) {
   ok(
     "the season's gym grid and saved calendar are byte-identical to where they started",
     (await seasonWorld()) === seasonBefore
+  )
+}
+
+/* ===== THE ONE BUTTON, and "activate" gone for good (owner rulings #3/#4/#6) =====
+ *
+ * NEW data-testid="generate-season" (board header) and data-testid=
+ * "step5-generate" (step 5's primary): one POST, `/plans/[planId]/generate`,
+ * that previews two plain-words sufficiency questions and only writes once
+ * the operator says "anyway".
+ *
+ * SAFETY (non-negotiable): this script NEVER presses the dialog through to
+ * confirm — it registers a `dialog` handler that reads the message and calls
+ * `dismiss()`, and it never POSTs `{confirm:true}` itself. A plan with ZERO
+ * chosen weekends is used on purpose: with the season's real games-per-team
+ * guarantee (gamesPerTeam=10, already read for the step 1 checks above) and
+ * at least one grade with teams>0 (every fresh plan inherits the season's
+ * estimates), every included unit's "promised games" is 0 < 10, so the
+ * preflight is GUARANTEED to return `{needsConfirm:true, findings}` and
+ * write nothing — confirmed below by reading the actual network response,
+ * not assumed. Self-restoring: the plan it creates is deleted at the end, and
+ * the season's active plan and games are checked byte-identical throughout.
+ */
+const GEN_PLAN = "Drive generate plan"
+for (const p of await plansOf()) {
+  if (p.name === GEN_PLAN) await page.request.delete(`${BASE}/api/seasons/${SEASON}/plans/${p.id}`)
+}
+const plansBeforeGenPlan = await plansOf()
+const activeBeforeGen = plansBeforeGenPlan.find((p) => p.isActive)?.id ?? null
+const genMade = await page.request.post(`${BASE}/api/seasons/${SEASON}/plans`, {
+  data: { name: GEN_PLAN, fresh: true },
+})
+const genPlan = genMade.ok() ? (await genMade.json()).plan : null
+ok("a fresh, zero-weekend plan is created for the one-button drive", Boolean(genPlan), `HTTP ${genMade.status()}`)
+
+if (genPlan) {
+  const genUnits = (await docOf(genPlan.id))?.settings?.state?.units ?? []
+  ok(
+    "the season's games-per-team guarantee is a real positive number, so this plan is guaranteed to have findings",
+    Number(plannerForBanner?.state?.gamesPerTeam ?? 0) > 0 && genUnits.some((u) => u.teams > 0),
+    `gamesPerTeam=${plannerForBanner?.state?.gamesPerTeam} · ${genUnits.filter((u) => u.teams > 0).length} unit(s) with teams`
+  )
+
+  /* ── step 5, with nothing open: the pointer, not a shortcut ────────────── */
+  await page.goto(`${BASE}/manage/leagues/${LEAGUE}/seasons/${SEASON}/plan?step=5`)
+  await page.waitForSelector('[data-testid="step5-plan-pointer"], [data-testid="step5-generate"]', {
+    timeout: 60000,
+  })
+  ok(
+    "with nothing open, step 5 offers the pointer back to step 1, not a generate shortcut",
+    (await page.locator('[data-testid="step5-plan-pointer"]').count()) === 1 &&
+      (await page.locator('[data-testid="step5-generate"]').count()) === 0
+  )
+
+  /* ── open the plan, then press THE ONE BUTTON on the board (step 3) ────── */
+  await openPlanFromStep1(page, planUrl(3), genPlan.id)
+  const genBtn = page.locator('[data-testid="generate-season"]')
+  ok("NEW: the board header offers generate-season now that a plan is open", (await genBtn.count()) === 1)
+
+  const genResponsePromise = page
+    .waitForResponse(
+      (r) => /\/plans\/[^/]+\/generate$/.test(new URL(r.url()).pathname) && r.request().method() === "POST",
+      { timeout: 20000 }
+    )
+    .catch(() => null)
+  let dialogMessage = null
+  page.once("dialog", async (dialog) => {
+    dialogMessage = dialog.message()
+    // SAFETY: dismiss, never accept. Accepting would resubmit with
+    // {confirm:true}, which is the one POST this script must never make.
+    await dialog.dismiss()
+  })
+  await genBtn.click()
+  const genResponse = await genResponsePromise
+  const genBody = genResponse ? await genResponse.json().catch(() => null) : null
+  await page.waitForTimeout(500)
+  ok(
+    "pressing generate-season POSTs the one door, and (zero weekends chosen) it stops at needsConfirm, writing nothing",
+    genBody?.needsConfirm === true && Array.isArray(genBody?.findings) && genBody.findings.length > 0,
+    JSON.stringify(genBody)?.slice(0, 200)
+  )
+  ok(
+    "SAFETY: the confirm dialog is observed and auto-dismissed, never accepted",
+    typeof dialogMessage === "string" && dialogMessage.length > 0,
+    (dialogMessage ?? "no dialog seen").slice(0, 160)
+  )
+  const plansAfterBoardGen = await plansOf()
+  ok(
+    "SAFETY: dismissing the dialog wrote nothing — the season's active plan did not change",
+    (plansAfterBoardGen.find((p) => p.isActive)?.id ?? null) === activeBeforeGen,
+    `active before ${activeBeforeGen} → after ${plansAfterBoardGen.find((p) => p.isActive)?.id ?? null}`
+  )
+
+  /* ── the same button, from step 5 ───────────────────────────────────────── */
+  await openPlanFromStep1(page, planUrl(5), genPlan.id)
+  await page.waitForSelector('[data-testid="step5-generate"]', { timeout: 60000 })
+  const step5GenBtn = page.locator('[data-testid="step5-generate"]')
+  ok("NEW: step 5's primary is generate-season's twin, step5-generate", (await step5GenBtn.count()) === 1)
+  const genResponsePromise2 = page
+    .waitForResponse(
+      (r) => /\/plans\/[^/]+\/generate$/.test(new URL(r.url()).pathname) && r.request().method() === "POST",
+      { timeout: 20000 }
+    )
+    .catch(() => null)
+  let dialogMessage2 = null
+  page.once("dialog", async (dialog) => {
+    dialogMessage2 = dialog.message()
+    await dialog.dismiss()
+  })
+  await step5GenBtn.click()
+  const genResponse2 = await genResponsePromise2
+  const genBody2 = genResponse2 ? await genResponse2.json().catch(() => null) : null
+  await page.waitForTimeout(500)
+  ok(
+    "step5-generate answers the same way: needsConfirm with findings, nothing written",
+    genBody2?.needsConfirm === true && Array.isArray(genBody2?.findings) && genBody2.findings.length > 0,
+    JSON.stringify(genBody2)?.slice(0, 200)
+  )
+  ok(
+    "SAFETY: step 5's dialog is also observed and auto-dismissed, never accepted",
+    typeof dialogMessage2 === "string" && dialogMessage2.length > 0,
+    (dialogMessage2 ?? "no dialog seen").slice(0, 160)
+  )
+  const plansAfterStep5Gen = await plansOf()
+  ok(
+    "SAFETY: still nothing written after the step 5 press — the active plan is unmoved",
+    (plansAfterStep5Gen.find((p) => p.isActive)?.id ?? null) === activeBeforeGen,
+    `active before ${activeBeforeGen} → after ${plansAfterStep5Gen.find((p) => p.isActive)?.id ?? null}`
+  )
+
+  /**
+   * RULING #6: "the word 'activate' appears nowhere user-facing." Swept across
+   * every screen this whole drive visited with a plan open — step 1, step 2,
+   * the board, and step 5 — plus the plan picker's own open menu, where the
+   * closest old word ("activate this plan") used to live. `/activate/i` never
+   * matches "active" (the marker word plans still wear): "active" is six
+   * letters, "activate" is eight, and the word never appears here as a
+   * substring of the other.
+   */
+  await page.goto(planUrl(1) + `&plan=${genPlan.id}`)
+  await page.waitForSelector('[data-testid="step1-plan-line"]', { timeout: 60000 })
+  const chooserBtn = page.locator('[data-testid="step1-plan-chooser"] [data-testid="plan-picker"]')
+  if ((await chooserBtn.count()) > 0) {
+    await chooserBtn.click()
+    await page.waitForSelector('[data-testid="plan-menu"]', { timeout: 10000 }).catch(() => {})
+  }
+  const sweepTexts = [
+    await page.locator("body").innerText(),
+  ]
+  await page.keyboard.press("Escape").catch(() => {})
+  await page.goto(planUrl(2) + `&plan=${genPlan.id}`)
+  await page.waitForSelector('[data-testid="step2-plan-line"]', { timeout: 60000 })
+  sweepTexts.push(await page.locator("body").innerText())
+  await openPlanFromStep1(page, planUrl(3), genPlan.id)
+  sweepTexts.push(await page.locator("body").innerText())
+  await openPlanFromStep1(page, planUrl(5), genPlan.id)
+  await page.waitForSelector('[data-testid="step5-generate"]', { timeout: 60000 })
+  sweepTexts.push(await page.locator("body").innerText())
+  const activateHits = sweepTexts.filter((t) => /activate/i.test(t))
+  ok(
+    'RULING #6: the word "activate" appears nowhere user-facing, across steps 1, 2, 3 and 5 with a plan open',
+    activateHits.length === 0,
+    activateHits.length > 0 ? activateHits[0].match(/.{0,40}activate.{0,40}/i)?.[0] : "clean"
+  )
+
+  /* ── clean up ────────────────────────────────────────────────────────── */
+  const genGone = await page.request.delete(`${BASE}/api/seasons/${SEASON}/plans/${genPlan.id}`)
+  ok("the one-button drive's plan is deleted again", genGone.ok(), `HTTP ${genGone.status()}`)
+  const plansAtEnd = await plansOf()
+  ok(
+    "the season's active plan is exactly the one it started with — nothing here ever generated anything",
+    (plansAtEnd.find((p) => p.isActive)?.id ?? null) === activeBeforeGen
   )
 }
 

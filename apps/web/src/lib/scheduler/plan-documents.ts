@@ -679,7 +679,7 @@ export const PLAN_COPY = {
   /** Why the two plans that cannot be deleted cannot be, said on the button. */
   deleteReference:
     "The imported reference is the record of what the league published, so it cannot be deleted.",
-  deleteActive: "This plan runs the season. Activate another one first.",
+  deleteActive: "This plan runs the season. Generate from another plan first.",
   /**
    * A PLACEMENT WHOSE BUILDING IS GONE (owner ruling 2026-08-05, #4). The
    * operator took a gym off a weekend on step 2, and games were already there.
