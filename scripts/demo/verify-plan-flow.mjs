@@ -476,8 +476,11 @@ const gridBefore = await page.request
 const sixPark = (gridBefore?.grid?.venues ?? gridBefore?.venues ?? []).find((v) =>
   /Six Park/.test(v.name ?? "")
 )
+// Six holds NJC marks; only the ones on IN-SEASON weekends have columns now
+// (owner 2026-08-07: the season's dates define the supply — the clamp drops
+// bare out-of-span Saturdays, and playoff weekends already have no column).
 const takenCells = (sixPark?.cells ?? []).filter((c) => c.state === "taken").length
-ok("Six Park carries taken weekends in the grid", takenCells >= 5, `${takenCells} taken`)
+ok("Six Park carries taken weekends in the grid", takenCells >= 4, `${takenCells} taken`)
 // Every weekend we have says where the booking stands, and every weekend we do
 // not have says nothing — that is what the hatch and the Booked it tap read.
 const gridRows = gridBefore?.grid?.venues ?? gridBefore?.venues ?? []

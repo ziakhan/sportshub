@@ -23,29 +23,27 @@ const sats = (cols: Array<{ satDateISO: string | null }>) =>
   cols.map((c) => c.satDateISO?.slice(0, 10) ?? null)
 
 describe("enumerateSeasonWeekends", () => {
-  it("gives a season with dates and no sessions every weekend of every month", () => {
+  it("gives a season with dates and no sessions every weekend INSIDE its dates", () => {
+    // The season's own start and end define the supply (owner 2026-08-07):
+    // no weekend is offered before the start or after the end. A weekend
+    // counts as inside when any of it touches the span — Nov 14-15 stays,
+    // because its Sunday IS the start date.
     const cols = enumerateSeasonWeekends({
       start: day("2026-11-15"),
       end: day("2026-12-15"),
       sessions: [],
     })
 
-    // Widened to whole months: Nov 1 through Dec 31.
     expect(sats(cols)).toEqual([
-      "2026-11-07",
       "2026-11-14",
       "2026-11-21",
       "2026-11-28",
       "2026-12-05",
       "2026-12-12",
-      "2026-12-19",
-      "2026-12-26",
     ])
     expect(cols.every((c) => c.sessionId === null)).toBe(true)
     expect(cols.every((c) => c.dayCount === 2)).toBe(true)
-    expect(cols.map((c) => c.month)).toEqual([
-      "Nov", "Nov", "Nov", "Nov", "Dec", "Dec", "Dec", "Dec",
-    ])
+    expect(cols.map((c) => c.month)).toEqual(["Nov", "Nov", "Nov", "Dec", "Dec"])
   })
 
   it("derives the span from the season's own days when it has no dates", () => {
@@ -68,7 +66,7 @@ describe("enumerateSeasonWeekends", () => {
     expect(cols[3].dayLabel).toBe("24–25")
   })
 
-  it("spans the widest of the season's dates and the weekends it already plays", () => {
+  it("keeps a real session outside the dates, but offers no bare weekend there", () => {
     const cols = enumerateSeasonWeekends({
       // The declared season starts in November, but October is already played.
       start: day("2026-11-01"),
@@ -76,9 +74,13 @@ describe("enumerateSeasonWeekends", () => {
       sessions: [{ id: "s1", days: weekend("2026-10-24") }],
     })
 
-    expect(sats(cols)[0]).toBe("2026-10-03")
+    // The played weekend keeps its column wherever it falls; the empty
+    // October Saturdays around it are not supply this season declares.
+    expect(sats(cols)[0]).toBe("2026-10-24")
+    expect(cols[0].sessionId).toBe("s1")
+    // Oct 31 stays: its Sunday is Nov 1, which touches the declared span.
+    expect(sats(cols)[1]).toBe("2026-10-31")
     expect(sats(cols).at(-1)).toBe("2026-12-26")
-    expect(cols.find((c) => c.satDateISO === day("2026-10-24").toISOString())?.sessionId).toBe("s1")
   })
 
   it("labels a weekend that straddles two months by both", () => {

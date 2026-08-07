@@ -194,10 +194,17 @@ export function enumerateSeasonWeekends(input: SeasonWeekendInput): VenueGridWee
 
   // Span candidates: the season's declared dates and every day it plays.
   const marks: Date[] = []
-  for (const value of [input.start, input.end]) {
+  const declared: { start: Date | null; end: Date | null } = { start: null, end: null }
+  for (const [edge, value] of [
+    ["start", input.start],
+    ["end", input.end],
+  ] as const) {
     if (value) {
       const d = utcMidnight(value)
-      if (!Number.isNaN(d.getTime())) marks.push(d)
+      if (!Number.isNaN(d.getTime())) {
+        marks.push(d)
+        declared[edge] = d
+      }
     }
   }
   for (const s of sessions) {
@@ -262,6 +269,17 @@ export function enumerateSeasonWeekends(input: SeasonWeekendInput): VenueGridWee
     for (; sat.getTime() <= spanEnd.getTime(); sat.setUTCDate(sat.getUTCDate() + 7)) {
       const iso = sat.toISOString()
       if (claimed.has(iso)) continue
+      /**
+       * A VIRTUAL WEEKEND STAYS INSIDE THE SEASON'S OWN DATES (owner
+       * 2026-08-07: "the season start and end date defines" — shortening the
+       * season is how trailing open weekends disappear). The month widening
+       * survives for REAL sessions, which keep their columns wherever they
+       * fall; it is only supply nobody created that stops being offered past
+       * the declared edges. A weekend counts as inside when any of it touches
+       * the declared span.
+       */
+      if (declared.end && sat.getTime() > declared.end.getTime()) continue
+      if (declared.start && sat.getTime() + DAY_MS < declared.start.getTime()) continue
       const sun = new Date(sat.getTime() + DAY_MS)
       columns.push(column([new Date(sat), sun], null))
       claimed.add(iso)
