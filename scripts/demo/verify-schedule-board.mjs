@@ -71,6 +71,10 @@ await page.waitForSelector("text=Generate the schedule", { timeout: 30000 })
 // no request leaves the page).
 await page.click("button:has-text('Whole season at once')")
 await page.waitForTimeout(400)
+// Summary-first screen (2026-08-07, stage 2): the games table and its
+// list/board toggle sit behind the quiet reveal now.
+await page.click('[data-testid="show-all-games"]')
+await page.waitForTimeout(200)
 await page.click('[data-games-view="board"]')
 await page.waitForSelector("[data-schedule-board]", { timeout: 20000 })
 await page.waitForTimeout(600)

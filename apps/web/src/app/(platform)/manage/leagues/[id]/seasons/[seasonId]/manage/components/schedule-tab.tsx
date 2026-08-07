@@ -6,6 +6,7 @@ import { Badge, Button, PanelHeader, toneForStatus, DateTimePicker } from "@/com
 import { inputClass, panelClass } from "./types"
 import { TeamCheck } from "./team-check"
 import { ScheduleBoard } from "./schedule-board"
+import { ScheduleVerdictHeader, FairnessSummaryTable } from "./summary-panel"
 import { computeFairnessReport } from "@/lib/scheduler/report"
 import { unitAbbrev, type BoardGame } from "@/lib/scheduler/board"
 
@@ -102,11 +103,11 @@ export function ScheduleTab({
   const [fillPreview, setFillPreview] = useState(false)
   const [report, setReport] = useState<any | null>(null)
   const [reportLoading, setReportLoading] = useState(false)
-  const loadReport = async () => {
-    if (report) {
-      setReport(null)
-      return
-    }
+  // Summary-first (owner plan, stage 2, 140-team scale): the fairness
+  // report computes automatically the moment a preview or a committed
+  // schedule exists — no click required to see the verdict.
+  useEffect(() => {
+    let cancelled = false
     // A live preview gets its report computed right here from the proposed
     // games — no need to commit first to see the fairness picture.
     if (preview && preview.games.length > 0) {
@@ -154,11 +155,23 @@ export function ScheduleTab({
       )
       return
     }
+    if (scheduleGames.length === 0) {
+      setReport(null)
+      return
+    }
     setReportLoading(true)
-    const res = await fetch(`/api/seasons/${seasonId}/schedule/report`)
-    if (res.ok) setReport(await res.json())
-    setReportLoading(false)
-  }
+    fetch(`/api/seasons/${seasonId}/schedule/report`)
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (!cancelled) setReport(data)
+      })
+      .finally(() => {
+        if (!cancelled) setReportLoading(false)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [preview, scheduleGames, seasonId, league])
   const [committing, setCommitting] = useState(false)
   const [scheduleError, setScheduleError] = useState<string | null>(null)
   const [capacity, setCapacity] = useState<CapacitySession[] | null>(null)
@@ -536,6 +549,30 @@ export function ScheduleTab({
     [visibleGames, unitByTeam]
   )
 
+  // Results area (owner plan, stage 2): summary-first. A clicked team
+  // replaces the fairness table with its schedule; "show all games" is a
+  // separate, quiet reveal of the same full table the summary sits above.
+  const [drillDownTeamId, setDrillDownTeamId] = useState<string | null>(null)
+  const [showAllGames, setShowAllGames] = useState(false)
+  const drilldownGames = useMemo(
+    () =>
+      drillDownTeamId
+        ? visibleGames.filter(
+            (g: any) => g.homeTeamId === drillDownTeamId || g.awayTeamId === drillDownTeamId
+          )
+        : [],
+    [visibleGames, drillDownTeamId]
+  )
+  const drilldownBoardGames = useMemo(
+    () =>
+      drillDownTeamId
+        ? boardGames.filter(
+            (g) => g.homeTeamId === drillDownTeamId || g.awayTeamId === drillDownTeamId
+          )
+        : [],
+    [boardGames, drillDownTeamId]
+  )
+
   return (
     <div className="space-y-6">
       <div className={`reveal ${panelClass}`}>
@@ -557,7 +594,7 @@ export function ScheduleTab({
         <div className="mb-4 grid gap-2 sm:grid-cols-2">
           <button
             type="button"
-            onClick={() => { setMode("session"); setPreview(null) }}
+            onClick={() => { setMode("session"); setPreview(null); setDrillDownTeamId(null) }}
             aria-pressed={mode === "session"}
             className={`rounded-xl border p-3 text-left transition-colors ${
               mode === "session" ? "border-play-500 bg-play-50" : "border-ink-200 hover:border-ink-300"
@@ -576,7 +613,7 @@ export function ScheduleTab({
           </button>
           <button
             type="button"
-            onClick={() => { setMode("season"); setPreview(null) }}
+            onClick={() => { setMode("season"); setPreview(null); setDrillDownTeamId(null) }}
             aria-pressed={mode === "season"}
             className={`rounded-xl border p-3 text-left transition-colors ${
               mode === "season" ? "border-play-500 bg-play-50" : "border-ink-200 hover:border-ink-300"
@@ -601,7 +638,7 @@ export function ScheduleTab({
                 return (
                   <button
                     key={s.id}
-                    onClick={() => { setSelectedSessionId(s.id); setPreview(null) }}
+                    onClick={() => { setSelectedSessionId(s.id); setPreview(null); setDrillDownTeamId(null) }}
                     className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition ${
                       selected
                         ? "border-play-500 bg-play-600 text-white"
@@ -884,15 +921,8 @@ export function ScheduleTab({
                 ? ` · ${preview.unscheduled.length} unscheduled`
                 : ""}
             </p>
-            {preview.warnings.length > 0 && (
-              <ul className="mb-3 space-y-0.5">
-                {preview.warnings.map((w, i) => (
-                  <li key={i} className="text-amber-700 text-xs">
-                    • {w}
-                  </li>
-                ))}
-              </ul>
-            )}
+            {/* Warnings render in the verdict header below (they feed its
+                issue count too) — not duplicated here. */}
             {(preview.tradeoffs ?? []).length === 0 && preview.unscheduled.length === 0 && (
               <p className="text-court-700 mb-3 text-xs font-semibold">
                 ✓ No trade-offs — every rule held: shares, rest days, rematch spacing, court
@@ -971,161 +1001,216 @@ export function ScheduleTab({
           />
         </div>
 
-        {/* Fairness report (owner 2026-08-01): show operators — and
-            eventually their clubs — exactly how the schedule treats every
-            team, so nobody suspects favorites. */}
+        {/* Results area, summary-first (owner plan, stage 2, 140-team
+            scale): verdict, then who needs a look (worst first), then click
+            through to verify. The old flat games table is one quiet link
+            away, never the first thing read. */}
         {(scheduleGames.length > 0 || (preview?.games.length ?? 0) > 0) && (
           <div className="mb-4">
-            <button
-              onClick={loadReport}
-              className="text-play-700 text-xs font-semibold hover:underline"
-            >
-              {reportLoading
-                ? "Building fairness report…"
-                : report
-                  ? "Hide fairness report"
-                  : `Fairness report${preview ? " (of this preview)" : ""} — back-to-backs, venues, courts`}
-            </button>
+            {reportLoading && !report && (
+              <p className="text-ink-500 text-xs">Building the verdict…</p>
+            )}
             {report && (
-              <div className={`mt-2 ${panelClass}`}>
-                <PanelHeader title="Schedule fairness" />
-                <div className="mb-3 flex flex-wrap gap-2 text-xs">
-                  <Badge tone={report.totals.backToBackTeamDays === 0 ? "court" : "warning"}>
-                    Back-to-backs: {report.totals.backToBackTeamDays}
-                  </Badge>
-                  <Badge tone={report.totals.bigGapTeamDays === 0 ? "court" : "warning"}>
-                    Morning+evening splits: {report.totals.bigGapTeamDays}
-                  </Badge>
-                  <Badge tone={report.totals.splitVenueTeamDays === 0 ? "court" : "warning"}>
-                    Two-gym days: {report.totals.splitVenueTeamDays}
-                  </Badge>
-                  <Badge tone={report.totals.maxTopCourtShare <= 0.5 ? "court" : "warning"}>
-                    Worst court concentration: {Math.round(report.totals.maxTopCourtShare * 100)}%
-                  </Badge>
-                  <Badge tone="neutral">
-                    First tip-offs per team: {report.totals.earlyGamesMin}–{report.totals.earlyGamesMax}
-                  </Badge>
-                  <Badge tone="neutral">
-                    Day-ending games per team: {report.totals.lastGamesMin}–{report.totals.lastGamesMax}
-                  </Badge>
-                  {report.totals.preferenceViolations !== undefined && (
-                    <Badge tone={report.totals.preferenceViolations === 0 ? "court" : "warning"}>
-                      Weekend preference misses: {report.totals.preferenceViolations}
-                    </Badge>
+              <>
+                <ScheduleVerdictHeader
+                  report={report}
+                  scheduledCount={report.totals.games}
+                  expectedCount={report.totals.games + (preview?.unscheduled.length ?? 0)}
+                  warnings={preview?.warnings ?? []}
+                />
+                <div className={`mt-3 ${panelClass}`}>
+                  {drillDownTeamId ? (
+                    <div data-testid="team-drilldown">
+                      <button
+                        onClick={() => setDrillDownTeamId(null)}
+                        className="text-play-700 mb-3 text-xs font-semibold hover:underline"
+                      >
+                        &larr; Back to summary
+                      </button>
+                      <GamesTable
+                        title={`${
+                          report.teams.find((t: any) => t.teamId === drillDownTeamId)?.teamName ??
+                          "Team"
+                        } schedule`}
+                        games={drilldownGames}
+                        boardGames={drilldownBoardGames}
+                        countLabel={`${drilldownGames.length}`}
+                        emptyMessage="No games for this team yet."
+                        gamesView={gamesView}
+                        setGamesView={setGamesView}
+                        openGameId={openGameId}
+                        setOpenGameId={setOpenGameId}
+                        suggestionsFor={suggestionsFor}
+                        setSuggestionsFor={setSuggestionsFor}
+                        suggestions={suggestions}
+                        clearSuggestions={() => setSuggestions([])}
+                        suggestionsLoading={suggestionsLoading}
+                        patchGame={patchGame}
+                        cancelGame={cancelGame}
+                        loadSuggestions={loadSuggestions}
+                        applySuggestion={applySuggestion}
+                      />
+                    </div>
+                  ) : (
+                    <>
+                      <FairnessSummaryTable report={report} onSelectTeam={setDrillDownTeamId} />
+                      <button
+                        data-testid="show-all-games"
+                        onClick={() => setShowAllGames((v) => !v)}
+                        className="text-ink-400 mt-3 text-xs hover:underline"
+                      >
+                        {showAllGames ? "Hide all games" : "Show all games"}
+                      </button>
+                      {showAllGames && (
+                        <div className="mt-3">
+                          <GamesTable
+                            title={
+                              mode === "session" && selectedSession
+                                ? `Games in ${selectedSession.label || "this session"}`
+                                : "Committed games"
+                            }
+                            games={visibleGames}
+                            boardGames={boardGames}
+                            countLabel={`${visibleGames.length}${
+                              mode === "session" && visibleGames.length !== scheduleGames.length
+                                ? ` of ${scheduleGames.length}`
+                                : ""
+                            }`}
+                            note={
+                              mode === "session" &&
+                              selectedSession &&
+                              scheduleGames.length > visibleGames.length
+                                ? `Showing only ${selectedSession.label || "this session"}. Switch to "Whole season" above to see everything.`
+                                : null
+                            }
+                            emptyMessage={
+                              scheduleGames.length === 0
+                                ? "No games committed yet. Preview then commit once the season is finalized."
+                                : "No games in this session yet."
+                            }
+                            gamesView={gamesView}
+                            setGamesView={setGamesView}
+                            openGameId={openGameId}
+                            setOpenGameId={setOpenGameId}
+                            suggestionsFor={suggestionsFor}
+                            setSuggestionsFor={setSuggestionsFor}
+                            suggestions={suggestions}
+                            clearSuggestions={() => setSuggestions([])}
+                            suggestionsLoading={suggestionsLoading}
+                            patchGame={patchGame}
+                            cancelGame={cancelGame}
+                            loadSuggestions={loadSuggestions}
+                            applySuggestion={applySuggestion}
+                          />
+                        </div>
+                      )}
+                    </>
                   )}
                 </div>
-                <div className="overflow-x-auto">
-                  <table className="text-ink-700 w-full text-xs">
-                    <thead className="bg-ink-50 text-ink-500 text-[10px] uppercase tracking-wide">
-                      <tr>
-                        <th className="px-2 py-1.5 text-left">Team</th>
-                        <th className="px-2 py-1.5 text-right">Games</th>
-                        <th className="px-2 py-1.5 text-right">Back-to-backs</th>
-                        <th className="px-2 py-1.5 text-right">Big gaps</th>
-                        <th className="px-2 py-1.5 text-right">Two-gym days</th>
-                        <th className="px-2 py-1.5 text-right">First tip-offs</th>
-                        <th className="px-2 py-1.5 text-right">Day-enders</th>
-                        <th className="px-2 py-1.5 text-left">Preference</th>
-                        <th className="px-2 py-1.5 text-left">Most-used court</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {report.teams.map((t: any) => (
-                        <tr key={t.teamId} className="border-ink-100 border-t">
-                          <td className="text-ink-900 px-2 py-1 font-medium">{t.teamName}</td>
-                          <td className="px-2 py-1 text-right">{t.games}</td>
-                          <td className={`px-2 py-1 text-right ${t.backToBacks > 0 ? "text-amber-700 font-semibold" : ""}`}>{t.backToBacks}</td>
-                          <td className={`px-2 py-1 text-right ${t.bigGapDays > 0 ? "text-amber-700 font-semibold" : ""}`}>{t.bigGapDays}</td>
-                          <td className={`px-2 py-1 text-right ${t.splitVenueDays > 0 ? "text-amber-700 font-semibold" : ""}`}>{t.splitVenueDays}</td>
-                          <td className="px-2 py-1 text-right">{t.earlyGames}</td>
-                          <td className="px-2 py-1 text-right">{t.lastGames}</td>
-                          <td className="px-2 py-1">
-                            {t.weekendStyle
-                              ? `${t.weekendStyle === "SAME_DAY" ? "One trip" : "Split days"}${
-                                  t.preferenceHonored && t.preferenceHonored.total > 0
-                                    ? ` · ${t.preferenceHonored.ok}/${t.preferenceHonored.total} ✓`
-                                    : ""
-                                }`
-                              : "—"}
-                          </td>
-                          <td className="px-2 py-1">
-                            {t.topCourtName ?? "—"}
-                            <span className="text-ink-400"> · {Math.round(t.topCourtShare * 100)}%</span>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
+              </>
             )}
           </div>
         )}
 
         <ManualGameAdd seasonId={seasonId} league={league} refresh={refresh} />
+      </div>
+    </div>
+  )
+}
 
-        <div>
-          <PanelHeader
-            title={
-              mode === "session" && selectedSession
-                ? `Games in ${selectedSession.label || "this session"}`
-                : "Committed games"
-            }
-            action={
-              <span className="flex items-center gap-2">
-                <span className="border-ink-200 flex overflow-hidden rounded-lg border">
-                  {([
-                    ["list", "List"],
-                    ["board", "Board"],
-                  ] as const).map(([key, label]) => (
-                    <button
-                      key={key}
-                      onClick={() => setGamesView(key)}
-                      aria-pressed={gamesView === key}
-                      data-games-view={key}
-                      title={
-                        key === "board"
-                          ? "One day across every gym and court"
-                          : "Every game in one list, with the controls for each"
-                      }
-                      className={`px-2.5 py-1 text-[11px] font-semibold transition-colors ${
-                        gamesView === key
-                          ? "bg-ink-950 text-white"
-                          : "text-ink-600 hover:bg-ink-50 bg-white"
-                      }`}
-                    >
-                      {label}
-                    </button>
-                  ))}
-                </span>
-                <span className="bg-ink-100 text-ink-600 rounded-full px-2.5 py-0.5 text-xs font-semibold">
-                  {visibleGames.length}
-                  {mode === "session" && visibleGames.length !== scheduleGames.length
-                    ? ` of ${scheduleGames.length}`
-                    : ""}
-                </span>
-              </span>
-            }
-          />
-          {mode === "session" && selectedSession && scheduleGames.length > visibleGames.length && (
-            <p className="text-ink-400 -mt-1 mb-2 text-xs">
-              Showing only {selectedSession.label || "this session"} — switch to &quot;Whole
-              season&quot; above to see everything.
-            </p>
-          )}
-          {gamesView === "board" ? (
-            <ScheduleBoard games={boardGames} />
-          ) : visibleGames.length === 0 ? (
-            <p className="text-ink-500 text-sm">
-              {scheduleGames.length === 0
-                ? "No games committed yet. Preview then commit once the season is finalized."
-                : "No games in this session yet."}
-            </p>
-          ) : (
-            <div className="space-y-2">
-              {visibleGames.map((g: any, i: number) => {
-                const open = openGameId === g.id
-                return (
+/**
+ * The games list/board, extracted so the same 300-line rendering serves
+ * both the full "show all games" reveal and a single team's drill-down —
+ * one definition, two callers, never duplicated.
+ */
+function GamesTable({
+  title,
+  games,
+  boardGames,
+  countLabel,
+  note,
+  emptyMessage,
+  gamesView,
+  setGamesView,
+  openGameId,
+  setOpenGameId,
+  suggestionsFor,
+  setSuggestionsFor,
+  suggestions,
+  clearSuggestions,
+  suggestionsLoading,
+  patchGame,
+  cancelGame,
+  loadSuggestions,
+  applySuggestion,
+}: {
+  title: string
+  games: any[]
+  boardGames: BoardGame[]
+  countLabel: string
+  note?: string | null
+  emptyMessage: string
+  gamesView: "list" | "board"
+  setGamesView: (v: "list" | "board") => void
+  openGameId: string | null
+  setOpenGameId: (id: string | null) => void
+  suggestionsFor: string | null
+  setSuggestionsFor: (id: string | null) => void
+  suggestions: any[]
+  clearSuggestions: () => void
+  suggestionsLoading: boolean
+  patchGame: (gameId: string, body: Record<string, any>) => void
+  cancelGame: (gameId: string) => void
+  loadSuggestions: (gameId: string) => void
+  applySuggestion: (gameId: string, s: any) => void
+}) {
+  return (
+    <div>
+      <PanelHeader
+        title={title}
+        action={
+          <span className="flex items-center gap-2">
+            <span className="border-ink-200 flex overflow-hidden rounded-lg border">
+              {([
+                ["list", "List"],
+                ["board", "Board"],
+              ] as const).map(([key, label]) => (
+                <button
+                  key={key}
+                  onClick={() => setGamesView(key)}
+                  aria-pressed={gamesView === key}
+                  data-games-view={key}
+                  title={
+                    key === "board"
+                      ? "One day across every gym and court"
+                      : "Every game in one list, with the controls for each"
+                  }
+                  className={`px-2.5 py-1 text-[11px] font-semibold transition-colors ${
+                    gamesView === key
+                      ? "bg-ink-950 text-white"
+                      : "text-ink-600 hover:bg-ink-50 bg-white"
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+            </span>
+            <span className="bg-ink-100 text-ink-600 rounded-full px-2.5 py-0.5 text-xs font-semibold">
+              {countLabel}
+            </span>
+          </span>
+        }
+      />
+      {note && <p className="text-ink-400 -mt-1 mb-2 text-xs">{note}</p>}
+      {gamesView === "board" ? (
+        <ScheduleBoard games={boardGames} />
+      ) : games.length === 0 ? (
+        <p className="text-ink-500 text-sm">{emptyMessage}</p>
+      ) : (
+        <div className="space-y-2">
+          {games.map((g: any, i: number) => {
+            const open = openGameId === g.id
+            return (
                   <div
                     key={g.id}
                     style={{ animationDelay: `${Math.min(i * 40, 320)}ms` }}
@@ -1192,7 +1277,7 @@ export function ScheduleTab({
                             onClick={() => {
                               if (suggestionsFor === g.id) {
                                 setSuggestionsFor(null)
-                                setSuggestions([])
+                                clearSuggestions()
                               } else {
                                 loadSuggestions(g.id)
                               }
@@ -1277,8 +1362,6 @@ export function ScheduleTab({
             </div>
           )}
         </div>
-      </div>
-    </div>
   )
 }
 

@@ -709,22 +709,50 @@ function generateScheduleOnce(input: SchedulerInput): SchedulerResult {
   if (slots.length === 0) warnings.push("No usable slots were generated.")
   if (units.length === 0) warnings.push("No scheduling units with ≥ 2 teams.")
 
-  // Units the filter excludes from EVERY session can never place a game —
-  // skip their pairings entirely and say so, instead of emitting one
-  // "unscheduled" row per pairing.
   const filter = input.sessionUnitFilter
-  const sessionIds = input.sessions.filter((s) => s.phase === "REGULAR").map((s) => s.id)
-  const unitAllowedSomewhere = (unitKey: string): boolean => {
-    if (!filter) return true
-    return sessionIds.some((sid) => {
-      const allowed = filter[sid]
-      return !allowed || allowed.includes(unitKey)
-    })
-  }
 
   // Session-by-session mode: per-team demand for THIS run is the restricted
   // sessions' share of the season, mirroring the capacity report's math.
-  const regularSessions = input.sessions.filter((s) => s.phase === "REGULAR")
+  const allRegularSessions = input.sessions.filter((s) => s.phase === "REGULAR")
+  /**
+   * A WEEKEND WITH NO COURT TIME IS NOT A GAME DESTINATION (owner 2026-08-07,
+   * the plan-to-scheduler contract). Post-planning, a season legitimately
+   * carries sessions its plan never used: no gyms attached, zero slots. They
+   * used to read as open-to-any supply, so the distributor poured whole
+   * shares onto them and reported hundreds of games that "can't fit". A
+   * zero-slot session contributes no demand and takes no games; its share
+   * redistributes to the weekends that really run. If EVERY session is
+   * slotless the old arithmetic stands, so the cold-season diagnostics read
+   * exactly as before.
+   */
+  const slotCountBySession = new Map<string, number>()
+  for (const sl of slots) {
+    slotCountBySession.set(sl.sessionId, (slotCountBySession.get(sl.sessionId) ?? 0) + 1)
+  }
+  const supplied = allRegularSessions.filter((s) => (slotCountBySession.get(s.id) ?? 0) > 0)
+  const regularSessions = supplied.length > 0 ? supplied : allRegularSessions
+
+  // Units the filter excludes from EVERY supplied session can never place a
+  // game — skip their pairings entirely and say so, instead of emitting one
+  // "unscheduled" row per pairing.
+  const unitAllowedSomewhere = (unitKey: string): boolean => {
+    if (!filter) return true
+    return regularSessions.some((sess) => {
+      const allowed = filter[sess.id]
+      return !allowed || allowed.includes(unitKey)
+    })
+  }
+  for (const sess of allRegularSessions) {
+    if ((slotCountBySession.get(sess.id) ?? 0) > 0) continue
+    // A slotless session the plan EXPLICITLY assigned grades to is a
+    // contradiction worth hearing about; a merely-unused one is skipped
+    // silently, because that is what unused means.
+    if ((input.sessionUnitFilter?.[sess.id] ?? []).length > 0) {
+      warnings.push(
+        `${sess.label ?? sess.id} has grades assigned but no court time at any gym - it was skipped. Attach a gym to it or take the grades off it.`
+      )
+    }
+  }
   const restricted = (input.restrictToSessionIds ?? []).filter((sid) =>
     regularSessions.some((s) => s.id === sid)
   )
