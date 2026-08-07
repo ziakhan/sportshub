@@ -97,9 +97,24 @@ export function usableCourtCount(courts: number, courtBuffer: number | undefined
  * season range, and the courts are what the world says the gym gives less the
  * buffer.
  */
+/** The Friday evening a session may take: 18:00 to 22:00, one block, at a gym
+ *  the session is already using (owner ruling 2026-08-06). */
+export const FRIDAY_START = "18:00"
+export const FRIDAY_END = "22:00"
+
+/** Games ONE court holds on a Friday evening at this plan's slot length. */
+export function fridayGamesPerCourt(slotMinutes?: number): number {
+  return gamesPerCourtDay(FRIDAY_START, FRIDAY_END, slotMinutes)
+}
+
 export function venueOnWeekend(
   gym: PlanWorldGym,
-  weekend: { dayCount?: number; startTime?: string | null; endTime?: string | null },
+  weekend: {
+    dayCount?: number
+    startTime?: string | null
+    endTime?: string | null
+    fridayCourts?: number
+  },
   world: Pick<PlanWorld, "courtBuffer" | "gameSlotMinutes">
 ): PlanWorldVenue {
   const days = Math.max(1, weekend.dayCount ?? DEFAULT_DAY_COUNT)
@@ -109,10 +124,18 @@ export function venueOnWeekend(
   const courts = usableCourtCount(wired, world.courtBuffer)
   const perCourtDay = gamesPerCourtDay(open, close, world.gameSlotMinutes)
   const courtDays = courts * days
+  /**
+   * THE FRIDAY IS EXTRA, NOT INSTEAD (owner ruling 2026-08-06). It rides on top
+   * of the weekend's own days at its own short window, so a session that took
+   * one holds what it always held plus the Friday evening.
+   */
+  const fridayCourts = Math.max(0, Math.min(courts, Math.floor(weekend.fridayCourts ?? 0)))
+  const fridayGames = fridayCourts * fridayGamesPerCourt(world.gameSlotMinutes)
   return {
     venueId: gym.venueId,
     name: gym.name,
-    capacityGames: courtDays * perCourtDay,
+    ...(fridayCourts > 0 ? { fridayCourts } : {}),
+    capacityGames: courtDays * perCourtDay + fridayGames,
     role: gym.role,
     // Dead since the 2026-08-03 venue ruling; kept so a world round-trips and
     // the drift sentence can still read an older plan.
@@ -583,6 +606,239 @@ export function worldReadiness(state: PlannerState | null): WorldReadiness {
   return { usable: false, gap: !chosenAny ? (gymOk ? "weekends" : "both") : "gym" }
 }
 
+/* --------------------------- the Friday evening -------------------------- */
+
+/**
+ * WHICH SIDE OF THE LEAGUE A GRADE IS ON (owner ruling 2026-08-06, THE GENDER
+ * LAW). Boys and girls divisions do not pool: a Friday evening justified by a
+ * boys cohort has to absorb a boys group, and a suggestion that reaches its
+ * numbers by adding a girls division to a boys one is not an answer, it is a
+ * scheduling error with a sentence around it.
+ *
+ * Read off the words the league uses, because that is where it lives: a plain
+ * grade carries no marker and is its own bucket, which groups only with itself.
+ * Unknown never merges with known, so the law fails SAFE.
+ */
+export type UnitGender = "girls" | "boys" | "unspecified"
+
+export function unitGender(unit: Pick<PlannerUnit, "key" | "label">): UnitGender {
+  const words = `${unit.label} ${unit.key}`.toLowerCase()
+  if (/\b(girls?|women|womens|female|f)\b/.test(words)) return "girls"
+  if (/\b(boys?|men|mens|male|m)\b/.test(words)) return "boys"
+  return "unspecified"
+}
+
+/** One gender across a whole group, or null when it is mixed. Null is a refusal:
+ *  the Friday is never suggested for a group that spans the league. */
+export function sharedGender(units: PlannerUnit[]): UnitGender | null {
+  if (units.length === 0) return null
+  const first = unitGender(units[0])
+  return units.every((u) => unitGender(u) === first) ? first : null
+}
+
+/**
+ * A FRIDAY EVENING THAT WOULD FIX THIS WEEKEND (owner ruling 2026-08-06).
+ *
+ * Suggested, NEVER taken: the solver does not add Fridays, because a Friday is a
+ * phone call and an evening of somebody's life, and the operator is the one who
+ * decides that. It only fires when it is unambiguously the cheap answer:
+ *
+ *  1. the session is in trouble — it overflows, or the packer had to open a
+ *     whole extra building for one small cohort;
+ *  2. a right-sized Friday block at a gym the session is ALREADY USING absorbs
+ *     all of it, so nothing new is rented and nobody makes a new call;
+ *  3. the grades it is justified by share a gender (the law above).
+ *
+ * Any of those failing means silence. A suggestion that needs a new gym is not
+ * this suggestion, and the rail says nothing rather than something nearly true.
+ */
+export interface FridayFit {
+  sessionId: string
+  venueId: string
+  venueName: string
+  /** Courts the Friday block needs: right-sized, never the whole building. */
+  courts: number
+  startTime: string
+  endTime: string
+  /** Games it takes off the rest of the weekend. */
+  games: number
+  /** The grades that justify it, all of one gender. */
+  unitKeys: string[]
+  gender: UnitGender
+  /** Why it fired, for the sentence the rail reads out. */
+  because: "overflow" | "extra-building"
+}
+
+export function fridayFit(
+  state: PlannerState,
+  weekend: PlannerWeekend,
+  /** The grades on this weekend, and the building each one plays in. */
+  assigned: string[],
+  playsIn: Record<string, string>
+): FridayFit | null {
+  if (assigned.length === 0) return null
+  const unitBy = new Map(state.units.map((u) => [u.key, u]))
+  const games = (keys: string[]) =>
+    keys.reduce((sum, key) => {
+      const u = unitBy.get(key)
+      return sum + (u ? Math.ceil((u.teams * weekend.targetGamesPerTeam) / 2) : 0)
+    }, 0)
+
+  const demand = games(assigned)
+  const over = demand - weekend.capacityGames
+  /**
+   * A WHOLE BUILDING OPENED FOR ONE SMALL COHORT. The other half of the trigger:
+   * the weekend fits, but only because the packer rented a second address for a
+   * single grade that a Friday at the first one would have held.
+   */
+  const byVenue = new Map<string, string[]>()
+  for (const key of assigned) {
+    const venueId = playsIn[key]
+    if (!venueId) continue
+    byVenue.set(venueId, [...(byVenue.get(venueId) ?? []), key])
+  }
+  const lonely = [...byVenue.entries()]
+    .filter(([venueId, keys]) => keys.length === 1 && weekend.venues.some((v) => v.venueId === venueId && v.role === "pool"))
+    .sort((a, b) => games(a[1]) - games(b[1]))[0]
+
+  const because: FridayFit["because"] | null =
+    over > 0 ? "overflow" : lonely && byVenue.size > 1 ? "extra-building" : null
+  if (!because) return null
+
+  // What the Friday has to absorb, and who justifies it.
+  const unitKeys = because === "overflow" ? assigned : lonely[1]
+  const need = because === "overflow" ? over : games(lonely[1])
+  if (need <= 0) return null
+
+  // THE GENDER LAW. A mixed justification is not a justification.
+  const gender = sharedGender(unitKeys.map((k) => unitBy.get(k)).filter(Boolean) as PlannerUnit[])
+  if (!gender) return null
+
+  /**
+   * NO NEW GYM (owner ruling 2026-08-06). The Friday goes at a building this
+   * session is ALREADY using, and the biggest one, so it needs the fewest
+   * courts. A gym nobody is using this weekend would be a new booking, which is
+   * exactly what this suggestion exists to avoid.
+   */
+  const inUse = weekend.venues.filter((v) => byVenue.has(v.venueId))
+  const perCourt = fridayGamesPerCourt(state.gameSlotMinutes)
+  if (perCourt <= 0 || inUse.length === 0) return null
+  const host = [...inUse].sort((a, b) => courtsWiredAt(b) - courtsWiredAt(a))[0]
+  const courts = Math.ceil(need / perCourt)
+  // It has to fit in the building we already have. Anything more is a new gym.
+  if (courts > courtsWiredAt(host)) return null
+
+  return {
+    sessionId: weekend.sessionId,
+    venueId: host.venueId,
+    venueName: host.name,
+    courts,
+    startTime: FRIDAY_START,
+    endTime: FRIDAY_END,
+    games: need,
+    unitKeys,
+    gender,
+    because,
+  }
+}
+
+/** The Friday suggestion, in the operator's own words. */
+export function fridaySentence(fit: FridayFit): string {
+  const wired = fit.courts === 1 ? "1 court" : `${fit.courts} courts`
+  return `Add Friday evening (${wired}, 6-10 PM) at ${venueShortLabel(fit.venueName)} - fits everything in one session, no extra gym.`
+}
+
+/** A gym in the words a rail row has room for. */
+function venueShortLabel(name: string): string {
+  return name.split(/\s+/).slice(0, 2).join(" ")
+}
+
+/**
+ * EVERY FRIDAY THE BOARD IS HOLDING, applied to the state it draws (owner ruling
+ * 2026-08-06). The working-copy twin of withFridayBlock, keyed the way the
+ * courts and the hours are keyed, so the capacity moves the instant the operator
+ * accepts and one Undo takes it back.
+ */
+export function withFridayBlocks(
+  state: PlannerState,
+  fridays: Record<string, number>
+): PlannerState {
+  if (Object.keys(fridays).length === 0) return state
+  const perCourt = fridayGamesPerCourt(state.gameSlotMinutes)
+  let touchedAny = false
+  const windows = state.windows.map((win) => {
+    let touchedWindow = false
+    const weekends = win.weekends.map((w) => {
+      let touched = false
+      const venues = w.venues.map((v) => {
+        const courts = fridays[courtCapKey(w.sessionId, v.venueId)]
+        if (courts == null) return v
+        const held = Math.max(0, Math.min(v.courts ?? courtsWiredAt(v), Math.floor(courts)))
+        touched = true
+        // The Friday rides ON TOP of the weekend's own days: take off whatever
+        // block this row already carried and put the new one on.
+        return {
+          ...v,
+          fridayCourts: held,
+          capacityGames: v.capacityGames + (held - (v.fridayCourts ?? 0)) * perCourt,
+        }
+      })
+      if (!touched) return w
+      touchedWindow = true
+      touchedAny = true
+      return {
+        ...w,
+        venues,
+        capacityGames: venues.reduce((sum, v) => sum + v.capacityGames, 0),
+        largestVenueCapacity: Math.max(0, ...venues.map((v) => v.capacityGames)),
+      }
+    })
+    return touchedWindow ? { ...win, weekends } : win
+  })
+  return touchedAny ? { ...state, windows } : state
+}
+
+/** Every Friday the board holds, written into the plan's own world on save. */
+export function withFridayBlocksInWorld(
+  world: PlanWorld,
+  fridays: Record<string, number>
+): PlanWorld {
+  let next = world
+  for (const [key, courts] of Object.entries(fridays)) {
+    const [sessionId, venueId] = key.split("|")
+    if (!sessionId || !venueId) continue
+    next = withFridayBlock(next, sessionId, venueId, courts)
+  }
+  return next
+}
+
+/** One weekend at one gym, with a Friday evening block on it. */
+export function withFridayBlock(
+  world: PlanWorld,
+  sessionId: string,
+  venueId: string,
+  courts: number
+): PlanWorld {
+  return rebuild({
+    ...world,
+    windows: (world.windows ?? []).map((win) => ({
+      ...win,
+      weekends: (win.weekends ?? []).map((w) =>
+        w.sessionId !== sessionId
+          ? w
+          : {
+              ...w,
+              venues: (w.venues ?? []).map((v) =>
+                v.venueId !== venueId
+                  ? v
+                  : { ...v, fridayCourts: Math.max(0, Math.floor(courts)) }
+              ),
+            }
+      ),
+    })),
+  })
+}
+
 /* ------------------- where a grade could actually go --------------------- */
 
 /**
@@ -924,6 +1180,7 @@ function rebuild(world: PlanWorld): PlanWorld {
                   dayCount: w.dayCount,
                   startTime: v.startTime ?? null,
                   endTime: v.endTime ?? null,
+                  fridayCourts: v.fridayCourts,
                 }, world)
               )
           : []
@@ -1816,6 +2073,43 @@ export function freshWorld(live: PlannerState): PlanWorld {
       })),
     })),
   }
+}
+
+/**
+ * A PLAN SAVED BEFORE PLANS HAD A ROSTER (owner ruling 2026-08-06).
+ *
+ * `gyms` arrived after the first plans did, so an older document either has none
+ * at all or only the buildings its weekends happened to mention. Every control
+ * that ranks, books or reorders a gym reads that roster, so those plans opened
+ * onto a step 2 with half its controls missing — no rank arrows, no bookings
+ * picker — and nothing on screen said why.
+ *
+ * They are healed on open, the same way grades are: the season's own buildings
+ * are folded in, keeping whatever the plan already knew about the ones it had
+ * (its courts, its hours, its role, its place in the order), and appending the
+ * rest at the back. Nothing the operator chose is overwritten, and the healed
+ * roster is saved forward so it only ever happens once.
+ */
+export function withHealedGyms(world: PlanWorld, seasonGyms: PlanWorldGym[]): PlanWorld {
+  const known = worldGyms(world)
+  const have = new Map(known.map((g) => [g.venueId, g]))
+  const missing = seasonGyms.filter((g) => !have.has(g.venueId))
+  if (missing.length === 0 && (world.gyms ?? []).length === known.length) return world
+  // A plan that already named a home gym keeps it: the season's opinion about
+  // which building it owns must not overwrite the operator's.
+  const hasHome = known.some((g) => g.role === "home")
+  return rebuild({
+    ...world,
+    gyms: [
+      ...known.map((g) => ({ ...g })),
+      ...missing.map((g) => ({ ...g, role: hasHome ? ("pool" as VenueRole) : g.role })),
+    ],
+  })
+}
+
+/** True when this world predates rosters, so opening it should heal one in. */
+export function needsGymHealing(world: PlanWorld, seasonGyms: PlanWorldGym[]): boolean {
+  return withHealedGyms(world, seasonGyms) !== world
 }
 
 /** A world with a `capturedAt` on it: what SeasonPlan.settings holds. */

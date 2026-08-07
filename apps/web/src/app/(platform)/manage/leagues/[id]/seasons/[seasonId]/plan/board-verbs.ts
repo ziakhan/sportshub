@@ -20,6 +20,7 @@ import {
   type PlannerState,
 } from "@/lib/scheduler/planner-core"
 import type { WindowPhase } from "@/lib/scheduler/plan-documents"
+import type { FridayFit } from "@/lib/scheduler/plan-world"
 import {
   bookingStatusFor,
   drawnGyms,
@@ -87,6 +88,8 @@ export function useBoardVerbs(m: BoardModel) {
     setAssertedGyms,
     fences,
     setFences,
+    fridays,
+    setFridays,
     emptyGyms,
     setEmptyGyms,
     undoStack,
@@ -140,6 +143,7 @@ export function useBoardVerbs(m: BoardModel) {
           assertedGyms,
           emptyGyms,
           fences,
+          fridays,
           dirty,
         },
       ].slice(-UNDO_DEPTH)
@@ -260,6 +264,7 @@ export function useBoardVerbs(m: BoardModel) {
     setAssertedGyms(last.assertedGyms)
     setEmptyGyms(last.emptyGyms)
     setFences(last.fences)
+    setFridays(last.fridays)
     setDirty(last.dirty)
     setUndoStack(undoStack.slice(0, -1))
     setArmed(null)
@@ -456,6 +461,49 @@ export function useBoardVerbs(m: BoardModel) {
           }.`
         : `${label} is back in the regular season. Choose the weekends it runs in step 2, then redraw.`
     )
+  }
+
+  /**
+   * TAKE THE FRIDAY EVENING (owner ruling 2026-08-06). The rail suggests it; the
+   * operator is the one who takes it, because a Friday is a phone call and an
+   * evening of somebody's life.
+   *
+   * It goes on the SESSION as shared capacity: a session runs Friday to Sunday
+   * and no grade is tied to a day at planning time, so nothing here assigns
+   * anybody to the Friday. Scheduling distributes the games later under its own
+   * rules. The operator took it, so it is CONFIRMED, and the ⋯ menu on that gym
+   * can change or remove it afterwards.
+   */
+  const takeFriday = (fit: FridayFit) => {
+    if (locked || !board) return
+    const key = courtCapKey(fit.sessionId, fit.venueId)
+    remember(`the Friday at ${gymShort(fit.venueId)}`)
+    setFridays((prev) => ({ ...prev, [key]: fit.courts }))
+    setBlockStatus((prev) => ({
+      ...prev,
+      [blockKey(fit.sessionId, fit.venueId)]: bookingStatusFor("operator") as BlockStatus,
+    }))
+    setArmed(null)
+    setArmedVenue(null)
+    setArmedBlock(null)
+    setArmedSection(null)
+    setDirty(true)
+    setFromLever(false)
+    flashCards(fit.sessionId)
+    setNotice(
+      `${weekendName(fit.sessionId)} runs Friday evening too: ${courtsWord(fit.courts)} at ${gymShort(fit.venueId)}, 6-10 PM. The games spread across the session when it is scheduled.`
+    )
+  }
+
+  /** Take a Friday evening back off a weekend, from the gym's own ⋯ menu. */
+  const dropFriday = (sessionId: string, venueId: string) => {
+    if (locked) return
+    remember(`the Friday at ${gymShort(venueId)}`)
+    setFridays((prev) => ({ ...prev, [courtCapKey(sessionId, venueId)]: 0 }))
+    setDirty(true)
+    setFromLever(false)
+    flashCards(sessionId)
+    setNotice(`${weekendName(sessionId)} is back to the weekend only at ${gymShort(venueId)}.`)
   }
 
   /**
@@ -1398,6 +1446,8 @@ export function useBoardVerbs(m: BoardModel) {
     /* what the board computes for you */
     draw,
     fenceWindow,
+    takeFriday,
+    dropFriday,
     redraw,
     redrawSpread,
     runLever,

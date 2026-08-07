@@ -146,6 +146,7 @@ const worldVenueSchema = z.object({
   hoursPerCourtDay: z.number().min(0).max(24).optional(),
   startTime: clock.nullish(),
   endTime: clock.nullish(),
+  fridayCourts: z.number().int().min(0).max(30).optional(),
 })
 
 const worldWeekendSchema = z.object({

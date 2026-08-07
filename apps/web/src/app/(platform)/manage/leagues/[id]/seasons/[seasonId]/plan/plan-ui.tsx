@@ -506,9 +506,16 @@ export function ActionPopover({
  * that is actually visible in light mode, a hover that changes the fill rather
  * than the layout, and a 28px face so a thumb can find it.
  */
+/**
+ * QUIET IS NOT INVISIBLE (owner ruling 2026-08-06, the affordance sweep, second
+ * occurrence). These sit beside louder controls and must not shout, but a
+ * stranger still has to be able to tell they are pressable: a solid border, a
+ * dark label, a real hover. The grey-on-grey version is what let the owner walk
+ * past the bookings picker twice.
+ */
 export function QuietAction({ children }: { children: React.ReactNode }) {
   return (
-    <span className="border-ink-300 text-ink-700 hover:border-ink-400 hover:bg-ink-100 hover:text-ink-900 inline-flex min-h-[28px] items-center rounded-md border bg-white px-2 text-[10.5px] font-bold shadow-sm transition-colors">
+    <span className="border-ink-400 text-ink-900 hover:border-court-500 hover:bg-court-50 inline-flex min-h-[32px] cursor-pointer items-center rounded-md border bg-white px-2 text-[10.5px] font-bold shadow-sm transition-colors">
       {children}
     </span>
   )
@@ -1251,9 +1258,11 @@ export function GymMenu({
   usedCourts,
   hours,
   hoursOverridden,
+  fridayCourts,
   onCourts,
   onHours,
   onResetHours,
+  onDropFriday,
 }: {
   gymName: string
   weekendLabel: string
@@ -1267,9 +1276,12 @@ export function GymMenu({
   hours: { startTime: string; endTime: string }
   /** True when those hours are this date's own, not the gym's usual range. */
   hoursOverridden: boolean
+  /** Courts held on the Friday evening here, when this session took one. */
+  fridayCourts?: number
   onCourts: (courts: number) => void
   onHours: (startTime: string, endTime: string) => void
   onResetHours: () => void
+  onDropFriday?: () => void
 }) {
   return (
     <ActionPopover
@@ -1293,6 +1305,14 @@ export function GymMenu({
           usedCourts={usedCourts}
           hours={hours}
           hoursOverridden={hoursOverridden}
+          fridayCourts={fridayCourts}
+          onDropFriday={
+            onDropFriday &&
+            (() => {
+              onDropFriday()
+              close()
+            })
+          }
           onCourts={(n) => {
             onCourts(n)
             close()
@@ -1319,9 +1339,11 @@ function GymMenuBody({
   usedCourts,
   hours,
   hoursOverridden,
+  fridayCourts,
   onCourts,
   onHours,
   onResetHours,
+  onDropFriday,
 }: {
   gymName: string
   weekendLabel: string
@@ -1330,11 +1352,11 @@ function GymMenuBody({
   usedCourts: number
   hours: { startTime: string; endTime: string }
   hoursOverridden: boolean
-  moveTargets?: () => MoveTarget[]
+  fridayCourts?: number
   onCourts: (courts: number) => void
   onHours: (startTime: string, endTime: string) => void
   onResetHours: () => void
-  onMoveTo?: (venueId: string) => void
+  onDropFriday?: () => void
 }) {
   const [held, setHeld] = useState(Math.max(0, Math.min(wired, courts)))
   const [start, setStart] = useState(hours.startTime)
@@ -1354,6 +1376,23 @@ function GymMenuBody({
       >
         This gym, this date
       </p>
+      {/* THE FRIDAY THIS SESSION TOOK (owner ruling 2026-08-06). The rail is
+          where one is accepted; this is where it is changed or given back. */}
+      {(fridayCourts ?? 0) > 0 && onDropFriday && (
+        <div className="border-court-200 bg-court-50 mb-2.5 rounded-lg border px-2 py-1.5">
+          <p className="text-ink-800 text-[11.5px] font-bold">
+            Friday evening: {courtsWord(fridayCourts as number)}, 6-10 PM
+          </p>
+          <button
+            type="button"
+            data-testid="drop-friday"
+            onClick={onDropFriday}
+            className="border-ink-400 text-ink-900 hover:border-hoop-500 hover:bg-hoop-50 mt-1.5 inline-flex min-h-[32px] cursor-pointer items-center rounded-lg border bg-white px-2.5 text-[11.5px] font-bold shadow-sm transition-colors"
+          >
+            Take the Friday back off
+          </button>
+        </div>
+      )}
       <p className="text-ink-900 text-[12.5px] font-bold">
         {gymName} on {weekendLabel}
       </p>

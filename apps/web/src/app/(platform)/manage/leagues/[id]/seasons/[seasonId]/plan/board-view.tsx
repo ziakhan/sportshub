@@ -70,6 +70,7 @@ export function BoardView({
   onDropSection,
   onPlaceVenue,
   onCorrectCourts,
+  onDropFriday,
   onSetHours,
   onOpenWeekend,
   onGhostDrop,
@@ -178,6 +179,9 @@ export function BoardView({
   ) => void
   onPlaceVenue: (sessionId: string, venueId: string, unitKeys: string[], games: number) => void
   onCorrectCourts: (sessionId: string, venueId: string, courts: number) => void
+  /** Take a Friday evening back off a gym on a weekend (owner ruling
+   *  2026-08-06). Absent on a board nobody may edit. */
+  onDropFriday?: (sessionId: string, venueId: string) => void
   onSetHours: (
     sessionId: string,
     venueId: string,
@@ -260,7 +264,8 @@ export function BoardView({
                       e.stopPropagation()
                       onFenceWindow(win.label, win.fenced ? "regular" : "playoffs")
                     }}
-                    className="border-ink-300 text-ink-600 hover:border-ink-400 hover:bg-white inline-flex min-h-[26px] cursor-pointer items-center rounded-lg border border-dashed bg-white/60 px-2 text-[10.5px] font-bold normal-case tracking-normal transition-colors"
+                    /* A CONTROL, NOT A CAPTION (owner ruling 2026-08-06). */
+                    className="border-ink-400 text-ink-900 hover:border-court-500 hover:bg-court-50 inline-flex min-h-[32px] cursor-pointer items-center rounded-lg border bg-white px-2 text-[10.5px] font-bold normal-case tracking-normal shadow-sm transition-colors"
                   >
                     {win.fenced ? "Mark as regular season" : "Mark as playoffs"}
                   </button>
@@ -353,6 +358,7 @@ export function BoardView({
                     onDropSection={onDropSection}
                     onPlaceVenue={onPlaceVenue}
                     onCorrectCourts={onCorrectCourts}
+                    onDropFriday={onDropFriday}
                     onSetHours={onSetHours}
                     onOpenWeekend={onOpenWeekend}
                     splitAxesFor={splitAxesFor}

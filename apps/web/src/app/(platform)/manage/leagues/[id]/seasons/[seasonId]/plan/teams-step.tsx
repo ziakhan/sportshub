@@ -669,7 +669,12 @@ export function TeamsStep({
                             data-testid="not-planned"
                             aria-label={`${row.label} has no estimate yet. Add one.`}
                             onClick={() => document.getElementById(plusId)?.focus()}
-                            className="border-ink-300 text-ink-500 hover:border-court-400 hover:bg-court-50 hover:text-court-800 inline-flex min-h-[26px] cursor-pointer items-center rounded-full border border-dashed bg-white px-2 py-0.5 text-[11px] font-semibold transition-colors"
+                            /* SOLIDLY OUTLINED, DARK LABEL (owner ruling
+                               2026-08-06, the affordance sweep, second
+                               occurrence). Dashed grey is for EMPTY STATES; a
+                               control that reads as one is a control nobody
+                               presses. */
+                            className="border-ink-400 text-ink-900 hover:border-court-500 hover:bg-court-50 hover:text-court-900 inline-flex min-h-[32px] cursor-pointer items-center rounded-full border bg-white px-2.5 py-0.5 text-[11px] font-bold shadow-sm transition-colors"
                           >
                             Not in the plan yet · add an estimate
                           </button>

@@ -17,7 +17,7 @@ import {
   type PlanAssignment,
   type PlanVenues,
 } from "@/lib/scheduler/season-plans"
-import { settingsOf } from "@/lib/scheduler/plan-world"
+import { settingsOf, withHealedGyms, worldGyms } from "@/lib/scheduler/plan-world"
 
 export const dynamic = "force-dynamic"
 
@@ -53,6 +53,28 @@ export async function GET(_request: NextRequest, { params }: { params: { id: str
     if (!plan) return NextResponse.json({ error: "Not found" }, { status: 404 })
     if (plan.isActive) {
       return NextResponse.json({ plan: { ...plan, settings: await currentSettings(params.id) } })
+    }
+    /**
+     * A PLAN SAVED BEFORE PLANS HAD A ROSTER IS HEALED ON OPEN (owner ruling
+     * 2026-08-06), the same way its grades are.
+     *
+     * `gyms` arrived after the first plans did, so those documents opened onto a
+     * step 2 with half its controls missing: no rank arrows, no bookings picker,
+     * nothing to explain it. The season's buildings are folded in here, keeping
+     * everything the plan already knew about the ones it had, and SAVED FORWARD
+     * so a plan is only ever healed once.
+     *
+     * It is a read that writes, deliberately and narrowly: the alternative is
+     * every step healing its own copy and disagreeing about the result.
+     */
+    const world = plan.settings?.state
+    if (world) {
+      const healed = withHealedGyms(world, worldGyms((await currentSettings(params.id)).state))
+      if (healed !== world) {
+        const settings = settingsOf(healed)
+        await (prisma as any).seasonPlan.update({ where: { id: plan.id }, data: { settings } })
+        return NextResponse.json({ plan: { ...plan, settings } })
+      }
     }
     return NextResponse.json({ plan })
   } catch (error) {

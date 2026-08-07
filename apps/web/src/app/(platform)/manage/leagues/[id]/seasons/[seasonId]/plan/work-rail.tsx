@@ -18,7 +18,12 @@ import {
   type SuggestionMove,
 } from "@/lib/scheduler/planner-core"
 import { PLAN_COPY } from "@/lib/scheduler/plan-documents"
-import { strandedSentence, type StrandedPlacement } from "@/lib/scheduler/plan-world"
+import {
+  fridaySentence,
+  strandedSentence,
+  type FridayFit,
+  type StrandedPlacement,
+} from "@/lib/scheduler/plan-world"
 import { PILL_TONE, fractionTone, hueFor } from "./plan-shared"
 import { BlockSummary, CountChip, Fraction, WhyPopover } from "./plan-ui"
 import { plural } from "./board-shared"
@@ -61,6 +66,8 @@ export function WorkRail({
   venues,
   playsIn,
   suggestions,
+  fridayFits = [],
+  onTakeFriday,
   blocks,
   blockCounts,
   stranded,
@@ -78,6 +85,10 @@ export function WorkRail({
   /** Where every grade plays on the board right now, for the row's tint. */
   playsIn: Record<string, Record<string, string>>
   suggestions: PlannerSuggestion[]
+  /** Friday evenings worth suggesting (owner ruling 2026-08-06). Never taken by
+   *  the solver; the operator accepts one from here or nothing happens. */
+  fridayFits?: FridayFit[]
+  onTakeFriday?: (fit: FridayFit) => void
   /** Every rental the calendar needs, so the rail can lead with the ones that
    *  have no building. */
   blocks: RentalBlock[]
@@ -186,6 +197,55 @@ export function WorkRail({
             detail="A gym our pool answered, that nobody has phoned yet."
           />
         )}
+
+        {/**
+          * A FRIDAY EVENING THAT WOULD FIX A WEEKEND (owner ruling 2026-08-06).
+          *
+          * Only ever a suggestion: the solver does not add Fridays, because one
+          * is a phone call and an evening of somebody's life. It appears only
+          * when a right-sized block at a gym the session ALREADY uses absorbs
+          * the whole problem with no new gym, and never for a group that spans
+          * the league, so silence here is the ordinary state.
+          */}
+        {fridayFits.map((fit) => (
+          <div
+            key={`friday-${fit.sessionId}-${fit.venueId}`}
+            data-testid="rail-friday"
+            data-session-id={fit.sessionId}
+            data-venue-id={fit.venueId}
+            data-courts={fit.courts}
+            className="border-court-300 bg-court-50 flex flex-wrap items-center gap-2 rounded-lg border px-3 py-2 shadow-sm"
+          >
+            <button
+              type="button"
+              data-testid="rail-jump"
+              onClick={(e) => {
+                e.stopPropagation()
+                onJump(fit.sessionId)
+              }}
+              aria-label={`Show ${weekendById.get(fit.sessionId)?.label ?? "that weekend"} on the board`}
+              className="text-court-800 hover:text-court-900 cursor-pointer text-[12px] font-bold underline decoration-dotted underline-offset-2"
+            >
+              {weekendById.get(fit.sessionId)?.label ?? "That weekend"}
+            </button>
+            <span className="text-ink-800 w-full text-[12px] font-semibold">
+              {fridaySentence(fit)}
+            </span>
+            {onTakeFriday && (
+              <button
+                type="button"
+                data-testid="rail-take-friday"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  onTakeFriday(fit)
+                }}
+                className="border-court-700 bg-court-600 hover:bg-court-700 ml-auto inline-flex min-h-[32px] cursor-pointer items-center rounded-lg border px-3 text-[12px] font-bold text-white shadow-sm transition-colors"
+              >
+                Add the Friday
+              </button>
+            )}
+          </div>
+        ))}
 
         {problems.map((s, i) => {
           const weekend = weekendById.get(s.sessionId)

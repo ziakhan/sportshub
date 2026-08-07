@@ -13,6 +13,7 @@ import {
   planStateFrom,
   withAssertedGymsInWorld,
   withWeekendHoursInWorld,
+  withFridayBlocksInWorld,
   withWindowPhasesInWorld,
   worldFromState,
 } from "@/lib/scheduler/plan-world"
@@ -63,6 +64,8 @@ export function useBoardPlans(m: BoardModel) {
     setAssertedGyms,
     fences,
     setFences,
+    fridays,
+    setFridays,
     setEmptyGyms,
     setUndoStack,
     setDirty,
@@ -126,6 +129,7 @@ export function useBoardPlans(m: BoardModel) {
     setAssertedGyms({})
     setEmptyGyms({})
     setFences({})
+    setFridays({})
     setFlashUnits([])
     setGhosts([])
     setArmedSection(null)
@@ -322,6 +326,7 @@ export function useBoardPlans(m: BoardModel) {
     setAssertedGyms({})
     setEmptyGyms({})
     setFences({})
+    setFridays({})
     setHourOverrides({})
     setUndoStack([])
     setDirty(false)
@@ -611,16 +616,22 @@ export function useBoardPlans(m: BoardModel) {
     // A month fenced as playoffs is a decision about the plan, so it travels
     // with the save exactly as an assertion does (owner ruling 2026-08-06).
     const noFences = Object.keys(fences).length === 0
-    if (nothingAsserted && noHours && noFences) return null
+    const noFridays = Object.keys(fridays).length === 0
+    if (nothingAsserted && noHours && noFences && noFridays) return null
     const base = planSettings?.state ?? (state ? worldFromState(state) : null)
     if (!base) return null
     // The FENCE first: it clears a month's gym time, so an assertion or an hours
     // exception inside a month being fenced must not be written back over it.
     // Then the gyms, because hours for a gym the world does not have on that
     // weekend would be written against nothing.
-    return withWeekendHoursInWorld(
-      withAssertedGymsInWorld(withWindowPhasesInWorld(base, fences), assertedGyms),
-      hourOverrides
+    return withFridayBlocksInWorld(
+      withWeekendHoursInWorld(
+        withAssertedGymsInWorld(withWindowPhasesInWorld(base, fences), assertedGyms),
+        hourOverrides
+      ),
+      // Last: a Friday is extra capacity at a gym the weekend already has, so
+      // the gym has to be on it before the block can ride along.
+      fridays
     )
   }
 

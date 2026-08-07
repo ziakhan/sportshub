@@ -12,7 +12,14 @@ import {
 import {
   bookingStatusFor,
   drawnGyms,
+  fridayFit,
+  fridaySentence,
   gymRanks,
+  needsGymHealing,
+  sharedGender,
+  unitGender,
+  withFridayBlock,
+  withHealedGyms,
   withGymOrder,
   fencedWindowLabels,
   windowFenced,
@@ -1789,5 +1796,184 @@ describe("who booked it decides what it is", () => {
     const venues = packPlanVenues(runs, assignment)
     const drawn = drawnGyms(state, assignment, venues)
     expect(drawn.assumed.map((a) => a.venueId)).not.toContain("v-home")
+  })
+})
+
+/**
+ * A PLAN SAVED BEFORE PLANS HAD A ROSTER (owner ruling 2026-08-06).
+ *
+ * `gyms` arrived after the first plans did, so those documents opened onto a
+ * step 2 with half its controls missing: the rank arrows and the bookings picker
+ * both read the roster, and an empty roster draws neither. They are healed from
+ * the season on open, the way grades are, and saved forward.
+ */
+describe("healing a plan that predates the gym roster", () => {
+  const SEASON_GYMS: PlanWorldGym[] = [
+    HOME,
+    { ...POOL, courts: 6 },
+    { venueId: "v-haber", name: "Haber Recreation Centre", role: "pool", courts: 6 },
+  ]
+
+  /** The old shape: weekends with venues on them, and no roster at all. */
+  function preRoster(): PlanWorld {
+    const { gyms: _dropped, ...rest } = world()
+    return rest as PlanWorld
+  }
+
+  it("opens with the season's buildings, and says it needed them", () => {
+    const old = preRoster()
+    expect(old.gyms).toBeUndefined()
+    expect(needsGymHealing(old, SEASON_GYMS)).toBe(true)
+    const healed = withHealedGyms(old, SEASON_GYMS)
+    expect(worldGyms(healed).map((g) => g.venueId)).toEqual(["v-home", "v-pool", "v-haber"])
+    // Healed means the roster is REAL now, so every control that reads it works.
+    expect(healed.gyms).toHaveLength(3)
+    expect(gymRanks(healed.gyms as PlanWorldGym[]).get("v-haber")).toBe(2)
+  })
+
+  it("keeps everything the plan already knew about the gyms it had", () => {
+    // The plan runs its home gym at 9 courts, which is not what the season says.
+    const mine = withGymCourts(world(), "v-home", 9)
+    const healed = withHealedGyms(mine, SEASON_GYMS)
+    const home = worldGyms(healed).find((g) => g.venueId === "v-home") as PlanWorldGym
+    expect(home.courts).toBe(9)
+    expect(home.role).toBe("home")
+    // The season's third gym arrives in the pool, at the back of the order.
+    expect(worldGyms(healed).map((g) => g.venueId)).toEqual(["v-home", "v-pool", "v-haber"])
+  })
+
+  it("never lets the season overwrite which building the plan owns", () => {
+    // This plan calls Six Park its home; the season calls The Playground home.
+    const flipped = withGymRole(world(), "v-pool", "home")
+    const healed = withHealedGyms(flipped, SEASON_GYMS)
+    const roles = Object.fromEntries(worldGyms(healed).map((g) => [g.venueId, g.role]))
+    expect(roles["v-pool"]).toBe("home")
+    expect(roles["v-home"]).toBe("pool")
+    expect(roles["v-haber"]).toBe("pool")
+  })
+
+  it("leaves a plan that already has the whole roster completely alone", () => {
+    const whole = world()
+    expect(needsGymHealing(whole, [HOME, POOL])).toBe(false)
+    expect(withHealedGyms(whole, [HOME, POOL])).toBe(whole)
+  })
+})
+
+/**
+ * THE FRIDAY EVENING SUGGESTION (owner ruling 2026-08-06).
+ *
+ * Suggested, never taken: the solver does not add Fridays. It fires only when a
+ * right-sized Friday block at a gym the session ALREADY uses absorbs the whole
+ * problem with no new gym, and never when the grades that justify it span the
+ * league. Silence is the default and the correct answer most of the time.
+ */
+describe("the Friday evening suggestion", () => {
+  const stateOf = (w: PlanWorld) =>
+    planStateFrom("s1", { settings: { capturedAt: "x", state: w } }) as PlannerState
+  /** One weekend, the home gym on it, and grades that will not fit. */
+  function tight(teams: Array<{ key: string; label: string; teams: number }>): PlannerState {
+    const base: PlanWorld = {
+      ...world(),
+      units: teams.map((t) => ({ ...t, divisionIds: [t.key], included: true })),
+    }
+    return stateOf(base)
+  }
+  const oct = (s: PlannerState) => s.windows[0].weekends[0]
+
+  it("reads the side of the league off the words the league uses", () => {
+    expect(unitGender({ key: "age:Junior Girls", label: "Junior Girls" })).toBe("girls")
+    expect(unitGender({ key: "age:Grade 9 Boys", label: "Grade 9 Boys" })).toBe("boys")
+    // A plain grade carries no marker and is its own bucket.
+    expect(unitGender({ key: "age:Grade 9", label: "Grade 9" })).toBe("unspecified")
+    expect(
+      sharedGender([
+        { key: "a", label: "Grade 9 Boys", divisionIds: [], teams: 4, approved: 0, expected: 4, source: "expected" },
+        { key: "b", label: "Grade 10 Boys", divisionIds: [], teams: 4, approved: 0, expected: 4, source: "expected" },
+      ])
+    ).toBe("boys")
+  })
+
+  it("NEVER pools across genders, however well the numbers would work", () => {
+    // The home gym holds 72; these two bring 80 between them, so the weekend
+    // overflows and a 2-court Friday would swallow it whole. It is still not an
+    // answer: a boys cohort cannot be fixed by absorbing a girls one.
+    const state = tight([
+      { key: "age:Grade 9 Boys", label: "Grade 9 Boys", teams: 40 },
+      { key: "age:Junior Girls", label: "Junior Girls", teams: 40 },
+    ])
+    expect(
+      fridayFit(state, oct(state), ["age:Grade 9 Boys", "age:Junior Girls"], {
+        "age:Grade 9 Boys": "v-home",
+        "age:Junior Girls": "v-home",
+      })
+    ).toBeNull()
+  })
+
+  it("fires on an overflow it can absorb, right-sized, at a gym already in use", () => {
+    // 80 teams is 80 games against the home gym's 72: eight games over.
+    const state = tight([{ key: "age:Grade 9 Boys", label: "Grade 9 Boys", teams: 80 }])
+    const fit = fridayFit(state, oct(state), ["age:Grade 9 Boys"], {
+      "age:Grade 9 Boys": "v-home",
+    })
+    expect(fit).not.toBeNull()
+    expect(fit?.because).toBe("overflow")
+    expect(fit?.venueId).toBe("v-home")
+    // Eight games at four per court on a 6-10 evening is two courts, not six.
+    expect(fit?.games).toBe(8)
+    expect(fit?.courts).toBe(2)
+    expect(fit?.startTime).toBe("18:00")
+    expect(fit?.endTime).toBe("22:00")
+    expect(fit?.gender).toBe("boys")
+    expect(fridaySentence(fit as never)).toBe(
+      "Add Friday evening (2 courts, 6-10 PM) at The Playground - fits everything in one session, no extra gym."
+    )
+  })
+
+  it("stays silent when the Friday would still need a new gym", () => {
+    // Far too big for the home gym's three courts on one evening: twelve games
+    // is all a 3-court Friday holds, and this is a hundred over.
+    const state = tight([{ key: "age:Grade 9 Boys", label: "Grade 9 Boys", teams: 172 }])
+    expect(
+      fridayFit(state, oct(state), ["age:Grade 9 Boys"], { "age:Grade 9 Boys": "v-home" })
+    ).toBeNull()
+  })
+
+  it("stays silent on a weekend that is simply fine", () => {
+    const state = tight([{ key: "age:Grade 9 Boys", label: "Grade 9 Boys", teams: 10 }])
+    expect(
+      fridayFit(state, oct(state), ["age:Grade 9 Boys"], { "age:Grade 9 Boys": "v-home" })
+    ).toBeNull()
+  })
+
+  it("fires on the third gym opened for one small cohort", () => {
+    // Two grades fit at home; a third small one was given a rented building all
+    // to itself. A Friday at the home gym holds it, and the rental goes away.
+    const w: PlanWorld = {
+      ...world(),
+      units: [
+        { key: "age:Grade 9 Boys", label: "Grade 9 Boys", divisionIds: ["a"], teams: 30, included: true },
+        { key: "age:Grade 10 Boys", label: "Grade 10 Boys", divisionIds: ["b"], teams: 4, included: true },
+      ],
+    }
+    const state = stateOf(withGymOnWeekend(w, "w-oct", "v-pool", true))
+    const fit = fridayFit(state, oct(state), ["age:Grade 9 Boys", "age:Grade 10 Boys"], {
+      "age:Grade 9 Boys": "v-home",
+      "age:Grade 10 Boys": "v-pool",
+    })
+    expect(fit?.because).toBe("extra-building")
+    // Justified by the lonely cohort only, and sized for it: 4 games, 1 court.
+    expect(fit?.unitKeys).toEqual(["age:Grade 10 Boys"])
+    expect(fit?.games).toBe(4)
+    expect(fit?.courts).toBe(1)
+  })
+
+  it("becomes real capacity when it is accepted, and can be taken back off", () => {
+    const on = withFridayBlock(world(), "w-oct", "v-home", 2)
+    const oct2 = worldWeekends(on).find((w) => w.sessionId === "w-oct")
+    // 3 courts × 2 days × 12, plus 2 courts × 4 games on the Friday evening.
+    expect(oct2?.capacityGames).toBe(72 + 8)
+    expect(oct2?.venues[0].fridayCourts).toBe(2)
+    const off = withFridayBlock(on, "w-oct", "v-home", 0)
+    expect(worldWeekends(off).find((w) => w.sessionId === "w-oct")?.capacityGames).toBe(72)
   })
 })

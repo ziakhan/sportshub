@@ -10,7 +10,7 @@ import {
 } from "@/lib/scheduler/plan-world"
 import { PILL_TONE, type Armed, type ArmedBlock, type ArmedSection } from "./plan-shared"
 import { WhyPopover } from "./plan-ui"
-import { PlanChooser } from "./plan-session"
+import { PlanBadge } from "./plan-session"
 import { Segmented } from "./season-strip"
 import { COPY, nameList, type BoardSnapshot } from "./board-shared"
 
@@ -40,6 +40,7 @@ export function BoardHead({
   selectedPlan,
   undoStack,
   worldUsable,
+  onGoToStep,
   onUndo,
   onRedraw,
   onRedrawSpread,
@@ -58,6 +59,8 @@ export function BoardHead({
   /** The boards behind this one: the top of it is what Undo says it will do. */
   undoStack: BoardSnapshot[]
   worldUsable: boolean
+  /** Back to step 1, where plans are chosen (owner ruling 2026-08-06). */
+  onGoToStep?: (step: number) => void
   onUndo: () => void
   onRedraw: () => void
   /** The same solve, told to use every weekend instead of as few as it can
@@ -187,15 +190,11 @@ export function BoardHead({
               {COPY.fillFromPool}
             </button>
           )}
-          {/* Which of this season's plans the board is a copy of. Switching
-              mid-flight lives here; CHOOSING one is step 1's job. */}
-          <PlanChooser
-            locked={locked}
-            busy={busy !== null}
-            compact
-            testId="board-plan-chooser"
-            onBeforeChange={() => !dirty || window.confirm(PLAN_COPY.discard)}
-          />
+          {/* WHICH PLAN THIS BOARD IS A COPY OF, SAID AND NOT ASKED (owner
+              ruling 2026-08-06). The compact switcher lived here and could swap
+              the plan out from under a calendar somebody was in the middle of;
+              choosing a plan is step 1's job, and this links back to it. */}
+          <PlanBadge onGoToStep={onGoToStep} testId="board-plan-badge" />
           {planId && (
             <Segmented
               label="How to view the calendar"

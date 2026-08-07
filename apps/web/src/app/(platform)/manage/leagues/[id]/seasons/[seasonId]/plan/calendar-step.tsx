@@ -173,6 +173,7 @@ export function CalendarStep({
     hoursOn,
     summary,
     columns,
+    fridayFits,
     ghostRoom,
   } = m
   const { revert, saveAsNew, savePlan, activatePlan } = planDocs
@@ -191,6 +192,8 @@ export function CalendarStep({
     onDropSection,
     draw,
     fenceWindow,
+    takeFriday,
+    dropFriday,
     redraw,
     redrawSpread,
     splitAxesFor,
@@ -293,6 +296,7 @@ export function CalendarStep({
         selectedPlan={selectedPlan}
         undoStack={undoStack}
         worldUsable={worldUsable}
+        onGoToStep={onGoToStep}
         onUndo={undoMove}
         onRedraw={redraw}
         onRedrawSpread={redrawSpread}
@@ -534,6 +538,8 @@ export function CalendarStep({
                     venues={gone.venues}
                     playsIn={shown.venues}
                     suggestions={suggestions}
+                    fridayFits={interactive ? fridayFits : []}
+                    onTakeFriday={interactive ? takeFriday : undefined}
                     blocks={blocks}
                     blockCounts={blockCounts}
                     stranded={stranded}

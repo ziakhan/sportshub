@@ -25,11 +25,13 @@ import {
 import {
   bareWeekend,
   boardColumns,
+  fridayFit,
   gymRanks,
   strandedPlacements,
   weekendRooms,
   weekendGymHours,
   withAssertedGyms,
+  withFridayBlocks,
   withWeekendHours,
   withWindowPhases,
   worldReadiness,
@@ -161,6 +163,15 @@ export function useBoardState({
    * plan's own world.
    */
   const [fences, setFences] = useState<Record<string, WindowPhase>>({})
+  /**
+   * FRIDAY EVENINGS THE OPERATOR TOOK (owner ruling 2026-08-06):
+   * "<sessionId>|<venueId>" → courts. The same keying as the courts and the
+   * hours, held in the working copy so it moves the board at once, is one step
+   * on the undo stack, and is written into the plan's world on save.
+   *
+   * The solver never puts one here. Only the rail's accept does.
+   */
+  const [fridays, setFridays] = useState<Record<string, number>>({})
   /**
    * A DROP THAT LANDED ON A DATE THE PLAN WAS NOT USING (owner ruling
    * 2026-08-06, slice B2): what the operator dropped, and the weekend it is
@@ -391,6 +402,7 @@ export function useBoardState({
     setAssertedGyms({})
     setEmptyGyms({})
     setFences({})
+    setFridays({})
     setFlashUnits([])
     setGhosts([])
     setArmedSection(null)
@@ -481,13 +493,16 @@ export function useBoardState({
       state
         ? applyCourtCaps(
             withWeekendHours(
-              withAssertedGyms(withWindowPhases(state, fences), assertedGyms),
+              withFridayBlocks(
+                withAssertedGyms(withWindowPhases(state, fences), assertedGyms),
+                fridays
+              ),
               hourOverrides
             ),
             courtOverrides
           )
         : null,
-    [state, fences, assertedGyms, hourOverrides, courtOverrides]
+    [state, fences, assertedGyms, fridays, hourOverrides, courtOverrides]
   )
 
   /**
@@ -951,6 +966,28 @@ export function useBoardState({
     return out
   }, [emptyGyms])
 
+  /**
+   * THE FRIDAY EVENINGS WORTH SUGGESTING (owner ruling 2026-08-06). Worked out
+   * off the board on screen and the buildings the packer really used, so a
+   * suggestion can never be about a weekend the operator is not looking at.
+   *
+   * Silent unless a right-sized Friday at a gym the session ALREADY uses fixes
+   * the whole thing, and never for a group that spans the league. A weekend that
+   * has already taken one is not offered another.
+   */
+  const fridayFits = useMemo(() => {
+    if (!board) return []
+    const out = []
+    for (const win of board.windows) {
+      for (const w of win.weekends) {
+        if (w.venues.some((v) => (v.fridayCourts ?? 0) > 0)) continue
+        const fit = fridayFit(board, w, gone.assignment[w.sessionId] ?? [], shown.venues[w.sessionId] ?? {})
+        if (fit) out.push(fit)
+      }
+    }
+    return out
+  }, [board, gone.assignment, shown.venues])
+
   const summary = useMemo(
     // A grade on a weekend this plan stopped running is NOT placed, and the
     // header pill has to say so rather than counting it as settled.
@@ -1047,6 +1084,9 @@ export function useBoardState({
     setAssertedGyms,
     fences,
     setFences,
+    fridays,
+    setFridays,
+    fridayFits,
     emptyGyms,
     setEmptyGyms,
     placedGyms,

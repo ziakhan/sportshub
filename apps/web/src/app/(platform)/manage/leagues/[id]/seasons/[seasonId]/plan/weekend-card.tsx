@@ -99,6 +99,7 @@ export function WeekendCard({
   onDropSection,
   onPlaceVenue,
   onCorrectCourts,
+  onDropFriday,
   onSetHours,
   onOpenWeekend,
   splitAxesFor,
@@ -196,6 +197,8 @@ export function WeekendCard({
   ) => void
   onPlaceVenue: (sessionId: string, venueId: string, unitKeys: string[], games: number) => void
   onCorrectCourts: (sessionId: string, venueId: string, courts: number) => void
+  /** Take the Friday evening back off this gym on this weekend. */
+  onDropFriday?: (sessionId: string, venueId: string) => void
   /** This gym, this date, these hours. Null puts it back on its usual range. */
   onSetHours: (
     sessionId: string,
@@ -1031,6 +1034,12 @@ export function WeekendCard({
                     usedCourts={usedCourts}
                     hours={hoursHere}
                     hoursOverridden={hoursHere.custom}
+                    fridayCourts={venue?.fridayCourts}
+                    onDropFriday={
+                      (venue?.fridayCourts ?? 0) > 0 && onDropFriday
+                        ? () => onDropFriday(weekend.sessionId, section.venueId)
+                        : undefined
+                    }
                     onCourts={(n) => onCorrectCourts(weekend.sessionId, section.venueId, n)}
                     onHours={(startTime, endTime) =>
                       onSetHours(weekend.sessionId, section.venueId, { startTime, endTime })

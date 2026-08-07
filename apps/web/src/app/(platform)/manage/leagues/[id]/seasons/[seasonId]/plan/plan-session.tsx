@@ -477,6 +477,54 @@ function NameBox({
  * the one you are in. Step 1 wears the full version in its header; step 3 wears
  * the same thing, compact, so switching mid-flight is one tap.
  */
+/**
+ * WHICH PLAN YOU ARE IN, SAID AND NOT ASKED (owner ruling 2026-08-06: the plan
+ * is chosen at step 1 and nowhere else).
+ *
+ * There were three choosers — step 1, step 2 and the board — so the plan could
+ * be swapped from under work in progress by a control that looked like a filter.
+ * Steps 2 to 5 state which plan they are in and link back to step 1 to change
+ * it, which is the one place that also creates, renames and deletes them.
+ */
+export function PlanBadge({
+  onGoToStep,
+  testId = "plan-badge",
+}: {
+  /** Back to step 1, where plans are chosen. Absent leaves the badge a label. */
+  onGoToStep?: (step: number) => void
+  testId?: string
+}) {
+  const session = usePlanSession()
+  const name = session.chosen?.name
+  if (!name) return null
+  const words = `Plan: ${name}`
+  if (!onGoToStep) {
+    return (
+      <span
+        data-testid={testId}
+        className="border-ink-200 text-ink-700 rounded-lg border bg-white px-2.5 py-1 text-[12px] font-bold"
+      >
+        {words}
+      </span>
+    )
+  }
+  return (
+    <button
+      type="button"
+      data-testid={testId}
+      title="Plans are chosen on step 1"
+      onClick={(e) => {
+        e.stopPropagation()
+        onGoToStep(1)
+      }}
+      className="border-ink-400 text-ink-900 hover:border-court-500 hover:bg-court-50 inline-flex min-h-[36px] cursor-pointer items-center gap-1.5 rounded-lg border bg-white px-3 text-[12px] font-bold shadow-sm transition-colors"
+    >
+      {words}
+      <span className="text-ink-500 text-[10.5px] font-semibold">Change in step 1</span>
+    </button>
+  )
+}
+
 export function PlanChooser({
   locked,
   busy = false,

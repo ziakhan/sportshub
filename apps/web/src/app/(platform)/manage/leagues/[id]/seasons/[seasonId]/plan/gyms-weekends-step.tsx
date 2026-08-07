@@ -26,7 +26,7 @@ import {
   worldWeekends,
   DEFAULT_DAY_COUNT,
 } from "@/lib/scheduler/plan-world"
-import { PlanChooser, PlanEmptyState, usePlanSession } from "./plan-session"
+import { PlanBadge, PlanEmptyState, usePlanSession } from "./plan-session"
 
 /**
  * Step 2, YOUR BUILDINGS (owner ruling 2026-08-06). This screen used to be two
@@ -93,9 +93,12 @@ function monthGroups(weekends: VenueGridWeekend[]): Array<{ month: string; span:
 export function GymsWeekendsStep({
   seasonId,
   onLoaded,
+  onGoToStep,
 }: {
   seasonId: string
   onLoaded?: (grid: VenueGrid) => void
+  /** Back to step 1, where plans are chosen (owner ruling 2026-08-06). */
+  onGoToStep?: (step: number) => void
 }) {
   const session = usePlanSession()
   const [seasonGrid, setSeasonGrid] = useState<VenueGrid | null>(null)
@@ -396,8 +399,22 @@ export function GymsWeekendsStep({
    */
   const toggleBooking = async (venue: VenueGridRow, sessionId: string, on: boolean) => {
     if (readOnly || !onPlanWorld) return
+    /**
+     * THE ARGUMENTS ARE (world, sessionId, venueId) AND THEY WERE THE WRONG WAY
+     * ROUND (owner bug report 2026-08-06: the cells would not select).
+     *
+     * withGymOnWeekend looks the gym up by venueId and returns the world
+     * UNCHANGED when it cannot find one, so passing them swapped made every tick
+     * a silent no-op: the save succeeded, the document came back identical, and
+     * the cell went back to off with nothing to explain it.
+     */
+    const next = withGymOnWeekend(world(), sessionId, venue.venueId, on)
+    if (next === world()) {
+      setError(`${venue.name} is not a gym this plan holds. Reopen the plan and try again.`)
+      return
+    }
     await saveWorld(
-      withGymOnWeekend(world(), venue.venueId, sessionId, on),
+      next,
       `${venue.seasonVenueId}:booking:${sessionId}`,
       on
         ? `${venue.name} is booked that weekend in this plan, full day, all courts.`
@@ -554,10 +571,10 @@ export function GymsWeekendsStep({
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2.5">
-          {/* THE PLAN IS THE SUBJECT OF THIS SCREEN (owner ruling 2026-08-05).
-              Switching plans here changes every card below it, so the control
-              belongs where the cards are. */}
-          <PlanChooser locked={locked} busy={busy !== null} compact testId="step2-plan-chooser" />
+          {/* WHICH PLAN THIS SCREEN IS ABOUT (owner ruling 2026-08-06). It used
+              to be a switcher, which changed every card below it from a control
+              that read like a filter. Plans are chosen at step 1. */}
+          <PlanBadge onGoToStep={onGoToStep} testId="step2-plan-badge" />
           <span className="border-ink-200 text-ink-600 rounded-full border bg-white px-2.5 py-0.5 text-[11px] font-bold">
             Step 2 of 5
           </span>
@@ -712,7 +729,7 @@ export function GymsWeekendsStep({
                             className={`min-h-[44px] w-[62px] cursor-pointer rounded-lg border px-1 text-[10.5px] font-bold transition-colors disabled:cursor-not-allowed disabled:opacity-60 ${
                               on
                                 ? "border-court-500 bg-court-100 text-court-900 hover:border-court-600"
-                                : "border-ink-300 text-ink-500 hover:border-ink-500 hover:bg-ink-50 border-dashed bg-white"
+                                : "border-ink-400 text-ink-900 hover:border-court-500 hover:bg-court-50 bg-white"
                             }`}
                           >
                             <span className="block leading-tight">{w.dayLabel}</span>
@@ -1015,7 +1032,7 @@ export function GymsWeekendsStep({
                         bookingsFor === venue.seasonVenueId ? null : venue.seasonVenueId
                       )
                     }
-                    className="border-ink-300 text-ink-700 hover:border-ink-400 hover:bg-ink-50 inline-flex min-h-[32px] cursor-pointer items-center gap-1.5 rounded-lg border border-dashed bg-white px-2.5 text-xs font-bold transition-colors"
+                    className="border-ink-400 text-ink-900 hover:border-court-500 hover:bg-court-50 inline-flex min-h-[36px] cursor-pointer items-center gap-1.5 rounded-lg border bg-white px-3 text-xs font-bold shadow-sm transition-colors"
                   >
                     {bookingsFor === venue.seasonVenueId
                       ? "Close booked dates"
@@ -1053,10 +1070,14 @@ export function GymsWeekendsStep({
                                 onClick={() =>
                                   void toggleBooking(venue, w.sessionId as string, !on)
                                 }
-                                className={`inline-flex min-h-[32px] cursor-pointer items-center rounded-lg border px-2 text-[11.5px] font-bold transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
+                                /* A CELL IS A BUTTON, NOT A LABEL (owner ruling
+                                   2026-08-06, the affordance sweep): solidly
+                                   outlined, dark label, hover. Dashed grey is
+                                   for empty states, and this is a control. */
+                                className={`inline-flex min-h-[36px] cursor-pointer items-center rounded-lg border px-2.5 text-[11.5px] font-bold shadow-sm transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
                                   on
-                                    ? "border-court-500 bg-court-600 text-white"
-                                    : "border-ink-300 text-ink-600 hover:border-ink-400 hover:bg-ink-50 border-dashed bg-white"
+                                    ? "border-court-600 bg-court-600 text-white"
+                                    : "border-ink-400 text-ink-900 hover:border-court-500 hover:bg-court-50 bg-white"
                                 }`}
                               >
                                 {w.label}

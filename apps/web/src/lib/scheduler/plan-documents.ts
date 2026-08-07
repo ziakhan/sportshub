@@ -73,6 +73,17 @@ export interface PlanWorldVenue {
    *  with a named exception). */
   startTime?: string | null
   endTime?: string | null
+  /**
+   * A FRIDAY EVENING BLOCK ON THIS WEEKEND (owner ruling 2026-08-06). Courts
+   * taken at this gym on the Friday, 18:00 to 22:00, as SHARED capacity for the
+   * whole session: a session runs Friday to Sunday and no grade is tied to a day
+   * at planning time, so scheduling distributes the games later under its own
+   * rules.
+   *
+   * Absent on every weekend that has not taken one, which is almost all of them.
+   * The solver NEVER adds these; only the operator does, from the rail.
+   */
+  fridayCourts?: number
 }
 
 export interface PlanWorldWeekend {

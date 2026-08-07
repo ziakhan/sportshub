@@ -206,6 +206,9 @@ export interface BoardSnapshot {
    *  phase. Fencing takes a month's gym time and its games with it, so undoing
    *  one has to hand the whole month back. */
   fences: Record<string, WindowPhase>
+  /** The Friday evenings taken, "<sessionId>|<venueId>" → courts (owner ruling
+   *  2026-08-06). One undo puts the whole block back. */
+  fridays: Record<string, number>
   /** Whether the plan had unsaved changes at that point, so undoing back to
    *  the saved calendar puts the Keep button back to sleep. */
   dirty: boolean

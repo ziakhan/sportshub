@@ -133,6 +133,10 @@ export interface PlannerVenue {
    * empty as a real cost. Absent means "a room, not a booking".
    */
   booked?: boolean
+  /** Courts held on the Friday evening of this weekend at this gym (owner
+   *  ruling 2026-08-06). Extra capacity for the whole session, never the
+   *  solver's doing: only the operator accepts one. */
+  fridayCourts?: number
   venueId: string
   name: string
   capacityGames: number
