@@ -21,7 +21,6 @@ import {
   currentAssignment,
   orderedVenues,
   packWeekendVenues,
-  planningSource,
   planningTeams,
   shiftClock,
   weekendDemand,
@@ -157,17 +156,22 @@ export async function buildPlannerState(
   // Grade clusters: divisions sharing ageGroup act as one draggable unit.
   const byAge = new Map<
     string,
-    { divisionIds: string[]; approved: number; expected: number; alternate: boolean }
+    { divisionIds: string[]; approved: number; expected: number; estimated: boolean; alternate: boolean }
   >()
   for (const d of divisions) {
     const c = byAge.get(d.ageGroup) ?? {
       divisionIds: [],
       approved: 0,
       expected: 0,
+      estimated: false,
       alternate: false,
     }
     c.divisionIds.push(d.id)
     c.expected += d.expectedTeams ?? 0
+    // Null is "never estimated"; a saved zero is an ANSWER ("this grade runs
+    // no teams"). Losing that distinction is how a deliberate 0 on step 1
+    // bounced back to the registration count.
+    c.estimated = c.estimated || d.expectedTeams !== null
     // The cluster is one draggable thing, so one division asking to move
     // buildings makes the whole grade alternate.
     c.alternate = c.alternate || Boolean(d.alternateVenues)
@@ -191,7 +195,8 @@ export async function buildPlannerState(
       // meaning: the number everything else plans on.
       approved: c.approved,
       expected: c.expected,
-      source: planningSource(c.approved, c.expected),
+      // "expected" the moment any division holds a saved number, zero included.
+      source: (c.estimated ? "expected" : "none") as "expected" | "none",
     }))
     // Natural order (Grade 7 … Grade 12, then named groups) so the strip
     // reads the way an operator thinks.

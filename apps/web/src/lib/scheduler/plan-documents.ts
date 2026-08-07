@@ -666,17 +666,6 @@ export const PLAN_COPY = {
   saveFirst: "Save your changes first.",
   /** The first plan of a season that has never kept a calendar. */
   takesOver: "Nothing runs this season yet, so this becomes its calendar.",
-  /** Above the board, when the plan on screen was saved in a world the season
-   *  has since moved on from. */
-  drift: (first: string, more: number) =>
-    `Saved under different settings: ${first}${more > 0 ? ` (+${more} more)` : ""}`,
-  /** A plan from before plans remembered their settings. Said once, quietly:
-   *  there is nothing to compare, and that is not the operator's fault. */
-  driftUnknown: "Saved before plans remembered their settings, so this one does not know the gyms, hours or estimates it was made under.",
-  /** The board is drawing the plan's own numbers, not the season's. */
-  driftBoard: "The board is showing this plan's own settings, so every number here is the world it was saved in.",
-  /** Said of the plan the season runs, whose board is the live world. */
-  driftActive: "The board is showing the season's settings, because this is the plan the season runs.",
   /**
    * WHAT ACTIVATING DOES (owner ruling 2026-08-05, #5). It used to apply the
    * calendar only, and the warning had to name what stayed put; a plan that owns
@@ -726,15 +715,26 @@ export const PLAN_COPY = {
  * The differences first, because they are the reason to stop and read, then
  * the plain statement of what activating does and does not change.
  */
+/**
+ * THE DRIFT IS SAID AT ACTIVATION, AND ONLY THERE (owner's 2026-08-06
+ * analysis, C4). The board no longer wears a banner about it: while an
+ * operator is editing a plan, the plan's own world is simply the world on
+ * screen, and a standing gold line about the season was one more thing to
+ * read past. The moment it matters is the moment the plan is about to BECOME
+ * the season — so that is where it is said, in plain words, with the way to
+ * bring the calendar up to date named right after it.
+ */
 export function activateConfirmText(name: string, drift: string[]): string {
   if (drift.length === 0) return PLAN_COPY.activate(name)
   return [
     PLAN_COPY.activate(name),
     "",
-    "This plan was saved under different settings:",
+    `Heads up: things have changed since ${name} was saved.`,
     ...drift.map((line) => `• ${line}`),
     "",
     PLAN_COPY.activateKeeps,
+    "",
+    "If anything looks off after, Redraw rebuilds the calendar under the settings the season has then.",
   ].join("\n")
 }
 

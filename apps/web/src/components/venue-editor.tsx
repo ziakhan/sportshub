@@ -32,6 +32,11 @@ interface VenueEditorProps {
   // posted hours while editing a season's private scheduling windows).
   referenceHours?: Hours[]
   referenceLabel?: string
+  // The hours grid edits SEASON (or global) day windows. A caller whose hours
+  // live elsewhere — the plan wizard's one-range-per-gym card — hides it and
+  // keeps the physical courts manager, which is a fact about the building in
+  // every world.
+  showHours?: boolean
 }
 
 const DAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
@@ -46,6 +51,7 @@ export function VenueEditor({
   hoursLabel,
   referenceHours,
   referenceLabel,
+  showHours = true,
 }: VenueEditorProps) {
   const [addingCourt, setAddingCourt] = useState(false)
   const [newCourtName, setNewCourtName] = useState("")
@@ -187,7 +193,7 @@ export function VenueEditor({
         )}
       </div>
 
-      {referenceHours && referenceHours.some((h) => h.openTime || h.closeTime) && (
+      {showHours && referenceHours && referenceHours.some((h) => h.openTime || h.closeTime) && (
         <div>
           <p className="text-ink-700 mb-2 text-xs font-semibold uppercase tracking-[0.1em]">
             {referenceLabel ?? "Venue's posted hours"}
@@ -207,6 +213,7 @@ export function VenueEditor({
         </div>
       )}
 
+      {showHours && (
       <div>
         <p className="text-ink-700 mb-2 text-xs font-semibold uppercase tracking-[0.1em]">
           {hoursLabel ?? "Default hours"}
@@ -263,6 +270,7 @@ export function VenueEditor({
           {savingHours ? "Saving..." : "Save hours"}
         </button>
       </div>
+      )}
     </div>
   )
 }

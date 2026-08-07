@@ -7,7 +7,6 @@ import type {
   PlanWorldVenue,
   PlanWorldWeekend,
   PlanSettings,
-  WindowPhase,
 } from "./plan-documents"
 import {
   buildingCapacityAt,
@@ -256,10 +255,13 @@ export function planStateFrom(
   return {
     seasonId,
     units,
-    windows: (world.windows ?? []).map((win) => ({
+    // A month a saved world fenced as playoffs is DROPPED WHOLE (owner's
+    // 2026-08-06 analysis, C1): playoff dates are a season setting now and
+    // planning never draws them — no ghost columns, no bands. Old documents
+    // that carry the fence read as if those dates were never planning supply,
+    // which is what the fence always meant.
+    windows: (world.windows ?? []).filter((win) => !windowFenced(win)).map((win) => ({
       label: win.label,
-      // What the month is FOR travels with it (owner ruling 2026-08-06): the
-      // solve drops a fenced one and the board draws it as its own band.
       phase: win.phase,
       weekends: (win.weekends ?? []).map((w) => {
         const on = weekendChosen(w)
@@ -1246,7 +1248,18 @@ export function withUnitTeams(world: PlanWorld, key: string, teams: number): Pla
   return {
     ...world,
     units: (world.units ?? []).map((u) =>
-      u.key === key ? { ...u, teams: next, expected: next, included: next > 0 || u.included } : u
+      u.key === key
+        ? {
+            ...u,
+            teams: next,
+            expected: next,
+            included: next > 0 || u.included,
+            // The operator WROTE this number, zero included. It is what keeps a
+            // deliberate 0 from reading as "never estimated" and reseeding off
+            // the registration count on step 1.
+            source: "expected",
+          }
+        : u
     ),
   }
 }
@@ -1471,102 +1484,6 @@ export function withWeekendChosen(
   })
 }
 
-/**
- * WHAT A MONTH IS FOR, IN THIS PLAN (owner ruling 2026-08-06, the March fence).
- *
- * Fencing a month as playoffs takes it out of the solve entirely: no league
- * games are placed there, no grade is owed a session there, and nothing in it
- * reaches the ask. The month stays on the board as its own quiet band, because
- * the league does play it, and the operator can hand it back to the regular
- * season with the same control.
- *
- * Anything already placed in the month goes with it. That is the honest reading
- * of the instruction: a month that is not league games cannot be holding league
- * games, and the alternative is a fenced March quietly keeping a calendar
- * nothing on the screen will ever recompute.
- */
-export function withWindowPhase(
-  world: PlanWorld,
-  label: string,
-  phase: WindowPhase
-): PlanWorld {
-  return rebuild({
-    ...world,
-    windows: (world.windows ?? []).map((win) =>
-      win.label !== label
-        ? win
-        : {
-            ...win,
-            phase,
-            weekends:
-              phase === "playoffs"
-                ? (win.weekends ?? []).map((w) => ({ ...w, chosen: false, venues: [] }))
-                : (win.weekends ?? []),
-          }
-    ),
-  })
-}
-
-/** The months this plan has fenced, by label, for the calendar the plan holds:
- *  a grade placed in a fenced month is not playing a league game there. */
-export function fencedWindowLabels(world: PlanWorld): Set<string> {
-  return new Set((world.windows ?? []).filter(windowFenced).map((win) => win.label))
-}
-
-/**
- * EVERY MONTH FENCE THE BOARD IS HOLDING, written into the plan's own world
- * (owner ruling 2026-08-06). The other half of withWindowPhases below: the board
- * computes on a fence the instant it is pressed, and this is what a save writes
- * down, the same way assertions and per-date hours work.
- */
-export function withWindowPhasesInWorld(
-  world: PlanWorld,
-  fences: Record<string, WindowPhase>
-): PlanWorld {
-  let next = world
-  for (const [label, phase] of Object.entries(fences)) next = withWindowPhase(next, label, phase)
-  return next
-}
-
-/**
- * A MONTH FENCE, IN THE SHAPE THE BOARD COMPUTES ON (owner ruling 2026-08-06).
- *
- * The board applies it the instant the operator presses it, so the solve, the
- * ask, the rail and the column all move together and one Undo takes it back.
- * withWindowPhasesInWorld is the other half, run when the plan is saved.
- *
- * A fenced month keeps its dates and loses its gym time: playoffs are drawn
- * later, so a building booked there is a booking for games nobody is going to
- * schedule. A month nobody fenced comes back as the very same object.
- */
-export function withWindowPhases(
-  state: PlannerState,
-  fences: Record<string, WindowPhase>
-): PlannerState {
-  if (Object.keys(fences).length === 0) return state
-  let touched = false
-  const windows = state.windows.map((win) => {
-    const phase = fences[win.label]
-    if (!phase || (win.phase ?? "regular") === phase) return win
-    touched = true
-    return {
-      ...win,
-      phase,
-      weekends:
-        phase === "playoffs"
-          ? win.weekends.map((w) => ({
-              ...w,
-              chosen: false,
-              venues: [],
-              capacityGames: 0,
-              largestVenueCapacity: 0,
-            }))
-          : win.weekends,
-    }
-  })
-  return touched ? { ...state, windows } : state
-}
-
 /** A gym on, or off, for every weekend this plan runs. Turning it on never
  *  invents a weekend: a weekend the plan does not run stays not run. */
 export function withGymEveryWeekend(world: PlanWorld, venueId: string, on: boolean): PlanWorld {
@@ -1769,13 +1686,6 @@ export interface BoardColumn {
   weekends: PlannerWeekend[]
   /** Every date of the month, in order, cards and ghosts together. */
   dates: BoardDate[]
-  /**
-   * A month this plan has FENCED as playoffs (owner ruling 2026-08-06). The
-   * column draws one quiet band instead of its dates: nothing is placed there,
-   * nothing is owed there, and nothing in it is a drop target, because the games
-   * that month are drawn from standings that do not exist yet.
-   */
-  fenced: boolean
 }
 
 /** The day part of an ISO date, which is the only part two sources agree on. */
@@ -1852,7 +1762,6 @@ export function boardColumns(
   const columns: BoardColumn[] = state.windows.map((win) => ({
     label: win.label,
     weekends: win.weekends,
-    fenced: windowFenced(win),
     dates: win.weekends.map((w) =>
       isGhostWeekend(w, hasContent)
         ? ghostOf(w)
@@ -1887,9 +1796,7 @@ export function boardColumns(
     seen.add(day)
     let column = byMonth.get(day.slice(0, 7))
     if (!column) {
-      // A month the plan's world has never held cannot be fenced: fencing is a
-      // decision recorded on a window, and this one does not exist yet.
-      column = { label: monthColumnLabel(sat.satDateISO), weekends: [], dates: [], fenced: false }
+      column = { label: monthColumnLabel(sat.satDateISO), weekends: [], dates: [] }
       byMonth.set(day.slice(0, 7), column)
       // In its own place in the season, not appended to the end of it.
       const at = columns.findIndex((c) => {

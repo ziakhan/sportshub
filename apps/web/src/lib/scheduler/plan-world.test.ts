@@ -21,11 +21,7 @@ import {
   withFridayBlock,
   withHealedGyms,
   withGymOrder,
-  fencedWindowLabels,
   windowFenced,
-  withWindowPhase,
-  withWindowPhases,
-  withWindowPhasesInWorld,
   homeGymCapacity,
   homeGymOf,
   weekendSolvable,
@@ -1402,7 +1398,7 @@ describe("a date the plan was not using", () => {
  * So a month can be fenced, per plan, and a fenced month is out of the solve
  * entirely while staying on the board as its own band.
  */
-describe("a month fenced as playoffs", () => {
+describe("a month an old document fenced as playoffs", () => {
   /** Oct and Nov chosen with the home gym on them, plus a bare-chosen March. */
   function threeMonths(): PlanWorld {
     const weekend = (sessionId: string, label: string, dateISO: string) => ({
@@ -1426,125 +1422,68 @@ describe("a month fenced as playoffs", () => {
         { key: "age:Grade 7", label: "Grade 7", divisionIds: ["d7"], teams: 10, included: true },
       ],
       windows: [
-        { label: "Oct 2026", weekends: [weekend("w-oct", "Oct 24–25", "2026-10-24")] },
-        { label: "Nov 2026", weekends: [weekend("w-nov", "Nov 21–22", "2026-11-21")] },
-        { label: "Mar 2027", weekends: [weekend("w-mar", "Mar 6–7", "2027-03-06")] },
+        { label: "Oct 2026", weekends: [weekend("w-oct", "Oct 24\u201325", "2026-10-24")] },
+        { label: "Nov 2026", weekends: [weekend("w-nov", "Nov 21\u201322", "2026-11-21")] },
+        { label: "Mar 2027", weekends: [weekend("w-mar", "Mar 6\u20137", "2027-03-06")] },
       ],
     }
   }
+  const marchFenced = (world: PlanWorld): PlanWorld => ({
+    ...world,
+    windows: (world.windows ?? []).map((win) =>
+      win.label === "Mar 2027" ? { ...win, phase: "playoffs" as const } : win
+    ),
+  })
   const stateOf = (w: PlanWorld) =>
     planStateFrom("s1", { settings: { capturedAt: "x", state: w } }) as PlannerState
 
-  it("is absent by default: the owner fences his own March", () => {
+  it("is absent by default: every month is planning supply", () => {
     const world = threeMonths()
     expect(world.windows.every((win) => !windowFenced(win))).toBe(true)
-    expect(fencedWindowLabels(world).size).toBe(0)
-    // Every month is in the solve until somebody says otherwise.
-    expect(solvableState(stateOf(world)).windows.map((w) => w.label)).toEqual([
+    expect(stateOf(world).windows.map((w) => w.label)).toEqual([
       "Oct 2026",
       "Nov 2026",
       "Mar 2027",
     ])
   })
 
-  it("drops the fenced month whole, and leaves the rest of the season alone", () => {
-    const fenced = withWindowPhase(threeMonths(), "Mar 2027", "playoffs")
-    expect(fencedWindowLabels(fenced)).toEqual(new Set(["Mar 2027"]))
-    const state = stateOf(fenced)
-    // Still on the board: the league DOES play that month.
-    expect(state.windows.map((w) => w.label)).toEqual(["Oct 2026", "Nov 2026", "Mar 2027"])
-    expect(state.windows[2].phase).toBe("playoffs")
-    // Not in the solve, and no grade is owed a session there.
+  /**
+   * Playoff dates are a SEASON setting now (owner's 2026-08-06 analysis, C1)
+   * and planning never draws them. A saved world still carrying the old
+   * per-plan fence reads the same way: the month is dropped whole on open —
+   * no band, no ghost dates, nothing owed and nothing to solve.
+   */
+  it("drops a fenced month's dates entirely: no band, no column, no solve", () => {
+    const state = stateOf(marchFenced(threeMonths()))
+    expect(state.windows.map((w) => w.label)).toEqual(["Oct 2026", "Nov 2026"])
+    expect(boardColumns(state, []).map((c) => c.label)).toEqual(["Oct 2026", "Nov 2026"])
     const runs = solvableState(state)
-    expect(runs.windows.map((w) => w.label)).toEqual(["Oct 2026", "Nov 2026"])
     const assignment = proposePlan(runs, "balance")
     expect(Object.keys(assignment).sort()).toEqual(["w-nov", "w-oct"])
     expect(assignment["w-mar"] ?? []).toEqual([])
-    // And the draw never books the home gym there, which would be a rental for
-    // games nobody is going to schedule.
+    // And the draw never books a building there: a rental for games nobody is
+    // going to schedule.
     expect(drawnGyms(state, assignment, packPlanVenues(runs, assignment)).added).toEqual({
       "w-oct": ["v-home"],
       "w-nov": ["v-home"],
     })
   })
 
-  it("drops a fenced month even when it has real gym time on it", () => {
-    // Fencing March AFTER a gym was attached still takes it out of the solve:
-    // what the month is FOR outranks what it happens to have booked.
+  it("drops it even when it has real gym time on it", () => {
     const withGym = withGymOnWeekend(threeMonths(), "w-mar", "v-home", true)
     expect(stateOf(withGym).windows[2].weekends[0].capacityGames).toBeGreaterThan(0)
-    const fenced = withWindowPhase(withGym, "Mar 2027", "playoffs")
-    // The fence clears the month: a month that is not league games is not
-    // holding a league booking either.
-    expect(stateOf(fenced).windows[2].weekends[0].venues).toEqual([])
-    expect(solvableState(stateOf(fenced)).windows.map((w) => w.label)).toEqual([
-      "Oct 2026",
-      "Nov 2026",
-    ])
-  })
-
-  it("hands the month back with the same control", () => {
-    const fenced = withWindowPhase(threeMonths(), "Mar 2027", "playoffs")
-    const back = withWindowPhase(fenced, "Mar 2027", "regular")
-    expect(fencedWindowLabels(back).size).toBe(0)
-    // The weekends come back unchosen, because fencing let them go: choosing
-    // them again is the operator's call, not something a toggle guesses at.
-    expect(solvableState(stateOf(back)).windows.map((w) => w.label)).toEqual([
+    expect(stateOf(marchFenced(withGym)).windows.map((w) => w.label)).toEqual([
       "Oct 2026",
       "Nov 2026",
     ])
   })
 
   it("is not a world to draw in when the fence is all that is left", () => {
-    const only = {
+    const only = marchFenced({
       ...threeMonths(),
       windows: threeMonths().windows.filter((win) => win.label === "Mar 2027"),
-    }
-    expect(worldReadiness(stateOf(only))).toEqual({ usable: true, gap: null })
-    const fenced = withWindowPhase(only, "Mar 2027", "playoffs")
-    // Every weekend this plan chose is inside the fence, so there is nothing to
-    // draw and the hero says which step fixes it.
-    expect(worldReadiness(stateOf(fenced))).toEqual({ usable: false, gap: "weekends" })
-  })
-
-  it("gives the board a column that says it is a band, not a row of dates", () => {
-    const fenced = withWindowPhase(threeMonths(), "Mar 2027", "playoffs")
-    const columns = boardColumns(stateOf(fenced), [])
-    expect(columns.map((c) => c.fenced)).toEqual([false, false, true])
-    expect(columns[2].label).toBe("Mar 2027")
-  })
-
-  it("round-trips through a saved world", () => {
-    const fenced = withWindowPhase(threeMonths(), "Mar 2027", "playoffs")
-    const saved = worldFromState(stateOf(fenced))
-    expect(fencedWindowLabels(saved)).toEqual(new Set(["Mar 2027"]))
-  })
-
-  /**
-   * The board holds the fence in its working copy and the SAVE writes it into
-   * the plan's world, the same way an asserted gym works. Both halves have to
-   * agree, or the month would come back unfenced the moment the plan reopened.
-   */
-  it("moves the board the instant it is pressed, and the save writes the same thing", () => {
-    const state = stateOf(threeMonths())
-    const onBoard = withWindowPhases(state, { "Mar 2027": "playoffs" })
-    expect(onBoard.windows[2].phase).toBe("playoffs")
-    expect(onBoard.windows[2].weekends[0].capacityGames).toBe(0)
-    expect(solvableState(onBoard).windows.map((w) => w.label)).toEqual(["Oct 2026", "Nov 2026"])
-    // Untouched months keep their own objects, and a board with no fence on it
-    // is handed straight back.
-    expect(onBoard.windows[0]).toBe(state.windows[0])
-    expect(withWindowPhases(state, {})).toBe(state)
-    expect(withWindowPhases(state, { "Mar 2027": "regular" })).toBe(state)
-    // A month this world has never heard of is not a reason to rebuild it.
-    expect(withWindowPhases(state, { "Jul 2027": "playoffs" })).toBe(state)
-
-    const saved = withWindowPhasesInWorld(threeMonths(), { "Mar 2027": "playoffs" })
-    expect(fencedWindowLabels(saved)).toEqual(new Set(["Mar 2027"]))
-    expect(solvableState(stateOf(saved)).windows.map((w) => w.label)).toEqual([
-      "Oct 2026",
-      "Nov 2026",
-    ])
+    })
+    expect(worldReadiness(stateOf(only))).toEqual({ usable: false, gap: "weekends" })
   })
 })
 

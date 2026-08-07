@@ -21,6 +21,8 @@ import { PLAN_COPY } from "@/lib/scheduler/plan-documents"
 import type { BuildingRoom } from "@/lib/scheduler/plan-world"
 import { venueShortName } from "@/lib/seasons/venue-strip"
 import {
+  BTN_SECONDARY,
+  BTN_SM,
   CARD_TONE,
   FRACTION_FOR_TONE,
   fractionTone,
@@ -1499,7 +1501,7 @@ function StrandedPrompt({
                 label: weekend.label,
               })
             }}
-            className="border-ink-300 text-ink-800 hover:border-ink-400 hover:bg-ink-50 min-h-[32px] cursor-pointer rounded-lg border bg-white px-2 text-[11px] font-bold shadow-sm transition-colors"
+            className={`${BTN_SECONDARY} ${BTN_SM}`}
           >
             A different weekend
           </button>
@@ -1518,7 +1520,7 @@ function StrandedPrompt({
             e.stopPropagation()
             setDismissed(true)
           }}
-          className="border-ink-300 text-ink-700 hover:border-ink-400 hover:bg-ink-50 min-h-[32px] cursor-pointer rounded-lg border bg-white px-2 text-[11px] font-bold transition-colors"
+          className={`${BTN_SECONDARY} ${BTN_SM}`}
         >
           Leave it open
         </button>

@@ -64,6 +64,22 @@ function PlanWizard() {
   const [step, setStep] = useState(fromUrl >= 1 && fromUrl <= 5 ? fromUrl : 1)
   const [header, setHeader] = useState<PlanHeaderInfo | null>(null)
 
+  /** The plan named in the address, restored by the session below (owner's
+   *  2026-08-06 analysis, B1: the URL carries the plan on every step). */
+  const planFromUrl = searchParams?.get("plan") ?? null
+
+  /**
+   * AND THE STEP IS KEPT IN IT, the same way: a reload lands on the step the
+   * operator was standing on, not back at the top of the walk. replaceState,
+   * because nothing navigates — the address is simply kept true.
+   */
+  useEffect(() => {
+    const url = new URL(window.location.href)
+    if (String(step) === (url.searchParams.get("step") ?? "")) return
+    url.searchParams.set("step", String(step))
+    window.history.replaceState(window.history.state, "", url)
+  }, [step])
+
   // Whichever step loads first names the season in the page header.
   const onLoaded = useCallback((info: PlanHeaderInfo) => setHeader(info), [])
 
@@ -90,7 +106,7 @@ function PlanWizard() {
   }, [wide])
 
   return (
-    <PlanSessionProvider seasonId={seasonId}>
+    <PlanSessionProvider seasonId={seasonId} initialPlanId={planFromUrl}>
       <div className={wide ? "w-full px-3 py-3" : "mx-auto max-w-5xl px-4 py-6"}>
         <SmartBack
           fallback={`/manage/leagues/${leagueId}/seasons/${seasonId}/manage?tab=plan`}

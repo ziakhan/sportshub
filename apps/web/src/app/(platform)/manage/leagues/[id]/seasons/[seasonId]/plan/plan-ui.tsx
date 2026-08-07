@@ -4,6 +4,7 @@ import { useCallback, useEffect, useId, useRef, useState } from "react"
 import { createPortal } from "react-dom"
 import type { PlacementReason, RentalAsk } from "@/lib/scheduler/planner-core"
 import {
+  BTN_MD,
   BTN_QUIET,
   BTN_SECONDARY,
   FRACTION_TONE,
@@ -27,6 +28,48 @@ import { armAfterDragStarts } from "./board-shared"
  *     well as hover. A title= attribute is dead on a touch screen, so nothing
  *     that matters is ever only a title.
  */
+
+/* ----------------------------- the notice slot ---------------------------- */
+
+/**
+ * MESSAGES NEVER RESHAPE THE SCREEN UNDER YOUR CURSOR (owner 2026-08-02: "when
+ * I'm removing the gym on and off, I'm seeing a message on top which is
+ * fluctuating and shifting the whole layout"). One slot, shared by every step
+ * that reports a save result: it keeps its space whether or not it has
+ * anything to say, so a toggle or a retry never moves a card under the
+ * operator's finger. An error always wins over a notice, and wears hoop; a
+ * notice wears whichever tone its step means by it.
+ */
+export function NoticeSlot({
+  error,
+  notice,
+  tone = "court",
+  testId,
+  className = "",
+}: {
+  error?: string | null
+  notice?: string | null
+  tone?: "court" | "gold"
+  testId?: string
+  className?: string
+}) {
+  return (
+    <p
+      data-testid={testId}
+      data-tone={error ? "hoop" : tone}
+      aria-live="polite"
+      className={`rounded-xl border px-4 py-2.5 text-sm transition-opacity duration-150 ${
+        error
+          ? "border-hoop-200 bg-hoop-50 text-hoop-900"
+          : tone === "gold"
+            ? "border-gold-200 bg-gold-50 text-gold-900"
+            : "border-court-200 bg-court-50 text-court-900"
+      } ${error || notice ? "opacity-100" : "invisible opacity-0"} ${className}`}
+    >
+      {error ?? notice ?? " "}
+    </p>
+  )
+}
 
 /* ------------------------------ the glyphs ------------------------------- */
 
@@ -648,7 +691,7 @@ export function AskSheet({
           e.stopPropagation()
           setOpen((v) => !v)
         }}
-        className="border-ink-300 text-ink-800 hover:border-ink-400 hover:bg-ink-50 inline-flex min-h-[36px] cursor-pointer items-center rounded-lg border bg-white px-3 text-[12.5px] font-bold transition-colors"
+        className={`${BTN_SECONDARY} ${BTN_MD}`}
       >
         What you need to book
       </button>

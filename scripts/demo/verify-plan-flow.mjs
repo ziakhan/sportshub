@@ -11,7 +11,7 @@
 // Run from scripts/demo (its node_modules has Playwright):
 //   node verify-plan-flow.mjs
 import { chromium } from "playwright"
-import { openBoard } from "./plan-board-lib.mjs"
+import { openBoard, openPlanFromStep1 } from "./plan-board-lib.mjs"
 
 const BASE = process.env.BASE_URL ?? "http://localhost:3000"
 const SEASON = process.env.SEASON_ID ?? "160b2f09-a95a-4a64-9b90-03793cae105b"
@@ -99,18 +99,22 @@ ok(
   ctaHref ?? "no href (this stage uses a tab switch)"
 )
 await page.locator('[data-testid="plan-tab-rail"] a').first().click()
-await page.waitForSelector('[data-testid="step1-plan-chooser"]', { timeout: 90000 })
+await page.waitForSelector('[data-testid="step1-plan-empty"]', { timeout: 90000 })
+// RE-PINNED 2026-08-06 wave (owner's B2 ruling): exactly ONE chooser lives on
+// step 1 at a time. With nothing open the empty-state card is it, and the
+// header chooser (step1-plan-chooser) does not mount at all — the two used to
+// coexist, which was the duplication B2 removed.
 ok(
-  "the walk starts on teams, with the plan controls in the header",
+  "the walk starts on teams, with nothing open and the empty-state card showing",
   /[?&]step=1/.test(page.url()) &&
-    (await page.locator('[data-testid="step1-plan-chooser"]').count()) === 1,
+    (await page.locator('[data-testid="step1-plan-empty"]').count()) === 1 &&
+    (await page.locator('[data-testid="step1-plan-chooser"]').count()) === 0,
   page.url().split("/").pop()
 )
 ok(
   "and no plan is opened for you: step 1 asks which one first",
-  (await page.locator('[data-testid="step1-plan-empty"]').count()) === 1 &&
-    /None open/.test(await page.locator('[data-testid="plan-picker"]').innerText()),
-  (await page.locator('[data-testid="step1-plan-chooser"]').innerText()).replace(/\n/g, " ")
+  (await page.locator('[data-testid="step1-plan-empty"]').count()) === 1,
+  (await page.locator('[data-testid="step1-plan-empty"]').innerText()).replace(/\n/g, " ")
 )
 await page.screenshot({ path: `${SHOTS}/1-plan-tab.png`, fullPage: true })
 
@@ -138,12 +142,17 @@ ok(
  * estimate. Once the operator has numbers everywhere its absence IS the right
  * state, and asserting it unconditionally was pinning the world rather than the
  * screen. Same reasoning as the start-from-registrations banner below.
+ *
+ * RE-PINNED AGAIN 2026-08-06 wave (owner ruling A1): "unestimated" is not
+ * "expected === 0" any more. A deliberate 0 (source "expected", teams 0) is an
+ * answered question and stays 0 — it does not wear the pill. Only a grade
+ * nobody ever put a number on (source !== "expected") is unestimated.
  */
 const step1Planner = await page.request
   .get(`${BASE}/api/seasons/${SEASON}/planner`)
   .then((r) => r.json())
   .catch(() => null)
-const unestimated = (step1Planner?.state?.units ?? []).filter((u) => u.expected === 0)
+const unestimated = (step1Planner?.state?.units ?? []).filter((u) => u.source !== "expected")
 ok(
   "step 1 marks unestimated grades as not in the plan, and only then",
   unestimated.length > 0
@@ -155,12 +164,14 @@ ok(
 )
 // The banner only shows while some registered grade lacks an estimate; once
 // the operator has numbers everywhere, its absence is the correct state.
+// RE-PINNED 2026-08-06 wave (A1): "estimated" is source === "expected", not
+// expected > 0 — a deliberate 0 counts as answered.
 const plannerForBanner = await page.request
   .get(`${BASE}/api/seasons/${SEASON}/planner`)
   .then((r) => r.json())
 const allEstimated = (plannerForBanner?.state?.units ?? [])
   .filter((u) => u.approved > 0)
-  .every((u) => u.expected > 0)
+  .every((u) => u.source === "expected")
 ok(
   "step 1 start-from-registrations state is honest",
   /Start from registrations/i.test(step1) || allEstimated,
@@ -311,6 +322,9 @@ await page.screenshot({ path: `${SHOTS}/3-step2-gyms.png`, fullPage: true })
 // ── Step 3: gym sections, levers, hours chips (no Keep, no Apply) ─────────
 // RE-PINNED 2026-08-05 (#2): step 3 opens on the chooser, so the drive opens the
 // season's own plan before there is a board to assert anything about.
+// RE-PINNED 2026-08-06 wave (B1): the chooser moved to step 1 — a cold visit to
+// step 3 now draws the board-plan-pointer card, and openBoard opens the plan
+// from step 1 before following the URL back here.
 const boardEntry = await openBoard(
   page,
   `${BASE}/manage/leagues/${LEAGUE}/seasons/${SEASON}/plan?step=3`
@@ -318,7 +332,7 @@ const boardEntry = await openBoard(
 ok(
   "step 3 opens with nothing selected, and the plan is opened by hand",
   boardEntry.empty && boardEntry.weekends === 0,
-  boardEntry.picker
+  boardEntry.pointerText
 )
 /**
  * RE-PINNED 2026-08-06 (owner ruling #6): the two disclosures under the board
@@ -633,8 +647,10 @@ if (worldPlan) {
   )
 
   /* ── step 1, on the plan: the estimates are the PLAN's ───────────────── */
+  // RE-PINNED 2026-08-06 wave (B2): a bare goto with no ?plan= lands on the
+  // empty-state card, not the header chooser — the two are never both mounted.
   await page.goto(planUrl(1))
-  await page.waitForSelector('[data-testid="step1-plan-chooser"]', { timeout: 60000 })
+  await page.waitForSelector('[data-testid="step1-plan-empty"]', { timeout: 60000 })
   await page.locator('[data-testid="plan-open"]').click()
   await page.waitForSelector('[data-testid="plan-menu"]', { timeout: 30000 })
   await page.locator(`[data-testid="plan-option"][data-plan-id="${worldPlan.id}"]`).click()
@@ -730,13 +746,11 @@ if (worldPlan) {
   await page.screenshot({ path: `${SHOTS}/9-step1-plan-world.png`, fullPage: true })
 
   /* ── step 2, on the plan ─────────────────────────────────────────────── */
-  await page.goto(planUrl(2))
+  // RE-PINNED 2026-08-06 wave (B1): step 2 has no chooser of its own any more
+  // (a cold visit draws step2-plan-pointer) — the plan is opened at step 1 and
+  // the URL carries it back here.
+  await openPlanFromStep1(page, planUrl(2), worldPlan.id)
   await page.waitForSelector('[data-testid="league-weekends"]', { timeout: 60000 })
-  // Open the plan the way an operator does.
-  await page.locator('[data-testid="plan-open"], [data-testid="step2-plan-chooser"] [data-testid="plan-picker"]').first().click()
-  await page.waitForSelector('[data-testid="plan-menu"]', { timeout: 30000 })
-  await page.locator(`[data-testid="plan-option"][data-plan-id="${worldPlan.id}"]`).click()
-  await page.waitForTimeout(2000)
 
   const planLine = page.locator('[data-testid="step2-plan-line"]')
   /**
@@ -914,11 +928,9 @@ if (worldPlan) {
   )
   ok("a grade is placed on the plan's first weekend", placeRes.ok(), `HTTP ${placeRes.status()}`)
 
-  await page.goto(planUrl(2))
+  // RE-PINNED 2026-08-06 wave (B1): same reopen-from-step-1 path as above.
+  await openPlanFromStep1(page, planUrl(2), worldPlan.id)
   await page.waitForSelector('[data-testid="league-weekends"]', { timeout: 60000 })
-  await page.locator('[data-testid="plan-open"], [data-testid="step2-plan-chooser"] [data-testid="plan-picker"]').first().click()
-  await page.waitForSelector('[data-testid="plan-menu"]', { timeout: 30000 })
-  await page.locator(`[data-testid="plan-option"][data-plan-id="${worldPlan.id}"]`).click()
   await page.waitForSelector(`[data-testid="league-weekend"][data-weekend="${realKeys[0].key}"]`, {
     timeout: 30000,
   })

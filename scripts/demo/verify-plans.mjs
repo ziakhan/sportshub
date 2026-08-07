@@ -13,7 +13,7 @@
 // Run from scripts/demo (its node_modules has Playwright):
 //   node verify-plans.mjs
 import { chromium } from "playwright"
-import { openBoard } from "./plan-board-lib.mjs"
+import { openBoard, switchPlan, openPlanFromStep1 } from "./plan-board-lib.mjs"
 
 const BASE = process.env.BASE_URL ?? "http://localhost:3000"
 const SEASON = process.env.SEASON_ID ?? "160b2f09-a95a-4a64-9b90-03793cae105b"
@@ -116,19 +116,25 @@ ok("captured the season's saved calendar", before.length > 2, `${before.length} 
 // RE-PINNED 2026-08-05 (owner rulings #1 and #2). Step 3 no longer opens the
 // season's active plan for you: it opens the chooser. The drive picks the plan
 // the way an operator does, and pins the empty entry on the way through.
+// RE-PINNED 2026-08-06 wave (B1): the chooser itself moved to step 1 — a cold
+// visit to step 3 draws board-plan-pointer instead, and openBoard opens the
+// plan from step 1 before following the URL back to the board.
 const entry = await openBoard(page, PLAN_URL)
 ok(
   "step 3 opens on nothing: no plan is selected just because one is active",
-  entry.empty && entry.sections === 0 && entry.weekends === 0 && /None open/.test(entry.picker),
-  `${entry.picker} · ${entry.sections} gym sections, ${entry.weekends} weekends drawn`
+  entry.empty && entry.sections === 0 && entry.weekends === 0,
+  `${entry.pointerText} · ${entry.sections} gym sections, ${entry.weekends} weekends drawn`
 )
 
-const picker = page.locator('[data-testid="plan-picker"]')
-const pickerText = (await picker.innerText()).replace(/\n/g, " ")
+// The board names the plan it holds with a label now, not a control (B1: the
+// picker moved to step 1, and board-plan-badge is what is left in its place).
+const badge = page.locator('[data-testid="board-plan-badge"]')
+const badgeText = (await badge.innerText()).replace(/\n/g, " ")
+const activeRow = (await listPlans()).find((p) => p.isActive)
 ok(
-  "the picker names the plan on the board and marks it active",
-  pickerText.includes("NPH plan") && /active/i.test(pickerText),
-  pickerText
+  "the board names the plan it holds, and the API agrees it is the active one",
+  badgeText.includes("NPH plan") && activeRow?.name === "NPH plan",
+  `${badgeText} · active plan is ${activeRow?.name ?? "none"}`
 )
 ok(
   "the reference plan says so before anybody tries to save onto it",
@@ -173,6 +179,15 @@ ok(
   legendBox && boardBox ? `legend y=${Math.round(legendBox.y)}, board y=${Math.round(boardBox.y)}` : "missing"
 )
 
+// RE-PINNED 2026-08-06 wave (B1): the dropdown lives at step 1 now, not beside
+// the board. The drive checks it there, then returns to the board where the
+// rest of this suite runs — nothing about the plan open changes underneath it.
+const boardUrl = new URL(page.url())
+const step1Check = new URL(boardUrl)
+step1Check.searchParams.set("step", "1")
+await page.goto(step1Check.toString(), { timeout: 90000 })
+await page.waitForSelector('[data-testid="step1-plan-chooser"]', { timeout: 60000 })
+const picker = page.locator('[data-testid="plan-picker"]')
 await picker.click()
 await page.waitForSelector('[data-testid="plan-menu"]', { timeout: 30000 })
 const options = page.locator('[data-testid="plan-option"]')
@@ -189,6 +204,10 @@ await page.screenshot({ path: `${SHOTS}/1-picker-open.png` })
 await page.keyboard.press("Escape")
 await page.waitForTimeout(250)
 ok("Escape shuts the dropdown", (await page.locator('[data-testid="plan-menu"]').count()) === 0)
+// Back to the board, still on the reference plan — nothing was selected.
+await page.goto(boardUrl.toString(), { timeout: 90000 })
+await page.waitForSelector('[data-testid="weekend-gym-section"]', { timeout: 90000 })
+await page.waitForTimeout(700)
 
 /* --------------------- one edit, then the save controls ------------------ */
 let edited = false
@@ -236,17 +255,23 @@ await page.locator('[data-testid="save-new-confirm"]').click()
 // Saving a copy is a POST, a list refresh and a document fetch. On a cold route
 // that is well past a second and a half, so this waits for the answer instead of
 // guessing at it.
+// RE-PINNED 2026-08-06 wave (B1): the board names its plan with the badge now,
+// not a picker (there is no picker on step 3 any more).
 let afterSaveText = ""
+let afterSaveActive = null
 for (let i = 0; i < 40; i++) {
-  afterSaveText = (await picker.innerText().catch(() => "")).replace(/\n/g, " ")
-  if (afterSaveText.includes(DRIVE_PLAN)) break
+  afterSaveText = (await badge.innerText().catch(() => "")).replace(/\n/g, " ")
+  if (afterSaveText.includes(DRIVE_PLAN)) {
+    afterSaveActive = (await listPlans()).find((p) => p.name === DRIVE_PLAN)?.isActive ?? null
+    break
+  }
   await page.waitForTimeout(500)
 }
 
 ok(
   "the board is now the new plan, and the new plan does not run the season",
-  afterSaveText.includes(DRIVE_PLAN) && !/active/i.test(afterSaveText),
-  afterSaveText
+  afterSaveText.includes(DRIVE_PLAN) && afterSaveActive === false,
+  `${afterSaveText} · isActive=${afterSaveActive}`
 )
 const savedState = await page.locator('[data-testid="plan-state"]').innerText()
 ok(
@@ -359,22 +384,22 @@ if (editedAgain) {
 }
 
 /* -------------------------- back to the reference ------------------------ */
-await picker.click()
-await page.waitForSelector('[data-testid="plan-menu"]', { timeout: 30000 })
-await page.locator('[data-testid="plan-option"][data-source="imported"]').first().click()
-await page.waitForTimeout(1500)
-const backText = (await picker.innerText()).replace(/\n/g, " ")
+// RE-PINNED 2026-08-06 wave (B1): switching plans is a step-1 errand now —
+// switchPlan hops there, picks the imported one, and follows the URL back.
+await switchPlan(page, { source: "imported" })
+const backText = (await badge.innerText()).replace(/\n/g, " ")
 const backState = await page.locator('[data-testid="plan-state"]').innerText()
+const backActive = (await listPlans()).find((p) => p.name === "NPH plan")?.isActive
 ok(
   "picking another plan reloads the board onto it, clean",
   backText.includes("NPH plan") &&
-    /active/i.test(backText) &&
+    backActive === true &&
     backState.includes("season's calendar") &&
     // Clean again: nothing to write back, and the only save left is the quiet
     // fork of the league's own calendar.
     (await page.locator('[data-testid="save-plan"]').count()) === 0 &&
     (await page.locator('[data-testid="save-as-new"]').innerText()) === "Save a copy",
-  `${backText} · ${backState}`
+  `${backText} · active=${backActive} · ${backState}`
 )
 ok(
   "the rail follows the plan it is critiquing",
@@ -398,9 +423,17 @@ await page.screenshot({ path: `${SHOTS}/5-back-on-reference.png` })
  *     decision;
  *   - the pool gyms are still LISTED, by name, with nothing on them.
  */
+// RE-PINNED 2026-08-06 wave (B1): "New plan" lives beside step 1's header
+// chooser now — there is no picker (and no New plan button) left on the board.
+const boardUrlForNew = new URL(page.url())
+const step1ForNew = new URL(boardUrlForNew)
+step1ForNew.searchParams.set("step", "1")
+await page.goto(step1ForNew.toString(), { timeout: 90000 })
+await page.waitForSelector('[data-testid="step1-plan-chooser"]', { timeout: 60000 })
+
 const newRow = page.locator('[data-testid="plan-new"]')
 ok(
-  "making a plan is a button beside the picker, not a row inside it",
+  "making a plan is a button beside step 1's picker, not a row inside it",
   (await newRow.count()) === 1 && (await newRow.innerText()).trim() === "New plan",
   await newRow.innerText().catch(() => "missing")
 )
@@ -433,19 +466,27 @@ ok(
   made ? `${made.name} source=${made.source} active=${made.isActive}` : "no new plan appeared"
 )
 
-// Polls for up to 30s rather than a fixed 1.5s: under load the client can
-// take much longer than the happy path to switch the board onto the plan it
-// just created.
+// RE-PINNED 2026-08-06 wave (B1): the URL now carries the new plan — follow it
+// to the board rather than watching a picker that no longer lives there.
 const madeName = made?.name ?? FRESH_NAME
-let newText = (await picker.innerText()).replace(/\n/g, " ")
-for (let i = 0; i < 60 && !(newText.includes(madeName) && !/active/i.test(newText)); i++) {
-  await page.waitForTimeout(500)
-  newText = (await picker.innerText().catch(() => newText)).replace(/\n/g, " ")
-}
+const backToBoard = new URL(page.url())
+backToBoard.searchParams.set("step", "3")
+await page.goto(backToBoard.toString(), { timeout: 90000 })
+// A fresh plan has no chosen weekend, so weekend-gym-section never appears.
+// And on a plan where nothing is used anywhere, every month's whole run of
+// ghosts collapses into one summary row (C2, 2026-08-06 wave), so even
+// [data-session-id] can be genuinely absent — ghost-collapse is the one thing
+// guaranteed to show up here.
+await page.waitForSelector('[data-session-id], [data-testid="ghost-collapse"]', {
+  timeout: 90000,
+})
+await page.waitForTimeout(900)
+const newText = (await badge.innerText().catch(() => "")).replace(/\n/g, " ")
+const newActive = (await listPlans()).find((p) => p.id === made?.id)?.isActive
 ok(
   "the board opens on the new plan, and the season keeps the one it runs",
-  newText.includes(madeName) && !/active/i.test(newText),
-  newText
+  newText.includes(madeName) && newActive === false,
+  `${newText} · isActive=${newActive}`
 )
 const madeDoc = made
   ? (await page.request.get(`${BASE}/api/seasons/${SEASON}/plans/${made.id}`).then((r) => r.json()))?.plan
@@ -480,10 +521,18 @@ ok(
   (await railAbout.count()) === 0 || (await railAbout.innerText()).trim() === `Ideas for ${madeName}`,
   await railAbout.innerText().catch(() => "no rail")
 )
+// RE-PINNED 2026-08-06 wave (C2): a plan where nothing is used ANYWHERE has
+// every month's whole run of ghosts collapsed into one summary row on
+// arrival, so [data-session-id] itself can legitimately be zero. What still
+// has to be true is that the board drew SOMETHING for every month — a real
+// card, a ghost row, or a collapsed summary of them.
+const drawnMonths =
+  (await page.locator("[data-session-id]").count()) +
+  (await page.locator('[data-testid="ghost-collapse"]').count())
 ok(
-  "the board still draws every weekend of the season, chosen or not",
-  (await page.locator("[data-session-id]").count()) > 0,
-  `${await page.locator("[data-session-id]").count()} weekends`
+  "the board still draws every month of the season, chosen or not (cards, ghosts, or their collapsed summary)",
+  drawnMonths > 0,
+  `${drawnMonths} dated row(s) or collapsed month(s)`
 )
 await page.screenshot({ path: `${SHOTS}/7-new-plan-on-the-board.png` })
 
@@ -654,13 +703,16 @@ await page.waitForTimeout(1200)
 // RE-PINNED 2026-08-06 (the fix): a CHOSEN WEEKEND is the whole requirement now.
 // The plan has no gym time on it and it is usable anyway, because the draw is
 // what puts the league's own building on the dates it chose.
+// RE-PINNED 2026-08-06 wave (C3): the hero's own line shortened to "Nothing is
+// saved until you say so." — the fuller "Nothing is booked or saved..." moved
+// into the draw-how popover below, alongside the shape-of-the-draw sentence.
 ok(
   "a plan with a chosen weekend and a home gym leads with Draw the calendar, bare weekend and all",
   (await hero.getAttribute("data-usable")) === "1" &&
     (await hero.getAttribute("data-gap")) === "" &&
     (await page.locator('[data-testid="draw-calendar"]').count()) === 1 &&
     (await page.locator('[data-testid="world-first"]').count()) === 0 &&
-    /Nothing is booked or saved/.test(await hero.innerText()),
+    /Nothing is saved until you say so/.test(await hero.innerText()),
   (await hero.innerText()).replace(/\n/g, " ")
 )
 ok(
@@ -675,15 +727,23 @@ ok(
  * time but no calendar yet), so this is the one place in the three suites
  * that can see it: the reference plan's board already has a calendar, and the
  * world-first hero has no draw button to explain.
+ *
+ * RE-PINNED 2026-08-06 wave (C3): draw-how is the WhyPopover TRIGGER now, not
+ * a paragraph — the explanation only exists once the popover is open, in the
+ * portalled why-popover panel.
  */
+const drawHow = page.locator('[data-testid="draw-how"]')
+ok("the hero offers a trigger explaining the draw, before you press it", (await drawHow.count()) === 1)
+await drawHow.click()
+await page.waitForSelector('[data-testid="why-popover"]', { timeout: 5000 })
+const drawHowText = await page.locator('[data-testid="why-popover"]').last().innerText()
 ok(
-  "the hero explains what the draw is about to do before you press it",
-  (await page.locator('[data-testid="draw-how"]').count()) === 1 &&
-    /Fills your home gym first, then rents as few gyms as possible/.test(
-      await page.locator('[data-testid="draw-how"]').innerText()
-    ),
-  await page.locator('[data-testid="draw-how"]').innerText().catch(() => "missing")
+  "and the popover explains the draw's shape",
+  /Fills your home gym first, then rents as few gyms as possible/.test(drawHowText),
+  drawHowText
 )
+await page.keyboard.press("Escape")
+await page.waitForTimeout(200)
 ok("nothing is drawn yet", (await playedOn()).length === 0)
 await page.screenshot({ path: `${SHOTS}/10-hero-draw-calendar.png` })
 
@@ -728,11 +788,22 @@ ok(
   `${drawnSections.length} section(s): ${drawnSections.join(", ")}`
 )
 const drawNotice = await page.locator('[data-testid="board-notice"]').innerText().catch(() => "")
+/**
+ * RE-PINNED 2026-08-07 (drive sweep, following the 2bc1b07 commit's own "Drive
+ * debt queued for sweep" note). `drawnHome` — the clause naming the building
+ * and "because that is the building your league owns" — was deleted in that
+ * commit; COPY.drawn (board-shared.ts) no longer names a building in the
+ * toast at all. WHICH building got used is still pinned, just by the DOM
+ * assertion right above this one (the home gym's own section on the drawn
+ * weekend) rather than by the notice's words. What the notice still promises,
+ * asserted on its current, stable copy: it announces the draw, says it used
+ * the plan's own gyms, and says nothing is saved yet.
+ */
 ok(
-  "it says what it did, which building it used, and that nothing is saved",
+  "it announces the draw, says it used the plan's own gyms, and that nothing is saved",
   /Here is the calendar/.test(drawNotice) &&
-    /Nothing is saved/.test(drawNotice) &&
-    /because that is the building your league owns/.test(drawNotice),
+    /in the gyms this plan has/.test(drawNotice) &&
+    /Nothing is saved/.test(drawNotice),
   drawNotice.replace(/\n/g, " ")
 )
 const drawState = await page.locator('[data-testid="plan-state"]').innerText()
@@ -902,9 +973,17 @@ await page.screenshot({ path: `${SHOTS}/14-resolved-in-this-world.png` })
 
 /* ------------------- rename and delete, from the picker ------------------ */
 // Owner ruling 2026-08-05, #2: plan CRUD lives in the picker.
+// RE-PINNED 2026-08-06 wave (B1): the picker itself lives at step 1 only now,
+// so both this rename and the delete-blocked check below happen there.
+const step1ForCrud = new URL(page.url())
+step1ForCrud.searchParams.set("step", "1")
+await page.goto(step1ForCrud.toString(), { timeout: 90000 })
+await page.waitForSelector('[data-testid="step1-plan-chooser"]', { timeout: 60000 })
+const crudPicker = page.locator('[data-testid="plan-picker"]')
+
 let renamed = false
 if (made) {
-  await picker.click()
+  await crudPicker.click()
   await page.waitForSelector('[data-testid="plan-menu"]', { timeout: 20000 })
   await page.locator(`[data-testid="plan-rename-open"][data-plan-id="${made.id}"]`).click()
   await page.waitForSelector('[data-testid="plan-rename-input"]', { timeout: 20000 })
@@ -917,10 +996,10 @@ if (made) {
     await page.waitForTimeout(400)
   }
 }
-ok("a plan renames in place, from the picker", renamed)
+ok("a plan renames in place, from step 1's picker", renamed)
 
 // The two plans that cannot be thrown away say so on the button itself.
-await picker.click()
+await crudPicker.click()
 await page.waitForSelector('[data-testid="plan-menu"]', { timeout: 20000 })
 const activePlanRow = (await listPlans()).find((p) => p.isActive)
 const blockedDelete = activePlanRow

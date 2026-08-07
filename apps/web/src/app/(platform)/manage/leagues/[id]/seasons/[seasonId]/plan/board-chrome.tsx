@@ -541,6 +541,10 @@ export function StrandedBanner({
  * and goes to the step that fixes it: "pick your weekends and gym time" was
  * unactionable from the day choosing a weekend stopped attaching a gym.
  */
+/** "Has this person ever drawn a calendar" — a fact about the person, not any
+ *  one plan, so it lives in the browser. */
+const DREW_ONCE_KEY = "planner-drew-once"
+
 export function DrawHero({
   usable,
   gap,
@@ -556,13 +560,55 @@ export function DrawHero({
   onGoToStep?: (step: number) => void
 }) {
   const missing = gap ?? "both"
+  /**
+   * COMPACT ONCE THE BUTTON NEEDS NO INTRODUCTION (owner's 2026-08-06
+   * analysis, C3). The first empty board a person ever meets gets the
+   * full-size invitation; after their first draw anywhere the ceremony is
+   * noise, so the card drops to one row. What the draw DOES lives in an info
+   * popover either way — one tap for whoever asks, no paragraph for whoever
+   * does not.
+   */
+  const [drewOnce] = useState(() => {
+    try {
+      return window.localStorage.getItem(DREW_ONCE_KEY) === "1"
+    } catch {
+      return false
+    }
+  })
+  const draw = () => {
+    try {
+      window.localStorage.setItem(DREW_ONCE_KEY, "1")
+    } catch {
+      /* private mode: the hero simply stays full-size next time */
+    }
+    onDraw()
+  }
+  const compact = usable && drewOnce
+
+  const how = (
+    <WhyPopover
+      text={`${COPY.drawHow} ${COPY.drawHint}`}
+      label="How the draw works"
+      testId="draw-how"
+    >
+      <span className="text-play-700 text-[11.5px] font-semibold underline decoration-dotted underline-offset-2">
+        How it works
+      </span>
+    </WhyPopover>
+  )
+
   return (
     <div
       data-testid="draw-hero"
       data-usable={usable ? "1" : "0"}
       data-gap={usable ? "" : missing}
+      data-size={compact ? "compact" : "full"}
       onClick={(e) => e.stopPropagation()}
-      className="border-court-200 bg-court-50/70 mb-3 rounded-2xl border px-5 py-7 text-center"
+      className={`border-court-200 bg-court-50/70 mb-3 rounded-2xl border ${
+        compact
+          ? "flex flex-wrap items-center gap-3 px-3 py-2"
+          : "px-5 py-5 text-center"
+      }`}
     >
       {usable ? (
         <>
@@ -570,8 +616,10 @@ export function DrawHero({
             type="button"
             data-testid="draw-calendar"
             disabled={busy}
-            onClick={onDraw}
-            className={`${BTN_PRIMARY} min-h-[48px] gap-2 rounded-xl px-6 text-[15px]`}
+            onClick={draw}
+            className={`${BTN_PRIMARY} ${
+              compact ? BTN_MD : "min-h-[44px] gap-2 rounded-xl px-6 text-[14px]"
+            }`}
           >
             <svg
               viewBox="0 0 24 24"
@@ -588,18 +636,14 @@ export function DrawHero({
             </svg>
             {COPY.drawTitle}
           </button>
-          {/* WHAT THE BUTTON IS ABOUT TO DO (owner ruling 2026-08-06, slice B2).
-              The shape of the draw, in one line, BEFORE it is pressed: the
-              building you own fills first, and what spills takes as few rented
-              gyms as it can. Above the promise that nothing is saved, because
-              what it does is the question somebody asks first. */}
-          <p
-            className="text-ink-700 mx-auto mt-2.5 max-w-md text-[12.5px] font-semibold"
-            data-testid="draw-how"
-          >
-            {COPY.drawHow}
-          </p>
-          <p className="text-ink-500 mx-auto mt-1 max-w-md text-[12.5px]">{COPY.drawHint}</p>
+          {compact ? (
+            how
+          ) : (
+            <p className="mx-auto mt-2 max-w-md text-[12.5px]">
+              <span className="text-ink-500">Nothing is saved until you say so. </span>
+              {how}
+            </p>
+          )}
         </>
       ) : (
         <>
@@ -618,57 +662,6 @@ export function DrawHero({
         </>
       )}
     </div>
-  )
-}
-
-/**
- * The one line that says this plan was drawn in a different world (owner
- * 2026-08-02: "a new plan also could have different venues. It could have
- * different settings, so how are you going to save it and how do you
- * remember?").
- *
- * Quiet gold, above the calendar, leading with the difference that matters
- * most and counting the rest; the whole list is one tap away. It is never an
- * alarm: a plan saved in October under October's gyms is not broken, it is
- * simply older than the season it sits in, and the operator is the one who
- * decides whether that matters.
- */
-export function DriftLine({
-  drift,
-  unknown,
-  onPlanWorld,
-}: {
-  drift: string[]
-  /** The plan predates world-tracking, so there is nothing to compare. */
-  unknown: boolean
-  /** The board is drawing the plan's own settings rather than the season's. */
-  onPlanWorld: boolean
-}) {
-  if (!unknown && drift.length === 0) return null
-  const lead = unknown ? PLAN_COPY.driftUnknown : PLAN_COPY.drift(drift[0], drift.length - 1)
-  const whole = [
-    ...(unknown ? [PLAN_COPY.driftUnknown] : drift),
-    onPlanWorld ? PLAN_COPY.driftBoard : PLAN_COPY.driftActive,
-  ].join(" ")
-  return (
-    // A thin gold spine over a pale wash, the same gold the step's other
-    // notices wear. Deliberately NOT gold TEXT: the palette stops at gold-600,
-    // which is too light to read at this size.
-    <p
-      className="border-gold-400 bg-gold-50 text-ink-800 mb-2.5 flex flex-wrap items-center gap-2 rounded-lg border-l-[3px] px-2.5 py-1.5 text-[11.5px]"
-      data-testid="plan-drift"
-    >
-      <span className="font-semibold">{lead}</span>
-      <WhyPopover
-        text={whole}
-        label="What is different about this plan's settings"
-        testId="plan-drift-why"
-      >
-        <span className="text-play-700 font-semibold underline decoration-dotted underline-offset-2">
-          What changed
-        </span>
-      </WhyPopover>
-    </p>
   )
 }
 

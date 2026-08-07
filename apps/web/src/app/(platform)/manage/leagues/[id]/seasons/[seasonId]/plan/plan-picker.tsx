@@ -9,6 +9,7 @@ import {
   planMarkers,
   type PlanRow,
 } from "@/lib/scheduler/plan-documents"
+import { BTN_MD, BTN_PRIMARY, BTN_SECONDARY } from "./plan-shared"
 
 /**
  * The two controls plans as documents adds to the wizard (owner 2026-08-02,
@@ -320,11 +321,6 @@ export function PlanPicker({
 
 /* --------------------------- the save controls --------------------------- */
 
-const QUIET =
-  "border-ink-300 text-ink-800 hover:border-ink-400 hover:bg-ink-50 inline-flex min-h-[36px] cursor-pointer items-center rounded-lg border bg-white px-3 text-xs font-bold transition-colors disabled:cursor-not-allowed disabled:opacity-50"
-const PRIMARY =
-  "border-court-600 bg-court-600 text-white hover:bg-court-700 hover:border-court-700 inline-flex min-h-[36px] cursor-pointer items-center rounded-lg border px-3 text-xs font-bold transition-colors disabled:cursor-not-allowed disabled:opacity-50"
-
 /**
  * One way to persist the board (owner 2026-08-02). What is offered depends on
  * the plan you are standing in, and nothing else:
@@ -391,7 +387,7 @@ export function PlanSaveControls({
               e.stopPropagation()
               onActivate()
             }}
-            className={QUIET}
+            className={`${BTN_SECONDARY} ${BTN_MD}`}
           >
             {busy === "activate" ? "Switching…" : "Use for the season"}
           </button>
@@ -406,7 +402,7 @@ export function PlanSaveControls({
             if (naming === null) onStartNaming()
             else onCancelNaming()
           }}
-          className={newIsPrimary ? PRIMARY : QUIET}
+          className={newIsPrimary ? `${BTN_PRIMARY} ${BTN_MD}` : `${BTN_SECONDARY} ${BTN_MD}`}
         >
           {newLabel}
         </button>
@@ -419,7 +415,7 @@ export function PlanSaveControls({
               e.stopPropagation()
               onSavePlan()
             }}
-            className={PRIMARY}
+            className={`${BTN_PRIMARY} ${BTN_MD}`}
           >
             {busy === "save-plan" ? "Saving…" : `Save to ${selected?.name}`}
           </button>
@@ -467,7 +463,7 @@ export function PlanSaveControls({
               e.stopPropagation()
               onSaveNew()
             }}
-            className={PRIMARY}
+            className={`${BTN_PRIMARY} ${BTN_MD}`}
           >
             {busy === "save-new" ? "Saving…" : "Save plan"}
           </button>
@@ -479,7 +475,7 @@ export function PlanSaveControls({
               e.stopPropagation()
               onCancelNaming()
             }}
-            className={QUIET}
+            className={`${BTN_SECONDARY} ${BTN_MD}`}
           >
             Cancel
           </button>

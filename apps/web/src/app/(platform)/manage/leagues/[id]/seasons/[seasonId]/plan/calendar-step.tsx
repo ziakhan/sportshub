@@ -1,11 +1,12 @@
 "use client"
 
-import { AskSheet, GymList } from "./plan-ui"
-import { PlanEmptyState } from "./plan-session"
+import { AskSheet, GymList, NoticeSlot } from "./plan-ui"
+import { PlanStepPointer } from "./plan-session"
 import { StripView } from "./season-strip"
 import type { PlanHeaderInfo } from "./teams-step"
 import { PLAN_COPY } from "@/lib/scheduler/plan-documents"
 import { COPY, headerPill } from "./board-shared"
+import { BTN_LG, BTN_PRIMARY } from "./plan-shared"
 import { useBoardState } from "./board-state"
 import { useBoardPlans } from "./board-plans"
 import { useBoardVerbs } from "./board-verbs"
@@ -13,7 +14,6 @@ import {
   ArmedLines,
   BoardHead,
   DrawHero,
-  DriftLine,
   GradeFilter,
   StrandedBanner,
   UndoFloat,
@@ -146,8 +146,6 @@ export function CalendarStep({
     openState,
     selectedPlan,
     activePlan,
-    drift,
-    worldUnknown,
     gone,
     stranded,
     strandedAt,
@@ -191,7 +189,6 @@ export function CalendarStep({
     onDropVenue,
     onDropSection,
     draw,
-    fenceWindow,
     takeFriday,
     dropFriday,
     redraw,
@@ -240,7 +237,7 @@ export function CalendarStep({
             data-testid="plan-reopen"
             onClick={() => void session.refreshDoc()}
             disabled={session.docBusy}
-            className="border-court-700 bg-court-600 hover:bg-court-700 mt-3 inline-flex min-h-[40px] cursor-pointer items-center rounded-xl border px-4 text-[13px] font-bold text-white shadow-sm transition-colors disabled:cursor-not-allowed disabled:opacity-50"
+            className={`${BTN_PRIMARY} ${BTN_LG} mt-3 rounded-xl`}
           >
             {PLAN_COPY.unreadableRetry}
           </button>
@@ -313,29 +310,21 @@ export function CalendarStep({
             This season is finalized, so the calendar is read only now.
           </p>
         )}
-        {error && (
-          <p className="border-hoop-200 bg-hoop-50 text-hoop-900 mb-4 rounded-xl border px-4 py-2.5 text-sm">
-            {error}
-          </p>
-        )}
-        {notice && !error && (
-          <p
-            className="border-court-200 bg-court-50 text-court-900 mb-4 rounded-xl border px-4 py-2.5 text-sm"
-            data-testid="board-notice"
-            aria-live="polite"
-          >
-            {notice}
-          </p>
-        )}
+        <NoticeSlot testId="board-notice" error={error} notice={notice} className="mb-4" />
         {board.errors.length > 0 && (
           <p className="text-ink-500 mb-4 text-xs">{board.errors.join(" · ")}</p>
         )}
 
         {!planId ? (
-          /* NOTHING OPEN (owner ruling 2026-08-05, #2). A visit that has not
-             chosen a plan gets the chooser, not the league's imported
-             calendar quietly loaded under its hands. */
-          <PlanEmptyState locked={locked} busy={busy !== null} />
+          /* NOTHING OPEN (owner ruling 2026-08-05, #2; chooser rule 2026-08-06,
+             B1). The board never loads the league's imported calendar under
+             idle hands — and it never offers the picker either. Plans are
+             chosen and made at step 1, so this points there and stops. */
+          <PlanStepPointer
+            detail="The calendar is a plan's own: its weekends, its gyms, its games. Open a plan and the board draws it here."
+            onGoToStep={onGoToStep}
+            testId="board-plan-pointer"
+          />
         ) : board.windows.length === 0 ? (
           <p className="border-ink-200 text-ink-500 rounded-xl border border-dashed px-4 py-6 text-center text-sm">
             This season has no weekends yet. Add them in step 2 and the calendar builds itself here.
@@ -377,11 +366,6 @@ export function CalendarStep({
                 moveBlock(strandedMove.unitKeys, strandedMove.fromSessionId, strandedMove.to.sessionId)
               }
             />
-
-            {/* The world this plan was saved in, where it is not the world the
-                season is in now. Above the calendar, because it is a fact about
-                every number below it. */}
-            <DriftLine drift={drift} unknown={worldUnknown} onPlanWorld={onPlanWorld} />
 
             {/* ONE GYM LIST (owner ruling 2026-08-06, #1). The colour key and
                 the tray were the same row twice; this is the one of them. Drag a
@@ -498,7 +482,6 @@ export function CalendarStep({
                       onSetHours={setWeekendHours}
                       onOpenWeekend={setZoomSession}
                       onGhostDrop={dropOnGhost}
-                      onFenceWindow={interactive ? fenceWindow : undefined}
                       splitAxesFor={splitAxesFor}
                     />
                   )

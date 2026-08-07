@@ -37,6 +37,10 @@ const updateSessionSchema = z.object({
   days: z.array(sessionDaySchema).min(1).optional(),
   venues: z.array(sessionVenueSchema).optional(),
   targetGamesPerTeam: z.number().int().min(1).max(10).nullable().optional(),
+  /** What the weekend is FOR (owner's 2026-08-06 analysis, C1). A playoff
+   *  weekend is a season fact, set here and nowhere else: planning excludes
+   *  its dates entirely, and the scheduler never treats it as supply. */
+  phase: z.enum(["REGULAR", "PLAYOFF"]).optional(),
 })
 
 async function authorize(seasonId: string) {
@@ -167,7 +171,11 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
     const data = updateSessionSchema.parse(body)
 
     await prisma.$transaction(async (tx: any) => {
-      if (data.label !== undefined || data.targetGamesPerTeam !== undefined) {
+      if (
+        data.label !== undefined ||
+        data.targetGamesPerTeam !== undefined ||
+        data.phase !== undefined
+      ) {
         await tx.seasonSession.update({
           where: { id: sessionId },
           data: {
@@ -175,6 +183,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
             ...(data.targetGamesPerTeam !== undefined
               ? { targetGamesPerTeam: data.targetGamesPerTeam }
               : {}),
+            ...(data.phase !== undefined ? { phase: data.phase } : {}),
           },
         })
       }

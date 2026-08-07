@@ -13,6 +13,7 @@ import {
 } from "@/lib/scheduler/planner-core"
 import type { PlanHeaderInfo } from "./teams-step"
 import { BTN_MD, BTN_QUIET, BTN_SECONDARY, BTN_SM } from "./plan-shared"
+import { NoticeSlot } from "./plan-ui"
 
 /**
  * Step 5, schedule (owner-approved mock, 2026-08-02). Scheduling is the
@@ -218,11 +219,7 @@ export function ScheduleStep({
             {COPY.locked}
           </p>
         )}
-        {error && (
-          <p className="border-hoop-200 bg-hoop-50 text-hoop-900 mb-4 rounded-xl border px-4 py-2.5 text-sm">
-            {error}
-          </p>
-        )}
+        <NoticeSlot testId="step5-notice" error={error} className="mb-4" />
 
         {bars.length === 0 ? (
           <div className="border-ink-200 rounded-xl border border-dashed px-4 py-6 text-center">

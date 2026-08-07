@@ -6,6 +6,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from "react"
@@ -31,7 +32,8 @@ import { BTN_MD, BTN_PRIMARY, BTN_SECONDARY } from "./plan-shared"
  *  1. THE PLAN IS CHOSEN AT STEP 1. Creating or opening a plan document is the
  *     first thing an operator does, not something they discover on the board
  *     five months of calendar later. So the picker and "New plan" are drawn in
- *     step 1's header, and step 3 keeps a compact copy for switching mid-flight.
+ *     step 1's header only; every other step just says which plan it is in
+ *     (PlanBadge) and links back to step 1 to change it.
  *  2. NOTHING IS SELECTED UNTIL SOMEBODY SELECTS IT. A visit starts with no
  *     plan open, whatever the season is running: the board and step 1 both ask
  *     "open a plan or start a new one" instead of quietly putting the league's
@@ -69,6 +71,14 @@ export interface PlanSession {
    *  the operator's own that the season does not run. On the ACTIVE plan the
    *  steps write through to the season instead, because it IS the season. */
   editsPlanWorld: boolean
+  /**
+   * True while the plan's own world is what the steps DRAW: any non-active
+   * plan that has one, the read-only reference included. The board has always
+   * drawn those worlds; steps 1 and 2 read the same document or the walk shows
+   * one plan on the calendar and a different one on its own numbers (the
+   * old-plan step-2 bug, fixed 2026-08-06 wave).
+   */
+  readsPlanWorld: boolean
   /** The plan the season actually runs. It drives everything downstream of the
    *  wizard; it is deliberately NOT what the wizard opens on. */
   active: PlanRow | null
@@ -118,9 +128,18 @@ export function usePlanSession(): PlanSession {
 
 export function PlanSessionProvider({
   seasonId,
+  initialPlanId = null,
   children,
 }: {
   seasonId: string
+  /**
+   * THE URL CARRIES THE PLAN (owner's 2026-08-06 analysis, B1). A visit still
+   * starts with nothing open — rule 2 stands — but a reload, a bookmark or a
+   * shared link with ?plan= on it is somebody deliberately naming the plan
+   * they were in, and the wizard puts them back in it. Restored once, after
+   * the list arrives, and only if the plan still exists.
+   */
+  initialPlanId?: string | null
   children: ReactNode
 }) {
   const [plans, setPlans] = useState<PlanRow[]>([])
@@ -150,6 +169,29 @@ export function PlanSessionProvider({
   useEffect(() => {
     void refresh()
   }, [refresh])
+
+  /** The one URL restore, spent whether or not it lands: a stale id in a
+   *  bookmark must not keep re-firing against every later refresh. */
+  const restoreRef = useRef<string | null>(initialPlanId)
+  useEffect(() => {
+    const wanted = restoreRef.current
+    if (!wanted || loading) return
+    restoreRef.current = null
+    if (plans.some((p) => p.id === wanted)) setPlanId(wanted)
+  }, [plans, loading])
+
+  /**
+   * AND THE URL FOLLOWS THE SELECTION, on every step. replaceState rather than
+   * a router navigation: nothing about the page changes, the address is simply
+   * kept true so a reload or a copied link reopens this plan.
+   */
+  useEffect(() => {
+    if (typeof window === "undefined") return
+    const url = new URL(window.location.href)
+    if (planId) url.searchParams.set("plan", planId)
+    else url.searchParams.delete("plan")
+    window.history.replaceState(window.history.state, "", url)
+  }, [planId])
 
   /** One document, held once. Every step reads it, so it is fetched here and
    *  nowhere else. */
@@ -336,6 +378,12 @@ export function PlanSessionProvider({
       // The active plan IS the season, so its edits go to the season's rows. The
       // reference plan is content-locked, so its world is read only too.
       editsPlanWorld: Boolean(chosen) && !chosen?.isActive && !isReferencePlan(chosen),
+      // Any non-active plan with a world of its own is DRAWN from it — writing
+      // is a separate, narrower right.
+      readsPlanWorld:
+        Boolean(chosen) &&
+        !chosen?.isActive &&
+        Boolean(doc && doc.id === planId && doc.settings?.state),
       active: plans.find((p) => p.isActive) ?? null,
       loading,
       docBusy,
@@ -477,12 +525,6 @@ function NameBox({
 }
 
 /**
- * The plan controls, wherever a step puts them: which plan you are in, the one
- * button that makes another, and — since the 2026-08-05 CRUD ruling — renaming
- * the one you are in. Step 1 wears the full version in its header; step 3 wears
- * the same thing, compact, so switching mid-flight is one tap.
- */
-/**
  * WHICH PLAN YOU ARE IN, SAID AND NOT ASKED (owner ruling 2026-08-06: the plan
  * is chosen at step 1 and nowhere else).
  *
@@ -516,24 +558,15 @@ export function PlanBadge({ testId = "plan-badge" }: { testId?: string }) {
 
 export function PlanChooser({
   locked,
-  busy = false,
-  compact = false,
-  onBeforeChange,
   testId = "plan-chooser",
 }: {
   locked: boolean
-  /** The step is mid-write, so the controls wait their turn. */
-  busy?: boolean
-  compact?: boolean
-  /** Return false to keep the current plan (unsaved work the operator kept). */
-  onBeforeChange?: () => boolean
   testId?: string
 }) {
   const session = usePlanSession()
   const [naming, setNaming] = useState<string | null>(null)
   const [renaming, setRenaming] = useState<string | null>(null)
-  const guard = () => (onBeforeChange ? onBeforeChange() : true)
-  const working = busy || session.creating
+  const working = session.creating
   const chosen = session.chosen
 
   return (
@@ -544,14 +577,11 @@ export function PlanChooser({
         busy={working}
         creating={session.creating}
         canWrite={!locked}
-        onSelect={(id) => {
-          if (!guard()) return
-          session.choose(id)
-        }}
+        onSelect={(id) => session.choose(id)}
         onRename={(id) => {
           setNaming(null)
           setRenaming(session.plans.find((p) => p.id === id)?.name ?? "")
-          if (id !== session.planId && guard()) session.choose(id)
+          if (id !== session.planId) session.choose(id)
         }}
         onDelete={async (id) => {
           const plan = session.plans.find((p) => p.id === id)
@@ -584,10 +614,9 @@ export function PlanChooser({
           disabled={working}
           onClick={(e) => {
             e.stopPropagation()
-            if (!guard()) return
             setNaming(session.suggestName())
           }}
-          className={compact ? PLAN_BTN_QUIET : PLAN_BTN_PRIMARY}
+          className={PLAN_BTN_PRIMARY}
         >
           <PlusMark />
           New plan
@@ -615,6 +644,44 @@ export function PlanChooser({
 }
 
 /**
+ * NOTHING OPEN, ON A STEP THAT CANNOT CHOOSE (owner's 2026-08-06 analysis, B1:
+ * the chooser lives at step 1 and nowhere else). Steps 2 to 5 never offer the
+ * picker — they say what is missing and walk the operator to the one place
+ * that fixes it, so the plan can never be swapped from under work in progress
+ * by a control three screens from where plans are managed.
+ */
+export function PlanStepPointer({
+  detail,
+  onGoToStep,
+  testId = "plan-pointer",
+}: {
+  detail: string
+  /** The wizard's own step control; without it the card still says the way. */
+  onGoToStep?: (step: number) => void
+  testId?: string
+}) {
+  return (
+    <div
+      data-testid={testId}
+      className="border-ink-200 bg-ink-50/70 rounded-2xl border border-dashed px-5 py-6 text-center"
+    >
+      <p className="text-ink-900 text-[15px] font-bold">No plan open</p>
+      <p className="text-ink-600 mx-auto mt-1 max-w-md text-[12.5px]">{detail}</p>
+      {onGoToStep && (
+        <button
+          type="button"
+          data-testid={`${testId}-go`}
+          onClick={() => onGoToStep(1)}
+          className={`${PLAN_BTN_PRIMARY} mt-3.5`}
+        >
+          Choose a plan in step 1
+        </button>
+      )}
+    </div>
+  )
+}
+
+/**
  * NOTHING IS OPEN YET (owner ruling 2026-08-05, #2). The fresh working state:
  * two clear buttons and no calendar under them, because the league's own
  * imported plan is not something the wizard should put in your hands without
@@ -622,13 +689,11 @@ export function PlanChooser({
  */
 export function PlanEmptyState({
   locked,
-  busy = false,
   heading = "Open a plan or start a new one",
   detail,
   testId = "plan-empty",
 }: {
   locked: boolean
-  busy?: boolean
   heading?: string
   detail?: string
   testId?: string
@@ -654,7 +719,7 @@ export function PlanEmptyState({
           <PlanPicker
             plans={session.plans}
             selectedId={session.planId}
-            busy={busy || session.creating}
+            busy={session.creating}
             canWrite={!locked}
             label="Open a plan"
             variant="button"
@@ -673,7 +738,7 @@ export function PlanEmptyState({
           <button
             type="button"
             data-testid="plan-start-new"
-            disabled={busy || session.creating}
+            disabled={session.creating}
             onClick={(e) => {
               e.stopPropagation()
               setNaming(session.suggestName())

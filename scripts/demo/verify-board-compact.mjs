@@ -44,11 +44,14 @@ ok("signed in as the league owner", true)
 // RE-PINNED 2026-08-05 (owner rulings #1 and #2): the board opens on nothing
 // until a plan is opened, so the drive opens the season's own plan first and
 // pins the empty entry on the way.
+// RE-PINNED 2026-08-06 wave (B1): the chooser moved to step 1 — a cold visit
+// to step 3 draws board-plan-pointer, and openBoard opens the plan there
+// before following the URL back to the board.
 const entry = await openBoard(page, PLAN)
 ok(
-  "step 3 opens on the chooser, with nothing selected",
-  entry.empty && entry.weekends === 0 && /None open/.test(entry.picker),
-  `${entry.picker} · ${entry.weekends} weekends drawn`
+  "step 3 opens on the pointer card, with nothing selected",
+  entry.empty && entry.weekends === 0,
+  `${entry.pointerText} · ${entry.weekends} weekends drawn`
 )
 await page.screenshot({ path: `${SHOTS}/board-empty.png` })
 
@@ -67,9 +70,21 @@ ok(
 // RENT. So courts may appear where a rental is being asked for — a rented
 // section saying how many courts it takes, or an empty slot saying how many it
 // needs — and nowhere else. A capacity meter still never counts courts.
+//
+// RE-PINNED 2026-08-07 (drive sweep): the rule is about BOARD CARDS. The work
+// rail's Friday-evening suggestion row (rail-friday, added by the "Friday
+// suggestions" feature) legitimately says "3 of 3 courts, 6-10 PM" — it is a
+// rental ask in its own right, just phrased in the rail rather than in
+// rental-mark/rental-slot-empty. It also carries a data-session-id (for its
+// own "jump to that weekend" wiring), which is what let it slip into this
+// sweep in the first place — a plain [data-session-id] query catches it even
+// though it lives in the sibling rail column, not on the board. Scoping to
+// board-scroll (the board's own container; the rail is a sibling of it, never
+// a descendant) is the actual fix.
 const courtsOutsideRentals = await page.evaluate(() => {
   const bad = []
-  for (const card of document.querySelectorAll("[data-session-id]")) {
+  const board = document.querySelector('[data-testid="board-scroll"]') ?? document
+  for (const card of board.querySelectorAll("[data-session-id]")) {
     const clone = card.cloneNode(true)
     for (const el of clone.querySelectorAll(
       '[data-testid="rental-mark"],[data-testid="rental-slot-empty"]'
@@ -326,108 +341,65 @@ ok(
   `${capacityRows.filter((r) => r.shown < r.attached).length} of ${capacityRows.length} weekends read under their attached wiring`
 )
 
-/* --------------------------- the switch guard ---------------------------- */
+/* ------------------- tap-and-tap: the moveSection verb -------------------- */
 /**
- * RE-PINNED 2026-08-05 (owner rulings #2 and #1, the switch-guard bug).
+ * REMOVED 2026-08-07 (owner instruction, following the 2bc1b07 drive sweep):
+ * the ⇄ switch-gym guard tested a verb that no longer exists. Owner ruling
+ * 2026-08-05 #2 deleted `switchGym` outright and folded a grade changing
+ * building into `moveSection` — one code path for both a drag and a tap, so
+ * the weekend-rooms arithmetic, the refusal and the undo step never drift
+ * apart again (see board-verbs.ts's own comment on the deletion). There is no
+ * `switch-gym` testid left anywhere in the tree, so the old guard always
+ * measured zero switches — it was pinning an artifact of its own emptiness,
+ * not a live guarantee.
  *
- * The guard used to measure a destination against the courts the calendar RENTS
- * there. Those are demand-sized, so every destination read full after one move
- * and the ⇄ disappeared. What it measures now is what the BUILDING could hold:
- * its own wired courts less the buffer, at the rate that weekend runs at — and a
- * pool gym the plan has not asked about is a legitimate destination too, because
- * taking it is the operator asserting they have it.
- *
- * So this check reproduces THAT arithmetic off the planner API, and the thing it
- * refuses to allow is a switch into a building that could not hold the grade even
- * if the league rented the whole thing.
+ * What replaces it: the capability itself, driven the way an operator who has
+ * no mouse drives it — tap a grade chip to arm it, tap "move here" on a
+ * weekend that offers to take it. The rail-suggestion move above exercises
+ * the SAME moveSection verb from its one-tap shortcut; this pins the manual
+ * entry point so the capability stays covered by more than the rail's own
+ * convenience wrapper around it.
  */
-const wiring = new Map(
-  (plannerState?.gyms ?? []).map((g) => [
-    g.venueId,
-    Math.max(0, Math.floor(g.courts ?? 0) - Math.max(0, Math.floor(plannerState?.courtBuffer ?? 0))),
-  ])
-)
-const switchCards = await page.evaluate(() => {
-  const cards = []
-  for (const card of document.querySelectorAll("[data-session-id]")) {
-    const used = {}
-    for (const s of card.querySelectorAll('[data-testid="weekend-gym-section"]')) {
-      used[s.getAttribute("data-venue-id")] = Number(
-        (s.querySelector('[data-testid="gym-fraction"]')?.textContent ?? "").split("/")[0]
-      )
-    }
-    const switches = []
-    for (const chip of card.querySelectorAll('[data-testid="grade-chip"]')) {
-      const button = chip.querySelector('[data-testid="switch-gym"]')
-      if (!button) continue
-      switches.push({
-        to: button.getAttribute("data-to"),
-        backup: button.getAttribute("data-backup") === "1",
-        games: Number(chip.querySelector("span[aria-hidden]")?.textContent ?? 0),
-      })
-    }
-    cards.push({ sessionId: card.getAttribute("data-session-id"), used, switches })
+const beforeTapMove = await page.locator("[data-session-id]").first().innerText()
+const chipToArm = page.locator('[data-testid="grade-chip"]').first()
+const armButton = chipToArm.locator('button[aria-pressed]')
+ok("a grade chip is on the board to arm", (await chipToArm.count()) > 0)
+if ((await chipToArm.count()) > 0) {
+  const armedUnit = await chipToArm.getAttribute("data-unit")
+  await armButton.click()
+  await page.waitForTimeout(300)
+  ok(
+    "tapping the chip arms it (aria-pressed flips true)",
+    (await armButton.getAttribute("aria-pressed")) === "true",
+    armedUnit ?? "unknown grade"
+  )
+  const destination = page.locator('[data-testid="move-here"]').first()
+  const destinationCount = await destination.count()
+  ok(
+    "an armed grade offers at least one weekend a tap can send it to",
+    destinationCount > 0,
+    `${destinationCount} destination(s) offered`
+  )
+  if (destinationCount > 0) {
+    await destination.click()
+    await page.waitForTimeout(700)
+    const tapMoveSaid = await page.locator('[data-testid="board-notice"]').innerText().catch(() => "")
+    ok(
+      "tap the chip, tap the destination: moveSection runs the same as the rail's one-tap shortcut",
+      / moved: .+ → .+/.test(tapMoveSaid.replace(/\n/g, " ")),
+      tapMoveSaid.replace(/\n/g, " ")
+    )
+    await page.locator('[data-testid="undo-last"]').click()
+    await page.waitForTimeout(700)
+    ok(
+      "and it undoes the same way the rail's move does",
+      (await page.locator('[data-testid="undo-last"]').count()) === 0
+    )
+  } else {
+    await page.keyboard.press("Escape")
+    await page.waitForTimeout(200)
   }
-  return cards
-})
-/** Minutes past midnight, or null when the clock is not one. */
-const clockAt = (time) => {
-  const m = /^(\d{1,2}):(\d{2})$/.exec(String(time ?? "").trim())
-  return m ? Number(m[1]) * 60 + Number(m[2]) : null
 }
-/** What the whole building could hold on this weekend, in games: the same courts
- *  × days × floor(window ÷ slot) the board computes with, never the courts this
- *  calendar happens to rent. */
-const buildingRoom = (weekend, venueId) => {
-  const attached = weekend.venues.find((v) => v.venueId === venueId)
-  const ceiling = Math.max(wiring.get(venueId) ?? 0, attached?.courts ?? 0)
-  if (attached) {
-    if (attached.capacityGames <= 0) return 0
-    const perCourt = attached.capacityGames / Math.max(1, attached.courts ?? 1)
-    return Math.floor(perCourt * ceiling)
-  }
-  // A BACKUP GYM (owner ruling #1): the plan has no gym time there, so its room
-  // is worked out from the gym's own hours the way venueOnWeekend does.
-  const gym = (plannerState?.gyms ?? []).find((g) => g.venueId === venueId)
-  if (!gym) return 0
-  const open = clockAt(gym.openTime ?? "09:00")
-  const close = clockAt(gym.closeTime ?? "21:00")
-  const slot = plannerState?.gameSlotMinutes || 60
-  const perCourtDay = Math.floor(Math.max(0, (close ?? 0) - (open ?? 0)) / slot)
-  const days = weekend.dayCount ?? 2
-  return ceiling * days * perCourtDay
-}
-const switchRows = switchCards.flatMap((card) => {
-  const weekend = byId.get(card.sessionId)
-  if (!weekend) return []
-  return card.switches.map((sw) => ({
-    weekend: weekend.label,
-    to: sw.to,
-    backup: sw.backup,
-    games: sw.games,
-    room: buildingRoom(weekend, sw.to) - (card.used[sw.to] ?? 0),
-  }))
-})
-const badSwitch = switchRows.filter((r) => r.room < r.games)
-ok(
-  "the switch is only ever offered into a BUILDING with room for that grade",
-  badSwitch.length === 0,
-  badSwitch.length
-    ? badSwitch
-        .slice(0, 3)
-        .map((r) => `${r.weekend}: ${r.games} games into ${r.room} of room`)
-        .join(" | ")
-    : `${switchRows.length} switches checked (${switchRows.filter((r) => r.backup).length} into a backup gym), all have room`
-)
-ok(
-  "and it is offered at all, which is the regression this ruling fixes",
-  switchRows.length > 0,
-  `${switchRows.length} grades can move building without leaving their weekend`
-)
-ok(
-  "no switch is drawn disabled: it is there or it is not",
-  (await page.locator('[data-testid="switch-gym"][disabled]').count()) === 0
-)
 
 /* ------------------------------ the strip -------------------------------- */
 await page.click('[data-testid="calendar-view-strip"]')
@@ -447,11 +419,13 @@ await page.screenshot({ path: `${SHOTS}/strip.png` })
 /* ----------------------------- reload check ------------------------------ */
 // RE-PINNED 2026-08-05: a reload starts clean, with no plan open, and opening
 // the season's own plan again brings back exactly the saved calendar.
+// RE-PINNED 2026-08-06 wave (B1): "clean" now means the pointer card, not a
+// chooser — the chooser itself moved to step 1.
 const reentry = await openBoard(page, PLAN)
 ok(
-  "a reload comes back to the chooser, not to somebody's calendar",
+  "a reload comes back to the pointer card, not to somebody's calendar",
   reentry.empty && reentry.weekends === 0,
-  reentry.picker
+  reentry.pointerText
 )
 const saved = await page.locator("[data-session-id]").first().innerText()
 ok("and the plan reopens on the same saved calendar", saved === beforeMove, saved.replace(/\n/g, " · "))

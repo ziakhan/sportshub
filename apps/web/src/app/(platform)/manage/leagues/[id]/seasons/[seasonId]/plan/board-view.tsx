@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo } from "react"
+import { useMemo, useState } from "react"
 import {
   weekendDemand,
   type PlacementReason,
@@ -9,7 +9,6 @@ import {
   type RentalBlock,
 } from "@/lib/scheduler/planner-core"
 import type { BoardColumn, BuildingRoom, GhostDate } from "@/lib/scheduler/plan-world"
-import type { WindowPhase } from "@/lib/scheduler/plan-documents"
 import { BTN_SECONDARY } from "./plan-shared"
 import type { Armed, ArmedBlock, ArmedSection, GhostChip } from "./plan-shared"
 import { GLYPH_LEGEND, ReasonGlyph, type BlockStatus, type SplitAxis } from "./plan-ui"
@@ -75,7 +74,6 @@ export function BoardView({
   onSetHours,
   onOpenWeekend,
   onGhostDrop,
-  onFenceWindow,
   splitAxesFor,
 }: {
   state: PlannerState
@@ -125,9 +123,6 @@ export function BoardView({
    *  Saturday it spans, as a card where the plan uses it and as a thin ghost row
    *  where it does not. */
   columns: BoardColumn[]
-  /** Fence a month as playoffs, or hand it back to the regular season (owner
-   *  ruling 2026-08-06). Absent on a board nobody may edit. */
-  onFenceWindow?: (label: string, phase: WindowPhase) => void
   /** What a date with nothing on it could hold, if the operator asserted the
    *  gyms behind it, either across the whole date or at one named building. The
    *  one number a ghost's drop offer is measured against. */
@@ -194,6 +189,16 @@ export function BoardView({
   onGhostDrop: (ghost: GhostDate, windowLabel: string, intent: GhostIntent) => void
   splitAxesFor: (sessionId: string, unitKeys: string[]) => SplitAxis[]
 }) {
+  /**
+   * A MONTH'S LEADING RUN OF UNUSED DATES, FOLDED (owner's 2026-08-06
+   * analysis, C2). A season has more open Saturdays than played ones, and the
+   * pile of thin ghost rows an operator has to scroll past before the first
+   * card was most of every column. The leading run collapses to one thin row
+   * per month; one tap opens it, and anything in the hand opens every month —
+   * a drop target that is folded away is a drop that cannot land.
+   */
+  const [openGhosts, setOpenGhosts] = useState<Set<string>>(new Set())
+
   /** The rentals of each weekend, so a card never filters the whole season. */
   const blocksBySession = useMemo(() => {
     const out = new Map<string, RentalBlock[]>()
@@ -244,55 +249,60 @@ export function BoardView({
             >
               <h3 className="text-ink-600 border-ink-200 mb-2 flex items-center justify-between gap-2 border-b pb-1.5 pl-1 text-[11.5px] font-bold uppercase tracking-[0.08em]">
                 <span>
-                  {win.fenced ? "Playoffs" : `Session ${i + 1}`} · {win.label.split(" ")[0]}
+                  {`Session ${i + 1}`} · {win.label.split(" ")[0]}
                 </span>
-                {/* WHAT THIS MONTH IS FOR (owner ruling 2026-08-06). One control,
-                    both ways, on the thing it is about. Hidden on a locked board,
-                    and on a month this plan does not hold, which cannot be fenced
-                    because there is no window to record it on. */}
-                {interactive && onFenceWindow && win.weekends.length > 0 && (
-                  <button
-                    type="button"
-                    data-testid="fence-window"
-                    data-window={win.label}
-                    data-fenced={win.fenced ? "1" : "0"}
-                    title={
-                      win.fenced
-                        ? `Put ${win.label} back in the regular season, so the draw fills it again.`
-                        : `${win.label} is playoffs: no league games are placed there, and no grade is owed a weekend in it.`
-                    }
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      onFenceWindow(win.label, win.fenced ? "regular" : "playoffs")
-                    }}
-                    /* A CONTROL, NOT A CAPTION (owner ruling 2026-08-06). */
-                    className={`${BTN_SECONDARY} min-h-[32px] px-2 text-[10.5px] normal-case tracking-normal`}
-                  >
-                    {win.fenced ? "Mark as regular season" : "Mark as playoffs"}
-                  </button>
-                )}
               </h3>
-              {/* A FENCED MONTH IS A BAND, NOT A ROW OF DATES (owner ruling
-                  2026-08-06). Playoffs come out of standings that do not exist
-                  yet, so there is nothing to place, nothing to owe and nothing to
-                  drop on: the column says what the month is for, and stops. */}
-              {win.fenced && (
-                <div
-                  data-testid="playoff-band"
-                  data-window={win.label}
-                  className="border-ink-200 bg-ink-100/60 text-ink-500 rounded-xl border border-dashed px-3 py-6 text-center"
-                >
-                  <p className="text-ink-700 text-[12.5px] font-bold">
-                    {win.label.split(" ")[0]} · playoffs, planned later
-                  </p>
-                  <p className="mx-auto mt-1 max-w-[220px] text-[11.5px]">
-                    Drawn from the standings once the regular season ends, so nothing is placed
-                    here and no grade is owed a weekend in it.
-                  </p>
-                </div>
-              )}
-              {!win.fenced &&
-                win.dates.map((date) =>
+              {(() => {
+                const holding = Boolean(armed || armedVenue || armedBlock || armedSection)
+                let lead = 0
+                while (lead < win.dates.length && win.dates[lead].kind === "ghost") lead++
+                const open = openGhosts.has(win.label) || dragging || holding
+                const collapsed = !open && lead >= 2
+                const shown = collapsed ? win.dates.slice(lead) : win.dates
+                const leads = win.dates
+                  .slice(0, lead)
+                  .flatMap((d) => (d.kind === "ghost" ? [d.ghost] : []))
+                const range =
+                  leads.length >= 2 ? `${leads[0].label} to ${leads[leads.length - 1].label}` : ""
+                return (
+                  <>
+                    {collapsed && (
+                      <button
+                        type="button"
+                        data-testid="ghost-collapse"
+                        data-window={win.label}
+                        data-count={lead}
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setOpenGhosts((prev) => new Set(prev).add(win.label))
+                        }}
+                        className="border-ink-200 text-ink-500 hover:border-ink-300 hover:text-ink-700 mb-1.5 flex min-h-[30px] w-full cursor-pointer items-center justify-between gap-2 rounded-lg border border-dashed bg-white/50 px-2.5 text-left text-[11px] transition-colors"
+                      >
+                        <span>
+                          {plural(lead, "open weekend", "open weekends")} · {range}
+                        </span>
+                        <span className="text-play-700 font-bold">Show</span>
+                      </button>
+                    )}
+                    {!collapsed && lead >= 2 && openGhosts.has(win.label) && (
+                      <button
+                        type="button"
+                        data-testid="ghost-collapse-hide"
+                        data-window={win.label}
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setOpenGhosts((prev) => {
+                            const next = new Set(prev)
+                            next.delete(win.label)
+                            return next
+                          })
+                        }}
+                        className="text-ink-400 hover:text-ink-600 mb-1 flex min-h-[24px] w-full cursor-pointer items-center justify-end px-1 text-[10.5px] font-semibold"
+                      >
+                        Hide open weekends
+                      </button>
+                    )}
+                    {shown.map((date) =>
                 date.kind === "ghost" ? (
                   /* A DATE THIS PLAN IS NOT USING (owner ruling 2026-08-06,
                      slice B2). One thin dashed row, and a full drop target: the
@@ -367,11 +377,11 @@ export function BoardView({
                   />
                 )
               )}
+                  </>
+                )
+              })()}
 
-              {/* A fenced month owes nobody a weekend, so nobody is benched in
-                  it: this list would be every grade in the league, said about a
-                  month where that is the plan. */}
-              {!win.fenced && missing.length > 0 && (
+              {missing.length > 0 && (
                 <div
                   className="border-ink-200 rounded-xl border border-dashed p-2"
                   data-testid="bench-group"

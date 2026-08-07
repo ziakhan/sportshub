@@ -14,7 +14,6 @@ import {
   withAssertedGymsInWorld,
   withWeekendHoursInWorld,
   withFridayBlocksInWorld,
-  withWindowPhasesInWorld,
   worldFromState,
 } from "@/lib/scheduler/plan-world"
 import { plural, savedVenueMap } from "./board-shared"
@@ -62,8 +61,6 @@ export function useBoardPlans(m: BoardModel) {
     setHourOverrides,
     assertedGyms,
     setAssertedGyms,
-    fences,
-    setFences,
     fridays,
     setFridays,
     setEmptyGyms,
@@ -128,7 +125,6 @@ export function useBoardPlans(m: BoardModel) {
     // opened.
     setAssertedGyms({})
     setEmptyGyms({})
-    setFences({})
     setFridays({})
     setFlashUnits([])
     setGhosts([])
@@ -325,7 +321,6 @@ export function useBoardPlans(m: BoardModel) {
     // over.
     setAssertedGyms({})
     setEmptyGyms({})
-    setFences({})
     setFridays({})
     setHourOverrides({})
     setUndoStack([])
@@ -421,7 +416,6 @@ export function useBoardPlans(m: BoardModel) {
     // the season's attachment, so the working copy stops carrying them.
     setAssertedGyms({})
     setEmptyGyms({})
-    setFences({})
     setHourOverrides({})
     setUndoStack([])
     setDirty(false)
@@ -499,11 +493,18 @@ export function useBoardPlans(m: BoardModel) {
     await session.refreshDoc()
     // A gym a GAME is already on could not be released, and that is a real
     // difference between the plan and the season the operator has to hear.
+    // THE RE-SOLVE OFFER rides the same line (owner's 2026-08-06 analysis,
+    // C4): a plan that was saved under older settings, or one that could not
+    // fully land, gets the way to a clean calendar named — Redraw is in the
+    // header, one press away, and now solves in the world the season just took.
     const blocked = Number(data.world?.blocked ?? 0)
+    const redrawOffer = " If anything looks off, Redraw rebuilds the calendar under these settings."
     setNotice(
       blocked > 0
-        ? `${plan.name} is the season's calendar and gym setup now, except ${plural(blocked, "weekend", "weekends")} that kept a gym because a game is already scheduled there.`
-        : `${plan.name} is the season's calendar and gym setup now. Everything after this step follows it.`
+        ? `${plan.name} is the season's calendar and gym setup now, except ${plural(blocked, "weekend", "weekends")} that kept a gym because a game is already scheduled there.${redrawOffer}`
+        : drift.length > 0
+          ? `${plan.name} is the season's calendar and gym setup now. The season had moved since it was saved, and it now runs this plan's version.${redrawOffer}`
+          : `${plan.name} is the season's calendar and gym setup now. Everything after this step follows it.`
     )
   }
 
@@ -613,20 +614,15 @@ export function useBoardPlans(m: BoardModel) {
   const worldWithAssertions = () => {
     const nothingAsserted = Object.values(assertedGyms).every((ids) => (ids ?? []).length === 0)
     const noHours = Object.keys(hourOverrides).length === 0
-    // A month fenced as playoffs is a decision about the plan, so it travels
-    // with the save exactly as an assertion does (owner ruling 2026-08-06).
-    const noFences = Object.keys(fences).length === 0
     const noFridays = Object.keys(fridays).length === 0
-    if (nothingAsserted && noHours && noFences && noFridays) return null
+    if (nothingAsserted && noHours && noFridays) return null
     const base = planSettings?.state ?? (state ? worldFromState(state) : null)
     if (!base) return null
-    // The FENCE first: it clears a month's gym time, so an assertion or an hours
-    // exception inside a month being fenced must not be written back over it.
-    // Then the gyms, because hours for a gym the world does not have on that
+    // The gyms first, because hours for a gym the world does not have on that
     // weekend would be written against nothing.
     return withFridayBlocksInWorld(
       withWeekendHoursInWorld(
-        withAssertedGymsInWorld(withWindowPhasesInWorld(base, fences), assertedGyms),
+        withAssertedGymsInWorld(base, assertedGyms),
         hourOverrides
       ),
       // Last: a Friday is extra capacity at a gym the weekend already has, so

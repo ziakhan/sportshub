@@ -9,6 +9,7 @@ import {
 } from "@/lib/scheduler/planner-core"
 import type { PlanHeaderInfo } from "./teams-step"
 import { BTN_MD, BTN_QUIET, BTN_SECONDARY, BTN_SM } from "./plan-shared"
+import { NoticeSlot } from "./plan-ui"
 
 /**
  * Step 4, publish (owner-approved mock, 2026-08-02). The calendar lives on
@@ -168,16 +169,7 @@ export function PublishStep({
             {COPY.locked}
           </p>
         )}
-        {error && (
-          <p className="border-hoop-200 bg-hoop-50 text-hoop-900 mb-4 rounded-xl border px-4 py-2.5 text-sm">
-            {error}
-          </p>
-        )}
-        {notice && !error && (
-          <p className="border-court-200 bg-court-50 text-court-900 mb-4 rounded-xl border px-4 py-2.5 text-sm">
-            {notice}
-          </p>
-        )}
+        <NoticeSlot testId="step4-notice" error={error} notice={notice} className="mb-4" />
 
         <div className="grid grid-cols-1 gap-5 lg:grid-cols-[1.3fr_1fr]">
           {/* The poster, exactly as it will travel. */}

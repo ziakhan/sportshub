@@ -10,7 +10,8 @@ import {
 import { isReferencePlan, PLAN_COPY, type PlanWorld } from "@/lib/scheduler/plan-documents"
 import { unitIncluded, withUnitIncluded, withUnitTeams } from "@/lib/scheduler/plan-world"
 import { PlanChooser, PlanEmptyState, usePlanSession } from "./plan-session"
-import { BTN_SECONDARY, BTN_SM } from "./plan-shared"
+import { BTN_MD, BTN_SECONDARY, BTN_SM } from "./plan-shared"
+import { NoticeSlot } from "./plan-ui"
 
 /**
  * Step 1, teams (owner-approved mock, 2026-08-02). The flow opens where the
@@ -81,6 +82,13 @@ interface GradeRow {
   /** Teams really registered. Overlay only, never a floor. */
   approved: number
   included: boolean
+  /**
+   * AN OPERATOR HAS ANSWERED THE QUESTION for this grade, zero included. A
+   * saved 0 is "this grade runs no teams"; only a grade NOBODY has estimated
+   * seeds its stepper from registrations. Conflating the two is the bug where
+   * minus-to-0 bounced back to the registration count after the save landed.
+   */
+  hasEstimate: boolean
 }
 
 export function TeamsStep({
@@ -109,9 +117,15 @@ export function TeamsStep({
    * the 2026-08-05 drive caught exactly that on step 2, where a click in the gap
    * wrote to the league's real calendar.
    */
-  const planWorldMode = session.editsPlanWorld
-  const pending = planWorldMode && session.world === null
-  const onPlanWorld = planWorldMode && session.world !== null
+  /**
+   * TWO QUESTIONS, NOT ONE (the old-plan fix, 2026-08-06 wave): whose numbers
+   * are DRAWN, and whose are WRITTEN. Any non-active plan with a world draws
+   * it — the read-only reference included, so this step and the board can
+   * never show two different plans. Only the operator's own plan writes it.
+   */
+  const readsWorld = session.readsPlanWorld
+  const pending = session.editsPlanWorld && session.world === null
+  const editsWorld = session.editsPlanWorld && session.world !== null
   const readOnly = locked || isReferencePlan(session.chosen) || pending
 
   // Refs so the debounced save always sends the LATEST numbers without
@@ -161,7 +175,7 @@ export function TeamsStep({
    */
   const rows: GradeRow[] = useMemo(() => {
     const live = state?.units ?? []
-    if (!onPlanWorld) {
+    if (!readsWorld) {
       return live.map((u) => ({
         key: u.key,
         label: u.label,
@@ -169,6 +183,7 @@ export function TeamsStep({
         expected: u.expected,
         approved: u.approved,
         included: u.expected > 0,
+        hasEstimate: u.source === "expected",
       }))
     }
     const world = session.world as PlanWorld
@@ -189,21 +204,31 @@ export function TeamsStep({
         // a plan's snapshot of it goes stale the day somebody signs up.
         approved: inSeason?.approved ?? 0,
         included: inPlan ? unitIncluded(inPlan) : false,
+        // Older documents never stamped `source`, so a positive number is its
+        // own proof; a zero counts only when the write stamped it.
+        hasEstimate: inPlan ? inPlan.source === "expected" || inPlan.teams > 0 : false,
       }
     })
-  }, [state, onPlanWorld, session.world])
+  }, [state, readsWorld, session.world])
 
-  const gamesPerTeam = onPlanWorld
+  const gamesPerTeam = readsWorld
     ? (session.world?.gamesPerTeam ?? 0)
     : (state?.gamesPerTeam ?? 0)
 
   // The steppers start from what is saved, whichever document that is. A grade
-  // with no estimate at all starts from the teams already registered, so + counts
-  // up from reality instead of from zero — a hint, never a floor.
+  // NOBODY has estimated starts from the teams already registered, so + counts
+  // up from reality instead of from zero — a hint, never a floor. A SAVED
+  // estimate is the answer whatever it is: a deliberate 0 stays 0.
   useEffect(() => {
     const seeded = Object.fromEntries(
-      rows.map((r) => [r.key, r.expected > 0 ? r.expected : r.approved])
+      rows.map((r) => [r.key, r.hasEstimate ? r.expected : r.approved])
     )
+    // Every save's response lands back here (the doc version moves), and the
+    // document it carries predates any click made while the write was in
+    // flight. A grade still mid-edit keeps the operator's number.
+    for (const key of dirtyRef.current) {
+      if (key in countsRef.current) seeded[key] = countsRef.current[key]
+    }
     setCounts(seeded)
     countsRef.current = seeded
     unitsRef.current = rows.map((r) => ({
@@ -213,10 +238,11 @@ export function TeamsStep({
       teams: r.expected,
       approved: r.approved,
       expected: r.expected,
-      source: r.expected > 0 ? "expected" : "none",
+      source: r.hasEstimate ? "expected" : "none",
     }))
     worldRef.current = session.world
-    // Keyed on the DOCUMENT, so switching plans reseeds and a save does not.
+    // Keyed on the DOCUMENT, so switching plans reseeds; a save reseeds too
+    // (the version bumps), which is why dirty grades are carried over above.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [session.planId, session.docVersion, state])
 
@@ -231,7 +257,7 @@ export function TeamsStep({
     // and the season is NOT the fallback.
     if (pending) return
 
-    if (onPlanWorld) {
+    if (editsWorld) {
       let world = worldRef.current ?? session.world
       if (!world) return
       for (const key of keys) {
@@ -270,7 +296,9 @@ export function TeamsStep({
       const unit = unitsRef.current.find((u) => u.key === key)
       return unit ? expectedTeamUpdates(unit.divisionIds, countsRef.current[key] ?? 0) : []
     })
-    if (updates.length === 0 || planWorldMode) return
+    // The season path is only for the season: a plan that draws its own
+    // world (the reference included) must never fall through to it.
+    if (updates.length === 0 || readsWorld) return
     const res = await fetch(`/api/seasons/${seasonId}/planner`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
@@ -291,7 +319,7 @@ export function TeamsStep({
     if (session.planId) void session.refreshDoc()
     setError(null)
     setSaving("saved")
-  }, [seasonId, onPlanWorld, planWorldMode, pending, session])
+  }, [seasonId, editsWorld, readsWorld, pending, session])
 
   /** Save whatever is pending right now, ahead of anything that reloads the
    *  season from the server. */
@@ -337,7 +365,7 @@ export function TeamsStep({
    * which is a different and much bigger thing than "this plan does not run it".
    */
   const setIncluded = async (row: GradeRow, included: boolean) => {
-    if (readOnly || !onPlanWorld) return
+    if (readOnly || !editsWorld) return
     await flushNow()
     const world = worldRef.current ?? session.world
     if (!world) return
@@ -359,7 +387,7 @@ export function TeamsStep({
     if (readOnly) return
     const next = { ...countsRef.current }
     for (const r of rows) {
-      if (r.approved <= 0 || r.expected > 0) continue
+      if (r.approved <= 0 || r.hasEstimate) continue
       next[r.key] = Math.min(MAX_PER_GRADE, r.approved)
       dirtyRef.current.add(r.key)
     }
@@ -405,13 +433,13 @@ export function TeamsStep({
       // operator's estimate per grade, and only that. A grade this plan holds
       // OUT asks for nothing, so it counts for nothing.
       teams: rows.reduce(
-        (sum, r) => sum + (r.included || !onPlanWorld ? planningTeams(r.approved, counts[r.key] ?? 0) : 0),
+        (sum, r) => sum + (r.included || !readsWorld ? planningTeams(r.approved, counts[r.key] ?? 0) : 0),
         0
       ),
       // The season's promise to a team, straight off the world on screen.
       gamesPerTeam,
     }),
-    [rows, counts, gamesPerTeam, onPlanWorld]
+    [rows, counts, gamesPerTeam, readsWorld]
   )
 
   if (!state) {
@@ -421,8 +449,10 @@ export function TeamsStep({
   const games = Math.round((totals.teams * totals.gamesPerTeam) / 2)
   const anyApproved = rows.some((r) => r.approved > 0)
   // Grades with teams in and no estimate at all: the season has entries the
-  // plan leaves out entirely. One tap fixes every one of them at once.
-  const unplanned = rows.filter((r) => r.approved > 0 && r.expected === 0)
+  // plan leaves out entirely. One tap fixes every one of them at once. A
+  // grade DELIBERATELY set to 0 is not one of these — that question is
+  // answered.
+  const unplanned = rows.filter((r) => r.approved > 0 && !r.hasEstimate)
   const allUnplanned = rows.length > 0 && unplanned.length === rows.length
 
   return (
@@ -436,10 +466,12 @@ export function TeamsStep({
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2.5">
-          {/* THE PLAN IS CHOSEN HERE (owner ruling 2026-08-05, #1). Opening or
-              creating the plan document is the first move of the walk, not
-              something to find on the board three steps later. */}
-          <PlanChooser locked={locked} testId="step1-plan-chooser" />
+          {/* THE PLAN IS CHOSEN HERE (owner ruling 2026-08-05, #1) — and ONLY
+              here, one control at a time (2026-08-06, B2): with nothing open
+              the big card below is the chooser, so the header shows this one
+              only once a plan is in hand. Two pickers on one screen was the
+              duplication the analysis called out. */}
+          {session.planId && <PlanChooser locked={locked} testId="step1-plan-chooser" />}
           <span className="border-ink-200 text-ink-600 rounded-full border bg-white px-2.5 py-0.5 text-[11px] font-bold">
             Step 1 of 5
           </span>
@@ -462,14 +494,14 @@ export function TeamsStep({
         <p
           className="border-ink-100 bg-court-50/60 text-court-900 border-b px-5 py-2 text-[12px]"
           data-testid="step1-plan-line"
-          data-world={pending ? "loading" : onPlanWorld ? "plan" : "season"}
+          data-world={pending ? "loading" : readsWorld ? "plan" : "season"}
         >
           Working in <b>{session.chosen?.name ?? "your plan"}</b>.{" "}
           {isReferencePlan(session.chosen)
             ? "This is the imported reference, so its numbers are read only. Start a plan of your own to change them."
             : pending
               ? "Opening this plan's numbers…"
-              : onPlanWorld
+              : readsWorld
                 ? "These numbers belong to this plan. The season keeps its own until you use this plan for the season."
                 : "This is the plan the season runs, so these numbers are the season's own."}
         </p>
@@ -489,11 +521,7 @@ export function TeamsStep({
             {PLAN_COPY.reference}
           </p>
         )}
-        {error && (
-          <p className="border-hoop-200 bg-hoop-50 text-hoop-900 mb-4 rounded-xl border px-4 py-2.5 text-sm">
-            {error}
-          </p>
-        )}
+        <NoticeSlot testId="step1-notice" error={error} className="mb-4" />
 
         {/* Entries are in and nothing is planned. Offer the shortcut once,
             as a suggestion the operator commits with one tap. */}
@@ -555,12 +583,13 @@ export function TeamsStep({
                 // does not quietly grow the plan: the operator decides whether
                 // to raise the number.
                 const over = row.approved > value
-                // The saved estimate is still zero, so this grade asks for no
-                // games yet, whatever the stepper is showing.
-                const notPlanned = row.expected === 0
+                // Nobody has estimated this grade yet, so whatever the stepper
+                // is showing is a hint, not a plan. A saved 0 does not land
+                // here: that grade IS planned, at nothing.
+                const notPlanned = !row.hasEstimate
                 /** Out of THIS plan: the row stays, greyed, with its number
                  *  intact, because putting it back must not cost a retype. */
-                const out = onPlanWorld && !row.included
+                const out = readsWorld && !row.included
                 /** The "+" of this row's stepper, so the empty-estimate chip can
                  *  hand the operator straight to the control that fills it. */
                 const plusId = `grade-plus-${row.key.replace(/[^a-z0-9]+/gi, "-")}`
@@ -611,7 +640,7 @@ export function TeamsStep({
                         {/* IN OR OUT of this plan (owner ruling 2026-08-05).
                             Only a plan can hold a grade out: on the season's
                             own rows that would mean deleting the division. */}
-                        {onPlanWorld && !readOnly && (
+                        {editsWorld && !readOnly && (
                           <button
                             type="button"
                             data-testid="grade-in-out"
@@ -731,7 +760,7 @@ export function TeamsStep({
                 type="button"
                 onClick={() => void addGrade()}
                 disabled={!newGrade.trim() || addingGrade}
-                className="border-ink-300 text-ink-800 hover:border-ink-400 hover:bg-ink-50 inline-flex h-9 cursor-pointer items-center rounded-lg border bg-white px-3 text-sm font-bold transition-colors disabled:cursor-not-allowed disabled:opacity-40"
+                className={`${BTN_SECONDARY} ${BTN_MD}`}
               >
                 {addingGrade ? "Adding…" : "Add"}
               </button>

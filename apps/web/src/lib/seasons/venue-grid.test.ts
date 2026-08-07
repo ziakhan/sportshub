@@ -149,7 +149,11 @@ describe("enumerateSeasonWeekends", () => {
     ])
   })
 
-  it("carries the phase so a finals weekend is never double-booked", () => {
+  it("excludes a playoff weekend entirely, without letting its date reopen", () => {
+    // Playoff weekends are a season setting and never planning supply
+    // (owner's 2026-08-06 analysis, C1): the finals session gets NO column,
+    // and its Saturday stays claimed so it does not come back as a virtual
+    // weekend the plan could quietly choose.
     const cols = enumerateSeasonWeekends({
       start: null,
       end: null,
@@ -158,9 +162,9 @@ describe("enumerateSeasonWeekends", () => {
         { id: "fin", phase: "PLAYOFF", days: weekend("2026-10-31") },
       ],
     })
-    expect(cols.find((c) => c.sessionId === "fin")?.phase).toBe("PLAYOFF")
+    expect(cols.find((c) => c.sessionId === "fin")).toBeUndefined()
+    expect(cols.some((c) => c.satDateISO === day("2026-10-31").toISOString())).toBe(false)
     expect(cols.find((c) => c.sessionId === "reg")?.phase).toBe("REGULAR")
-    expect(cols.find((c) => c.sessionId === null)?.phase).toBeNull()
   })
 
   it("gives two sessions on one weekend a column each", () => {

@@ -18,7 +18,7 @@
 // Run from scripts/demo (its node_modules has Playwright):
 //   node verify-blocks.mjs
 import { chromium } from "playwright"
-import { openBoard } from "./plan-board-lib.mjs"
+import { openBoard, openPlanFromStep1 } from "./plan-board-lib.mjs"
 
 const BASE = process.env.BASE_URL ?? "http://localhost:3000"
 const SEASON = process.env.SEASON_ID ?? "160b2f09-a95a-4a64-9b90-03793cae105b"
@@ -178,11 +178,14 @@ ok(
 /* ------------------------------- the board ------------------------------- */
 // RE-PINNED 2026-08-05 (owner rulings #1 and #2): step 3 opens on the chooser
 // with nothing selected, so the drive opens the season's own plan by hand.
+// RE-PINNED 2026-08-06 wave (B1): the chooser moved to step 1 — a cold visit
+// to step 3 draws board-plan-pointer, and openBoard opens the plan from step 1
+// before following the URL back to the board.
 const entry = await openBoard(page, PLAN_URL)
 ok(
   "the board opens on nothing until a plan is opened",
-  entry.empty && entry.weekends === 0 && /None open/.test(entry.picker),
-  `${entry.picker} · ${entry.weekends} weekends drawn`
+  entry.empty && entry.weekends === 0,
+  `${entry.pointerText} · ${entry.weekends} weekends drawn`
 )
 
 const summaryText = async () => {
@@ -1100,7 +1103,24 @@ ok(
  * SeasonSession the season keeps forever. If this world has none, the
  * drop/undo pair is skipped rather than risking a write nothing here (or its
  * cleanup) can take back.
+ *
+ * RE-PINNED 2026-08-06 wave (C2): a month's LEADING run of 2+ unused dates is
+ * collapsed into one ghost-collapse row until something is armed or dragged,
+ * so the session-backed ghosts this search wants can be sitting un-rendered
+ * inside a collapsed run. Expand every collapsed month first, or this search
+ * only ever sees the dates AFTER the leading run — which on this board are
+ * genuinely session-less, and the search comes back empty for the wrong
+ * reason.
  */
+const collapsedMonths = page.locator('[data-testid="ghost-collapse"]')
+const collapsedCount = await collapsedMonths.count()
+for (let i = 0; i < collapsedCount; i++) {
+  // Always click index 0: each click removes that button from the DOM (the
+  // month re-renders expanded), so the live collection shifts under a fixed
+  // index.
+  await collapsedMonths.first().click()
+  await page.waitForTimeout(150)
+}
 const safeGhostId = await page.evaluate(() => {
   const rows = [...document.querySelectorAll('[data-testid="ghost-date"]')]
   const withSession = rows.find((el) => el.getAttribute("data-session-id"))
@@ -1473,11 +1493,9 @@ try {
   ok("the throwaway plan saved, with the season's own world in it", Boolean(probeId))
   if (!probeId) throw new Error("probe plan")
 
-  await page.goto(PLAN_URL)
-  await page.waitForSelector('[data-testid="plan-empty"]', { timeout: 120000 })
-  await page.locator('[data-testid="plan-open"]').click()
-  await page.waitForSelector('[data-testid="plan-menu"]', { timeout: 40000 })
-  await page.locator(`[data-testid="plan-option"][data-plan-id="${probeId}"]`).click()
+  // RE-PINNED 2026-08-06 wave (B1): the chooser lives at step 1 only now — a
+  // cold visit to step 3 draws board-plan-pointer instead of plan-empty.
+  await openPlanFromStep1(page, PLAN_URL, probeId)
   await page.waitForSelector('[data-testid="weekend-gym-section"]', { timeout: 120000 })
   await page.waitForTimeout(900)
 

@@ -75,8 +75,22 @@ export async function GET(_request: NextRequest, { params }: { params: { id: str
         await (prisma as any).seasonPlan.update({ where: { id: plan.id }, data: { settings } })
         return NextResponse.json({ plan: { ...plan, settings } })
       }
+      return NextResponse.json({ plan })
     }
-    return NextResponse.json({ plan })
+    /**
+     * A PLAN WITH NO WORLD AT ALL IS GIVEN ONE THE SAME WAY (2026-08-06 wave,
+     * A2). Documents from before plans owned a world open onto steps that have
+     * nothing to draw: step 1 hangs on "opening this plan's numbers" and step 2
+     * quietly shows the season's buildings under the plan's name. The nearest
+     * record of the world those plans were drawn in IS the season's — the same
+     * answer PATCH has always given a null-settings plan on its first content
+     * write — so it is recorded here once and saved forward. The reference plan
+     * included: this is the system writing down what it already knows, not an
+     * operator rewriting the published record.
+     */
+    const settings = await currentSettings(params.id)
+    await (prisma as any).seasonPlan.update({ where: { id: plan.id }, data: { settings } })
+    return NextResponse.json({ plan: { ...plan, settings } })
   } catch (error) {
     console.error("Season plan read error:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })

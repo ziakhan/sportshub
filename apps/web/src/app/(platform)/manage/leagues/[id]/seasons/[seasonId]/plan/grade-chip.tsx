@@ -33,8 +33,6 @@ export function GradeChip({
   onDragState,
   onRemove,
   muted,
-  diffTone,
-  caption,
 }: {
   unit: PlannerUnit
   /** Games this grade brings. On a weekend, what it brings there; on the bench,
@@ -73,32 +71,27 @@ export function GradeChip({
    */
   onDragState?: (dragging: boolean) => void
   onRemove?: () => void
+  /** A benched grade: still readable, but a notch quieter than one that plays
+   *  somewhere this month. */
   muted?: boolean
-  /** Compare mode: agrees with the kept calendar, or sits somewhere new. */
-  diffTone?: "agreed" | "changed"
-  /** Compare mode only: where the kept calendar plays this grade instead. */
-  caption?: string
 }) {
   const isArmed = armed?.unitKey === unit.key && armed?.fromSessionId === fromSessionId
-  // Arming is a live action, so it outranks the compare ring while it lasts, and
-  // the mark on the grade that JUST MOVED outranks everything: it is the answer
-  // to "what did I just do", and it stands until the board is touched again.
+  // Arming is a live action, so it outranks everything else while it lasts,
+  // and the mark on the grade that JUST MOVED outranks everything: it is the
+  // answer to "what did I just do", and it stands until the board is touched
+  // again.
   const ring = flash
     ? "outline-play-600 outline outline-[3px] outline-offset-1 motion-safe:transition-all"
     : isArmed
       ? "ring-play-500 ring-2"
-      : diffTone === "agreed"
-        ? "ring-court-400 ring-1"
-        : diffTone === "changed"
-          ? "ring-gold-500 ring-1"
-          : // The highlight is the quietest ring on the chip, so it never
-            // outranks a live answer about what just happened.
-            highlight === "on"
-            ? FILTER_MATCH
-            : ""
+      : // The highlight is the quietest ring on the chip, so it never
+        // outranks a live answer about what just happened.
+        highlight === "on"
+        ? FILTER_MATCH
+        : ""
   const ink = muted ? "text-ink-400" : (quiet ?? "text-ink-400")
   const glyph = reason ? REASON_GLYPH[reason] : undefined
-  const chip = (
+  return (
     <span
       draggable={interactive}
       onDragStart={(e) => {
@@ -113,7 +106,6 @@ export function GradeChip({
       }}
       onDragEnd={() => onDragState?.(false)}
       data-testid="grade-chip"
-      data-diff={diffTone}
       data-flash={flash ? "1" : undefined}
       data-highlight={highlight ?? undefined}
       data-unit={unit.key}
@@ -202,20 +194,6 @@ export function GradeChip({
           ×
         </button>
       )}
-    </span>
-  )
-
-  if (!caption) return chip
-  return (
-    <span className="inline-flex flex-col items-start gap-0.5">
-      {chip}
-      <span
-        className={`pl-0.5 text-[10px] font-bold leading-none ${
-          diffTone === "changed" ? "text-gold-600" : "text-ink-400"
-        }`}
-      >
-        {caption}
-      </span>
     </span>
   )
 }

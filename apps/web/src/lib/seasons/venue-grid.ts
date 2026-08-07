@@ -239,6 +239,14 @@ export function enumerateSeasonWeekends(input: SeasonWeekendInput): VenueGridWee
       const sat = saturdayOf(day)
       if (sat) claimed.add(sat.toISOString())
     }
+    /**
+     * A PLAYOFF WEEKEND IS NOT PLANNING SUPPLY (owner's 2026-08-06 analysis,
+     * C1: playoff weekends are a season setting and their dates are fully
+     * excluded — no ghost columns, no bands). It still CLAIMS its Saturdays
+     * above, so the date does not reappear as a virtual weekend the plan
+     * could quietly choose; it simply has no column anywhere planning draws.
+     */
+    if (s.phase === "PLAYOFF") continue
     columns.push(col)
   }
 

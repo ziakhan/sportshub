@@ -20,7 +20,6 @@ import {
 import {
   planDrift,
   type PlanSettings,
-  type WindowPhase,
 } from "@/lib/scheduler/plan-documents"
 import {
   bareWeekend,
@@ -33,7 +32,6 @@ import {
   withAssertedGyms,
   withFridayBlocks,
   withWeekendHours,
-  withWindowPhases,
   worldReadiness,
   type BoardColumn,
   type BuildingRoom,
@@ -155,14 +153,6 @@ export function useBoardState({
    * plan's own world, or onto the season's attachment on the plan it runs.
    */
   const [assertedGyms, setAssertedGyms] = useState<Record<string, string[]>>({})
-  /**
-   * A MONTH THIS PLAN HAS FENCED AS PLAYOFFS, in the working copy (owner ruling
-   * 2026-08-06): window label → phase. Held here rather than written straight
-   * through, so it behaves like every other edit on this board — the numbers move
-   * at once, one Undo takes it back, and the save is what writes it into the
-   * plan's own world.
-   */
-  const [fences, setFences] = useState<Record<string, WindowPhase>>({})
   /**
    * FRIDAY EVENINGS THE OPERATOR TOOK (owner ruling 2026-08-06):
    * "<sessionId>|<venueId>" → courts. The same keying as the courts and the
@@ -401,7 +391,6 @@ export function useBoardState({
     setHourOverrides({})
     setAssertedGyms({})
     setEmptyGyms({})
-    setFences({})
     setFridays({})
     setFlashUnits([])
     setGhosts([])
@@ -483,18 +472,13 @@ export function useBoardState({
    * correction is then a fraction of; and the courts land last (owner ruling
    * 2026-08-06, #5).
    */
-  /**
-   * The month FENCE goes on first (owner ruling 2026-08-06): what a month is for
-   * outranks everything anybody attached to it, and a fenced month has no gym
-   * time for the hours and the courts below to be a correction to.
-   */
   const board = useMemo(
     () =>
       state
         ? applyCourtCaps(
             withWeekendHours(
               withFridayBlocks(
-                withAssertedGyms(withWindowPhases(state, fences), assertedGyms),
+                withAssertedGyms(state, assertedGyms),
                 fridays
               ),
               hourOverrides
@@ -502,7 +486,7 @@ export function useBoardState({
             courtOverrides
           )
         : null,
-    [state, fences, assertedGyms, fridays, hourOverrides, courtOverrides]
+    [state, assertedGyms, fridays, hourOverrides, courtOverrides]
   )
 
   /**
@@ -1082,8 +1066,6 @@ export function useBoardState({
     setHourOverrides,
     assertedGyms,
     setAssertedGyms,
-    fences,
-    setFences,
     fridays,
     setFridays,
     fridayFits,

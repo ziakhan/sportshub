@@ -1,6 +1,5 @@
 import type { DragEvent } from "react"
 import type { PlannerLever, PlannerState, PlanSummary } from "@/lib/scheduler/planner-core"
-import type { WindowPhase } from "@/lib/scheduler/plan-documents"
 import { PILL_TONE, type GhostChip } from "./plan-shared"
 import type { BlockStatus } from "./plan-ui"
 
@@ -20,8 +19,6 @@ export const LOCKED_STATUSES = ["FINALIZED", "IN_PROGRESS", "COMPLETED"]
 /** Strings with real apostrophes live here as JS expressions, so nothing
  *  needs escaping and the copy stays readable. */
 export const COPY = {
-  opened:
-    "We placed every grade for you, balanced across your gym time. Drag anything you'd do differently, then keep it.",
   oneWeekendPerMonth:
     "Every grade gets one weekend a month, so move it to another weekend in the same month.",
   /** The verb that fills every weekend with no building from the pool. A button
@@ -202,10 +199,6 @@ export interface BoardSnapshot {
    *  has to take the assertion back with it, or the board would keep computing on
    *  gym time nobody claimed. */
   assertedGyms: Record<string, string[]>
-  /** The months fenced as playoffs (owner ruling 2026-08-06): window label →
-   *  phase. Fencing takes a month's gym time and its games with it, so undoing
-   *  one has to hand the whole month back. */
-  fences: Record<string, WindowPhase>
   /** The Friday evenings taken, "<sessionId>|<venueId>" → courts (owner ruling
    *  2026-08-06). One undo puts the whole block back. */
   fridays: Record<string, number>

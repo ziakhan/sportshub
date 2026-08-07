@@ -134,6 +134,30 @@ export function SessionsTab({
                   )}
                 </span>
                 <div className="flex items-center gap-3">
+                  {/* WHAT THIS WEEKEND IS FOR (owner's 2026-08-06 analysis,
+                      C1). Playoff weekends are a SEASON setting, set here and
+                      nowhere else: planning excludes their dates entirely —
+                      no columns, no ghosts — and the scheduler never treats
+                      them as supply. */}
+                  {!locked && (
+                    <button
+                      data-testid="session-phase-toggle"
+                      data-phase={s.phase ?? "REGULAR"}
+                      title={
+                        s.phase === "PLAYOFF"
+                          ? "Put this weekend back in the regular season, so planning can use its dates again."
+                          : "Playoff weekends come out of the standings later. Planning skips their dates entirely."
+                      }
+                      onClick={() =>
+                        void save(s.id, {
+                          phase: s.phase === "PLAYOFF" ? "REGULAR" : "PLAYOFF",
+                        })
+                      }
+                      className="text-play-700 hover:text-play-800 text-xs font-semibold"
+                    >
+                      {s.phase === "PLAYOFF" ? "Back to regular season" : "Mark as playoffs"}
+                    </button>
+                  )}
                   {!locked && (
                     <button
                       onClick={() => { setEditingId(s.id); setCreating(false) }}
