@@ -100,6 +100,60 @@ teams later**:
 Sizing: schema (small, additive) + generator rework (medium) + seed
 resolution + public TBD rendering (medium). A clean post-v2 arc.
 
+### Research findings (2026-08-08, two web investigations)
+
+**NPH's real 2024-25 playoffs (verified from live Exposure Events
+bracket pages, sources in the research transcript):**
+- 6 boys divisions (Gr 7-12), 12 to ~28 teams each. Playoffs = one
+  "Championship Weekend" per grade cluster (Mar 1-2 / Mar 8-9) — matches
+  the tiered finals weekends already in our season's PLAYOFF sessions.
+- **Not everybody qualifies: ~65-75% per division.** Gr 7: 8 of 12
+  (clean bracket). Gr 8: **14 of 19 with top-2 seeds getting round-1
+  byes**, then QF/SF/Final + a 3rd-place game. Gr 9-12 (big divisions,
+  16-18 qualifiers): NOT knockout — a championship POOL/round-robin
+  format producing full final standings, which is how NPH delivers its
+  advertised "10-game season + 2 guaranteed playoff games."
+- So NPH itself mixes formats by division size: brackets small,
+  pools big, byes when the count isn't a power of 2.
+
+**Industry conventions (multi-source):**
+- Byes are pure math: byes = next-power-of-2 − field, top seeds, round 1
+  only; after round 1 a bracket is always a clean power of 2. 6 teams →
+  top 2 bye into semis; 10 → top 6 bye, 7-10 play in; 12 → top 4 bye.
+- Seed pairing: the recursive 1-8-4-5-3-6-2-7 order; youth uses FIXED
+  brackets (no reseeding found anywhere in youth practice).
+- "Everybody plays" is a first-class youth pattern: X-game-guarantee
+  brackets + consolation ladders exist as named products; pool-play →
+  medal rounds for development-focused events.
+- Tiebreakers (de facto youth standard): head-to-head → point
+  differential CAPPED per game (sportsmanship rule distinctive to
+  youth) → points scored → coin flip/lottery.
+- Placeholder scheduling before teams are known is established platform
+  practice (TeamSnap, LeagueLobster): "Seed 1", "Winner of Game 3"
+  slots scheduled up front; public schedules show only resolved games.
+- No universal same-day rest rule exists in youth basketball (soft
+  advisories only) — our zero-b2b ladder is STRICTER than industry.
+
+### The playoff configuration (per division)
+
+1. **Qualifiers**: a number, "all", or "top %" (NPH's real band is
+   65-75%; suggest defaults from division size, bracket-friendly).
+2. **Format**: BRACKET (single-elim; auto-byes by the formula; optional
+   3rd-place game; optional consolation bracket) · POOLS (round-robin
+   pools ~4 → medal round; the guaranteed-games shape for big
+   divisions) · GUARANTEE (X-game guarantee with consolation ladder).
+3. **Guaranteed playoff games**: a promised number (NPH promises 2) the
+   chosen format must satisfy — audited against booked weekend capacity
+   BEFORE generating, same voice as the season auditor.
+4. **Seeding**: standard recursive pairing, fixed bracket; tiebreaker
+   chain configurable with the capped-differential youth default.
+5. **Placement**: the full structural schedule (placeholders) placed by
+   the v2 cell placer into the booked playoff weekends; the day-shape
+   ladder applies (zero b2b holds in playoffs too, which beats industry
+   practice); public shows TBD until seeds/winners resolve.
+6. **Weekend mapping**: grade clusters to finals weekends, exactly as
+   the real NPH calendar already books them.
+
 ## 5. Missing-features inventory (plan for the future)
 
 Game-level operations:
