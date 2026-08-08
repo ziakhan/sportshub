@@ -77,21 +77,49 @@ and repair optimize the same burden vector the fairness table shows.
 availability slack — but for POSTPONEMENT absorption at 10-13% real
 cancellation rates, a different purpose than packing quality.)
 
+## Owner amendments (2026-08-07 evening, supersede where they touch)
+
+1. **No reserved-court mechanics.** Scheduling consumes the capacity that is
+   really booked; the slack lever lives in PLANNING as a configurable
+   "plan X% extra capacity" knob that honors every existing rule (grade
+   placements, home-gym-first, cohesion). The earlier +1-court experiment
+   variant was a probe, not a feature.
+2. **Venue distance is a first-class fact.** Venues have addresses; pairwise
+   travel time defines VENUE CLUSTERS: gyms under a configurable threshold
+   (default 30 min; Haber-Playground is 5-7 min) count as THE SAME PLACE.
+   The split burden, the cohesion logic, and the repair sweeps all operate
+   on clusters, not raw venue ids: an intra-cluster split is free, and
+   converting a cross-cluster split into an intra-cluster one counts as a
+   heal. Measured on the owner's saved schedule: 70 raw splits = 57 real
+   cross-cluster (36 SixPark+Playground, 21 SixPark+Haber) + 13 harmless
+   Burlington-internal. Distance source: geocoded coordinates first
+   (straight-line + threshold), Places drive-time matrix as the upgrade.
+
 ## The plan (staged, each measurable on the live world before/after)
 
-- **A. Burden-aware attempt selection (small, do first).** Add the burden
-  vector (splits, monster waits, mid waits — after b2b, before style) to
-  the generator's retry-selection objective. This alone should let existing
-  capacity and any future slack be SPENT correctly; re-run the slack curve
-  after to see the honest slack payoff.
+- **A. Burden-aware attempt selection (small, do first; PROVEN by the
+  attempt-anatomy probe).** The judge's key today is [unscheduled, b2b,
+  requests, style, spread, tradeoffs] — splits appear nowhere, and the
+  +10%-slack run CONTAINED a 22-split candidate that lost to a 62-split
+  one on b2b alone (scripts/analysis/attempt-anatomy.ts output). New key
+  per the owner's hierarchy: [unscheduled, CROSS-CLUSTER splits, monster
+  waits, b2b, requests, style, mid waits, spread, tradeoffs]; early-exit
+  checks the full vector. Then re-run the slack curve for the honest
+  payoff.
 - **B. LNS repair loop.** Wrap the existing sweeps in destroy-and-rebuild
   over small windows (one day / one team / one venue), objective = the
   ranked burden vector + min-max fairness. Literature-standard upgrade,
   stays deterministic, anytime-stoppable.
-- **C. Slack guidance in the planner.** Surface utilization per weekend and
-  a what-if ("one more court at Playground on these 3 days removes ~N
-  splits") using the experiment harness as a live probe; ties into courts
-  held back / ask-sheet. The owner's instinct, given numbers.
+- **C. Planned-slack knob + guidance.** Season/plan-level "plan X% extra
+  capacity" configuration consumed by the planner (all existing rules
+  honored), plus utilization + what-if guidance ("one more court at
+  Playground on these 3 days removes ~N splits") powered by the experiment
+  harness as a live probe.
+- **C2. Venue clusters.** Coordinates on venues (Places geocode at add;
+  backfill for existing), pairwise minutes, configurable same-place
+  threshold (default 30), cluster-aware split metric + cohesion + sweeps +
+  fairness column ("Same day, 2 gyms" counts cross-cluster only; the
+  drill-down can show intra-cluster moves quietly).
 - **D. The disadvantage ledger.** Per-team running burden tally (splits,
   waits, b2b, early/late) as a first-class fairness surface — the industry
   gap nobody fills; mostly reuses the fairness table's data.

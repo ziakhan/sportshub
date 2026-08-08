@@ -80,6 +80,9 @@ export interface SchedulerInput {
   /** The league's Friday-evening window, when it set one (owner 2026-08-07). */
   fridayStartTime?: string | null
   fridayEndTime?: string | null
+  /** Analysis-only tap: called once per internal attempt with the candidate
+   *  games and the selection key. Never alters behavior. */
+  debugAttempt?: (attempt: number, games: ProposedGame[], key: number[]) => void
   gameLengthMinutes: number
   idealGamesPerDayPerTeam: number
   schedulingPhilosophy: SchedulerPhilosophy
@@ -680,6 +683,7 @@ export function generateSchedule(input: SchedulerInput): SchedulerResult {
       edgeSpread(res.games),
       res.tradeoffs.length,
     ]
+    input.debugAttempt?.(k, res.games, key)
     // Edge spread is a RATE (percent of playing days); within ~a-day-in-four
     // is the target, not a defect — treat ≤25 as passing for the early exit.
     if (key[0] === 0 && key[1] === 0 && key[2] === 0 && key[3] === 0 && key[4] <= 25 && key[5] === 0)
