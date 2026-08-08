@@ -613,6 +613,184 @@ export function ScheduleTab({
             season is always solved whole; publishing stages by session).
             The "landed on week two" session-first UX died with it. */}
 
+
+        <div className="mb-4 flex flex-wrap items-center gap-2">
+          <Button
+            size="sm"
+            onClick={() => runPreview()}
+            disabled={previewLoading || (mode === "session" && !selectedSessionId)}
+          >
+            {previewLoading
+              ? "Running…"
+              : mode === "session"
+                ? `Preview ${selectedSession?.label || "session"}`
+                : "Preview whole season"}
+          </Button>
+          <span title="Roll a different matchup/time variation — previewing and committing keep the exact variation shown">
+            <Button
+              size="sm"
+              variant="secondary"
+              onClick={() => runPreview(shuffle + 1)}
+              disabled={previewLoading || (mode === "session" && !selectedSessionId)}
+            >
+              Shuffle
+            </Button>
+          </span>
+          {shuffle > 0 && (
+            <span className="bg-play-100 text-play-700 flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold">
+              Variation #{shuffle}
+              <button
+                onClick={() => runPreview(0)}
+                className="hover:text-play-900 underline decoration-dotted"
+                title="Back to the season's standard plan"
+              >
+                reset
+              </button>
+            </span>
+          )}
+          <span title="Run a few automatic what-ifs — compact days, freeing a court, shrinking hours — and pick one">
+            <Button size="sm" variant="secondary" onClick={runScenarios} disabled={scenariosLoading}>
+              {scenariosLoading ? "Running scenarios…" : scenarios ? "Hide scenarios" : "Scenarios"}
+            </Button>
+          </span>
+          {activeScenario && (
+            <span className="bg-gold-100 text-gold-800 flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold">
+              {activeScenario.title}
+              <button
+                onClick={() => {
+                  setActiveScenario(null)
+                  setPreview(null)
+                }}
+                className="underline decoration-dotted"
+                title="Back to the as-configured plan"
+              >
+                reset
+              </button>
+            </span>
+          )}
+          <span title={!canCommit ? "Finalize the season before committing" : ""}>
+            <Button
+              size="sm"
+              tone="court"
+              onClick={commitSchedule}
+              disabled={committing || !canCommit || (mode === "session" && !selectedSessionId)}
+            >
+              {committing
+                ? "Committing…"
+                : mode === "session"
+                  ? "Commit this session"
+                  : "Commit whole season"}
+            </Button>
+          </span>
+          {scheduleGames.length > 0 && (
+            <Button size="sm" variant="secondary" tone="hoop" onClick={wipeSchedule}>
+              Delete all
+            </Button>
+          )}
+        </div>
+
+        {scenarios && (
+          <div className="border-ink-100 mb-4 rounded-xl border bg-white px-3 py-3">
+            <p className="text-ink-900 text-xs font-bold uppercase tracking-wide">
+              Scenarios — pick how to use your court time
+            </p>
+            <p className="text-ink-500 mt-0.5 text-[11px]">
+              Each one is a full schedule run. Choosing one previews it; committing saves exactly
+              what you saw.
+            </p>
+            {scenarios.advice && (
+              <p className="text-amber-800 bg-amber-50 border-amber-200 mt-2 rounded-lg border px-2 py-1.5 text-[11px]">
+                {scenarios.advice}
+              </p>
+            )}
+            <div className="mt-2 grid gap-2 md:grid-cols-2">
+              {(scenarios.cards ?? []).map((card: any) => (
+                <div
+                  key={card.key}
+                  className={`rounded-lg border p-2.5 ${
+                    (activeScenario?.key ?? "baseline") === card.key
+                      ? "border-play-400 bg-play-50"
+                      : "border-ink-100"
+                  }`}
+                >
+                  <p className="text-ink-900 text-xs font-semibold">{card.title}</p>
+                  {card.wins.map((w: string) => (
+                    <p key={w} className="text-court-700 mt-0.5 text-[11px]">
+                      ✓ {w}
+                    </p>
+                  ))}
+                  <p className="text-ink-500 mt-1 text-[11px]">
+                    {card.totals.games} games · {card.totals.backToBackTeamDays} back-to-backs ·{" "}
+                    {card.totals.preferenceViolations} preference misses · days end ~
+                    {Math.floor(card.totals.latestEndMin / 60)}:
+                    {String(card.totals.latestEndMin % 60).padStart(2, "0")}
+                  </p>
+                  {card.tradeoffs.length > 0 && (
+                    <p className="text-ink-400 mt-0.5 text-[11px]">{card.tradeoffs[0]}</p>
+                  )}
+                  <Button
+                    size="sm"
+                    variant={
+                      (activeScenario?.key ?? "baseline") === card.key ? "primary" : "secondary"
+                    }
+                    className="mt-1.5"
+                    onClick={() => {
+                      applyScenario(card)
+                    }}
+                  >
+                    {(activeScenario?.key ?? "baseline") === card.key
+                      ? "Selected"
+                      : "Use this scenario"}
+                  </Button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {gapTeams.length > 0 && (
+          <div className="border-amber-200 bg-amber-50 mb-4 rounded-xl border px-3 py-2.5">
+            <p className="text-amber-900 text-xs font-semibold">
+              {gapTeams.length} team{gapTeams.length === 1 ? " is" : "s are"} below the{" "}
+              {league?.gamesGuaranteed}-game guarantee
+              {" — "}
+              <span className="font-normal">
+                usually a dropout, a late-added team, or a new make-up session.
+              </span>
+            </p>
+            <p className="text-amber-800 mt-0.5 text-[11px]">
+              {gapTeams
+                .slice(0, 4)
+                .map((t) => `${t.name} (${t.count})`)
+                .join(" · ")}
+              {gapTeams.length > 4 ? ` · +${gapTeams.length - 4} more` : ""}
+            </p>
+            <div className="mt-2 flex flex-wrap items-center gap-2">
+              <Button size="sm" onClick={previewGaps} disabled={previewLoading}>
+                {previewLoading && fillPreview ? "Running…" : "Preview the fix"}
+              </Button>
+              <Button size="sm" tone="court" onClick={commitGaps} disabled={committing || !canCommit}>
+                Add ONLY the missing games
+              </Button>
+              <span className="text-amber-700 text-[11px]">
+                Nobody&apos;s existing games move.
+              </span>
+            </div>
+          </div>
+        )}
+
+        {draftCount > 0 && (
+          <div className="border-gold-200 bg-gold-50 mb-4 flex flex-wrap items-center justify-between gap-2 rounded-xl border px-3 py-2">
+            <p className="text-gold-700 text-xs font-semibold">
+              {draftCount} draft game{draftCount === 1 ? "" : "s"} — visible only to you until
+              you publish. Review below, re-run sessions freely, then publish once.
+            </p>
+            <Button size="sm" onClick={publishSchedule} disabled={publishing}>
+              {publishing ? "Publishing…" : `Publish schedule · ${draftCount} new`}
+            </Button>
+          </div>
+        )}
+
         {scheduleError && (
           <div className="border-hoop-200 bg-hoop-50 text-hoop-700 mb-3 rounded-xl border px-3 py-2 text-xs">
             {scheduleError}
