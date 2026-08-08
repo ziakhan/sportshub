@@ -3430,6 +3430,86 @@ function generateScheduleOnce(input: SchedulerInput): SchedulerResult {
     }
 
     /**
+     * THE SHAPE OF A FAMILY'S DAY (owner ruling 2026-08-07, third pass):
+     * games close together at one gym. Best is a 1-2 slot breather; a 3-4
+     * slot wait is tolerable; a back-to-back is a burden to remove where a
+     * small gap can exist, but it BEATS a monster wait (more than 4 slots -
+     * over five hours at 75-minute games); and nothing here ever touches a
+     * venue, so a repaired day can never become a split day. Same-day,
+     * same-venue time moves only, accepted when the total day-shape burden
+     * of the moved game's two teams strictly drops.
+     */
+    {
+      const B2B = 25
+      const HUGE = 40
+      const MID = 8
+      const dayShape = (id: string, dk2: string): number => {
+        const ts: number[] = []
+        for (const g2 of games) {
+          if (dateKeyOf(new Date(g2.scheduledAt)) !== dk2) continue
+          if (g2.homeTeamId !== id && g2.awayTeamId !== id) continue
+          ts.push(new Date(g2.scheduledAt).getTime())
+        }
+        ts.sort((a, b) => a - b)
+        let burden = 0
+        const slotMs = (input.gameSlotMinutes || 60) * 60000
+        for (let i = 1; i < ts.length; i++) {
+          const gapSlots = (ts[i] - ts[i - 1]) / slotMs - 1
+          if (gapSlots <= 0) burden += B2B
+          else if (gapSlots > 4) burden += HUGE
+          else if (gapSlots > 2) burden += MID
+        }
+        return burden
+      }
+      for (let round = 0; round < 4; round++) {
+        let improved = false
+        for (let gi = 0; gi < games.length; gi++) {
+          const g = games[gi]
+          const dk2 = dateKeyOf(new Date(g.scheduledAt))
+          const ids = teamsOf(g)
+          const before2 = ids.reduce((acc, id) => acc + dayShape(id, dk2), 0)
+          if (before2 === 0) continue
+          const bk2 = bucketOfG(g)
+          // Same DAY, same VENUE, different time, neither team already there.
+          const dayBuckets2 = [...freeSlotsByBucket.keys()].filter(
+            (obk) => obk !== bk2 && obk.startsWith(`${g.dayId}|`)
+          )
+          let moved = false
+          for (const obk of dayBuckets2) {
+            const clash = (assignedByBucket.get(obk) ?? []).some((oj) =>
+              teamsOf(games[oj]).some((id) => ids.includes(id))
+            )
+            if (clash) continue
+            const slotList = freeSlotsByBucket.get(obk) ?? []
+            const si = slotList.findIndex((cs) => cs.venueId === g.venueId)
+            if (si < 0) continue
+            const cs = slotList[si]
+            const oldSlot = (bucketCourts.get(bk2) ?? []).find((x) => x.courtId === g.courtId)
+            const oldStart = g.scheduledAt
+            const oldBucketGames = assignedByBucket.get(bk2) ?? []
+            reassign(gi, cs)
+            games[gi] = { ...games[gi], scheduledAt: cs.startAt.toISOString() }
+            const after2 = ids.reduce((acc, id) => acc + dayShape(id, dk2), 0)
+            if (after2 < before2) {
+              slotList.splice(si, 1)
+              if (oldSlot) (freeSlotsByBucket.get(bk2) ?? []).push(oldSlot)
+              oldBucketGames.splice(oldBucketGames.indexOf(gi), 1)
+              if (!assignedByBucket.has(obk)) assignedByBucket.set(obk, [])
+              assignedByBucket.get(obk)!.push(gi)
+              improved = true
+              moved = true
+              break
+            }
+            reassign(gi, oldSlot ?? cs)
+            games[gi] = { ...games[gi], scheduledAt: oldStart }
+          }
+          if (moved) continue
+        }
+        if (!improved) break
+      }
+    }
+
+    /**
      * EVEN OUT WHAT COULD NOT BE ELIMINATED (owner ruling 2026-08-07, goal
      * two): nobody carries four split days while others carry none. A
      * split-total-NEUTRAL same-time swap can still MOVE a split from a team
