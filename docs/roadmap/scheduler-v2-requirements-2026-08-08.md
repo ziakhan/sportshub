@@ -83,15 +83,19 @@ S5. **Approved requests honored best-effort** (they are a contract of
     effort, not law — blackouts are the law-tier version).
 S6. **Matchup quality.** Round-robin coverage per grade; rematches spaced
     across sessions; opponent variety before repeats.
-S7. **Court variety inside a gym: report only.** Not an optimization
-    target.
+S7. **Court variety inside a gym** (owner 2026-08-08: "still desired but
+    the least important thing"): teams should rotate courts rather than
+    play the same court every game. Lowest-priority goal — implemented as
+    a placement tie-break (prefer the court the teams have used least),
+    never traded against anything above it. Reported in the table.
 
 ## 4. Explicit non-goals / de-prioritized (owner + Fable opinion)
 
 - (Withdrawn 2026-08-08 by owner ruling: same-day remains the goal;
   Sat/Sun spreading is the fallback valve at par with long gaps, not the
   default. See S2/S3.)
-- Court-level preferences, "top court %" — reporting only (S7).
+- (Revised 2026-08-08: court variety is back as the LOWEST-tier goal,
+  see S7 — a tie-break, not a currency.)
 - Session-by-session generation — dead (H8). Sessions matter for
   publishing, locking, and vocabulary, not for solving.
 - LLM in the runtime scheduling path — prohibited (research verdict,
@@ -133,6 +137,26 @@ A4. Regenerate with 1 team dropped: only that team's games and the
     minimal ripple change; all published/locked games byte-identical.
 A5. Preview == commit, run twice → identical.
 A6. Full-season generate under 60s on the reference world.
+
+## 6b. Recorded for the future (owner 2026-08-08 — explicitly NOT now)
+
+**GYM GROUPS, a planning-phase concept.** Nearby gyms (e.g. 10 minutes
+apart) may be COMBINED at planning time into one composite gym: 4 courts
+in one building + 2 in another = one 6-court gym, giving planning more
+flexibility than forcing an age group into whichever single building it
+fits. Consequences when it comes:
+- The composite is a PLANNING object. The engine stays cluster-blind:
+  a cell is still (weekend, gym) — the gym just has more courts, each
+  carrying a building tag. H1 is unchanged ("the grade lives in its
+  assigned gym" — the group IS the gym).
+- Attendability inside a group is already guaranteed by the zero
+  back-to-back law: the tightest legal same-day shape (1 empty slot =
+  one game length) covers a short drive between grouped buildings.
+  A courtesy refinement (avoid cross-building consecutive games when a
+  same-building alternative is free) can ride the S7 tie-break tier.
+- No travel matrices, no cluster logic in the engine — this keeps the
+  fresh design's "clusters stay out of the engine" pushback true while
+  delivering the owner's flexibility idea at the right layer.
 
 ## 7. Open questions for the owner
 
