@@ -99,6 +99,31 @@ export function placeCell(
   const teamBusy = new Set<string>() // `${teamId}|${startMs}`
   /** teamId -> stops (pins + placed so far). */
   const stopsOf = new Map<string, TeamStop[]>()
+  /** Live tip-off times per (grade, day): the REAL day edges (the page's
+   *  report counts a division's actual first/last game of the day). */
+  const gradeDayTimes = new Map<string, Map<number, number>>()
+  const gradeOf = (teamId: string): string => teamById.get(teamId)!.gradeId
+  const bumpTime = (gradeId: string, dayId: string, startMs: number, delta: number) => {
+    const k = `${gradeId}|${dayId}`
+    if (!gradeDayTimes.has(k)) gradeDayTimes.set(k, new Map())
+    const m = gradeDayTimes.get(k)!
+    const next = (m.get(startMs) ?? 0) + delta
+    if (next <= 0) m.delete(startMs)
+    else m.set(startMs, next)
+  }
+  const edgesFor =
+    (teamId: string) =>
+    (dayId: string): { first: number; last: number } | null => {
+      const m = gradeDayTimes.get(`${gradeOf(teamId)}|${dayId}`)
+      if (!m || m.size === 0) return null
+      let first = Number.POSITIVE_INFINITY
+      let last = Number.NEGATIVE_INFINITY
+      for (const t of m.keys()) {
+        if (t < first) first = t
+        if (t > last) last = t
+      }
+      return { first, last }
+    }
   const pushStop = (teamId: string, pos: GridPosition) => {
     if (!stopsOf.has(teamId)) stopsOf.set(teamId, [])
     stopsOf.get(teamId)!.push({
@@ -107,8 +132,6 @@ export function placeCell(
       startMin: pos.startMin,
       dow: pos.dow,
       dateKey: pos.dateKey,
-      first: pos.slotIdx === 0,
-      last: pos.slotIdx === pos.slotCount - 1,
     })
   }
   const popStop = (teamId: string, startMs: number) => {
@@ -119,7 +142,10 @@ export function placeCell(
 
   const teamPoints = (teamId: string): number => {
     const t = teamById.get(teamId)!
-    return burdenPoints(weekendCounts(stopsOf.get(teamId) ?? [], t, slotMinutes), weights)
+    return burdenPoints(
+      weekendCounts(stopsOf.get(teamId) ?? [], t, slotMinutes, edgesFor(teamId)),
+      weights
+    )
   }
   const B = (teamId: string): number => ledger.pointsBefore.get(teamId) ?? 0
 
@@ -137,6 +163,7 @@ export function placeCell(
     )
     if (pos) occupied[pos.idx] = true
     const startMs = new Date(g.pinned.startIso).getTime()
+    bumpTime(g.gradeId, g.pinned.dayId, startMs, 1)
     for (const teamId of [g.teamAId, g.teamBId]) {
       teamBusy.add(`${teamId}|${startMs}`)
       pushStop(
@@ -182,10 +209,13 @@ export function placeCell(
   ): { quad: number; points: number } => {
     let quad = 0
     let points = 0
+    const gradeId = gradeOf(g.teamAId)
     for (const teamId of [g.teamAId, g.teamBId]) {
       const before = teamPoints(teamId)
       pushStop(teamId, pos)
+      bumpTime(gradeId, pos.dayId, pos.startMs, 1)
       const after = teamPoints(teamId)
+      bumpTime(gradeId, pos.dayId, pos.startMs, -1)
       popStop(teamId, pos.startMs)
       quad += (B(teamId) + after) ** 2 - (B(teamId) + before) ** 2
       points += after - before
@@ -218,6 +248,36 @@ export function placeCell(
 
   const placements = new Map<string, GridPosition>() // gameKey -> pos
   const placedList: PlacedGame[] = []
+  const unplace = (gi: number) => {
+    const g = placedList[gi]
+    const from = placements.get(gameKeyOf(g))
+    if (!from) return
+    occupied[from.idx] = false
+    bumpTime(g.gradeId, from.dayId, from.startMs, -1)
+    for (const teamId of [g.teamAId, g.teamBId]) {
+      teamBusy.delete(`${teamId}|${from.startMs}`)
+      popStop(teamId, from.startMs)
+    }
+    placements.delete(gameKeyOf(g))
+  }
+  const place = (gi: number, to: GridPosition) => {
+    const g = placedList[gi]
+    occupied[to.idx] = true
+    bumpTime(g.gradeId, to.dayId, to.startMs, 1)
+    for (const teamId of [g.teamAId, g.teamBId]) {
+      teamBusy.add(`${teamId}|${to.startMs}`)
+      pushStop(teamId, to)
+    }
+    placements.set(gameKeyOf(g), to)
+    placedList[gi] = {
+      ...g,
+      dayId: to.dayId,
+      dayVenueId: to.dayVenueId,
+      courtId: to.courtId,
+      slotIdx: to.slotIdx,
+      startIso: to.startIso,
+    }
+  }
   for (const g of unplaced) {
     let best: GridPosition | null = null
     let bestEval = { quad: Number.POSITIVE_INFINITY, points: Number.POSITIVE_INFINITY }
@@ -275,40 +335,14 @@ export function placeCell(
           return xp !== undefined && xp.idx === pos.idx
         })
         if (occIdx < 0) continue // a pin — never evicted
-        const occupant = placedList[occIdx]
-        // Free the slot, look for a new home for the occupant.
-        const freeSlot = placements.get(gameKeyOf(occupant))!
-        occupied[freeSlot.idx] = false
-        for (const teamId of [occupant.teamAId, occupant.teamBId]) {
-          teamBusy.delete(`${teamId}|${freeSlot.startMs}`)
-          popStop(teamId, freeSlot.startMs)
-        }
-        placements.delete(gameKeyOf(occupant))
-        const newHome = grid.find((p) => p.idx !== pos.idx && feasible(occupant, p))
+        const freeSlot = placements.get(gameKeyOf(placedList[occIdx]))!
+        unplace(occIdx)
+        const newHome = grid.find((p) => p.idx !== pos.idx && feasible(placedList[occIdx], p))
         if (!newHome) {
-          // Put the occupant back and try the next slot.
-          occupied[freeSlot.idx] = true
-          for (const teamId of [occupant.teamAId, occupant.teamBId]) {
-            teamBusy.add(`${teamId}|${freeSlot.startMs}`)
-            pushStop(teamId, freeSlot)
-          }
-          placements.set(gameKeyOf(occupant), freeSlot)
+          place(occIdx, freeSlot) // put the occupant back, try the next slot
           continue
         }
-        occupied[newHome.idx] = true
-        for (const teamId of [occupant.teamAId, occupant.teamBId]) {
-          teamBusy.add(`${teamId}|${newHome.startMs}`)
-          pushStop(teamId, newHome)
-        }
-        placements.set(gameKeyOf(occupant), newHome)
-        placedList[occIdx] = {
-          ...occupant,
-          dayId: newHome.dayId,
-          dayVenueId: newHome.dayVenueId,
-          courtId: newHome.courtId,
-          slotIdx: newHome.slotIdx,
-          startIso: newHome.startIso,
-        }
+        place(occIdx, newHome)
         best = pos
         bestEval = evalAt(g, pos)
         break
@@ -331,6 +365,7 @@ export function placeCell(
       }
     }
     occupied[best.idx] = true
+    bumpTime(g.gradeId, best.dayId, best.startMs, 1)
     for (const teamId of [g.teamAId, g.teamBId]) {
       teamBusy.add(`${teamId}|${best.startMs}`)
       pushStop(teamId, best)
@@ -352,34 +387,6 @@ export function placeCell(
     let f = 0
     for (const id of teamIds) f += (B(id) + teamPoints(id)) ** 2
     return f
-  }
-  const unplace = (gi: number) => {
-    const g = placedList[gi]
-    const from = placements.get(gameKeyOf(g))
-    if (!from) return
-    occupied[from.idx] = false
-    for (const teamId of [g.teamAId, g.teamBId]) {
-      teamBusy.delete(`${teamId}|${from.startMs}`)
-      popStop(teamId, from.startMs)
-    }
-    placements.delete(gameKeyOf(g))
-  }
-  const place = (gi: number, to: GridPosition) => {
-    const g = placedList[gi]
-    occupied[to.idx] = true
-    for (const teamId of [g.teamAId, g.teamBId]) {
-      teamBusy.add(`${teamId}|${to.startMs}`)
-      pushStop(teamId, to)
-    }
-    placements.set(gameKeyOf(g), to)
-    placedList[gi] = {
-      ...g,
-      dayId: to.dayId,
-      dayVenueId: to.dayVenueId,
-      courtId: to.courtId,
-      slotIdx: to.slotIdx,
-      startIso: to.startIso,
-    }
   }
 
   for (let accepted = 0; accepted < 200; accepted++) {

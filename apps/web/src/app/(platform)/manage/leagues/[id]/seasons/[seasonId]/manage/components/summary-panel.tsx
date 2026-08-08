@@ -36,10 +36,17 @@ export const BURDEN_WEIGHTS = {
   gamesShort: 20,
   // Owner's ladder 2026-08-08 (scheduler v2): a back-to-back is
   // forbidden-tier; a 5+ slot wait prices like a two-date weekend (6); a
-  // 3-4 slot gap is inside the PREFERRED breather (2-4 slots) — free.
+  // 3-4 slot gap is inside the PREFERRED breather (2-4 slots) — free; a
+  // 1-slot gap costs a point; and the day's first/last tip-off are the
+  // spread tallies (owner 2026-08-08: "are we not using the late starts
+  // and early endings in the burden score yet?" — now we are).
   backToBacks: 50,
   monsterWaits: 6,
+  twoDateWeekends: 6,
   midWaits: 0,
+  gapOne: 1,
+  earlyGames: 1,
+  lateGames: 1,
 } as const
 
 /** One weighted penalty score per team. Lower is better; 0 is a perfect
@@ -51,7 +58,11 @@ export function burdenScore(t: TeamFairness, gamesTarget: number): number {
     BURDEN_WEIGHTS.gamesShort * gamesShort(t, gamesTarget) +
     BURDEN_WEIGHTS.monsterWaits * t.monsterGapDays +
     BURDEN_WEIGHTS.backToBacks * t.backToBacks +
-    BURDEN_WEIGHTS.midWaits * t.midGapDays
+    BURDEN_WEIGHTS.midWaits * t.midGapDays +
+    BURDEN_WEIGHTS.twoDateWeekends * (t.twoDateWeekends ?? 0) +
+    BURDEN_WEIGHTS.gapOne * (t.gapOneDays ?? 0) +
+    BURDEN_WEIGHTS.earlyGames * t.earlyGames +
+    BURDEN_WEIGHTS.lateGames * t.lastGames
   )
 }
 
@@ -165,6 +176,8 @@ type ColumnKey =
   | "lastGames"
   | "midWaits"
   | "monsterWaits"
+  | "twoDateWeekends"
+  | "gapOne"
   | "splitVenueDays"
   | "tightSplits"
   | "preferenceMisses"
@@ -264,6 +277,10 @@ export function FairnessSummaryTable({
         return r.team.midGapDays
       case "monsterWaits":
         return r.team.monsterGapDays
+      case "twoDateWeekends":
+        return r.team.twoDateWeekends ?? 0
+      case "gapOne":
+        return r.team.gapOneDays ?? 0
       case "splitVenueDays":
         return r.team.splitVenueDays
       case "tightSplits":
@@ -325,6 +342,20 @@ export function FairnessSummaryTable({
       tooltip: "3-4 empty slots between games. Inside the preferred 2+ slot breather - no penalty.",
     },
     { key: "monsterWaits", label: "5hr+ waits", align: "right", show: true },
+    {
+      key: "twoDateWeekends",
+      label: "Two-day weekends",
+      align: "right",
+      show: true,
+      tooltip: "Weekends split across two dates. Priced like a 5hr+ wait (owner: equally bad).",
+    },
+    {
+      key: "gapOne",
+      label: "1-slot gaps",
+      align: "right",
+      show: true,
+      tooltip: "Same-day games only one empty slot apart. The preferred breather is 2+.",
+    },
     { key: "splitVenueDays", label: "Same day, 2 gyms", align: "right", show: true },
     {
       key: "tightSplits",
@@ -477,6 +508,14 @@ export function FairnessSummaryTable({
                     className={`px-2 py-2 text-right tabular-nums ${tintNonzero(t.monsterGapDays)}`}
                   >
                     {t.monsterGapDays}
+                  </td>
+                  <td
+                    className={`px-2 py-2 text-right tabular-nums ${tintNonzero(t.twoDateWeekends ?? 0)}`}
+                  >
+                    {t.twoDateWeekends ?? 0}
+                  </td>
+                  <td className={`px-2 py-2 text-right tabular-nums ${tintNonzero(t.gapOneDays ?? 0)}`}>
+                    {t.gapOneDays ?? 0}
                   </td>
                   <td
                     className={`px-2 py-2 text-right tabular-nums ${tintNonzero(t.splitVenueDays)}`}

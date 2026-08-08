@@ -31,6 +31,12 @@ export interface TeamFairness {
   /** Subset of bigGapDays: 5+ empty slots between games the same day (the
    *  "monster wait" tier, roughly 5+ hours at a typical 90-minute slot). */
   monsterGapDays: number
+  /** Same-day, same-venue pairs with exactly 1 empty slot between games
+   *  (the owner's ladder prefers 2+; 1 slot costs a point). */
+  gapOneDays: number
+  /** Weekends where the team's 2+ games fall on different dates — priced
+   *  equal to a 5hr+ wait by owner ruling 2026-08-08. */
+  twoDateWeekends: number
   splitVenueDays: number
   /** Cross-gym consecutive pairs with a gap too short to drive between
    *  venues (under TRAVEL_MIN_GAP_SLOTS empty slots) — a day the family
@@ -125,6 +131,8 @@ export function computeFairnessReport(
     let monsterGapDays = 0
     let splitVenueDays = 0
     let tightSplitDays = 0
+    let gapOneDays = 0
+    let twoDateWeekends = 0
     let earlyGames = 0
     let lastGames = 0
     const byDay = new Map<string, ReportGame[]>()
@@ -177,6 +185,11 @@ export function computeFairnessReport(
         }
       }
     }
+    for (const [, sessGames] of bySession) {
+      if (sessGames.length < 2) continue
+      const days = new Set(sessGames.map((g) => dayKey(new Date(g.scheduledAt))))
+      if (days.size > 1) twoDateWeekends++
+    }
     let prefOk = 0
     let prefTotal = 0
     if (style) {
@@ -203,6 +216,7 @@ export function computeFairnessReport(
           continue
         }
         if (gapSlots <= 0) backToBacks++
+        else if (Math.round(gapSlots) === 1) gapOneDays++
         else if (gapSlots > 2) {
           bigGapDays++
           // 3-4 slots = mid wait; 5+ slots = monster wait (owner tiers,
@@ -236,6 +250,8 @@ export function computeFairnessReport(
       bigGapDays,
       midGapDays,
       monsterGapDays,
+      gapOneDays,
+      twoDateWeekends,
       splitVenueDays,
       tightSplitDays,
       earlyGames,

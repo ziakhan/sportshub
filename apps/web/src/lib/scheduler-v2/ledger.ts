@@ -18,9 +18,15 @@ export interface TeamStop {
   startMin: number
   dow: number
   dateKey: string
-  /** First/last playable slot of its day at this gym (early/late tally). */
-  first: boolean
-  last: boolean
+}
+
+/** The actual first/last tip-off of a (day, grade) — the page's report
+ *  counts THESE (per-division day edges), so the engine must balance the
+ *  same thing, not the booked grid's phantom first/last slots (that
+ *  mismatch let 8 teams collect 5 late endings while 13 had none). */
+export interface DayEdges {
+  first: number
+  last: number
 }
 
 export interface BurdenCounts {
@@ -62,7 +68,8 @@ export function burdenPoints(c: BurdenCounts, w: BurdenWeights): number {
 export function weekendCounts(
   stops: TeamStop[],
   team: Pick<SnapTeam, "style" | "windows">,
-  slotMinutes: number
+  slotMinutes: number,
+  edgesOf?: (dayId: string) => DayEdges | null
 ): BurdenCounts {
   const c = zeroCounts()
   const sorted = [...stops].sort((a, b) => a.startMs - b.startMs)
@@ -79,9 +86,13 @@ export function weekendCounts(
   }
   if (sorted.length >= 2 && days.size > 1) c.twoDates++
 
-  for (const s of sorted) {
-    if (s.first) c.early++
-    if (s.last) c.late++
+  if (edgesOf) {
+    for (const s of sorted) {
+      const e = edgesOf(s.dayId)
+      if (!e) continue
+      if (s.startMs === e.first) c.early++
+      if (s.startMs === e.last && e.last !== e.first) c.late++
+    }
   }
 
   if (sorted.length >= 2) {
