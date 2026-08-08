@@ -25,6 +25,12 @@ export interface TeamFairness {
   games: number
   backToBacks: number
   bigGapDays: number
+  /** Subset of bigGapDays: 3-4 empty slots between games the same day (the
+   *  "mid wait" tier — bigGapDays is their sum with monsterGapDays). */
+  midGapDays: number
+  /** Subset of bigGapDays: 5+ empty slots between games the same day (the
+   *  "monster wait" tier, roughly 5+ hours at a typical 90-minute slot). */
+  monsterGapDays: number
   splitVenueDays: number
   earlyGames: number
   lastGames: number
@@ -110,6 +116,8 @@ export function computeFairnessReport(
     )
     let backToBacks = 0
     let bigGapDays = 0
+    let midGapDays = 0
+    let monsterGapDays = 0
     let splitVenueDays = 0
     let earlyGames = 0
     let lastGames = 0
@@ -182,7 +190,13 @@ export function computeFairnessReport(
         const cur = new Date(dayGames[i].scheduledAt).getTime()
         const gapSlots = (cur - prev) / (slotMinutes * 60000) - 1
         if (gapSlots <= 0) backToBacks++
-        else if (gapSlots > 2) bigGapDays++
+        else if (gapSlots > 2) {
+          bigGapDays++
+          // 3-4 slots = mid wait; 5+ slots = monster wait (owner tiers,
+          // 2026-08-07). The two always sum to bigGapDays.
+          if (gapSlots <= 4) midGapDays++
+          else monsterGapDays++
+        }
       }
     }
     const courtCounts = new Map<string, { name: string | null; n: number }>()
@@ -207,6 +221,8 @@ export function computeFairnessReport(
       games: sorted.length,
       backToBacks,
       bigGapDays,
+      midGapDays,
+      monsterGapDays,
       splitVenueDays,
       earlyGames,
       lastGames,

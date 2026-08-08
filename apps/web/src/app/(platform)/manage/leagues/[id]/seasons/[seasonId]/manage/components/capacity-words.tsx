@@ -3,10 +3,12 @@
 import { useEffect, useState } from "react"
 
 /**
- * Schedule readiness — answers ONE question in plain words at the top of
- * the Schedule tab (owner 2026-07-30): "can you generate the season's
- * schedule right now?" ✓ yes, or ✗ with exactly what's in the way.
- * Regular-season sessions only; playoff weekends are separate machinery.
+ * Schedule readiness (owner ruling 2026-08-07: the one-button preflight
+ * inside Generate now owns "can you run this" — Preview just tries and
+ * shows what's wrong). All this keeps is a single thin line for the one
+ * case the preflight can't self-diagnose before a run: the season isn't
+ * finalized, a division is too thin, or sessions/capacity aren't there
+ * yet. Nothing to say when ready means nothing renders.
  */
 export function ScheduleReadiness({
   seasonId,
@@ -72,37 +74,13 @@ export function ScheduleReadiness({
   if (cap && cap.sessions === 0) blockers.push("no regular-season sessions exist yet")
 
   const ready = blockers.length === 0 && cap !== null
-  if (!cap && blockers.length === 0) return null // still loading
+  // Nothing loading, nothing wrong, or still loading: say nothing — the
+  // preflight inside Generate carries the "can you run this" words now.
+  if (ready || (!cap && blockers.length === 0)) return null
 
   return (
-    <div
-      className={`reveal rounded-2xl border p-4 ${
-        ready ? "border-court-200 bg-court-50" : "border-amber-200 bg-amber-50"
-      }`}
-    >
-      {ready ? (
-        <p className="text-ink-900 text-sm">
-          <span className="text-court-700 font-bold">✓ You can generate the season&apos;s
-          schedule.</span>{" "}
-          <span className="text-ink-600">
-            Your {cap!.running} regular-season session{cap!.running === 1 ? "" : "s"} provide{" "}
-            {cap!.provided} game slots for the {cap!.needed} needed
-            {scheduleGamesCount > 0
-              ? ` · ${scheduleGamesCount} game${scheduleGamesCount === 1 ? "" : "s"} committed so far`
-              : ""}
-            .
-          </span>
-        </p>
-      ) : (
-        <div className="text-sm">
-          <p className="text-amber-800 font-bold">✗ Not ready to generate the full schedule yet:</p>
-          <ul className="text-amber-700 mt-1 list-inside list-disc space-y-0.5 text-xs">
-            {blockers.map((b, i) => (
-              <li key={i}>{b}</li>
-            ))}
-          </ul>
-        </div>
-      )}
-    </div>
+    <p className="text-amber-700 text-xs">
+      Not ready to generate yet: {blockers.join(" · ")}
+    </p>
   )
 }

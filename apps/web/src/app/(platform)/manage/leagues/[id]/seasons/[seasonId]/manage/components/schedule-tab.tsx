@@ -1070,6 +1070,7 @@ export function ScheduleTab({
                       <FairnessSummaryTable
                         report={report}
                         gamesTarget={gamesTarget}
+                        divisionByTeam={unitByTeam}
                         onSelectTeam={setDrillDownTeamId}
                       />
                       <button
