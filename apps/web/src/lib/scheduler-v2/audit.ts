@@ -45,6 +45,29 @@ export function gradeDemand(nTeams: number, target: number): number {
   return Math.ceil((nTeams * target) / 2)
 }
 
+/**
+ * The hosting entries scheduling actually uses: a (weekend, gym) with ZERO
+ * booked court-time is NOT a game destination (owner ruling 2026-08-07,
+ * stage 2) — operators assign grades to future weekends before booking
+ * gyms, and an unbooked weekend is a plan-ahead note, not a promise. The
+ * auditor reports how many were skipped; the matchup layer uses this same
+ * function, so the two can never disagree.
+ */
+export function effectiveHosting(
+  snapshot: WorldSnapshot
+): Map<string, Array<{ gradeId: string; gymId: string }>> {
+  const out = new Map<string, Array<{ gradeId: string; gymId: string }>>()
+  for (const w of snapshot.weekends) {
+    const kept: Array<{ gradeId: string; gymId: string }> = []
+    for (const h of w.hosting) {
+      const supply = gymSupply(w, h.gymId, snapshot.config.slotMinutes, snapshot.config.courtBuffer)
+      if (supply.total > 0) kept.push(h)
+    }
+    if (kept.length > 0) out.set(w.id, kept)
+  }
+  return out
+}
+
 export function audit(snapshot: WorldSnapshot): Finding[] {
   const findings: Finding[] = []
   const { config } = snapshot
@@ -52,11 +75,28 @@ export function audit(snapshot: WorldSnapshot): Finding[] {
   const teamById = new Map(snapshot.teams.map((t) => [t.id, t]))
   const gymName = (id: string) => id // venue names not in snapshot; renderer may map later
 
+  /* 0. Planned-but-unbooked weekends are skipped, and the operator is
+        told so in one line (INFO, never a block). */
+  const hosting = effectiveHosting(snapshot)
+  let skippedWeekends = 0
+  for (const w of snapshot.weekends) {
+    if (w.hosting.length > 0 && !hosting.has(w.id)) skippedWeekends++
+  }
+  if (skippedWeekends > 0) {
+    findings.push({
+      severity: "INFO",
+      code: "no-games-planned",
+      arithmetic: { skippedWeekends },
+      message: `${skippedWeekends} planned weekend${skippedWeekends === 1 ? " has" : "s have"} no booked gym time yet, so no games are scheduled there. Book courts in Planning to bring ${skippedWeekends === 1 ? "it" : "them"} into the season.`,
+      options: [],
+    })
+  }
+
   /* 1. Cell capacity (H1, H7) — the check that would have caught v1's
         wandering games before they existed. */
   for (const w of snapshot.weekends) {
     const byGym = new Map<string, string[]>()
-    for (const h of w.hosting) {
+    for (const h of hosting.get(w.id) ?? []) {
       if (!byGym.has(h.gymId)) byGym.set(h.gymId, [])
       byGym.get(h.gymId)!.push(h.gradeId)
     }
@@ -99,7 +139,7 @@ export function audit(snapshot: WorldSnapshot): Finding[] {
   const promise = config.promiseDefault
   for (const grade of snapshot.grades) {
     const hostedWeekends = snapshot.weekends.filter((w) =>
-      w.hosting.some((h) => h.gradeId === grade.id)
+      (hosting.get(w.id) ?? []).some((h) => h.gradeId === grade.id)
     )
     if (hostedWeekends.length === 0) {
       findings.push({
@@ -163,7 +203,7 @@ export function audit(snapshot: WorldSnapshot): Finding[] {
         that day's supply. */
   for (const w of snapshot.weekends) {
     const byGym = new Map<string, string[]>()
-    for (const h of w.hosting) {
+    for (const h of hosting.get(w.id) ?? []) {
       if (!byGym.has(h.gymId)) byGym.set(h.gymId, [])
       byGym.get(h.gymId)!.push(h.gradeId)
     }

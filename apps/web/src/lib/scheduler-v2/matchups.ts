@@ -5,6 +5,7 @@
  * exact minimum-cost perfect matching so blackouts, pins and stickiness
  * bend the structure without breaking coverage-before-repeat.
  */
+import { effectiveHosting } from "./audit"
 import type { CellGame, MatchupCell, SnapGrade, WorldSnapshot } from "./types"
 
 const pairKey = (a: string, b: string): string => (a < b ? `${a}|${b}` : `${b}|${a}`)
@@ -132,6 +133,7 @@ export function buildMatchups(snapshot: WorldSnapshot): MatchupResult {
   const keepBonus = snapshot.config.keepBonus
 
   const teamById = new Map(snapshot.teams.map((t) => [t.id, t]))
+  const hosting = effectiveHosting(snapshot)
   const cellsMap = new Map<string, MatchupCell>()
   const cellOf = (weekendId: string, gymId: string): MatchupCell => {
     const k = `${weekendId}|${gymId}`
@@ -203,11 +205,13 @@ export function buildMatchups(snapshot: WorldSnapshot): MatchupResult {
       }
     }
 
-    const hosted = snapshot.weekends.filter((w) => w.hosting.some((h) => h.gradeId === grade.id))
+    const hosted = snapshot.weekends.filter((w) =>
+      (hosting.get(w.id) ?? []).some((h) => h.gradeId === grade.id)
+    )
     const promise = snapshot.config.promiseDefault
 
     for (const w of hosted) {
-      const gymId = w.hosting.find((h) => h.gradeId === grade.id)!.gymId
+      const gymId = hosting.get(w.id)!.find((h) => h.gradeId === grade.id)!.gymId
       const cell = cellOf(w.id, gymId)
 
       // Day-locks from partial blackouts (H4 at day granularity).
@@ -323,7 +327,7 @@ export function buildMatchups(snapshot: WorldSnapshot): MatchupResult {
       if (deficit.length < 2) break
       let placed = false
       for (const w of hosted) {
-        const gymId = w.hosting.find((h) => h.gradeId === grade.id)!.gymId
+        const gymId = hosting.get(w.id)!.find((h) => h.gradeId === grade.id)!.gymId
         const cell = cellOf(w.id, gymId)
         // Capacity truth (H7): a catch-up game only lands where the gym has
         // spare court-slots for ALL grades it hosts that weekend.

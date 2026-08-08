@@ -100,29 +100,47 @@ export function placeCell(
   /** teamId -> stops (pins + placed so far). */
   const stopsOf = new Map<string, TeamStop[]>()
   /** Live tip-off times per (grade, day): the REAL day edges (the page's
-   *  report counts a division's actual first/last game of the day). */
-  const gradeDayTimes = new Map<string, Map<number, number>>()
+   *  report counts a division's actual first/last game of the day).
+   *  Min/max maintained incrementally — this lookup sits inside every
+   *  placement evaluation, and a map scan here measured a 4x solve
+   *  slowdown (15s -> 63s). */
+  interface DayTimes {
+    times: Map<number, number>
+    first: number
+    last: number
+  }
+  const gradeDayTimes = new Map<string, DayTimes>()
   const gradeOf = (teamId: string): string => teamById.get(teamId)!.gradeId
   const bumpTime = (gradeId: string, dayId: string, startMs: number, delta: number) => {
     const k = `${gradeId}|${dayId}`
-    if (!gradeDayTimes.has(k)) gradeDayTimes.set(k, new Map())
-    const m = gradeDayTimes.get(k)!
-    const next = (m.get(startMs) ?? 0) + delta
-    if (next <= 0) m.delete(startMs)
-    else m.set(startMs, next)
+    if (!gradeDayTimes.has(k)) {
+      gradeDayTimes.set(k, { times: new Map(), first: Infinity, last: -Infinity })
+    }
+    const dt = gradeDayTimes.get(k)!
+    const next = (dt.times.get(startMs) ?? 0) + delta
+    if (next <= 0) {
+      dt.times.delete(startMs)
+      // Only a removed edge forces the (rare) rescan.
+      if (startMs === dt.first || startMs === dt.last) {
+        dt.first = Infinity
+        dt.last = -Infinity
+        for (const t of dt.times.keys()) {
+          if (t < dt.first) dt.first = t
+          if (t > dt.last) dt.last = t
+        }
+      }
+    } else {
+      dt.times.set(startMs, next)
+      if (startMs < dt.first) dt.first = startMs
+      if (startMs > dt.last) dt.last = startMs
+    }
   }
   const edgesFor =
     (teamId: string) =>
     (dayId: string): { first: number; last: number } | null => {
-      const m = gradeDayTimes.get(`${gradeOf(teamId)}|${dayId}`)
-      if (!m || m.size === 0) return null
-      let first = Number.POSITIVE_INFINITY
-      let last = Number.NEGATIVE_INFINITY
-      for (const t of m.keys()) {
-        if (t < first) first = t
-        if (t > last) last = t
-      }
-      return { first, last }
+      const dt = gradeDayTimes.get(`${gradeOf(teamId)}|${dayId}`)
+      if (!dt || dt.times.size === 0) return null
+      return { first: dt.first, last: dt.last }
     }
   const pushStop = (teamId: string, pos: GridPosition) => {
     if (!stopsOf.has(teamId)) stopsOf.set(teamId, [])
@@ -205,13 +223,18 @@ export function placeCell(
    *  points added (for the stickiness threshold). */
   const evalAt = (
     g: { teamAId: string; teamBId: string },
-    pos: GridPosition
+    pos: GridPosition,
+    beforeA?: number,
+    beforeB?: number
   ): { quad: number; points: number } => {
     let quad = 0
     let points = 0
     const gradeId = gradeOf(g.teamAId)
-    for (const teamId of [g.teamAId, g.teamBId]) {
-      const before = teamPoints(teamId)
+    const befores = [beforeA, beforeB]
+    const teams = [g.teamAId, g.teamBId]
+    for (let i = 0; i < 2; i++) {
+      const teamId = teams[i]
+      const before = befores[i] ?? teamPoints(teamId)
       pushStop(teamId, pos)
       bumpTime(gradeId, pos.dayId, pos.startMs, 1)
       const after = teamPoints(teamId)
@@ -281,9 +304,12 @@ export function placeCell(
   for (const g of unplaced) {
     let best: GridPosition | null = null
     let bestEval = { quad: Number.POSITIVE_INFINITY, points: Number.POSITIVE_INFINITY }
+    // Invariant across candidate positions — computed once per game.
+    const beforeA = teamPoints(g.teamAId)
+    const beforeB = teamPoints(g.teamBId)
     for (const pos of grid) {
       if (!feasible(g, pos)) continue
-      const e = evalAt(g, pos)
+      const e = evalAt(g, pos, beforeA, beforeB)
       if (best === null) {
         best = pos
         bestEval = e
@@ -357,7 +383,7 @@ export function placeCell(
         (p) => p.courtId === prev.courtId && p.startIso === prev.startIso && p.dayId === prev.dayId
       )
       if (prevPos && feasible(g, prevPos)) {
-        const e = evalAt(g, prevPos)
+        const e = evalAt(g, prevPos, beforeA, beforeB)
         if (e.points - bestEval.points <= keepTheta) {
           best = prevPos
           bestEval = e

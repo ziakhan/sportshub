@@ -162,7 +162,15 @@ export function ScheduleStep({
       const data = res ? await res.json().catch(() => null) : null
       if (!res?.ok) {
         setGenBusy(false)
-        setError(data?.error ?? "Couldn't generate the schedule. Try again.")
+        // The auditor's findings ARE the product's voice (v2 contract):
+        // plain words, real arithmetic, concrete options — never swallowed
+        // behind a generic line.
+        const details = Array.isArray(data?.errors) ? (data.errors as string[]) : []
+        setError(
+          details.length > 0
+            ? details.join("\n")
+            : (data?.error ?? "Couldn't generate the schedule. Try again.")
+        )
         return
       }
       if (data?.needsConfirm) {
