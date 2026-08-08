@@ -3234,6 +3234,7 @@ function generateScheduleOnce(input: SchedulerInput): SchedulerResult {
     }
     const bucketOfG = (g: ProposedGame): string =>
       bucketKeyOf(g.dayId, new Date(g.scheduledAt).getTime())
+    const startMsOf = (bk2: string): number => Number(bk2.split("|")[1])
     const assignedByBucket = new Map<string, number[]>()
     for (let gi = 0; gi < games.length; gi++) {
       const bk = bucketOfG(games[gi])
@@ -3354,6 +3355,7 @@ function generateScheduleOnce(input: SchedulerInput): SchedulerResult {
               (atAssignedGym(games[a]) ? 1 : 0) - (atAssignedGym(games[b]) ? 1 : 0) ||
               courtUseOf(g, games[a].courtId) - courtUseOf(g, games[b].courtId)
           )
+        let swapped = false
         for (const gj of swapCands) {
           const other = games[gj]
           const odk = dateKeyOf(new Date(other.scheduledAt))
@@ -3369,10 +3371,59 @@ function generateScheduleOnce(input: SchedulerInput): SchedulerResult {
             teamsOf(games[gj]).reduce((acc, id) => acc + splitOf(id, odk), 0)
           if (afterAll < beforeAll) {
             changed = true
+            swapped = true
             break
           }
           reassign(gi, gSlot)
           reassign(gj, oSlot)
+        }
+        if (swapped) continue
+        /**
+         * LAST RESORT: A LONGER DAY AT ONE GYM BEATS A SHORTER DAY AT TWO
+         * (owner ruling 2026-08-07, second pass). When no same-time court or
+         * swap exists at the family's building, the game may move to a
+         * DIFFERENT TIME the same day at that building — accepting the longer
+         * gap or the back-to-back that creates, because the split is the
+         * worse evil ("that makes the day even longer"). Different-DAY moves
+         * stay off the table (owner: arguable, not yet). The assigned-gym
+         * stranding rule still holds: only an off-plan game moves this way.
+         */
+        if (!mayFreeMove) continue
+        const dayBuckets = [...freeSlotsByBucket.keys()].filter(
+          (obk) => obk !== bk && obk.startsWith(`${g.dayId}|`)
+        )
+        let done = false
+        for (const obk of dayBuckets) {
+          const startMs = Number(obk.split("|")[1])
+          // Neither team may already be on a court at the target time.
+          const clash = (assignedByBucket.get(obk) ?? []).some((oj) =>
+            teamsOf(games[oj]).some((id) => teamsOf(g).includes(id))
+          )
+          if (clash) continue
+          const slotList = freeSlotsByBucket.get(obk) ?? []
+          const si = slotList.findIndex((cs) => wantVenues.has(cs.venueId))
+          if (si < 0) continue
+          const cs = slotList[si]
+          const oldSlot = (bucketCourts.get(bk) ?? []).find((x) => x.courtId === g.courtId)
+          const oldBucketGames = assignedByBucket.get(bk) ?? []
+          // Move across time: court, venue AND clock move together.
+          reassign(gi, cs)
+          games[gi] = { ...games[gi], scheduledAt: cs.startAt.toISOString(), dayId: g.dayId }
+          const after = teamsOf(games[gi]).reduce((acc, id) => acc + splitOf(id, dk), 0)
+          if (after < before) {
+            slotList.splice(si, 1)
+            if (oldSlot) (freeSlotsByBucket.get(bk) ?? []).push(oldSlot)
+            oldBucketGames.splice(oldBucketGames.indexOf(gi), 1)
+            if (!assignedByBucket.has(obk)) assignedByBucket.set(obk, [])
+            assignedByBucket.get(obk)!.push(gi)
+            changed = true
+            done = true
+            break
+          }
+          // No gain: put the clock and the court back.
+          reassign(gi, oldSlot ?? cs)
+          games[gi] = { ...games[gi], scheduledAt: new Date(startMsOf(bk)).toISOString() }
+          if (done) break
         }
       }
       if (!changed) break
