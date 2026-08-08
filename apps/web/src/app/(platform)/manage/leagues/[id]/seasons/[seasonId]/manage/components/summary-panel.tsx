@@ -174,7 +174,7 @@ export function FairnessSummaryTable({
               <th className="px-2 py-1.5 text-right">Early starts</th>
               <th className="px-2 py-1.5 text-right">Late endings</th>
               <th className="px-2 py-1.5 text-right">Big gaps</th>
-              <th className="px-2 py-1.5 text-right">Two-gym days</th>
+              <th className="px-2 py-1.5 text-right">Same day, 2 gyms</th>
               {hasPreference && <th className="px-2 py-1.5 text-right">Preference misses</th>}
               {hasRequests && <th className="px-2 py-1.5 text-right">Request misses</th>}
               <th className="px-2 py-1.5 text-right">Top court %</th>

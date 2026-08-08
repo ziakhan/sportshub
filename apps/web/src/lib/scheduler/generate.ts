@@ -3149,6 +3149,22 @@ function generateScheduleOnce(input: SchedulerInput): SchedulerResult {
         const want = assignedVenue(g.sessionId, g.unitKey)
         let candidates = want !== null ? free.filter((cs) => cs.venueId === want) : []
         if (candidates.length === 0) {
+          /**
+           * THE FAMILY'S OWN BUILDINGS BEFORE THE BEST-RANKED ONE (owner
+           * ruling 2026-08-07: eliminating same-day gym splits outranks the
+           * plan's per-grade gym placement). When the wanted gym has no court
+           * left, the next room to try is wherever either team ALREADY plays
+           * today — not the highest-priority venue with space, which is how a
+           * family got sent across town between games.
+           */
+          const cohesion = free.filter((cs) =>
+            [g.homeTeamId, g.awayTeamId].some(
+              (id) => (teamDayVenue.get(`${id}|${dk}|${cs.venueId}`) ?? 0) > 0
+            )
+          )
+          if (cohesion.length > 0) candidates = cohesion
+        }
+        if (candidates.length === 0) {
           let bestRank = Infinity
           for (const cs of free) bestRank = Math.min(bestRank, cs.venueRank)
           candidates = free.filter((cs) => cs.venueRank === bestRank)
@@ -3159,9 +3175,11 @@ function generateScheduleOnce(input: SchedulerInput): SchedulerResult {
           let sc = 0
           // Venue-major: earlier venues in the session plan fill first
           sc += (10 - Math.min(9, dvRank.get(cs.dayVenueId) ?? 9)) * 1.5
-          // Same-gym cohesion: either family already at this venue today
+          // Same-gym cohesion: either family already at this venue today.
+          // Weighted to DOMINATE venue-major (owner ruling 2026-08-07): a
+          // fuller first venue never justifies splitting a family's day.
           for (const id of [g.homeTeamId, g.awayTeamId]) {
-            if ((teamDayVenue.get(`${id}|${dk}|${cs.venueId}`) ?? 0) > 0) sc += 6
+            if ((teamDayVenue.get(`${id}|${dk}|${cs.venueId}`) ?? 0) > 0) sc += 24
           }
           // Division continuity on the court
           const prev = courtPrevUnit.get(cs.courtId)
@@ -3195,15 +3213,20 @@ function generateScheduleOnce(input: SchedulerInput): SchedulerResult {
     }
   }
 
-  // ── Venue-cohesion repair (owner 2026-08-01: same gym per trip is the
-  // point of one-trip weekends). Court assignment is chronological, so a
-  // team's FIRST game can't know where its second wants to be — this sweep
-  // unifies split-venue team-days afterwards: move the odd game to a free
-  // court at the family's venue, or swap courts with a same-time game,
-  // accepting only changes that reduce total split team-days. A game already
-  // sitting in the gym its grade was assigned for that weekend is off limits
-  // to this sweep, in both roles (owner 2026-08-02: the plan's gym outranks
-  // cohesion, and cohesion is what the plan was for in the first place).
+  // ── Venue-cohesion repair (owner 2026-08-01; hierarchy inverted by owner
+  // ruling 2026-08-07). Court assignment is chronological, so a team's FIRST
+  // game can't know where its second wants to be — this sweep unifies
+  // split-venue team-days afterwards: move the odd game to a free court at
+  // the family's venue, or swap courts with a same-time game, accepting only
+  // changes that reduce total split team-days.
+  //
+  // THE OLD FENCE IS GONE: a game at its grade's assigned gym used to be off
+  // limits in both roles, which left the sweep powerless the moment the plan
+  // assigned every grade a gym (nearly always). The 2026-08-07 ruling is the
+  // reverse hierarchy — ELIMINATING a family's split day outranks the plan's
+  // per-grade placement — so any game may move or swap when it heals a split;
+  // staying at the assigned gym survives only as a preference (off-plan
+  // partners are tried before at-plan ones).
   {
     const atAssignedGym = (g: ProposedGame): boolean => {
       const want = assignedVenue(g.sessionId, g.unitKey)
@@ -3272,7 +3295,6 @@ function generateScheduleOnce(input: SchedulerInput): SchedulerResult {
       let changed = false
       for (let gi = 0; gi < games.length; gi++) {
         const g = games[gi]
-        if (atAssignedGym(g)) continue
         const dk = dateKeyOf(new Date(g.scheduledAt))
         // Which of this game's teams sits split today, and where do their
         // OTHER games live?
@@ -3286,8 +3308,17 @@ function generateScheduleOnce(input: SchedulerInput): SchedulerResult {
         if (wantVenues.size === 0) continue
         const bk = bucketOfG(g)
         const before = teamsOf(g).reduce((acc, id) => acc + splitOf(id, dk), 0)
+        /**
+         * A FREE-COURT MOVE MAY NOT STRAND A BOOKING (the spill-test nuance,
+         * 2026-08-07). Healing a split by walking a game OFF its assigned gym
+         * onto an empty court elsewhere leaves the paid building emptier —
+         * the sweep would drain a small rented gym to zero. So a game at its
+         * assigned gym leaves only by SWAP, which keeps every venue's usage
+         * constant: the family heals and the booking stays used.
+         */
+        const mayFreeMove = !atAssignedGym(g)
         // Free court at a wanted venue, same time?
-        const free = freeSlotsByBucket.get(bk) ?? []
+        const free = mayFreeMove ? (freeSlotsByBucket.get(bk) ?? []) : []
         let freeIdx = -1
         let freeBest = Infinity
         for (let fi = 0; fi < free.length; fi++) {
@@ -3315,8 +3346,14 @@ function generateScheduleOnce(input: SchedulerInput): SchedulerResult {
         // Swap courts with a same-time game already at a wanted venue —
         // least-camped courts first.
         const swapCands = (assignedByBucket.get(bk) ?? [])
-          .filter((gj) => gj !== gi && wantVenues.has(games[gj].venueId) && !atAssignedGym(games[gj]))
-          .sort((a, b) => courtUseOf(g, games[a].courtId) - courtUseOf(g, games[b].courtId))
+          .filter((gj) => gj !== gi && wantVenues.has(games[gj].venueId))
+          .sort(
+            (a, b) =>
+              // Off-plan partners first: conformity to the plan's gym is a
+              // preference now, never a fence (owner ruling 2026-08-07).
+              (atAssignedGym(games[a]) ? 1 : 0) - (atAssignedGym(games[b]) ? 1 : 0) ||
+              courtUseOf(g, games[a].courtId) - courtUseOf(g, games[b].courtId)
+          )
         for (const gj of swapCands) {
           const other = games[gj]
           const odk = dateKeyOf(new Date(other.scheduledAt))
@@ -3339,6 +3376,82 @@ function generateScheduleOnce(input: SchedulerInput): SchedulerResult {
         }
       }
       if (!changed) break
+    }
+
+    /**
+     * EVEN OUT WHAT COULD NOT BE ELIMINATED (owner ruling 2026-08-07, goal
+     * two): nobody carries four split days while others carry none. A
+     * split-total-NEUTRAL same-time swap can still MOVE a split from a team
+     * that has many onto teams that have fewer; each accepted trade strictly
+     * lowers the worst-off team's count, so the loop terminates. Elimination
+     * always ran first, so nothing here undoes goal one.
+     */
+    const seasonSplitsOf = (id: string): number => {
+      let n = 0
+      for (const [k, m] of dayVenuesOf) {
+        if (k.startsWith(`${id}|`) && m.size > 1) n++
+      }
+      return n
+    }
+    for (let round = 0; round < 6; round++) {
+      let traded = false
+      // Worst-off teams first.
+      const loads = new Map<string, number>()
+      for (const g of games) for (const id of teamsOf(g)) {
+        if (!loads.has(id)) loads.set(id, seasonSplitsOf(id))
+      }
+      const order = [...Array(games.length).keys()].sort((a, b) => {
+        const la = Math.max(...teamsOf(games[a]).map((id) => loads.get(id) ?? 0))
+        const lb = Math.max(...teamsOf(games[b]).map((id) => loads.get(id) ?? 0))
+        return lb - la
+      })
+      for (const gi of order) {
+        const g = games[gi]
+        const dk = dateKeyOf(new Date(g.scheduledAt))
+        const splitTeams = teamsOf(g).filter((id) => splitOf(id, dk))
+        if (splitTeams.length === 0) continue
+        const donorLoad = Math.max(...splitTeams.map((id) => seasonSplitsOf(id)))
+        if (donorLoad < 2) continue // one split is inside the fair share
+        const wantVenues = new Set<string>()
+        for (const id of splitTeams) {
+          for (const [v, n] of dayVenuesOf.get(`${id}|${dk}`) ?? []) {
+            if (v !== g.venueId && n > 0) wantVenues.add(v)
+          }
+        }
+        const bk = bucketOfG(g)
+        for (const gj of assignedByBucket.get(bk) ?? []) {
+          if (gj === gi || !wantVenues.has(games[gj].venueId)) continue
+          const other = games[gj]
+          const odk = dateKeyOf(new Date(other.scheduledAt))
+          const totalBefore =
+            teamsOf(g).reduce((acc, id) => acc + splitOf(id, dk), 0) +
+            teamsOf(other).reduce((acc, id) => acc + splitOf(id, odk), 0)
+          const gSlot = (bucketCourts.get(bk) ?? []).find((x) => x.courtId === g.courtId)
+          const oSlot = (bucketCourts.get(bk) ?? []).find((x) => x.courtId === other.courtId)
+          if (!gSlot || !oSlot) continue
+          reassign(gi, oSlot)
+          reassign(gj, gSlot)
+          const totalAfter =
+            teamsOf(games[gi]).reduce((acc, id) => acc + splitOf(id, dk), 0) +
+            teamsOf(games[gj]).reduce((acc, id) => acc + splitOf(id, odk), 0)
+          const recipientLoad = Math.max(
+            0,
+            ...teamsOf(games[gj])
+              .filter((id) => splitOf(id, odk))
+              .map((id) => seasonSplitsOf(id))
+          )
+          // Accept only a strict hand-down: no more total splits, and the
+          // team now holding one is still better off than the donor was.
+          if (totalAfter <= totalBefore && recipientLoad < donorLoad) {
+            traded = true
+            break
+          }
+          reassign(gi, gSlot)
+          reassign(gj, oSlot)
+        }
+        if (traded) break
+      }
+      if (!traded) break
     }
   }
 
