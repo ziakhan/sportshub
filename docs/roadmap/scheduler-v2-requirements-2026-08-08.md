@@ -158,6 +158,65 @@ fits. Consequences when it comes:
   fresh design's "clusters stay out of the engine" pushback true while
   delivering the owner's flexibility idea at the right layer.
 
+## 6c. Legacy inventory — what v1 assumed before planning existed
+(Audit 2026-08-08, owner's hypothesis confirmed: the engine predates the
+planning phase, and the plan reached it as optional hints bolted on later.
+v2 must not inherit ANY of these. File references are v1.)
+
+**Engine assumptions (lib/scheduler):**
+1. Pooled capacity: Phase 1 packed time buckets against ALL gyms' courts
+   as one pool — the proven root cause of every split (74 wandering
+   games, 36 split days on a plan that fit perfectly).
+2. Plan-as-hint: `venueAssignments` is an OPTIONAL input; load.ts calls
+   it "a preference the engine honors while it can." In v2 the plan is
+   the law (H1) and the input is required.
+3. Cross-division pairing pools (`allowCrossDivisionScheduling` +
+   scheduling groups): a group whose divisions were assigned DIFFERENT
+   gyms resolves to "no assigned gym" and places anywhere, silently.
+   Pre-plan feature at war with the plan. v2: groups must live inside one
+   gym-cell or be rejected by the auditor.
+4. Pre-plan behavior knobs on Season.scheduleConfig —
+   `schedulingPhilosophy` (FAMILY_FRIENDLY/SPREAD_DAYS) and
+   `idealGamesPerDayPerTeam` — steer day shapes UNDER the owner's S2/S3
+   ladder rulings. v2 replaces both with the ladder + per-team style.
+5. The 6-attempt varietySeed retry lottery — randomized candidates judged
+   after the fact. v2: deterministic construct+repair, no multi-start.
+6. Warning vocabulary blames the operator's capacity ("Add hours or a
+   court at the assigned gym...") for spill the engine itself caused.
+   v2: the auditor speaks BEFORE solving, and only about real arithmetic.
+7. `venueRoles` home/pool "pack the home gym first" residency — predates
+   per-weekend assignments and now competes with them. v2: the plan's
+   assignment IS the location truth; roles are a planning-page concern.
+8. `sessionUnitFilter` optional with default "sessions without an entry
+   host any unit" — a grade can be scheduled into weekends the plan
+   never chose for it when unitKeys were not persisted. v2: the plan
+   states every (weekend, grade) explicitly; absence means NOT PLAYING.
+
+**API doors (all pre-plan, all bypass the plan):**
+9. POST /schedule/preview + /schedule/commit — generate with NO plan
+   preflight, NO plan-world application, session-scoped wipes
+   (`sessionIds`, `replaceExisting`, `fillGapsOnly`). The one-button
+   plan generate exists in parallel; these older doors still exist AND
+   the schedule tab still drives them.
+10. DELETE /schedule — wipe-the-season door with no plan concept.
+11. /schedule/capacity + /schedule/scenarios — planning-era surfaces
+    living under the schedule tab (owner already flagged the capacity
+    panel). Planning's business belongs in Planning.
+
+**UI (schedule tab):**
+12. Mode defaults to "session" and auto-selects "the first session with
+    nothing committed" — THE "why did I land on week two" mystery,
+    solved: it is the session-by-session generation UX, dead per H8.
+13. Session-scoped save copy ("Save the schedule for 'this session'?
+    ...other sessions are untouched") — session-by-session generation.
+14. One-shot publish button — the staged week/session publishing ruling
+    (H8) needs per-session publish controls instead.
+
+**Disposition:** v2's architecture retires 1-8 structurally (snapshot →
+auditor → solve → proposal; plan required; no knobs, no lottery). Items
+9-14 are v1 SURFACES to be removed or rewired when v2 lands — listed here
+so the cutover has a kill list and nothing survives by forgetting.
+
 ## 7. Open questions for the owner
 
 Q1. ANSWERED (owner 2026-08-08): No. Same-day first with optimal gaps;
