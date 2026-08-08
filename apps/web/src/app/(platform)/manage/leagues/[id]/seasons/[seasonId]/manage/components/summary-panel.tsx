@@ -34,9 +34,12 @@ export const BURDEN_WEIGHTS = {
   tightSplits: 30,
   splitVenueDays: 20,
   gamesShort: 20,
-  monsterWaits: 8,
-  backToBacks: 5,
-  midWaits: 2,
+  // Owner's ladder 2026-08-08 (scheduler v2): a back-to-back is
+  // forbidden-tier; a 5+ slot wait prices like a two-date weekend (6); a
+  // 3-4 slot gap is inside the PREFERRED breather (2-4 slots) — free.
+  backToBacks: 50,
+  monsterWaits: 6,
+  midWaits: 0,
 } as const
 
 /** One weighted penalty score per team. Lower is better; 0 is a perfect
@@ -314,7 +317,13 @@ export function FairnessSummaryTable({
     { key: "backToBacks", label: "Back-to-backs", align: "right", show: true },
     { key: "earlyGames", label: "Early starts", align: "right", show: true },
     { key: "lastGames", label: "Late endings", align: "right", show: true },
-    { key: "midWaits", label: "Long waits (3-4)", align: "right", show: true },
+    {
+      key: "midWaits",
+      label: "Waits (3-4)",
+      align: "right",
+      show: true,
+      tooltip: "3-4 empty slots between games. Inside the preferred 2+ slot breather - no penalty.",
+    },
     { key: "monsterWaits", label: "5hr+ waits", align: "right", show: true },
     { key: "splitVenueDays", label: "Same day, 2 gyms", align: "right", show: true },
     {

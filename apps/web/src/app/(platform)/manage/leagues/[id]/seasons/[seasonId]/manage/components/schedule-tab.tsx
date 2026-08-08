@@ -69,7 +69,11 @@ export function ScheduleTab({
     return map
   }, [scheduleGames])
 
-  const [mode, setMode] = useState<"session" | "season">("session")
+  // Whole-season is the DEFAULT view (owner ruling 2026-08-08 + legacy
+  // inventory item 12: the session-first landing was v1's
+  // session-by-session generation UX — the "why did I land on week two"
+  // mystery). Session mode remains for LOOKING at one weekend.
+  const [mode, setMode] = useState<"session" | "season">("season")
   // Default to the first session that has nothing committed yet.
   const [selectedSessionId, setSelectedSessionId] = useState<string>("")
   useEffect(() => {
@@ -855,77 +859,10 @@ export function ScheduleTab({
           </div>
         )}
 
-        {visibleCapacity && visibleCapacity.length > 0 && (
-          <div className="mb-6 space-y-3">
-            <div>
-              <PanelHeader title={mode === "session" ? "This session's capacity" : "Capacity planner"} />
-              <p className="text-ink-500 -mt-2 text-xs">
-                Slots this session can hold vs the games your divisions need. Untick a division
-                to leave it out — preview and commit follow this plan.
-              </p>
-            </div>
-            {visibleCapacity.map((s) => {
-              const ex = excluded[s.sessionId] ?? new Set<string>()
-              const includedDemand = s.units
-                .filter((u) => !ex.has(u.unitKey))
-                .reduce((sum, u) => sum + u.gamesNeeded, 0)
-              const spare = s.slotsTotal - includedDemand
-              const tone =
-                spare < 0
-                  ? "border-hoop-200 bg-hoop-50"
-                  : spare <= Math.ceil(s.slotsTotal * 0.1)
-                    ? "border-amber-200 bg-amber-50"
-                    : "border-court-200 bg-court-50"
-              return (
-                <div key={s.sessionId} className={`rounded-xl border p-3 ${tone}`}>
-                  <div className="flex flex-wrap items-center justify-between gap-2">
-                    <p className="text-ink-900 text-xs font-semibold">
-                      {s.label || "Session"} · {s.days} day{s.days === 1 ? "" : "s"} · {s.courts}{" "}
-                      court{s.courts === 1 ? "" : "s"} · {s.gamesPerTeam} game
-                      {s.gamesPerTeam === 1 ? "" : "s"}/team
-                    </p>
-                    <p className="text-ink-700 text-xs font-semibold">
-                      {includedDemand} of {s.slotsTotal} slots needed ·{" "}
-                      {spare >= 0 ? (
-                        <span className="text-court-700">{spare} spare</span>
-                      ) : (
-                        <span className="text-hoop-700">{-spare} short</span>
-                      )}
-                      {(s.blockedByOthers ?? 0) > 0 && (
-                        <span className="text-amber-700">
-                          {" "}· {s.blockedByOthers} taken by other leagues
-                        </span>
-                      )}
-                    </p>
-                  </div>
-                  <div className="mt-2 flex flex-wrap gap-2">
-                    {s.units.map((u) => {
-                      const off = ex.has(u.unitKey)
-                      return (
-                        <label
-                          key={u.unitKey}
-                          className={`flex cursor-pointer items-center gap-1.5 rounded-lg border px-2 py-1 text-[11px] ${
-                            off
-                              ? "border-ink-200 bg-white text-ink-400 line-through"
-                              : "border-ink-200 bg-white text-ink-700"
-                          }`}
-                        >
-                          <input
-                            type="checkbox"
-                            checked={!off}
-                            onChange={() => toggleUnit(s.sessionId, u.unitKey)}
-                          />
-                          {u.label} · {u.teams} teams · {u.gamesNeeded} games
-                        </label>
-                      )
-                    })}
-                  </div>
-                </div>
-              )
-            })}
-          </div>
-        )}
-
+        {/* The capacity planner left this page 2026-08-08 (owner ruling +
+            legacy inventory item 11): planning's business lives in
+            Planning. Scheduler v2's auditor states any real shortfall in
+            plain words before generating. */}
         {preview && (
           <div className="mb-6 rounded-2xl border border-play-200 bg-play-50 p-4">
             <p className="text-play-800 mb-2 text-sm font-semibold">

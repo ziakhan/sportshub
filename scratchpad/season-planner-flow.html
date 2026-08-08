@@ -1,0 +1,518 @@
+<!doctype html><html><head><!-- frame-runtime --><script>window.__FRAME_PREAMBLE={"capabilities":{"downloads":"downloads.BABDwU1K.js","mcp":"mcp.hoz5jxDa.js","permissions":"permissions.ByA9Fd8x.js","self":"self.D3u1zjZe.js","user":"user.Cp1-RnjB.js"},"transforms":"_transforms.DYk1Ltlh.js","comments":"_comments.DiwQajF_.js","translate":"_translate.C5leZL2A.js"}</script><script>(function(){"use strict";const Ee="modulepreload",we=function(e){return"/"+e},Se={},ee=function(t,n,l){let i=Promise.resolve();function s(f){const c=new Event("vite:preloadError",{cancelable:!0});if(c.payload=f,window.dispatchEvent(c),!c.defaultPrevented)throw f}return i.then(f=>{for(const c of f||[])c.status==="rejected"&&s(c.reason);return t().catch(s)})},te=["light","dark","system"];function ne(e){if(e===null||typeof e!="object")return!1;const t=e.__frame_init;return t!==null&&typeof t=="object"}function W(e){return e!==null&&typeof e=="object"&&e.__frame_size_poke===!0}function re(e){if(e===null||typeof e!="object")return!1;const t=e.__frame_theme;if(t===null||typeof t!="object")return!1;const n=t.theme;return typeof n=="string"&&te.includes(n)}function se(e){try{typeof reportError=="function"?reportError(e):setTimeout(()=>{throw e},0)}catch{}}const oe=Object.freeze(Object.assign(Object.create(null),{user:Object.freeze(Object.assign(Object.create(null),{id:null,isOwner:!1,canEdit:!1,name:null,avatarUrl:null,email:null}))}));function Y(e){if(window===top||e.type==="auxclick"&&e.button!==1)return;const t=e.composedPath?e.composedPath():[e.target];let n=null;for(let f=0;f<t.length;f++){const c=t[f];if(c&&c.matches&&c.matches("a[href],area[href]")){n=c;break}}if(!n&&e.target&&e.target.closest&&(n=e.target.closest("a[href],area[href]")),!n)return;const l=n.getAttribute("href");if(!l)return;let i,s;try{i=new URL(l,document.baseURI),s=new URL(document.baseURI).origin}catch{return}(i.protocol==="http:"||i.protocol==="https:")&&i.origin!==s&&(e.preventDefault(),parent.postMessage({__frame_nav:!0,url:i.href},"*"))}const K={};function D(e){if(window===top)return;const t=Date.now();t-(K[e]||0)<500||(K[e]=t,parent.postMessage({__frame_engaged:!0,kind:e},"*"))}const ie=2e3,x=["wheel","touchstart","touchmove","keydown","pointerdown"];let J=0;function ae(e){e.isTrusted&&(J=Date.now())}function ce(){addEventListener("click",Y,!0),addEventListener("auxclick",Y,!0)}function le(){for(let e=0;e<x.length;e++)addEventListener(x[e],ae,{capture:!0,passive:!0});addEventListener("scroll",e=>{e.isTrusted&&Date.now()-J<ie&&D("scroll")},{capture:!0,passive:!0}),addEventListener("pointermove",e=>{e.isTrusted&&D("pointer")},{capture:!0,passive:!0}),addEventListener("click",e=>{e.isTrusted&&D("click")},{capture:!0,passive:!0})}const I="__frame_scroll",ue=150,fe=310,de=160,me=3e4;function pe(){let e=0,t=!1,n=!1,l=!1,i=0;const s=a=>{try{sessionStorage.setItem(I,JSON.stringify({y:a}))}catch{}},f=()=>{if(t){t=!1;return}n=!0,clearTimeout(e),e=setTimeout(()=>s(scrollY),ue)};try{addEventListener("scroll",f,{passive:!0}),addEventListener("pagehide",()=>{clearTimeout(e),s(scrollY)})}catch{}const c=()=>{let a;try{a=sessionStorage.getItem(I)}catch{return null}if(a===null)return null;let _;try{_=JSON.parse(a)}catch{_=null}const m=_?.y;if(!(typeof m=="number"&&Number.isFinite(m)&&m>=0)){try{sessionStorage.removeItem(I)}catch{}return null}return m};let g=!1;const p=a=>{try{const _=scrollY;scrollTo({top:a,left:0,behavior:"instant"}),i=a,l=!0,s(a);const m=scrollY;m!==_&&(t=!0),m!==a&&!g&&(g=!0,addEventListener("load",()=>{try{if(scrollY===m){const y=c();p(y!==null?y:i)}}catch{}},{once:!0}))}catch{}},o=()=>{try{return!!location.hash}catch{return!0}};let u=!1;const d=()=>{try{if(u||innerWidth>fe||innerHeight>de)return;u=!0;const a=Date.now(),_=()=>{try{removeEventListener("resize",_)}catch{}if(Date.now()-a>me||n||o())return;const m=c();p(m!==null?m:i)};addEventListener("resize",_)}catch{}};let h=!1,b=!1;return{restore(){if(h||(h=!0,o()))return;const a=c();a!==null&&(p(a),d())},promoted(){if(b||(b=!0,o()))return;const a=c();a!==null?(p(a),d()):l&&p(i)}}}function he(e,t,n){const l=[...t.values()].filter(i=>i.targets.some(s=>s.startsWith(e+".")));return{wrap(i,s){const f=`${e}.${i}`,c=l.filter(g=>g.targets.includes(f));return c.length===0?(...g)=>{try{return s(...g)}catch(p){return Promise.reject(p)}}:(...g)=>{let p=g;for(const u of c){const d=u.module.parameters;if(d)try{p=d(p)}catch{return Promise.reject({code:"transform_error",id:u.id,scope:e,message:"parameters transform failed"})}}let o;try{o=s(...p)}catch(u){o=Promise.reject(u)}return o.then(u=>{for(let d=c.length-1;d>=0;d--){const h=c[d],b=h.module.returns;if(b)try{u=b(u)}catch{return n({id:h.id,scope:e,leg:"returns"}),u}}return u},u=>{for(let d=c.length-1;d>=0;d--){const h=c[d],b=h.module.throws;if(b)try{u=b(u)}catch{return n({id:h.id,scope:e,leg:"throws"}),Promise.reject(u)}}return Promise.reject(u)})}}}}function ge(e,t,n,l=()=>{}){const i=new Set(e.changes??[]),s=new Map;for(const f of i){const c=t[f];c&&s.set(f,c)}return{contract:e.contract,changes:i,flags:new Set(e.flags??[]),capabilities:e.capabilities??{},capBudgets:e.capBudgets??{},transforms:s,shellOrigin:n.shellOrigin,mount:n.mount,pipe:f=>he(f,s,l)}}(function(){const e=Object.defineProperty,t=globalThis,n=["RTCPeerConnection","webkitRTCPeerConnection","RTCDataChannel","RTCIceCandidate","RTCSessionDescription","RTCRtpSender","RTCRtpReceiver"];let l=0;for(let i=0;i<n.length;i++){const s=n[i];try{e(t,s,{value:void 0,writable:!1,configurable:!1})}catch{try{delete t[s]}catch{}try{e(t,s,{value:void 0,writable:!1,configurable:!0})}catch{}}typeof t[s]=="function"&&l++}if(l&&window!==top)try{parent.postMessage({__frame_rtc_lockdown_failed:l},"*")}catch{}})();const _e=1e4,ye=Object.freeze([...window.__FRAME_PREAMBLE?.origins??["https://claude.ai","https://preview.claude.ai"]]);function G(e){for(const t of ye)if(t.endsWith(":*"))try{const n=new URL(e);if(`${n.protocol}//${n.hostname}:*`===t)return!0}catch{}else if(e===t)return!0;return!1}const R=Object.freeze({...window.__FRAME_PREAMBLE?.capabilities}),U=window.__FRAME_PREAMBLE?.transforms,z=window.__FRAME_PREAMBLE?.comments,$=window.__FRAME_PREAMBLE?.translate,T=/^[\w.-]+\.js$/,be=/^[a-z][a-z0-9_-]{0,63}$/;let V=null,j=null;function q(e,t,n){try{Object.defineProperty(e,t,{value:n,writable:!1,configurable:!1,enumerable:!0})}catch{try{Object.defineProperty(e,t,{value:n,writable:!1,configurable:!0,enumerable:!0})}catch{}}}let B=!1;function X(e){const t=document.documentElement;e==="light"||e==="dark"?(t.dataset.theme=e,t.style.colorScheme=e,B=!0):B&&(delete t.dataset.theme,t.style.colorScheme="",B=!1)}const A=Object.assign(Object.create(null),{mcp:Object.assign(Object.create(null),{watchTool:{handlerArg:3}})}),M=new Map;function Q(e,t){const n=M.get(e);if(!n)return;const l=Object.assign(Object.create(null),t);Object.assign(n.impl,l),n.impl.__settled=()=>Promise.reject({code:"capability_removed",message:`${e}: method not in this runtime`});const i=n.queue;n.queue=[];for(const s of i){const f=l[s.method];if(f)if(A[e]?.[s.method])try{s.resolve(f(...s.args))}catch{k(s,A[e][s.method].handlerArg,{code:"transform_error",message:`${e}.${s.method} rejected its arguments`})}else f(...s.args).then(s.resolve,s.reject);else{const c={code:"capability_removed",message:`${e}.${s.method} is not in this runtime`},g=A[e]?.[s.method];if(g){k(s,g.handlerArg,c);continue}s.reject(c)}}}function ve(e,t){const n=M.get(e);if(!n)return;n.impl.__settled=()=>Promise.reject(t);const l=n.queue;n.queue=[];for(const i of l){const s=A[e]?.[i.method];if(s){k(i,s.handlerArg,t);continue}i.reject(t)}}function N(e,t){const n=oe[e];if(!n){ve(e,t);return}Q(e,Object.fromEntries(Object.entries(n).map(([l,i])=>[l,()=>Promise.resolve(i)])))}function k(e,t,n){if(e.syncState?.dead)return;const l=e.args[t];typeof l=="function"&&queueMicrotask(()=>{if(!e.syncState?.dead)try{l({type:"error",error:n})}catch(i){se(i)}})}const F=Object.getOwnPropertyDescriptor(window,"claude");if(window!==top&&!(F&&F.writable===!1)){ce(),le();let e=null;try{e=pe()}catch{}const t=F?.value??{};q(window,"claude",t);const n=o=>{const u={impl:Object.create(null),queue:[]};M.set(o,u);const d=u.impl,h=new Proxy(d,{get:(b,a)=>{if(typeof a!="string"||a==="then"||a==="toJSON"||a==="valueOf")return;if(a==="toString")return Object.prototype.toString;const _=A[o]?.[a];return _?(...m)=>{if(typeof m[_.handlerArg]!="function")throw new TypeError(`${o}.${a} requires a handler function`);const y=d[a];if(y)return y(...m);if(d.__settled){const v={dead:!1},P={args:[...m],syncState:v};return d.__settled().catch(C=>k(P,_.handlerArg,C)),()=>{v.dead=!0}}let E=null;const S={dead:!1};return u.queue.push({method:a,args:m,resolve:v=>{E=typeof v=="function"?v:null,S.dead&&E?.()},reject:()=>{},syncState:S}),()=>{S.dead=!0,E?.()}}:(...m)=>{const y=d[a]??d.__settled;return y?y(...m):new Promise((E,S)=>{u.queue.push({method:a,args:m,resolve:E,reject:S})})}},set:()=>!1});q(t,o,h)};for(const o of Object.keys(R)){if(t[o]!==void 0){q(t,o,t[o]);continue}n(o)}let l=null,i=null,s=0;const f=o=>{o.source!==parent||!G(o.origin)||ne(o.data)&&(l=o.data.__frame_init,j=o.origin,removeEventListener("message",f),clearTimeout(s),i?.())};addEventListener("message",f),parent.postMessage({__frame_connect:!0},"*");const c=new Promise(o=>{i=o,s=setTimeout(()=>{removeEventListener("message",f),o()},_e)}),g=document.readyState==="loading"?new Promise(o=>document.addEventListener("DOMContentLoaded",()=>o(),{once:!0})):Promise.resolve();g.then(()=>{try{e?.restore()}catch{}});const p=o=>{if(!(o.source!==parent||!G(o.origin))&&W(o.data)){removeEventListener("message",p);try{e?.promoted()}catch{}}};addEventListener("message",p),c.then(async()=>{if(!l||!j){for(const r of M.keys())N(r,{code:"not_granted",message:"frame initialization did not arrive - capability unavailable"});return}X(l.theme);const o=j;let u=!1,d=!1;addEventListener("message",r=>{if(r.source!==parent||r.origin!==o)return;re(r.data)&&X(r.data.__frame_theme.theme);const w=r.data?.__fc_mode;w&&typeof w=="object"&&!u&&z&&T.test(z)&&(u=!0,h(z).then(H=>H.install?.(o,w.on===!0)).catch(()=>{}));const O=r.data?.__ft_cmd;O&&typeof O=="object"&&!d&&$&&T.test($)&&(d=!0,h($).then(H=>H.install?.(o,O)).catch(()=>{}))});const h=r=>ee(()=>import("/_runtime/"+r),void 0),b=Object.keys(l.capabilities??{});for(const r of b)Object.hasOwn(R,r)||be.test(r)&&t[r]===void 0&&(n(r),N(r,{code:"capability_disabled",message:"capability not in this runtime generation"}));const a=b.filter(r=>Object.hasOwn(R,r)).map(r=>[r,R[r]]).filter(r=>typeof r[1]=="string"&&T.test(r[1])),[_,...m]=await Promise.allSettled([U&&T.test(U)?h(U):Promise.resolve({}),...a.map(([,r])=>h(r))]),y=j;V=ge(l,_.status==="fulfilled"&&_.value?.TRANSFORMS||{},{shellOrigin:y,mount:Q},r=>parent.postMessage({__frame_cap_telemetry:r},y));const E=r=>parent.postMessage({__frame_cap_telemetry:{kind:"cap-load-error",cap:r}},y),S=V;m.forEach((r,w)=>{const O=a[w][0];if(r.status!=="fulfilled"){E(O);return}try{r.value?.install?.(S)}catch{E(O)}});for(const[r,w]of M)if(!(w.queue.length===0&&Object.keys(w.impl).length>0)){if(b.includes(r)){N(r,{code:"capability_disabled",message:"capability not available in this session"});continue}N(r,{code:"not_granted",message:"capability not available in this session"})}await g,parent.postMessage({__frame_ready:!0},j);let v=-1,P=0;const C=()=>{P=0;const r=Math.max(document.documentElement.scrollHeight,document.body?document.body.scrollHeight:0);r!==v&&(v=r,parent.postMessage({__frame_size:!0,h:r},y))},L=()=>{P||(P=setTimeout(C,200))},Z=new ResizeObserver(L);Z.observe(document.documentElement),document.body&&Z.observe(document.body),document.addEventListener("load",L,!0),document.fonts?.ready.then(L,()=>{}),addEventListener("beforeprint",()=>{v=-1,C()}),L(),addEventListener("message",r=>{if(!(r.source!==parent||r.origin!==y)&&W(r.data)){try{e?.promoted()}catch{}v=-1,L()}})})}})();</script><!-- /frame-runtime --><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1"><style>:root{color-scheme:light}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}</style></head><body>
+<title>Season Planner — the step-by-step flow (proposal)</title>
+<style>
+  :root {
+    --bg: #F7F6F3; --card: #FFFFFF; --ink: #1C2321; --muted: #5C6660;
+    --line: #E5E4DF; --line-soft: #EFEEE9;
+    --accent: #1F7A4D; --accent-ink: #145736; --accent-soft: #E8F3ED; --accent-border: #BFDECD;
+    --gold: #B45309; --gold-soft: #FCF3E3; --gold-border: #F0D9AE;
+    --hoop: #B3261E; --hoop-soft: #FBEAE8; --hoop-border: #F0C6C2;
+    --chip: #EEF0EC; --chip-ink: #3D4540;
+    --shadow: 0 1px 2px rgba(28,35,33,.05), 0 8px 24px rgba(28,35,33,.06);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #121614; --card: #1B211E; --ink: #E8ECE9; --muted: #9AA69F;
+      --line: #2A322E; --line-soft: #232A26;
+      --accent: #4CC38A; --accent-ink: #7FD9AC; --accent-soft: #1D2F26; --accent-border: #2E4A3B;
+      --gold: #E5A54E; --gold-soft: #2E2517; --gold-border: #4A3B22;
+      --hoop: #E5786F; --hoop-soft: #2F1D1B; --hoop-border: #4A2C29;
+      --chip: #242B27; --chip-ink: #C4CCC7;
+      --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.25);
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #121614; --card: #1B211E; --ink: #E8ECE9; --muted: #9AA69F;
+    --line: #2A322E; --line-soft: #232A26;
+    --accent: #4CC38A; --accent-ink: #7FD9AC; --accent-soft: #1D2F26; --accent-border: #2E4A3B;
+    --gold: #E5A54E; --gold-soft: #2E2517; --gold-border: #4A3B22;
+    --hoop: #E5786F; --hoop-soft: #2F1D1B; --hoop-border: #4A2C29;
+    --chip: #242B27; --chip-ink: #C4CCC7;
+    --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.25);
+  }
+  :root[data-theme="light"] {
+    --bg: #F7F6F3; --card: #FFFFFF; --ink: #1C2321; --muted: #5C6660;
+    --line: #E5E4DF; --line-soft: #EFEEE9;
+    --accent: #1F7A4D; --accent-ink: #145736; --accent-soft: #E8F3ED; --accent-border: #BFDECD;
+    --gold: #B45309; --gold-soft: #FCF3E3; --gold-border: #F0D9AE;
+    --hoop: #B3261E; --hoop-soft: #FBEAE8; --hoop-border: #F0C6C2;
+    --chip: #EEF0EC; --chip-ink: #3D4540;
+    --shadow: 0 1px 2px rgba(28,35,33,.05), 0 8px 24px rgba(28,35,33,.06);
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font: 16px/1.55 -apple-system, "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 1060px; margin: 0 auto; padding: 48px 24px 96px; }
+
+  /* ---------- intro ---------- */
+  .eyebrow { font-size: 12px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--accent); }
+  h1 { font-size: clamp(28px, 4vw, 40px); line-height: 1.12; letter-spacing: -.02em; margin: 10px 0 14px; text-wrap: balance; }
+  .lede { max-width: 62ch; color: var(--muted); font-size: 17px; margin: 0; }
+  .principles { display: flex; flex-wrap: wrap; gap: 10px; margin: 26px 0 0; padding: 0; list-style: none; }
+  .principles li {
+    background: var(--card); border: 1px solid var(--line); border-radius: 999px;
+    padding: 7px 15px; font-size: 13.5px; font-weight: 600; color: var(--chip-ink);
+  }
+  .principles b { color: var(--accent-ink); font-weight: 700; }
+
+  /* ---------- stepper rail ---------- */
+  .rail {
+    display: flex; align-items: center; gap: 0; margin: 40px 0 8px; padding: 18px 22px;
+    background: var(--card); border: 1px solid var(--line); border-radius: 18px; box-shadow: var(--shadow);
+    overflow-x: auto;
+  }
+  .rail .node { display: flex; align-items: center; gap: 10px; white-space: nowrap; }
+  .rail .dot {
+    width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center;
+    font-size: 13px; font-weight: 700; background: var(--accent); color: #fff; flex: none;
+  }
+  .rail .dot.off { background: var(--chip); color: var(--muted); }
+  .rail .lbl { font-size: 14px; font-weight: 650; }
+  .rail .lbl small { display: block; font-size: 11.5px; font-weight: 500; color: var(--muted); }
+  .rail .link { flex: 1 0 28px; height: 2px; background: var(--line); margin: 0 12px; min-width: 20px; }
+  .railnote { font-size: 13px; color: var(--muted); margin: 10px 4px 0; }
+
+  /* ---------- step sections ---------- */
+  .step { display: grid; grid-template-columns: 300px 1fr; gap: 28px; margin-top: 64px; align-items: start; }
+  @media (max-width: 860px) { .step { grid-template-columns: 1fr; } }
+  .note { position: sticky; top: 24px; }
+  .stepno {
+    display: inline-flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 700;
+    letter-spacing: .12em; text-transform: uppercase; color: var(--accent);
+  }
+  .stepno::before {
+    content: attr(data-n); width: 24px; height: 24px; border-radius: 50%;
+    background: var(--accent); color: #fff; display: grid; place-items: center;
+    font-size: 13px; letter-spacing: 0;
+  }
+  .note h2 { font-size: 22px; letter-spacing: -.015em; line-height: 1.2; margin: 10px 0 8px; text-wrap: balance; }
+  .note p { font-size: 14.5px; color: var(--muted); margin: 0 0 10px; }
+  .mind {
+    margin-top: 14px; padding: 12px 14px; border-left: 3px solid var(--accent);
+    background: var(--accent-soft); border-radius: 0 10px 10px 0; font-size: 13.5px; color: var(--ink);
+  }
+  .mind b { color: var(--accent-ink); }
+
+  /* ---------- mock screen chrome ---------- */
+  .screen {
+    background: var(--card); border: 1px solid var(--line); border-radius: 20px;
+    box-shadow: var(--shadow); overflow: hidden;
+  }
+  .screen-head {
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    padding: 14px 20px; border-bottom: 1px solid var(--line-soft);
+  }
+  .screen-head .t { font-size: 15px; font-weight: 700; letter-spacing: -.01em; }
+  .screen-head .t small { display: block; font-weight: 500; font-size: 12px; color: var(--muted); }
+  .screen-body { padding: 20px; }
+  .btn {
+    display: inline-block; border-radius: 10px; padding: 8px 16px; font-size: 13.5px; font-weight: 650;
+    background: var(--accent); color: #fff; border: 1px solid transparent; cursor: pointer;
+  }
+  .btn.ghost { background: transparent; color: var(--ink); border-color: var(--line); }
+  .btn.sm { padding: 5px 11px; font-size: 12.5px; border-radius: 8px; }
+  .pill {
+    display: inline-block; border-radius: 999px; padding: 3px 10px; font-size: 11.5px; font-weight: 700;
+  }
+  .pill.ok { background: var(--accent-soft); color: var(--accent-ink); border: 1px solid var(--accent-border); }
+  .pill.warn { background: var(--gold-soft); color: var(--gold); border: 1px solid var(--gold-border); }
+  .pill.bad { background: var(--hoop-soft); color: var(--hoop); border: 1px solid var(--hoop-border); }
+  .pill.mut { background: var(--chip); color: var(--muted); border: 1px solid var(--line); }
+
+  /* ---------- step 1: teams grid ---------- */
+  table { border-collapse: collapse; width: 100%; font-variant-numeric: tabular-nums; }
+  .teams th, .teams td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--line-soft); font-size: 14px; }
+  .teams th { font-size: 11.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); font-weight: 700; }
+  .count { display: inline-flex; align-items: center; gap: 0; border: 1px solid var(--line); border-radius: 9px; overflow: hidden; }
+  .count b { min-width: 44px; text-align: center; font-size: 14px; }
+  .count span { padding: 4px 10px; background: var(--chip); color: var(--muted); font-weight: 700; cursor: pointer; user-select: none; }
+  .hintrow { font-size: 12.5px; color: var(--muted); }
+  .sumline {
+    margin-top: 14px; padding: 12px 16px; border-radius: 12px; background: var(--accent-soft);
+    border: 1px solid var(--accent-border); font-size: 14px; color: var(--ink);
+  }
+  .sumline b { color: var(--accent-ink); }
+
+  /* ---------- step 2: venue card ---------- */
+  .venue { border: 1px solid var(--line); border-radius: 16px; padding: 16px 18px; margin-bottom: 14px; }
+  .venue-top { display: flex; flex-wrap: wrap; align-items: baseline; gap: 10px 14px; }
+  .venue-top .name { font-size: 15.5px; font-weight: 700; }
+  .facts { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+  .fact {
+    font-size: 12.5px; background: var(--chip); color: var(--chip-ink); border-radius: 8px; padding: 4px 10px;
+    border: 1px solid var(--line-soft);
+  }
+  .fact b { font-weight: 700; color: var(--ink); }
+  .wk { margin-top: 12px; overflow-x: auto; }
+  .wk table td, .wk table th { padding: 4px 4px; }
+  .wk th { font-size: 10.5px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); font-weight: 700; text-align: center; }
+  .cell {
+    width: 44px; height: 30px; border-radius: 7px; display: grid; place-items: center;
+    font-size: 10.5px; font-weight: 700; cursor: pointer;
+  }
+  .cell.on { background: var(--accent-soft); color: var(--accent-ink); border: 1px solid var(--accent-border); }
+  .cell.off { background: var(--chip); color: var(--muted); border: 1px dashed var(--line); }
+  .cell.ext { background: var(--gold-soft); color: var(--gold); border: 1px solid var(--gold-border); }
+  .legend { display: flex; flex-wrap: wrap; gap: 14px; margin-top: 10px; font-size: 12px; color: var(--muted); }
+  .legend i { display: inline-block; width: 12px; height: 12px; border-radius: 4px; margin-right: 6px; vertical-align: -1px; }
+
+  /* ---------- step 3: calendar board ---------- */
+  .board { display: grid; grid-template-columns: repeat(5, minmax(150px, 1fr)); gap: 10px; min-width: 780px; }
+  .boardwrap { overflow-x: auto; }
+  .month { background: var(--bg); border: 1px solid var(--line-soft); border-radius: 14px; padding: 10px; }
+  .month h4 { margin: 2px 4px 8px; font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+  .wknd { background: var(--card); border: 1px solid var(--line); border-radius: 11px; padding: 9px 10px; margin-bottom: 8px; }
+  .wknd .d { font-size: 12.5px; font-weight: 700; }
+  .wknd .chips { display: flex; flex-wrap: wrap; gap: 4px; margin: 6px 0; }
+  .gchip {
+    font-size: 11px; font-weight: 700; border-radius: 6px; padding: 2px 7px;
+    background: var(--accent-soft); color: var(--accent-ink); border: 1px solid var(--accent-border); cursor: grab;
+  }
+  .gchip.g2 { background: var(--chip); color: var(--chip-ink); border-color: var(--line); }
+  .meter { font-size: 11px; color: var(--muted); }
+  .meter b { color: var(--ink); font-weight: 700; }
+  .wknd.hot { border-color: var(--gold-border); background: var(--gold-soft); }
+  .wknd.hot .meter b { color: var(--gold); }
+  .wknd.na { border-style: dashed; opacity: .75; }
+  .wknd.na .d { color: var(--muted); }
+
+  /* ---------- step 4: publish card ---------- */
+  .pub { display: grid; grid-template-columns: 1.3fr 1fr; gap: 18px; }
+  @media (max-width: 720px) { .pub { grid-template-columns: 1fr; } }
+  .poster {
+    border-radius: 14px; padding: 18px; color: #F2EFE9;
+    background: linear-gradient(160deg, #173A2A 0%, #0E2018 100%);
+    border: 1px solid #2E4A3B;
+  }
+  .poster .brand { font-size: 11px; letter-spacing: .18em; text-transform: uppercase; color: #8FCEAD; font-weight: 700; }
+  .poster h3 { margin: 6px 0 12px; font-size: 20px; letter-spacing: -.01em; color: #fff; }
+  .poster .grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; }
+  .poster .m { background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.12); border-radius: 8px; padding: 7px 8px; }
+  .poster .m h5 { margin: 0 0 5px; font-size: 10px; letter-spacing: .1em; text-transform: uppercase; color: #8FCEAD; }
+  .poster .m div { font-size: 10.5px; line-height: 1.5; color: #DCE6DF; }
+  .poster .cta { margin-top: 12px; font-size: 12px; color: #8FCEAD; font-weight: 650; }
+  .publist { display: flex; flex-direction: column; gap: 10px; }
+  .pubrow { border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; font-size: 13.5px; display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+  .pubrow small { display: block; color: var(--muted); font-size: 12px; }
+
+  /* ---------- step 5: actuals + schedule ---------- */
+  .bars { display: flex; flex-direction: column; gap: 9px; margin-bottom: 16px; }
+  .bar { display: grid; grid-template-columns: 76px 1fr 130px; gap: 12px; align-items: center; font-size: 13px; }
+  .bar .g { font-weight: 700; }
+  .track { height: 10px; border-radius: 999px; background: var(--chip); position: relative; overflow: hidden; }
+  .fill { position: absolute; inset: 0 auto 0 0; border-radius: 999px; background: var(--accent); }
+  .fill.over { background: var(--gold); }
+  .bar .n { color: var(--muted); text-align: right; font-variant-numeric: tabular-nums; }
+  .alert {
+    display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between;
+    border: 1px solid var(--gold-border); background: var(--gold-soft); border-radius: 12px;
+    padding: 12px 14px; font-size: 13.5px; margin-bottom: 16px;
+  }
+  .alert b { color: var(--gold); }
+  .schedrow { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+  .schednote { font-size: 12.5px; color: var(--muted); margin-top: 10px; }
+
+  .close { margin-top: 72px; border-top: 1px solid var(--line); padding-top: 22px; max-width: 68ch; }
+  .close p { color: var(--muted); font-size: 14.5px; }
+  @media (prefers-reduced-motion: no-preference) {
+    .step { scroll-margin-top: 20px; }
+  }
+</style>
+
+<div class="wrap">
+  <p class="eyebrow">Proposal · operator experience</p>
+  <h1>Plan your season in five steps</h1>
+  <p class="lede">One guided flow that mirrors how a league operator already works: confirm what we already know, answer the one thing we can't know, get the calendar, publish, then schedule when registration locks. Every screen below uses NPH's real world. Nothing is built yet; this is the thing to react to.</p>
+  <ul class="principles">
+    <li>Ask only what we <b>can't know</b></li>
+    <li>Everything else is <b>pre-filled</b> — history decides, they confirm</li>
+    <li>Venue truth lives in <b>one place</b></li>
+    <li>The plan is <b>remembered</b> — it drives every step after</li>
+    <li>Plan first, <b>schedule follows</b></li>
+  </ul>
+
+  <div class="rail" aria-label="The five steps">
+    <span class="node"><span class="dot">1</span><span class="lbl">Teams<small>who's coming</small></span></span>
+    <span class="link"></span>
+    <span class="node"><span class="dot">2</span><span class="lbl">Gyms &amp; weekends<small>where and when</small></span></span>
+    <span class="link"></span>
+    <span class="node"><span class="dot">3</span><span class="lbl">Your calendar<small>we compute it</small></span></span>
+    <span class="link"></span>
+    <span class="node"><span class="dot off">4</span><span class="lbl">Publish<small>post the card</small></span></span>
+    <span class="link"></span>
+    <span class="node"><span class="dot off">5</span><span class="lbl">Schedule<small>when you're ready</small></span></span>
+  </div>
+  <p class="railnote">The rail is always visible. Finished steps get a check and stay clickable — going back to edit never loses work downstream; it recomputes it.</p>
+
+  <!-- STEP 1 -->
+  <section class="step">
+    <div class="note">
+      <span class="stepno" data-n="1">Teams</span>
+      <h2>“How many teams do you expect?”</h2>
+      <p>One grid, one number per grade. Prefilled from last season where history exists. No dates, no venues, no jargon — this is the estimate they already carry in their head in August.</p>
+      <div class="mind"><b>The mind-read:</b> the flow starts where <i>they</i> start every summer — a guess about teams — not where software usually starts (forms about “divisions” and “sessions”).</div>
+    </div>
+    <div class="screen">
+      <div class="screen-head">
+        <span class="t">Plan your season <small>Showcase League · 2026–27</small></span>
+        <span class="pill mut">Step 1 of 5</span>
+      </div>
+      <div class="screen-body">
+        <table class="teams">
+          <tr><th>Grade</th><th>Expected teams</th><th></th></tr>
+          <tr><td><b>Grade 7</b></td><td><span class="count"><span>−</span><b>14</b><span>+</span></span></td><td class="hintrow">13 last season</td></tr>
+          <tr><td><b>Grade 8</b></td><td><span class="count"><span>−</span><b>12</b><span>+</span></span></td><td class="hintrow">10 last season</td></tr>
+          <tr><td><b>Grade 9</b></td><td><span class="count"><span>−</span><b>27</b><span>+</span></span></td><td class="hintrow">27 last season</td></tr>
+          <tr><td><b>Grade 10</b></td><td><span class="count"><span>−</span><b>44</b><span>+</span></span></td><td class="hintrow">42 last season · growing</td></tr>
+          <tr><td><b>Grade 11</b></td><td><span class="count"><span>−</span><b>25</b><span>+</span></span></td><td class="hintrow">24 last season</td></tr>
+          <tr><td><b>Grade 12</b></td><td><span class="count"><span>−</span><b>27</b><span>+</span></span></td><td class="hintrow">26 last season</td></tr>
+          <tr><td><b>Jr Girls</b></td><td><span class="count"><span>−</span><b>9</b><span>+</span></span></td><td class="hintrow">8 last season</td></tr>
+        </table>
+        <div class="sumline"><b>158 teams · about 1,020 games</b> at 13 games each. Next we'll find the gym time to hold them.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- STEP 2 -->
+  <section class="step">
+    <div class="note">
+      <span class="stepno" data-n="2">Gyms &amp; weekends</span>
+      <h2>“Here's your gym time — confirm it.”</h2>
+      <p>Not a form. The gyms they've used are already on the card — courts, hours, and the season's weekends all selectable. Every weekend starts available: <b>we never mark a gym unavailable for them</b> — they untick what they don't have, because they're the ones who know. One card per gym is the <i>whole</i> venue model; a one-weekend exception is edited on the cell itself, never in a settings page.</p>
+      <div class="mind"><b>The mind-read:</b> they open this step and their gyms are already there. And if a facility shares its real calendar with us one day (Six Park's owners could), it flows straight onto this grid — until then, nothing is assumed.</div>
+    </div>
+    <div class="screen">
+      <div class="screen-head">
+        <span class="t">Gym time <small>pre-filled from last season — tap only what changed</small></span>
+        <span class="pill mut">Step 2 of 5</span>
+      </div>
+      <div class="screen-body">
+        <div class="venue">
+          <div class="venue-top"><span class="name">Six Park East · Oshawa</span><span class="pill ok">Home gym</span><span class="pill mut">pre-filled from last season</span></div>
+          <div class="facts">
+            <span class="fact"><b>6</b> courts</span>
+            <span class="fact">Sat–Sun <b>8:00 – 20:00</b></span>
+            <span class="fact">Edit hours</span>
+          </div>
+          <div class="wk">
+            <table>
+              <tr><th>Oct 24</th><th>Oct 31</th><th>Nov 14</th><th>Nov 21</th><th>Nov 28</th><th>Dec 12</th><th>Dec 19</th><th>Jan 9</th><th>Jan 16</th><th>Jan 30</th><th>Feb 6</th><th>Feb 13</th><th>Feb 20</th></tr>
+              <tr>
+                <td><span class="cell on">yes</span></td>
+                <td><span class="cell on">yes</span></td>
+                <td><span class="cell on">yes</span></td>
+                <td><span class="cell on">yes</span></td>
+                <td><span class="cell on">yes</span></td>
+                <td><span class="cell on">yes</span></td>
+                <td><span class="cell on">yes</span></td>
+                <td><span class="cell on">yes</span></td>
+                <td><span class="cell on">yes</span></td>
+                <td><span class="cell on">yes</span></td>
+                <td><span class="cell on">yes</span></td>
+                <td><span class="cell on">yes</span></td>
+                <td><span class="cell ext">to 21:00</span></td>
+              </tr>
+            </table>
+          </div>
+        </div>
+        <div class="venue">
+          <div class="venue-top"><span class="name">The Playground · Burlington</span></div>
+          <div class="facts">
+            <span class="fact"><b>3</b> courts</span>
+            <span class="fact">Sat–Sun <b>8:00 – 18:00</b></span>
+            <span class="fact">Edit hours</span>
+          </div>
+          <div class="wk">
+            <table>
+              <tr><th>Oct 24</th><th>Oct 31</th><th>Nov 14</th><th>Nov 21</th><th>Nov 28</th><th>Dec 12</th><th>Dec 19</th><th>Jan 9</th><th>Jan 16</th><th>Jan 30</th><th>Feb 6</th><th>Feb 13</th><th>Feb 20</th></tr>
+              <tr>
+                <td><span class="cell on">yes</span></td><td><span class="cell on">yes</span></td><td><span class="cell on">yes</span></td><td><span class="cell on">yes</span></td><td><span class="cell on">yes</span></td><td><span class="cell on">yes</span></td><td><span class="cell on">yes</span></td><td><span class="cell on">yes</span></td><td><span class="cell on">yes</span></td><td><span class="cell on">yes</span></td><td><span class="cell on">yes</span></td><td><span class="cell on">yes</span></td><td><span class="cell on">yes</span></td>
+              </tr>
+            </table>
+          </div>
+        </div>
+        <div class="legend">
+          <span><i style="background:var(--accent-soft);border:1px solid var(--accent-border)"></i>available</span>
+          <span><i style="background:var(--chip);border:1px dashed var(--line)"></i>released (they tapped it off — never pre-marked by us)</span>
+          <span><i style="background:var(--gold-soft);border:1px solid var(--gold-border)"></i>custom hours that weekend</span>
+        </div>
+        <p class="schednote">+ Add a gym · Haber Rec (2 courts) collapsed below · The Playground is fully NPH-managed, so it always starts fully open</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- STEP 3 -->
+  <section class="step">
+    <div class="note">
+      <span class="stepno" data-n="3">Your calendar</span>
+      <h2>We hand them their own graphic</h2>
+      <p>No preference questions. The grouping rules are baked in because they're league truths, not choices: oldest grades together, youngest together, the middle split by size, the two biggest grades kept apart — and each grade leaning to the gym it has historically played in. The system proposes; the operator adjusts by dragging.</p>
+      <p>Grade chips drag between weekends; the court math recomputes live. Amber means tight, dashed means the gym isn't yours that weekend. A quiet “Adjust grouping rules” link exists for the operator who cares — it is never a step.</p>
+      <div class="mind"><b>The mind-read:</b> this screen <i>is</i> the calendar NPH drew by hand and posted — same five columns, same grade blocks, same gyms per grade. They'll recognize their own decisions, computed in a second.</div>
+    </div>
+    <div class="screen">
+      <div class="screen-head">
+        <span class="t">Proposed calendar <small>drag a grade to move it · math updates live</small></span>
+        <span class="pill ok">All grades fit</span>
+      </div>
+      <div class="screen-body boardwrap">
+        <div class="board">
+          <div class="month"><h4>Session 1 · Oct</h4>
+            <div class="wknd"><span class="d">Oct 24–25</span><div class="chips"><span class="gchip">Gr7</span><span class="gchip">Gr8</span><span class="gchip">Gr9</span><span class="gchip">Gr11</span><span class="gchip">JrG</span></div><span class="meter">courts <b>8 / 9</b> · both gyms</span></div>
+            <div class="wknd"><span class="d">Oct 31–Nov 1</span><div class="chips"><span class="gchip">Gr10</span><span class="gchip">Gr12</span></div><span class="meter">courts <b>6 / 9</b></span></div>
+          </div>
+          <div class="month"><h4>Session 2 · Nov</h4>
+            <div class="wknd"><span class="d">Nov 14–15</span><div class="chips"><span class="gchip">Gr7</span></div><span class="meter">Playground · <b>2 / 3</b></span></div>
+            <div class="wknd hot"><span class="d">Nov 21–22</span><div class="chips"><span class="gchip">Gr8</span><span class="gchip">Gr9</span><span class="gchip">Gr10</span><span class="gchip">JrG</span></div><span class="meter">Six Park <b>6 / 6</b> · full house</span></div>
+            <div class="wknd"><span class="d">Nov 28–29</span><div class="chips"><span class="gchip">Gr11</span><span class="gchip">Gr12</span></div><span class="meter">courts <b>5 / 9</b></span></div>
+          </div>
+          <div class="month"><h4>Session 3 · Dec</h4>
+            <div class="wknd"><span class="d">Dec 12–13</span><div class="chips"><span class="gchip">Gr8</span><span class="gchip">Gr11</span><span class="gchip">Gr12</span></div><span class="meter">courts <b>6 / 9</b></span></div>
+            <div class="wknd"><span class="d">Dec 19–20</span><div class="chips"><span class="gchip">Gr7</span><span class="gchip">Gr9</span><span class="gchip">Gr10</span></div><span class="meter">courts <b>8 / 9</b></span></div>
+          </div>
+          <div class="month"><h4>Session 4 · Jan</h4>
+            <div class="wknd"><span class="d">Jan 9–10</span><div class="chips"><span class="gchip">Gr7</span><span class="gchip">Gr9</span><span class="gchip">JrG</span></div><span class="meter">courts <b>5 / 9</b></span></div>
+            <div class="wknd"><span class="d">Jan 16–17</span><div class="chips"><span class="gchip">Gr10</span></div><span class="meter">Six Park · <b>4 / 6</b></span></div>
+            <div class="wknd"><span class="d">Jan 30–31</span><div class="chips"><span class="gchip">Gr8</span><span class="gchip">Gr11</span><span class="gchip">Gr12</span><span class="gchip">JrG</span></div><span class="meter">courts <b>7 / 9</b></span></div>
+          </div>
+          <div class="month"><h4>Session 5 · Feb</h4>
+            <div class="wknd"><span class="d">Feb 6–7</span><div class="chips"><span class="gchip">Gr9</span><span class="gchip">JrG</span></div><span class="meter">Six Park · <b>4 / 6</b></span></div>
+            <div class="wknd"><span class="d">Feb 13–14</span><div class="chips"><span class="gchip">Gr7</span><span class="gchip">Gr8</span><span class="gchip">Gr10</span></div><span class="meter">courts <b>7 / 9</b></span></div>
+            <div class="wknd"><span class="d">Feb 20–21</span><div class="chips"><span class="gchip">Gr11</span><span class="gchip">Gr12</span></div><span class="meter">courts <b>5 / 9</b></span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- STEP 4 -->
+  <section class="step">
+    <div class="note">
+      <span class="stepno" data-n="4">Publish</span>
+      <h2>The calendar lives here — and travels anywhere</h2>
+      <p>Publishing puts the calendar on the league's own page, where clubs and families already look — on the platform, it's a living view, not a poster. The downloadable graphic exists for everywhere else: Instagram, print, email.</p>
+      <p>Publishing also freezes the plan as the season's <b>baseline</b>: persisted, manually editable later, and quietly carried forward as the input to registration caps, the plan-vs-actuals watch, and scheduling. For a per-session league, this same step shows prices and entry rules; the flow doesn't change shape. If teams don't exist yet, the flow simply rests here — a published calendar, waiting for sign-ups.</p>
+      <div class="mind"><b>The mind-read:</b> the graphic they hand-built in a design tool last year is now a byproduct of planning — and unlike their old poster, this one is still connected to everything that happens next.</div>
+    </div>
+    <div class="screen">
+      <div class="screen-head">
+        <span class="t">Publish your season <small>card + live page + registration</small></span>
+        <span class="pill mut">Step 4 of 5</span>
+      </div>
+      <div class="screen-body">
+        <div class="pub">
+          <div class="poster">
+            <div class="brand">Showcase League · 2026–27</div>
+            <h3>Season calendar</h3>
+            <div class="grid">
+              <div class="m"><h5>Oct</h5><div>24–25 · Gr7 8 9 11 JrG<br>31–1 · Gr10 12</div></div>
+              <div class="m"><h5>Nov</h5><div>14–15 · Gr7<br>21–22 · Gr8 9 10 JrG<br>28–29 · Gr11 12</div></div>
+              <div class="m"><h5>Dec</h5><div>12–13 · Gr8 11 12<br>19–20 · Gr7 9 10</div></div>
+              <div class="m"><h5>Jan</h5><div>9–10 · Gr7 9 JrG<br>16–17 · Gr10<br>30–31 · Gr8 11 12 JrG</div></div>
+              <div class="m"><h5>Feb</h5><div>6–7 · Gr9 JrG<br>13–14 · Gr7 8 10<br>20–21 · Gr11 12</div></div>
+            </div>
+            <div class="cta">Register at ysportshub.com/showcase</div>
+          </div>
+          <div class="publist">
+            <div class="pubrow"><span>League page<small>the calendar appears where families already look</small></span><span class="btn sm ghost">Preview</span></div>
+            <div class="pubrow"><span>Download card<small>PNG for Instagram, print, email</small></span><span class="btn sm ghost">Download</span></div>
+            <div class="pubrow"><span>Publish &amp; open registration<small>saves the plan as this season's baseline</small></span><span class="btn sm">Publish</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- STEP 5 -->
+  <section class="step">
+    <div class="note">
+      <span class="stepno" data-n="5">Schedule</span>
+      <h2>Scheduling is the follow-through, not a second product</h2>
+      <p>While registration runs, this step is a watch-screen: actual sign-ups against the step-1 estimate, per grade. The moment actuals break a weekend, it says so — in October, while a court can still be booked.</p>
+      <p>When entries lock (or earlier, if they want), one button generates the schedule from everything already entered. Zero re-entry: gyms, hours, weekends, groupings all flow from steps 2–3.</p>
+      <div class="mind"><b>The mind-read:</b> nobody asks them for venue hours a second time. The plan <i>is</i> the scheduler's input — which is exactly how they think about it.</div>
+    </div>
+    <div class="screen">
+      <div class="screen-head">
+        <span class="t">Registration vs plan <small>updating live as teams sign up</small></span>
+        <span class="pill warn">1 weekend needs attention</span>
+      </div>
+      <div class="screen-body">
+        <div class="bars">
+          <div class="bar"><span class="g">Gr7</span><span class="track"><span class="fill" style="width:64%"></span></span><span class="n">9 of 14 expected</span></div>
+          <div class="bar"><span class="g">Gr8</span><span class="track"><span class="fill" style="width:75%"></span></span><span class="n">9 of 12 expected</span></div>
+          <div class="bar"><span class="g">Gr9</span><span class="track"><span class="fill over" style="width:100%"></span></span><span class="n"><b>30</b> of 27 expected</span></div>
+          <div class="bar"><span class="g">Gr10</span><span class="track"><span class="fill" style="width:86%"></span></span><span class="n">38 of 44 expected</span></div>
+          <div class="bar"><span class="g">Gr11</span><span class="track"><span class="fill" style="width:80%"></span></span><span class="n">20 of 25 expected</span></div>
+          <div class="bar"><span class="g">Gr12</span><span class="track"><span class="fill" style="width:78%"></span></span><span class="n">21 of 27 expected</span></div>
+        </div>
+        <div class="alert">
+          <span><b>Grade 9 is 3 teams over plan.</b> Nov 21–22 now needs 7 courts; Six Park has 6. Options: extend Saturday to 21:00, or move Jr Girls to Nov 28–29.</span>
+          <span class="btn sm ghost">See options</span>
+        </div>
+        <div class="schedrow">
+          <span class="btn">Generate schedule</span>
+          <span class="btn ghost">Schedule now with current teams</span>
+          <span class="pill mut">uses your plan — nothing to re-enter</span>
+        </div>
+        <p class="schednote">After generating: preview, fairness report, and publish — the existing scheduling screens, reached from here instead of found in a tab.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- THE OTHER LEAGUES -->
+  <section class="step">
+    <div class="note">
+      <span class="stepno" data-n="+">The other leagues</span>
+      <h2>The whole picture, without a bigger wizard</h2>
+      <p>We never ask “do you want to plan your other leagues too?” — that's a question with an obvious answer and a scary commitment. Instead: the moment one league publishes, the next one is a single tap away, and it starts with everything already known — same gyms, same grid, minus the weekends the first league just consumed.</p>
+      <p>Each league keeps its own tiny five-step plan. The org calendar is a <i>view</i>, not a flow: every league's weekends layered on one board. Big leagues take buildings; small ones fill leftover courts — the way NPH already runs D1 inside Six Park on Showcase weekends.</p>
+      <div class="mind"><b>The mind-read:</b> they plan Showcase first and the rest follows — which is exactly their real order of operations. The software never makes them choose it; it just meets them there.</div>
+    </div>
+    <div class="screen">
+      <div class="screen-head">
+        <span class="t">Organization calendar <small>every league, one board</small></span>
+        <span class="pill ok">Showcase published</span>
+      </div>
+      <div class="screen-body">
+        <div class="alert" style="border-color:var(--accent-border);background:var(--accent-soft)">
+          <span><b style="color:var(--accent-ink)">Showcase League is published.</b> Plan D1 next — your gyms already show what's left.</span>
+          <span class="btn sm">Plan D1</span>
+        </div>
+        <div class="boardwrap">
+          <div class="board" style="min-width:680px;grid-template-columns:repeat(4,minmax(150px,1fr))">
+            <div class="month"><h4>November</h4>
+              <div class="wknd"><span class="d">Nov 14–15</span><div class="chips"><span class="gchip">SL Gr7 · Playground</span><span class="gchip g2">free: Six Park</span></div><span class="meter">room for a <b>D1 weekend</b></span></div>
+              <div class="wknd"><span class="d">Nov 21–22</span><div class="chips"><span class="gchip">SL ×4 grades</span></div><span class="meter">Six Park <b>6 / 6</b> — full</span></div>
+              <div class="wknd"><span class="d">Nov 28–29</span><div class="chips"><span class="gchip">SL Gr11 12</span><span class="gchip g2">free: 4 courts</span></div><span class="meter">room for a <b>D1 weekend</b></span></div>
+            </div>
+            <div class="month"><h4>December</h4>
+              <div class="wknd"><span class="d">Dec 12–13</span><div class="chips"><span class="gchip">SL Gr8 11 12</span><span class="gchip g2">free: 3 courts</span></div><span class="meter">room for <b>D1 Scholastic</b></span></div>
+              <div class="wknd"><span class="d">Dec 19–20</span><div class="chips"><span class="gchip">SL Gr7 9 10</span><span class="gchip g2">free: 1 court</span></div><span class="meter">nearly full</span></div>
+            </div>
+            <div class="month"><h4>January</h4>
+              <div class="wknd"><span class="d">Jan 9–10</span><div class="chips"><span class="gchip">SL Gr7 9 JrG</span><span class="gchip g2">free: 3 courts</span></div><span class="meter">D1's historic pick</span></div>
+              <div class="wknd"><span class="d">Jan 30–31</span><div class="chips"><span class="gchip">SL ×4 grades</span></div><span class="meter">Six Park full · Playground <b>1 free</b></span></div>
+            </div>
+            <div class="month"><h4>February</h4>
+              <div class="wknd"><span class="d">Feb 6–7</span><div class="chips"><span class="gchip">SL Gr9 JrG</span><span class="gchip g2">free: 2 courts</span></div><span class="meter">room for <b>D1 girls</b></span></div>
+              <div class="wknd"><span class="d">Feb 20–21</span><div class="chips"><span class="gchip">SL Gr11 12</span><span class="gchip g2">free: 3 courts</span></div><span class="meter">room for a <b>D1 weekend</b></span></div>
+            </div>
+          </div>
+        </div>
+        <p class="schednote">Weekday leagues (NPA-style) barely touch this board — their academy gyms and school nights live on the same venue cards, off the weekend grid.</p>
+      </div>
+    </div>
+  </section>
+
+  <div class="close">
+    <p class="eyebrow" style="color:var(--muted)">Where things live afterward</p>
+    <p>After the wizard, the same five steps become the season's home page — a rail with checkmarks where every step reopens for editing in place. Gym facts stay on the step-2 card and nowhere else; the calendar stays on step 3 and re-renders the card and the league page when the plan changes. The published plan is the season's remembered baseline: registration measures itself against it, scheduling reads from it, and manual edits to it flow downstream. The wizard and the workspace are the same screens, so nothing learned during setup has to be re-found later.</p>
+  </div>
+</div>
+
+</body></html>

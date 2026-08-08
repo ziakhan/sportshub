@@ -5,6 +5,7 @@ import { z } from "zod"
 import { generateSchedule } from "@/lib/scheduler/generate"
 import { runDistributed } from "@/lib/scheduler/distribute"
 import { loadSchedulerInput } from "@/lib/scheduler/load"
+import { solveSeasonV2 } from "@/lib/scheduler-v2"
 
 export const dynamic = "force-dynamic"
 
@@ -68,6 +69,69 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
     const parsed = previewSchema.parse(body ?? {})
     const { sessionUnits, varietyShuffle, fillGapsOnly } = parsed
     const sessionIds = fillGapsOnly ? undefined : parsed.sessionIds
+
+    /* WHOLE-SEASON PREVIEW = SCHEDULER V2 (owner-ordered rebuild,
+       2026-08-08): the plain "preview the season" press runs the same
+       engine the one-button generate commits — preview == commit by
+       construction. The legacy modes below (session-scoped, scenarios,
+       fill-gaps, shuffle) still run v1 until their surfaces retire
+       (legacy-inventory items 9-14). */
+    const legacyMode = !!(
+      parsed.scenario ||
+      sessionUnits ||
+      (sessionIds && sessionIds.length > 0) ||
+      varietyShuffle ||
+      fillGapsOnly
+    )
+    if (!legacyMode) {
+      const solved = await solveSeasonV2(params.id)
+      if (solved.errors.length > 0) {
+        return NextResponse.json({ error: "Cannot preview", errors: solved.errors }, { status: 422 })
+      }
+      const blocks = solved.findings.filter((f) => f.severity === "BLOCK")
+      if (blocks.length > 0 || !solved.proposal) {
+        return NextResponse.json(
+          { error: "Cannot preview", errors: blocks.map((f) => f.message) },
+          { status: 422 }
+        )
+      }
+      const teamIds = [
+        ...new Set(solved.proposal.games.flatMap((g) => [g.homeTeamId, g.awayTeamId])),
+      ]
+      const gameVenueIds = [...new Set(solved.proposal.games.map((g) => g.venueId))]
+      const gameCourtIds = [...new Set(solved.proposal.games.map((g) => g.courtId))]
+      const [teamRows, venueRows, courtRows] = await Promise.all([
+        (prisma as any).team.findMany({
+          where: { id: { in: teamIds } },
+          select: { id: true, name: true },
+        }),
+        (prisma as any).venue.findMany({
+          where: { id: { in: gameVenueIds } },
+          select: { id: true, name: true },
+        }),
+        (prisma as any).court.findMany({
+          where: { id: { in: gameCourtIds } },
+          select: { id: true, name: true },
+        }),
+      ])
+      const teamName = new Map(teamRows.map((t: any) => [t.id, t.name]))
+      const venueName = new Map(venueRows.map((v: any) => [v.id, v.name]))
+      const courtName = new Map(courtRows.map((c: any) => [c.id, c.name]))
+      return NextResponse.json({
+        games: solved.proposal.games.map((g) => ({
+          ...g,
+          homeTeamName: teamName.get(g.homeTeamId) ?? g.homeTeamId,
+          awayTeamName: teamName.get(g.awayTeamId) ?? g.awayTeamId,
+          venue: { name: venueName.get(g.venueId) ?? null },
+          court: { name: courtName.get(g.courtId) ?? null },
+        })),
+        unscheduled: [],
+        warnings: solved.findings.filter((f) => f.severity !== "BLOCK").map((f) => f.message),
+        tradeoffs: [],
+        utilization: undefined,
+        shape: solved.proposal.stats,
+      })
+    }
 
     const { input, errors } = await loadSchedulerInput(params.id)
     if (!input || errors.length > 0) {

@@ -14,8 +14,7 @@ import {
   type PlanVenues,
 } from "@/lib/scheduler/season-plans"
 import type { PlanSettings } from "@/lib/scheduler/plan-documents"
-import { loadSchedulerInput } from "@/lib/scheduler/load"
-import { generateSchedule } from "@/lib/scheduler/generate"
+import { applyProposal, solveSeasonV2 } from "@/lib/scheduler-v2"
 
 export const dynamic = "force-dynamic"
 
@@ -36,10 +35,11 @@ export const dynamic = "force-dynamic"
  * 2. Findings and no confirm yet → 200 {needsConfirm: true, findings},
  *    nothing written.
  * 3. Otherwise: the exact writes POST .../activate makes (applyPlanWorld,
- *    applyAssignment, the isActive flip, the settings re-snapshot), then the
- *    exact run POST .../schedule/commit makes for a whole-season regenerate
- *    (loadSchedulerInput, generateSchedule, the same existing-games seed and
- *    the same replace-unplayed-only delete).
+ *    applyAssignment, the isActive flip, the settings re-snapshot), then
+ *    SCHEDULER V2 (owner-ordered clean-sheet rebuild, 2026-08-08):
+ *    snapshot -> audit (plain-words BLOCK findings, before any write) ->
+ *    whole-season solve -> identity-preserving apply. Played/live/locked
+ *    games are pins v2 schedules around; draft games keep their ids.
  */
 const bodySchema = z.object({ confirm: z.boolean().optional() })
 
@@ -165,65 +165,51 @@ export async function POST(
       })
     }
 
-    /* -------- AND GENERATE: the same run POST .../schedule/commit makes -------- */
+    /* -------- AND GENERATE: scheduler v2 (owner's clean-sheet rebuild, ------- */
+    /* -------- 2026-08-08) — snapshot -> audit -> solve -> apply.        ------- */
     // The plan's own excluded teams stay out of the run (owner ruling
     // 2026-08-07, #8): generation covers "the N teams in this plan", and the
-    // loader drops the rest before any pairing exists.
+    // world builder drops the rest before any pairing exists.
     const excludedTeamIds =
       ((settings?.state as any)?.excludedTeamIds as string[] | undefined) ?? undefined
-    const { input, errors } = await loadSchedulerInput(params.id, { excludedTeamIds })
-    if (!input || errors.length > 0) {
-      return NextResponse.json({ error: "Cannot generate", errors }, { status: 422 })
+    const solved = await solveSeasonV2(params.id, { excludedTeamIds })
+    if (solved.errors.length > 0) {
+      return NextResponse.json({ error: "Cannot generate", errors: solved.errors }, { status: 422 })
     }
-
-    // Whole-season regenerate: only un-played games are replaced. Played and
-    // live games survive and seed matchup + per-team counts, exactly the
-    // "else" branch of POST .../schedule/commit.
-    input.existingGames = await (prisma as any).game.findMany({
-      where: {
-        seasonId: params.id,
-        phase: "REGULAR",
-        OR: [
-          { status: { notIn: ["CANCELLED", "SCHEDULED"] } },
-          { status: "SCHEDULED", isLocked: true },
-        ],
-      },
-      select: { homeTeamId: true, awayTeamId: true, scheduledAt: true, courtId: true, sessionId: true },
-    })
-
-    const result = generateSchedule(input)
-
-    const writeCounts = await (prisma as any).$transaction(async (tx: any) => {
-      // Locked games are PINNED and never removed; the generator schedules
-      // around them (same guard as schedule/commit).
-      const del = await tx.game.deleteMany({
-        where: { seasonId: params.id, phase: "REGULAR", status: "SCHEDULED", isLocked: false },
-      })
-      const created = await tx.game.createMany({
-        data: result.games.map((g) => ({
-          seasonId: params.id,
-          phase: "REGULAR",
-          sessionId: g.sessionId,
-          dayId: g.dayId,
-          dayVenueId: g.dayVenueId,
-          courtId: g.courtId,
-          venueId: g.venueId,
-          homeTeamId: g.homeTeamId,
-          awayTeamId: g.awayTeamId,
-          scheduledAt: new Date(g.scheduledAt),
-          duration: g.duration,
-          status: "SCHEDULED",
-          isLocked: false,
-        })),
-      })
-      return { removed: del.count, created: created.count }
-    })
+    const blocks = solved.findings.filter((f) => f.severity === "BLOCK")
+    if (blocks.length > 0 || !solved.proposal) {
+      // The auditor speaks BEFORE anything is written: plain words, real
+      // arithmetic, concrete options (H1/H2 contract).
+      return NextResponse.json(
+        { error: "Cannot generate", errors: blocks.map((f) => f.message) },
+        { status: 422 }
+      )
+    }
+    if (solved.unplaced > 0) {
+      // §6.11: the audit passed but placement failed — an engine bug, never
+      // a silent degradation. Nothing is written.
+      return NextResponse.json(
+        {
+          error: "Cannot generate",
+          errors: [
+            `${solved.unplaced} games could not be placed even though the plan fits — this is an engine fault, nothing was written. Please report it.`,
+          ],
+        },
+        { status: 500 }
+      )
+    }
+    await applyProposal(params.id, solved.proposal)
 
     return NextResponse.json({
       generated: true,
-      games: writeCounts.created,
-      unscheduled: result.unscheduled.length,
-      warnings: result.warnings,
+      games: solved.proposal.stats.games,
+      unscheduled: 0,
+      warnings: solved.findings.filter((f) => f.severity !== "BLOCK").map((f) => f.message),
+      shape: {
+        backToBacks: solved.proposal.stats.backToBacks,
+        longGaps: solved.proposal.stats.longGaps,
+        twoDateWeekends: solved.proposal.stats.twoDateWeekends,
+      },
     })
   } catch (error) {
     if (error instanceof z.ZodError) {
