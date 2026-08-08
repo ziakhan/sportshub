@@ -99,20 +99,19 @@ export function placeCell(
   const teamBusy = new Set<string>() // `${teamId}|${startMs}`
   /** teamId -> stops (pins + placed so far). */
   const stopsOf = new Map<string, TeamStop[]>()
-  /** Live tip-off times per (grade, day): the REAL day edges (the page's
-   *  report counts a division's actual first/last game of the day).
-   *  Min/max maintained incrementally — this lookup sits inside every
-   *  placement evaluation, and a map scan here measured a 4x solve
-   *  slowdown (15s -> 63s). */
+  /** Live tip-off times per DAY of this cell's one gym: the building's
+   *  actual first/last games (owner ruling 2026-08-08 — a late finish is
+   *  the gym's last slot, not your division's; a 2-team division playing
+   *  midday is never flagged). Min/max maintained incrementally — a map
+   *  scan here measured a 4x solve slowdown (15s -> 63s). */
   interface DayTimes {
     times: Map<number, number>
     first: number
     last: number
   }
   const gradeDayTimes = new Map<string, DayTimes>()
-  const gradeOf = (teamId: string): string => teamById.get(teamId)!.gradeId
-  const bumpTime = (gradeId: string, dayId: string, startMs: number, delta: number) => {
-    const k = `${gradeId}|${dayId}`
+  const bumpTime = (dayId: string, startMs: number, delta: number) => {
+    const k = dayId
     if (!gradeDayTimes.has(k)) {
       gradeDayTimes.set(k, { times: new Map(), first: Infinity, last: -Infinity })
     }
@@ -135,13 +134,11 @@ export function placeCell(
       if (startMs > dt.last) dt.last = startMs
     }
   }
-  const edgesFor =
-    (teamId: string) =>
-    (dayId: string): { first: number; last: number } | null => {
-      const dt = gradeDayTimes.get(`${gradeOf(teamId)}|${dayId}`)
-      if (!dt || dt.times.size === 0) return null
-      return { first: dt.first, last: dt.last }
-    }
+  const edgesOf = (dayId: string): { first: number; last: number } | null => {
+    const dt = gradeDayTimes.get(dayId)
+    if (!dt || dt.times.size === 0) return null
+    return { first: dt.first, last: dt.last }
+  }
   const pushStop = (teamId: string, pos: GridPosition) => {
     if (!stopsOf.has(teamId)) stopsOf.set(teamId, [])
     stopsOf.get(teamId)!.push({
@@ -161,7 +158,7 @@ export function placeCell(
   const teamPoints = (teamId: string): number => {
     const t = teamById.get(teamId)!
     return burdenPoints(
-      weekendCounts(stopsOf.get(teamId) ?? [], t, slotMinutes, edgesFor(teamId)),
+      weekendCounts(stopsOf.get(teamId) ?? [], t, slotMinutes, edgesOf),
       weights
     )
   }
@@ -181,7 +178,7 @@ export function placeCell(
     )
     if (pos) occupied[pos.idx] = true
     const startMs = new Date(g.pinned.startIso).getTime()
-    bumpTime(g.gradeId, g.pinned.dayId, startMs, 1)
+    bumpTime(g.pinned.dayId, startMs, 1)
     for (const teamId of [g.teamAId, g.teamBId]) {
       teamBusy.add(`${teamId}|${startMs}`)
       pushStop(
@@ -229,16 +226,15 @@ export function placeCell(
   ): { quad: number; points: number } => {
     let quad = 0
     let points = 0
-    const gradeId = gradeOf(g.teamAId)
     const befores = [beforeA, beforeB]
     const teams = [g.teamAId, g.teamBId]
     for (let i = 0; i < 2; i++) {
       const teamId = teams[i]
       const before = befores[i] ?? teamPoints(teamId)
       pushStop(teamId, pos)
-      bumpTime(gradeId, pos.dayId, pos.startMs, 1)
+      bumpTime(pos.dayId, pos.startMs, 1)
       const after = teamPoints(teamId)
-      bumpTime(gradeId, pos.dayId, pos.startMs, -1)
+      bumpTime(pos.dayId, pos.startMs, -1)
       popStop(teamId, pos.startMs)
       quad += (B(teamId) + after) ** 2 - (B(teamId) + before) ** 2
       points += after - before
@@ -276,7 +272,7 @@ export function placeCell(
     const from = placements.get(gameKeyOf(g))
     if (!from) return
     occupied[from.idx] = false
-    bumpTime(g.gradeId, from.dayId, from.startMs, -1)
+    bumpTime(from.dayId, from.startMs, -1)
     for (const teamId of [g.teamAId, g.teamBId]) {
       teamBusy.delete(`${teamId}|${from.startMs}`)
       popStop(teamId, from.startMs)
@@ -286,7 +282,7 @@ export function placeCell(
   const place = (gi: number, to: GridPosition) => {
     const g = placedList[gi]
     occupied[to.idx] = true
-    bumpTime(g.gradeId, to.dayId, to.startMs, 1)
+    bumpTime(to.dayId, to.startMs, 1)
     for (const teamId of [g.teamAId, g.teamBId]) {
       teamBusy.add(`${teamId}|${to.startMs}`)
       pushStop(teamId, to)
@@ -391,7 +387,7 @@ export function placeCell(
       }
     }
     occupied[best.idx] = true
-    bumpTime(g.gradeId, best.dayId, best.startMs, 1)
+    bumpTime(best.dayId, best.startMs, 1)
     for (const teamId of [g.teamAId, g.teamBId]) {
       teamBusy.add(`${teamId}|${best.startMs}`)
       pushStop(teamId, best)
@@ -495,7 +491,7 @@ export function placeCell(
   }
   for (const teamId of cellTeams) {
     const t = teamById.get(teamId)!
-    counts.set(teamId, weekendCounts(stopsOf.get(teamId) ?? [], t, slotMinutes))
+    counts.set(teamId, weekendCounts(stopsOf.get(teamId) ?? [], t, slotMinutes, edgesOf))
   }
   for (const teamId of cellTeams) {
     if (!counts.has(teamId)) counts.set(teamId, zeroCounts())

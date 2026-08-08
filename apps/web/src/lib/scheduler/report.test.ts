@@ -34,8 +34,12 @@ describe("computeFairnessReport", () => {
     expect(B.tightSplitDays).toBe(0)
     expect(B.topCourtName).toBe("Court 1")
     expect(B.topCourtShare).toBe(1)
-    expect(A.earlyGames).toBe(1)
+    // Owner ruling 2026-08-08: early/late are the BUILDING's first/last
+    // tip-off of the day. A opens Gym 1 on day 1 AND its 10:30 game is Gym
+    // 2's only (= first) game that day: two early starts.
+    expect(A.earlyGames).toBe(2)
     expect(B.earlyGames).toBe(2)
+    expect(B.lastGames).toBe(1)
     expect(r.totals.backToBackTeamDays).toBe(0)
     expect(r.totals.bigGapTeamDays).toBe(1)
     expect(r.totals.splitVenueTeamDays).toBe(1)

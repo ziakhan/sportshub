@@ -86,10 +86,10 @@ export function computeFairnessReport(
   /** gameId → sessionId, needed to group weekends for preference checks. */
   sessionByGame?: Map<string, string>,
   /**
-   * teamId → division/unit key. When present, first/last tip-offs are the
-   * DIVISION block's opening and closing games each day — the scarce,
-   * rotatable slots — instead of the whole day's (at 8 courts most teams
-   * sit in the day's global first wave, which is not a fairness signal).
+   * OWNER RULING 2026-08-08: a late finish is the BUILDING's last slot of
+   * the day, an early start its first — not your division's. Edges are
+   * scoped per (day, gym); this param is kept for signature compatibility
+   * and no longer read.
    */
   unitByTeam?: Map<string, string>,
   /** Approved best-effort windows per team (for "requests honored"). */
@@ -106,10 +106,9 @@ export function computeFairnessReport(
     }
   }
 
-  // First/last tip-off per day (from the actual game set) — scoped to the
-  // division when unit info is available.
-  const edgeKey = (g: ReportGame, dk: string): string =>
-    unitByTeam ? `${dk}|${unitByTeam.get(g.homeTeamId) ?? ""}` : dk
+  // First/last tip-off per (day, GYM), from the actual game set — the
+  // building's opening and closing games (owner ruling 2026-08-08).
+  const edgeKey = (g: ReportGame, dk: string): string => `${dk}|${g.venueId ?? ""}`
   const firstStartByDay = new Map<string, number>()
   const lastStartByDay = new Map<string, number>()
   for (const g of active) {
