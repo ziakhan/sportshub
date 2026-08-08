@@ -538,6 +538,172 @@ function buildPairings(
 export const TRAVEL_MIN_GAP_SLOTS = 2
 
 /**
+ * HAND THE SECOND SPLIT DOWN, ON THE FINISHED SCHEDULE (owner 2026-08-08:
+ * "a team who has two games split in a gym, why can't we swap them out with
+ * another team from the same gym and make it 20+ instead of 40+"). The
+ * in-flight fairness pass works through the solver's bucket bookkeeping and
+ * was measured leaving legal trades on the table (18 on the live world). This
+ * polish needs none of that machinery: it sees the finished schedule as plain
+ * games, and a trade is two games exchanging their entire slots — time, gym,
+ * court — which cannot break feasibility because both slots stay occupied.
+ * Greedy, deterministic, and guarded in the fairness table's own currency:
+ * the donor's split count must drop, total splits may not rise, no day may
+ * become undriveable, at most two monsters' worth (16 pts) of new same-gym
+ * waiting, and the recipient must end better off than the donor began.
+ */
+export function flattenSplitLoads(games: ProposedGame[], slotMinutes: number): void {
+  const slotMs = slotMinutes * 60000
+  const dkOf = (iso: string): string => {
+    const d = new Date(iso)
+    return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`
+  }
+  const teamsOfG = (g: ProposedGame): [string, string] => [g.homeTeamId, g.awayTeamId]
+
+  let byTd = new Map<string, number[]>()
+  const reindex = () => {
+    byTd = new Map()
+    for (let i = 0; i < games.length; i++) {
+      const dk = dkOf(games[i].scheduledAt)
+      for (const id of teamsOfG(games[i])) {
+        const k = `${id}|${dk}`
+        if (!byTd.has(k)) byTd.set(k, [])
+        byTd.get(k)!.push(i)
+      }
+    }
+  }
+  const dayProfile = (id: string, dk: string): { split: number; tight: number; waitPts: number } => {
+    const list = (byTd.get(`${id}|${dk}`) ?? [])
+      .map((i) => games[i])
+      .sort((a, b) => new Date(a.scheduledAt).getTime() - new Date(b.scheduledAt).getTime())
+    const split = new Set(list.map((g) => g.venueId)).size > 1 ? 1 : 0
+    let tight = 0
+    let waitPts = 0
+    for (let i = 1; i < list.length; i++) {
+      const gap =
+        (new Date(list[i].scheduledAt).getTime() - new Date(list[i - 1].scheduledAt).getTime()) /
+          slotMs -
+        1
+      if (list[i].venueId !== list[i - 1].venueId) {
+        if (gap < TRAVEL_MIN_GAP_SLOTS) tight++
+        continue
+      }
+      if (gap <= 0) waitPts += 5
+      else if (gap > 4) waitPts += 8
+      else if (gap > 2) waitPts += 2
+    }
+    return { split, tight, waitPts }
+  }
+  const seasonSplits = (id: string): number => {
+    let n = 0
+    for (const [k, idxs] of byTd) {
+      if (!k.startsWith(`${id}|`)) continue
+      if (new Set(idxs.map((i) => games[i].venueId)).size > 1) n++
+    }
+    return n
+  }
+  const SLOT_FIELDS = [
+    "sessionId",
+    "dayId",
+    "dayVenueId",
+    "courtId",
+    "venueId",
+    "scheduledAt",
+  ] as const
+  const swapSlots = (i: number, j: number) => {
+    for (const f of SLOT_FIELDS) {
+      const tmp = games[i][f]
+      ;(games[i] as any)[f] = games[j][f]
+      ;(games[j] as any)[f] = tmp
+    }
+  }
+
+  reindex()
+  for (let pass = 0; pass < 32; pass++) {
+    let traded = false
+    const donors = [...new Set(games.flatMap(teamsOfG))]
+      .map((id) => ({ id, load: seasonSplits(id) }))
+      .filter((d) => d.load >= 2)
+      .sort((a, b) => b.load - a.load || a.id.localeCompare(b.id))
+    if (process.env.POLISH_DEBUG) console.log(`[polish] pass ${pass}: donors ${donors.length}`)
+    for (const donor of donors) {
+      if (traded) break
+      // The donor's split days, worst first is irrelevant — any heal helps.
+      for (const [k, idxs] of [...byTd.entries()].sort((a, b) => a[0].localeCompare(b[0]))) {
+        if (traded) break
+        if (!k.startsWith(`${donor.id}|`)) continue
+        const dk = k.split("|")[1]
+        if (new Set(idxs.map((i) => games[i].venueId)).size < 2) continue
+        // Every same-day game is a swap candidate, in deterministic order.
+        const sameDay = [...new Set([...byTd.entries()]
+          .filter(([kk]) => kk.endsWith(`|${dk}`))
+          .flatMap(([, v]) => v))].sort(
+          (a, b) =>
+            games[a].scheduledAt.localeCompare(games[b].scheduledAt) ||
+            games[a].courtId.localeCompare(games[b].courtId)
+        )
+        for (const gi of [...idxs].sort()) {
+          if (traded) break
+          for (const gj of sameDay) {
+            if (gj === gi) continue
+            const A = games[gi]
+            const B = games[gj]
+            if (A.sessionId !== B.sessionId) continue
+            if (A.venueId === B.venueId && A.scheduledAt === B.scheduledAt) continue
+            const at = teamsOfG(A)
+            const bt = teamsOfG(B)
+            if (at.some((x) => (bt as string[]).includes(x))) continue
+            // Neither pair may land on a time where they already play.
+            const clash = sameDay.some((ix) => {
+              if (ix === gi || ix === gj) return false
+              const g2 = games[ix]
+              const g2t = teamsOfG(g2)
+              return (
+                (g2.scheduledAt === B.scheduledAt && g2t.some((x) => (at as string[]).includes(x))) ||
+                (g2.scheduledAt === A.scheduledAt && g2t.some((x) => (bt as string[]).includes(x)))
+              )
+            })
+            if (clash) continue
+            const affected = [...new Set([...at, ...bt])]
+            const before = affected.map((id) => dayProfile(id, dk))
+            swapSlots(gi, gj)
+            reindex()
+            const after = affected.map((id) => dayProfile(id, dk))
+            const sum = (xs: Array<{ split: number; tight: number; waitPts: number }>, f: "split" | "tight" | "waitPts") =>
+              xs.reduce((acc, x) => acc + x[f], 0)
+            const donorAfter = seasonSplits(donor.id)
+            // EVERY other team in the trade must end strictly better off
+            // than the donor began — not just the partner game's pair. The
+            // first version only bounded the partner's teams, and the
+            // donor's own OPPONENT could silently inherit the split,
+            // becoming next pass's donor and trading it straight back: an
+            // A<->B ping-pong that burned all 32 passes for a net of zero
+            // (measured live, 2026-08-08).
+            const worstAfter = Math.max(
+              0,
+              ...affected.filter((id) => id !== donor.id).map((id) => seasonSplits(id))
+            )
+            if (
+              donorAfter < donor.load &&
+              sum(after, "split") <= sum(before, "split") &&
+              sum(after, "tight") <= sum(before, "tight") &&
+              sum(after, "waitPts") - sum(before, "waitPts") <= 16 &&
+              worstAfter < donor.load
+            ) {
+              if (process.env.POLISH_DEBUG) console.log(`[polish] TRADE donor ${donor.id.slice(0, 8)} day ${dk}`)
+              traded = true
+              break
+            }
+            swapSlots(gi, gj)
+            reindex()
+          }
+        }
+      }
+    }
+    if (!traded) break
+  }
+}
+
+/**
  * Auto-retry wrapper (owner 2026-08-01: "better spread over two days than
  * back-to-backs"): whether a weekend can be split one-game-per-day is
  * decided by which matchups share the weekend — an odd matchup-cycle makes
@@ -771,8 +937,10 @@ export function generateSchedule(input: SchedulerInput): SchedulerResult {
       key[6] === 0 &&
       key[8] <= 25 &&
       key[9] === 0
-    )
+    ) {
+      flattenSplitLoads(res.games, input.gameSlotMinutes)
       return res
+    }
     let better = false
     for (let i = 0; i < KEY_LEN; i++) {
       if (key[i] < bestKey[i]) {
@@ -786,6 +954,7 @@ export function generateSchedule(input: SchedulerInput): SchedulerResult {
       bestKey = key
     }
   }
+  flattenSplitLoads(best!.games, input.gameSlotMinutes)
   return best!
 }
 
@@ -3618,6 +3787,33 @@ function generateScheduleOnce(input: SchedulerInput): SchedulerResult {
      * lowers the worst-off team's count, so the loop terminates. Elimination
      * always ran first, so nothing here undoes goal one.
      */
+    /** Same-gym wait points (table currency: b2b 5, monster 8, mid 2) and
+     *  undriveable-split count for one team-day — the guard that keeps a
+     *  fairness trade honest without vetoing it for texture the table
+     *  prices at a fraction of a split. */
+    const dayWaits = (id: string, dk2: string): { tight: number; waitPts: number } => {
+      const stops: Array<{ t: number; v: string }> = []
+      for (const g2 of games) {
+        if (dateKeyOf(new Date(g2.scheduledAt)) !== dk2) continue
+        if (g2.homeTeamId !== id && g2.awayTeamId !== id) continue
+        stops.push({ t: new Date(g2.scheduledAt).getTime(), v: g2.venueId })
+      }
+      stops.sort((a, b) => a.t - b.t)
+      let tight = 0
+      let waitPts = 0
+      const slotMs = (input.gameSlotMinutes || 60) * 60000
+      for (let i = 1; i < stops.length; i++) {
+        const gapSlots = (stops[i].t - stops[i - 1].t) / slotMs - 1
+        if (stops[i].v !== stops[i - 1].v) {
+          if (gapSlots < TRAVEL_MIN_GAP_SLOTS) tight++
+          continue
+        }
+        if (gapSlots <= 0) waitPts += 5
+        else if (gapSlots > 4) waitPts += 8
+        else if (gapSlots > 2) waitPts += 2
+      }
+      return { tight, waitPts }
+    }
     const seasonSplitsOf = (id: string): number => {
       let n = 0
       for (const [k, m] of dayVenuesOf) {
@@ -3625,7 +3821,11 @@ function generateScheduleOnce(input: SchedulerInput): SchedulerResult {
       }
       return n
     }
-    for (let round = 0; round < 6; round++) {
+    // Each accepted trade strictly shrinks sum(load^2), so this terminates;
+    // the cap is a safety rail, not a budget. (It was 6 — which silently
+    // meant "at most six hand-downs a season", leaving 2-split teams
+    // stranded next to zeros. Owner 2026-08-08: that trade must happen.)
+    for (let round = 0; round < 64; round++) {
       let traded = false
       // Worst-off teams first.
       const loads = new Map<string, number>()
@@ -3651,6 +3851,10 @@ function generateScheduleOnce(input: SchedulerInput): SchedulerResult {
           }
         }
         const bk = bucketOfG(g)
+        const tightBeforeST = [...new Set(teamsOf(g))].reduce(
+          (acc, id) => acc + dayWaits(id, dk).tight,
+          0
+        )
         for (const gj of assignedByBucket.get(bk) ?? []) {
           if (gj === gi || !wantVenues.has(games[gj].venueId)) continue
           const other = games[gj]
@@ -3672,9 +3876,12 @@ function generateScheduleOnce(input: SchedulerInput): SchedulerResult {
               .filter((id) => splitOf(id, odk))
               .map((id) => seasonSplitsOf(id))
           )
-          // Accept only a strict hand-down: no more total splits, and the
-          // team now holding one is still better off than the donor was.
-          if (totalAfter <= totalBefore && recipientLoad < donorLoad) {
+          // Accept only a strict hand-down: no more total splits, the team
+          // now holding one is still better off than the donor was, and no
+          // day anywhere in the trade became undriveable.
+          const affectedST = [...new Set([...teamsOf(games[gi]), ...teamsOf(games[gj])])]
+          const tightAfterST = affectedST.reduce((acc, id) => acc + dayWaits(id, dk).tight, 0)
+          if (totalAfter <= totalBefore && recipientLoad < donorLoad && tightAfterST <= tightBeforeST) {
             traded = true
             break
           }
@@ -3688,10 +3895,10 @@ function generateScheduleOnce(input: SchedulerInput): SchedulerResult {
          * out"). When no same-time partner exists, trade with a game at a
          * wanted venue at ANOTHER TIME the same day: the two games swap
          * courts AND clocks. Both courts stay booked, so the stranding rule
-         * is satisfied the same way same-time swaps satisfy it. Guarded by
-         * the venue-aware day-shape burden of all four teams, so a fairness
-         * trade can never buy flatness with an undriveable split or a
-         * monster wait it did not pay off elsewhere.
+         * is satisfied the same way same-time swaps satisfy it. Guarded in
+         * the TABLE's currency: never a new undriveable day, and at most
+         * one monster-wait's worth (8 pts) of new same-gym waiting — small
+         * texture against the 20-point split being handed down.
          */
         const dayBks = [...(assignedByBucket.keys() as Iterable<string>)].filter(
           (obk2) => obk2 !== bk && obk2.startsWith(`${g.dayId}|`)
@@ -3714,7 +3921,9 @@ function generateScheduleOnce(input: SchedulerInput): SchedulerResult {
             if (clashG || clashO) continue
             const odk = dateKeyOf(new Date(other.scheduledAt))
             const affected = [...new Set([...gTeams, ...oTeams])]
-            const shapeBefore = affected.reduce((acc, id) => acc + dayShape(id, dk), 0)
+            const wBefore = affected.map((id) => dayWaits(id, dk))
+            const tightBefore2 = wBefore.reduce((acc, w) => acc + w.tight, 0)
+            const waitPtsBefore = wBefore.reduce((acc, w) => acc + w.waitPts, 0)
             const totalBefore =
               gTeams.reduce((acc, id) => acc + splitOf(id, dk), 0) +
               oTeams.reduce((acc, id) => acc + splitOf(id, odk), 0)
@@ -3736,8 +3945,24 @@ function generateScheduleOnce(input: SchedulerInput): SchedulerResult {
                 .filter((id) => splitOf(id, odk))
                 .map((id) => seasonSplitsOf(id))
             )
-            const shapeAfter = affected.reduce((acc, id) => acc + dayShape(id, dk), 0)
-            if (totalAfter <= totalBefore && recipientLoad < donorLoad && shapeAfter <= shapeBefore) {
+            const wAfter = affected.map((id) => dayWaits(id, dk))
+            const tightAfter2 = wAfter.reduce((acc, w) => acc + w.tight, 0)
+            const waitPtsAfter = wAfter.reduce((acc, w) => acc + w.waitPts, 0)
+            // The old guard here compared the ENGINE's day-shape burden,
+            // where a healed day's new back-to-back (25) looks worse than a
+            // driveable split (0) — vetoing exactly the 40 -> 20+20 trade
+            // the owner asked for. The table prices wait texture at 2-8
+            // against the 20-point split being handed down: allow up to two
+            // monsters' worth (16 pts) across the four teams, never a new
+            // undriveable day. (In a two-games-a-day league the recipient's
+            // compact pair usually must be pried apart to make their new
+            // split driveable — that widening IS the wait texture.)
+            if (
+              totalAfter <= totalBefore &&
+              recipientLoad < donorLoad &&
+              tightAfter2 <= tightBefore2 &&
+              waitPtsAfter - waitPtsBefore <= 16
+            ) {
               const bkList = assignedByBucket.get(bk)!
               const obkList = assignedByBucket.get(obk)!
               bkList.splice(bkList.indexOf(gi), 1)
