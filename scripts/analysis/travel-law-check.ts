@@ -50,6 +50,34 @@ async function main() {
   }
   const dist = new Map<number, number>()
   for (const n of splitsByTeam.values()) dist.set(n, (dist.get(n) ?? 0) + 1)
+  // Burden-score histogram exactly as the fairness table scores it.
+  const per = new Map<string, { split: number; tight: number; b2b: number; monster: number; mid: number }>()
+  const bump = (id: string, k: "split" | "tight" | "b2b" | "monster" | "mid") => {
+    const o = per.get(id) ?? { split: 0, tight: 0, b2b: 0, monster: 0, mid: 0 }
+    o[k]++
+    per.set(id, o)
+  }
+  const teamIds = new Set<string>()
+  for (const g of res.games) { teamIds.add(g.homeTeamId); teamIds.add(g.awayTeamId) }
+  for (const [k, list] of byTd) {
+    const id = k.split("|")[0]
+    if (new Set(list.map((x) => x.v)).size > 1) bump(id, "split")
+    for (let i = 1; i < list.length; i++) {
+      const gap = (list[i].t - list[i - 1].t) / slotMs - 1
+      if (list[i].v !== list[i - 1].v) { if (gap < 2) bump(id, "tight"); continue }
+      if (gap <= 0) bump(id, "b2b")
+      else if (gap > 4) bump(id, "monster")
+      else if (gap > 2) bump(id, "mid")
+    }
+  }
+  const hist: Record<string, number> = {}
+  for (const id of teamIds) {
+    const o = per.get(id) ?? { split: 0, tight: 0, b2b: 0, monster: 0, mid: 0 }
+    const score = o.split * 20 + o.tight * 30 + o.monster * 8 + o.b2b * 5 + o.mid * 2
+    const b = score === 0 ? "0" : score <= 10 ? "1-10" : score <= 20 ? "11-20" : score <= 40 ? "21-40" : "41+"
+    hist[b] = (hist[b] ?? 0) + 1
+  }
+  console.log(`burden histogram: ${JSON.stringify(hist)}`)
   console.log(`games ${res.games.length} | unscheduled ${res.unscheduled.length} | ${secs}s`)
   console.log(`splits ${splits} | TIGHT (undriveable) ${tight} | b2b ${b2b} | monster ${monster} | mid ${mid}`)
   console.log(`split distribution (splits-per-team: teams): ${JSON.stringify(Object.fromEntries([...dist.entries()].sort()))}`)
