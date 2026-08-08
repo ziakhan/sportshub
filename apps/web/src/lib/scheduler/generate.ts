@@ -528,6 +528,16 @@ function buildPairings(
 // ---------- main generator ----------
 
 /**
+ * A SPLIT DAY NEEDS DRIVING TIME (owner ruling 2026-08-07): when a team's
+ * two games land at different gyms, the gap between them IS the drive — so
+ * it is never a "wait", and it must be at least this many empty slots or
+ * the family physically cannot attend both games. At 75-minute slots, 2
+ * empty slots ≈ 2.5 hours: enough for any pair of gyms in the pool. Once
+ * venue clusters land (plan item C2) this becomes per-pair travel time.
+ */
+export const TRAVEL_MIN_GAP_SLOTS = 2
+
+/**
  * Auto-retry wrapper (owner 2026-08-01: "better spread over two days than
  * back-to-backs"): whether a weekend can be split one-game-per-day is
  * decided by which matchups share the weekend — an odd matchup-cycle makes
@@ -626,28 +636,32 @@ export function generateSchedule(input: SchedulerInput): SchedulerResult {
     return viol
   }
 
-  /** [back-to-backs, style violations] for a candidate result. */
+  /** [back-to-backs, style violations] for a candidate result. A
+   *  back-to-back is a SAME-GYM shape; consecutive games at different gyms
+   *  are the undriveable-split problem and candidateBurdens counts those —
+   *  double-counting them here would let one bad day outvote two. */
   const shapeIssues = (games: ProposedGame[]): [number, number] => {
-    const bySessionTeam = new Map<string, number[]>()
+    const bySessionTeam = new Map<string, Array<{ t: number; v: string }>>()
     for (const g of games) {
       for (const id of [g.homeTeamId, g.awayTeamId]) {
         const k = `${g.sessionId}|${id}`
         if (!bySessionTeam.has(k)) bySessionTeam.set(k, [])
-        bySessionTeam.get(k)!.push(new Date(g.scheduledAt).getTime())
+        bySessionTeam.get(k)!.push({ t: new Date(g.scheduledAt).getTime(), v: g.venueId })
       }
     }
     let b2b = 0
     let styleViol = 0
-    for (const [k, times] of bySessionTeam) {
-      if (times.length < 2) continue
+    for (const [k, stops] of bySessionTeam) {
+      if (stops.length < 2) continue
       const teamId = k.split("|")[1]
       const style = styleByTeam.get(teamId) ?? philosophyStyle
-      times.sort((a, b) => a - b)
-      const dks = times.map((t) => dkOf(new Date(t)))
+      stops.sort((a, b) => a.t - b.t)
+      const dks = stops.map((s) => dkOf(new Date(s.t)))
       const sameDay = new Set(dks).size === 1
       if (sameDay) {
-        for (let i = 1; i < times.length; i++) {
-          if ((times[i] - times[i - 1]) / (input.gameSlotMinutes * 60000) - 1 <= 0) b2b++
+        for (let i = 1; i < stops.length; i++) {
+          if (stops[i].v !== stops[i - 1].v) continue
+          if ((stops[i].t - stops[i - 1].t) / (input.gameSlotMinutes * 60000) - 1 <= 0) b2b++
         }
       }
       if ((style === "SAME_DAY" && !sameDay) || (style === "SPLIT_DAYS" && sameDay)) styleViol++
@@ -655,14 +669,60 @@ export function generateSchedule(input: SchedulerInput): SchedulerResult {
     return [b2b, styleViol]
   }
   let best: SchedulerResult | null = null
-  let bestKey: [number, number, number, number, number, number] = [
-    Infinity,
-    Infinity,
-    Infinity,
-    Infinity,
-    Infinity,
-    Infinity,
-  ]
+  /**
+   * A CANDIDATE'S DAY-SHAPE BURDENS, for selection (owner ruling 2026-08-07:
+   * the judge was blind — a 22-split candidate lost to a 62-split one on
+   * back-to-backs alone). Venue-aware: consecutive games at DIFFERENT gyms
+   * are a drive, so their gap is never a "wait" — and a gap too short to
+   * drive (under 2 slots) is its own count, worse than the split itself,
+   * because a family physically cannot attend both games.
+   */
+  const candidateBurdens = (
+    games: ProposedGame[]
+  ): { splits: number; tightSplits: number; maxTeamSplits: number; monster: number; mid: number } => {
+    const slotMs = (input.gameSlotMinutes || 60) * 60000
+    const byTeamDay = new Map<string, Array<{ t: number; v: string }>>()
+    for (const g of games) {
+      const d = new Date(g.scheduledAt)
+      const dk = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`
+      for (const id of [g.homeTeamId, g.awayTeamId]) {
+        const k = `${id}|${dk}`
+        if (!byTeamDay.has(k)) byTeamDay.set(k, [])
+        byTeamDay.get(k)!.push({ t: d.getTime(), v: g.venueId })
+      }
+    }
+    let splits = 0
+    let tightSplits = 0
+    let monster = 0
+    let mid = 0
+    const splitsPerTeam = new Map<string, number>()
+    for (const [tk, list] of byTeamDay) {
+      list.sort((a, b) => a.t - b.t)
+      if (new Set(list.map((x) => x.v)).size > 1) {
+        splits++
+        const id = tk.split("|")[0]
+        splitsPerTeam.set(id, (splitsPerTeam.get(id) ?? 0) + 1)
+      }
+      for (let i = 1; i < list.length; i++) {
+        const gap = (list[i].t - list[i - 1].t) / slotMs - 1
+        if (list[i].v !== list[i - 1].v) {
+          if (gap < TRAVEL_MIN_GAP_SLOTS) tightSplits++
+          continue
+        }
+        if (gap > 4) monster++
+        else if (gap > 2) mid++
+      }
+    }
+    // The owner's even-spread law in one number: the worst-off team's split
+    // count. Two candidates with equal totals are told apart by who
+    // concentrates them ("everybody gets one or two out of ten, not one
+    // team with four").
+    const maxTeamSplits = Math.max(0, ...splitsPerTeam.values())
+    return { splits, tightSplits, maxTeamSplits, monster, mid }
+  }
+
+  const KEY_LEN = 10
+  let bestKey: number[] = Array(KEY_LEN).fill(Infinity)
   let attemptCap = attempts
   for (let k = 0; k < attemptCap; k++) {
     const res = generateScheduleOnce({
@@ -673,23 +733,48 @@ export function generateSchedule(input: SchedulerInput): SchedulerResult {
     // variations can't conjure court-slots. One confirmation attempt only.
     if (res.unscheduled.length >= 3 && k === 0) attemptCap = Math.min(attempts, 2)
     const [b2b, styleViol] = shapeIssues(res.games)
-    const key: [number, number, number, number, number, number] = [
+    const bur = candidateBurdens(res.games)
+    // THE JUDGE SCORES WHAT THE FAIRNESS TABLE SCORES (owner ruling
+    // 2026-08-07, replacing 2026-08-01's b2b-at-all-costs order — the old
+    // key was proven blind: a 22-split candidate lost to a 62-split one).
+    // Undriveable split days first, then splits, then monster waits, then
+    // back-to-backs; requests stay best-effort by contract.
+    const key: number[] = [
       res.unscheduled.length,
-      // No back-to-backs, at all costs (owner 2026-08-01) — they outrank
-      // even approved requests, which are best effort by contract.
+      // Splits and undriveable splits share one currency — the fairness
+      // table's own weights (20 and 20+30) — so the judge never trades six
+      // new split days to erase one tight one, or vice versa. Strict
+      // lexicographic ranking here was measured doing exactly that.
+      bur.splits * 20 + bur.tightSplits * 30,
+      bur.maxTeamSplits,
+      bur.monster,
       b2b,
       requestIssues(res.games),
       styleViol,
+      bur.mid,
       edgeSpread(res.games),
       res.tradeoffs.length,
     ]
     input.debugAttempt?.(k, res.games, key)
     // Edge spread is a RATE (percent of playing days); within ~a-day-in-four
     // is the target, not a defect — treat ≤25 as passing for the early exit.
-    if (key[0] === 0 && key[1] === 0 && key[2] === 0 && key[3] === 0 && key[4] <= 25 && key[5] === 0)
+    // Mid waits are excluded from the exit test the same way: a handful of
+    // 3-4 slot gaps is normal texture, and demanding zero would forfeit the
+    // early exit on every real-sized world for no selection benefit.
+    if (
+      key[0] === 0 &&
+      key[1] === 0 &&
+      key[2] === 0 &&
+      key[3] === 0 &&
+      key[4] === 0 &&
+      key[5] === 0 &&
+      key[6] === 0 &&
+      key[8] <= 25 &&
+      key[9] === 0
+    )
       return res
     let better = false
-    for (let i = 0; i < 6; i++) {
+    for (let i = 0; i < KEY_LEN; i++) {
       if (key[i] < bestKey[i]) {
         better = true
         break
@@ -3438,33 +3523,45 @@ function generateScheduleOnce(input: SchedulerInput): SchedulerResult {
      * games close together at one gym. Best is a 1-2 slot breather; a 3-4
      * slot wait is tolerable; a back-to-back is a burden to remove where a
      * small gap can exist, but it BEATS a monster wait (more than 4 slots -
-     * over five hours at 75-minute games); and nothing here ever touches a
-     * venue, so a repaired day can never become a split day. Same-day,
-     * same-venue time moves only, accepted when the total day-shape burden
-     * of the moved game's two teams strictly drops.
+     * over five hours at 75-minute games). On a SPLIT day the logic
+     * inverts: the cross-gym gap must be wide enough to drive, and a wide
+     * gap there is free, not a wait. Nothing here ever touches a venue, so
+     * a repaired day can never become a split day. Same-day, same-venue
+     * time moves only, accepted when the total day-shape burden of the
+     * moved game's two teams strictly drops.
      */
-    {
-      const B2B = 25
-      const HUGE = 40
-      const MID = 8
-      const dayShape = (id: string, dk2: string): number => {
-        const ts: number[] = []
-        for (const g2 of games) {
-          if (dateKeyOf(new Date(g2.scheduledAt)) !== dk2) continue
-          if (g2.homeTeamId !== id && g2.awayTeamId !== id) continue
-          ts.push(new Date(g2.scheduledAt).getTime())
-        }
-        ts.sort((a, b) => a - b)
-        let burden = 0
-        const slotMs = (input.gameSlotMinutes || 60) * 60000
-        for (let i = 1; i < ts.length; i++) {
-          const gapSlots = (ts[i] - ts[i - 1]) / slotMs - 1
-          if (gapSlots <= 0) burden += B2B
-          else if (gapSlots > 4) burden += HUGE
-          else if (gapSlots > 2) burden += MID
-        }
-        return burden
+    const B2B = 25
+    const HUGE = 40
+    const MID = 8
+    // A split day with no time to drive between gyms is the worst shape a
+    // day can take (owner ruling 2026-08-07: "you cannot have a gym split
+    // and the games scheduled back-to-back") — priced above everything so
+    // the sweep will trade any wait to buy the family its drive. And on a
+    // cross-venue pair the gap IS the drive: long is fine, never a wait.
+    const TIGHT_SPLIT = 60
+    const dayShape = (id: string, dk2: string): number => {
+      const stops: Array<{ t: number; v: string }> = []
+      for (const g2 of games) {
+        if (dateKeyOf(new Date(g2.scheduledAt)) !== dk2) continue
+        if (g2.homeTeamId !== id && g2.awayTeamId !== id) continue
+        stops.push({ t: new Date(g2.scheduledAt).getTime(), v: g2.venueId })
       }
+      stops.sort((a, b) => a.t - b.t)
+      let burden = 0
+      const slotMs = (input.gameSlotMinutes || 60) * 60000
+      for (let i = 1; i < stops.length; i++) {
+        const gapSlots = (stops[i].t - stops[i - 1].t) / slotMs - 1
+        if (stops[i].v !== stops[i - 1].v) {
+          if (gapSlots < TRAVEL_MIN_GAP_SLOTS) burden += TIGHT_SPLIT
+          continue
+        }
+        if (gapSlots <= 0) burden += B2B
+        else if (gapSlots > 4) burden += HUGE
+        else if (gapSlots > 2) burden += MID
+      }
+      return burden
+    }
+    {
       for (let round = 0; round < 4; round++) {
         let improved = false
         for (let gi = 0; gi < games.length; gi++) {
@@ -3583,6 +3680,78 @@ function generateScheduleOnce(input: SchedulerInput): SchedulerResult {
           }
           reassign(gi, gSlot)
           reassign(gj, oSlot)
+        }
+        if (traded) break
+        /**
+         * CROSS-TIME HAND-DOWN (owner ruling 2026-08-07, fourth pass: "20
+         * teams with two gym splits... we definitely need to spread it
+         * out"). When no same-time partner exists, trade with a game at a
+         * wanted venue at ANOTHER TIME the same day: the two games swap
+         * courts AND clocks. Both courts stay booked, so the stranding rule
+         * is satisfied the same way same-time swaps satisfy it. Guarded by
+         * the venue-aware day-shape burden of all four teams, so a fairness
+         * trade can never buy flatness with an undriveable split or a
+         * monster wait it did not pay off elsewhere.
+         */
+        const dayBks = [...(assignedByBucket.keys() as Iterable<string>)].filter(
+          (obk2) => obk2 !== bk && obk2.startsWith(`${g.dayId}|`)
+        )
+        for (const obk of dayBks) {
+          if (traded) break
+          for (const gj of [...(assignedByBucket.get(obk) ?? [])]) {
+            const other = games[gj]
+            if (!wantVenues.has(other.venueId)) continue
+            const gTeams = teamsOf(g)
+            const oTeams = teamsOf(other)
+            if (gTeams.some((id) => oTeams.includes(id))) continue
+            // Neither pair may land on a time where they already play.
+            const clashG = (assignedByBucket.get(obk) ?? []).some(
+              (oj) => oj !== gj && teamsOf(games[oj]).some((id) => gTeams.includes(id))
+            )
+            const clashO = (assignedByBucket.get(bk) ?? []).some(
+              (oj) => oj !== gi && teamsOf(games[oj]).some((id) => oTeams.includes(id))
+            )
+            if (clashG || clashO) continue
+            const odk = dateKeyOf(new Date(other.scheduledAt))
+            const affected = [...new Set([...gTeams, ...oTeams])]
+            const shapeBefore = affected.reduce((acc, id) => acc + dayShape(id, dk), 0)
+            const totalBefore =
+              gTeams.reduce((acc, id) => acc + splitOf(id, dk), 0) +
+              oTeams.reduce((acc, id) => acc + splitOf(id, odk), 0)
+            const gSlot = (bucketCourts.get(bk) ?? []).find((x) => x.courtId === g.courtId)
+            const oSlot = (bucketCourts.get(obk) ?? []).find((x) => x.courtId === other.courtId)
+            if (!gSlot || !oSlot) continue
+            const gStart = games[gi].scheduledAt
+            const oStart = games[gj].scheduledAt
+            reassign(gi, oSlot)
+            reassign(gj, gSlot)
+            games[gi] = { ...games[gi], scheduledAt: oStart }
+            games[gj] = { ...games[gj], scheduledAt: gStart }
+            const totalAfter =
+              teamsOf(games[gi]).reduce((acc, id) => acc + splitOf(id, dk), 0) +
+              teamsOf(games[gj]).reduce((acc, id) => acc + splitOf(id, odk), 0)
+            const recipientLoad = Math.max(
+              0,
+              ...teamsOf(games[gj])
+                .filter((id) => splitOf(id, odk))
+                .map((id) => seasonSplitsOf(id))
+            )
+            const shapeAfter = affected.reduce((acc, id) => acc + dayShape(id, dk), 0)
+            if (totalAfter <= totalBefore && recipientLoad < donorLoad && shapeAfter <= shapeBefore) {
+              const bkList = assignedByBucket.get(bk)!
+              const obkList = assignedByBucket.get(obk)!
+              bkList.splice(bkList.indexOf(gi), 1)
+              obkList.splice(obkList.indexOf(gj), 1)
+              bkList.push(gj)
+              obkList.push(gi)
+              traded = true
+              break
+            }
+            reassign(gi, gSlot)
+            reassign(gj, oSlot)
+            games[gi] = { ...games[gi], scheduledAt: gStart }
+            games[gj] = { ...games[gj], scheduledAt: oStart }
+          }
         }
         if (traded) break
       }

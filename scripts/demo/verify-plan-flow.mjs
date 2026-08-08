@@ -501,7 +501,11 @@ const sixPark = (gridBefore?.grid?.venues ?? gridBefore?.venues ?? []).find((v) 
 // (owner 2026-08-07: the season's dates define the supply — the clamp drops
 // bare out-of-span Saturdays, and playoff weekends already have no column).
 const takenCells = (sixPark?.cells ?? []).filter((c) => c.state === "taken").length
-ok("Six Park carries taken weekends in the grid", takenCells >= 4, `${takenCells} taken`)
+// RE-PINNED 2026-08-07: the season now ends at the last finals, so most NJC
+// weekends fall outside the span and have no column. What this check pins is
+// that cross-league taken marks still reach the grid at all, not how many of
+// them the current season span happens to overlap.
+ok("Six Park carries taken weekends in the grid", takenCells >= 1, `${takenCells} taken`)
 // Every weekend we have says where the booking stands, and every weekend we do
 // not have says nothing — that is what the hatch and the Booked it tap read.
 const gridRows = gridBefore?.grid?.venues ?? gridBefore?.venues ?? []

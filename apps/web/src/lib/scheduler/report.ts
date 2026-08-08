@@ -17,7 +17,7 @@ export interface ReportGame {
   status?: string
 }
 
-import type { ScheduleBlackout, ScheduleWindow } from "./generate"
+import { TRAVEL_MIN_GAP_SLOTS, type ScheduleBlackout, type ScheduleWindow } from "./generate"
 
 export interface TeamFairness {
   teamId: string
@@ -32,6 +32,11 @@ export interface TeamFairness {
    *  "monster wait" tier, roughly 5+ hours at a typical 90-minute slot). */
   monsterGapDays: number
   splitVenueDays: number
+  /** Cross-gym consecutive pairs with a gap too short to drive between
+   *  venues (under TRAVEL_MIN_GAP_SLOTS empty slots) — a day the family
+   *  physically cannot attend in full (owner ruling 2026-08-07). Cross-gym
+   *  gaps are otherwise exempt from the wait tiers: the gap is the drive. */
+  tightSplitDays: number
   earlyGames: number
   lastGames: number
   /** The team's resolved weekend style, when known. */
@@ -119,6 +124,7 @@ export function computeFairnessReport(
     let midGapDays = 0
     let monsterGapDays = 0
     let splitVenueDays = 0
+    let tightSplitDays = 0
     let earlyGames = 0
     let lastGames = 0
     const byDay = new Map<string, ReportGame[]>()
@@ -189,6 +195,13 @@ export function computeFairnessReport(
         const prev = new Date(dayGames[i - 1].scheduledAt).getTime()
         const cur = new Date(dayGames[i].scheduledAt).getTime()
         const gapSlots = (cur - prev) / (slotMinutes * 60000) - 1
+        // Consecutive games at DIFFERENT gyms: the gap is the family's
+        // drive, never a wait — but a gap too short to drive means they
+        // cannot attend both games at all (owner ruling 2026-08-07).
+        if ((dayGames[i].venueId ?? "?") !== (dayGames[i - 1].venueId ?? "?")) {
+          if (gapSlots < TRAVEL_MIN_GAP_SLOTS) tightSplitDays++
+          continue
+        }
         if (gapSlots <= 0) backToBacks++
         else if (gapSlots > 2) {
           bigGapDays++
@@ -224,6 +237,7 @@ export function computeFairnessReport(
       midGapDays,
       monsterGapDays,
       splitVenueDays,
+      tightSplitDays,
       earlyGames,
       lastGames,
       weekendStyle: style,

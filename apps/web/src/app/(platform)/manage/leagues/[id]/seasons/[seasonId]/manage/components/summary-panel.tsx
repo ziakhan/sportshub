@@ -21,13 +21,17 @@ function gamesShort(t: TeamFairness, gamesTarget: number): number {
 }
 
 /**
- * Burden score weights (owner 2026-08-07 hierarchy). A same-day two-gym
- * split and being short of the games guarantee hurt a family the most;
- * a 5hr+ "monster" wait between games is next; then a back-to-back; a
- * milder 3-4 slot "mid" wait is the least severe. Re-weight here if the
- * owner's priorities shift — nothing else should hardcode these numbers.
+ * Burden score weights (owner 2026-08-07 hierarchy). A split day with no
+ * time to drive between the gyms is the worst thing a schedule can do to a
+ * family (they cannot attend both games) — it stacks ON TOP of the split's
+ * own weight. Then the split itself and being short of the games
+ * guarantee; a 5hr+ "monster" wait between games is next; then a
+ * back-to-back; a milder 3-4 slot "mid" wait is the least severe.
+ * Re-weight here if the owner's priorities shift — nothing else should
+ * hardcode these numbers.
  */
 export const BURDEN_WEIGHTS = {
+  tightSplits: 30,
   splitVenueDays: 20,
   gamesShort: 20,
   monsterWaits: 8,
@@ -39,6 +43,7 @@ export const BURDEN_WEIGHTS = {
  *  schedule for that team. */
 export function burdenScore(t: TeamFairness, gamesTarget: number): number {
   return (
+    BURDEN_WEIGHTS.tightSplits * t.tightSplitDays +
     BURDEN_WEIGHTS.splitVenueDays * t.splitVenueDays +
     BURDEN_WEIGHTS.gamesShort * gamesShort(t, gamesTarget) +
     BURDEN_WEIGHTS.monsterWaits * t.monsterGapDays +
@@ -158,6 +163,7 @@ type ColumnKey =
   | "midWaits"
   | "monsterWaits"
   | "splitVenueDays"
+  | "tightSplits"
   | "preferenceMisses"
   | "requestMisses"
   | "topCourtShare"
@@ -194,6 +200,9 @@ export function FairnessSummaryTable({
   onSelectTeam: (teamId: string) => void
 }) {
   const hasPreference = report.teams.some((t) => t.preferenceHonored)
+  // Only present when the schedule commits this crime at all — the engine's
+  // job is to make this column disappear (owner ruling 2026-08-07).
+  const hasTightSplits = report.teams.some((t) => t.tightSplitDays > 0)
   const hasRequests = report.teams.some((t) => t.requestsHonored)
   const showGamesShort = gamesTarget > 0
 
@@ -254,6 +263,8 @@ export function FairnessSummaryTable({
         return r.team.monsterGapDays
       case "splitVenueDays":
         return r.team.splitVenueDays
+      case "tightSplits":
+        return r.team.tightSplitDays
       case "preferenceMisses":
         return r.preferenceMisses ?? -1
       case "requestMisses":
@@ -306,6 +317,13 @@ export function FairnessSummaryTable({
     { key: "midWaits", label: "Long waits (3-4)", align: "right", show: true },
     { key: "monsterWaits", label: "5hr+ waits", align: "right", show: true },
     { key: "splitVenueDays", label: "Same day, 2 gyms", align: "right", show: true },
+    {
+      key: "tightSplits",
+      label: "No time to drive",
+      align: "right",
+      show: hasTightSplits,
+      tooltip: "Split days where the gap between gyms is too short to drive it.",
+    },
     { key: "preferenceMisses", label: "Preference misses", align: "right", show: hasPreference },
     { key: "requestMisses", label: "Request misses", align: "right", show: hasRequests },
     { key: "topCourtShare", label: "Top court %", align: "right", show: true },
@@ -456,6 +474,13 @@ export function FairnessSummaryTable({
                   >
                     {t.splitVenueDays}
                   </td>
+                  {hasTightSplits && (
+                    <td
+                      className={`px-2 py-2 text-right tabular-nums ${t.tightSplitDays > 0 ? "text-hoop-700 font-semibold" : ""}`}
+                    >
+                      {t.tightSplitDays}
+                    </td>
+                  )}
                   {hasPreference && (
                     <td
                       className={`px-2 py-2 text-right tabular-nums ${r.preferenceMisses ? "text-amber-700 font-semibold" : ""}`}

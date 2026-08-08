@@ -94,6 +94,41 @@ cancellation rates, a different purpose than packing quality.)
    cross-cluster (36 SixPark+Playground, 21 SixPark+Haber) + 13 harmless
    Burlington-internal. Distance source: geocoded coordinates first
    (straight-line + threshold), Places drive-time matrix as the upgrade.
+3. **A split day and a tight schedule cannot coexist** (owner, 2026-08-07
+   night). A gym split means travel time: the cross-gym gap must be long
+   enough to drive (TRAVEL_MIN_GAP_SLOTS = 2 empty slots until clusters
+   land), and on a split day a long cross-gym gap is GOOD, not a wait —
+   "at least you can go and play one game closer to home." A split with a
+   short gap is physically unattendable and outranks every other burden.
+   Owner will also run an Instagram survey: split-day vs different-day
+   preference (he expects the answer depends on where a family lives).
+
+## Built 2026-08-07 night (commit pending deploy)
+
+**Item A + travel law + cross-time hand-down, measured clean-sheet on the
+live world (same venue-aware yardstick both sides):**
+
+| metric | committed (old engine) | new engine |
+|---|---|---|
+| undriveable split days (gap < 2 slots) | **22** | **2** |
+| split days total | 37 | 39 |
+| back-to-backs (same gym) | 9 | 10 |
+| monster waits (same gym, 5+ slots) | 9 | 17 |
+| mid waits (3-4 slots) | 72 | 82 |
+| max splits per team | 2 | 2 |
+| split distribution | {1:27, 2:5} | {1:27, 2:6} |
+| total burden points | 1661 | 1190 (−28%) |
+
+What shipped: (1) judge re-keyed [unscheduled, splits×20+tight×30 (one
+currency — strict lexicographic was measured trading 6 new splits to erase
+1 tight), maxSplitsPerTeam, monster, b2b, requests, style, mid, spread,
+tradeoffs]; (2) day-shape burden venue-aware everywhere (cross-gym gap =
+the drive, never a wait; TIGHT_SPLIT=60 forces repair to widen); (3)
+report.ts + burden table: tightSplitDays field, weight 30, "No time to
+drive" column (only shown when nonzero); (4) fairness hand-down extended
+with same-day CROSS-TIME court+clock swaps, shape-guarded. Residuals for
+item B (LNS): 2 tight days repair could not widen, 6 teams still at 2
+splits — flattening those needs destroy-and-rebuild over their days.
 
 ## The plan (staged, each measurable on the live world before/after)
 
