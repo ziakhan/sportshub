@@ -411,7 +411,7 @@ export function placeCell(
     return f
   }
 
-  for (let accepted = 0; accepted < 200; accepted++) {
+  for (let accepted = 0; accepted < 500; accepted++) {
     let bestDelta = 0
     let bestAction: (() => void) | null = null
 

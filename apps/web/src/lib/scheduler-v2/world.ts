@@ -153,7 +153,12 @@ export async function buildWorldSnapshot(
     if (sess.phase !== "REGULAR") continue
     const days: SnapDay[] = []
     for (const day of sess.days ?? []) {
-      const date = new Date(day.date)
+      // The day column is DATE-ONLY (UTC midnight). Read its CALENDAR
+      // components and anchor at LOCAL midnight, or every Saturday becomes
+      // Friday 8 p.m. locally and the whole schedule slides a day early
+      // (owner caught it: "why are my games on 11 a.m. on Friday?").
+      const raw = new Date(day.date)
+      const date = new Date(raw.getUTCFullYear(), raw.getUTCMonth(), raw.getUTCDate())
       const dow = date.getDay()
       const venues = []
       for (const dv of day.dayVenues ?? []) {
