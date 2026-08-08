@@ -60,15 +60,23 @@ S1. **Fair burden distribution.** Whatever disadvantage exists (waits,
     teams: no team stacks multiples while peers have none. A universal
     per-team burden score (weights configurable) is the shared currency of
     the engine's decisions and the operator's fairness table.
-S2. **Humane day shapes.** When a team plays twice in a day: small gap
-    (1–2 slots) best; 3–4 slot waits tolerable; 5+ hour waits and
-    back-to-backs are the burdens to minimize (back-to-back beats a
-    monster wait; both lose to a split across two days).
-S3. **Day spreading is allowed and encouraged** (owner 2026-08-08:
-    "different days are okay, not everybody has to play the same day").
-    A weekend's two games may land Sat+Sun as singles; per-team style
-    preference (families who travel far may want one trip) is honored
-    best-effort and beats the engine's default when stated.
+S2. **Humane day shapes** (owner ruling 2026-08-08, supersedes all prior
+    day-shape orderings). Same-day is the GOAL; the shape ladder:
+      1. BEST: both games one day, gap of 2+ empty slots (the preferred
+         breather — owner: "a preferred gap of two games in between or
+         more").
+      2. Next: both games one day, 1 empty slot.
+      3. Equally bad, both acceptable fallbacks: a long same-day gap
+         (5+ hours) OR the two games on two different dates. (Owner's
+         family calculus: a 9am+9pm Saturday commits the whole day but
+         frees Sunday; Sat+Sun singles nibble both days. A wash.)
+      4. NEVER: back-to-back (zero gap) — unacceptable, target is ZERO.
+S3. **Same-day first, spread as the iteration valve** (owner 2026-08-08):
+    schedule everyone same-day with optimal gaps and drive back-to-backs
+    to zero; count the long gaps that remain; if there are too many, MOVE
+    those long-gap days to two-date weekends (they trade at par per S2.3).
+    Per-team style preference, when stated, is honored best-effort and
+    beats the engine's default.
 S4. **Early/late fairness.** First-slot and last-slot games are tallied
     and spread; never concentrated on the same teams.
 S5. **Approved requests honored best-effort** (they are a contract of
@@ -80,8 +88,9 @@ S7. **Court variety inside a gym: report only.** Not an optimization
 
 ## 4. Explicit non-goals / de-prioritized (owner + Fable opinion)
 
-- Same-day doubleheaders as a default requirement — dropped. Spreading
-  across Sat/Sun is a first-class shape (S3) and dissolves most S2 pain.
+- (Withdrawn 2026-08-08 by owner ruling: same-day remains the goal;
+  Sat/Sun spreading is the fallback valve at par with long gaps, not the
+  default. See S2/S3.)
 - Court-level preferences, "top court %" — reporting only (S7).
 - Session-by-session generation — dead (H8). Sessions matter for
   publishing, locking, and vocabulary, not for solving.
@@ -117,6 +126,9 @@ A1. 0 games outside their grade's assigned gym; 0 same-day gym splits.
 A2. 726 games, 0 unscheduled, every team exactly its promise.
 A3. Burden table: no team above ~25 points while any team sits at 0 with
     the same shape available (fairness = no stacked burdens).
+A7. ZERO back-to-backs (S2.4) on the reference world, with a report of
+    how many long-gap days remain — the owner iterates from that number
+    (S3), so the engine must expose it honestly.
 A4. Regenerate with 1 team dropped: only that team's games and the
     minimal ripple change; all published/locked games byte-identical.
 A5. Preview == commit, run twice → identical.
@@ -124,8 +136,8 @@ A6. Full-season generate under 60s on the reference world.
 
 ## 7. Open questions for the owner
 
-Q1. Sat+Sun singles as the engine's default shape (style preference
-    overrides per team)? Fable recommends yes.
+Q1. ANSWERED (owner 2026-08-08): No. Same-day first with optimal gaps;
+    spreading only as the iteration valve for surplus long gaps.
 Q2. When a grade outgrows its gym mid-season (late team adds): move the
     WHOLE grade to a bigger gym for affected weekends, or allow an
     explicit, operator-approved two-gym weekend (H3 gap applies)?
