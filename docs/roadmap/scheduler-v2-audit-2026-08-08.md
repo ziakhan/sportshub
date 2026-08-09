@@ -134,6 +134,31 @@ bracket pages, sources in the research transcript):**
 - No universal same-day rest rule exists in youth basketball (soft
   advisories only) — our zero-b2b ladder is STRICTER than industry.
 
+### Validation against NPH's real 2024-25 Grade 8 bracket (2026-08-08)
+
+Fetched their live Exposure Events bracket page and compared structurally
+against buildBracket(14, thirdPlace=true):
+
+| Property | NPH's real bracket | Our generator | Match |
+|---|---|---|---|
+| Field | 14 of 19 teams | configurable, tested at 14 | ✓ |
+| Byes | 2, to Royal Crown + Cooksville (top 2) | 2, to seeds 1-2 (formula) | ✓ |
+| Round-1 games | 6 | 6 | ✓ |
+| Bye entry | round of 8, OPPOSITE halves (they met only in placement; Royal Crown won the final from one half) | seedOrder guarantees top-2 in opposite halves | ✓ |
+| 3rd-place game | yes (Cooksville won it) | thirdPlace flag | ✓ |
+| Shape | R1+QF+SF Sat, F+3rd Sun (up to 3 games/day) | tier cascade, maxGamesPerDay 3 | ✓ |
+
+NOT validated (honest limits):
+- Exact seed→pairing map: the page shows no seed numbers, so whether NPH
+  paired exactly 8v9/7v10 etc. is unverifiable; ours is the multi-source
+  industry convention.
+- Grades 9-12 pool internals: NPH's actual pool composition was not
+  reconstructable (only final standings); our POOLS format is
+  industry-standard practice, not an NPH replica. Their champions going
+  4-0 suggests a similar-but-not-identical internal structure.
+- Their game times/rest gaps: not extracted; our zero-back-to-back +
+  1-slot-rest rule is deliberately stricter than anything they enforce.
+
 ### The playoff configuration (per division)
 
 1. **Qualifiers**: a number, "all", or "top %" (NPH's real band is
