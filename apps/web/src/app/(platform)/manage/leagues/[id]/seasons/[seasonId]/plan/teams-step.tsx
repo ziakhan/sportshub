@@ -124,7 +124,17 @@ interface RegisteredTeam {
  * `PlanWorld`) is fine: an object with one extra optional property is still
  * a `PlanWorld`.
  */
-type PlanWorldWithExclusions = PlanWorld & { excludedTeamIds?: string[] }
+type PlanWorldWithExclusions = PlanWorld & {
+  excludedTeamIds?: string[]
+  /**
+   * DIVISIONS ARE MADE FROM REAL NUMBERS AT PLAN TIME (owner ruling
+   * 2026-08-09): per grade cluster, how many divisions it runs as. Plan-
+   * scoped intent like everything else in the sandbox; it becomes real
+   * Division rows (teams snake-dealt deterministically, fine-tuning board
+   * to follow) only when the one button generates. Key = the grade row key.
+   */
+  divisionPlans?: Record<string, { count: number }>
+}
 
 export function TeamsStep({
   seasonId,
@@ -489,6 +499,24 @@ export function TeamsStep({
     const world = readsWorld ? (session.world as PlanWorldWithExclusions | null) : null
     return new Set(world?.excludedTeamIds ?? [])
   }, [readsWorld, session.world])
+  const divisionPlans = useMemo(() => {
+    const world = readsWorld ? (session.world as PlanWorldWithExclusions | null) : null
+    return world?.divisionPlans ?? {}
+  }, [readsWorld, session.world])
+  const setDivisionCount = async (gradeKey: string, count: number) => {
+    if (!editsWorld || readOnly) return
+    const world = (worldRef.current ?? session.world) as PlanWorldWithExclusions | null
+    if (!world) return
+    const plans = { ...(world.divisionPlans ?? {}) }
+    if (count <= 1) delete plans[gradeKey]
+    else plans[gradeKey] = { count }
+    const next: PlanWorldWithExclusions = { ...world, divisionPlans: plans }
+    worldRef.current = next
+    setSaving("saving")
+    const ok = await session.saveWorld(next)
+    setSaving(ok ? "saved" : "idle")
+    if (!ok) setError("That didn't save. Try again.")
+  }
   const toggleExcludedTeam = async (teamId: string) => {
     if (!editsWorld || readOnly) return
     const world = (worldRef.current ?? session.world) as PlanWorldWithExclusions | null
@@ -870,6 +898,35 @@ export function TeamsStep({
                           plan's own world, so only offered while readsWorld —
                           and only when this grade actually has registered
                           teams to manage. */}
+                      {/* SPLIT INTO DIVISIONS (owner 2026-08-09): the split
+                          decision lives HERE, where the real numbers are —
+                          never at league creation. Count now; teams deal
+                          snake-by-seed at generate; the fine-tuning board is
+                          the recorded follow-up. */}
+                      {readsWorld && !out && planned >= 4 && (
+                        <div className="mt-1 flex flex-wrap items-center gap-1.5 text-xs">
+                          <span className="text-ink-500">Run as</span>
+                          <select
+                            data-testid={`division-count-${row.key}`}
+                            className="border-ink-200 rounded-lg border px-1.5 py-0.5 text-xs"
+                            value={divisionPlans[row.key]?.count ?? 1}
+                            disabled={!editsWorld || readOnly}
+                            onChange={(e) => void setDivisionCount(row.key, Number(e.target.value))}
+                          >
+                            {[1, 2, 3, 4].map((n) => (
+                              <option key={n} value={n}>
+                                {n === 1 ? "one division" : `${n} divisions`}
+                              </option>
+                            ))}
+                          </select>
+                          {(divisionPlans[row.key]?.count ?? 1) > 1 && (
+                            <span className="text-ink-400">
+                              ~{Math.ceil(planned / (divisionPlans[row.key]?.count ?? 1))} teams each,
+                              dealt by strength when the schedule is generated
+                            </span>
+                          )}
+                        </div>
+                      )}
                       {readsWorld && gradeTeams(row.divisionIds).length > 0 && (
                         <TeamsDisclosure
                           teams={gradeTeams(row.divisionIds)}
