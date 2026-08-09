@@ -18,6 +18,209 @@ interface Props {
   seasonStatus: string
 }
 
+
+/**
+ * Playoff PLAN (owner 2026-08-08): configure per division — qualifiers,
+ * format, extras, weekend — see the derived structure (byes, game count,
+ * guarantee) update live, and generate the full structural schedule with
+ * placeholder slots. Real games materialize only when seeds resolve
+ * (regular season complete); until then the plan shows "Seed 3" and
+ * "Winner of G2" rows. Design: docs/roadmap/scheduler-v2-audit-2026-08-08.md.
+ */
+function PlayoffPlanSection({ seasonId }: { seasonId: string }) {
+  const [data, setData] = useState<any | null>(null)
+  const [busy, setBusy] = useState(false)
+  const [msg, setMsg] = useState<string | null>(null)
+  const [errs, setErrs] = useState<string[]>([])
+
+  const load = useCallback(async () => {
+    const res = await fetch(`/api/seasons/${seasonId}/playoff-plan`)
+    if (res.ok) setData(await res.json())
+  }, [seasonId])
+  useEffect(() => {
+    void load()
+  }, [load])
+
+  const saveConfigs = async (configs: Record<string, any>) => {
+    await fetch(`/api/seasons/${seasonId}/playoff-plan`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ configs }),
+    })
+    await load()
+  }
+
+  const updateConfig = (divisionId: string, patch: Record<string, any>) => {
+    if (!data) return
+    const configs: Record<string, any> = {}
+    for (const d of data.divisions) {
+      configs[d.id] = d.id === divisionId ? { ...d.config, ...patch } : d.config
+    }
+    void saveConfigs(configs)
+  }
+
+  const generate = async () => {
+    setBusy(true)
+    setMsg(null)
+    setErrs([])
+    const res = await fetch(`/api/seasons/${seasonId}/playoff-plan`, { method: "POST" })
+    const body = await res.json().catch(() => null)
+    setBusy(false)
+    if (!res.ok) {
+      setErrs(Array.isArray(body?.errors) ? body.errors : [body?.error ?? "Couldn't generate."])
+      return
+    }
+    setMsg(
+      `${body.games} playoff games scheduled — ${body.materialized} with known teams, ${body.placeholders} waiting on seeds or results.`
+    )
+    await load()
+  }
+
+  if (!data) return null
+  const weekendLabel = (id: string) =>
+    data.weekends.find((w: any) => w.id === id)?.label ?? "Playoff weekend"
+
+  const planGames: any[] = data.plan?.games ?? []
+  const byWeekend = new Map<string, any[]>()
+  for (const g of planGames) {
+    if (!byWeekend.has(g.weekendId)) byWeekend.set(g.weekendId, [])
+    byWeekend.get(g.weekendId)!.push(g)
+  }
+  const divName = (id: string) => data.divisions.find((d: any) => d.id === id)?.name ?? id
+
+  return (
+    <div className={panelClass}>
+      <PanelHeader title="Playoff plan" />
+      <p className="text-ink-500 -mt-2 mb-3 text-xs">
+        Configure each division, then generate the whole playoff schedule now — teams fill in
+        when the regular season decides them. Byes are automatic (next power of two), seeding
+        is the standard 1v8 order.
+      </p>
+      {data.weekends.length === 0 && (
+        <p className="text-hoop-700 mb-3 text-xs font-semibold">
+          No playoff weekends are booked yet — add a playoff session with gym time in Planning.
+        </p>
+      )}
+      <div className="space-y-2">
+        {data.divisions.map((d: any) => (
+          <div key={d.id} className="border-ink-100 rounded-xl border p-3">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <p className="text-ink-900 text-sm font-semibold">
+                {d.name} <span className="text-ink-400 font-normal">· {d.teams} teams</span>
+              </p>
+              <p className="text-ink-500 text-xs">
+                {d.preview.field} in · {d.preview.games} games
+                {d.preview.byes > 0 ? ` · ${d.preview.byes} byes` : ""} · everyone gets ≥
+                {d.preview.guaranteedGames}
+              </p>
+            </div>
+            <div className="mt-2 flex flex-wrap items-center gap-2 text-xs">
+              <select
+                className="border-ink-200 rounded-lg border px-2 py-1"
+                value={String(d.config.qualifiers)}
+                onChange={(e) =>
+                  updateConfig(d.id, {
+                    qualifiers: e.target.value === "all" ? "all" : Number(e.target.value),
+                  })
+                }
+              >
+                <option value="all">Everybody ({d.teams})</option>
+                {[4, 6, 8, 10, 12, 14, 16].filter((n) => n < d.teams).map((n) => (
+                  <option key={n} value={n}>
+                    Top {n}
+                  </option>
+                ))}
+              </select>
+              <select
+                className="border-ink-200 rounded-lg border px-2 py-1"
+                value={d.config.format}
+                onChange={(e) => updateConfig(d.id, { format: e.target.value })}
+              >
+                <option value="BRACKET">Bracket (knockout)</option>
+                <option value="POOLS">Pools → medal rounds</option>
+                <option value="PLACEMENT">Placement rounds (no elimination)</option>
+              </select>
+              <label className="flex items-center gap-1">
+                <input
+                  type="checkbox"
+                  checked={!!d.config.thirdPlace}
+                  onChange={(e) => updateConfig(d.id, { thirdPlace: e.target.checked })}
+                />
+                3rd-place game
+              </label>
+              <select
+                className="border-ink-200 rounded-lg border px-2 py-1"
+                value={d.config.weekendId ?? ""}
+                onChange={(e) => updateConfig(d.id, { weekendId: e.target.value || null })}
+              >
+                {data.weekends.map((w: any) => (
+                  <option key={w.id} value={w.id}>
+                    {w.label ?? "Playoff weekend"} · {w.supply} slots
+                  </option>
+                ))}
+              </select>
+            </div>
+            {d.preview.notes.length > 0 && (
+              <p className="text-ink-400 mt-1.5 text-[11px]">{d.preview.notes.join(" ")}</p>
+            )}
+          </div>
+        ))}
+      </div>
+      <div className="mt-3 flex items-center gap-2">
+        <Button size="sm" onClick={() => void generate()} disabled={busy || data.weekends.length === 0}>
+          {busy ? "Generating…" : "Generate playoff schedule"}
+        </Button>
+        {msg && <p className="text-court-700 text-xs font-semibold">{msg}</p>}
+      </div>
+      {errs.length > 0 && (
+        <div className="border-hoop-200 bg-hoop-50 mt-3 rounded-xl border px-3 py-2">
+          {errs.map((e, i) => (
+            <p key={i} className="text-hoop-700 text-xs">
+              {e}
+            </p>
+          ))}
+        </div>
+      )}
+      {planGames.length > 0 && (
+        <div className="mt-4 space-y-3">
+          {[...byWeekend.entries()].map(([wid, games]) => (
+            <div key={wid}>
+              <p className="text-ink-900 mb-1 text-xs font-bold uppercase tracking-wide">
+                {weekendLabel(wid)}
+              </p>
+              <div className="overflow-x-auto">
+                <table className="w-full text-xs">
+                  <tbody>
+                    {[...games]
+                      .sort((a, b) => (a.startIso < b.startIso ? -1 : 1))
+                      .map((g) => (
+                        <tr key={g.structId + g.divisionId} className="border-ink-50 border-b">
+                          <td className="text-ink-500 py-1 pr-2 whitespace-nowrap">
+                            {new Date(g.startIso).toLocaleString("en-CA", {
+                              weekday: "short",
+                              hour: "numeric",
+                              minute: "2-digit",
+                            })}
+                          </td>
+                          <td className="text-ink-400 py-1 pr-2">{divName(g.divisionId)}</td>
+                          <td className="text-ink-500 py-1 pr-2">{g.round}</td>
+                          <td className="text-ink-900 py-1 font-semibold">
+                            {g.homeLabel} <span className="text-ink-400 font-normal">vs</span>{" "}
+                            {g.awayLabel}
+                          </td>
+                        </tr>
+                      ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 export function PlayoffsTab({ seasonId, divisions, seasonStatus }: Props) {
   const [brackets, setBrackets] = useState<any[]>([])
   const [divisionId, setDivisionId] = useState("")
@@ -109,6 +312,7 @@ export function PlayoffsTab({ seasonId, divisions, seasonStatus }: Props) {
 
   return (
     <div className="space-y-6">
+      <PlayoffPlanSection seasonId={seasonId} />
       {/* Existing brackets */}
       {brackets.map((bracket) => {
         const rounds = new Map<number, any[]>()

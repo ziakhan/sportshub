@@ -1417,6 +1417,14 @@ model Season {
 
   playoffFormat String?
   playoffTeams  Int?
+  // Scheduler v2 playoffs (owner 2026-08-08): per-division configuration
+  // (qualifiers/format/guarantee/extras) and the generated STRUCTURAL
+  // schedule — placed games carrying placeholder slots ("SEED:3",
+  // "WINNER:G2", "POOL:A:1"). Real Game rows materialize per game as
+  // slots resolve; unresolved structure lives only here, so no public
+  // surface ever meets a null team.
+  playoffConfig Json?
+  playoffPlan   Json?
   // Playoff eligibility (owner 2026-07-29): minimum games played (from the
   // scorekeeper's attendance roll call) to be playoff-eligible. Null = off.
   playoffMinGames Int?
