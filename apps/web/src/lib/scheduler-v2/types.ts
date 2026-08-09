@@ -111,9 +111,13 @@ export interface SnapTeam {
 }
 
 export interface SnapGrade {
-  id: string // Division id
+  /** Division id, or `grade:<ageGroup>` for a pooled unit (Setting A). */
+  id: string
   name: string
   teamIds: string[] // sorted
+  /** Pooled units only: each team's true division (PREFER leans on it). */
+  divisionOf?: Record<string, string>
+  poolMode?: "PREFER" | "OPEN"
 }
 
 export type PinState = "PIN" | "DRAFT"

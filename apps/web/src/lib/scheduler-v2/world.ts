@@ -145,9 +145,48 @@ export async function buildWorldSnapshot(
   grades.sort((a, b) => (a.id < b.id ? -1 : 1))
   teams.sort((a, b) => (a.id < b.id ? -1 : 1))
 
+  /* CROSS-DIVISION PLAY (owner Setting A, 2026-08-09): PREFER/OPEN grades
+     pool their divisions into ONE scheduling unit (NPH's own measured
+     reality); LOCKED (default) keeps each division its own world. The
+     pooled unit remembers each team's division so PREFER can lean
+     same-division in the matchup cost. */
+  const gradeScheduling = (season.gradeScheduling ?? {}) as Record<string, string>
+  const divisionAgeGroup = new Map<string, string>()
+  for (const d of season.divisions ?? []) divisionAgeGroup.set(d.id, d.ageGroup ?? d.name)
+  const pooledGrades: SnapGrade[] = []
+  const pooledInto = new Map<string, string>() // divisionId -> pooled unit id
+  {
+    const byAge = new Map<string, SnapGrade[]>()
+    for (const g of grades) {
+      const age = divisionAgeGroup.get(g.id) ?? g.name
+      if (!byAge.has(age)) byAge.set(age, [])
+      byAge.get(age)!.push(g)
+    }
+    for (const [age, members] of [...byAge.entries()].sort()) {
+      const mode = gradeScheduling[age]
+      if ((mode === "PREFER" || mode === "OPEN") && members.length > 1) {
+        const unitId = `grade:${age}`
+        const teamIds = members.flatMap((m) => m.teamIds).sort()
+        const divisionOf: Record<string, string> = {}
+        for (const m of members) for (const t of m.teamIds) divisionOf[t] = m.id
+        pooledGrades.push({ id: unitId, name: age, teamIds, divisionOf, poolMode: mode } as SnapGrade)
+        for (const m of members) pooledInto.set(m.id, unitId)
+      } else {
+        pooledGrades.push(...members)
+      }
+    }
+  }
+  const finalGrades = pooledGrades.sort((a, b) => (a.id < b.id ? -1 : 1))
+
   /* -------------------------------- weekends -------------------------------- */
 
   const gradeIds = new Set(grades.map((g) => g.id))
+  // Teams in pooled grades carry the pooled unit id so every layer keys
+  // consistently; their true division survives in the unit's divisionOf.
+  for (const t of teams) {
+    const pooled = pooledInto.get(t.gradeId)
+    if (pooled) (t as any).gradeId = pooled
+  }
   const weekendsRaw: SnapWeekend[] = []
   for (const sess of season.sessions ?? []) {
     if (sess.phase !== "REGULAR") continue
@@ -197,9 +236,18 @@ export async function buildWorldSnapshot(
         if (typeof gymId !== "string" || gymId.length === 0) continue
         if (!key.startsWith("division:")) continue
         const gid = key.slice("division:".length)
-        if (gradeIds.has(gid)) hosting.push({ gradeId: gid, gymId })
+        if (gradeIds.has(gid)) hosting.push({ gradeId: pooledInto.get(gid) ?? gid, gymId })
       }
     }
+    const seenHost = new Set<string>()
+    const dedupedHosting = hosting.filter((h) => {
+      const k = `${h.gradeId}|${h.gymId}`
+      if (seenHost.has(k)) return false
+      seenHost.add(k)
+      return true
+    })
+    hosting.length = 0
+    hosting.push(...dedupedHosting)
     hosting.sort((a, b) => (a.gradeId < b.gradeId ? -1 : 1))
     if (hosting.length === 0) continue // a weekend the plan gave nobody
     weekendsRaw.push({
@@ -277,7 +325,7 @@ export async function buildWorldSnapshot(
       courtBuffer: Math.max(0, season.courtBuffer ?? 0),
     },
     weekends,
-    grades,
+    grades: finalGrades,
     teams,
     existingGames,
   }

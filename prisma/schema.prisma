@@ -1425,6 +1425,12 @@ model Season {
   // surface ever meets a null team.
   playoffConfig Json?
   playoffPlan   Json?
+  // Cross-division play per grade (owner 2026-08-09, Setting A):
+  // { "<ageGroup>": "LOCKED" | "PREFER" | "OPEN" }. LOCKED = divisions
+  // schedule only within themselves (default); PREFER = one grade pool
+  // leaning same-division (NPH Gr10-12 measured pattern); OPEN = one free
+  // grade pool (NPH Gr9 pattern).
+  gradeScheduling Json?
   // Playoff eligibility (owner 2026-07-29): minimum games played (from the
   // scorekeeper's attendance roll call) to be playoff-eligible. Null = off.
   playoffMinGames Int?

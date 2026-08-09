@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react"
 import { format } from "date-fns"
 import { Badge, Button, PanelHeader, toneForStatus, DateTimePicker } from "@/components/ui"
 import { inputClass, panelClass } from "./types"
+import { DivisionSetup } from "./division-setup"
 import { TeamCheck } from "./team-check"
 import { ScheduleBoard } from "./schedule-board"
 import { ScheduleVerdictHeader, FairnessSummaryTable } from "./summary-panel"
@@ -607,6 +608,10 @@ export function ScheduleTab({
             </button>
           </p>
         )}
+
+        {/* Divisions are a SCHEDULING decision (owner 2026-08-09): one calm
+            card, everything else inside its guided dialog. */}
+        <DivisionSetup seasonId={seasonId} onChanged={() => { setPreview(null); window.location.reload() }} />
 
         {/* The mode chooser and session picker left this page 2026-08-08:
             session-by-session GENERATION is dead by owner ruling (the

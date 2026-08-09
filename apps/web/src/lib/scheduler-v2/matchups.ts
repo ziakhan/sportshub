@@ -263,6 +263,11 @@ export function buildMatchups(snapshot: WorldSnapshot): MatchupResult {
         const cost = (a: string, b: string): number => {
           const pk = pairKey(a, b)
           let c = W_REPEAT * (pairCount.get(pk) ?? 0)
+          // PREFER pooling (Setting A): lean same-division without fencing —
+          // the NPH Gr10-12 pattern (~40% same-tag vs 16% random).
+          if (grade.poolMode === "PREFER" && grade.divisionOf) {
+            if (grade.divisionOf[a] !== grade.divisionOf[b]) c += 250
+          }
           const met = lastMet.get(pk)
           if (met) {
             if (met.roundId !== null && met.roundId === w.roundId) c += W_SESSION

@@ -92,6 +92,29 @@ export function audit(snapshot: WorldSnapshot): Finding[] {
     })
   }
 
+  /* 0b. A pooled grade (Setting A) must live in ONE gym per weekend —
+        cross-division matchups cannot span buildings. */
+  for (const w of snapshot.weekends) {
+    const gymsOf = new Map<string, Set<string>>()
+    for (const h of hosting.get(w.id) ?? []) {
+      if (!gymsOf.has(h.gradeId)) gymsOf.set(h.gradeId, new Set())
+      gymsOf.get(h.gradeId)!.add(h.gymId)
+    }
+    for (const [gid, gyms] of gymsOf) {
+      if (gyms.size > 1 && gid.startsWith("grade:")) {
+        findings.push({
+          severity: "BLOCK",
+          code: "group-split-across-gyms",
+          weekendId: w.id,
+          gradeId: gid,
+          arithmetic: { gyms: gyms.size },
+          message: `Weekend of ${fmtDates(w)}: ${gid.slice(6)} plays as one pool but its divisions are booked into ${gyms.size} different gyms. Put the whole grade in one gym that weekend, or set its cross-division play to Locked.`,
+          options: ["Assign the whole grade to one gym that weekend.", "Set the grade's cross-division play to Locked."],
+        })
+      }
+    }
+  }
+
   /* 1. Cell capacity (H1, H7) — the check that would have caught v1's
         wandering games before they existed. */
   for (const w of snapshot.weekends) {

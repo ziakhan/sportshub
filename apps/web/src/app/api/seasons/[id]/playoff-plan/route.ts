@@ -128,7 +128,11 @@ function resolveConfigs(
   for (const d of season.divisions ?? []) {
     const teams = d.teamSubmissions?.length ?? 0
     if (teams < 1) continue
-    const key = d.ageGroup ?? d.name
+    const age = d.ageGroup ?? d.name
+    // Setting B: a grade whose playoff pooling is DIVISION runs one
+    // bracket PER division — its units are the divisions themselves.
+    const pooling = (stored[age] as any)?.pooling ?? "GRADE"
+    const key = pooling === "DIVISION" ? (d.name.includes(age) ? d.name : `${age} · ${d.name}`) : age
     if (!byGrade.has(key)) byGrade.set(key, { teams: 0, divisionIds: [] })
     const g = byGrade.get(key)!
     g.teams += teams

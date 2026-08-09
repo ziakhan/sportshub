@@ -34,6 +34,7 @@ function PlayoffPlanSection({ seasonId }: { seasonId: string }) {
   const [busy, setBusy] = useState(false)
   const [msg, setMsg] = useState<string | null>(null)
   const [errs, setErrs] = useState<string[]>([])
+  const [view, setView] = useState<"bracket" | "schedule">("bracket")
 
   const load = useCallback(async () => {
     const res = await fetch(`/api/seasons/${seasonId}/playoff-plan`)
@@ -237,6 +238,75 @@ function PlayoffPlanSection({ seasonId }: { seasonId: string }) {
       )}
 
       {planGames.length > 0 && (
+        <div className="border-ink-100 mt-4 inline-flex overflow-hidden rounded-lg border text-xs">
+          {(["bracket", "schedule"] as const).map((v) => (
+            <button
+              key={v}
+              type="button"
+              onClick={() => setView(v)}
+              aria-pressed={view === v}
+              className={`px-3 py-1 font-semibold ${view === v ? "bg-play-600 text-white" : "text-ink-600 bg-white"}`}
+            >
+              {v === "bracket" ? "Bracket" : "Schedule"}
+            </button>
+          ))}
+        </div>
+      )}
+      {planGames.length > 0 && view === "bracket" && (
+        <div className="mt-3 space-y-5">
+          {[...new Set(planGames.map((g) => g.divisionId))].sort().map((unit) => {
+            const unitGames = planGames.filter((g) => g.divisionId === unit)
+            const roundOrder = [...new Set(unitGames.map((g) => g.round))].sort((a, b) => {
+              const fa = unitGames.filter((g) => g.round === a).map((g) => g.startIso).sort()[0]
+              const fb = unitGames.filter((g) => g.round === b).map((g) => g.startIso).sort()[0]
+              return fa < fb ? -1 : 1
+            })
+            return (
+              <div key={unit}>
+                <p className="text-ink-900 mb-1.5 text-xs font-bold uppercase tracking-wide">{unit}</p>
+                <div className="overflow-x-auto">
+                  <div className="flex items-start gap-3 pb-1">
+                    {roundOrder.map((round) => (
+                      <div key={round} className="w-52 shrink-0">
+                        <p className="text-ink-500 mb-1 text-[11px] font-semibold">{round}</p>
+                        <div className="space-y-1.5">
+                          {unitGames
+                            .filter((g) => g.round === round)
+                            .sort((a, b) => (a.startIso < b.startIso ? -1 : 1))
+                            .map((g) => {
+                              const resolved = g.homeTeamId && g.awayTeamId
+                              return (
+                                <div
+                                  key={g.structId}
+                                  className={`rounded-lg border px-2 py-1.5 text-[11px] ${resolved ? "border-ink-200 bg-white" : "border-ink-100 bg-ink-50"}`}
+                                >
+                                  <p className={resolved ? "text-ink-900 font-semibold" : "text-ink-400"}>
+                                    {g.homeLabel}
+                                  </p>
+                                  <p className={resolved ? "text-ink-900 font-semibold" : "text-ink-400"}>
+                                    {g.awayLabel}
+                                  </p>
+                                  <p className="text-ink-400 mt-0.5">
+                                    {new Date(g.startIso).toLocaleString("en-CA", {
+                                      weekday: "short",
+                                      hour: "numeric",
+                                      minute: "2-digit",
+                                    })}
+                                  </p>
+                                </div>
+                              )
+                            })}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      )}
+      {planGames.length > 0 && view === "schedule" && (
         <div className="mt-4 space-y-4">
           {[...byWeekend.entries()].map(([wid, games]) => {
             const byDay = new Map<string, any[]>()
@@ -295,18 +365,9 @@ function PlayoffPlanSection({ seasonId }: { seasonId: string }) {
   )
 }
 
-export function PlayoffsTab({ seasonId, divisions, seasonStatus }: Props) {
+export function PlayoffsTab({ seasonId }: Props) {
   const [brackets, setBrackets] = useState<any[]>([])
-  const [divisionId, setDivisionId] = useState("")
-  const [qualifying, setQualifying] = useState("")
-  const [options, setOptions] = useState<any[] | null>(null)
-  const [seedPreview, setSeedPreview] = useState<any[] | null>(null)
-  const [format, setFormat] = useState("")
-  const [startDate, setStartDate] = useState("")
-  const [busy, setBusy] = useState(false)
   const [error, setError] = useState("")
-
-  const canGenerate = ["IN_PROGRESS", "COMPLETED"].includes(seasonStatus)
 
   const loadBrackets = useCallback(async () => {
     const res = await fetch(`/api/seasons/${seasonId}/playoffs`)
@@ -319,55 +380,6 @@ export function PlayoffsTab({ seasonId, divisions, seasonStatus }: Props) {
   useEffect(() => {
     loadBrackets()
   }, [loadBrackets])
-
-  // The guided step: division + qualifying count → the formats that fit
-  useEffect(() => {
-    const q = parseInt(qualifying, 10)
-    if (!divisionId || !Number.isFinite(q) || q < 2) {
-      setOptions(null)
-      setSeedPreview(null)
-      return
-    }
-    let cancelled = false
-    fetch(`/api/seasons/${seasonId}/playoffs?divisionId=${divisionId}&qualifying=${q}`)
-      .then((r) => (r.ok ? r.json() : null))
-      .then((data) => {
-        if (cancelled || !data) return
-        setOptions(data.options)
-        setSeedPreview(data.seedPreview)
-        setFormat("")
-      })
-    return () => {
-      cancelled = true
-    }
-  }, [seasonId, divisionId, qualifying])
-
-  const generate = async () => {
-    setBusy(true)
-    setError("")
-    const res = await fetch(`/api/seasons/${seasonId}/playoffs`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        divisionId,
-        qualifying: parseInt(qualifying, 10),
-        format,
-        startDate,
-      }),
-    })
-    const data = await res.json().catch(() => ({}))
-    setBusy(false)
-    if (!res.ok) {
-      setError(data.error || "Could not generate the bracket")
-      return
-    }
-    setDivisionId("")
-    setQualifying("")
-    setOptions(null)
-    setSeedPreview(null)
-    setFormat("")
-    loadBrackets()
-  }
 
   const removeBracket = async (sessionId: string) => {
     if (!confirm("Delete this bracket and its unplayed games?")) return
@@ -382,7 +394,6 @@ export function PlayoffsTab({ seasonId, divisions, seasonStatus }: Props) {
     loadBrackets()
   }
 
-  const usedDivisionIds = new Set(brackets.map((b) => b.playoffPlan?.divisionId))
 
   return (
     <div className="space-y-6">
@@ -464,121 +475,7 @@ export function PlayoffsTab({ seasonId, divisions, seasonStatus }: Props) {
         )
       })}
 
-      {/* Wizard */}
-      <div className={`reveal ${panelClass}`}>
-        <PanelHeader className="mb-1" title="Generate playoffs" />
-        {!canGenerate ? (
-          <p className="text-ink-500 text-sm">
-            Playoffs can be generated once the season is in progress.
-          </p>
-        ) : (
-          <div className="space-y-4">
-            <p className="text-ink-500 text-xs">
-              Pick a division and how many teams qualify — you&apos;ll only be offered formats
-              that work for that number. Seeds come from the current standings. Eligibility
-              rules (minimum games played) live under Settings &rsaquo; Rules.
-            </p>
-
-            <div className="grid gap-3 sm:grid-cols-3">
-              <label className="block">
-                <span className="text-ink-700 mb-1 block text-xs font-semibold">Division</span>
-                <select
-                  value={divisionId}
-                  onChange={(e) => setDivisionId(e.target.value)}
-                  className="border-ink-200 w-full rounded-lg border px-3 py-2 text-sm"
-                >
-                  <option value="">Select…</option>
-                  {divisions.map((d: any) => (
-                    <option key={d.id} value={d.id} disabled={usedDivisionIds.has(d.id)}>
-                      {d.name}
-                      {usedDivisionIds.has(d.id) ? " (bracket exists)" : ""}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label className="block">
-                <span className="text-ink-700 mb-1 block text-xs font-semibold">
-                  Teams qualifying
-                </span>
-                <input
-                  type="number"
-                  min={2}
-                  max={64}
-                  value={qualifying}
-                  onChange={(e) => setQualifying(e.target.value)}
-                  className="border-ink-200 w-full rounded-lg border px-3 py-2 text-sm"
-                  placeholder="e.g. 4"
-                />
-              </label>
-              <label className="block">
-                <span className="text-ink-700 mb-1 block text-xs font-semibold">
-                  First round date
-                </span>
-                <DateTimePicker mode="date" value={startDate} onChange={setStartDate} />
-              </label>
-            </div>
-
-            {options && options.length === 0 && (
-              <p className="text-hoop-600 text-sm">
-                No formats fit that number — try a different qualifying count.
-              </p>
-            )}
-
-            {options && options.length > 0 && (
-              <div className="grid gap-2 sm:grid-cols-2">
-                {options.map((o: any) => (
-                  <button
-                    key={o.key + o.label}
-                    type="button"
-                    onClick={() => setFormat(o.key)}
-                    aria-pressed={format === o.key}
-                    className={`rounded-xl border p-3 text-left transition-colors ${
-                      format === o.key
-                        ? "border-play-500 bg-play-50"
-                        : "border-ink-100 hover:border-ink-300"
-                    }`}
-                  >
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="text-ink-900 text-sm font-semibold">{o.label}</span>
-                      {o.recommended && <Badge tone="play">Recommended</Badge>}
-                    </div>
-                    <p className="text-ink-500 mt-1 text-xs">{o.description}</p>
-                    <p className="text-ink-400 mt-1 text-[11px]">
-                      {o.games} games · {o.rounds} round{o.rounds > 1 ? "s" : ""}
-                    </p>
-                  </button>
-                ))}
-              </div>
-            )}
-
-            {seedPreview && seedPreview.length > 0 && (
-              <div>
-                <h4 className="font-condensed text-ink-800 mb-2 text-sm font-bold uppercase tracking-wide">
-                  Seeds (current standings)
-                </h4>
-                <ol className="text-ink-700 grid gap-1 text-sm sm:grid-cols-2">
-                  {seedPreview.map((s: any) => (
-                    <li key={s.teamId} className="flex items-baseline gap-2">
-                      <span className="text-ink-400 w-5 font-mono text-xs">#{s.seed}</span>
-                      <span className="font-medium">{s.name}</span>
-                      <span className="text-ink-400 text-xs">{s.record}</span>
-                    </li>
-                  ))}
-                </ol>
-              </div>
-            )}
-
-            {error && <p className="text-hoop-600 text-sm">{error}</p>}
-
-            <Button
-              onClick={generate}
-              disabled={busy || !divisionId || !format || !startDate}
-            >
-              {busy ? "Generating…" : "Generate bracket"}
-            </Button>
-          </div>
-        )}
-      </div>
+      {error && <p className="text-hoop-600 text-sm">{error}</p>}
     </div>
   )
 }
