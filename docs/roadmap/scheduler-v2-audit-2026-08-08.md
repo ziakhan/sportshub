@@ -325,6 +325,40 @@ product space, and each drives different software:
   tier labels, absent from public pages); recommend LEAGUE PLACES as
   the default mode, CLUBS CHOOSE as the config alternative.
 
+## 4c. PROVEN: conferences are labels, grades are the scheduling pool
+(2026-08-09, from NPH's live stats API — stats.northpolehoops.com, the
+real system behind their Exposure shell; raw JSON saved in scratchpad)
+
+Owner asked: which teams do small-division teams play, and were there
+cross-division matchups? The answer dissolves the premise:
+
+- **In NPH's actual system, conferences are NOT scheduling divisions.**
+  Each grade is one pool; ARETE/PRIME/etc. are name suffixes, and many
+  teams carry none. Grade 9 (26 teams): ARETE 9, PRIME 7, untagged 10 —
+  no GAME SPEAKS at all (the census counts were approximations from
+  entry text; the live API corrects them).
+- **Underdog Elite (Gr9, untagged): 10 regular-season games against 10
+  DISTINCT opponents** across ARETE, PRIME and untagged teams — full
+  coverage-before-repeats across the whole grade. Cross-"conference"
+  play everywhere.
+- **Grade 12 shows clustering**: MC Elite (untagged) played DMV CHILL
+  opponents 10 of 12 times and ARETE never — consistent with Gr12
+  running TWO scheduling pools (ARETE ~10 | DMV+untagged ~16). So NPH
+  merges labels into right-sized pools per grade, exactly the
+  "scheduling group" concept.
+- **The disaster that proves the auditor**: "Retro Elite - GAME SPEAKS",
+  Grade 12's only GS-tagged team, finished the season **0-0-0 with ZERO
+  games** — nobody ever generated it a schedule. The precise failure
+  our H2 BLOCK finding ("would get 0 of the promised 10 games")
+  makes impossible.
+
+**Requirements consequence (supersedes the tiny-division worry):**
+division-as-label vs pool-as-schedule is NPH's real model. Our
+scheduling-groups pooling for small divisions is now an evidence-backed
+requirement, not a speculation; and our demo world's isolated 2-3 team
+divisions misrepresent NPH (they'd be pooled). Queued with the
+division-formation design (4b).
+
 ## 5. Missing-features inventory (plan for the future)
 
 Game-level operations:
