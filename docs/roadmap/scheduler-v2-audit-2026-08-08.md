@@ -389,6 +389,41 @@ From the live stats API (playoff rounds carry rnd_type "F"):
    consolation, bracket continuing for winners; labels do not fence
    playoff draws unless STRICT.
 
+## 4e. The industry-standard option sheet (owner 2026-08-09: every
+option defensible as "industry standard + what NPH did")
+
+**Setting A — Regular-season scheduling (league/grade level):**
+| Option | Provenance |
+|---|---|
+| Locked to division | classic conference play; OUR CURRENT BEHAVIOR |
+| Prefer own division | NPH 25-26 Gr10-12 measured pattern (~42% same-tag vs 16% random) |
+| Open across the grade | NPH 25-26 Gr9 measured pattern (random mixing) |
+
+**Setting B — Playoff pooling (grade level):**
+| Option | Provenance |
+|---|---|
+| Pooled by grade (merged seeding) | NPH 25-26 reality; OUR CURRENT BEHAVIOR |
+| Locked: each division its own bracket | strict-conference leagues; industry norm where conferences are real |
+
+**Setting C — Playoff qualification:** everybody (NPH 25-26) · top N
+(NPH 24-25 used ~65-75%) · top % .
+
+**Setting D — Guarantee → format (with meaning-bearing labels):**
+at least 1 = knockout (universal) · at least 2 = knockout + consolation
+round (NPH 25-26) · at least 3-4 = pools → medal Sunday (AAU/industry
+guaranteed-games norm).
+
+**Setting E — Format override (Advanced, kept WITH PURPOSE — each entry
+names its precedent):** Automatic · Knockout bracket (universal) ·
+Pools → medals (AAU standard) · Placement rounds, standings decide
+(NPH 24-25 Gr9-11 Sunday shape) · Bye gauntlet — byes play two
+qualifying games (NPH 24-25 exact variant; NOT YET BUILT, add on NPH's
+ask) · 3rd-place game toggle (NPH plays one, both seasons).
+
+Status: C, D, E-minus-gauntlet, and the "pooled" side of B are BUILT.
+A's choice, B's locked side, and the gauntlet variant are designed,
+queued for go.
+
 ## 5. Missing-features inventory (plan for the future)
 
 Game-level operations:
