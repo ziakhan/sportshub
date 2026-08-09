@@ -33,11 +33,18 @@ export function DivisionSetup({
   onChanged: () => void
 }) {
   const [grades, setGrades] = useState<GradeState[] | null>(null)
+  const [loadError, setLoadError] = useState<string | null>(null)
   const [open, setOpen] = useState(false)
 
   const load = useCallback(async () => {
-    const res = await fetch(`/api/seasons/${seasonId}/divisions/formation`)
-    if (res.ok) setGrades((await res.json()).grades ?? [])
+    setLoadError(null)
+    try {
+      const res = await fetch(`/api/seasons/${seasonId}/divisions/formation`)
+      if (res.ok) setGrades((await res.json()).grades ?? [])
+      else setLoadError(`the server said ${res.status}`)
+    } catch {
+      setLoadError("the request did not reach the server")
+    }
   }, [seasonId])
   useEffect(() => {
     void load()
@@ -47,6 +54,24 @@ export function DivisionSetup({
     () => (grades ?? []).filter((g) => g.teams >= SPLIT_THRESHOLD || g.divisions.length > 1),
     [grades]
   )
+  // A failed load must say so — a silently missing card is undebuggable.
+  if (loadError) {
+    return (
+      <div className="border-ink-100 mb-4 rounded-2xl border bg-white p-4">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div>
+            <PanelHeader title="Divisions" />
+            <p className="text-ink-500 -mt-2 text-xs">
+              Couldn&apos;t load the division list — {loadError}.
+            </p>
+          </div>
+          <Button size="sm" variant="secondary" onClick={() => void load()}>
+            Try again
+          </Button>
+        </div>
+      </div>
+    )
+  }
   if (!grades || splittable.length === 0) return null
 
   const splitCount = splittable.filter((g) => g.divisions.length > 1).length
