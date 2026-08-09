@@ -159,6 +159,44 @@ NOT validated (honest limits):
 - Their game times/rest gaps: not extracted; our zero-back-to-back +
   1-slot-rest rule is deliberately stricter than anything they enforce.
 
+### Forensic reconstruction of NPH Grades 9-12 (2026-08-08, from raw game data)
+
+Owner's insight proved right: the games themselves were on the public
+bracket pages, and who-played-whom decomposes the format exactly. This
+OVERTURNS the earlier "pools" characterization (which came from a first
+researcher's guess at the standings) — grades 9-11 were NOT pools:
+
+**Grades 9/10/11 (18 teams, 18 games each) — a bye-gauntlet knockout:**
+1. Seeds 1-2 bye; seeds 3-18 play Round 1 (8 games). The 8 losers are
+   done after ONE game (their "2 guaranteed playoff games" marketing did
+   not survive contact with the bracket).
+2. Saturday gauntlet (6 games): EACH bye team plays TWO different R1
+   winners (a double quarterfinal — verified: RSB beat City Above at
+   2:45 and Eurostep at 6:30); the remaining four R1 winners pair off.
+   10 teams -> 4 in one day.
+3. Sunday final four: semifinals + final + 3rd place (4 games).
+   Records confirm the shape exactly: one 4-0 champion, 3-1 finalist,
+   3-1 third, 2-2 fourth, six 1-1, eight 0-1 = 36 team-games = 18 ✓.
+
+**Grade 12 (16 teams, 16 games) — a clean 16-bracket + 3rd place**
+(8+4+2+1+1), no byes needed.
+
+**Rest-gap validation:** NPH's own double-game days kept >= 1 empty slot
+between a team's games (City Above 12:15 -> 2:45; RSB 2:45 -> 6:30) —
+our no-b2b + 1-slot-rest playoff rule matches their real practice.
+
+**Can our tool express what they did?** Grade 12: yes, exactly (BRACKET,
+16, 3rd place on). Grades 9-11: everything EXCEPT the double-QF
+gauntlet — our byes skip into a single quarterfinal, giving top seeds
+one fewer Saturday game. If the owner wants last year reproduced
+verbatim, that is one named format variant to add ("bye teams play two
+qualifying games"); alternatively our standard bracket is the
+conventional version of the same weekend. Data caveats: a handful of
+extracted scores are noisy (one Gr11 opponent missing, one Gr12
+apparent duplicate, standings tab sort quirks) — structure conclusions
+rest on game counts and records, which are consistent across all three
+grades.
+
 ### The playoff configuration (per division)
 
 1. **Qualifiers**: a number, "all", or "top %" (NPH's real band is
