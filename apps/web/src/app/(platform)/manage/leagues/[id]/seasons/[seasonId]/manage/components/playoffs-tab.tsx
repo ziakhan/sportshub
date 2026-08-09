@@ -105,6 +105,49 @@ function PlayoffPlanSection({ seasonId }: { seasonId: string }) {
         </p>
       )}
 
+      {/* Grades that run as divisions choose their bracket pooling HERE —
+          a playoff-time decision, not a season-start one (owner 2026-08-09). */}
+      {(data.gradePooling ?? []).length > 0 && (
+        <div className="border-ink-100 bg-ink-50/50 mb-3 space-y-2 rounded-xl border p-3">
+          {(data.gradePooling ?? []).map((gp: any) => (
+            <div key={gp.ageGroup} className="flex flex-wrap items-center justify-between gap-2">
+              <p className="text-ink-700 text-xs">
+                <span className="text-ink-900 font-semibold">{gp.ageGroup}</span> runs as{" "}
+                {gp.divisions} divisions — its playoffs are
+              </p>
+              <div className="border-ink-200 inline-flex overflow-hidden rounded-lg border text-xs">
+                {(
+                  [
+                    { v: "GRADE", label: "one championship" },
+                    { v: "DIVISION", label: "a bracket per division" },
+                  ] as const
+                ).map((o) => (
+                  <button
+                    key={o.v}
+                    type="button"
+                    aria-pressed={gp.pooling === o.v}
+                    onClick={async () => {
+                      await fetch(`/api/seasons/${seasonId}/playoff-plan`, {
+                        method: "PATCH",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ ageGroup: gp.ageGroup, pooling: o.v }),
+                      })
+                      setMsg("Pooling saved — press Plan the playoffs to rebuild the schedule.")
+                      await load()
+                    }}
+                    className={`px-2.5 py-1 font-semibold ${
+                      gp.pooling === o.v ? "bg-play-600 text-white" : "text-ink-600 bg-white"
+                    }`}
+                  >
+                    {o.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
       <div className="space-y-2">
         {data.divisions.map((d: any) => {
           const c = d.config

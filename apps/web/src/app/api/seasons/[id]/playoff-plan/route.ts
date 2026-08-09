@@ -232,8 +232,27 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
       }
     })
 
+    // Grades running as multiple divisions: the Playoffs tab asks HERE how
+    // their brackets pool (owner 2026-08-09: playoff questions live in the
+    // playoff area, not in season-start division setup).
+    const stored = (season.playoffConfig ?? {}) as Record<string, any>
+    const divCountByAge = new Map<string, number>()
+    for (const d of season.divisions ?? []) {
+      if ((d.teamSubmissions?.length ?? 0) === 0) continue
+      const age = d.ageGroup ?? d.name
+      divCountByAge.set(age, (divCountByAge.get(age) ?? 0) + 1)
+    }
+    const gradePooling = [...divCountByAge.entries()]
+      .filter(([, n]) => n > 1)
+      .map(([age, n]) => ({
+        ageGroup: age,
+        divisions: n,
+        pooling: stored[age]?.pooling === "DIVISION" ? "DIVISION" : "GRADE",
+      }))
+
     return NextResponse.json({
       divisions,
+      gradePooling,
       weekends: weekends.map((w) => ({
         id: w.id,
         label: w.label,
@@ -263,6 +282,34 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
       return NextResponse.json({ error: "Validation error", details: error.errors }, { status: 400 })
     }
     console.error("Playoff plan PUT error:", error)
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+  }
+}
+
+const patchSchema = z.object({
+  ageGroup: z.string().min(1).max(80),
+  pooling: z.enum(["GRADE", "DIVISION"]),
+})
+
+/** PATCH — one grade's bracket pooling (whole grade vs per-division). */
+export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
+  try {
+    const gate = await seasonPlannerAuth(params.id)
+    if (gate.status !== 200) return NextResponse.json({ error: gate.error }, { status: gate.status })
+    const body = patchSchema.parse(await req.json())
+    const season = await (prisma as any).season.findUnique({
+      where: { id: params.id },
+      select: { playoffConfig: true },
+    })
+    const pc = { ...((season?.playoffConfig ?? {}) as Record<string, any>) }
+    pc[body.ageGroup] = { ...(pc[body.ageGroup] ?? {}), pooling: body.pooling }
+    await (prisma as any).season.update({ where: { id: params.id }, data: { playoffConfig: pc } })
+    return NextResponse.json({ saved: true })
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return NextResponse.json({ error: "Validation error", details: error.errors }, { status: 400 })
+    }
+    console.error("Playoff plan PATCH error:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }

@@ -26,13 +26,17 @@ const postSchema = z.object({
     .min(1)
     .max(6),
   scheduling: z.enum(["LOCKED", "PREFER", "OPEN"]).optional(),
-  playoffPooling: z.enum(["GRADE", "DIVISION"]).optional(),
 })
 
 export async function GET(_req: NextRequest, { params }: { params: { id: string } }) {
   try {
     const gate = await seasonPlannerAuth(params.id)
     if (gate.status !== 200) return NextResponse.json({ error: gate.error }, { status: gate.status })
+    const season = await (prisma as any).season.findUnique({
+      where: { id: params.id },
+      select: { gradeScheduling: true },
+    })
+    const gradeScheduling = (season?.gradeScheduling ?? {}) as Record<string, string>
     const divisions = await (prisma as any).division.findMany({
       where: { seasonId: params.id },
       orderBy: [{ ageGroup: "asc" }, { name: "asc" }],
@@ -46,7 +50,13 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
     const byGrade = new Map<string, any>()
     for (const d of divisions) {
       const key = d.ageGroup ?? d.name
-      if (!byGrade.has(key)) byGrade.set(key, { ageGroup: key, divisions: [], teams: 0 })
+      if (!byGrade.has(key))
+        byGrade.set(key, {
+          ageGroup: key,
+          scheduling: gradeScheduling[key] ?? "LOCKED",
+          divisions: [],
+          teams: 0,
+        })
       const g = byGrade.get(key)
       g.divisions.push({
         id: d.id,
@@ -69,22 +79,18 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     const body = postSchema.parse(await req.json())
     const result = await formDivisions(params.id, body.ageGroup, body.divisions)
     if (!result.ok) return NextResponse.json({ error: result.error }, { status: 422 })
-    /* Settings A and B ride the same guided flow (owner: the related
-       questions belong to this moment). */
-    const season = await (prisma as any).season.findUnique({
-      where: { id: params.id },
-      select: { gradeScheduling: true, playoffConfig: true },
-    })
+    /* Cross-division play is the one season-start setting that rides this
+       flow. Playoff questions live on the Playoffs tab (owner 2026-08-09:
+       decide them when the season is ending, not here). */
     if (body.scheduling) {
+      const season = await (prisma as any).season.findUnique({
+        where: { id: params.id },
+        select: { gradeScheduling: true },
+      })
       const gs = { ...((season?.gradeScheduling ?? {}) as Record<string, string>) }
       if (body.divisions.length <= 1 || body.scheduling === "LOCKED") delete gs[body.ageGroup]
       else gs[body.ageGroup] = body.scheduling
       await (prisma as any).season.update({ where: { id: params.id }, data: { gradeScheduling: gs } })
-    }
-    if (body.playoffPooling) {
-      const pc = { ...((season?.playoffConfig ?? {}) as Record<string, any>) }
-      pc[body.ageGroup] = { ...(pc[body.ageGroup] ?? {}), pooling: body.playoffPooling }
-      await (prisma as any).season.update({ where: { id: params.id }, data: { playoffConfig: pc } })
     }
     return NextResponse.json(result)
   } catch (error) {
