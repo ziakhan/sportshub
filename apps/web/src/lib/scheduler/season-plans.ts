@@ -191,6 +191,9 @@ export const planWorldSchema = z.object({
    *  below clamps them to real submissions of this season, same as every
    *  other id this schema accepts. */
   excludedTeamIds: z.array(z.string()).max(500).optional(),
+  // Step-1 "run as N divisions" intents (owner 2026-08-09) — plan-scoped,
+  // materialized by the one-button generate.
+  divisionPlans: z.record(z.object({ count: z.number().int().min(1).max(4) })).optional(),
   gameSlotMinutes: z.number().int().min(10).max(240).optional(),
   fridayStart: z.string().regex(/^\d{1,2}:\d{2}$/).optional(),
   fridayEnd: z.string().regex(/^\d{1,2}:\d{2}$/).optional(),
@@ -206,7 +209,10 @@ export const planSettingsSchema = z.object({
  *  that file is the client's own, in flight the same day — so this module
  *  stays self-contained; a zod-parsed world structurally satisfies it either
  *  way. */
-export type PlanWorldWithExclusions = PlanWorld & { excludedTeamIds?: string[] }
+export type PlanWorldWithExclusions = PlanWorld & {
+  excludedTeamIds?: string[]
+  divisionPlans?: Record<string, { count: number }>
+}
 
 /**
  * A world the operator edited, clamped to things this season actually has
@@ -281,6 +287,7 @@ export async function sanitizePlanWorld(
     // survive. Absent stays absent — a plan that never named an exclusion
     // list keeps not having one.
     excludedTeamIds: world.excludedTeamIds?.filter((id) => validTeamIds.has(id)),
+    divisionPlans: world.divisionPlans,
   }
 }
 

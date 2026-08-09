@@ -499,23 +499,60 @@ export function TeamsStep({
     const world = readsWorld ? (session.world as PlanWorldWithExclusions | null) : null
     return new Set(world?.excludedTeamIds ?? [])
   }, [readsWorld, session.world])
+  /** Local mirror of saved intents so the ACTIVE plan (whose board draws
+   *  the season, not a sandbox world) still shows what it saved. */
+  const [intentOverrides, setIntentOverrides] = useState<Record<string, number>>({})
   const divisionPlans = useMemo(() => {
-    const world = readsWorld ? (session.world as PlanWorldWithExclusions | null) : null
-    return world?.divisionPlans ?? {}
-  }, [readsWorld, session.world])
+    const world = session.world as PlanWorldWithExclusions | null
+    const fromWorld = world?.divisionPlans ?? {}
+    const merged: Record<string, { count: number }> = { ...fromWorld }
+    for (const [k, count] of Object.entries(intentOverrides)) merged[k] = { count }
+    return merged
+  }, [session.world, intentOverrides])
+  /** The number the row SHOWS: saved intent first, else the season's real
+   *  non-empty division count for the grade (so a grade already split
+   *  reads "2 divisions" on the active plan). */
+  const shownDivisionCount = (row: { key: string; divisionIds: string[] }): number => {
+    const intent = divisionPlans[row.key]?.count
+    if (intent) return intent
+    const withTeams = new Set(
+      gradeTeams(row.divisionIds).map((t) => t.divisionId).filter(Boolean)
+    )
+    return Math.max(1, withTeams.size)
+  }
   const setDivisionCount = async (gradeKey: string, count: number) => {
-    if (!editsWorld || readOnly) return
-    const world = (worldRef.current ?? session.world) as PlanWorldWithExclusions | null
-    if (!world) return
-    const plans = { ...(world.divisionPlans ?? {}) }
-    if (count <= 1) delete plans[gradeKey]
-    else plans[gradeKey] = { count }
-    const next: PlanWorldWithExclusions = { ...world, divisionPlans: plans }
-    worldRef.current = next
+    if (readOnly || !session.planId) return
     setSaving("saving")
-    const ok = await session.saveWorld(next)
-    setSaving(ok ? "saved" : "idle")
-    if (!ok) setError("That didn't save. Try again.")
+    if (editsWorld) {
+      const world = (worldRef.current ?? session.world) as PlanWorldWithExclusions | null
+      if (world) {
+        const plans = { ...(world.divisionPlans ?? {}) }
+        if (count <= 1) delete plans[gradeKey]
+        else plans[gradeKey] = { count }
+        const next: PlanWorldWithExclusions = { ...world, divisionPlans: plans }
+        worldRef.current = next
+        const ok = await session.saveWorld(next)
+        setSaving(ok ? "saved" : "idle")
+        if (!ok) setError("That didn't save. Try again.")
+        return
+      }
+    }
+    // Active plan (no sandbox world in session): the dedicated endpoint
+    // writes the same stored settings the generate button reads.
+    const res = await fetch(
+      `/api/seasons/${seasonId}/plans/${session.planId}/division-intent`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ gradeKey, count }),
+      }
+    ).catch(() => null)
+    setSaving(res?.ok ? "saved" : "idle")
+    if (!res?.ok) {
+      setError("That didn't save. Try again.")
+      return
+    }
+    setIntentOverrides((o) => ({ ...o, [gradeKey]: count }))
   }
   const toggleExcludedTeam = async (teamId: string) => {
     if (!editsWorld || readOnly) return
@@ -903,14 +940,18 @@ export function TeamsStep({
                           never at league creation. Count now; teams deal
                           snake-by-seed at generate; the fine-tuning board is
                           the recorded follow-up. */}
-                      {readsWorld && !out && planned >= 4 && (
+                      {/* Unlike the exclude list (which renders AGAINST the
+                          plan's own world), the division count applies to any
+                          open plan including the ACTIVE one — the owner
+                          couldn't see it at all on his real plan (2026-08-09). */}
+                      {!out && planned >= 4 && session.planId && (
                         <div className="mt-1 flex flex-wrap items-center gap-1.5 text-xs">
                           <span className="text-ink-500">Run as</span>
                           <select
                             data-testid={`division-count-${row.key}`}
                             className="border-ink-200 rounded-lg border px-1.5 py-0.5 text-xs"
-                            value={divisionPlans[row.key]?.count ?? 1}
-                            disabled={!editsWorld || readOnly}
+                            value={shownDivisionCount(row)}
+                            disabled={readOnly}
                             onChange={(e) => void setDivisionCount(row.key, Number(e.target.value))}
                           >
                             {[1, 2, 3, 4].map((n) => (
@@ -919,10 +960,10 @@ export function TeamsStep({
                               </option>
                             ))}
                           </select>
-                          {(divisionPlans[row.key]?.count ?? 1) > 1 && (
+                          {shownDivisionCount(row) > 1 && (
                             <span className="text-ink-400">
-                              ~{Math.ceil(planned / (divisionPlans[row.key]?.count ?? 1))} teams each,
-                              dealt by strength when the schedule is generated
+                              ~{Math.ceil(planned / shownDivisionCount(row))} teams each, dealt when
+                              the schedule is generated
                             </span>
                           )}
                         </div>
