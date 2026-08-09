@@ -940,34 +940,11 @@ export function TeamsStep({
                           never at league creation. Count now; teams deal
                           snake-by-seed at generate; the fine-tuning board is
                           the recorded follow-up. */}
-                      {/* Unlike the exclude list (which renders AGAINST the
-                          plan's own world), the division count applies to any
-                          open plan including the ACTIVE one — the owner
-                          couldn't see it at all on his real plan (2026-08-09). */}
-                      {!out && planned >= 4 && session.planId && (
-                        <div className="mt-1 flex flex-wrap items-center gap-1.5 text-xs">
-                          <span className="text-ink-500">Run as</span>
-                          <select
-                            data-testid={`division-count-${row.key}`}
-                            className="border-ink-200 rounded-lg border px-1.5 py-0.5 text-xs"
-                            value={shownDivisionCount(row)}
-                            disabled={readOnly}
-                            onChange={(e) => void setDivisionCount(row.key, Number(e.target.value))}
-                          >
-                            {[1, 2, 3, 4].map((n) => (
-                              <option key={n} value={n}>
-                                {n === 1 ? "one division" : `${n} divisions`}
-                              </option>
-                            ))}
-                          </select>
-                          {shownDivisionCount(row) > 1 && (
-                            <span className="text-ink-400">
-                              ~{Math.ceil(planned / shownDivisionCount(row))} teams each, dealt when
-                              the schedule is generated
-                            </span>
-                          )}
-                        </div>
-                      )}
+                      {/* Division formation LEFT this page (owner ruling
+                          2026-08-09): planning is gyms and capacity; divisions
+                          are a SCHEDULING decision made when the league locks,
+                          in their own guided flow. Grade counts are all
+                          planning ever needed. */}
                       {readsWorld && gradeTeams(row.divisionIds).length > 0 && (
                         <TeamsDisclosure
                           teams={gradeTeams(row.divisionIds)}
