@@ -24,9 +24,9 @@ export const dynamic = "force-dynamic"
 
 const configSchema = z.object({
   qualifiers: z.union([z.literal("all"), z.number().int().min(2).max(64)]),
-  format: z.enum(["BRACKET", "POOLS", "PLACEMENT"]),
+  guaranteedGames: z.number().int().min(1).max(6),
+  formatOverride: z.enum(["BRACKET", "POOLS", "PLACEMENT"]).nullable(),
   thirdPlace: z.boolean(),
-  placementRounds: z.number().int().min(1).max(8),
   maxGamesPerDay: z.number().int().min(1).max(4),
   weekendId: z.string().nullable(),
 })
@@ -116,22 +116,35 @@ function resolveConfigs(
   season: any,
   weekends: SnapWeekend[],
   slotMinutes: number
-): Map<string, { cfg: PlayoffDivisionConfig; teams: number; structure: ReturnType<typeof buildStructure> }> {
+): Map<string, { cfg: PlayoffDivisionConfig; teams: number; label: string; divisionIds: string[]; structure: ReturnType<typeof buildStructure> }> {
   const stored = (season.playoffConfig ?? {}) as Record<string, PlayoffDivisionConfig>
   const remaining = new Map<string, number>()
   for (const w of weekends) remaining.set(w.id, weekendSupply(w, slotMinutes))
 
-  const rows: Array<{ id: string; teams: number; cfg: PlayoffDivisionConfig; structure: ReturnType<typeof buildStructure> }> = []
+  // THE PLAYOFF UNIT IS THE GRADE (final model, owner 2026-08-09):
+  // conference divisions are labels; their teams pool for the playoffs,
+  // seeded by merged regular-season records.
+  const byGrade = new Map<string, { teams: number; divisionIds: string[] }>()
   for (const d of season.divisions ?? []) {
     const teams = d.teamSubmissions?.length ?? 0
-    if (teams < 2) continue
+    if (teams < 1) continue
+    const key = d.ageGroup ?? d.name
+    if (!byGrade.has(key)) byGrade.set(key, { teams: 0, divisionIds: [] })
+    const g = byGrade.get(key)!
+    g.teams += teams
+    g.divisionIds.push(d.id)
+  }
+
+  const rows: Array<{ id: string; teams: number; label: string; divisionIds: string[]; cfg: PlayoffDivisionConfig; structure: ReturnType<typeof buildStructure> }> = []
+  for (const [key, g] of [...byGrade.entries()].sort()) {
+    if (g.teams < 2) continue
     const cfg: PlayoffDivisionConfig = {
-      ...defaultConfig(teams),
-      ...(stored[d.id] ?? {}),
-      weekendId: stored[d.id]?.weekendId ?? null,
+      ...defaultConfig(g.teams),
+      ...(stored[key] ?? {}),
+      weekendId: stored[key]?.weekendId ?? null,
     }
-    const field = cfg.qualifiers === "all" ? teams : Math.min(cfg.qualifiers, teams)
-    rows.push({ id: d.id, teams, cfg, structure: buildStructure(field, cfg) })
+    const field = cfg.qualifiers === "all" ? g.teams : Math.min(cfg.qualifiers, g.teams)
+    rows.push({ id: key, teams: g.teams, label: key, divisionIds: g.divisionIds, cfg, structure: buildStructure(field, cfg) })
   }
   // Pinned choices consume capacity first, then defaults pack the rest.
   for (const r of rows) {
@@ -148,7 +161,7 @@ function resolveConfigs(
     r.cfg.weekendId = best
     if (best) remaining.set(best, remaining.get(best)! - r.structure.games.length)
   }
-  return new Map(rows.map((r) => [r.id, { cfg: r.cfg, teams: r.teams, structure: r.structure }]))
+  return new Map(rows.map((r) => [r.id, { cfg: r.cfg, teams: r.teams, label: r.label, divisionIds: r.divisionIds, structure: r.structure }]))
 }
 
 async function seasonState(seasonId: string) {
@@ -175,25 +188,45 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
     const weekends = await playoffWeekends(params.id)
     const slotMinutes = season.gameSlotMinutes ?? 75
     const resolved = resolveConfigs(season, weekends, slotMinutes)
-    const divisions = (season.divisions ?? [])
-      .filter((d: any) => resolved.has(d.id))
-      .map((d: any) => {
-        const { cfg, teams, structure } = resolved.get(d.id)!
-        const field = cfg.qualifiers === "all" ? teams : Math.min(cfg.qualifiers as number, teams)
-        return {
-          id: d.id,
-          name: d.name,
-          teams,
-          config: cfg,
-          preview: {
-            field,
-            games: structure.games.length,
-            byes: structure.byes,
-            guaranteedGames: structure.guaranteedGames,
-            notes: structure.notes,
-          },
-        }
-      })
+    // Per-weekend load so each card can say, in one sentence, whether it
+    // fits alongside the other grades sharing its weekend.
+    const loadByWeekend = new Map<string, number>()
+    for (const [, e] of resolved) {
+      if (!e.cfg.weekendId) continue
+      loadByWeekend.set(e.cfg.weekendId, (loadByWeekend.get(e.cfg.weekendId) ?? 0) + e.structure.games.length)
+    }
+    const divisions = [...resolved.entries()].map(([key, entry]) => {
+      const { cfg, teams, structure, divisionIds } = entry
+      const field = cfg.qualifiers === "all" ? teams : Math.min(cfg.qualifiers as number, teams)
+      const w = weekends.find((x) => x.id === cfg.weekendId)
+      const supply = w ? weekendSupply(w, slotMinutes) : 0
+      const load = cfg.weekendId ? (loadByWeekend.get(cfg.weekendId) ?? 0) : 0
+      const lastDay = w?.days[w.days.length - 1]
+      const finalDayName = lastDay
+        ? new Date(lastDay.date).toLocaleDateString("en-CA", { weekday: "long" })
+        : "the final day"
+      const fit = !w
+        ? { ok: false, text: "No playoff weekend is booked yet." }
+        : load <= supply
+          ? { ok: true, text: `${structure.games.length} games · fits ${w.label ?? "the playoff weekend"} (${load} of ${supply} slots with the other grades)` }
+          : { ok: false, text: `${w.label ?? "The playoff weekend"} needs ${load} games across its grades but holds ${supply}. Move a grade to another weekend or add court time.` }
+      return {
+        id: key,
+        name: key,
+        teams,
+        divisionCount: divisionIds.length,
+        config: cfg,
+        preview: {
+          field,
+          games: structure.games.length,
+          byes: structure.byes,
+          guaranteedGames: structure.guaranteedGames,
+          notes: structure.notes,
+          finalDayName,
+          fit,
+        },
+      }
+    })
 
     return NextResponse.json({
       divisions,
@@ -254,13 +287,12 @@ export async function POST(_req: NextRequest, { params }: { params: { id: string
     const slotMinutes = season.gameSlotMinutes ?? 75
     const resolved = resolveConfigs(season, weekends, slotMinutes)
 
-    /* Structures per weekend. */
+    /* Structures per weekend, one unit per GRADE. */
     const perWeekend = new Map<string, Array<{ divisionId: string; name: string; games: any[] }>>()
-    for (const d of season.divisions ?? []) {
-      const entry = resolved.get(d.id)
-      if (!entry || !entry.cfg.weekendId) continue
+    for (const [key, entry] of resolved) {
+      if (!entry.cfg.weekendId) continue
       if (!perWeekend.has(entry.cfg.weekendId)) perWeekend.set(entry.cfg.weekendId, [])
-      perWeekend.get(entry.cfg.weekendId)!.push({ divisionId: d.id, name: d.name, games: entry.structure.games })
+      perWeekend.get(entry.cfg.weekendId)!.push({ divisionId: key, name: entry.label, games: entry.structure.games })
     }
 
     /* Preflight: plain words, before any write. */
@@ -300,6 +332,10 @@ export async function POST(_req: NextRequest, { params }: { params: { id: string
     /* Seed resolution: only for divisions whose REGULAR season is done. */
     const standings = await getSeasonStandings(params.id)
     const seedsByDivision = new Map<string, Array<{ teamId: string; name: string }>>()
+    const gradeOfDivision = new Map<string, string>()
+    for (const [key, entry] of resolved) {
+      for (const did of entry.divisionIds) gradeOfDivision.set(did, key)
+    }
     const openRegular = await (prisma as any).game.groupBy({
       by: ["homeTeamId"],
       where: { seasonId: params.id, phase: "REGULAR", status: { in: ["SCHEDULED", "LIVE"] } },
@@ -310,15 +346,30 @@ export async function POST(_req: NextRequest, { params }: { params: { id: string
       where: { seasonId: params.id, phase: "REGULAR", status: { in: ["SCHEDULED", "LIVE"] } },
     })
     for (const r of openAway) teamsWithOpenGames.add(r.awayTeamId)
+    // Merge each grade's division standings into one seeded list: wins,
+    // then losses, then differential, then name — deterministic. Seeds
+    // resolve only when NO team in the grade has open regular games.
+    const gradeRows = new Map<string, Array<any>>()
+    const gradeOpen = new Map<string, boolean>()
+    const gradePlayed = new Map<string, boolean>()
     for (const div of standings?.divisions ?? []) {
-      const anyOpen = div.rows.some((r) => teamsWithOpenGames.has(r.teamId))
-      const anyPlayed = div.rows.some((r) => (r as any).wins + (r as any).losses > 0)
-      if (!anyOpen && anyPlayed) {
-        seedsByDivision.set(
-          div.divisionId,
-          div.rows.map((r) => ({ teamId: r.teamId, name: (r as any).name ?? r.teamId }))
-        )
-      }
+      const key = gradeOfDivision.get(div.divisionId)
+      if (!key) continue
+      if (!gradeRows.has(key)) gradeRows.set(key, [])
+      gradeRows.get(key)!.push(...div.rows)
+      if (div.rows.some((r) => teamsWithOpenGames.has(r.teamId))) gradeOpen.set(key, true)
+      if (div.rows.some((r) => (r as any).wins + (r as any).losses > 0)) gradePlayed.set(key, true)
+    }
+    for (const [key, rows] of gradeRows) {
+      if (gradeOpen.get(key) || !gradePlayed.get(key)) continue
+      const sorted = [...rows].sort(
+        (a: any, b: any) =>
+          b.wins - a.wins ||
+          a.losses - b.losses ||
+          (b.differential ?? 0) - (a.differential ?? 0) ||
+          String(a.name).localeCompare(String(b.name))
+      )
+      seedsByDivision.set(key, sorted.map((r: any) => ({ teamId: r.teamId, name: r.name ?? r.teamId })))
     }
 
     const nameOf = (divisionId: string, slot: SlotRef): { teamId: string | null; label: string } => {

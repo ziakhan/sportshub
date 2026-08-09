@@ -23,25 +23,33 @@ export type PlayoffFormat = "BRACKET" | "POOLS" | "PLACEMENT"
 export interface PlayoffDivisionConfig {
   /** "all" or a number ≤ team count. */
   qualifiers: number | "all"
-  format: PlayoffFormat
-  /** Bracket only: bronze game between semifinal losers. */
+  /** The promise: every qualifier plays at least this many games. The
+   *  format DERIVES from it (1 = bracket; 2 = bracket + consolation
+   *  round, the modern NPH shape; 3+ = pools or placement) unless
+   *  formatOverride pins one (the Advanced control). */
+  guaranteedGames: number
+  formatOverride: PlayoffFormat | null
   thirdPlace: boolean
-  /** PLACEMENT only: how many games everyone plays. */
-  placementRounds: number
   /** Playoff-weekend exception to the season's 2-game cap. */
   maxGamesPerDay: number
-  /** Which booked PLAYOFF weekend (SeasonSession id) hosts this division. */
+  /** Which booked PLAYOFF weekend (SeasonSession id) hosts this grade. */
   weekendId: string | null
 }
 
-export function defaultConfig(teamCount: number): Omit<PlayoffDivisionConfig, "weekendId"> {
+export function defaultConfig(_teamCount: number): Omit<PlayoffDivisionConfig, "weekendId"> {
   return {
     qualifiers: "all",
-    format: teamCount >= 17 ? "POOLS" : "BRACKET",
+    guaranteedGames: 2,
+    formatOverride: null,
     thirdPlace: true,
-    placementRounds: 4,
     maxGamesPerDay: 3,
   }
+}
+
+export function deriveFormat(field: number, cfg: PlayoffDivisionConfig): PlayoffFormat {
+  if (cfg.formatOverride) return cfg.formatOverride
+  if (cfg.guaranteedGames <= 2) return "BRACKET"
+  return field >= 8 ? "POOLS" : "PLACEMENT"
 }
 
 /* -------------------------------- structure ------------------------------- */
@@ -96,8 +104,10 @@ const roundName = (remaining: number): string =>
         ? "Quarterfinal"
         : `Round of ${remaining}`
 
-/** Single-elimination with byes by the universal formula. */
-export function buildBracket(field: number, thirdPlace: boolean): PlayoffStructure {
+/** Single-elimination with byes by the universal formula. With
+ *  `consolation`, round-1 losers pair off for one more game (the modern
+ *  NPH shape: everyone who plays round 1 gets at least 2 games). */
+export function buildBracket(field: number, thirdPlace: boolean, consolation = false): PlayoffStructure {
   const size = nextPow2(field)
   const byes = size - field
   const order = seedOrder(size)
@@ -135,6 +145,19 @@ export function buildBracket(field: number, thirdPlace: boolean): PlayoffStructu
     column = next
     tier++
   }
+  if (consolation) {
+    // Round-1 losers, paired in bracket order, one consolation game each.
+    const r1 = games.filter((x) => x.tier === 0)
+    for (let i = 0; i + 1 < r1.length; i += 2) {
+      games.push({
+        id: `g${++g}`,
+        round: "Consolation",
+        tier: 1,
+        home: { type: "LOSER", ref: r1[i].id },
+        away: { type: "LOSER", ref: r1[i + 1].id },
+      })
+    }
+  }
   const finalId = `g${++g}`
   games.push({ id: finalId, round: "Final", tier, home: column[0].slot, away: column[1].slot })
   if (thirdPlace) {
@@ -149,7 +172,10 @@ export function buildBracket(field: number, thirdPlace: boolean): PlayoffStructu
       })
     }
   }
-  return { games, byes, notes, guaranteedGames: 1 }
+  if (consolation && field > byes + 1) {
+    notes.push("Round-1 losers get a consolation game — everyone who plays round 1 plays at least twice.")
+  }
+  return { games, byes, notes, guaranteedGames: consolation ? 2 : 1 }
 }
 
 /** Pool sizes of 4 and 5 (research: avoid pools of 3). Number theory
@@ -336,9 +362,10 @@ export function buildPlacement(field: number, rounds: number): PlayoffStructure 
 
 export function buildStructure(field: number, cfg: PlayoffDivisionConfig): PlayoffStructure {
   if (field < 2) return { games: [], byes: 0, notes: ["Fewer than 2 qualifiers."], guaranteedGames: 0 }
-  if (cfg.format === "POOLS" && field >= 8) return buildPools(field, cfg.thirdPlace)
-  if (cfg.format === "PLACEMENT") return buildPlacement(field, cfg.placementRounds)
-  return buildBracket(field, cfg.thirdPlace)
+  const format = deriveFormat(field, cfg)
+  if (format === "POOLS" && field >= 8) return buildPools(field, cfg.thirdPlace)
+  if (format === "PLACEMENT") return buildPlacement(field, Math.max(2, cfg.guaranteedGames))
+  return buildBracket(field, cfg.thirdPlace, cfg.guaranteedGames >= 2)
 }
 
 /* -------------------------------- placement ------------------------------- */

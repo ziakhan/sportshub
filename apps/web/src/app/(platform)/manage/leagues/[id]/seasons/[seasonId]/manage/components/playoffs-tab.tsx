@@ -20,15 +20,17 @@ interface Props {
 
 
 /**
- * Playoff PLAN (owner 2026-08-08): configure per division — qualifiers,
- * format, extras, weekend — see the derived structure (byes, game count,
- * guarantee) update live, and generate the full structural schedule with
- * placeholder slots. Real games materialize only when seeds resolve
- * (regular season complete); until then the plan shows "Seed 3" and
- * "Winner of G2" rows. Design: docs/roadmap/scheduler-v2-audit-2026-08-08.md.
+ * Playoff plan (owner-approved redesign 2026-08-09): one card per GRADE,
+ * collapsed to plain sentences — who's in, what's promised, does it fit.
+ * The three real questions live behind "Change"; format and byes are
+ * derived and EXPLAINED, never configured (byes appear only as "the top
+ * N teams skip round 1"). One button plans everything; the result renders
+ * as the actual weekend with placeholder names in gray until the regular
+ * season decides them.
  */
 function PlayoffPlanSection({ seasonId }: { seasonId: string }) {
   const [data, setData] = useState<any | null>(null)
+  const [open, setOpen] = useState<Record<string, boolean>>({})
   const [busy, setBusy] = useState(false)
   const [msg, setMsg] = useState<string | null>(null)
   const [errs, setErrs] = useState<string[]>([])
@@ -41,22 +43,18 @@ function PlayoffPlanSection({ seasonId }: { seasonId: string }) {
     void load()
   }, [load])
 
-  const saveConfigs = async (configs: Record<string, any>) => {
+  const updateConfig = async (unitId: string, patch: Record<string, any>) => {
+    if (!data) return
+    const configs: Record<string, any> = {}
+    for (const d of data.divisions) {
+      configs[d.id] = d.id === unitId ? { ...d.config, ...patch } : d.config
+    }
     await fetch(`/api/seasons/${seasonId}/playoff-plan`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ configs }),
     })
     await load()
-  }
-
-  const updateConfig = (divisionId: string, patch: Record<string, any>) => {
-    if (!data) return
-    const configs: Record<string, any> = {}
-    for (const d of data.divisions) {
-      configs[d.id] = d.id === divisionId ? { ...d.config, ...patch } : d.config
-    }
-    void saveConfigs(configs)
   }
 
   const generate = async () => {
@@ -67,18 +65,18 @@ function PlayoffPlanSection({ seasonId }: { seasonId: string }) {
     const body = await res.json().catch(() => null)
     setBusy(false)
     if (!res.ok) {
-      setErrs(Array.isArray(body?.errors) ? body.errors : [body?.error ?? "Couldn't generate."])
+      setErrs(Array.isArray(body?.errors) ? body.errors : [body?.error ?? "Couldn't plan the playoffs."])
       return
     }
     setMsg(
-      `${body.games} playoff games scheduled — ${body.materialized} with known teams, ${body.placeholders} waiting on seeds or results.`
+      body.placeholders > 0
+        ? `${body.games} playoff games planned. ${body.placeholders} show placeholders until the regular season decides the teams.`
+        : `${body.games} playoff games planned with real teams.`
     )
     await load()
   }
 
   if (!data) return null
-  const weekendLabel = (id: string) =>
-    data.weekends.find((w: any) => w.id === id)?.label ?? "Playoff weekend"
 
   const planGames: any[] = data.plan?.games ?? []
   const byWeekend = new Map<string, any[]>()
@@ -86,92 +84,148 @@ function PlayoffPlanSection({ seasonId }: { seasonId: string }) {
     if (!byWeekend.has(g.weekendId)) byWeekend.set(g.weekendId, [])
     byWeekend.get(g.weekendId)!.push(g)
   }
-  const divName = (id: string) => data.divisions.find((d: any) => d.id === id)?.name ?? id
+  const weekendLabel = (id: string) => data.weekends.find((w: any) => w.id === id)?.label ?? "Playoff weekend"
 
   return (
     <div className={panelClass}>
-      <PanelHeader title="Playoff plan" />
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+        <PanelHeader title="Playoff plan" />
+        <Button size="sm" onClick={() => void generate()} disabled={busy || data.weekends.length === 0}>
+          {busy ? "Planning…" : "Plan the playoffs"}
+        </Button>
+      </div>
       <p className="text-ink-500 -mt-2 mb-3 text-xs">
-        Configure each division, then generate the whole playoff schedule now — teams fill in
-        when the regular season decides them. Byes are automatic (next power of two), seeding
-        is the standard 1v8 order.
+        The whole playoff schedule is planned now; team names fill in automatically as the
+        regular season finishes.
       </p>
       {data.weekends.length === 0 && (
         <p className="text-hoop-700 mb-3 text-xs font-semibold">
           No playoff weekends are booked yet — add a playoff session with gym time in Planning.
         </p>
       )}
+
       <div className="space-y-2">
-        {data.divisions.map((d: any) => (
-          <div key={d.id} className="border-ink-100 rounded-xl border p-3">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <p className="text-ink-900 text-sm font-semibold">
-                {d.name} <span className="text-ink-400 font-normal">· {d.teams} teams</span>
-              </p>
-              <p className="text-ink-500 text-xs">
-                {d.preview.field} in · {d.preview.games} games
-                {d.preview.byes > 0 ? ` · ${d.preview.byes} byes` : ""} · everyone gets ≥
-                {d.preview.guaranteedGames}
-              </p>
+        {data.divisions.map((d: any) => {
+          const c = d.config
+          const isOpen = !!open[d.id]
+          const inSentence =
+            c.qualifiers === "all"
+              ? `All ${d.teams} teams make the playoffs.`
+              : `Top ${Math.min(c.qualifiers, d.teams)} of ${d.teams} teams make the playoffs.`
+          const promiseSentence = `Everyone plays at least ${d.preview.guaranteedGames} game${
+            d.preview.guaranteedGames === 1 ? "" : "s"
+          }; champion crowned ${d.preview.finalDayName}.`
+          return (
+            <div key={d.id} className="border-ink-100 rounded-xl border p-3">
+              <div className="flex flex-wrap items-start justify-between gap-2">
+                <div>
+                  <p className="text-ink-900 text-sm font-semibold">{d.name}</p>
+                  <p className="text-ink-700 mt-0.5 text-xs">
+                    {inSentence} {promiseSentence}
+                  </p>
+                  {d.preview.byes > 0 && (
+                    <p className="text-ink-500 mt-0.5 text-xs">
+                      The top {d.preview.byes} team{d.preview.byes === 1 ? "" : "s"} skip round 1.
+                    </p>
+                  )}
+                  <p
+                    className={`mt-0.5 text-xs font-semibold ${d.preview.fit.ok ? "text-court-700" : "text-hoop-700"}`}
+                  >
+                    {d.preview.fit.ok ? "✓ " : ""}
+                    {d.preview.fit.text}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  className="text-play-600 hover:text-play-700 text-xs font-semibold"
+                  onClick={() => setOpen((o) => ({ ...o, [d.id]: !isOpen }))}
+                >
+                  {isOpen ? "Done" : "Change"}
+                </button>
+              </div>
+              {isOpen && (
+                <div className="border-ink-100 mt-2 space-y-2 border-t pt-2 text-xs">
+                  <label className="flex flex-wrap items-center gap-2">
+                    <span className="text-ink-700 w-32 font-semibold">Who makes it?</span>
+                    <select
+                      className="border-ink-200 rounded-lg border px-2 py-1"
+                      value={String(c.qualifiers)}
+                      onChange={(e) =>
+                        void updateConfig(d.id, {
+                          qualifiers: e.target.value === "all" ? "all" : Number(e.target.value),
+                        })
+                      }
+                    >
+                      <option value="all">Everybody ({d.teams})</option>
+                      {[4, 6, 8, 10, 12, 14, 16, 20, 24].filter((n) => n < d.teams).map((n) => (
+                        <option key={n} value={n}>
+                          Top {n}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <label className="flex flex-wrap items-center gap-2">
+                    <span className="text-ink-700 w-32 font-semibold">Every team plays</span>
+                    <select
+                      className="border-ink-200 rounded-lg border px-2 py-1"
+                      value={String(c.guaranteedGames)}
+                      onChange={(e) => void updateConfig(d.id, { guaranteedGames: Number(e.target.value) })}
+                    >
+                      {[1, 2, 3, 4].map((n) => (
+                        <option key={n} value={n}>
+                          at least {n} game{n === 1 ? "" : "s"}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <label className="flex flex-wrap items-center gap-2">
+                    <span className="text-ink-700 w-32 font-semibold">Which weekend?</span>
+                    <select
+                      className="border-ink-200 rounded-lg border px-2 py-1"
+                      value={c.weekendId ?? ""}
+                      onChange={(e) => void updateConfig(d.id, { weekendId: e.target.value || null })}
+                    >
+                      {data.weekends.map((w: any) => (
+                        <option key={w.id} value={w.id}>
+                          {w.label ?? "Playoff weekend"}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <details>
+                    <summary className="text-ink-500 cursor-pointer font-semibold">Advanced</summary>
+                    <div className="mt-2 space-y-2">
+                      <label className="flex flex-wrap items-center gap-2">
+                        <span className="text-ink-700 w-32 font-semibold">Format</span>
+                        <select
+                          className="border-ink-200 rounded-lg border px-2 py-1"
+                          value={c.formatOverride ?? ""}
+                          onChange={(e) => void updateConfig(d.id, { formatOverride: e.target.value || null })}
+                        >
+                          <option value="">Automatic</option>
+                          <option value="BRACKET">Knockout bracket</option>
+                          <option value="POOLS">Pools, then medal games</option>
+                          <option value="PLACEMENT">Everyone plays a set number, standings decide</option>
+                        </select>
+                      </label>
+                      <label className="flex items-center gap-2">
+                        <input
+                          type="checkbox"
+                          checked={!!c.thirdPlace}
+                          onChange={(e) => void updateConfig(d.id, { thirdPlace: e.target.checked })}
+                        />
+                        <span className="text-ink-700">Play a 3rd-place game</span>
+                      </label>
+                    </div>
+                  </details>
+                </div>
+              )}
             </div>
-            <div className="mt-2 flex flex-wrap items-center gap-2 text-xs">
-              <select
-                className="border-ink-200 rounded-lg border px-2 py-1"
-                value={String(d.config.qualifiers)}
-                onChange={(e) =>
-                  updateConfig(d.id, {
-                    qualifiers: e.target.value === "all" ? "all" : Number(e.target.value),
-                  })
-                }
-              >
-                <option value="all">Everybody ({d.teams})</option>
-                {[4, 6, 8, 10, 12, 14, 16].filter((n) => n < d.teams).map((n) => (
-                  <option key={n} value={n}>
-                    Top {n}
-                  </option>
-                ))}
-              </select>
-              <select
-                className="border-ink-200 rounded-lg border px-2 py-1"
-                value={d.config.format}
-                onChange={(e) => updateConfig(d.id, { format: e.target.value })}
-              >
-                <option value="BRACKET">Bracket (knockout)</option>
-                <option value="POOLS">Pools → medal rounds</option>
-                <option value="PLACEMENT">Placement rounds (no elimination)</option>
-              </select>
-              <label className="flex items-center gap-1">
-                <input
-                  type="checkbox"
-                  checked={!!d.config.thirdPlace}
-                  onChange={(e) => updateConfig(d.id, { thirdPlace: e.target.checked })}
-                />
-                3rd-place game
-              </label>
-              <select
-                className="border-ink-200 rounded-lg border px-2 py-1"
-                value={d.config.weekendId ?? ""}
-                onChange={(e) => updateConfig(d.id, { weekendId: e.target.value || null })}
-              >
-                {data.weekends.map((w: any) => (
-                  <option key={w.id} value={w.id}>
-                    {w.label ?? "Playoff weekend"} · {w.supply} slots
-                  </option>
-                ))}
-              </select>
-            </div>
-            {d.preview.notes.length > 0 && (
-              <p className="text-ink-400 mt-1.5 text-[11px]">{d.preview.notes.join(" ")}</p>
-            )}
-          </div>
-        ))}
+          )
+        })}
       </div>
-      <div className="mt-3 flex items-center gap-2">
-        <Button size="sm" onClick={() => void generate()} disabled={busy || data.weekends.length === 0}>
-          {busy ? "Generating…" : "Generate playoff schedule"}
-        </Button>
-        {msg && <p className="text-court-700 text-xs font-semibold">{msg}</p>}
-      </div>
+
+      {msg && <p className="text-court-700 mt-3 text-xs font-semibold">{msg}</p>}
       {errs.length > 0 && (
         <div className="border-hoop-200 bg-hoop-50 mt-3 rounded-xl border px-3 py-2">
           {errs.map((e, i) => (
@@ -181,40 +235,60 @@ function PlayoffPlanSection({ seasonId }: { seasonId: string }) {
           ))}
         </div>
       )}
+
       {planGames.length > 0 && (
-        <div className="mt-4 space-y-3">
-          {[...byWeekend.entries()].map(([wid, games]) => (
-            <div key={wid}>
-              <p className="text-ink-900 mb-1 text-xs font-bold uppercase tracking-wide">
-                {weekendLabel(wid)}
-              </p>
-              <div className="overflow-x-auto">
-                <table className="w-full text-xs">
-                  <tbody>
-                    {[...games]
-                      .sort((a, b) => (a.startIso < b.startIso ? -1 : 1))
-                      .map((g) => (
-                        <tr key={g.structId + g.divisionId} className="border-ink-50 border-b">
-                          <td className="text-ink-500 py-1 pr-2 whitespace-nowrap">
-                            {new Date(g.startIso).toLocaleString("en-CA", {
-                              weekday: "short",
-                              hour: "numeric",
-                              minute: "2-digit",
+        <div className="mt-4 space-y-4">
+          {[...byWeekend.entries()].map(([wid, games]) => {
+            const byDay = new Map<string, any[]>()
+            for (const g of games) {
+              const day = new Date(g.startIso).toLocaleDateString("en-CA", {
+                weekday: "long",
+                month: "short",
+                day: "numeric",
+              })
+              if (!byDay.has(day)) byDay.set(day, [])
+              byDay.get(day)!.push(g)
+            }
+            return (
+              <div key={wid}>
+                <p className="text-ink-900 mb-1 text-xs font-bold uppercase tracking-wide">
+                  {weekendLabel(wid)}
+                </p>
+                {[...byDay.entries()].map(([day, dayGames]) => (
+                  <div key={day} className="mb-2">
+                    <p className="text-ink-500 mb-1 text-[11px] font-semibold">{day}</p>
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-xs">
+                        <tbody>
+                          {[...dayGames]
+                            .sort((a, b) => (a.startIso < b.startIso ? -1 : 1))
+                            .map((g) => {
+                              const resolved = g.homeTeamId && g.awayTeamId
+                              return (
+                                <tr key={g.structId + g.divisionId} className="border-ink-50 border-b">
+                                  <td className="text-ink-500 py-1 pr-2 whitespace-nowrap">
+                                    {new Date(g.startIso).toLocaleTimeString("en-CA", {
+                                      hour: "numeric",
+                                      minute: "2-digit",
+                                    })}
+                                  </td>
+                                  <td className="text-ink-400 py-1 pr-2 whitespace-nowrap">{g.divisionId}</td>
+                                  <td className="text-ink-500 py-1 pr-2">{g.round}</td>
+                                  <td className={`py-1 ${resolved ? "text-ink-900 font-semibold" : "text-ink-400"}`}>
+                                    {g.homeLabel} <span className="text-ink-300 font-normal">vs</span>{" "}
+                                    {g.awayLabel}
+                                  </td>
+                                </tr>
+                              )
                             })}
-                          </td>
-                          <td className="text-ink-400 py-1 pr-2">{divName(g.divisionId)}</td>
-                          <td className="text-ink-500 py-1 pr-2">{g.round}</td>
-                          <td className="text-ink-900 py-1 font-semibold">
-                            {g.homeLabel} <span className="text-ink-400 font-normal">vs</span>{" "}
-                            {g.awayLabel}
-                          </td>
-                        </tr>
-                      ))}
-                  </tbody>
-                </table>
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                ))}
               </div>
-            </div>
-          ))}
+            )
+          })}
         </div>
       )}
     </div>

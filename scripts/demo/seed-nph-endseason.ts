@@ -11,7 +11,9 @@ import { PrismaClient } from "@prisma/client"
 
 const prisma = new PrismaClient()
 
-const SOURCE_SEASON = "160b2f09-a95a-4a64-9b90-03793cae105b"
+/** Override with SOURCE_SEASON env; otherwise the newest season of the
+ *  league named "NPH Showcase League" is used (ids differ per DB). */
+const SOURCE_SEASON_ENV = process.env.SOURCE_SEASON ?? null
 const TWIN_LEAGUE_NAME = "NPH Showcase League — End of Season"
 
 const hash = (s: string): number => {
@@ -21,8 +23,19 @@ const hash = (s: string): number => {
 }
 
 async function main() {
+  let sourceId = SOURCE_SEASON_ENV
+  if (!sourceId) {
+    const lg = await (prisma as any).league.findFirst({ where: { name: "NPH Showcase League" } })
+    if (!lg) throw new Error("NPH Showcase League not found")
+    const ss = await (prisma as any).season.findFirst({
+      where: { leagueId: lg.id },
+      orderBy: { createdAt: "desc" },
+    })
+    if (!ss) throw new Error("no season on NPH Showcase League")
+    sourceId = ss.id
+  }
   const src = await (prisma as any).season.findUnique({
-    where: { id: SOURCE_SEASON },
+    where: { id: sourceId },
     include: {
       league: true,
       divisions: { include: { teamSubmissions: { where: { status: "APPROVED" } } } },
@@ -153,7 +166,7 @@ async function main() {
 
   /* The season's games, COMPLETED with deterministic scores. */
   const games = await (prisma as any).game.findMany({
-    where: { seasonId: SOURCE_SEASON, phase: "REGULAR", status: { not: "CANCELLED" } },
+    where: { seasonId: sourceId, phase: "REGULAR", status: { not: "CANCELLED" } },
   })
   let created = 0
   for (const g of games) {
