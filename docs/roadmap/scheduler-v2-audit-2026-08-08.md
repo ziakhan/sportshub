@@ -287,6 +287,44 @@ Fit check = the auditor's job, same voice: "Grade 9's everybody-in
 pools weekend needs 52 court-slots on Mar 6-7; Six Park East holds 54.
 It fits — 2 slots spare."
 
+## 4b. Division formation (owner design session 2026-08-09)
+
+The one open NPH question — do clubs choose their conference or does the
+league place them — turned out to be unanswerable from their public pages
+(their site says nothing about placement; the conference names do not
+even appear in marketing). But the owner's three scenarios define the
+product space, and each drives different software:
+
+1. **CLUBS CHOOSE** — the league defines named divisions per grade
+   (levels with descriptions); registration asks the club to pick; the
+   right-placement responsibility is the CLUB's; the operator approves
+   (with a move-at-approval override).
+2. **LEAGUE PLACES** — registration collects grade (+ an optional
+   "requested level" hint); teams pool per grade; the operator later
+   forms divisions from history/reputation/strength.
+3. **RANDOM/AUTOMATIC** — a strategy inside #2's tool, not a separate
+   mode: the auto-split can be random, snake-by-strength, by requested
+   level, or by last season's record (renewals).
+
+**Proposed design — one season setting, "How do divisions form?":**
+- Default for a small grade: ONE division, no complexity shown.
+- When a grade's pool crosses a threshold (owner: "bigger than X" —
+  suggest 16), the UI offers **"Make divisions"**: an auto-split
+  proposal (choose strategy: random / snake by estimate / requested
+  level / last-season record) rendered as a DRAG-AND-DROP board —
+  operator shuffles teams between proposed divisions, names them
+  (ARETE-style labels), publishes when happy. Same board idiom as the
+  planning canvas.
+- In CLUBS-CHOOSE mode the flow inverts: divisions exist up front,
+  registration carries the picker, the board becomes an approval-time
+  review (operator can still drag misplaced teams).
+- Everything downstream is already division-native (scheduling units,
+  standings, playoffs, gym assignment), so formation is purely a
+  registration/setup-surface feature — no engine changes.
+- Evidence note: NPH's flow is consistent with LEAGUE PLACES (internal
+  tier labels, absent from public pages); recommend LEAGUE PLACES as
+  the default mode, CLUBS CHOOSE as the config alternative.
+
 ## 5. Missing-features inventory (plan for the future)
 
 Game-level operations:
