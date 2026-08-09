@@ -183,6 +183,12 @@ async function main() {
     created++
   }
 
+  // The My Leagues drawer lists LeagueOwner ROLE rows, not League.ownerId
+  // (discovered when the owner couldn't see the twin) — grant it.
+  await (prisma as any).userRole.create({
+    data: { userId: src.league.ownerId, role: "LeagueOwner", leagueId: league.id },
+  })
+
   console.log(`twin league ${league.id}`)
   console.log(`twin season ${season.id}`)
   console.log(`completed games: ${created}`)
