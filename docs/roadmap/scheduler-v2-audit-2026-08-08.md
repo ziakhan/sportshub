@@ -154,6 +154,76 @@ bracket pages, sources in the research transcript):**
 6. **Weekend mapping**: grade clusters to finals weekends, exactly as
    the real NPH calendar already books them.
 
+### "Everybody makes playoffs" at 20-28 teams — the design (owner ask)
+
+Three formats cover every field size when nobody is cut; all three are
+fully schedulable UP FRONT with placeholders:
+
+**A. POOLS → MEDAL SUNDAY (recommended default for 17+ teams).**
+- Seed everyone from regular-season standings; snake-deal into pools of
+  4 (24 teams → 6 pools: pool A gets seeds 1,12,13,24; pool B
+  2,11,14,23; ...). Odd remainders make one pool of 5, never a pool of
+  3 (research: "one larger pool beats one tiny pool").
+- Saturday: pool round-robin — 3 games per team, 36 games total for 24.
+  Every pairing is known the moment seeds resolve, so the whole Saturday
+  is schedulable as "Seed 1 vs Seed 12" placeholders weeks ahead.
+- Sunday: medal rounds by pool finish — 6 pool winners + 2 best
+  runners-up → 8-team GOLD bracket (QF/SF/F, 7 games); remaining
+  runners-up + thirds → SILVER crossovers; fourths → BRONZE crossovers.
+  EVERYONE plays Sunday. Guarantee: 4+ games per team.
+- Sunday's slots are booked and published as CONDITIONAL games — "Pool A
+  winner vs Pool F winner, 10:00 Court 2" — the universal tournament
+  idiom: a family knows when and where they'd play in every scenario;
+  the opponent resolves Saturday night automatically from scores.
+- CAPACITY MATH, 24 teams: 36 + ~16-18 games ≈ 52-54 = exactly one
+  6-court gym × 9 slots × 2 days (54). One big building hosts the whole
+  division's championship weekend. The auditor states this arithmetic
+  before generating.
+
+**B. FULL-FIELD BRACKET + CONSOLATION LADDER (10-16 teams).** Everyone
+enters one bracket (byes by the formula); every loser drops into a
+consolation bracket ("3-game guarantee" shape). Champion + placement
+games; ~1.5x the games of a pure bracket.
+
+**C. PLACEMENT ROUNDS (NPH's own Gr 9-12 format).** No elimination at
+all: every team plays exactly G championship games (NPH: teams went
+4-0 etc.) against seed-adjacent opponents; the championship standings
+crown the winner. Cheapest in court time (N×G/2 games), zero dependency
+scheduling (all pairings seed-derived), the entire playoff publishable
+the day standings finalize.
+
+**Playoff-weekend day-shape exception (needs the owner's ruling):** the
+regular-season law "never a 3-game day" cannot hold at a pools weekend
+(3 pool games Saturday is the format). Proposed: playoff cells allow up
+to maxGamesPerDay (default 3) with a minimum gap of 1 slot between a
+team's games — back-to-backs stay forbidden even here, which is already
+stricter than industry practice (no youth rest rule exists anywhere).
+
+### What the league must actually be asked (and what it must NOT)
+
+INPUTS (per division, ~5 questions, all with smart defaults):
+1. Who qualifies: everybody / top N / top % (default: everybody for
+   rec-tier, ~70% for competitive — NPH's real band).
+2. Format: pools+medals / bracket+consolation / placement rounds /
+   pure bracket (default by size: ≤8 pure bracket · 9-16 bracket+
+   consolation · 17+ pools+medals).
+3. Guaranteed playoff games per team (default 2; pools deliver 4).
+4. Extras: 3rd-place game? silver/bronze tiers? (defaults: yes, yes.)
+5. Max playoff games per team per day (default 3, min-gap 1 slot).
+
+NOT inputs — derived, never asked:
+- BYES: pure arithmetic (next power of 2 minus field, top seeds,
+  round 1 only). The league never configures byes; asking would only
+  create wrong answers.
+- Bracket shape, pool count, snake seeding, total game count, court
+  needs — all derive from N + format + guarantee.
+- Tiebreakers ship as the youth-standard chain (H2H → capped diff →
+  points → lottery) with the cap value as the only knob.
+
+Fit check = the auditor's job, same voice: "Grade 9's everybody-in
+pools weekend needs 52 court-slots on Mar 6-7; Six Park East holds 54.
+It fits — 2 slots spare."
+
 ## 5. Missing-features inventory (plan for the future)
 
 Game-level operations:
