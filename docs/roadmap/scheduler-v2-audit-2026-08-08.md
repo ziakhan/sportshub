@@ -359,6 +359,36 @@ requirement, not a speculation; and our demo world's isolated 2-3 team
 divisions misrepresent NPH (they'd be pooled). Queued with the
 division-formation design (4b).
 
+## 4d. NPH 2025-26 playoffs decoded (2026-08-09) + THE FINAL MODEL
+
+From the live stats API (playoff rounds carry rnd_type "F"):
+- **Nearly everybody made the 25-26 playoffs**: Gr9 22/26, Gr10 37/43,
+  Gr11 22/25, Gr12 21/27 (78-88%) — a big shift from 24-25's 65-75% cut.
+- **Games per team: mostly 2** (the "2 guaranteed playoff games"
+  promise, delivered as: everyone plays round 1, losers get a
+  consolation game, winners continue), finalists reaching 3-5. Two
+  playoff dates per grade.
+- **Conferences did NOT fence the playoffs**: same-tag lean in older
+  grades (Gr12: 9 same, 0 cross among tagged) but untagged teams cross
+  everything everywhere; Gr9 playoffs as mixed as its regular season.
+- 20-0 scorelines are forfeit conventions (several present).
+- NPH CHANGED formats between seasons (24-25 gauntlet cut vs 25-26
+  everybody-in guarantee) — the configurator must express both. Ours
+  does (BRACKET with cut / everybody + consolation guarantee); the
+  24-25 double-QF gauntlet stays the one unexpressed variant.
+
+**FINAL MODEL (owner ruling 2026-08-09 + evidence):**
+1. Divisions are LEAGUE-MADE at planning time (clubs may state a
+   preference at registration; the league places).
+2. Scheduling strictness is a league option per grade: STRICT (divisions
+   schedule only within themselves) · PREFER (same-division lean, the
+   NPH older-grades pattern) · OPEN (whole-grade pool, the NPH Gr9
+   pattern). Conference/division is a label + standings home either way.
+3. Playoffs configured per division/grade with qualifiers (everybody as
+   the modern NPH default), a guaranteed-games number (2) honored via
+   consolation, bracket continuing for winners; labels do not fence
+   playoff draws unless STRICT.
+
 ## 5. Missing-features inventory (plan for the future)
 
 Game-level operations:
