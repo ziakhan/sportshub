@@ -224,6 +224,7 @@ function PlayoffPlanSection({ seasonId, seasonStatus }: { seasonId: string; seas
   const [msg, setMsg] = useState<string | null>(null)
   const [errs, setErrs] = useState<string[]>([])
   const [view, setView] = useState<"bracket" | "consolations" | "schedule">("bracket")
+  const [unitTab, setUnitTab] = useState<string | null>(null)
 
   const load = useCallback(async () => {
     const res = await fetch(`/api/seasons/${seasonId}/playoff-plan`)
@@ -497,8 +498,31 @@ function PlayoffPlanSection({ seasonId, seasonStatus }: { seasonId: string; seas
         </div>
       )}
 
+      {/* ONE GRADE AT A TIME (owner 2026-08-10): grade tabs on top, the
+          three views below scoped to the chosen grade — never one huge
+          scrolling page. */}
       {planGames.length > 0 && (
-        <div className="mt-4 flex flex-wrap items-center gap-3">
+        <div className="border-ink-100 mt-4 flex flex-wrap gap-1 border-b pb-2">
+          {[...new Set(planGames.map((g) => g.divisionId))].sort().map((u) => {
+            const selected = (unitTab ?? [...new Set(planGames.map((g) => g.divisionId))].sort()[0]) === u
+            return (
+              <button
+                key={u}
+                type="button"
+                onClick={() => setUnitTab(u)}
+                aria-pressed={selected}
+                className={`rounded-lg px-3 py-1.5 text-xs font-bold ${
+                  selected ? "bg-play-600 text-white" : "text-ink-600 bg-ink-50 hover:bg-ink-100"
+                }`}
+              >
+                {u}
+              </button>
+            )
+          })}
+        </div>
+      )}
+      {planGames.length > 0 && (
+        <div className="mt-3 flex flex-wrap items-center gap-3">
           <div className="border-ink-100 inline-flex overflow-hidden rounded-lg border text-xs">
             {(["bracket", "consolations", "schedule"] as const).map((v) => (
               <button
@@ -521,42 +545,43 @@ function PlayoffPlanSection({ seasonId, seasonStatus }: { seasonId: string; seas
         </div>
       )}
       {planGames.length > 0 && view === "bracket" && (
-        <div className="mt-3 space-y-6">
-          {[...new Set(planGames.map((g) => g.divisionId))].sort().map((unit) => (
-            <BracketTree key={unit} unit={unit} games={planGames.filter((g) => g.divisionId === unit)} />
-          ))}
+        <div className="mt-3">
+          {(() => {
+            const units = [...new Set(planGames.map((g) => g.divisionId))].sort()
+            const u = unitTab && units.includes(unitTab) ? unitTab : units[0]
+            return <BracketTree unit={u} games={planGames.filter((g) => g.divisionId === u)} />
+          })()}
         </div>
       )}
       {planGames.length > 0 && view === "consolations" && (
-        <div className="mt-3 space-y-5">
-          {[...new Set(planGames.map((g) => g.divisionId))].sort().map((unit) => {
-            const cons = planGames.filter(
-              (g) => g.divisionId === unit && /consolation/i.test(g.round)
-            )
-            return (
-              <div key={unit}>
-                <p className="text-ink-900 mb-1.5 text-xs font-bold uppercase tracking-wide">{unit}</p>
-                {cons.length === 0 ? (
-                  <p className="text-ink-400 text-xs">
-                    No consolation games; this bracket sends first-round losers home.
-                  </p>
-                ) : (
-                  <div className="grid gap-1.5 sm:grid-cols-3 lg:grid-cols-4">
-                    {cons
-                      .sort((a, b) => (a.startIso < b.startIso ? -1 : 1))
-                      .map((g) => (
-                        <GameBox key={g.structId} g={g} />
-                      ))}
-                  </div>
-                )}
+        <div className="mt-3">
+          {(() => {
+            const units = [...new Set(planGames.map((g) => g.divisionId))].sort()
+            const u = unitTab && units.includes(unitTab) ? unitTab : units[0]
+            const cons = planGames.filter((g) => g.divisionId === u && /consolation/i.test(g.round))
+            return cons.length === 0 ? (
+              <p className="text-ink-400 text-xs">
+                No consolation games; this bracket sends first-round losers home.
+              </p>
+            ) : (
+              <div className="grid gap-1.5 sm:grid-cols-3 lg:grid-cols-4">
+                {cons
+                  .sort((a, b) => (a.startIso < b.startIso ? -1 : 1))
+                  .map((g) => (
+                    <GameBox key={g.structId} g={g} />
+                  ))}
               </div>
             )
-          })}
+          })()}
         </div>
       )}
       {planGames.length > 0 && view === "schedule" && (
         <div className="mt-4 space-y-4">
-          {[...byWeekend.entries()].map(([wid, games]) => {
+          {[...byWeekend.entries()].map(([wid, weekendGames]) => {
+            const units = [...new Set(planGames.map((g: any) => g.divisionId))].sort()
+            const u = unitTab && units.includes(unitTab) ? unitTab : units[0]
+            const games = weekendGames.filter((g: any) => g.divisionId === u)
+            if (games.length === 0) return null
             const byDay = new Map<string, any[]>()
             for (const g of games) {
               const day = new Date(g.startIso).toLocaleDateString("en-CA", {
@@ -590,7 +615,6 @@ function PlayoffPlanSection({ seasonId, seasonStatus }: { seasonId: string; seas
                                       minute: "2-digit",
                                     })}
                                   </td>
-                                  <td className="text-ink-400 py-1 pr-2 whitespace-nowrap">{g.divisionId}</td>
                                   <td className="text-ink-500 py-1 pr-2">{g.round}</td>
                                   <td className={`py-1 ${resolved ? "text-ink-900 font-semibold" : "text-ink-400"}`}>
                                     {g.homeLabel} <span className="text-ink-300 font-normal">vs</span>{" "}
