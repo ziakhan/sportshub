@@ -1,8 +1,7 @@
 "use client"
 
-import Link from "next/link"
 import { useState, useEffect, useCallback } from "react"
-import { Button, Badge, PanelHeader, toneForStatus, DateTimePicker } from "@/components/ui"
+import { Button, PanelHeader } from "@/components/ui"
 import { panelClass } from "./types"
 
 /**
@@ -37,10 +36,10 @@ interface Props {
    height. Connectors are one SVG elbow per feed. Consolation games live on
    their own tab; the 3rd-place game sits under the final. */
 
-const ROW_H = 76
-const BOX_W = 200
-const COL_GAP = 44
-const BOX_H = 64
+const ROW_H = 96
+const BOX_W = 220
+const COL_GAP = 48
+const BOX_H = 82
 
 function GameBox({ g, style }: { g: any; style?: React.CSSProperties }) {
   const resolved = g.homeTeamId && g.awayTeamId
@@ -53,7 +52,7 @@ function GameBox({ g, style }: { g: any; style?: React.CSSProperties }) {
   return (
     <div
       style={style}
-      className={`rounded-lg border px-2 py-1 text-[11px] leading-tight shadow-sm ${
+      className={`rounded-xl border px-2.5 py-1.5 text-xs leading-snug shadow-sm ${
         resolved ? "border-ink-200 bg-white" : "border-ink-100 bg-ink-50"
       }`}
     >
@@ -61,13 +60,15 @@ function GameBox({ g, style }: { g: any; style?: React.CSSProperties }) {
         {seed(g.home)}
         <span className="truncate">{g.homeLabel}</span>
       </p>
-      <p className={`flex items-center truncate ${g.awayTeamId ? "text-ink-900 font-semibold" : "text-ink-400"}`}>
+      <p className={`mt-0.5 flex items-center truncate ${g.awayTeamId ? "text-ink-900 font-semibold" : "text-ink-400"}`}>
         {seed(g.away)}
         <span className="truncate">{g.awayLabel}</span>
       </p>
-      <p className="text-ink-400 mt-0.5 text-[10px]">
+      <p className="text-ink-400 mt-1 text-[11px]">
         {new Date(g.startIso).toLocaleString("en-CA", {
           weekday: "short",
+          month: "short",
+          day: "numeric",
           hour: "numeric",
           minute: "2-digit",
         })}
@@ -150,7 +151,7 @@ function BracketTree({ unit, games }: { unit: string; games: any[] }) {
     return i === 0 ? "Opening round" : name
   }
   const rows = Math.max(leaf, 1)
-  const width = tiers.length * (BOX_W + COL_GAP)
+  const width = tiers.length * (BOX_W + COL_GAP) + BOX_W
   const height = rows * ROW_H + (third ? BOX_H + 18 : 0)
   const x = (g: any) => (colOf.get(g.tier ?? 0) ?? 0) * (BOX_W + COL_GAP)
   const y = (g: any) => (pos.get(g.structId) ?? 0) * ROW_H
@@ -204,8 +205,19 @@ function BracketTree({ unit, games }: { unit: string; games: any[] }) {
                 style={{ position: "absolute", left: x(g), top: y(g), width: BOX_W }}
               />
             ))}
+            <div
+              style={{
+                position: "absolute",
+                left: x(finals[0]) + BOX_W + COL_GAP,
+                top: y(finals[0]) + BOX_H / 2 - 16,
+                width: BOX_W - 30,
+              }}
+              className="border-gold-300 bg-gold-50 text-gold-800 rounded-xl border px-2.5 py-1.5 text-xs font-bold"
+            >
+              🏆 Champion
+            </div>
             {third && (
-              <div style={{ position: "absolute", left: x(third), top: y(finals[0]) + BOX_H + 18, width: BOX_W }}>
+              <div style={{ position: "absolute", left: x(third), top: y(finals[0]) + BOX_H + 24, width: BOX_W }}>
                 <p className="text-ink-400 mb-0.5 text-[10px] font-semibold uppercase">3rd place</p>
                 <GameBox g={third} />
               </div>
@@ -638,116 +650,11 @@ function PlayoffPlanSection({ seasonId, seasonStatus }: { seasonId: string; seas
 }
 
 export function PlayoffsTab({ seasonId, seasonStatus }: Props) {
-  const [brackets, setBrackets] = useState<any[]>([])
-  const [error, setError] = useState("")
-
-  const loadBrackets = useCallback(async () => {
-    const res = await fetch(`/api/seasons/${seasonId}/playoffs`)
-    if (res.ok) {
-      const data = await res.json()
-      setBrackets(data.brackets || [])
-    }
-  }, [seasonId])
-
-  useEffect(() => {
-    loadBrackets()
-  }, [loadBrackets])
-
-  const removeBracket = async (sessionId: string) => {
-    if (!confirm("Delete this bracket and its unplayed games?")) return
-    const res = await fetch(`/api/seasons/${seasonId}/playoffs?sessionId=${sessionId}`, {
-      method: "DELETE",
-    })
-    if (!res.ok) {
-      const data = await res.json().catch(() => ({}))
-      setError(data.error || "Could not delete the bracket")
-      return
-    }
-    loadBrackets()
-  }
-
-
+  /* The plan section is the one playoff surface (owner 2026-08-10: the
+     leftover v1 brackets list below it read as unrelated noise). */
   return (
     <div className="space-y-6">
       <PlayoffPlanSection seasonId={seasonId} seasonStatus={seasonStatus} />
-      {/* Existing brackets */}
-      {brackets.map((bracket) => {
-        const rounds = new Map<number, any[]>()
-        for (const g of bracket.games) {
-          const list = rounds.get(g.playoffRound) ?? []
-          list.push(g)
-          rounds.set(g.playoffRound, list)
-        }
-        const plan = bracket.playoffPlan ?? {}
-        const labelFor = (g: any) =>
-          (plan.matchups ?? []).find(
-            (m: any) => m.round === g.playoffRound && m.slot === g.playoffSlot
-          )?.label
-        const nothingPlayed = bracket.games.every((g: any) => g.status === "SCHEDULED")
-        return (
-          <div key={bracket.id} className={`reveal ${panelClass}`}>
-            <PanelHeader
-              className="mb-1"
-              title={bracket.label ?? "Playoffs"}
-              action={
-                nothingPlayed ? (
-                  <Button size="sm" variant="subtle" onClick={() => removeBracket(bracket.id)}>
-                    Delete bracket
-                  </Button>
-                ) : undefined
-              }
-            />
-            <p className="text-ink-500 mb-4 text-xs">
-              {plan.qualifying} teams · single games · later rounds appear automatically as
-              results are finalized.
-              {plan.notes ? ` ${plan.notes}` : ""}
-            </p>
-            <div className="space-y-4">
-              {[...rounds.entries()]
-                .sort((a, b) => a[0] - b[0])
-                .map(([round, games]) => (
-                  <div key={round}>
-                    <h4 className="font-condensed text-ink-800 mb-2 text-sm font-bold uppercase tracking-wide">
-                      Round {round}
-                    </h4>
-                    <div className="grid gap-2 sm:grid-cols-2">
-                      {games.map((g: any) => (
-                        <Link
-                          key={g.id}
-                          href={`/live/${g.id}`}
-                          className="border-ink-100 hover:border-play-300 block rounded-xl border p-3 transition-colors"
-                        >
-                          <div className="text-ink-400 mb-1 flex items-center justify-between text-[10px] uppercase tracking-wide">
-                            <span>{labelFor(g) ?? `Game ${g.playoffSlot + 1}`}</span>
-                            <Badge tone={toneForStatus(g.status)}>{g.status}</Badge>
-                          </div>
-                          <div className="text-ink-900 flex items-center justify-between text-sm font-medium">
-                            <span>{g.homeTeam?.name}</span>
-                            <span className="font-mono tabular-nums">{g.homeScore ?? ""}</span>
-                          </div>
-                          <div className="text-ink-900 flex items-center justify-between text-sm font-medium">
-                            <span>{g.awayTeam?.name}</span>
-                            <span className="font-mono tabular-nums">{g.awayScore ?? ""}</span>
-                          </div>
-                          <div className="text-ink-500 mt-1 text-[11px]">
-                            {new Date(g.scheduledAt).toLocaleString(undefined, {
-                              month: "short",
-                              day: "numeric",
-                              hour: "numeric",
-                              minute: "2-digit",
-                            })}
-                          </div>
-                        </Link>
-                      ))}
-                    </div>
-                  </div>
-                ))}
-            </div>
-          </div>
-        )
-      })}
-
-      {error && <p className="text-hoop-600 text-sm">{error}</p>}
     </div>
   )
 }
