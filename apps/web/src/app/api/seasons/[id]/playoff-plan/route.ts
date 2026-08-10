@@ -480,6 +480,7 @@ export async function POST(_req: NextRequest, { params }: { params: { id: string
         divisionId: g.divisionId,
         weekendId: g.weekendId,
         round: g.round,
+        tier: g.tier,
         dayId: g.dayId,
         dayVenueId: g.dayVenueId,
         courtId: g.courtId,
