@@ -1,7 +1,7 @@
 # Divisions, Scheduling & Playoffs — full-system design
 **2026-08-09 · owner-ordered step-back ("take a step back, do the design for the entire system. I don't want broken UI... I need a full plan and full design.")**
 
-Status: **PLAN FINAL (2026-08-09)** — all owner calls answered; build starts on the owner's explicit go. Owner rulings folded in: equal pools only · demo world resets to no divisions · divisions free until schedule publish, then locked (new teams join existing divisions) · regular-season cross-play is a YES/NO per grade (NO=fenced, YES=NPH-style lean) · playoff default = ONE championship per grade, merged seeding · v1 includes the "division-first opening round" pairing flavor · whole-platform polish sweep is the next arc.
+Status: **BUILT + DEPLOYED BOTH SERVERS 2026-08-10 (box e85bfb2, runbook #77)** — was: PLAN FINAL (2026-08-09) — all owner calls answered; build starts on the owner's explicit go. Owner rulings folded in: equal pools only · demo world resets to no divisions · divisions free until schedule publish, then locked (new teams join existing divisions) · regular-season cross-play is a YES/NO per grade (NO=fenced, YES=NPH-style lean) · playoff default = ONE championship per grade, merged seeding · v1 includes the "division-first opening round" pairing flavor · whole-platform polish sweep is the next arc.
 
 ---
 
