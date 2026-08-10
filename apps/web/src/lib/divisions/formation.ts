@@ -91,13 +91,20 @@ export async function formDivisions(
       }
       out.push({ id: targetIds[i], name: specs[i].name, teams: specs[i].teamIds.length })
     }
-    /* Hosting: wherever ANY of the grade's divisions plays, every target
-       division plays (same gym). */
+    /* Hosting: every weekend where ANY of the grade's divisions played,
+       every target division plays too — SPREAD across that weekend's
+       booked gyms (deterministic cycle). All-in-one-gym would make a big
+       split grade unschedulable: one gym cannot hold 4 divisions' games,
+       and the auditor would rightly block it. */
     const gradeDivIds = new Set(existing.map((d: any) => d.id))
     for (const id of targetIds) gradeDivIds.add(id)
     const sessions = await tx.seasonSession.findMany({
       where: { seasonId, phase: "REGULAR" },
-      select: { id: true, unitVenues: true },
+      select: {
+        id: true,
+        unitVenues: true,
+        days: { select: { dayVenues: { select: { id: true, venueId: true } } } },
+      },
     })
     for (const sess of sessions) {
       const uv = { ...((sess.unitVenues ?? {}) as Record<string, string>) }
@@ -105,13 +112,35 @@ export async function formDivisions(
         .filter(([k]) => k.startsWith("division:") && gradeDivIds.has(k.slice(9)))
         .map(([, v]) => v)
       if (hostedGyms.length === 0) continue
-      const gym = hostedGyms[0]
-      let changed = false
-      for (const id of targetIds) {
-        if (!uv[`division:${id}`]) {
-          uv[`division:${id}`] = gym
-          changed = true
+      /* The weekend's bookable gyms, stable order; the grade's current
+         gyms first so an unsplit grade keeps its home. */
+      const booked: string[] = []
+      for (const day of sess.days ?? []) {
+        for (const dv of [...(day.dayVenues ?? [])].sort((a: any, b: any) =>
+          String(a.id).localeCompare(String(b.id))
+        )) {
+          if (!booked.includes(dv.venueId)) booked.push(dv.venueId)
         }
+      }
+      const cycle = [
+        ...hostedGyms.filter((g, i) => hostedGyms.indexOf(g) === i),
+        ...booked.filter((v) => !hostedGyms.includes(v)),
+      ]
+      let changed = false
+      /* Reused divisions keep their home gym; only NEW divisions get
+         placed, preferring gyms no sibling division already uses. */
+      const used = new Set(
+        targetIds.map((id) => uv[`division:${id}`]).filter(Boolean) as string[]
+      )
+      let ci = 0
+      for (const id of targetIds) {
+        if (uv[`division:${id}`]) continue
+        const free = cycle.filter((g) => !used.has(g))
+        const gym = free.length > 0 ? free[ci % free.length] : cycle[ci % Math.max(1, cycle.length)] ?? hostedGyms[0]
+        uv[`division:${id}`] = gym
+        used.add(gym)
+        ci++
+        changed = true
       }
       /* Divisions about to be deleted lose their keys. */
       for (const d of existing) {

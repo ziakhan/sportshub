@@ -34,9 +34,16 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
     if (gate.status !== 200) return NextResponse.json({ error: gate.error }, { status: gate.status })
     const season = await (prisma as any).season.findUnique({
       where: { id: params.id },
-      select: { gradeScheduling: true },
+      select: { gradeScheduling: true, status: true },
     })
     const gradeScheduling = (season?.gradeScheduling ?? {}) as Record<string, string>
+    // Owner ruling 2026-08-09: divisions are free to change (with a
+    // regenerate) until the schedule is PUBLISHED; after that they lock and
+    // new teams join an existing division.
+    const publishedCount = await (prisma as any).game.count({
+      where: { seasonId: params.id, phase: "REGULAR", publishedAt: { not: null } },
+    })
+    const locked = publishedCount > 0 || ["IN_PROGRESS", "COMPLETED"].includes(season?.status)
     const divisions = await (prisma as any).division.findMany({
       where: { seasonId: params.id },
       orderBy: [{ ageGroup: "asc" }, { name: "asc" }],
@@ -65,7 +72,42 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
       })
       g.teams += d.teamSubmissions.length
     }
-    return NextResponse.json({ grades: [...byGrade.values()].filter((g) => g.teams > 0) })
+    const grades = [...byGrade.values()].filter((g) => g.teams > 0)
+    // Definite staleness: a fenced (NO cross-play) split grade whose games
+    // still pair teams across divisions needs a regenerate.
+    const staleGrades: string[] = []
+    if (!locked) {
+      const divOfTeam = new Map<string, string>()
+      const gradeOfTeam = new Map<string, string>()
+      for (const g of grades) {
+        if (g.divisions.length < 2) continue
+        for (const d of g.divisions) {
+          for (const t of d.teams) {
+            divOfTeam.set(t.teamId, d.id)
+            gradeOfTeam.set(t.teamId, g.ageGroup)
+          }
+        }
+      }
+      if (divOfTeam.size > 0) {
+        const games = await (prisma as any).game.findMany({
+          where: { seasonId: params.id, phase: "REGULAR" },
+          select: { homeTeamId: true, awayTeamId: true },
+        })
+        const seen = new Set<string>()
+        for (const gm of games) {
+          const age = gradeOfTeam.get(gm.homeTeamId)
+          if (!age || seen.has(age)) continue
+          if ((gradeScheduling[age] ?? "LOCKED") !== "LOCKED") continue
+          const dh = divOfTeam.get(gm.homeTeamId)
+          const da = divOfTeam.get(gm.awayTeamId)
+          if (dh && da && dh !== da) {
+            staleGrades.push(age)
+            seen.add(age)
+          }
+        }
+      }
+    }
+    return NextResponse.json({ grades, locked, staleGrades })
   } catch (error) {
     console.error("divisions formation GET error:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
@@ -77,6 +119,19 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     const gate = await seasonPlannerAuth(params.id)
     if (gate.status !== 200) return NextResponse.json({ error: gate.error }, { status: gate.status })
     const body = postSchema.parse(await req.json())
+    const seasonRow = await (prisma as any).season.findUnique({
+      where: { id: params.id },
+      select: { status: true },
+    })
+    const publishedCount = await (prisma as any).game.count({
+      where: { seasonId: params.id, phase: "REGULAR", publishedAt: { not: null } },
+    })
+    if (publishedCount > 0 || ["IN_PROGRESS", "COMPLETED"].includes(seasonRow?.status)) {
+      return NextResponse.json(
+        { error: "The schedule is published — divisions are locked. New teams join an existing division." },
+        { status: 422 }
+      )
+    }
     const result = await formDivisions(params.id, body.ageGroup, body.divisions)
     if (!result.ok) return NextResponse.json({ error: result.error }, { status: 422 })
     /* Cross-division play is the one season-start setting that rides this

@@ -142,10 +142,10 @@ const birthYearFor = (division: string): number => {
 /** Division display name, composed the way the console does. */
 const divisionName = (e: NphCensusEntry): string => {
   if (e.league === "SL") {
-    const grade = e.division.startsWith("Gr")
-      ? `Grade ${e.division.slice(2)} Boys`
-      : "Junior Girls"
-    return e.conference ? `${grade} · ${e.conference}` : grade
+    // One division per grade (design 2026-08-09): divisions do not exist
+    // until the operator CREATES them at scheduling time. The conference
+    // still flavors duplicate team names, never the division.
+    return e.division.startsWith("Gr") ? `Grade ${e.division.slice(2)} Boys` : "Junior Girls"
   }
   if (e.league === "D1") return e.division
   return "National"

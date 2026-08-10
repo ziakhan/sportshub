@@ -28,7 +28,7 @@ interface Props {
  * as the actual weekend with placeholder names in gray until the regular
  * season decides them.
  */
-function PlayoffPlanSection({ seasonId }: { seasonId: string }) {
+function PlayoffPlanSection({ seasonId, seasonStatus }: { seasonId: string; seasonStatus: string }) {
   const [data, setData] = useState<any | null>(null)
   const [open, setOpen] = useState<Record<string, boolean>>({})
   const [busy, setBusy] = useState(false)
@@ -75,6 +75,21 @@ function PlayoffPlanSection({ seasonId }: { seasonId: string }) {
         : `${body.games} playoff games planned with real teams.`
     )
     await load()
+  }
+
+  // Playoffs are a season-END event (owner 2026-08-09): before the season
+  // is underway the tab stays calm — no config noise.
+  if (!["IN_PROGRESS", "COMPLETED"].includes(seasonStatus)) {
+    return (
+      <div className={panelClass}>
+        <PanelHeader title="Playoffs" />
+        <p className="text-ink-500 mt-1 text-sm">
+          Playoffs are planned once the season is underway. The plan takes your divisions and the
+          final standings (tiebreakers live under Settings &rsaquo; Rules) — you&apos;ll pick who
+          qualifies, how many games everyone is guaranteed, and how brackets pool.
+        </p>
+      </div>
+    )
   }
 
   if (!data) return null
@@ -252,6 +267,19 @@ function PlayoffPlanSection({ seasonId }: { seasonId: string }) {
                           <option value="PLACEMENT">Everyone plays a set number, standings decide</option>
                         </select>
                       </label>
+                      {d.divisionCount > 1 && (
+                        <label className="flex flex-wrap items-center gap-2">
+                          <span className="text-ink-700 w-32 font-semibold">Opening round</span>
+                          <select
+                            className="border-ink-200 rounded-lg border px-2 py-1"
+                            value={c.openingRound ?? "SEEDED"}
+                            onChange={(e) => void updateConfig(d.id, { openingRound: e.target.value })}
+                          >
+                            <option value="SEEDED">by seeding</option>
+                            <option value="DIVISION_FIRST">within divisions first (NPH day 1)</option>
+                          </select>
+                        </label>
+                      )}
                       <label className="flex items-center gap-2">
                         <input
                           type="checkbox"
@@ -408,7 +436,7 @@ function PlayoffPlanSection({ seasonId }: { seasonId: string }) {
   )
 }
 
-export function PlayoffsTab({ seasonId }: Props) {
+export function PlayoffsTab({ seasonId, seasonStatus }: Props) {
   const [brackets, setBrackets] = useState<any[]>([])
   const [error, setError] = useState("")
 
@@ -440,7 +468,7 @@ export function PlayoffsTab({ seasonId }: Props) {
 
   return (
     <div className="space-y-6">
-      <PlayoffPlanSection seasonId={seasonId} />
+      <PlayoffPlanSection seasonId={seasonId} seasonStatus={seasonStatus} />
       {/* Existing brackets */}
       {brackets.map((bracket) => {
         const rounds = new Map<number, any[]>()

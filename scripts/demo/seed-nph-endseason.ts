@@ -164,6 +164,57 @@ async function main() {
     }
   }
 
+  /* The twin SHOWCASES divisions (design 2026-08-09): the pre-season
+     source now starts undivided, so the twin splits its big grades itself
+     — 4 conference-named divisions, snake-dealt by name — representing a
+     season where the operator created divisions at setup and it played
+     out. Grade 11 keeps per-division playoff pooling as the Setting B demo. */
+  const CONFS = ["ARETE", "DMV CHILL", "GAME SPEAKS", "PRIME"]
+  const byAge = new Map<string, any[]>()
+  for (const d of await (prisma as any).division.findMany({
+    where: { seasonId: season.id },
+    include: { teamSubmissions: { include: { team: { select: { name: true } } } } },
+  })) {
+    const k = d.ageGroup ?? d.name
+    if (!byAge.has(k)) byAge.set(k, [])
+    byAge.get(k)!.push(d)
+  }
+  for (const [age, divs] of byAge) {
+    if (divs.length !== 1 || divs[0].teamSubmissions.length < 16) continue
+    const base = divs[0]
+    const ids = [base.id]
+    for (let i = 1; i < 4; i++) {
+      const nd = await (prisma as any).division.create({
+        data: {
+          seasonId: season.id,
+          name: `${base.name} · ${CONFS[i]}`,
+          ageGroup: base.ageGroup,
+          gender: base.gender ?? undefined,
+          tier: base.tier ?? 1,
+        },
+      })
+      ids.push(nd.id)
+    }
+    await (prisma as any).division.update({
+      where: { id: base.id },
+      data: { name: `${base.name} · ${CONFS[0]}` },
+    })
+    const subs = [...base.teamSubmissions].sort((a: any, b: any) =>
+      String(a.team?.name ?? "").localeCompare(String(b.team?.name ?? ""))
+    )
+    for (let i = 0; i < subs.length; i++) {
+      const snake = Math.floor(i / 4) % 2 === 0 ? i % 4 : 3 - (i % 4)
+      await (prisma as any).teamSubmission.update({
+        where: { id: subs[i].id },
+        data: { divisionId: ids[snake] },
+      })
+    }
+  }
+  await (prisma as any).season.update({
+    where: { id: season.id },
+    data: { playoffConfig: { "Grade 11": { pooling: "DIVISION" } } },
+  })
+
   /* The season's games, COMPLETED with deterministic scores. */
   const games = await (prisma as any).game.findMany({
     where: { seasonId: sourceId, phase: "REGULAR", status: { not: "CANCELLED" } },

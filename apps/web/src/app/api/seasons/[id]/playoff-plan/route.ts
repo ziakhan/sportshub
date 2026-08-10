@@ -6,6 +6,8 @@ import { getSeasonStandings } from "@/lib/queries/standings"
 import {
   buildStructure,
   defaultConfig,
+  deriveFormat,
+  divisionFirstRound1,
   placeWeekend,
   type PlayoffDivisionConfig,
   type SlotRef,
@@ -26,6 +28,7 @@ const configSchema = z.object({
   qualifiers: z.union([z.literal("all"), z.number().int().min(2).max(64)]),
   guaranteedGames: z.number().int().min(1).max(6),
   formatOverride: z.enum(["BRACKET", "POOLS", "PLACEMENT"]).nullable(),
+  openingRound: z.enum(["SEEDED", "DIVISION_FIRST"]).optional(),
   thirdPlace: z.boolean(),
   maxGamesPerDay: z.number().int().min(1).max(4),
   weekendId: z.string().nullable(),
@@ -272,9 +275,20 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
     const gate = await seasonPlannerAuth(params.id)
     if (gate.status !== 200) return NextResponse.json({ error: gate.error }, { status: gate.status })
     const body = putSchema.parse(await req.json())
+    // MERGE, never replace: playoffConfig also stores grade-level keys the
+    // unit configs don't carry (pooling for DIVISION-pooled grades). A full
+    // replace silently wiped them on every config change.
+    const seasonRow = await (prisma as any).season.findUnique({
+      where: { id: params.id },
+      select: { playoffConfig: true },
+    })
+    const stored = { ...((seasonRow?.playoffConfig ?? {}) as Record<string, any>) }
+    for (const [k, v] of Object.entries(body.configs)) {
+      stored[k] = { ...(stored[k] ?? {}), ...(v as object) }
+    }
     await (prisma as any).season.update({
       where: { id: params.id },
-      data: { playoffConfig: body.configs },
+      data: { playoffConfig: stored },
     })
     return NextResponse.json({ saved: true })
   } catch (error) {
@@ -421,6 +435,28 @@ export async function POST(_req: NextRequest, { params }: { params: { id: string
           String(a.name).localeCompare(String(b.name))
       )
       seedsByDivision.set(key, sorted.map((r: any) => ({ teamId: r.teamId, name: r.name ?? r.teamId })))
+    }
+
+    // DIVISION_FIRST opening round (owner + NPH forensics): once a unit's
+    // seeds are known, re-pair its bracket's round 1 within divisions.
+    const teamDivision = new Map<string, string>()
+    for (const div of standings?.divisions ?? []) {
+      for (const r of div.rows) teamDivision.set(r.teamId, div.divisionId)
+    }
+    for (const [key, entry] of resolved) {
+      if (entry.cfg.openingRound !== "DIVISION_FIRST") continue
+      if (entry.divisionIds.length < 2) continue
+      const seeds = seedsByDivision.get(key)
+      if (!seeds) continue
+      const field = entry.cfg.qualifiers === "all" ? entry.teams : Math.min(entry.cfg.qualifiers as number, entry.teams)
+      if (deriveFormat(field, entry.cfg) !== "BRACKET") continue
+      divisionFirstRound1(
+        placedAll.filter((g) => g.divisionId === key),
+        (seed) => {
+          const row = seeds[seed - 1]
+          return row ? (teamDivision.get(row.teamId) ?? null) : null
+        }
+      )
     }
 
     const nameOf = (divisionId: string, slot: SlotRef): { teamId: string | null; label: string } => {

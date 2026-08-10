@@ -34,6 +34,12 @@ export interface PlayoffDivisionConfig {
   maxGamesPerDay: number
   /** Which booked PLAYOFF weekend (SeasonSession id) hosts this grade. */
   weekendId: string | null
+  /** Opening-round pairing for BRACKET formats on a multi-division grade.
+   *  DIVISION_FIRST reproduces NPH's real day 1 (2025-26 forensics: big
+   *  divisions opened almost entirely against themselves, then crossed):
+   *  round-1 participants pair within their own division where possible.
+   *  Later rounds are untouched — winners cross as the bracket narrows. */
+  openingRound?: "SEEDED" | "DIVISION_FIRST"
 }
 
 export function defaultConfig(_teamCount: number): Omit<PlayoffDivisionConfig, "weekendId"> {
@@ -369,6 +375,54 @@ export function buildStructure(field: number, cfg: PlayoffDivisionConfig): Playo
 }
 
 /* -------------------------------- placement ------------------------------- */
+
+/**
+ * Re-pair a bracket's OPENING round so teams meet their own division where
+ * possible (cfg.openingRound = DIVISION_FIRST). Operates on any game list
+ * carrying SlotRefs: tier-0 games whose both slots are SEED are the
+ * opening round (byes never appear as games and are unaffected). The game
+ * ids keep their positions, so every later WINNER/LOSER reference is
+ * intact — only who stands in the opening slots changes.
+ * Pairing: within each division, best remaining seed vs worst remaining
+ * seed; odd leftovers pair across divisions by the same rule. Deterministic.
+ */
+export function divisionFirstRound1<T extends { tier: number; home: SlotRef; away: SlotRef }>(
+  games: T[],
+  divisionOfSeed: (seed: number) => string | null
+): void {
+  const opening = games.filter(
+    (g) => g.tier === 0 && g.home.type === "SEED" && g.away.type === "SEED"
+  )
+  if (opening.length < 2) return
+  const seeds = opening
+    .flatMap((g) => [Number(g.home.ref), Number(g.away.ref)])
+    .filter((n) => Number.isFinite(n))
+    .sort((a, b) => a - b)
+  if (seeds.length !== opening.length * 2) return // non-numeric refs — leave as is
+
+  const byDiv = new Map<string, number[]>()
+  for (const sd of seeds) {
+    const d = divisionOfSeed(sd) ?? "?"
+    if (!byDiv.has(d)) byDiv.set(d, [])
+    byDiv.get(d)!.push(sd)
+  }
+  const pairs: Array<[number, number]> = []
+  const leftovers: number[] = []
+  for (const [, list] of [...byDiv.entries()].sort((a, b) => a[1][0] - b[1][0])) {
+    while (list.length >= 2) pairs.push([list.shift()!, list.pop()!])
+    if (list.length === 1) leftovers.push(list[0])
+  }
+  leftovers.sort((a, b) => a - b)
+  while (leftovers.length >= 2) pairs.push([leftovers.shift()!, leftovers.pop()!])
+
+  // Best seed first, into the opening games in their original order.
+  pairs.sort((a, b) => Math.min(...a) - Math.min(...b))
+  opening.sort((a, b) => Math.min(Number(a.home.ref), Number(a.away.ref)) - Math.min(Number(b.home.ref), Number(b.away.ref)))
+  opening.forEach((g, i) => {
+    g.home = { type: "SEED", ref: String(Math.min(...pairs[i])) }
+    g.away = { type: "SEED", ref: String(Math.max(...pairs[i])) }
+  })
+}
 
 export interface PlacedStructGame extends StructGame {
   dayId: string

@@ -609,6 +609,21 @@ export function ScheduleTab({
           </p>
         )}
 
+        {/* The scheduling GATE (owner 2026-08-09): entering this tab before
+            anything is generated is a deliberate threshold — say so plainly. */}
+        {scheduleGames.length === 0 && !preview && (
+          <div className="border-play-200 bg-play-50 mb-4 rounded-2xl border p-4">
+            <p className="text-ink-900 text-sm font-semibold">
+              You&apos;re about to build the real schedule.
+            </p>
+            <p className="text-ink-700 mt-1 text-xs">
+              Make sure registration is closed and team counts are final. Big grades can run as
+              divisions — set them up below first, then generate. You can change divisions and
+              regenerate freely until you publish.
+            </p>
+          </div>
+        )}
+
         {/* Divisions are a SCHEDULING decision (owner 2026-08-09): one calm
             card, everything else inside its guided dialog. */}
         <DivisionSetup seasonId={seasonId} onChanged={() => { setPreview(null); window.location.reload() }} />
