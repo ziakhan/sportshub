@@ -1115,3 +1115,14 @@ Rebuild NOT needed after env change (route reads env at request time) — but th
 - Seeders: seed-journey emits ONE division per grade; twin seeder self-splits big grades (conference names, snake) + sets Grade 11 pooling=DIVISION; scripts/demo/collapse-preseason-divisions.cjs resets a live world (refuses if published games exist).
 - DEMO STATE both servers: PRE-SEASON world at the scheduling gate (no divisions, no games — owner demos: gate → Set up divisions → drag → yes/no → generate → publish). TWIN: locked divisions card + Grade 11 per-division brackets + Grade 10 one-championship with DIVISION_FIRST day 1 (12/16 same-division), 163-game plan on both servers.
 - NEXT ARC (owner-picked): whole-platform polish sweep against the §3 visual rules.
+
+## #78 — 2026-08-10 daytime: OWNER FEEDBACK BATCH (queue mode: explain→approve→build) — ✅ LOCAL 057e90a, box deploy pending owner word
+- New working mode memorialized: error reports = questions (explain only, collect queue, build on batch go) + LIVE EDITING law (no save buttons; pencil→type→blur→saved) in [[feedback-fully-baked-ux-first]] 9a.
+- Item 1 GRADE STAYS TOGETHER (owner: "we were already scheduling the same grades in the same gyms... grades should stay together"): divisions inherit the grade's gym per weekend EXACTLY; both auto-placement attempts deleted; world re-homed whole-grade (66/108·70/108·9/54, nothing over); generate clean NO-CONFIRM 725 games 0 b2b; YES lean 57%, NO fenced 210/210.
+- Item 2: step-1 stepper seeds max(estimate, approved) — reality leads; plan wizard AUTO-OPENS an editable plan (active, else newest), read-only reference is a deliberate switch only.
+- Item 3: divisionPlans remnants deleted everywhere incl. generate-route auto-materialization (divisions can never be auto-created again).
+- Item 4: step 5 = "Finish planning: use this plan for scheduling" → POST activate → Schedule tab. Generation left the wizard.
+- Item 5 PLAN SEAM: Schedule tab is plan-aware — journey strip (Plan→Divisions→Generate→Publish), "Built on plan X · change" header, door when no active plan ("Which plan drives this schedule?"), QUICK SETUP one-dialog path (season venues + weekend dates + hours + games/team → sessions POST × N → plans POST snapshot → activate; no estimates, real registrations). Tournament-style events recorded as future item reusing playoff structures.
+- Live rename: ✎ beside every division name on the card; blur=autosave via formation PATCH; em-dash sweep of all NEW copy (platform-wide em-dash sweep queued into polish arc).
+- Gates: tsc/eslint 0 · units 27/27 · plan-flow drive UPDATED for new rulings 89/89 · door drive 9/9 · divisions drive intact. Drive-caused Grade 10 misnames found+fixed (exact aria-label selectors now).
+- Box deploy NOT run (owner word pending).
