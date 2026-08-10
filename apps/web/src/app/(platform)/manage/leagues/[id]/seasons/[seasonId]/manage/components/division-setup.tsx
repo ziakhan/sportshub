@@ -49,6 +49,59 @@ const DIV_COLORS = [
 ]
 const colorFor = (i: number) => DIV_COLORS[i % DIV_COLORS.length]
 
+/** Live name editing (owner 2026-08-10, the Google-doc rule): click the
+ *  pencil, type, step away — saved. No save button anywhere. */
+function InlineName({
+  name,
+  short,
+  onSave,
+}: {
+  name: string
+  short: string
+  onSave: (next: string) => Promise<void>
+}) {
+  const [editing, setEditing] = useState(false)
+  const [value, setValue] = useState(name)
+  if (!editing) {
+    return (
+      <>
+        {short}
+        <button
+          type="button"
+          aria-label={`Rename ${name}`}
+          title="Rename"
+          onClick={() => {
+            setValue(name)
+            setEditing(true)
+          }}
+          className="text-ink-300 hover:text-ink-600 ml-0.5 align-middle"
+        >
+          ✎
+        </button>
+      </>
+    )
+  }
+  return (
+    <input
+      autoFocus
+      aria-label={`Name for ${name}`}
+      className="border-play-300 rounded border bg-white px-1 py-0.5 text-xs"
+      value={value}
+      maxLength={60}
+      onChange={(e) => setValue(e.target.value)}
+      onKeyDown={(e) => {
+        if (e.key === "Enter") (e.target as HTMLInputElement).blur()
+        if (e.key === "Escape") setEditing(false)
+      }}
+      onBlur={async () => {
+        setEditing(false)
+        const next = value.trim()
+        if (next && next !== name) await onSave(next)
+      }}
+    />
+  )
+}
+
 export function DivisionSetup({
   seasonId,
   onChanged,
@@ -116,7 +169,7 @@ export function DivisionSetup({
           <PanelHeader title="Divisions" />
           <p className="text-ink-500 -mt-2 text-xs">
             {locked
-              ? "Divisions are locked — the schedule is published. New teams join an existing division."
+              ? "Divisions are locked once the schedule is published. New teams join an existing division."
               : split.length > 0
                 ? "Manage a grade's divisions below, any time before the schedule is published."
                 : "Big grades can run as divisions. Nothing is created unless you set it up."}
@@ -131,7 +184,7 @@ export function DivisionSetup({
 
       {staleGrades.length > 0 && (
         <p className="border-gold-300 bg-gold-50 text-gold-800 mt-3 rounded-lg border px-2.5 py-1.5 text-xs font-semibold">
-          {staleGrades.join(", ")} changed since the last schedule — regenerate below to apply the
+          {staleGrades.join(", ")} changed since the last schedule. Regenerate below to apply the
           new divisions.
         </p>
       )}
@@ -145,11 +198,22 @@ export function DivisionSetup({
             >
               <p className="text-ink-700 min-w-0 text-xs">
                 <span className="text-ink-900 text-sm font-semibold">{g.ageGroup}</span>{" "}
-                <span className="whitespace-nowrap">· {g.teams} teams —</span>{" "}
+                <span className="whitespace-nowrap">· {g.teams} teams:</span>{" "}
                 {g.divisions.map((d, i) => (
                   <span key={d.id} className="mr-2 inline-flex items-center gap-1 whitespace-nowrap">
                     <span className={`inline-block h-2 w-2 rounded-full ${colorFor(i).dot}`} />
-                    {d.name.replace(`${g.ageGroup} · `, "")} ({d.teams.length})
+                    <InlineName
+                      name={d.name}
+                      short={`${d.name.replace(`${g.ageGroup} · `, "")} (${d.teams.length})`}
+                      onSave={async (next) => {
+                        await fetch(`/api/seasons/${seasonId}/divisions/formation`, {
+                          method: "PATCH",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({ divisionId: d.id, name: next }),
+                        })
+                        await load()
+                      }}
+                    />
                   </span>
                 ))}
               </p>
@@ -364,12 +428,12 @@ function CrossPlayChoice({
           [
             {
               v: "NO" as const,
-              label: "No — keep to themselves",
+              label: "No, they keep to themselves",
               hint: "Each division gets its own schedule.",
             },
             {
               v: "YES" as const,
-              label: "Yes — they can mix",
+              label: "Yes, they can mix",
               hint: "Same-division games lean first; crossing fills the rest (how NPH runs it).",
             },
           ] as const
@@ -532,7 +596,7 @@ function SetupDialog({
         <>
           <p className="text-ink-900 text-sm font-semibold">Create divisions for teams</p>
           <p className="text-ink-500 mt-0.5 text-xs">
-            Choose the grades to set up — you&apos;ll walk through them one at a time. Nothing is
+            Choose the grades to set up; you&apos;ll walk through them one at a time. Nothing is
             created until you finish a grade.
           </p>
           <div className="mt-3 space-y-1.5">
@@ -627,7 +691,7 @@ function SetupDialog({
                 >
                   <span className="text-ink-900 font-semibold">Deal randomly</span>
                   <span className="text-ink-500 block text-xs">
-                    An even split to start from — you can still drag anyone anywhere.
+                    An even split to start from. You can still drag anyone anywhere.
                   </span>
                 </button>
                 <button
@@ -651,7 +715,7 @@ function SetupDialog({
             <>
               <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
                 <p className="text-ink-500 text-xs">
-                  Drag teams between the pool and the divisions — any direction.
+                  Drag teams between the pool and the divisions, any direction.
                 </p>
                 <div className="flex gap-2">
                   <Button size="sm" variant="secondary" onClick={() => board.dealRandomly(count)}>

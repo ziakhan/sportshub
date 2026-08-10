@@ -5,6 +5,7 @@ import { format } from "date-fns"
 import { Badge, Button, PanelHeader, toneForStatus, DateTimePicker } from "@/components/ui"
 import { inputClass, panelClass } from "./types"
 import { DivisionSetup } from "./division-setup"
+import { JourneyStrip, PlanDoor, usePlanDoor } from "./plan-door"
 import { TeamCheck } from "./team-check"
 import { ScheduleBoard } from "./schedule-board"
 import { ScheduleVerdictHeader, FairnessSummaryTable } from "./summary-panel"
@@ -58,6 +59,8 @@ export function ScheduleTab({
   refresh: () => void
   onGoToTab?: (tab: string) => void
 }) {
+  const door = usePlanDoor(seasonId)
+  const [showDoor, setShowDoor] = useState(false)
   const regularSessions = useMemo(
     () => sessions.filter((s: any) => (s.phase ?? "REGULAR") === "REGULAR"),
     [sessions]
@@ -609,16 +612,55 @@ export function ScheduleTab({
           </p>
         )}
 
+        {/* THE PLAN SEAM (owner-approved design 2026-08-10): Schedule is
+            always driven by exactly ONE named plan. No plan chosen → the
+            door asks; chosen → the header answers "where am I" and the
+            journey strip shows the road. */}
+        {!door.loading && (
+          <JourneyStrip
+            stage={!door.active ? 0 : scheduleGames.length === 0 ? 1 : draftCount > 0 ? 3 : 3}
+          />
+        )}
+        {!door.loading && !door.active && (
+          <PlanDoor
+            seasonId={seasonId}
+            leagueId={league?.id ?? ""}
+            plans={door.plans ?? []}
+            onChosen={() => window.location.reload()}
+          />
+        )}
+        {door.active && (
+          <p className="text-ink-500 -mt-2 mb-3 text-xs">
+            Built on plan <span className="text-ink-800 font-semibold">{door.active.name}</span>
+            {" · "}
+            <button
+              type="button"
+              onClick={() => setShowDoor((v) => !v)}
+              className="text-play-600 hover:text-play-700 font-semibold"
+            >
+              {showDoor ? "keep it" : "change"}
+            </button>
+          </p>
+        )}
+        {door.active && showDoor && (
+          <PlanDoor
+            seasonId={seasonId}
+            leagueId={league?.id ?? ""}
+            plans={(door.plans ?? []).filter((p) => !p.isActive)}
+            onChosen={() => window.location.reload()}
+          />
+        )}
+
         {/* The scheduling GATE (owner 2026-08-09): entering this tab before
             anything is generated is a deliberate threshold — say so plainly. */}
-        {scheduleGames.length === 0 && !preview && (
+        {door.active && scheduleGames.length === 0 && !preview && (
           <div className="border-play-200 bg-play-50 mb-4 rounded-2xl border p-4">
             <p className="text-ink-900 text-sm font-semibold">
               You&apos;re about to build the real schedule.
             </p>
             <p className="text-ink-700 mt-1 text-xs">
               Make sure registration is closed and team counts are final. Big grades can run as
-              divisions — set them up below first, then generate. You can change divisions and
+              divisions: set them up below first, then generate. You can change divisions and
               regenerate freely until you publish.
             </p>
           </div>
@@ -626,7 +668,9 @@ export function ScheduleTab({
 
         {/* Divisions are a SCHEDULING decision (owner 2026-08-09): one calm
             card, everything else inside its guided dialog. */}
-        <DivisionSetup seasonId={seasonId} onChanged={() => { setPreview(null); window.location.reload() }} />
+        {door.active && (
+          <DivisionSetup seasonId={seasonId} onChanged={() => { setPreview(null); window.location.reload() }} />
+        )}
 
         {/* The mode chooser and session picker left this page 2026-08-08:
             session-by-session GENERATION is dead by owner ruling (the
@@ -634,7 +678,8 @@ export function ScheduleTab({
             The "landed on week two" session-first UX died with it. */}
 
 
-        <div className="mb-4 flex flex-wrap items-center gap-2">
+        {/* Generation controls exist only once a plan drives the schedule. */}
+        <div className={`mb-4 flex-wrap items-center gap-2 ${door.active ? "flex" : "hidden"}`}>
           <Button
             size="sm"
             onClick={() => runPreview()}

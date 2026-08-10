@@ -55,7 +55,7 @@ const COPY = {
   waiting:
     "You can wait for entries to lock, or use this calendar now with the teams already in. Either way the gyms, hours, weekends and groupings come from steps 2 and 3.",
   ready:
-    "Your grades are at or past what you planned for. One button turns everything already entered into a schedule.",
+    "Your grades are at or past what you planned for. Finish planning and the Schedule tab takes it from here.",
   final:
     "Entries for this season are closed. Everything the scheduler needs is already here: gyms, hours, weekends and groupings.",
   noPlan:
@@ -64,7 +64,7 @@ const COPY = {
     "This season was finalized without a kept calendar, so there is nothing here to measure against. These bars are the teams that registered.",
   reuse: "uses your plan, nothing to re-enter",
   footer:
-    "Generating writes the games straight onto this season and lands you on the summary screen you already have for reading them.",
+    "Finishing hands this plan to the Schedule tab, where divisions are set up and the schedule is generated.",
 }
 
 const clockTime = (at: number) =>
@@ -143,48 +143,30 @@ export function ScheduleStep({
   }, [load, locked])
 
   /**
-   * THE ONE BUTTON, pressed (owner ruling 2026-08-07, #3 and #5). One POST
-   * makes the open plan the season and builds its schedule; the only thing it
-   * may ask first is the two sufficiency questions the preflight already
-   * checked against what this board showed. `confirmed` is the SECOND call,
-   * made only after the operator has read those sentences and said "anyway".
+   * FINISH PLANNING (owner ruling 2026-08-10, plan/schedule seam): step 5
+   * no longer generates — generating before divisions exist was work the
+   * Schedule tab immediately threw away. One POST makes the open plan the
+   * season's scheduling plan (activate: world applied, flag flipped), then
+   * lands on the Schedule tab where divisions and the one generate button
+   * live.
    */
-  const runGenerate = useCallback(
-    async (confirmed: boolean) => {
-      if (!planId) return
-      setGenBusy(true)
-      setError(null)
-      const res = await fetch(`/api/seasons/${seasonId}/plans/${planId}/generate`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(confirmed ? { confirm: true } : {}),
-      }).catch(() => null)
-      const data = res ? await res.json().catch(() => null) : null
-      if (!res?.ok) {
-        setGenBusy(false)
-        // The auditor's findings ARE the product's voice (v2 contract):
-        // plain words, real arithmetic, concrete options — never swallowed
-        // behind a generic line.
-        const details = Array.isArray(data?.errors) ? (data.errors as string[]) : []
-        setError(
-          details.length > 0
-            ? details.join("\n")
-            : (data?.error ?? "Couldn't generate the schedule. Try again.")
-        )
-        return
-      }
-      if (data?.needsConfirm) {
-        setGenBusy(false)
-        const findings = (data.findings ?? []) as string[]
-        if (window.confirm(`${findings.join("\n")}\n\nGenerate anyway?`)) void runGenerate(true)
-        return
-      }
-      // A hard navigation: the summary screen needs the games this call just
-      // wrote, not whatever a client cache remembers from before it ran.
-      window.location.href = `/manage/leagues/${leagueId}/seasons/${seasonId}/manage?tab=schedule`
-    },
-    [planId, seasonId, leagueId]
-  )
+  const runFinish = useCallback(async () => {
+    if (!planId) return
+    setGenBusy(true)
+    setError(null)
+    const res = await fetch(`/api/seasons/${seasonId}/plans/${planId}/activate`, {
+      method: "POST",
+    }).catch(() => null)
+    const data = res ? await res.json().catch(() => null) : null
+    if (!res?.ok) {
+      setGenBusy(false)
+      setError(data?.error ?? "Couldn't finish planning. Try again.")
+      return
+    }
+    // A hard navigation: the Schedule tab needs the plan this call just
+    // handed over, not whatever a client cache remembers from before it ran.
+    window.location.href = `/manage/leagues/${leagueId}/seasons/${seasonId}/manage?tab=schedule`
+  }, [planId, seasonId, leagueId])
 
   const bars = useMemo(() => registrationBars(state?.units ?? []), [state])
   const attention = useMemo(
@@ -380,10 +362,10 @@ export function ScheduleStep({
           </p>
         )}
 
-        {/* THE ONE DOOR (owner ruling 2026-08-07, #3): one press makes the
-            open plan the season and builds its schedule. It needs a plan
-            open to know which one; with none, the wizard's own pointer back
-            to step 1 stands rather than a shortcut that skips it. */}
+        {/* THE HANDOFF (owner ruling 2026-08-10): finishing makes the open
+            plan the season's scheduling plan and moves to the Schedule tab.
+            It needs a plan open to know which one; with none, the wizard's
+            own pointer back to step 1 stands. */}
         <p className="text-ink-600 mt-5 max-w-2xl text-sm">
           {locked ? COPY.final : allIn ? COPY.ready : COPY.waiting}
         </p>
@@ -391,16 +373,16 @@ export function ScheduleStep({
           {planId ? (
             <button
               type="button"
-              data-testid="step5-generate"
+              data-testid="step5-finish"
               disabled={genBusy}
-              onClick={() => void runGenerate(false)}
+              onClick={() => void runFinish()}
               className={`${BTN_PRIMARY} ${BTN_MD}`}
             >
-              {genBusy ? "Generating…" : "Use this calendar and generate the schedule"}
+              {genBusy ? "Finishing…" : "Finish planning: use this plan for scheduling"}
             </button>
           ) : (
             <PlanStepPointer
-              detail="Generating turns an open plan's calendar into real games. Open one in step 1 first."
+              detail="Finishing hands an open plan to the Schedule tab. Open one in step 1 first."
               onGoToStep={onGoToStep}
               testId="step5-plan-pointer"
             />

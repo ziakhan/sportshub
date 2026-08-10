@@ -184,13 +184,28 @@ export function PlanSessionProvider({
   }, [refresh])
 
   /** The one URL restore, spent whether or not it lands: a stale id in a
-   *  bookmark must not keep re-firing against every later refresh. */
+   *  bookmark must not keep re-firing against every later refresh. With no
+   *  URL plan, the wizard opens on an EDITABLE plan — the active one, else
+   *  the newest of the operator's own (owner 2026-08-10: landing on the
+   *  read-only reference read as "everything is uneditable"). The reference
+   *  stays a deliberate switch, never the landing. */
   const restoreRef = useRef<string | null>(initialPlanId)
   useEffect(() => {
+    if (loading) return
     const wanted = restoreRef.current
-    if (!wanted || loading) return
     restoreRef.current = null
-    if (plans.some((p) => p.id === wanted)) setPlanId(wanted)
+    if (wanted && plans.some((p) => p.id === wanted)) {
+      setPlanId(wanted)
+      return
+    }
+    if (!wanted) {
+      setPlanId((current) => {
+        if (current) return current
+        const editable = plans.filter((x) => !isReferencePlan(x))
+        const open = editable.find((x) => x.isActive) ?? editable[0] ?? null
+        return open ? open.id : current
+      })
+    }
   }, [plans, loading])
 
   /**

@@ -193,7 +193,6 @@ export const planWorldSchema = z.object({
   excludedTeamIds: z.array(z.string()).max(500).optional(),
   // Step-1 "run as N divisions" intents (owner 2026-08-09) — plan-scoped,
   // materialized by the one-button generate.
-  divisionPlans: z.record(z.object({ count: z.number().int().min(1).max(4) })).optional(),
   gameSlotMinutes: z.number().int().min(10).max(240).optional(),
   fridayStart: z.string().regex(/^\d{1,2}:\d{2}$/).optional(),
   fridayEnd: z.string().regex(/^\d{1,2}:\d{2}$/).optional(),
@@ -211,7 +210,6 @@ export const planSettingsSchema = z.object({
  *  way. */
 export type PlanWorldWithExclusions = PlanWorld & {
   excludedTeamIds?: string[]
-  divisionPlans?: Record<string, { count: number }>
 }
 
 /**
@@ -287,7 +285,6 @@ export async function sanitizePlanWorld(
     // survive. Absent stays absent — a plan that never named an exclusion
     // list keeps not having one.
     excludedTeamIds: world.excludedTeamIds?.filter((id) => validTeamIds.has(id)),
-    divisionPlans: world.divisionPlans,
   }
 }
 

@@ -25,14 +25,19 @@ export async function openBoard(page, planUrl, { source = null, active = true } 
   const step = target.searchParams.get("step") ?? "3"
   const pointerTestId = step === "2" ? "step2-plan-pointer" : "board-plan-pointer"
 
-  // 1. A cold visit to the target step, no ?plan= on it: nothing auto-opens,
-  //    so the step draws its pointer card instead of a calendar.
+  // 1. A cold visit to the target step, no ?plan= on it. OWNER 2026-08-10:
+  //    with editable plans existing, one AUTO-OPENS now (the uneditable-
+  //    landing fix) — so a cold visit legitimately shows either the pointer
+  //    card (no plans) or a drawn board (auto-opened plan).
   const cleanUrl = new URL(target)
   cleanUrl.searchParams.delete("plan")
   await page.goto(cleanUrl.toString(), { timeout: 90000 })
-  await page.waitForSelector(`[data-testid="${pointerTestId}"]`, { timeout: 120000 })
+  await page.waitForSelector(
+    `[data-testid="${pointerTestId}"], [data-testid="weekend-gym-section"], [data-session-id]`,
+    { timeout: 120000 }
+  )
   const entry = {
-    /** Nothing auto-opened: the pointer card is what a cold visit sees. */
+    /** True only when nothing auto-opened (a season with no plans). */
     empty: (await page.locator(`[data-testid="${pointerTestId}"]`).count()) === 1,
     /** The pointer card's own words, for a caller that wants to pin them. */
     pointerText: (
@@ -53,9 +58,14 @@ export async function openBoard(page, planUrl, { source = null, active = true } 
   step1Url.searchParams.set("step", "1")
   step1Url.searchParams.delete("plan")
   await page.goto(step1Url.toString(), { timeout: 90000 })
-  await page.waitForSelector('[data-testid="step1-plan-empty"]', { timeout: 120000 })
-  const chooser = page.locator('[data-testid="plan-open"]')
-  await chooser.click()
+  // Auto-open (owner 2026-08-10) means step 1 may arrive with a plan already
+  // open: the header chooser draws then, the empty-state card only without.
+  await page.waitForSelector(
+    '[data-testid="step1-plan-empty"], [data-testid="step1-plan-chooser"]',
+    { timeout: 120000 }
+  )
+  const chooser = page.locator('[data-testid="plan-open"], [data-testid="step1-plan-chooser"] [data-testid="plan-picker"]')
+  await chooser.first().click()
   await page.waitForSelector('[data-testid="plan-menu"]', { timeout: 10000 })
   const wanted = source
     ? `[data-testid="plan-option"][data-source="${source}"]`
@@ -127,8 +137,15 @@ export async function openPlanFromStep1(page, targetUrl, planId) {
   step1Url.searchParams.set("step", "1")
   step1Url.searchParams.delete("plan")
   await page.goto(step1Url.toString(), { timeout: 90000 })
-  await page.waitForSelector('[data-testid="step1-plan-empty"]', { timeout: 90000 })
-  await page.locator('[data-testid="plan-open"]').click()
+  // Auto-open (owner 2026-08-10): step 1 may arrive with a plan already open.
+  await page.waitForSelector(
+    '[data-testid="step1-plan-empty"], [data-testid="step1-plan-chooser"]',
+    { timeout: 90000 }
+  )
+  await page
+    .locator('[data-testid="plan-open"], [data-testid="step1-plan-chooser"] [data-testid="plan-picker"]')
+    .first()
+    .click()
   await page.waitForSelector('[data-testid="plan-menu"]', { timeout: 30000 })
   await page.locator(`[data-testid="plan-option"][data-plan-id="${planId}"]`).click()
   await page.waitForSelector('[data-testid="step1-plan-chooser"]', { timeout: 30000 })

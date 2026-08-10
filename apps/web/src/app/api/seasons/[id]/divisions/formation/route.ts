@@ -114,6 +114,37 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
   }
 }
 
+const patchSchema = z.object({
+  divisionId: z.string().min(1),
+  name: z.string().min(1).max(80),
+})
+
+/** PATCH — rename one division in place (live editing: click the name,
+ *  type, step away — saved. No save buttons, owner 2026-08-10). */
+export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
+  try {
+    const gate = await seasonPlannerAuth(params.id)
+    if (gate.status !== 200) return NextResponse.json({ error: gate.error }, { status: gate.status })
+    const body = patchSchema.parse(await req.json())
+    const division = await (prisma as any).division.findFirst({
+      where: { id: body.divisionId, seasonId: params.id },
+      select: { id: true },
+    })
+    if (!division) return NextResponse.json({ error: "Not found" }, { status: 404 })
+    await (prisma as any).division.update({
+      where: { id: body.divisionId },
+      data: { name: body.name },
+    })
+    return NextResponse.json({ saved: true })
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return NextResponse.json({ error: "Validation error", details: error.errors }, { status: 400 })
+    }
+    console.error("divisions formation PATCH error:", error)
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+  }
+}
+
 export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
   try {
     const gate = await seasonPlannerAuth(params.id)

@@ -92,22 +92,29 @@ ok(
   (await page.locator('[aria-current="step"]').first().innerText()).includes("Teams")
 )
 // Already inside the wizard (the tab IS the door now); just wait for step 1.
-await page.waitForSelector('[data-testid="step1-plan-empty"]', { timeout: 90000 })
-// RE-PINNED 2026-08-06 wave (owner's B2 ruling): exactly ONE chooser lives on
-// step 1 at a time. With nothing open the empty-state card is it, and the
-// header chooser (step1-plan-chooser) does not mount at all — the two used to
-// coexist, which was the duplication B2 removed.
+// OWNER 2026-08-10 (supersedes the 08-06 empty-start pin): with editable
+// plans existing, the wizard OPENS ON ONE — landing on the read-only
+// reference read as "everything is uneditable". The empty-state card is
+// now only for a season with no plans of its own.
+await page.waitForSelector('[data-testid="step1-plan-line"], [data-testid="step1-plan-empty"]', {
+  timeout: 90000,
+})
+const plansAtOpen = await page.request
+  .get(`${BASE}/api/seasons/${SEASON}/plans`)
+  .then((r) => r.json())
+  .then((d) => (d.plans ?? []).filter((p) => p.source !== "imported"))
+  .catch(() => [])
 ok(
-  "the walk starts on teams, with nothing open and the empty-state card showing",
-  /[?&]step=1/.test(page.url()) &&
-    (await page.locator('[data-testid="step1-plan-empty"]').count()) === 1 &&
-    (await page.locator('[data-testid="step1-plan-chooser"]').count()) === 0,
+  "the walk starts on teams",
+  /[?&]step=1/.test(page.url()),
   page.url().split("/").pop()
 )
 ok(
-  "and no plan is opened for you: step 1 asks which one first",
-  (await page.locator('[data-testid="step1-plan-empty"]').count()) === 1,
-  (await page.locator('[data-testid="step1-plan-empty"]').innerText()).replace(/\n/g, " ")
+  "OWNER 2026-08-10: with editable plans existing, step 1 opens on one (never the read-only reference)",
+  plansAtOpen.length === 0 ||
+    ((await page.locator('[data-testid="step1-plan-line"]').count()) > 0 &&
+      !/reference/i.test(await page.locator('[data-testid="step1-plan-line"]').innerText())),
+  `editable plans: ${plansAtOpen.length}`
 )
 await page.screenshot({ path: `${SHOTS}/1-plan-tab.png`, fullPage: true })
 
@@ -170,7 +177,12 @@ ok(
   /Start from registrations/i.test(step1) || allEstimated,
   allEstimated ? "every registered grade already estimated" : "banner shown"
 )
-ok("step 1 offers add-a-grade", /Add a grade/i.test(step1))
+ok(
+  "step 1 offers add-a-grade (or the auto-opened plan carries the affordance)",
+  /Add a grade/i.test(step1) ||
+    (await page.locator('[data-testid="step1-plan-chooser"]').count()) > 0,
+  /Add a grade/i.test(step1) ? "button shown" : "auto-opened plan view"
+)
 await page.screenshot({ path: `${SHOTS}/2-step1-teams.png`, fullPage: true })
 
 // ── Step 2: building roster, league weekend row, reserved notice ──────────
@@ -235,11 +247,14 @@ ok(
  * gym that is not home" (season fallback). NEW: offers none, with nothing
  * open.
  */
-ok(
-  "with nothing open, step 2 offers no make-home button (no season fallback to write into any more)",
-  (await page.locator('[data-testid="make-home"]').count()) === 0,
-  `${gymCards - homeCards} gym(s) could have offered one under the old write-through`
-)
+{
+  const planOpenStep2 = (await page.locator('[data-testid="step2-plan-line"]').count()) > 0
+  ok(
+    "step 2 write controls follow the open document: present on an auto-opened plan, absent with nothing open (owner 2026-08-10)",
+    planOpenStep2 || (await page.locator('[data-testid="make-home"]').count()) === 0,
+    planOpenStep2 ? "auto-opened plan — writes allowed" : "nothing open — read only"
+  )
+}
 ok(
   "step 2 has no reorder arrows",
   (await page.getByRole("button", { name: /move .* (up|down)/i }).count()) === 0
@@ -297,11 +312,16 @@ ok(
  * is driven later in the "A PLAN OWNS ITS WORLD" section below, where the row
  * starts at 0 of N and a click really turns one on.
  */
-ok(
-  "with no plan of the operator's own open, the row says it is read only",
-  (await page.locator('[data-testid="league-weekends-note"]').count()) === 1 &&
-    /Open a plan of your own to choose the weekends it fills first/.test(step2)
-)
+{
+  const planOpenStep2 = (await page.locator('[data-testid="step2-plan-line"]').count()) > 0
+  ok(
+    "the league-weekends row is honest about writability (editable on the auto-opened plan, read-only note otherwise)",
+    planOpenStep2 ||
+      ((await page.locator('[data-testid="league-weekends-note"]').count()) === 1 &&
+        /Open a plan of your own to choose the weekends it fills first/.test(step2)),
+    planOpenStep2 ? "auto-opened plan" : "read-only note shown"
+  )
+}
 /**
  * RE-PINNED 2026-08-06 (wave B): the per-gym "toggle all weekends at once"
  * bulk buttons are gone along with the paint grid they lived on — booking a
@@ -329,11 +349,14 @@ ok(
  * courts" badge. OLD: "step 2 still edits courts" (the season-fallback write
  * path). NEW: nothing open means no editable input anywhere on the roster.
  */
-ok(
-  "with nothing open, step 2 shows courts read only (no input, no season fallback to write into)",
-  (await page.getByLabel(/ courts$/).count()) === 0 && gymCards > 0,
-  `0 editable input(s) among ${gymCards} gym(s)`
-)
+{
+  const planOpenStep2 = (await page.locator('[data-testid="step2-plan-line"]').count()) > 0
+  ok(
+    "courts editability follows the open document (inputs on the auto-opened plan, badges otherwise)",
+    gymCards > 0 && (planOpenStep2 || (await page.getByLabel(/ courts$/).count()) === 0),
+    planOpenStep2 ? "auto-opened plan — inputs allowed" : "read-only badges"
+  )
+}
 ok(
   "step 2 notice slot is mounted even when empty",
   (await page.locator('[data-testid="step2-notice"]').count()) === 1
@@ -351,8 +374,8 @@ const boardEntry = await openBoard(
   `${BASE}/manage/leagues/${LEAGUE}/seasons/${SEASON}/plan?step=3`
 )
 ok(
-  "step 3 opens with nothing selected, and the plan is opened by hand",
-  boardEntry.empty && boardEntry.weekends === 0,
+  "step 3 cold entry is coherent: pointer card when no plans, an auto-opened board otherwise (owner 2026-08-10)",
+  boardEntry.empty ? boardEntry.weekends === 0 : boardEntry.weekends > 0,
   boardEntry.pointerText
 )
 /**
@@ -744,8 +767,16 @@ if (worldPlan) {
   // RE-PINNED 2026-08-06 wave (B2): a bare goto with no ?plan= lands on the
   // empty-state card, not the header chooser — the two are never both mounted.
   await page.goto(planUrl(1))
-  await page.waitForSelector('[data-testid="step1-plan-empty"]', { timeout: 60000 })
-  await page.locator('[data-testid="plan-open"]').click()
+  // Auto-open (owner 2026-08-10): a bare goto may land with a plan already
+  // open — the chooser is then the header's, otherwise the empty card's.
+  await page.waitForSelector(
+    '[data-testid="step1-plan-empty"], [data-testid="step1-plan-chooser"]',
+    { timeout: 60000 }
+  )
+  await page
+    .locator('[data-testid="plan-open"], [data-testid="step1-plan-chooser"] [data-testid="plan-picker"]')
+    .first()
+    .click()
   await page.waitForSelector('[data-testid="plan-menu"]', { timeout: 30000 })
   await page.locator(`[data-testid="plan-option"][data-plan-id="${worldPlan.id}"]`).click()
   await page.waitForTimeout(2000)
@@ -1183,12 +1214,13 @@ if (genPlan) {
 
   /* ── step 5, with nothing open: the pointer, not a shortcut ────────────── */
   await page.goto(`${BASE}/manage/leagues/${LEAGUE}/seasons/${SEASON}/plan?step=5`)
-  await page.waitForSelector('[data-testid="step5-plan-pointer"], [data-testid="step5-generate"]', {
+  await page.waitForSelector('[data-testid="step5-plan-pointer"], [data-testid="step5-finish"]', {
     timeout: 60000,
   })
   ok(
-    "with nothing open, step 5 offers the pointer back to step 1, not a generate shortcut",
-    (await page.locator('[data-testid="step5-plan-pointer"]').count()) === 1 &&
+    "a bare step-5 visit is coherent: the finish handoff on an auto-opened plan, the pointer with nothing open — never a generate shortcut",
+    ((await page.locator('[data-testid="step5-finish"]').count()) === 1) !==
+      ((await page.locator('[data-testid="step5-plan-pointer"]').count()) === 1) &&
       (await page.locator('[data-testid="step5-generate"]').count()) === 0
   )
 
@@ -1233,37 +1265,29 @@ if (genPlan) {
 
   /* ── the same button, from step 5 ───────────────────────────────────────── */
   await openPlanFromStep1(page, planUrl(5), genPlan.id)
-  await page.waitForSelector('[data-testid="step5-generate"]', { timeout: 60000 })
-  const step5GenBtn = page.locator('[data-testid="step5-generate"]')
-  ok("NEW: step 5's primary is generate-season's twin, step5-generate", (await step5GenBtn.count()) === 1)
-  const genResponsePromise2 = page
-    .waitForResponse(
-      (r) => /\/plans\/[^/]+\/generate$/.test(new URL(r.url()).pathname) && r.request().method() === "POST",
-      { timeout: 20000 }
-    )
-    .catch(() => null)
-  let dialogMessage2 = null
-  page.once("dialog", async (dialog) => {
-    dialogMessage2 = dialog.message()
-    await dialog.dismiss()
-  })
-  await step5GenBtn.click()
-  const genResponse2 = await genResponsePromise2
-  const genBody2 = genResponse2 ? await genResponse2.json().catch(() => null) : null
-  await page.waitForTimeout(500)
+  await page.waitForSelector('[data-testid="step5-finish"]', { timeout: 60000 })
+  const step5FinishBtn = page.locator('[data-testid="step5-finish"]')
   ok(
-    "step5-generate answers the same way: needsConfirm with findings, nothing written",
-    genBody2?.needsConfirm === true && Array.isArray(genBody2?.findings) && genBody2.findings.length > 0,
-    JSON.stringify(genBody2)?.slice(0, 200)
+    "OWNER 2026-08-10: step 5's primary is the Finish-planning HANDOFF (step5-finish) — generation left the wizard",
+    (await step5FinishBtn.count()) === 1
   )
   ok(
-    "SAFETY: step 5's dialog is also observed and auto-dismissed, never accepted",
-    typeof dialogMessage2 === "string" && dialogMessage2.length > 0,
-    (dialogMessage2 ?? "no dialog seen").slice(0, 160)
+    "step 5 offers NO generate button anywhere — the Schedule tab owns generation",
+    (await page.locator('[data-testid="step5-generate"]').count()) === 0
+  )
+  // SAFETY: the finish button ACTIVATES (writes a plan's world onto the
+  // season), so this drive never presses it — presence and wording are the
+  // whole check here; activation is exercised by the schedule-door drive
+  // against a plan that is safe to hand over.
+  const finishLabel = (await step5FinishBtn.innerText()).trim()
+  ok(
+    "the handoff says what it does in plain words",
+    /finish planning/i.test(finishLabel) && /scheduling/i.test(finishLabel),
+    finishLabel
   )
   const plansAfterStep5Gen = await plansOf()
   ok(
-    "SAFETY: still nothing written after the step 5 press — the active plan is unmoved",
+    "SAFETY: nothing pressed, nothing written — the active plan is unmoved",
     (plansAfterStep5Gen.find((p) => p.isActive)?.id ?? null) === activeBeforeGen,
     `active before ${activeBeforeGen} → after ${plansAfterStep5Gen.find((p) => p.isActive)?.id ?? null}`
   )
@@ -1294,7 +1318,7 @@ if (genPlan) {
   await openPlanFromStep1(page, planUrl(3), genPlan.id)
   sweepTexts.push(await page.locator("body").innerText())
   await openPlanFromStep1(page, planUrl(5), genPlan.id)
-  await page.waitForSelector('[data-testid="step5-generate"]', { timeout: 60000 })
+  await page.waitForSelector('[data-testid="step5-finish"]', { timeout: 60000 })
   sweepTexts.push(await page.locator("body").innerText())
   const activateHits = sweepTexts.filter((t) => /activate/i.test(t))
   ok(

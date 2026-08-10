@@ -85,7 +85,7 @@ function PlayoffPlanSection({ seasonId, seasonStatus }: { seasonId: string; seas
         <PanelHeader title="Playoffs" />
         <p className="text-ink-500 mt-1 text-sm">
           Playoffs are planned once the season is underway. The plan takes your divisions and the
-          final standings (tiebreakers live under Settings &rsaquo; Rules) — you&apos;ll pick who
+          final standings (tiebreakers live under Settings &rsaquo; Rules): you&apos;ll pick who
           qualifies, how many games everyone is guaranteed, and how brackets pool.
         </p>
       </div>
@@ -128,7 +128,7 @@ function PlayoffPlanSection({ seasonId, seasonStatus }: { seasonId: string; seas
             <div key={gp.ageGroup} className="flex flex-wrap items-center justify-between gap-2">
               <p className="text-ink-700 text-xs">
                 <span className="text-ink-900 font-semibold">{gp.ageGroup}</span> runs as{" "}
-                {gp.divisions} divisions — its playoffs are
+                {gp.divisions} divisions; its playoffs are
               </p>
               <div className="border-ink-200 inline-flex overflow-hidden rounded-lg border text-xs">
                 {(
@@ -147,7 +147,7 @@ function PlayoffPlanSection({ seasonId, seasonStatus }: { seasonId: string; seas
                         headers: { "Content-Type": "application/json" },
                         body: JSON.stringify({ ageGroup: gp.ageGroup, pooling: o.v }),
                       })
-                      setMsg("Pooling saved — press Plan the playoffs to rebuild the schedule.")
+                      setMsg("Pooling saved. Press Plan the playoffs to rebuild the schedule.")
                       await load()
                     }}
                     className={`px-2.5 py-1 font-semibold ${

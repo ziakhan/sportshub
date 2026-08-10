@@ -133,7 +133,6 @@ type PlanWorldWithExclusions = PlanWorld & {
    * Division rows (teams snake-dealt deterministically, fine-tuning board
    * to follow) only when the one button generates. Key = the grade row key.
    */
-  divisionPlans?: Record<string, { count: number }>
 }
 
 export function TeamsStep({
@@ -311,7 +310,10 @@ export function TeamsStep({
   // estimate is the answer whatever it is: a deliberate 0 stays 0.
   useEffect(() => {
     const seeded = Object.fromEntries(
-      rows.map((r) => [r.key, r.hasEstimate ? r.expected : r.approved])
+      // Reality leads (owner 2026-08-10): once real registrations pass a
+      // saved estimate, the real count IS the number — a stale forecast
+      // must never under-read a grade that already filled up.
+      rows.map((r) => [r.key, r.hasEstimate ? Math.max(r.expected, r.approved) : r.approved])
     )
     // Every save's response lands back here (the doc version moves), and the
     // document it carries predates any click made while the write was in
@@ -499,61 +501,6 @@ export function TeamsStep({
     const world = readsWorld ? (session.world as PlanWorldWithExclusions | null) : null
     return new Set(world?.excludedTeamIds ?? [])
   }, [readsWorld, session.world])
-  /** Local mirror of saved intents so the ACTIVE plan (whose board draws
-   *  the season, not a sandbox world) still shows what it saved. */
-  const [intentOverrides, setIntentOverrides] = useState<Record<string, number>>({})
-  const divisionPlans = useMemo(() => {
-    const world = session.world as PlanWorldWithExclusions | null
-    const fromWorld = world?.divisionPlans ?? {}
-    const merged: Record<string, { count: number }> = { ...fromWorld }
-    for (const [k, count] of Object.entries(intentOverrides)) merged[k] = { count }
-    return merged
-  }, [session.world, intentOverrides])
-  /** The number the row SHOWS: saved intent first, else the season's real
-   *  non-empty division count for the grade (so a grade already split
-   *  reads "2 divisions" on the active plan). */
-  const shownDivisionCount = (row: { key: string; divisionIds: string[] }): number => {
-    const intent = divisionPlans[row.key]?.count
-    if (intent) return intent
-    const withTeams = new Set(
-      gradeTeams(row.divisionIds).map((t) => t.divisionId).filter(Boolean)
-    )
-    return Math.max(1, withTeams.size)
-  }
-  const setDivisionCount = async (gradeKey: string, count: number) => {
-    if (readOnly || !session.planId) return
-    setSaving("saving")
-    if (editsWorld) {
-      const world = (worldRef.current ?? session.world) as PlanWorldWithExclusions | null
-      if (world) {
-        const plans = { ...(world.divisionPlans ?? {}) }
-        if (count <= 1) delete plans[gradeKey]
-        else plans[gradeKey] = { count }
-        const next: PlanWorldWithExclusions = { ...world, divisionPlans: plans }
-        worldRef.current = next
-        const ok = await session.saveWorld(next)
-        setSaving(ok ? "saved" : "idle")
-        if (!ok) setError("That didn't save. Try again.")
-        return
-      }
-    }
-    // Active plan (no sandbox world in session): the dedicated endpoint
-    // writes the same stored settings the generate button reads.
-    const res = await fetch(
-      `/api/seasons/${seasonId}/plans/${session.planId}/division-intent`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ gradeKey, count }),
-      }
-    ).catch(() => null)
-    setSaving(res?.ok ? "saved" : "idle")
-    if (!res?.ok) {
-      setError("That didn't save. Try again.")
-      return
-    }
-    setIntentOverrides((o) => ({ ...o, [gradeKey]: count }))
-  }
   const toggleExcludedTeam = async (teamId: string) => {
     if (!editsWorld || readOnly) return
     const world = (worldRef.current ?? session.world) as PlanWorldWithExclusions | null
@@ -935,11 +882,6 @@ export function TeamsStep({
                           plan's own world, so only offered while readsWorld —
                           and only when this grade actually has registered
                           teams to manage. */}
-                      {/* SPLIT INTO DIVISIONS (owner 2026-08-09): the split
-                          decision lives HERE, where the real numbers are —
-                          never at league creation. Count now; teams deal
-                          snake-by-seed at generate; the fine-tuning board is
-                          the recorded follow-up. */}
                       {/* Division formation LEFT this page (owner ruling
                           2026-08-09): planning is gyms and capacity; divisions
                           are a SCHEDULING decision made when the league locks,
