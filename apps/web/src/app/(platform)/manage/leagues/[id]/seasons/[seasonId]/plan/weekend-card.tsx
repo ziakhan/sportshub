@@ -980,9 +980,14 @@ export function WeekendCard({
                     tint={paint.action}
                   />
                 )}
-                {/* THE GYM ROW COUNTS COURTS (approved two-number law,
-                    2026-08-10): what is used of what the building has, free
-                    room in green words. The games detail rides the tooltip. */}
+              </div>
+              {/* THE DATA LINE (owner 2026-08-11: the header was too crowded —
+                  "put the courts information on the second line"). Line one is
+                  the gym's NAME and its two buttons, nothing else; this second
+                  line counts courts (approved two-number law, 2026-08-10) and
+                  carries the exceptional marks — an assumed booking, a
+                  paying-for-more rental, a correction, custom hours. */}
+              <div className="mt-0.5 flex flex-wrap items-center gap-1.5 pl-3.5">
                 <span
                   data-testid="gym-fraction"
                   title={`${venueShortName(section.name)}: ${section.games} games of ${held}${
@@ -990,7 +995,7 @@ export function WeekendCard({
                   } · ${courtsUsedHere} of ${courtsTotalHere} courts${
                     courtsFreeHere > 0 ? `, ${courtsFreeHere} free` : ""
                   }`}
-                  className={`shrink-0 text-[11px] font-bold tabular-nums ${
+                  className={`text-[11px] font-bold tabular-nums ${
                     section.over > 0 ? "text-hoop-800" : "text-ink-600"
                   }`}
                 >
@@ -999,43 +1004,29 @@ export function WeekendCard({
                     <span className="text-court-700 font-bold"> · {courtsFreeHere} free</span>
                   )}
                 </span>
+                {status === "assumed" && <BlockStatusMark status={status} />}
+                {section.role === "pool" && rentedCourts > usedCourts && (
+                  <span data-testid="rental-mark" className="text-ink-600 text-[10px] font-bold">
+                    rented {rentedCourts}
+                  </span>
+                )}
+                {capped != null && capped < wired && (
+                  <span
+                    data-testid="courts-corrected"
+                    className="border-gold-400 bg-gold-50 text-gold-600 rounded-md border px-1.5 text-[10px] font-bold"
+                  >
+                    {courtsWord(capped)} of {wired} this weekend
+                  </span>
+                )}
+                {hoursHere.custom && (
+                  <span
+                    data-testid="hours-custom"
+                    className="border-gold-400 bg-gold-50 text-gold-600 rounded-md border px-1.5 text-[10px] font-bold tabular-nums"
+                  >
+                    {hoursHere.startTime} to {hoursHere.endTime}
+                  </span>
+                )}
               </div>
-              {/* EXCEPTIONAL MARKS ONLY (approved design 2026-08-10): an
-                  assumed booking, a paying-for-more rental, a correction, or
-                  custom hours. Nothing routine prints here — home-ness reads
-                  from the rail; the box colour and tooltip carry the rest. */}
-              {(status === "assumed" ||
-                (section.role === "pool" && rentedCourts > usedCourts) ||
-                (capped != null && capped < wired) ||
-                hoursHere.custom) && (
-                <div className="mt-0.5 flex flex-wrap items-center gap-1.5 pl-3.5">
-                  {status === "assumed" && <BlockStatusMark status={status} />}
-                  {section.role === "pool" && rentedCourts > usedCourts && (
-                    <span
-                      data-testid="rental-mark"
-                      className="text-ink-600 text-[10px] font-bold"
-                    >
-                      rented {rentedCourts}
-                    </span>
-                  )}
-                  {capped != null && capped < wired && (
-                    <span
-                      data-testid="courts-corrected"
-                      className="border-gold-400 bg-gold-50 text-gold-600 rounded-md border px-1.5 text-[10px] font-bold"
-                    >
-                      {courtsWord(capped)} of {wired} this weekend
-                    </span>
-                  )}
-                  {hoursHere.custom && (
-                    <span
-                      data-testid="hours-custom"
-                      className="border-gold-400 bg-gold-50 text-gold-600 rounded-md border px-1.5 text-[10px] font-bold tabular-nums"
-                    >
-                      {hoursHere.startTime} to {hoursHere.endTime}
-                    </span>
-                  )}
-                </div>
-              )}
               <div className="mt-1 flex flex-wrap items-start gap-1">
                 {chips.map((k) => chipFor(k, section.venueId))}
                 {/* WHAT WAS HERE, AND WHERE IT WENT (owner ruling 2026-08-05,
@@ -1157,23 +1148,14 @@ export function WeekendCard({
                 takesSection || takesChip ? TARGET_RING : ""
               } ${litGym(room.venueId) ? FILTER_MATCH : anyLens ? FILTER_DIM : ""}`}
             >
-              <div className="flex flex-wrap items-center gap-1.5">
+              <div className="flex items-center gap-1.5">
                 <i aria-hidden className={`h-2.5 w-2.5 flex-none rounded-full ${paint.swatch}`} />
-                <span className={`min-w-0 truncate text-[13px] font-bold ${paint.name}`}>
+                <span
+                  className={`min-w-0 flex-1 truncate text-[13px] font-bold ${paint.name}`}
+                  title={room.name}
+                >
                   {venueShortName(room.name)}
                 </span>
-                <span className="text-ink-500 text-[10.5px] font-bold">empty</span>
-                <span className="text-ink-400 text-[10.5px] font-semibold">
-                  drop grades here
-                </span>
-                {hoursHere.custom && (
-                  <span
-                    data-testid="hours-custom"
-                    className="border-gold-400 bg-gold-50 text-gold-600 rounded-md border px-1.5 text-[10px] font-bold tabular-nums"
-                  >
-                    {hoursHere.startTime} to {hoursHere.endTime}
-                  </span>
-                )}
                 {interactive && wired > 0 && (
                   <GymMenu
                     gymName={venueShortName(room.name)}
@@ -1192,6 +1174,20 @@ export function WeekendCard({
                     }
                     onResetHours={() => onSetHours(weekend.sessionId, room.venueId, null)}
                   />
+                )}
+              </div>
+              {/* Same two-line shape as a full section (owner 2026-08-11):
+                  the name owns line one, the state lives on line two. */}
+              <div className="mt-0.5 flex flex-wrap items-center gap-1.5 pl-3.5">
+                <span className="text-ink-500 text-[10.5px] font-bold">empty</span>
+                <span className="text-ink-400 text-[10.5px] font-semibold">drop grades here</span>
+                {hoursHere.custom && (
+                  <span
+                    data-testid="hours-custom"
+                    className="border-gold-400 bg-gold-50 text-gold-600 rounded-md border px-1.5 text-[10px] font-bold tabular-nums"
+                  >
+                    {hoursHere.startTime} to {hoursHere.endTime}
+                  </span>
                 )}
               </div>
               {takesSection && armedSection && !dragging && (
