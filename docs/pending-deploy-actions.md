@@ -1126,3 +1126,9 @@ Rebuild NOT needed after env change (route reads env at request time) — but th
 - Live rename: ✎ beside every division name on the card; blur=autosave via formation PATCH; em-dash sweep of all NEW copy (platform-wide em-dash sweep queued into polish arc).
 - Gates: tsc/eslint 0 · units 27/27 · plan-flow drive UPDATED for new rulings 89/89 · door drive 9/9 · divisions drive intact. Drive-caused Grade 10 misnames found+fixed (exact aria-label selectors now).
 - Box deploy NOT run (owner word pending).
+
+## #79 — 2026-08-10 evening: QA T-LIST BATCH (owner-triaged one by one) — ✅ LOCAL b0cf7c2, box pending
+- Owner triage of QA log T-001..T-011: T-003/004 CLOSED (already shipped Aug 7-8 — owner's plan "New 2" data proved backups attach+fill+rent-ask works; QA tested the pre-wave build) · T-007 CLOSED BY DESIGN (sessions are monthly; cross-month moves don't exist as a concept) · T-010 verified clean on box · T-001/002 deferred until deploy+reseed · T-005/006/008/009/011 BUILT + owner's add-gym dropdown bug.
+- Shipped: legacy kill-list (Shuffle/Scenarios gone, Delete all typed guard) · season-calendar card = grade × weekend-date grid w/ green checks (owner's design) · gym palette sky/violet replaces gold/hoop · rail collapsed-by-default tab (all sessions visible) · TIGHT_RATIO 0.95 badge restraint · hover-reveal chip anatomy · slim empty weekends · tinted board surface · casing pass · venue-selector stacking fix.
+- Gates: tsc/eslint 0 · planner units 153/153 (one test re-pinned to the new tight line) · plan-flow drive 89/89 (rail-tab adapted) · card + board screenshots.
+- QA log annotated in place with dev responses. W/D/QA-lists (tester-wishlist 07-28, qa-triage 07-23) NOT started — owner will direct after this batch.
