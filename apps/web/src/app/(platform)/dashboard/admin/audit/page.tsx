@@ -84,7 +84,7 @@ export default async function AdminAuditPage({
                 : "bg-ink-100 text-ink-700 hover:bg-ink-200"
             }`}
           >
-            {a.action.toLowerCase().replace(/_/g, " ")} ({a._count})
+            {(a.action.charAt(0) + a.action.slice(1).toLowerCase()).replace(/_/g, " ")} ({a._count})
           </Link>
         ))}
       </div>
@@ -120,7 +120,7 @@ export default async function AdminAuditPage({
                   </td>
                   <td className="whitespace-nowrap px-4 py-3">
                     <span className="bg-play-50 text-play-700 rounded-full px-2 py-0.5 text-xs font-medium">
-                      {e.action.toLowerCase().replace(/_/g, " ")}
+                      {(e.action.charAt(0) + e.action.slice(1).toLowerCase()).replace(/_/g, " ")}
                     </span>
                   </td>
                   <td className="text-ink-600 whitespace-nowrap px-4 py-3 text-xs">
