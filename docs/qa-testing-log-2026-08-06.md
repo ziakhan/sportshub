@@ -197,4 +197,14 @@ Template (copy for each new entry):
 - **What I hit:** the only way to get a Friday onto a weekend is the board's conditional suggestion, which appears solely when a shortfall exists that a right-sized Friday at an already-used gym would fix (owner ruling 2026-08-06, "silent unless…"). There's no way to declare up front that a session runs Friday evenings as a fact — even though some leagues (the NJC/NSC Fri–Sun constraint is the platform's own example) simply DO run Fridays.
 - **Suggestion:** keep the smart suggestion, but also allow a proactive "this session runs Fridays" declaration (per weekend or per season), feeding the same `fridays`/window machinery. The per-season Friday time window already exists (`fridayStart`/`fridayEnd`, default 6–10 PM) — this just adds the missing front door. Relates to T-015 (valid day shapes are Fri/Sat/Sun).
 
-<!-- Add findings below. Next ID: T-019 -->
+### T-019 · Suggestions should PREVIEW their move on the board before applying — see what moves, then commit · IDEA · med · web-desktop
+- **Where:** LOCAL, latest master — Plan Your Season board, the Ideas/suggestions rail.
+- **What I hit:** accepting a suggestion just… happens. The interface does the move for you, but you never SEE what's about to move where — you're trusting a sentence, then auditing the board afterward to understand what changed.
+- **Proposed interaction (UI/UX-guideline-checked):**
+  1. **Hover (desktop) or first tap (touch) = preview mode:** the board dims except the SOURCE and DESTINATION weekends; ghost chips render at the destination showing exactly what would land; both cards' capacity badges show before→after ("83/48 → 57/48" · "29/48 → 53/48"). Nothing is committed; mouse-out/tap-elsewhere dissolves it.
+  2. **Click / second tap = apply:** the chip travels source→destination as ONE shared-element animation (~250ms, ease-out; instant + move-mark under prefers-reduced-motion), then the existing undo pill appears.
+  3. Touch parity is mandatory (hover can never be the only path — first tap previews and flips the row's button to "Apply move").
+- **Guideline basis:** motion must convey cause-and-effect, not decorate; one or two animated elements max (the moving chip, not the whole board); ease-out entries; reduced-motion respected; hover-only interactions forbidden on touch.
+- **Implementation note (cheap!):** the board already owns every primitive this needs — ghost chips, the lens/dimming system, persistent move marks, flashMove, and the undo pill. Preview = a dry-run of the same move verb rendered with existing ghosts + lens-dim; apply = the verb it already runs. This is composition, not new machinery.
+
+<!-- Add findings below. Next ID: T-020 -->
