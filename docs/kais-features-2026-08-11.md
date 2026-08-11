@@ -93,7 +93,7 @@ Template:
   opens in custom mode automatically, so nothing existing breaks.
 - **Status notes:** built 2026-08-11; type-check clean; awaiting my local test.
 
-### K-004 · Program schedules: Date and Time are separate fields; Time is a start–finish range (no duration dropdown) · UI · Built (local)
+### K-004 · Program schedules: Date and Time are separate fields; Time is a start–finish range (no duration dropdown) · UI · Tested — good
 - **What/why:** The combined date+time button hides the time selector below the
   calendar — easy to miss, easy to forget the time entirely. And duration as a
   separate concept is unnecessary: picking a start and finish time says it all.
@@ -112,6 +112,9 @@ Template:
   the base files hadn't drifted in 224 commits. The league schedule quick-add
   from the original work was deliberately NOT ported (scheduling fence; the
   developers rewrote that area).
-- **Status notes:** ported 2026-08-11; type-check clean; awaiting my local test.
+- **Status notes:** ported 2026-08-11; type-check clean. Polish round iterated
+  live with me same day: panel widened 288→316px so hour/minute boxes clear
+  their chevrons, time-button icon spacing fixed, footer readout renamed
+  "Lasts" → "Duration" (my wording call). Signed off: perfect.
 
 <!-- Add changes below. Next ID: K-005 -->
