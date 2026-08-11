@@ -149,4 +149,18 @@ Template (copy for each new entry):
 - **The mirror-image gap:** assignment is a one-time snapshot at accept. Games committed/published on that day AFTER the accept are never attached to the accepted referee — so accept-before-publish yields permanently empty shifts.
 - **Fix idea:** the accept flow and the publish flow need to reconcile: (a) accept should assign only published games and TELL the referee the count; (b) publishing a day's schedule should (re)attach any accepted shift's referee to the newly published games in their window. Either half alone still leaves ghosts.
 
-<!-- Add findings below. Next ID: T-014 -->
+### T-014 · Plan wizard teams step: "Not in this plan" doesn't look clickable — a toggle dressed as a badge · UI · med · web-desktop
+- **Where:** LOCAL, latest master (`88a2d241`) — Plan Your Season → teams step, the in/out pill on a grade row.
+- **What I did:** Had grades sitting at "Not in this plan" and wanted them in the plan.
+- **What happened:** It wasn't obvious the pill itself is the way in — it reads as a status label. It IS the toggle (one click includes the grade), but its out-state styling (plain white pill, gray 11px bold text) matches the read-only badges nearby, and the label describes state rather than offering an action. Classic affordance failure: nothing says "click me."
+- **What I expected:** The out state should advertise the action, not the situation.
+- **Fix ideas (any one of these largely solves it):**
+  1. Action-verb label when out: **"+ Add to plan"** (with the plus glyph) instead of "Not in this plan"; when in, keep state language ("In this plan ✓") with a hover affordance for removal.
+  2. Make the out state look like a button among badges: dashed or tinted border, hover lift — anything that contrasts with the true read-only pills beside it.
+  3. At minimum a tooltip/title ("Click to include this grade in the plan").
+- **Dev pointer:** `plan/teams-step.tsx` ~line 782 (`data-testid="grade-in-out"`, owner ruling 2026-08-05). Note the adjacent stronger "remove from plan entirely" action — whatever styling change lands must keep those two visually distinct.
+- **Process note:** logged rather than fixed locally — the plan wizard is inside the tester branch's no-touch scheduling fence.
+- **ESCALATION (same session):** it's worse than styling — the pill also SILENTLY IGNORES CLICKS when no owned plan is open, when viewing the reference calendar, or while a plan's world loads (the code's own words: "the toggle is shown but goes quiet"). Reproduced live: tried to include grades, nothing happened, no explanation. So the identical visual is sometimes a live toggle, sometimes a dead one, sometimes static text. Silent no-ops are the worst affordance failure — the fix must include a visibly disabled state with the reason ("Open one of your plans to edit"), not just a prettier active state.
+- **ROOT CAUSE CONFIRMED (code-traced, reproducible even inside an editable plan):** grades with NO unit in the plan's world (never estimated — stepper at 0) still render the "Not in this plan" pill, but clicking it is a guaranteed no-op: `setIncluded` → `withUnitIncluded` (plan-world.ts:1298) maps over `world.units` and matches nothing, so the plan "saves" unchanged and the pill never flips. The designed entry path for such grades is the ADD A GRADE stepper (which creates the unit) — the code's own comment says so ("add-a-grade's stepper is the restore path") — but the UI never hands the user there. **Fix:** on zero-unit rows either don't render the toggle at all, or make it a "+ Add this grade…" affordance that focuses/opens ADD A GRADE. Pointer: `teams-step.tsx` grade-row render (~740–800) + `withUnitIncluded`.
+
+<!-- Add findings below. Next ID: T-015 -->
