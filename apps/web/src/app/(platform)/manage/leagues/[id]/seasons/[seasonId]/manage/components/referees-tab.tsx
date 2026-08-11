@@ -9,6 +9,8 @@ interface PoolReferee {
   userId: string
   name: string
   certification: string | null
+  /** The ref's advertised standard rate per game (their profile), if set. */
+  fee: number | null
   gamesRefereed: number
   hasPin: boolean
   // QA-208: cert proof-of-doc flags — the doc itself never ships in this list.
@@ -267,7 +269,21 @@ export function RefereesTab({
             <label className="text-ink-600 mb-1 block text-xs font-medium">Send to</label>
             <select
               value={target}
-              onChange={(e) => setTarget(e.target.value)}
+              onChange={(e) => {
+                // K-001: choosing a ref prefills the rate with THEIR standard
+                // fee — but never clobbers a number the operator typed (we only
+                // replace an empty field or the previous ref's untouched fee).
+                const next = e.target.value
+                const prevFee = (pool ?? []).find((r) => r.userId === target)?.fee
+                const nextFee = (pool ?? []).find((r) => r.userId === next)?.fee
+                if (
+                  nextFee != null &&
+                  (ratePerGame === "" || ratePerGame === String(prevFee ?? ""))
+                ) {
+                  setRatePerGame(String(nextFee))
+                }
+                setTarget(next)
+              }}
               className={`${inputClass} w-full`}
             >
               <option value="">📢 All league referees (first accept wins)</option>
@@ -278,6 +294,7 @@ export function RefereesTab({
                   return (
                     <option key={r.userId} value={r.userId}>
                       {r.name}
+                      {r.fee != null ? ` · $${r.fee}/game` : ""}
                       {dayId ? ` — ${label}` : ""}
                     </option>
                   )
@@ -305,6 +322,18 @@ export function RefereesTab({
             {busy ? "Sending…" : "Send offer"}
           </Button>
         </div>
+        {(() => {
+          // K-001: lowball warning — offering below the target ref's standard
+          // rate is allowed, but the operator should do it knowingly.
+          const t = (pool ?? []).find((r) => r.userId === target)
+          if (!t || t.fee == null || ratePerGame === "") return null
+          if (Number(ratePerGame) >= t.fee) return null
+          return (
+            <p className="text-hoop-700 mt-2 text-xs font-medium">
+              {t.name}&apos;s standard rate is ${t.fee}/game — your offer is below it.
+            </p>
+          )
+        })()}
       </div>
 
       {/* Offers */}
@@ -372,6 +401,7 @@ export function RefereesTab({
                       {r.certification ?? "Uncertified"}
                       {r.certification && !r.hasCertDoc ? " · Self-declared" : ""} ·{" "}
                       {r.gamesRefereed} games
+                      {r.fee != null ? ` · $${r.fee}/game` : ""}
                       {r.hasPin ? "" : " · no sign-off PIN"}
                     </span>
                   </div>

@@ -136,4 +136,17 @@ Template (copy for each new entry):
   - Either way: family-facing words only, league branding first.
 - **Discretion note:** as with T-006 — the specific design is the developers' call; the requirement is that a parent can answer "does my kid play that weekend?" in under five seconds, or the card should stop trying to answer it at all.
 
-<!-- Add findings below. Next ID: T-012 -->
+### T-012 · Referee accepts a shift → nowhere in the referee area to see the games · UI · high · web-desktop
+- **Where:** LOCAL, latest master (`88a2d241`). Referee account, after accepting a shift offer.
+- **What I did:** Accepted a shift; looked for the assigned games "in the schedule."
+- **What happened:** The nav's "My Games" tab (`/referee`) is a redirect to the shift-requests inbox — the code's own comment says "until a referee dashboard exists, land on requests." The games DO land in the general **My Calendar** (verified end-to-end: accept → 3 games appear under the "Refereeing · league" lens) — but nothing tells the referee that, and nobody looks for their assignments in a generic calendar when a tab literally named "My Games" exists.
+- **What I expected:** Accepting a shift should visibly produce a schedule: either a real referee dashboard behind "My Games" (assigned games, upcoming first, with dates/venues/rates), or at minimum the accept confirmation linking straight to My Calendar.
+- **Also:** the referee gets NO feedback on accept about what they were booked onto — the "assigned to N games" message goes to the LEAGUE OWNER's notification only.
+
+### T-013 · Shift accept books referees onto DRAFT (unpublished) games — invisible assignments · BUG · high · web-desktop
+- **Where:** LOCAL, latest master. Found via end-to-end test of the accept flow.
+- **What happened:** The accept endpoint (`api/referee-requests/[id]`) assigns the referee to every game on the session day WITHOUT checking the new draft/publish visibility rule (`PUBLISHED_GAME`, Schedule Studio P0). Verified: accepting a shift over draft games returns "assigned to 3 games" — and those games are invisible to the referee on every surface (My Calendar correctly filters drafts). A referee can be told they're booked while able to see nothing.
+- **The mirror-image gap:** assignment is a one-time snapshot at accept. Games committed/published on that day AFTER the accept are never attached to the accepted referee — so accept-before-publish yields permanently empty shifts.
+- **Fix idea:** the accept flow and the publish flow need to reconcile: (a) accept should assign only published games and TELL the referee the count; (b) publishing a day's schedule should (re)attach any accepted shift's referee to the newly published games in their window. Either half alone still leaves ghosts.
+
+<!-- Add findings below. Next ID: T-014 -->
