@@ -46,6 +46,8 @@ Template (copy for each new entry):
 - **Fix idea / dev pointer:** the card avatar (`components/social/feed-card.tsx`, author row) is currently a plain initial circle. Suggest: when the post's tagged player has an unexpired story visible to the viewer, render the gold story ring around the post avatar and open the fullscreen viewer on tap (the viewer currently lives inside `components/social/stories-rail.tsx` — worth extracting so both surfaces share it). Needs the feed payload to carry the tagged player's id + a has-story flag (additive fields, native-safe), and story visibility rules must be respected (PUBLIC vs FOLLOWERS). Native app should get the same behavior for parity.
 
 ### T-003 · Plan Your Season step 3: schedule crams the home gym and never uses the other gyms · BUG · high · web-desktop
+
+> **DEV RESPONSE (2026-08-10, validated on current build):** RESOLVED BY TIMING. This pass tested the Aug 6 live build; the backup-gym rulings shipped Aug 7-8. Today: placing a backup with no availability attaches it to the weekend with assumed capacity (owner's live plan "New 2" runs this way), the "Fill the gaps from my pool" verb exists, and placements read as assumed rentals feeding the ask sheet. No code change needed.
 - **Where:** LIVE site, league owner account → Plan Your Season → step 3 (the calendar / "draw the calendar").
 - **What I did:** Set up a plan with multiple gyms included, then had step 3 draw the calendar.
 - **What happened:** Every game lands in the home gym. When the home gym runs out of space, the schedule just overflows it — over capacity, not enough room — while the other included gyms sit completely unused. No balancing or spill to the other facilities ever happens.
@@ -55,6 +57,8 @@ Template (copy for each new entry):
 - **ROOT CAUSE FOUND (follow-up test):** the gym rail shows both backup gyms as "backup · on **0 weekends**" — the pool gyms were never attached to any weekend, so the solver has nothing to spill into. Not a solver bug: a configuration state the UI allows and then handles terribly (see T-004). Open question for devs: should step 2 even allow finishing with all backups on 0 weekends, given the demand math is already known?
 
 ### T-004 · Over-capacity plan: the board nags per-weekend instead of offering the actual fix (use the backup gyms) · UI · high · web-desktop
+
+> **DEV RESPONSE (2026-08-10):** Same timing as T-003 — the fill verb, hand placement onto backups, and assumed-rental wording all shipped Aug 7-8. Closed.
 - **Where:** LIVE site, Plan Your Season → step 3 board. Scenario: home gym (3 courts) over capacity on EVERY weekend (83/48, 57/48…), two 6-court backups in the pool on 0 weekends; "What is left: 26 open," "13 rentals need a building."
 - **What I did:** Looked for how to resolve the overflow using the bigger backup gyms.
 - **What happened:** Each spill card only offers "A different weekend / Split / Leave it open" — pointless when every weekend is over capacity. The real fix (put a backup gym on the weekend) exists only as drag-and-drop from the top rail plus a fine-print hint ("Turn one on for it back in step 2, or find a building"). The Ideas rail suggests extending hours / adding a court / moving grades — none of which can save a plan that is globally over capacity.
@@ -85,6 +89,8 @@ Template (copy for each new entry):
 - **Tester's closing note — layout at YOUR discretion:** I don't have a hard preference between the hybrid, the collapsed-rail default, or another arrangement entirely — pick whatever is cleanest UI-wise and easiest to build. The two things that must be true when you're done: (1) all sessions, playoffs included, visible without horizontal scrolling; (2) the "what's left / fix it" information stays easy to reach while working the board. How you get there is your call.
 
 ### T-007 · Planner board: grade moves are locked to the same session, blocking cost-saving cross-session moves · IDEA · high · web-desktop
+
+> **DEV RESPONSE (2026-08-10):** OVERRULED BY OWNER DESIGN RULING. Seasons are planned by month; every month is its own session and games never cross months — the fence is the model, not a limitation. Within-month weekend moves (which exist today) are the intended freedom. Closed, by design.
 - **Where:** LIVE site, Plan Your Season → step 3 board. Screenshot evidence captured.
 - **What I did:** Armed the Haber section on Feb 13–14 (Session 5) to move its grades. Jan 30–31 (Session 4) sits at 29/48 — ~19 free slots at the home gym.
 - **What happened:** Only the other February weekends light up as drop targets ("Move 3 grades here"); Jan 30–31 is not offered. The bench is per-month ("NOT PLAYING THIS MONTH"). Cross-session moves are simply not possible in the UI.
@@ -109,6 +115,8 @@ Template (copy for each new entry):
 - **Suggestion:** do a text sweep and pick ONE capitalization convention (sentence case is the usual web standard: first word capitalized, rest lowercase unless a name), then apply it everywhere — including the places where code deliberately lowercases statuses. Mixed styles (ALL-CAPS eyebrows + lowercase chips + sentence-case buttons on one screen) read as unfinished even when each was a deliberate choice. Related precedent: the stat-label casing cleanup (W-001) already established "pick one casing and enforce it" for stats — this extends the same rule to UI labels.
 
 ### T-010 · Family-facing league preview shows 4 Grade 9 divisions — two healthy, two orphaned duplicates · BUG · med · web-desktop
+
+> **DEV RESPONSE (2026-08-10, verified against today's box DB):** RESOLVED. The summer world's divisions are clean (no orphan duplicates). The uneven divisions visible on the End-of-Season twin are intentional NPH-style conference sizes, not debris. Remaining hardening (idempotent summer seed) queued low.
 - **Where:** LIVE site, plan wizard step 4 → preview of the public league page (the calendar/divisions families see).
 - **What I did:** Previewed the league page a family would see.
 - **What happened:** Grade 9 shows FOUR divisions with team counts 8, 12, 3, and 2. Same pattern on other grades. Two divisions per grade (the 8/12 pair) look like the intended Tier 1 / Tier 2 structure; the 3- and 2-team ones look like broken duplicates.
