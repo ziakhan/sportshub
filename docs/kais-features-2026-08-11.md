@@ -137,4 +137,36 @@ Template:
   real gap was enforcement, not content.
 - **Status notes:** built + E2E-verified 2026-08-11; type-check clean.
 
-<!-- Add changes below. Next ID: K-006 -->
+### K-006 · Add-a-player: inline "give them their own login" invite for 13+ kids · FEATURE · Built (local)
+- **What/why:** The child-login email invite existed (family-invitations API,
+  accept page, signup hook) but only on the kid's profile page — invisible at
+  the moment a parent adds the kid. Now the "Player Added!" success screen
+  offers it inline when the new player is 13+: enter their email → invite
+  sent. Under-13 never sees it (COPPA — they stay parent-managed; and the
+  child record itself still requires name + DOB from the parent, which is why
+  "add purely by email" is not a thing).
+- **Where:** `players/add/page.tsx` success card. Existing API, no backend.
+
+### K-007 · Onboarding: handle merged into the profile step (3 steps → 2) · UI · Built (local)
+- **What/why:** The @handle screen was prefilled, skippable, and never
+  blocking — a field's profile, not a step's. Merged into "Complete your
+  profile" as a compact input at the top ("yours to change anytime"), saved
+  non-blocking alongside the profile per the original QA-209 rule. Wizard is
+  now: Who are you? → Your info. Step captions updated.
+- **Where:** `onboarding/onboarding-flow.tsx` (HandleStep removed, HandleField
+  embedded, back-targets rewired).
+
+### K-008 · Onboarding: 13+ players can invite their parent right after their profile saves · FEATURE · Built (local)
+- **What/why:** Discoverability — a teen shouldn't have to discover later that
+  a parent link exists ("get it done with it"). After a Player's profile
+  submits (their Player record now exists), one optional screen: "Invite your
+  parent or guardian — they approve signups and handle payments." Email →
+  existing GUARDIAN invite API; Skip always available; then the normal
+  post-login destination (deep links preserved).
+- **OWNER-RULING FLAG:** the standing rule says parent↔child linking is
+  event-driven, not at onboarding. This is the player-initiated direction
+  surfaced early, always optional — but it amends the documented rule, so it
+  needs the owner's sign-off when this branch is shared.
+- **Where:** `onboarding-flow.tsx` new "family" step, Player role only.
+
+<!-- Add changes below. Next ID: K-009 -->

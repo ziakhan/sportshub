@@ -23,7 +23,18 @@ function AddPlayerForm() {
 
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [createdPlayer, setCreatedPlayer] = useState<{ name: string } | null>(null)
+  const [createdPlayer, setCreatedPlayer] = useState<{
+    name: string
+    id: string | null
+    canInvite: boolean
+  } | null>(null)
+  // K-006: optional own-login invite for a just-added 13+ player, right at
+  // the moment of creation (the flow already exists on the profile page —
+  // this makes it discoverable when it matters). COPPA: under-13 never sees it.
+  const [inviteEmail, setInviteEmail] = useState("")
+  const [inviteBusy, setInviteBusy] = useState(false)
+  const [inviteSent, setInviteSent] = useState(false)
+  const [inviteError, setInviteError] = useState<string | null>(null)
   const labelClass = "block text-sm font-medium text-ink-700"
   const inputClass =
     "mt-1 block w-full rounded-xl border border-ink-200 px-3 py-2 text-ink-900 shadow-sm focus:border-play-500 focus:outline-none focus:ring-2 focus:ring-play-500/20"
@@ -60,7 +71,12 @@ function AddPlayerForm() {
         throw new Error(errorData.error || "Failed to add player")
       }
 
-      setCreatedPlayer({ name: `${data.firstName} ${data.lastName}` })
+      const body = await res.json().catch(() => ({}) as any)
+      setCreatedPlayer({
+        name: `${data.firstName} ${data.lastName}`,
+        id: body?.id ?? null,
+        canInvite: !isMinor && !!body?.id,
+      })
     } catch (err) {
       setError(err instanceof Error ? err.message : "An error occurred")
     } finally {
@@ -94,6 +110,65 @@ function AddPlayerForm() {
             <p className="text-ink-600 mb-6">
               <span className="font-semibold">{createdPlayer.name}</span> has been registered.
             </p>
+            {createdPlayer.canInvite && (
+              <div className="border-ink-200 bg-court-50/60 mb-6 rounded-2xl border p-4 text-left">
+                {inviteSent ? (
+                  <p className="text-court-700 text-sm font-semibold">
+                    Invite sent ✓ — {createdPlayer.name.split(" ")[0]} has an email with their
+                    own login link.
+                  </p>
+                ) : (
+                  <>
+                    <p className="text-ink-900 text-sm font-semibold">
+                      13 or older? Give {createdPlayer.name.split(" ")[0]} their own login
+                      <span className="text-ink-400 font-normal"> (optional)</span>
+                    </p>
+                    <p className="text-ink-500 mt-0.5 text-xs">
+                      We&apos;ll email an invite — they get their own sign-in on the same player
+                      profile. You stay the guardian.
+                    </p>
+                    <div className="mt-2 flex gap-2">
+                      <input
+                        type="email"
+                        value={inviteEmail}
+                        onChange={(e) => setInviteEmail(e.target.value)}
+                        placeholder="their-email@example.com"
+                        className="border-ink-200 focus:border-play-500 min-w-0 flex-1 rounded-xl border px-3 py-2 text-sm focus:outline-none"
+                      />
+                      <Button
+                        variant="subtle"
+                        disabled={inviteBusy || !inviteEmail.trim()}
+                        onClick={async () => {
+                          setInviteBusy(true)
+                          setInviteError(null)
+                          try {
+                            const r = await fetch("/api/family-invitations", {
+                              method: "POST",
+                              headers: { "Content-Type": "application/json" },
+                              body: JSON.stringify({
+                                type: "CHILD_LOGIN",
+                                playerId: createdPlayer.id,
+                                email: inviteEmail.trim(),
+                              }),
+                            })
+                            const d = await r.json().catch(() => ({}))
+                            if (!r.ok) throw new Error(d.error || "Couldn't send the invite")
+                            setInviteSent(true)
+                          } catch (e) {
+                            setInviteError(e instanceof Error ? e.message : "Couldn't send the invite")
+                          } finally {
+                            setInviteBusy(false)
+                          }
+                        }}
+                      >
+                        {inviteBusy ? "Sending…" : "Send invite"}
+                      </Button>
+                    </div>
+                    {inviteError && <p className="mt-1 text-xs text-red-600">{inviteError}</p>}
+                  </>
+                )}
+              </div>
+            )}
             <div className="flex gap-3">
               <Button href={redirectTo || "/players"} tone="play" className="flex-1">
                 View My Players
@@ -104,6 +179,9 @@ function AddPlayerForm() {
                 onClick={() => {
                   setCreatedPlayer(null)
                   setError(null)
+                  setInviteEmail("")
+                  setInviteSent(false)
+                  setInviteError(null)
                   reset()
                 }}
               >

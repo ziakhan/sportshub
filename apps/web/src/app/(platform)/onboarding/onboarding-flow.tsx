@@ -214,102 +214,35 @@ const secondaryButtonClass =
 const primaryButtonClass =
   "flex-1 rounded-xl bg-play-600 px-4 py-3 font-semibold text-white shadow-sm transition hover:bg-play-700 disabled:cursor-not-allowed disabled:bg-ink-400"
 
-function HandleStep({ onContinue, onBack }: { onContinue: () => void; onBack: () => void }) {
-  const [handle, setHandle] = useState<string | null>(null)
-  const [draft, setDraft] = useState("")
-  const [loading, setLoading] = useState(true)
-  const [busy, setBusy] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-
-  useEffect(() => {
-    fetch("/api/account/handle")
-      .then((r) => (r.ok ? r.json() : null))
-      .then((data) => {
-        setHandle(data?.handle ?? null)
-        setDraft(data?.handle ?? "")
-      })
-      .catch(() => {})
-      .finally(() => setLoading(false))
-  }, [])
-
-  const saveAndContinue = async () => {
-    setError(null)
-    const trimmed = draft.trim().toLowerCase()
-    if (!trimmed || trimmed === handle) {
-      onContinue()
-      return
-    }
-    setBusy(true)
-    try {
-      const res = await fetch("/api/account/handle", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ handle: trimmed }),
-      })
-      const data = await res.json().catch(() => ({}))
-      if (!res.ok) {
-        setError(data.error || "Couldn't save that handle")
-        setBusy(false)
-        return
-      }
-      onContinue()
-    } catch {
-      setError("Network error. Please try again.")
-      setBusy(false)
-    }
-  }
-
+/** K-007: the handle input embedded in the profile step (was its own step). */
+function HandleField({
+  draft,
+  reserved,
+  onChange,
+}: {
+  draft: string
+  reserved: string | null
+  onChange: (v: string) => void
+}) {
   return (
-    <div className="space-y-6">
-      <div>
-        <h2 className="text-ink-900 text-xl font-semibold">Pick your handle</h2>
-        <p className="text-ink-700 mt-1 text-sm">
-          This is your name across SportsHub. We reserved the default below for you at sign-up.
-          Keep it, or make it your own.
-        </p>
+    <div className="mb-6">
+      <label className="text-ink-700 block text-sm font-medium">
+        Your handle <span className="text-ink-400 font-normal">(yours to change anytime)</span>
+      </label>
+      <div className="border-ink-200 focus-within:border-play-500 mt-1 flex w-full items-center rounded-xl border bg-white px-3 shadow-sm">
+        <span className="text-ink-400 text-sm">@</span>
+        <input
+          value={draft}
+          onChange={(e) => onChange(e.target.value.toLowerCase())}
+          className="text-ink-900 w-full border-0 bg-transparent px-1 py-2.5 text-sm focus:outline-none focus:ring-0"
+          placeholder="yourname"
+          maxLength={20}
+        />
       </div>
-
-      {loading ? (
-        <p className="text-ink-500 text-sm">Loading…</p>
-      ) : (
-        <div>
-          <div className="border-ink-200 focus-within:border-play-500 flex w-full items-center rounded-xl border bg-white px-3 shadow-sm">
-            <span className="text-ink-400 text-sm">@</span>
-            <input
-              value={draft}
-              onChange={(e) => setDraft(e.target.value.toLowerCase())}
-              className="text-ink-900 w-full border-0 bg-transparent px-1 py-2.5 text-sm focus:outline-none focus:ring-0"
-              placeholder="yourname"
-              maxLength={20}
-            />
-          </div>
-          {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
-          <p className="text-ink-500 mt-2 text-xs">
-            Skipping keeps your default handle{handle ? ` (@${handle})` : ""}.
-          </p>
-        </div>
-      )}
-
-      <div className="flex items-center gap-4">
-        <button type="button" onClick={onBack} className={secondaryButtonClass}>
-          Back
-        </button>
-        <button
-          type="button"
-          onClick={onContinue}
-          className="text-ink-500 hover:text-ink-800 text-sm font-semibold"
-        >
-          Skip for now
-        </button>
-        <button
-          type="button"
-          onClick={saveAndContinue}
-          disabled={busy || loading}
-          className={primaryButtonClass}
-        >
-          {busy ? "Saving…" : "Continue"}
-        </button>
-      </div>
+      <p className="text-ink-500 mt-1 text-xs">
+        Your name across SportsHub{reserved ? ` — we reserved @${reserved} for you` : ""}. Leave it
+        as is, or make it your own.
+      </p>
     </div>
   )
 }
@@ -335,11 +268,33 @@ interface OnboardingFlowProps {
 }
 
 export function OnboardingFlow({ userName }: OnboardingFlowProps) {
-  const [step, setStep] = useState<"role" | "handle" | "profile">("role")
+  const [step, setStep] = useState<"role" | "profile" | "family">("role")
   const [selectedRole, setSelectedRole] = useState<string | null>(null)
   const [adultAttested, setAdultAttested] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  // K-007: the handle is a FIELD on the profile step now, not its own step —
+  // prefilled with the reserved default, saved non-blocking on submit.
+  const [reservedHandle, setReservedHandle] = useState<string | null>(null)
+  const [handleDraft, setHandleDraft] = useState("")
+  useEffect(() => {
+    fetch("/api/account/handle")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        setReservedHandle(data?.handle ?? null)
+        setHandleDraft(data?.handle ?? "")
+      })
+      .catch(() => {})
+  }, [])
+  // K-008: 13+ players get an optional invite-your-parent moment after their
+  // profile saves (their Player record exists by then). Owner-rule note: the
+  // event-driven-linking ruling — this is the player-initiated GUARDIAN
+  // invite the API already supports, surfaced at onboarding.
+  const [inviteEmail, setInviteEmail] = useState("")
+  const [inviteBusy, setInviteBusy] = useState(false)
+  const [inviteSent, setInviteSent] = useState(false)
+  const [inviteError, setInviteError] = useState<string | null>(null)
+  const [pendingDest, setPendingDest] = useState<string>("/post-login")
   const searchParams = useSearchParams()
   // Deep link the user was chasing before sign-up — honored at the terminal
   // step so onboarding drops them where they meant to go, not on dashboard.
@@ -356,10 +311,7 @@ export function OnboardingFlow({ userName }: OnboardingFlowProps) {
     }
 
     setError(null)
-
-    // QA-209: a light handle-pick step sits between role selection and the
-    // per-role profile form for every role.
-    setStep("handle")
+    setStep("profile")
   }
 
   const handleProfileSubmit = async (profileData: ProfileData) => {
@@ -401,23 +353,128 @@ export function OnboardingFlow({ userName }: OnboardingFlowProps) {
         return
       }
 
+      // K-007: save the handle alongside the profile — non-blocking by design
+      // (QA-209 rule: onboarding never stalls on the handle).
+      const trimmedHandle = handleDraft.trim().toLowerCase()
+      if (trimmedHandle && trimmedHandle !== reservedHandle) {
+        await fetch("/api/account/handle", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ handle: trimmedHandle }),
+        }).catch(() => {})
+      }
+
       // Every role now finishes through /post-login, which runs the onboarding
       // soft gate (the /welcome checklist) — including club owners, whose first
       // checklist step is "Create your club". A full reload lets the server
       // layouts pick up the fresh session/roles; an explicit deep-link
       // callbackUrl still wins.
-      window.location.href = callbackUrl ?? "/post-login"
+      const dest = callbackUrl ?? "/post-login"
+      // K-008: 13+ players get one optional moment to invite their parent —
+      // their Player record exists as of this successful POST.
+      if (role === "Player") {
+        setPendingDest(dest)
+        setIsSubmitting(false)
+        setStep("family")
+        return
+      }
+      window.location.href = dest
     } catch {
       setError("Network error. Please try again.")
       setIsSubmitting(false)
     }
   }
 
-  if (step === "handle" && selectedRole) {
+  if (step === "family") {
     return (
       <div className="border-ink-100 rounded-3xl border bg-white p-8 shadow-[0_22px_70px_-42px_rgba(15,23,42,0.45)]">
-        <HandleStep onContinue={() => setStep("profile")} onBack={() => setStep("role")} />
-        <p className="text-ink-500 mt-4 text-center text-sm">Step 2 of 3: Pick your handle</p>
+        <div className="space-y-6">
+          <div>
+            <h2 className="text-ink-900 text-xl font-semibold">
+              One last thing — invite your parent or guardian
+              <span className="text-ink-400 font-normal"> (optional)</span>
+            </h2>
+            <p className="text-ink-700 mt-1 text-sm">
+              They approve signups and handle payments for anything that costs money. We&apos;ll
+              email them a link; you keep your own login either way.
+            </p>
+          </div>
+
+          {inviteSent ? (
+            <p className="text-court-700 border-court-200 bg-court-50/60 rounded-xl border p-4 text-sm font-semibold">
+              Invite sent ✓ — they&apos;ll get an email with a link to connect to your account.
+            </p>
+          ) : (
+            <div>
+              <input
+                type="email"
+                value={inviteEmail}
+                onChange={(e) => setInviteEmail(e.target.value)}
+                placeholder="parent@example.com"
+                className="border-ink-200 focus:border-play-500 block w-full rounded-xl border px-3 py-2.5 text-sm shadow-sm focus:outline-none"
+              />
+              {inviteError && <p className="mt-2 text-sm text-red-600">{inviteError}</p>}
+            </div>
+          )}
+
+          <div className="flex items-center gap-4">
+            <button
+              type="button"
+              onClick={() => (window.location.href = pendingDest)}
+              className="text-ink-500 hover:text-ink-800 text-sm font-semibold"
+            >
+              {inviteSent ? "Continue" : "Skip for now"}
+            </button>
+            {!inviteSent && (
+              <button
+                type="button"
+                disabled={inviteBusy || !inviteEmail.trim()}
+                onClick={async () => {
+                  setInviteBusy(true)
+                  setInviteError(null)
+                  try {
+                    const pr = await fetch("/api/players")
+                    const pd = await pr.json().catch(() => ({}))
+                    const playerId = pd?.players?.[0]?.id
+                    if (!playerId) {
+                      throw new Error(
+                        "Couldn't look up your player profile — you can invite them anytime from your profile page."
+                      )
+                    }
+                    const r = await fetch("/api/family-invitations", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({
+                        type: "GUARDIAN",
+                        playerId,
+                        email: inviteEmail.trim(),
+                      }),
+                    })
+                    const d = await r.json().catch(() => ({}))
+                    if (!r.ok) throw new Error(d.error || "Couldn't send the invite")
+                    setInviteSent(true)
+                  } catch (e) {
+                    setInviteError(e instanceof Error ? e.message : "Couldn't send the invite")
+                  } finally {
+                    setInviteBusy(false)
+                  }
+                }}
+                className={primaryButtonClass}
+              >
+                {inviteBusy ? "Sending…" : "Send invite"}
+              </button>
+            )}
+            {inviteSent && (
+              <button
+                type="button"
+                onClick={() => (window.location.href = pendingDest)}
+                className={primaryButtonClass}
+              >
+                Continue
+              </button>
+            )}
+          </div>
+        </div>
       </div>
     )
   }
@@ -431,12 +488,14 @@ export function OnboardingFlow({ userName }: OnboardingFlowProps) {
           </div>
         )}
 
+        <HandleField draft={handleDraft} reserved={reservedHandle} onChange={setHandleDraft} />
+
         {selectedRole === "Parent" && (
           <>
             <ParentInfoCallouts />
             <ParentForm
               onSubmit={handleProfileSubmit}
-              onBack={() => setStep("handle")}
+              onBack={() => setStep("role")}
               isSubmitting={isSubmitting}
             />
           </>
@@ -444,14 +503,14 @@ export function OnboardingFlow({ userName }: OnboardingFlowProps) {
         {selectedRole === "Player" && (
           <PlayerForm
             onSubmit={handleProfileSubmit}
-            onBack={() => setStep("handle")}
+            onBack={() => setStep("role")}
             isSubmitting={isSubmitting}
           />
         )}
         {selectedRole === "Staff" && (
           <StaffForm
             onSubmit={handleProfileSubmit}
-            onBack={() => setStep("handle")}
+            onBack={() => setStep("role")}
             isSubmitting={isSubmitting}
           />
         )}
@@ -461,7 +520,7 @@ export function OnboardingFlow({ userName }: OnboardingFlowProps) {
             <div className="mt-6">
               <RefereeForm
                 onSubmit={handleProfileSubmit}
-                onBack={() => setStep("handle")}
+                onBack={() => setStep("role")}
                 isSubmitting={isSubmitting}
               />
             </div>
@@ -473,7 +532,7 @@ export function OnboardingFlow({ userName }: OnboardingFlowProps) {
             <div className="mt-6">
               <LeagueOwnerForm
                 onSubmit={handleProfileSubmit}
-                onBack={() => setStep("handle")}
+                onBack={() => setStep("role")}
                 isSubmitting={isSubmitting}
               />
             </div>
@@ -491,7 +550,7 @@ export function OnboardingFlow({ userName }: OnboardingFlowProps) {
             <div className="flex gap-4">
               <button
                 type="button"
-                onClick={() => setStep("handle")}
+                onClick={() => setStep("role")}
                 className="border-ink-200 rounded-xl border bg-white px-4 py-2.5 font-semibold text-ink-700 transition hover:bg-court-50"
               >
                 Back
@@ -508,7 +567,7 @@ export function OnboardingFlow({ userName }: OnboardingFlowProps) {
           </div>
         )}
 
-        <p className="text-ink-500 mt-4 text-center text-sm">Step 3 of 3: Complete your profile</p>
+        <p className="text-ink-500 mt-4 text-center text-sm">Step 2 of 2: Complete your profile</p>
       </div>
     )
   }
@@ -577,7 +636,7 @@ export function OnboardingFlow({ userName }: OnboardingFlowProps) {
         {isSubmitting ? "Setting up your account..." : "Continue"}
       </button>
 
-      <p className="text-ink-500 mt-4 text-center text-sm">Step 1 of 3: Choose your role</p>
+      <p className="text-ink-500 mt-4 text-center text-sm">Step 1 of 2: Choose your role</p>
     </div>
   )
 }
