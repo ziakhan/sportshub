@@ -186,6 +186,11 @@ export default function EditTeamPage() {
   const [nameSuffix, setNameSuffix] = useState("")
   const [clubName, setClubName] = useState("")
   const [clubShortName, setClubShortName] = useState<string | null>(null)
+  // K-003: presets are a fast path, not a fence — "Custom…" opens free text.
+  // A loaded team whose suffix isn't a preset opens in custom mode.
+  const [customSuffix, setCustomSuffix] = useState(false)
+  const showCustomSuffix =
+    customSuffix || (nameSuffix !== "" && !TEAM_NAME_SUFFIXES.includes(nameSuffix))
 
   const {
     register,
@@ -503,10 +508,13 @@ export default function EditTeamPage() {
                   <button
                     key={s || "none"}
                     type="button"
-                    onClick={() => setNameSuffix(s)}
-                    aria-pressed={nameSuffix === s}
+                    onClick={() => {
+                      setNameSuffix(s)
+                      setCustomSuffix(false)
+                    }}
+                    aria-pressed={!showCustomSuffix && nameSuffix === s}
                     className={`rounded-full px-3 py-1 text-xs font-semibold transition ${
-                      nameSuffix === s
+                      !showCustomSuffix && nameSuffix === s
                         ? "bg-play-600 text-white"
                         : "bg-ink-50 text-ink-600 hover:bg-ink-100"
                     }`}
@@ -514,7 +522,33 @@ export default function EditTeamPage() {
                     {s || "None"}
                   </button>
                 ))}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setCustomSuffix(true)
+                    if (TEAM_NAME_SUFFIXES.includes(nameSuffix)) setNameSuffix("")
+                  }}
+                  aria-pressed={showCustomSuffix}
+                  className={`rounded-full px-3 py-1 text-xs font-semibold transition ${
+                    showCustomSuffix
+                      ? "bg-play-600 text-white"
+                      : "bg-ink-50 text-ink-600 hover:bg-ink-100"
+                  }`}
+                >
+                  Custom…
+                </button>
               </div>
+              {showCustomSuffix && (
+                <input
+                  type="text"
+                  value={nameSuffix}
+                  onChange={(e) => setNameSuffix(e.target.value)}
+                  maxLength={20}
+                  placeholder="Your own suffix — e.g. Elite, North, 2B"
+                  className="border-ink-200 focus:border-play-500 mt-2 block w-full rounded-xl border px-3 py-2 text-sm focus:outline-none"
+                  autoFocus
+                />
+              )}
             </div>
 
             <div className="border-ink-100 bg-ink-50/60 rounded-xl border border-dashed px-3 py-2">
