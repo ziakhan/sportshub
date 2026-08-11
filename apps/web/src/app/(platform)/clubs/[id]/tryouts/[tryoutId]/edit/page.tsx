@@ -5,7 +5,7 @@ import { useParams } from "next/navigation"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
-import { Badge, Button, Card, DateTimePicker, PanelHeader, SmartBack } from "@/components/ui"
+import { Badge, Button, Card, DateTimePicker, TimeRangePicker, PanelHeader, SmartBack } from "@/components/ui"
 import { VenueSelector } from "@/components/venue-selector"
 import { VenueConflictNotice } from "@/components/venues/venue-conflict-notice"
 import { AgePolicySelect } from "@/components/registration/age-policy-select"
@@ -295,14 +295,17 @@ export default function EditTryoutPage() {
             <div className="grid gap-4 sm:grid-cols-2">
               <div>
                 <label htmlFor="scheduledAt" className="block text-sm font-medium text-ink-700">
-                  Date & Time <span className="text-red-500">*</span>
+                  Date <span className="text-red-500">*</span>
                 </label>
                 <DateTimePicker
                   id="scheduledAt"
-                  mode="datetime"
-                  value={watch("scheduledAt") || ""}
-                  onChange={(v) => setValue("scheduledAt", v, { shouldValidate: true })}
-                  placeholder="Pick a date & time"
+                  mode="date"
+                  value={(watch("scheduledAt") || "").split("T")[0] ?? ""}
+                  onChange={(v) => {
+                    const timePart = (watch("scheduledAt") || "").split("T")[1] || "18:00"
+                    setValue("scheduledAt", v ? `${v}T${timePart}` : "", { shouldValidate: true })
+                  }}
+                  placeholder="Pick a date"
                 />
                 {errors.scheduledAt && (
                   <p className="mt-1 text-sm text-red-600">{errors.scheduledAt.message}</p>
@@ -310,14 +313,20 @@ export default function EditTryoutPage() {
               </div>
 
               <div>
-                <label htmlFor="duration" className="block text-sm font-medium text-ink-700">
-                  Duration (minutes)
+                <label htmlFor="tryout-time" className="block text-sm font-medium text-ink-700">
+                  Time
                 </label>
-                <input
-                  {...register("duration")}
-                  type="number"
-                  id="duration"
-                  className={inputCls}
+                <TimeRangePicker
+                  id="tryout-time"
+                  time={(watch("scheduledAt") || "").split("T")[1] || ""}
+                  minutes={Number(watch("duration")) || 90}
+                  onChange={(next) => {
+                    const datePart = (watch("scheduledAt") || "").split("T")[0]
+                    if (datePart) {
+                      setValue("scheduledAt", `${datePart}T${next.time}`, { shouldValidate: true })
+                    }
+                    setValue("duration", next.minutes)
+                  }}
                 />
               </div>
             </div>

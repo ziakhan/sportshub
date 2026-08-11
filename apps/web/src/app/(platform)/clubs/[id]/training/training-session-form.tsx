@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { DateTimePicker } from "@/components/ui"
+import { DateTimePicker, TimeRangePicker } from "@/components/ui"
 import { VenueSelector } from "@/components/venue-selector"
 import { AgePolicySelect } from "@/components/registration/age-policy-select"
 import { TRAINING_SESSION_TYPES } from "@/lib/training"
@@ -64,6 +64,13 @@ const GROUP_TIERS = [
   { value: "LARGE_GROUP", label: "Large group (6-10)" },
 ]
 
+/** Picking a tier auto-fills the enforced signup cap (still editable). */
+const TIER_CAPACITY: Record<string, number> = {
+  PRIVATE: 1,
+  SMALL_GROUP: 4,
+  LARGE_GROUP: 10,
+}
+
 /**
  * Shared create/edit form for a trainer's Training Program (batch-backlog
  * §5): preset TYPE dropdown drives discovery; the trainer freely NAMES the
@@ -82,6 +89,12 @@ export function TrainingSessionForm({
   const [values, setValues] = useState<TrainingSessionFormValues>(initial)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  // One-time schedule is stored as a single "YYYY-MM-DDTHH:mm" (startAt);
+  // the split Date / Time fields edit its two halves. Time is remembered
+  // here so picking it before the date isn't lost.
+  const [oneTime, setOneTime] = useState(initial.startAt.split("T")[1] || "18:00")
+  const oneDate = values.startAt.split("T")[0] ?? ""
 
   const set = <K extends keyof TrainingSessionFormValues>(
     key: K,
@@ -248,7 +261,14 @@ export function TrainingSessionForm({
           </label>
           <select
             value={values.groupTier}
-            onChange={(e) => set("groupTier", e.target.value)}
+            onChange={(e) => {
+              const tier = e.target.value
+              setValues((v) => ({
+                ...v,
+                groupTier: tier,
+                capacity: TIER_CAPACITY[tier] ? String(TIER_CAPACITY[tier]) : v.capacity,
+              }))
+            }}
             className={inputClass}
           >
             {GROUP_TIERS.map((t) => (
@@ -257,6 +277,22 @@ export function TrainingSessionForm({
               </option>
             ))}
           </select>
+        </div>
+        <div>
+          <label className={labelClass}>
+            Capacity <span className="text-ink-400 font-normal">(optional)</span>
+          </label>
+          <input
+            type="number"
+            min="1"
+            value={values.capacity}
+            onChange={(e) => set("capacity", e.target.value)}
+            placeholder="e.g. 4"
+            className={inputClass}
+          />
+          <p className="mt-1 text-xs text-ink-400">
+            The signup limit — fills in from group size, adjust if needed.
+          </p>
         </div>
       </div>
 
@@ -287,26 +323,28 @@ export function TrainingSessionForm({
         {values.scheduleType === "ONE_TIME" ? (
           <div className="mt-3 grid gap-4 sm:grid-cols-2">
             <div>
-              <label className={labelClass}>When</label>
+              <label className={labelClass}>Date</label>
               <DateTimePicker
-                mode="datetime"
-                value={values.startAt}
-                onChange={(v) => set("startAt", v)}
+                mode="date"
+                value={oneDate}
+                onChange={(v) => set("startAt", v ? `${v}T${oneTime}` : "")}
+                placeholder="Pick a date…"
               />
             </div>
             <div>
-              <label className={labelClass}>Duration</label>
-              <select
-                value={values.durationMinutes}
-                onChange={(e) => set("durationMinutes", Number(e.target.value))}
-                className={inputClass}
-              >
-                {[30, 45, 60, 75, 90, 120, 180].map((m) => (
-                  <option key={m} value={m}>
-                    {m} min
-                  </option>
-                ))}
-              </select>
+              <label className={labelClass}>Time</label>
+              <TimeRangePicker
+                time={oneTime}
+                minutes={values.durationMinutes}
+                onChange={(next) => {
+                  setOneTime(next.time)
+                  setValues((v) => ({
+                    ...v,
+                    startAt: oneDate ? `${oneDate}T${next.time}` : v.startAt,
+                    durationMinutes: next.minutes,
+                  }))
+                }}
+              />
             </div>
           </div>
         ) : (
@@ -333,11 +371,17 @@ export function TrainingSessionForm({
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
               <div>
-                <label className={labelClass}>Start time</label>
-                <DateTimePicker
-                  mode="time"
-                  value={values.startTime}
-                  onChange={(v) => set("startTime", v)}
+                <label className={labelClass}>Time</label>
+                <TimeRangePicker
+                  time={values.startTime}
+                  minutes={values.durationMinutes}
+                  onChange={(next) =>
+                    setValues((v) => ({
+                      ...v,
+                      startTime: next.time,
+                      durationMinutes: next.minutes,
+                    }))
+                  }
                 />
               </div>
               <div>
@@ -356,20 +400,6 @@ export function TrainingSessionForm({
                   onChange={(v) => set("endDate", v)}
                 />
               </div>
-              <div>
-                <label className={labelClass}>Duration</label>
-                <select
-                  value={values.durationMinutes}
-                  onChange={(e) => set("durationMinutes", Number(e.target.value))}
-                  className={inputClass}
-                >
-                  {[30, 45, 60, 75, 90, 120, 180].map((m) => (
-                    <option key={m} value={m}>
-                      {m} min
-                    </option>
-                  ))}
-                </select>
-              </div>
             </div>
           </div>
         )}
@@ -387,19 +417,6 @@ export function TrainingSessionForm({
             value={values.fee}
             onChange={(e) => set("fee", e.target.value)}
             placeholder="0.00"
-            className={inputClass}
-          />
-        </div>
-        <div>
-          <label className={labelClass}>
-            Capacity <span className="text-ink-400 font-normal">(optional)</span>
-          </label>
-          <input
-            type="number"
-            min="1"
-            value={values.capacity}
-            onChange={(e) => set("capacity", e.target.value)}
-            placeholder="e.g. 4 for small group"
             className={inputClass}
           />
         </div>

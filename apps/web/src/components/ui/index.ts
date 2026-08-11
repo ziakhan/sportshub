@@ -23,4 +23,5 @@ export { MediaTile } from "./media-tile"
 export { StarRating } from "./star-rating"
 
 export { DateTimePicker } from "./date-time-picker"
+export { TimeRangePicker } from "./time-range-picker"
 export { SmartBack } from "./smart-back"

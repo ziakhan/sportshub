@@ -26,7 +26,7 @@ function pad(n: number) {
 }
 
 /** Brand-styled select (no native OS chrome) — used for month/year/hour/minute. */
-function BrandSelect({
+export function BrandSelect({
   value,
   onChange,
   children,
