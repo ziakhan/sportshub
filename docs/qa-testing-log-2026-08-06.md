@@ -176,4 +176,19 @@ Template (copy for each new entry):
 - **Why it's legal:** this is a within-month weekend move — explicitly the "intended freedom" under the owner's sessions-are-months ruling (see T-007's resolution). No fence is crossed.
 - **Design note for devs:** the solver also deliberately spaces grades (day-shape/cadence rules), so the suggestion should respect spacing constraints or state the trade-off ("saves one building day; Grade X's October games compress to one weekend"). Quantifying the saving in the suggestion (rented court-days, ideally $) is what makes it land with operators.
 
-<!-- Add findings below. Next ID: T-017 -->
+### T-017 · Roster-deadline reminder system: early approval stays, but rosters get chased to a hard date · IDEA (feature spec) · high · web + native
+- **The problem:** leagues rightly approve team entries months before rosters exist — but nothing then drives rosters to completion. An approved, forever-empty team is a ghost the schedule must plan around, discovered too late.
+- **Keep:** roster-less registration and approval (correct for the domain — see the platform's own offer-pipeline design). Add: a deadline with an escalating reminder cadence, and visibility for the league owner.
+- **Proposed cadence** (grounded in the platform's own waiver-reminder precedent of 7d+24h with a send-once dedupe ledger, and external best practice of 3–5 escalating touches):
+  1. **T-30 days** — email only: "Your roster for [league season] is due [date] — you have 4 of 8 required players."
+  2. **T-14 days** — email + in-app notification.
+  3. **T-7 days** — email + in-app + push (matches the house waiver cadence day).
+  4. **T-24 hours** — urgent tone, all channels.
+  5. **Day after deadline (overdue)** — "Your team is not eligible to play and the schedule will be planned without you until the roster is finalized," with the one-click fix link.
+- **Rules that make it good, not naggy:** every touch is DATA-DRIVEN and self-healing (checklist philosophy — compliant roster = touch silently skipped); every message shows the live count and deep-links to the roster page; send-once ledger per (team, season, window) mirroring `WaiverReminder`; cron infra already exists (`/api/cron/*`).
+- **League-owner side:** a digest at T-7 and day-after ("3 teams still un-rostered: …") so operators chase humans, plus the approval row itself showing "0 players committed" at approval time (informed approval — earlier finding, still unbuilt).
+- **Owner decisions needed:** (1) what "finalized" means — roster locked vs ≥N players (suggest a per-season minimum-roster number); (2) where the deadline lives (new season field vs derived from season start).
+- **Scheduling-side enforcement (dev territory):** after the deadline, non-compliant teams are flagged and excluded from the schedule draw until they comply — the "plan around them" half.
+- **Fence note:** the reminder system itself is registration/communications (waiver-reminder cousin) — buildable outside the scheduling fence; only the draw-exclusion piece touches scheduling.
+
+<!-- Add findings below. Next ID: T-018 -->
