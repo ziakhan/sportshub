@@ -567,9 +567,21 @@ export function ActionPopover({
  * dark label, a real hover. The grey-on-grey version is what let the owner walk
  * past the bookings picker twice.
  */
-export function QuietAction({ children }: { children: React.ReactNode }) {
+export function QuietAction({
+  children,
+  className = "",
+}: {
+  children: React.ReactNode
+  /** Colour, from the thing the action belongs to (owner 2026-08-10:
+   *  "everything is grey" — buttons wear their owner's family). */
+  className?: string
+}) {
   return (
-    <span className={`${BTN_QUIET} min-h-[32px] rounded-md px-2 text-[10.5px]`}>
+    <span
+      className={`min-h-[32px] rounded-md px-2 text-[10.5px] ${
+        className || `${BTN_QUIET}`
+      } inline-flex cursor-pointer items-center border font-bold transition-colors`}
+    >
       {children}
     </span>
   )
@@ -1181,6 +1193,7 @@ const MOVE_STATUS: Record<MoveTarget["status"], { words: string; tone: string }>
  * It replaces "Move all…", which said what it did only if you already knew.
  */
 export function MoveMenu({
+  tint,
   gymName,
   weekendLabel,
   armed,
@@ -1188,6 +1201,8 @@ export function MoveMenu({
   onMoveTo,
   onArmForWeekend,
 }: {
+  /** The gym family's action classes — buttons wear their owner's colour. */
+  tint?: string
   gymName: string
   weekendLabel: string
   /** This section is already picked up and waiting for a date. */
@@ -1211,9 +1226,9 @@ export function MoveMenu({
           /* MOVE IS A VERB, SO IT WEARS THE ACTION COLOUR (owner ruling
              2026-08-06). Armed adds the ring; the resting state is still
              unmistakably a button. */
-          className={`${BTN_SECONDARY} min-h-[32px] rounded-md px-2 text-[10.5px] ${
-            armed ? "ring-play-400 bg-play-50 ring-2" : ""
-          }`}
+          className={`min-h-[32px] rounded-md border px-2 text-[10.5px] font-bold transition-colors ${
+            tint ?? BTN_SECONDARY
+          } ${armed ? "ring-play-400 ring-2" : ""}`}
         >
           Move
         </button>
@@ -1321,6 +1336,7 @@ export function GymMenu({
   onDropFriday,
   splitWhat,
   splitAxes,
+  tint,
 }: {
   gymName: string
   weekendLabel: string
@@ -1346,6 +1362,7 @@ export function GymMenu({
    *  the menu ends with the split options for this block. */
   splitWhat?: string
   splitAxes?: () => SplitAxis[]
+  tint?: string
 }) {
   return (
     <ActionPopover
@@ -1353,7 +1370,7 @@ export function GymMenu({
       testId="gym-menu"
       width={284}
       trigger={
-        <QuietAction>
+        <QuietAction className={tint}>
           <span aria-hidden className="px-0.5 text-[13px] leading-none">
             ⋯
           </span>

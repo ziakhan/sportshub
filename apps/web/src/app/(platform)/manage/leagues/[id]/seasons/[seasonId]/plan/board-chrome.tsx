@@ -206,7 +206,11 @@ export function BoardHead({
               label="Redraw the calendar"
               testId="redraw-menu"
               width={280}
-              trigger={<QuietAction>Redraw ▾</QuietAction>}
+              trigger={
+                <QuietAction className="border-play-300 text-play-700 bg-play-50 hover:bg-play-100">
+                  Redraw ▾
+                </QuietAction>
+              }
             >
               {(close) => (
                 <div className="space-y-1.5">
@@ -438,7 +442,7 @@ export function GradeFilter({
             className={`inline-flex min-h-[30px] cursor-pointer items-center rounded-lg border px-2 text-[11.5px] font-bold transition-colors ${
               on
                 ? "border-court-600 bg-court-600 text-white"
-                : "border-ink-300 text-ink-700 hover:border-ink-400 hover:bg-white bg-white/70"
+                : "border-court-300 text-court-800 bg-court-50 hover:bg-court-100"
             }`}
           >
             {u.label}

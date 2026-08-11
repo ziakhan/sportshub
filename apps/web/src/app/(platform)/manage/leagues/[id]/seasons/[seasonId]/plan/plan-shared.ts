@@ -200,6 +200,9 @@ export const VENUE_HUES = [
     /** The gym BOX outline on a weekend card (owner 2026-08-10: "the
      *  outline of the gyms should be the same color as the gym color"). */
     box: "border-court-300",
+    /** The row's action buttons, in the family (owner 2026-08-10:
+     *  "everything is grey" — controls wear their owner's colour). */
+    action: "border-court-300 text-court-700 bg-white hover:bg-court-50",
   },
   {
     fill: "bg-play-50",
@@ -212,34 +215,53 @@ export const VENUE_HUES = [
     /** The gym BOX outline on a weekend card (owner 2026-08-10: "the
      *  outline of the gyms should be the same color as the gym color"). */
     box: "border-play-300",
+    /** The row's action buttons, in the family (owner 2026-08-10:
+     *  "everything is grey" — controls wear their owner's colour). */
+    action: "border-play-300 text-play-700 bg-white hover:bg-play-50",
   },
-  /* One hue, one meaning (QA T-005, 2026-08-10): the warning families
-     (gold/amber, hoop/orange-red) are STATUS colours on this board — a gym
-     wearing them made chips read as alerts. Identity draws from calm
-     families only. */
+  /* One hue, one meaning (QA T-005) + REAL differentiation (owner
+     2026-08-10: "the colors are too similar... reserve red for errors,
+     make it more colorful"). Identity hues sit far apart on the wheel —
+     green, purple, true blue, fuchsia, cyan — and the whole warning
+     family (red/orange/amber) belongs to status alone. */
   {
-    fill: "bg-sky-50",
-    stripe: "border-l-sky-500",
-    swatch: "bg-sky-500",
-    name: "text-sky-700",
-    bar: "bg-sky-500",
-    chip: "border-sky-200 bg-sky-50 text-sky-800",
-    chipQuiet: "text-sky-600",
-    /** The gym BOX outline on a weekend card (owner 2026-08-10: "the
-     *  outline of the gyms should be the same color as the gym color"). */
-    box: "border-sky-300",
+    fill: "bg-blue-50",
+    stripe: "border-l-blue-600",
+    swatch: "bg-blue-600",
+    name: "text-blue-700",
+    bar: "bg-blue-600",
+    chip: "border-blue-200 bg-blue-50 text-blue-800",
+    chipQuiet: "text-blue-600",
+    box: "border-blue-300",
+    /** The row's action buttons, in the family (owner 2026-08-10:
+     *  "everything is grey" — controls wear their owner's colour). */
+    action: "border-blue-300 text-blue-700 bg-white hover:bg-blue-50",
   },
   {
-    fill: "bg-violet-50",
-    stripe: "border-l-violet-500",
-    swatch: "bg-violet-500",
-    name: "text-violet-700",
-    bar: "bg-violet-500",
-    chip: "border-violet-200 bg-violet-50 text-violet-800",
-    chipQuiet: "text-violet-600",
-    /** The gym BOX outline on a weekend card (owner 2026-08-10: "the
-     *  outline of the gyms should be the same color as the gym color"). */
-    box: "border-violet-300",
+    fill: "bg-fuchsia-50",
+    stripe: "border-l-fuchsia-500",
+    swatch: "bg-fuchsia-500",
+    name: "text-fuchsia-700",
+    bar: "bg-fuchsia-500",
+    chip: "border-fuchsia-200 bg-fuchsia-50 text-fuchsia-800",
+    chipQuiet: "text-fuchsia-600",
+    box: "border-fuchsia-300",
+    /** The row's action buttons, in the family (owner 2026-08-10:
+     *  "everything is grey" — controls wear their owner's colour). */
+    action: "border-fuchsia-300 text-fuchsia-700 bg-white hover:bg-fuchsia-50",
+  },
+  {
+    fill: "bg-cyan-50",
+    stripe: "border-l-cyan-500",
+    swatch: "bg-cyan-500",
+    name: "text-cyan-700",
+    bar: "bg-cyan-500",
+    chip: "border-cyan-200 bg-cyan-50 text-cyan-800",
+    chipQuiet: "text-cyan-600",
+    box: "border-cyan-300",
+    /** The row's action buttons, in the family (owner 2026-08-10:
+     *  "everything is grey" — controls wear their owner's colour). */
+    action: "border-cyan-300 text-cyan-700 bg-white hover:bg-cyan-50",
   },
 ]
 

@@ -943,6 +943,7 @@ export function WeekendCard({
                       onMoveSection(section.unitKeys, weekend.sessionId, weekend.sessionId, venueId)
                     }
                     onArmForWeekend={() => onArmSection(armedHere ? null : asArmed())}
+                    tint={paint.action}
                   />
                 )}
                 {interactive && wired > 0 && (
@@ -976,6 +977,7 @@ export function WeekendCard({
                         ? () => splitAxesFor(weekend.sessionId, section.unitKeys)
                         : undefined
                     }
+                    tint={paint.action}
                   />
                 )}
                 {/* THE GYM ROW COUNTS COURTS (approved two-number law,
