@@ -191,4 +191,9 @@ Template (copy for each new entry):
 - **Scheduling-side enforcement (dev territory):** after the deadline, non-compliant teams are flagged and excluded from the schedule draw until they comply — the "plan around them" half.
 - **Fence note:** the reminder system itself is registration/communications (waiver-reminder cousin) — buildable outside the scheduling fence; only the draw-exclusion piece touches scheduling.
 
-<!-- Add findings below. Next ID: T-018 -->
+### T-018 · Fridays are rescue-only — let a session DECLARE it runs Fridays · IDEA · med · web-desktop
+- **Where:** LOCAL, latest master — Plan Your Season board, the Friday mechanism.
+- **What I hit:** the only way to get a Friday onto a weekend is the board's conditional suggestion, which appears solely when a shortfall exists that a right-sized Friday at an already-used gym would fix (owner ruling 2026-08-06, "silent unless…"). There's no way to declare up front that a session runs Friday evenings as a fact — even though some leagues (the NJC/NSC Fri–Sun constraint is the platform's own example) simply DO run Fridays.
+- **Suggestion:** keep the smart suggestion, but also allow a proactive "this session runs Fridays" declaration (per weekend or per season), feeding the same `fridays`/window machinery. The per-season Friday time window already exists (`fridayStart`/`fridayEnd`, default 6–10 PM) — this just adds the missing front door. Relates to T-015 (valid day shapes are Fri/Sat/Sun).
+
+<!-- Add findings below. Next ID: T-019 -->
