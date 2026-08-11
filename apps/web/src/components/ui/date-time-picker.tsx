@@ -45,12 +45,12 @@ export function BrandSelect({
         value={value}
         onChange={onChange}
         aria-label={ariaLabel}
-        className="border-ink-200 focus:border-play-500 focus:ring-play-200 w-full cursor-pointer appearance-none rounded-lg border bg-white py-1.5 pl-2.5 pr-7 text-sm font-medium text-ink-800 transition hover:border-ink-300 focus:outline-none focus:ring-2"
+        className="border-ink-200 focus:border-play-500 focus:ring-play-200 w-full cursor-pointer appearance-none rounded-lg border bg-white py-1.5 pl-2.5 pr-6 text-sm font-medium text-ink-800 transition hover:border-ink-300 focus:outline-none focus:ring-2"
       >
         {children}
       </select>
       <svg
-        className="text-ink-400 pointer-events-none absolute right-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2"
+        className="text-ink-400 pointer-events-none absolute right-1.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2"
         viewBox="0 0 24 24"
         fill="none"
         stroke="currentColor"
