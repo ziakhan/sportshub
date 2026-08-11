@@ -169,4 +169,11 @@ Template (copy for each new entry):
 - **Likely cause worth checking:** weekday drift on stored dates (a Saturday anchored at midnight rendering as the neighboring day) — same family as the TZ issues already fixed in "anchor day rows at LOCAL midnight" and the "TZ-proof weekday histogram." If pairs are being *generated* on Sun+Mon, the generator's anchor is off by one somewhere.
 - **Ask:** constrain session-day generation and display to Fri/Sat/Sun, and audit existing plan/demo dates for the off-by-one.
 
-<!-- Add findings below. Next ID: T-016 -->
+### T-016 · Ideas rail should propose cost-saving consolidation moves within a session · IDEA · med · web-desktop
+- **Where:** LOCAL, latest master — Plan Your Season board, the suggestions/Ideas rail.
+- **Scenario (real, from my plan):** one grade is the ONLY thing playing on Oct 17–18 — so that weekend's building is booked for a single grade — while Oct 9–10, in the SAME month/session, has spare court time that could absorb them.
+- **What I expected:** a suggestion like "Move Grade X from Oct 17–18 to Oct 9–10 — frees a booked building day" with the move one click away (the rail's suggestions already know how to 'do the move'). The engine minimizes rented court-days when it draws, but the rail never re-audits the CURRENT plan — especially after hand edits — for consolidation opportunities.
+- **Why it's legal:** this is a within-month weekend move — explicitly the "intended freedom" under the owner's sessions-are-months ruling (see T-007's resolution). No fence is crossed.
+- **Design note for devs:** the solver also deliberately spaces grades (day-shape/cadence rules), so the suggestion should respect spacing constraints or state the trade-off ("saves one building day; Grade X's October games compress to one weekend"). Quantifying the saving in the suggestion (rented court-days, ideally $) is what makes it land with operators.
+
+<!-- Add findings below. Next ID: T-017 -->
