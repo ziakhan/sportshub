@@ -342,7 +342,7 @@ export default function TournamentManagePage() {
                 </div>
                 <div className="flex items-center gap-2">
                   <span
-                    className={`rounded-full px-2 py-0.5 text-xs font-medium ${
+                    className={`rounded-full px-2 py-0.5 text-xs font-medium capitalize ${
                       t.status === "APPROVED"
                         ? "bg-court-100 text-court-700"
                         : t.status === "REJECTED"

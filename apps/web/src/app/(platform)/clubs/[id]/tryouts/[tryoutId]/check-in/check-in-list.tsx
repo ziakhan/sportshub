@@ -152,7 +152,9 @@ export function CheckInList({
                   </span>
                   <span className="text-ink-500 block truncate text-xs">
                     {signup.playerAge != null ? `${signup.playerAge}` : ""}
-                    {signup.playerGender ? ` • ${signup.playerGender.toLowerCase()}` : ""}
+                    {signup.playerGender
+                      ? ` • ${signup.playerGender.charAt(0) + signup.playerGender.slice(1).toLowerCase()}`
+                      : ""}
                     {signup.parentName ? ` • ${signup.parentName}` : ""}
                   </span>
                 </span>

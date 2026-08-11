@@ -61,4 +61,23 @@ Template:
 - **Status notes:** built 2026-08-11; type-check pending; awaiting my local
   test on the Referees tab before marking Tested — good.
 
-<!-- Add changes below. Next ID: K-002 -->
+### K-002 · Capitalization sweep: no standalone lowercase labels · UI · Built (local)
+- **What/why:** Lowercase words rendering as standalone labels look unfinished
+  (my T-009 finding, now implemented locally where allowed). Audit result:
+  the design system already handles most of it — Badge pills render ALL-CAPS
+  by CSS, and mid-sentence lowercase ("Offer pending") is correct sentence
+  case — so the real offenders were a handful of hand-rolled spots.
+- **Where in the app (all outside the scheduling fence):**
+  1. Team status pills on browse-leagues, browse-tournaments, and the club's
+     tournament manage page — "approved"/"pending" now render "Approved"/
+     "Pending" (CSS `capitalize` on the pill).
+  2. Tryout check-in list — "• male" → "• Male".
+  3. Admin audit trail — action chips/labels "referee assign" → "Referee assign"
+     (filter chips + table rows).
+  4. Admin SEO panel — entity counters "game recap: 5" → "Game recap: 5".
+- **Deliberately NOT touched:** the planner/scheduling screens' lowercase
+  ("not planned", "home gym", "backup") — inside the no-touch fence; already
+  filed for the developers as T-009.
+- **Status notes:** built 2026-08-11; type-check clean; awaiting my local test.
+
+<!-- Add changes below. Next ID: K-003 -->

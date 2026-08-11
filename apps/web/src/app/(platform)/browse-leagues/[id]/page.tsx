@@ -265,7 +265,7 @@ function SeasonDetailSubmitInner() {
                   <div className="flex items-center gap-2">
                     {t.division && <span className="text-play-700 text-xs">{t.division.name}</span>}
                     <span
-                      className={`rounded-full px-2 py-0.5 text-xs font-medium ${
+                      className={`rounded-full px-2 py-0.5 text-xs font-medium capitalize ${
                         t.status === "APPROVED"
                           ? "bg-court-100 text-court-700"
                           : "bg-hoop-100 text-hoop-700"

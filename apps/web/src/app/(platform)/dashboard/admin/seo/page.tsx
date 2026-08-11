@@ -115,7 +115,7 @@ export default async function AdminSeoPage() {
             .sort((a, b) => b._count - a._count)
             .map((r) => (
               <span key={r.entityType} className="bg-ink-50 text-ink-700 rounded-full px-3 py-1 text-sm">
-                {r.entityType.toLowerCase().replace("_", " ")}: <b>{r._count}</b>
+                {(r.entityType.charAt(0) + r.entityType.slice(1).toLowerCase()).replace("_", " ")}: <b>{r._count}</b>
               </span>
             ))}
           {byType.length === 0 && <span className="text-ink-400 text-sm">No tracked views yet.</span>}
