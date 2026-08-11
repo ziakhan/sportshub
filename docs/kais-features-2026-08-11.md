@@ -147,22 +147,25 @@ Template:
   "add purely by email" is not a thing).
 - **Where:** `players/add/page.tsx` success card. Existing API, no backend.
 
-### K-007 · Onboarding: handle merged into the profile step (3 steps → 2) · UI · Built (local)
-- **What/why:** The @handle screen was prefilled, skippable, and never
-  blocking — a field's profile, not a step's. Merged into "Complete your
-  profile" as a compact input at the top ("yours to change anytime"), saved
-  non-blocking alongside the profile per the original QA-209 rule. Wizard is
-  now: Who are you? → Your info. Step captions updated.
-- **Where:** `onboarding/onboarding-flow.tsx` (HandleStep removed, HandleField
-  embedded, back-targets rewired).
+### K-007 · Onboarding: handle merged into the profile step (3 steps → 2) and made REQUIRED · UI · Built (local)
+- **What/why:** The @handle screen was prefilled and skippable — a field's
+  profile, not a step's. Merged into "Complete your profile" as an input at
+  the top. Then upgraded per my ruling: the handle is REQUIRED — empty or
+  unavailable handles block submission with a clear error, saved before the
+  role is created. Wizard is now: Who are you? → Your info.
+- **OWNER-RULING FLAG:** QA-209 documented the handle as never-blocking;
+  making it required amends that rule — owner sign-off needed when shared.
+- **Where:** `onboarding/onboarding-flow.tsx` (HandleStep removed, required
+  HandleField embedded, save-then-create ordering, back-targets rewired).
 
-### K-008 · Onboarding: 13+ players can invite their parent right after their profile saves · FEATURE · Built (local)
+### K-008 · Onboarding: 13+ players invite their parent via an email field ON the profile step · FEATURE · Built (local)
 - **What/why:** Discoverability — a teen shouldn't have to discover later that
-  a parent link exists ("get it done with it"). After a Player's profile
-  submits (their Player record now exists), one optional screen: "Invite your
-  parent or guardian — they approve signups and handle payments." Email →
-  existing GUARDIAN invite API; Skip always available; then the normal
-  post-login destination (deep links preserved).
+  a parent link exists ("get it done with it"). The Player profile step (step
+  2) now carries an optional "Parent or guardian's email" field; the invite
+  fires automatically right after the profile saves (the Player record must
+  exist first — that's why it sends post-save under the hood). Happy path adds
+  ZERO screens; a failed send opens a recovery screen with retry/skip. Uses
+  the existing GUARDIAN invite API; deep links preserved.
 - **OWNER-RULING FLAG:** the standing rule says parent↔child linking is
   event-driven, not at onboarding. This is the player-initiated direction
   surfaced early, always optional — but it amends the documented rule, so it

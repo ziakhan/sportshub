@@ -214,7 +214,9 @@ const secondaryButtonClass =
 const primaryButtonClass =
   "flex-1 rounded-xl bg-play-600 px-4 py-3 font-semibold text-white shadow-sm transition hover:bg-play-700 disabled:cursor-not-allowed disabled:bg-ink-400"
 
-/** K-007: the handle input embedded in the profile step (was its own step). */
+/** K-007: the handle input embedded in the profile step (was its own step).
+ *  Required as of 2026-08-11 (tester ruling) — amends QA-209's never-blocks
+ *  rule; an empty or unavailable handle now stops submission with an error. */
 function HandleField({
   draft,
   reserved,
@@ -227,7 +229,8 @@ function HandleField({
   return (
     <div className="mb-6">
       <label className="text-ink-700 block text-sm font-medium">
-        Your handle <span className="text-ink-400 font-normal">(yours to change anytime)</span>
+        Your handle <span className="text-red-500">*</span>{" "}
+        <span className="text-ink-400 font-normal">(you can change it anytime)</span>
       </label>
       <div className="border-ink-200 focus-within:border-play-500 mt-1 flex w-full items-center rounded-xl border bg-white px-3 shadow-sm">
         <span className="text-ink-400 text-sm">@</span>
@@ -330,9 +333,68 @@ export function OnboardingFlow({ userName }: OnboardingFlowProps) {
     await submitOnboarding(selectedRole!)
   }
 
+  /** K-008: look up the just-created Player and send the GUARDIAN invite.
+   *  Shared by the automatic post-save send and the recovery screen's retry. */
+  const sendParentInvite = async (): Promise<boolean> => {
+    setInviteBusy(true)
+    setInviteError(null)
+    try {
+      const pr = await fetch("/api/players")
+      const pd = await pr.json().catch(() => ({}))
+      const playerId = pd?.players?.[0]?.id
+      if (!playerId) {
+        throw new Error(
+          "Couldn't look up your player profile — you can invite them anytime from your profile page."
+        )
+      }
+      const r = await fetch("/api/family-invitations", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ type: "GUARDIAN", playerId, email: inviteEmail.trim() }),
+      })
+      const d = await r.json().catch(() => ({}))
+      if (!r.ok) throw new Error(d.error || "Couldn't send the invite")
+      setInviteSent(true)
+      return true
+    } catch (e) {
+      setInviteError(e instanceof Error ? e.message : "Couldn't send the invite")
+      return false
+    } finally {
+      setInviteBusy(false)
+    }
+  }
+
   const submitOnboarding = async (role: string, profileData?: ProfileData) => {
-    setIsSubmitting(true)
     setError(null)
+
+    // K-007 (required handle): validate and save BEFORE creating the role —
+    // an empty or taken handle blocks submission with a clear error.
+    const trimmedHandle = handleDraft.trim().toLowerCase()
+    if (!trimmedHandle) {
+      setError("Pick a handle to continue — it's your name across SportsHub.")
+      return
+    }
+    setIsSubmitting(true)
+    if (trimmedHandle !== reservedHandle) {
+      try {
+        const hr = await fetch("/api/account/handle", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ handle: trimmedHandle }),
+        })
+        const hd = await hr.json().catch(() => ({}))
+        if (!hr.ok) {
+          setError(hd.error || "That handle isn't available — try another.")
+          setIsSubmitting(false)
+          return
+        }
+        setReservedHandle(trimmedHandle)
+      } catch {
+        setError("Network error saving your handle. Please try again.")
+        setIsSubmitting(false)
+        return
+      }
+    }
 
     try {
       const res = await fetch("/api/onboarding", {
@@ -353,30 +415,23 @@ export function OnboardingFlow({ userName }: OnboardingFlowProps) {
         return
       }
 
-      // K-007: save the handle alongside the profile — non-blocking by design
-      // (QA-209 rule: onboarding never stalls on the handle).
-      const trimmedHandle = handleDraft.trim().toLowerCase()
-      if (trimmedHandle && trimmedHandle !== reservedHandle) {
-        await fetch("/api/account/handle", {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ handle: trimmedHandle }),
-        }).catch(() => {})
-      }
-
       // Every role now finishes through /post-login, which runs the onboarding
       // soft gate (the /welcome checklist) — including club owners, whose first
       // checklist step is "Create your club". A full reload lets the server
       // layouts pick up the fresh session/roles; an explicit deep-link
       // callbackUrl still wins.
       const dest = callbackUrl ?? "/post-login"
-      // K-008: 13+ players get one optional moment to invite their parent —
-      // their Player record exists as of this successful POST.
-      if (role === "Player") {
+      // K-008: the optional parent email collected on the profile step fires
+      // now — the Player record exists as of this successful POST. Success
+      // goes straight on; failure opens the recovery screen (retry/skip).
+      if (role === "Player" && inviteEmail.trim()) {
         setPendingDest(dest)
-        setIsSubmitting(false)
-        setStep("family")
-        return
+        const sent = await sendParentInvite()
+        if (!sent) {
+          setIsSubmitting(false)
+          setStep("family")
+          return
+        }
       }
       window.location.href = dest
     } catch {
@@ -429,39 +484,10 @@ export function OnboardingFlow({ userName }: OnboardingFlowProps) {
               <button
                 type="button"
                 disabled={inviteBusy || !inviteEmail.trim()}
-                onClick={async () => {
-                  setInviteBusy(true)
-                  setInviteError(null)
-                  try {
-                    const pr = await fetch("/api/players")
-                    const pd = await pr.json().catch(() => ({}))
-                    const playerId = pd?.players?.[0]?.id
-                    if (!playerId) {
-                      throw new Error(
-                        "Couldn't look up your player profile — you can invite them anytime from your profile page."
-                      )
-                    }
-                    const r = await fetch("/api/family-invitations", {
-                      method: "POST",
-                      headers: { "Content-Type": "application/json" },
-                      body: JSON.stringify({
-                        type: "GUARDIAN",
-                        playerId,
-                        email: inviteEmail.trim(),
-                      }),
-                    })
-                    const d = await r.json().catch(() => ({}))
-                    if (!r.ok) throw new Error(d.error || "Couldn't send the invite")
-                    setInviteSent(true)
-                  } catch (e) {
-                    setInviteError(e instanceof Error ? e.message : "Couldn't send the invite")
-                  } finally {
-                    setInviteBusy(false)
-                  }
-                }}
+                onClick={() => void sendParentInvite()}
                 className={primaryButtonClass}
               >
-                {inviteBusy ? "Sending…" : "Send invite"}
+                {inviteBusy ? "Sending…" : "Try again"}
               </button>
             )}
             {inviteSent && (
@@ -489,6 +515,26 @@ export function OnboardingFlow({ userName }: OnboardingFlowProps) {
         )}
 
         <HandleField draft={handleDraft} reserved={reservedHandle} onChange={setHandleDraft} />
+
+        {selectedRole === "Player" && (
+          <div className="mb-6">
+            <label className="text-ink-700 block text-sm font-medium">
+              Parent or guardian&apos;s email{" "}
+              <span className="text-ink-400 font-normal">(optional — we&apos;ll invite them)</span>
+            </label>
+            <input
+              type="email"
+              value={inviteEmail}
+              onChange={(e) => setInviteEmail(e.target.value)}
+              placeholder="parent@example.com"
+              className="border-ink-200 focus:border-play-500 mt-1 block w-full rounded-xl border px-3 py-2.5 text-sm shadow-sm focus:outline-none"
+            />
+            <p className="text-ink-500 mt-1 text-xs">
+              They approve signups and handle payments for anything that costs money. Leave blank
+              to do this later from your profile.
+            </p>
+          </div>
+        )}
 
         {selectedRole === "Parent" && (
           <>
