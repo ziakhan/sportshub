@@ -17,6 +17,7 @@ import {
   SceneOpenRegistration,
   SceneReferees,
   SceneScheduling,
+  ScenePlanBoard,
   SceneSessions,
   SceneTiebreakers,
   SceneVenues,
@@ -54,7 +55,6 @@ import {
   SceneRosterPending,
 } from "./scenes/offers"
 import {
-  SceneCapacityPlanner,
   SceneFinalizeSeason,
   SceneLeaguePayments,
   SceneRecordPayment,
@@ -165,7 +165,7 @@ const LIB: LibScene[] = [
     personaLabel: LEAGUE_LABEL,
     frame: "desktop",
     url: MANAGE_URL,
-    caption: "Divisions by grade, each a single birth year. The fourth one is about to join.",
+    caption: "Divisions happen at scheduling time, from real teams, only when a grade wants splitting. One checkbox, a drag board, and a plain question about cross-play.",
     screen: SceneDivisions,
   },
   {
@@ -175,7 +175,7 @@ const LIB: LibScene[] = [
     personaLabel: LEAGUE_LABEL,
     frame: "desktop",
     url: MANAGE_URL,
-    caption: "Five weekend sessions define exactly when games can be played.",
+    caption: "Weekends, not spreadsheets: the wizard turns dates into game weekends with the hours each gym really has.",
     screen: SceneSessions,
   },
   {
@@ -185,7 +185,7 @@ const LIB: LibScene[] = [
     personaLabel: LEAGUE_LABEL,
     frame: "desktop",
     url: MANAGE_URL,
-    caption: "Real gyms with real courts. Court counts and hours feed straight into the scheduler.",
+    caption: "The buildings step: a home gym plus anything the league can rent. Every gym gets its own colour and keeps it everywhere.",
     screen: SceneVenues,
   },
   {
@@ -632,8 +632,8 @@ const LIB: LibScene[] = [
     frame: "desktop",
     url: MANAGE_URL,
     caption:
-      "Before generating, the planner shows what every session can hold against what the divisions need.",
-    screen: SceneCapacityPlanner,
+      "The calendar board: every weekend a card, every gym a coloured box, every grade a chip you can drag. The courts math answers live.",
+    screen: ScenePlanBoard,
   },
   {
     id: "schedule-preview",

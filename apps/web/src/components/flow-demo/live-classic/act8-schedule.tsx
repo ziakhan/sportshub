@@ -1,8 +1,8 @@
 "use client"
 
 /**
- * Act — Referees booked, everyone told: the schedule published in the plan
- * act fans out. The league broadcasts a day offer to its referee pool, Mike accepts and
+ * Act 9 — Schedule out, referees booked, everyone told: the league commits
+ * the schedule, broadcasts a day offer to its referee pool, Mike accepts and
  * gets the whole day, and every family and staff member gets the bell, the
  * email, and the games on their calendar. Mirrors the season Referees tab,
  * /referee/requests, /notifications and /calendar.
@@ -18,6 +18,7 @@ import { LiveInput, LiveSelect } from "./anim"
 import type { LiveScene } from "./engine"
 import { pick } from "./helpers"
 import { LeagueHold as Hold, SeasonShell } from "./act6-league"
+import { SCENE_COMMIT } from "./act7-register"
 
 /* S2 — Broadcast a day offer to the referee pool */
 const refOffer: LiveScene = {
@@ -601,6 +602,7 @@ const calendarChanges: LiveScene = {
 }
 
 export const ACT_SCHEDULE: LiveScene[] = [
+  SCENE_COMMIT,
   refOffer,
   refAccept,
   notifBell,

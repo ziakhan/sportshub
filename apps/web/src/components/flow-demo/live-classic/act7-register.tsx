@@ -248,7 +248,7 @@ const finalizeSeason: LiveScene = {
   frame: "desktop",
   url: "/manage/leagues/nph-summer-league/seasons/summer-2026/manage",
   caption:
-    "May 15, the deadline. Thirty teams in, all approved and paid. The preflight is green, and finalizing locks every roster. Next stop: plan the season.",
+    "May 15, the deadline. Eight teams in, all approved and paid. The preflight is green, and finalizing locks every roster.",
   script: [
     { wait: 500 },
     { set: { checks: true } },
@@ -278,10 +278,12 @@ const finalizeSeason: LiveScene = {
           <p className="text-court-700 text-sm font-bold">✓ Ready to finalize</p>
           <div className="mt-3 grid grid-cols-2 gap-x-8 gap-y-1.5">
             {[
+              "At least one division created",
+              "At least one game session scheduled",
+              "Every session has a day with venue + court",
+              "At least one venue assigned",
               "No teams pending approval",
-              "Every team fee paid or invoiced",
-              "Rosters submitted by every team",
-              "Games guaranteed defined",
+              "Max games per season defined",
               "Period / half length defined",
               "Tiebreaker order configured",
             ].map((c) => (
@@ -294,10 +296,10 @@ const finalizeSeason: LiveScene = {
       )}
       <div className="grid grid-cols-4 gap-4">
         {[
+          ["4", "Divisions"],
           ["30", "Teams"],
-          ["4", "Grades"],
-          ["10", "Games each"],
-          ["360", "Players rostered"],
+          ["5", "Sessions"],
+          ["4", "Venues"],
         ].map(([v, l]) => (
           <Card key={l} size="sm" className="text-center">
             <p className="font-condensed text-ink-950 text-3xl font-bold">{v}</p>
@@ -309,4 +311,95 @@ const finalizeSeason: LiveScene = {
   ),
 }
 
+/* S1 — One button schedules the season (or one session at a time) */
+const GAMES = [
+  ["Sat May 30 · 9:00 am", TEAM.name, "North Toronto Huskies Grade 10"],
+  ["Sat May 30 · 9:00 am", "Royal Crown Grade 10", "West United Prep Grade 10"],
+  ["Sat May 30 · 10:30 am", "North York Lions Grade 10", "City Above Elite Grade 10"],
+  ["Sat May 30 · 12:00 pm", TEAM.name, "Royal Crown Grade 10"],
+]
+
+const commitSchedule: LiveScene = {
+  id: "l-commit-schedule",
+  act: "register",
+  persona: "league",
+  personaLabel: OFFICE,
+  frame: "desktop",
+  url: "/manage/leagues/nph-summer-league/seasons/summer-2026/manage",
+  caption:
+    "One button proposes every game inside the rules, one session or the whole season. Committing publishes it, and every team is told.",
+  script: [
+    { wait: 400 },
+    { press: "previewBtn" },
+    { set: { preview: true } },
+    { wait: 900 },
+    { hold: "commitBtn" },
+    { set: { committed: true } },
+    { wait: 400 },
+    { confirm: "Season Schedule Published" },
+  ],
+  render: (g) => (
+    <SeasonShell active="Schedule" status="Finalized" statusTone="hoop">
+      <Panel
+        title="Schedule"
+        action={
+          <div className="flex gap-2">
+            <span data-live-id="previewBtn" className="inline-block rounded-xl">
+              <Button size="sm" variant={g("preview") ? "subtle" : "primary"}>
+                Preview schedule
+              </Button>
+            </span>
+            <Hold id="commitBtn">
+              <Button size="sm" variant={g("preview") ? "primary" : "subtle"}>
+                Commit schedule
+              </Button>
+            </Hold>
+          </div>
+        }
+      >
+        <p className="text-ink-500 mb-4 text-sm">
+          Preview the scheduler&apos;s proposal, then commit to persist games. Season must be
+          finalized before you can commit.
+        </p>
+        {!g("preview") ? (
+          <p className="text-ink-400 text-sm">
+            No games committed yet. Preview then commit once the season is finalized.
+          </p>
+        ) : (
+          <div className="border-court-200 bg-court-50/40 live-row-in rounded-xl border p-4">
+            <p className="text-ink-900 text-sm font-bold">Preview: 150 game(s)</p>
+            <p className="text-ink-500 mt-1 text-xs">Slots used: 150 / 180</p>
+            <table className="mt-3 w-full">
+              <thead className="border-ink-100 border-b">
+                <tr>
+                  {["When", "Home", "Away"].map((h) => (
+                    <th key={h} className="text-ink-500 px-3 py-2 text-left text-[11px] font-extrabold uppercase tracking-[0.12em]">
+                      {h}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody className="divide-ink-50 divide-y">
+                {GAMES.map(([w, h, a]) => (
+                  <tr key={w + h}>
+                    <td className="text-ink-800 px-3 py-2 text-sm">{w}</td>
+                    <td className="text-ink-900 px-3 py-2 text-sm font-semibold">{h}</td>
+                    <td className="text-ink-800 px-3 py-2 text-sm">{a}</td>
+                  </tr>
+                ))}
+                <tr>
+                  <td colSpan={3} className="text-ink-400 px-3 py-2 text-center text-xs">
+                    + 146 more games across Weeks 1-5
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        )}
+      </Panel>
+    </SeasonShell>
+  ),
+}
+
 export const ACT_REGISTER_LEAGUE: LiveScene[] = [registerTeam, teamsLand, finalizeSeason]
+export const SCENE_COMMIT = commitSchedule

@@ -1,5 +1,12 @@
 "use client"
 
+/**
+ * FROZEN 2026-08-11 (owner: "keep the version of the old one"). This is the
+ * demo as it shipped before the scheduling redesign (plan wizard, slim board,
+ * divisions at scheduling time). Served unlisted at /demo/classic. Do not
+ * evolve it: new product goes into ../live, this stays as the record.
+ */
+
 import { LivePlayer, type LiveAct } from "./engine"
 import { ACT1 } from "./act1-club"
 import { ACT2 } from "./act2-tryout"
@@ -8,7 +15,6 @@ import { ACT4 } from "./act4-signups"
 import { ACT5, ACT6 } from "./act5-accept"
 import { ACT_LEAGUE } from "./act6-league"
 import { ACT_REGISTER_LEAGUE } from "./act7-register"
-import { ACT_PLAN } from "./act-plan"
 import { ACT_SCHEDULE } from "./act8-schedule"
 import { ACT_GAMEDAY } from "./act9-gameday"
 import { ACT_FINAL } from "./act10-final"
@@ -23,13 +29,12 @@ const ACTS: LiveAct[] = [
   { id: "finalize", title: "The team is set" },
   { id: "league", title: "The league opens" },
   { id: "register", title: "Teams enter" },
-  { id: "plan", title: "Plan the season" },
-  { id: "schedule", title: "Refs & the fan-out" },
+  { id: "schedule", title: "Schedule & refs" },
   { id: "gameday", title: "Game day, live" },
   { id: "final", title: "Final & the sheet" },
 ]
 
-export function LiveDemo() {
+export function LiveDemoClassic() {
   return (
     <LivePlayer
       acts={ACTS}
@@ -42,12 +47,11 @@ export function LiveDemo() {
         ...ACT6,
         ...ACT_LEAGUE,
         ...ACT_REGISTER_LEAGUE,
-        ...ACT_PLAN,
         ...ACT_SCHEDULE,
         ...ACT_GAMEDAY,
         ...ACT_FINAL,
       ]}
-      durationLabel="about 14 minutes"
+      durationLabel="about 13 minutes"
     />
   )
 }

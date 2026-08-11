@@ -605,14 +605,14 @@ export function SceneSchedulePreview() {
             <Button size="sm" variant="subtle">
               Preview schedule
             </Button>
-            <Advance confirm="Schedule committed: 150 games created">
-              <Button size="sm">Commit schedule</Button>
+            <Advance confirm="Schedule published: 150 games live for every team and family">
+              <Button size="sm">Publish schedule</Button>
             </Advance>
           </div>
         }
       >
         <div className="border-court-200 bg-court-50/40 rounded-xl border p-4">
-          <p className="text-ink-900 text-sm font-bold">Preview: 150 game(s)</p>
+          <p className="text-ink-900 text-sm font-bold">Draft: 150 games, only you can see them</p>
           <p className="text-ink-500 mt-1 text-xs">Slots used: 150 / 180</p>
           <table className="mt-3 w-full">
             <thead className="border-ink-100 border-b">

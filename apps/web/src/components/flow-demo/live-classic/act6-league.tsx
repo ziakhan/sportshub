@@ -1,18 +1,17 @@
 "use client"
 
 /**
- * Act — The league opens: create the league, build the season (fees,
- * deadline, guaranteed games) and open registration. Sessions and gyms are
- * no longer set up here: since the scheduling redesign they are planned in
- * the wizard AFTER teams register (see act-plan.tsx). Mirrors
- * /manage/leagues/* and the season console.
+ * Act 7 — The league opens: create the league, build the season (fees,
+ * deadline, guaranteed games), lay out sessions with dates/times, pick the
+ * gyms, and open registration. Mirrors /manage/leagues/* and the season
+ * manage tabs (docs/demo-inventory/league.md).
  */
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { cn } from "@/components/ui/cn"
-import { LEAGUE, fmt } from "../data"
+import { LEAGUE, SESSIONS, VENUES, fmt } from "../data"
 import { Field, OperatorPage, Panel } from "../scenes/shared"
 import { LiveInput, LiveSelect } from "./anim"
 import type { LiveScene } from "./engine"
@@ -164,8 +163,7 @@ function SeasonShell({
   status?: string
   statusTone?: "neutral" | "court" | "play" | "hoop"
 }) {
-  // The console as shipped (manage/page.tsx TABS, IA redesign 2026-07-30).
-  const TABS = ["Overview", "Clubs", "Teams", "Plan Your Season", "Schedule", "Standings", "Playoffs", "Referees", "\u2699 Settings"]
+  const TABS = ["Overview", "Divisions", "Venues", "Sessions", "Scheduling", "Tiebreakers", "Teams", "Referees", "Schedule", "Standings", "Playoffs"]
   return (
     <div className="px-10 py-8">
       <p className="text-ink-500 mb-3 text-sm font-medium">&larr; Back to {LEAGUE.name}</p>
@@ -197,6 +195,141 @@ function SeasonShell({
   )
 }
 
+/* L3 — Sessions: dates and times for game days */
+const addSession: LiveScene = {
+  id: "l-sessions",
+  act: "league",
+  persona: "league",
+  personaLabel: OFFICE,
+  frame: "desktop",
+  url: "/manage/leagues/nph-summer-league/seasons/summer-2026/manage",
+  caption: "Five weekend sessions define exactly when games can happen. Week 5 gets its two days and times.",
+  script: [
+    { zoom: "addForm", scale: 1.2 },
+    ...typeIn("slabel", "slabel", "Week 5", 14),
+    ...typeIn("d1", "d1", "2026-06-27", 22),
+    ...typeIn("t1a", "t1a", "09:00", 14),
+    ...typeIn("t1b", "t1b", "18:00", 14),
+    { press: "addDay" },
+    { set: { day2: true } },
+    { wait: 350 },
+    ...typeIn("d2", "d2", "2026-06-28", 22),
+    { zoom: null },
+    { hold: "addBtn" },
+  ],
+  render: (g) => (
+    <SeasonShell active="Sessions">
+      <Panel title="Sessions (game days)">
+        <div className="divide-ink-100 divide-y">
+          {SESSIONS.slice(0, 4).map((s) => (
+            <div key={s.label} className="flex items-center justify-between py-3">
+              <div>
+                <p className="text-ink-900 text-sm font-bold">{s.label}</p>
+                <p className="text-ink-500 text-xs">{s.days.map((d) => `${d} 09:00-18:00`).join(" · ")}</p>
+              </div>
+              <span className="text-hoop-600 text-xs font-semibold">Remove</span>
+            </div>
+          ))}
+        </div>
+        <div data-live-id="addForm" className="border-ink-100 mt-4 space-y-3 border-t pt-4">
+          <LiveInput id="slabel" value={g("slabel") as string} caret={!!g("slabel:caret")} placeholder="Label (e.g. Week 1)" />
+          <div className="grid grid-cols-[2fr_1fr_1fr_auto] items-center gap-3">
+            <LiveInput id="d1" value={g("d1") as string} caret={!!g("d1:caret")} placeholder="Pick a date" />
+            <LiveInput id="t1a" value={g("t1a") as string} caret={!!g("t1a:caret")} placeholder="09:00" />
+            <LiveInput id="t1b" value={g("t1b") as string} caret={!!g("t1b:caret")} placeholder="17:00" />
+            <span className="text-ink-400">×</span>
+          </div>
+          {!!g("day2") && (
+            <div className="live-row-in grid grid-cols-[2fr_1fr_1fr_auto] items-center gap-3">
+              <LiveInput id="d2" value={g("d2") as string} caret={!!g("d2:caret")} placeholder="Pick a date" />
+              <LiveInput value="09:00" />
+              <LiveInput value="18:00" />
+              <span className="text-ink-400">×</span>
+            </div>
+          )}
+          <p data-live-id="addDay" className="text-play-700 inline-block text-xs font-semibold">
+            + Add another day
+          </p>
+          <Hold id="addBtn" block>
+            <Button block>Add Session</Button>
+          </Hold>
+        </div>
+      </Panel>
+    </SeasonShell>
+  ),
+}
+
+/* L4 — Venues: the gyms games run in */
+const addVenue: LiveScene = {
+  id: "l-venues",
+  act: "league",
+  persona: "league",
+  personaLabel: OFFICE,
+  frame: "desktop",
+  url: "/manage/leagues/nph-summer-league/seasons/summer-2026/manage",
+  caption: "Real gyms with real courts. Court counts and hours feed straight into the scheduler.",
+  script: [
+    { wait: 400 },
+    ...pick("venueSel", "venue", 0, "Paramount Fine Foods Centre · 5500 Rose Cherry Pl, Mississauga"),
+    { hold: "addBtn" },
+    { set: { added: true } },
+    { wait: 600 },
+    { confirm: "Venue added" },
+  ],
+  render: (g) => (
+    <SeasonShell active="Venues">
+      <Panel title="Venues">
+        <div className="divide-ink-100 divide-y">
+          {VENUES.slice(0, 3).map((v) => (
+            <div key={v.name} className="flex items-center justify-between py-3">
+              <div>
+                <p className="text-ink-900 text-sm font-bold">{v.name}</p>
+                <p className="text-ink-500 text-xs">
+                  {v.address}, {v.city} · {v.courts} courts
+                </p>
+              </div>
+              <div className="flex items-center gap-3 text-xs">
+                <span className="text-play-700 font-semibold">Edit courts &amp; hours</span>
+                <span className="text-hoop-600 font-semibold">Remove</span>
+              </div>
+            </div>
+          ))}
+          {!!g("added") && (
+            <div className="live-row-in flex items-center justify-between py-3">
+              <div>
+                <p className="text-ink-900 text-sm font-bold">Paramount Fine Foods Centre</p>
+                <p className="text-ink-500 text-xs">5500 Rose Cherry Pl, Mississauga · 2 courts</p>
+              </div>
+              <div className="flex items-center gap-3 text-xs">
+                <span className="text-play-700 font-semibold">Edit courts &amp; hours</span>
+                <span className="text-hoop-600 font-semibold">Remove</span>
+              </div>
+            </div>
+          )}
+        </div>
+        <div className="border-ink-100 mt-4 flex items-center gap-3 border-t pt-4">
+          <div className="flex-1">
+            <LiveSelect
+              id="venueSel"
+              value={g("venue") as string}
+              placeholder="Search venues…"
+              open={!!g("venue:open")}
+              options={[
+                "Paramount Fine Foods Centre · 5500 Rose Cherry Pl, Mississauga",
+                "Central Arena · 519 Drury Ln, Burlington",
+              ]}
+              highlight={g("venue:hi") as number}
+            />
+          </div>
+          <Hold id="addBtn">
+            <Button>Add to League</Button>
+          </Hold>
+        </div>
+      </Panel>
+    </SeasonShell>
+  ),
+}
+
 /* L5 — Publish: open registration */
 const openRegistration: LiveScene = {
   id: "l-open-reg",
@@ -206,7 +339,7 @@ const openRegistration: LiveScene = {
   frame: "desktop",
   url: "/manage/leagues/nph-summer-league/seasons/summer-2026/manage",
   caption:
-    "Fees and dates are set. Opening registration notifies every returning club; gyms and game days get planned once the teams are real.",
+    "Fees set, sessions dated, gyms booked. Opening registration notifies every returning club. Referees come later.",
   script: [
     { wait: 600 },
     { hold: "openBtn" },
@@ -231,10 +364,10 @@ const openRegistration: LiveScene = {
     >
       <div className="mb-5 grid grid-cols-4 gap-4">
         {[
+          ["4", "Divisions"],
           ["0", "Teams"],
-          ["4", "Grades invited"],
-          ["10", "Games each"],
-          ["$3,990", "Team fee"],
+          ["5", "Sessions"],
+          ["4", "Venues"],
         ].map(([v, l]) => (
           <Card key={l} size="sm" className="text-center">
             <p className="font-condensed text-ink-950 text-3xl font-bold">{v}</p>
@@ -250,7 +383,7 @@ const openRegistration: LiveScene = {
             ["Registration Deadline:", "May 15, 2026"],
             ["Team Fee:", fmt(LEAGUE.teamFee)],
             ["Games Guaranteed:", "10"],
-            ["Playoffs:", "Decided at season end"],
+            ["Playoffs:", "SINGLE ELIMINATION"],
           ].map(([k, v]) => (
             <div key={k} className="flex justify-between">
               <span className="text-ink-500">{k}</span>
@@ -263,5 +396,5 @@ const openRegistration: LiveScene = {
   ),
 }
 
-export const ACT_LEAGUE: LiveScene[] = [createLeague, createSeason, openRegistration]
+export const ACT_LEAGUE: LiveScene[] = [createLeague, createSeason, addSession, addVenue, openRegistration]
 export { SeasonShell, Hold as LeagueHold }
