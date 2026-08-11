@@ -1163,3 +1163,8 @@ Rebuild NOT needed after env change (route reads env at request time) — but th
 - Season "Fall/Winter 2025-26 (completed)" = end-of-season twin (Showcase twin's "(completed)" label + IN_PROGRESS): 415 games (255 Junior + 160 Senior) on the circuits' REAL 2025-26 blocks at Six Park East (Oct 10-12 … Feb 13-15), all COMPLETED, hash scores 45-84, zero ties, per-team exactly 10; per-unit standings verified (Junior 51 rows, Senior 32); Mar 13-15 championship session empty, playoff-plan null so the Playoffs tab offers planning.
 - /leagues and /org/north-pole-hoops list only "National Circuit"; old league APIs 404. All pages 200 as owner-nph.
 - Box: NOT seeded (local only).
+
+## #84 — 2026-08-11: BOX DEPLOYED 88a2d24 + National Circuit seeded on box DB (owner word: "can you deploy it on the box")
+- Code: deploy.sh clean, "Deployed 88a2d24", web 200. Covers everything since 2d0d2a1: QA T-list batch (#79), slim board + one-word-per-gym palette + two-line gym boxes (#80), demo refresh w/ frozen /demo/classic, National Circuit seeder (#81-83).
+- Data: seed-national-circuit.ts run on box DB (TZ=America/Toronto), 18s: one National Circuit league, twin 2025-26 (415 games, standings, playoffs unplanned) + gate 2026-27 (83 teams, wizard open). Box ids differ from local (league 6440afbc-50a3-4144-aca0-a7a0f092559f; twin season 6f93ee95-b309-4af6-8475-524818eb616d; gate season 0b0261d4-5319-4046-9872-bf582c63c8c8).
+- Verified over HTTPS: twin public page renders finals + both branded divisions, gate shows Registration, /demo and /demo/classic both 200.
