@@ -61,6 +61,7 @@ function TimeRow({
         value={h12(hh)}
         onChange={(e) => compose(Number(e.target.value), mm, isPM)}
         ariaLabel={`${label} hour`}
+        className="flex-1"
       >
         {Array.from({ length: 12 }, (_, i) => i + 1).map((h) => (
           <option key={h} value={h}>{h}</option>
@@ -71,6 +72,7 @@ function TimeRow({
         value={mm - (mm % 5)}
         onChange={(e) => compose(h12(hh), Number(e.target.value), isPM)}
         ariaLabel={`${label} minute`}
+        className="flex-1"
       >
         {Array.from({ length: 12 }, (_, i) => i * 5).map((m) => (
           <option key={m} value={m}>{pad(m)}</option>
@@ -153,12 +155,12 @@ export function TimeRangePicker({
         type="button"
         id={id}
         onClick={() => setOpen((v) => !v)}
-        className="flex w-full items-center justify-between rounded-xl border border-ink-200 bg-white px-3 py-2.5 text-left text-sm text-ink-900 shadow-sm transition hover:border-ink-300 focus:border-play-500 focus:outline-none focus:ring-2 focus:ring-play-200"
+        className="flex w-full items-center justify-between gap-2 rounded-xl border border-ink-200 bg-white py-2.5 pl-3 pr-2 text-left text-sm text-ink-900 shadow-sm transition hover:border-ink-300 focus:border-play-500 focus:outline-none focus:ring-2 focus:ring-play-200"
       >
-        <span className={time ? "" : "text-ink-400"}>
+        <span className={`whitespace-nowrap ${time ? "" : "text-ink-400"}`}>
           {time ? formatRange(startTotal, endTotal) : placeholder || "Pick a time…"}
         </span>
-        <svg className="text-ink-400 h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <svg className="text-ink-400 h-3.5 w-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
           <circle cx="12" cy="12" r="9" />
           <path d="M12 7v5l3 2" strokeLinecap="round" />
         </svg>
@@ -177,7 +179,7 @@ export function TimeRangePicker({
           </div>
           <div className="border-ink-100 flex items-center border-t pt-3">
             <span className="text-ink-500 text-xs">
-              Lasts <span className="text-ink-800 font-semibold">{formatLasts(minutes)}</span>
+              Duration <span className="text-ink-800 font-semibold">{formatLasts(minutes)}</span>
               {crossesDay ? " · ends next day" : ""}
             </span>
             <button
