@@ -3,6 +3,22 @@
  * leagues, LOCAL ONLY. Additive to whatever demo world is loaded (journey
  * or pitch): it never touches the NPH Showcase League's data.
  *
+ * TWO LIFECYCLE STAGES (owner 2026-08-11, so both product journeys can be
+ * driven live):
+ *   - National Junior Circuit → PRE-SEASON AT THE PLANNING GATE. Mirrors
+ *     the Showcase upcoming season's gate state (REGISTRATION status —
+ *     FINALIZED/IN_PROGRESS lock the planner, lib/seasons/season-lock.ts;
+ *     collapse-preseason-divisions.cjs defines the gate: one division per
+ *     group, no games, gradeScheduling/playoffConfig cleared): all 51
+ *     teams approved + paid with locked rosters, but NO sessions, NO
+ *     season venues, NO games, NO saved plans — the owner opens Plan Your
+ *     Season, picks Six Park and the weekends himself.
+ *   - National Senior Circuit → END OF REGULAR SEASON, playoffs NOT
+ *     planned: the full 160-game schedule COMPLETED with deterministic
+ *     prep-level scores (seed-nph-endseason.ts's hash pattern, no ties),
+ *     standings populated, the Mar 12-14 championship weekend session
+ *     empty so the Playoffs tab offers planning, season IN_PROGRESS.
+ *
  * Source data (do not invent teams):
  *   docs/research/census-njc-nsc-2025-26.md  — every real 2025-26 team entry
  *   docs/research/nph-operations-intel-2026-08.md — how the circuits run:
@@ -147,6 +163,8 @@ interface LeagueSpec {
   description: string
   unit: "Junior" | "Senior"
   birthYears: number[]
+  /** Which lifecycle state to stage (header comment). */
+  stage: "PLANNING_GATE" | "END_OF_REGULAR"
 }
 
 const LEAGUES: LeagueSpec[] = [
@@ -157,6 +175,7 @@ const LEAGUES: LeagueSpec[] = [
       "National club circuit for grade 9 and 10 prep juniors. Five weekend sessions plus a national championship, played at Six Park East in Oshawa.",
     unit: "Junior",
     birthYears: [2011, 2012],
+    stage: "PLANNING_GATE",
   },
   {
     key: "NSC",
@@ -165,6 +184,7 @@ const LEAGUES: LeagueSpec[] = [
       "National club circuit for grade 11 and 12 prep seniors. Five weekend sessions plus a national championship, played at Six Park East in Oshawa.",
     unit: "Senior",
     birthYears: [2009, 2010],
+    stage: "END_OF_REGULAR",
   },
 ]
 
@@ -288,10 +308,14 @@ async function main() {
       await p.division.deleteMany({ where: { seasonId: season.id } })
       await p.seasonSession.deleteMany({ where: { seasonId: season.id } })
       await p.seasonVenue.deleteMany({ where: { seasonId: season.id } })
+      await p.seasonPlan.deleteMany({ where: { seasonId: season.id } })
     }
     const seasonData = {
       label: SEASON_LABEL,
-      status: "FINALIZED",
+      // Gate = REGISTRATION, exactly like the Showcase upcoming season:
+      // FINALIZED/IN_PROGRESS are LOCKED_SEASON_STATUSES and would 409 the
+      // planner. End-of-regular = IN_PROGRESS (the endseason twin's state).
+      status: spec.stage === "PLANNING_GATE" ? "REGISTRATION" : "IN_PROGRESS",
       type: "FALL_WINTER",
       startDate: new Date("2026-10-16T00:00:00Z"),
       endDate: new Date("2027-03-14T00:00:00Z"),
@@ -306,6 +330,12 @@ async function main() {
       defaultVenueCloseTime: "18:00",
       teamFee: 5150, // all-in five sessions + championship (research pricing)
       rosterChangePolicy: "REQUEST_ONLY",
+      // Nothing planned yet in either stage (collapse-preseason-divisions
+      // clears the same three at the Showcase gate; NSC has not planned
+      // playoffs, so its Playoffs tab must offer planning, not a bracket).
+      gradeScheduling: {},
+      playoffConfig: {},
+      playoffPlan: null,
     }
     if (!season) {
       season = await p.season.create({ data: { leagueId: league.id, ...seasonData }, select: { id: true } })
@@ -320,9 +350,13 @@ async function main() {
     })
 
     // Venue + the six Fri-Sun blocks at Six Park East, whole building.
-    await p.seasonVenue.create({
-      data: { seasonId: season.id, venueId: venue.id, courtsAvailable: 6, role: "pool", isPrimary: true },
-    })
+    // The PLANNING_GATE stage gets NEITHER: the owner attaches the gym and
+    // picks the weekends himself in the Plan Your Season wizard.
+    if (spec.stage === "END_OF_REGULAR") {
+      await p.seasonVenue.create({
+        data: { seasonId: season.id, venueId: venue.id, courtsAvailable: 6, role: "pool", isPrimary: true },
+      })
+    }
     const mkBlock = async (sat: string, label: string, phase: "REGULAR" | "PLAYOFF", target: number | null) => {
       const session = await p.seasonSession.create({
         data: { seasonId: season!.id, label, phase, targetGamesPerTeam: target },
@@ -353,8 +387,10 @@ async function main() {
         }
       }
     }
-    for (const [i, sat] of SESSION_SATS.entries()) await mkBlock(sat, sessionLabel(sat, i), "REGULAR", 2)
-    await mkBlock(CHAMPIONSHIP_SAT, "National Championship · Mar 12-14", "PLAYOFF", null)
+    if (spec.stage === "END_OF_REGULAR") {
+      for (const [i, sat] of SESSION_SATS.entries()) await mkBlock(sat, sessionLabel(sat, i), "REGULAR", 2)
+      await mkBlock(CHAMPIONSHIP_SAT, "National Championship · Mar 12-14", "PLAYOFF", null)
+    }
 
     // Teams: every real census entry, with a fictional roster, submitted
     // APPROVED with a locked season roster.
@@ -418,15 +454,38 @@ async function main() {
     }
     console.log(`✓ ${spec.name}: ${teamCount} teams submitted + approved`)
 
-    // Schedule with the REAL engine. NJC runs first; when NSC loads, NJC's
-    // games (same courts, other season) surface as busy bookings and the
-    // engine schedules around them — the product's shared-venue mechanism.
+    if (spec.stage === "PLANNING_GATE") {
+      // Nothing generated, nothing planned: the wizard is the demo.
+      const [g, s, v, pl] = await Promise.all([
+        p.game.count({ where: { seasonId: season.id } }),
+        p.seasonSession.count({ where: { seasonId: season.id } }),
+        p.seasonVenue.count({ where: { seasonId: season.id } }),
+        p.seasonPlan.count({ where: { seasonId: season.id } }),
+      ])
+      if (g + s + v + pl !== 0) throw new Error(`${spec.name}: gate state not clean (games ${g}, sessions ${s}, venues ${v}, plans ${pl})`)
+      console.log(`✓ ${spec.name}: at the planning gate — ${teamCount} teams approved, nothing generated`)
+      summary.push({ league: spec.name, leagueId: league.id, seasonId: season.id, teams: teamCount, games: 0, weekends: 0, perTeam: "-", unscheduled: 0 })
+      continue
+    }
+
+    // END_OF_REGULAR: schedule with the REAL engine, then complete every
+    // regular-season game with deterministic scores (the endseason twin's
+    // hash pattern — prep-level 45-84, basketball never ties).
     const { input, errors } = await loadSchedulerInput(season.id)
     if (!input) throw new Error(`${spec.name}: scheduler input failed: ${errors.join("; ")}`)
     const result = generateSchedule(input)
     if (result.warnings.length) for (const w of result.warnings) console.log(`  ! ${w}`)
     const publishedAt = new Date()
+    const hash = (s: string): number => {
+      let h = 7
+      for (const c of s) h = (h * 31 + c.charCodeAt(0)) % 1_000_003
+      return h
+    }
     for (const g of result.games) {
+      const h = hash(`${g.homeTeamId}|${g.awayTeamId}|${g.scheduledAt}`)
+      const home = 45 + (h % 40)
+      let away = 45 + (Math.floor(h / 40) % 40)
+      if (away === home) away += 3 // basketball never ties
       await p.game.create({
         data: {
           seasonId: season.id,
@@ -440,9 +499,11 @@ async function main() {
           awayTeamId: g.awayTeamId,
           scheduledAt: new Date(g.scheduledAt),
           duration: g.duration,
-          status: "SCHEDULED",
+          status: "COMPLETED",
+          homeScore: home,
+          awayScore: away,
           isLocked: false,
-          publishedAt, // published: public pages show the schedule
+          publishedAt, // published: public pages show the finals
         },
       })
     }
@@ -451,8 +512,8 @@ async function main() {
       for (const u of result.unscheduled.slice(0, 5)) console.log(`    - ${u.reason}`)
     }
 
-    // Gates: per-team counts + weekend spread.
-    const games = await p.game.findMany({ where: { seasonId: season.id }, select: { homeTeamId: true, awayTeamId: true, scheduledAt: true } })
+    // Gates: per-team counts, weekend spread, all-completed, empty champs.
+    const games = await p.game.findMany({ where: { seasonId: season.id }, select: { homeTeamId: true, awayTeamId: true, scheduledAt: true, status: true, homeScore: true, awayScore: true } })
     const perTeam = new Map<string, number>()
     for (const g of games) {
       perTeam.set(g.homeTeamId, (perTeam.get(g.homeTeamId) ?? 0) + 1)
@@ -462,7 +523,10 @@ async function main() {
     const min = Math.min(...counts)
     const max = Math.max(...counts)
     const weekends = new Set(games.map((g: any) => sessionSatFor(new Date(g.scheduledAt)))).size
-    console.log(`✓ ${spec.name}: ${games.length} games published across ${weekends} weekends · per-team ${min}-${max}`)
+    const incomplete = games.filter((g: any) => g.status !== "COMPLETED" || g.homeScore == null || g.homeScore === g.awayScore).length
+    const champGames = await p.game.count({ where: { seasonId: season.id, session: { phase: "PLAYOFF" } } })
+    if (incomplete > 0 || champGames > 0) throw new Error(`${spec.name}: end-of-season state wrong (incomplete ${incomplete}, championship games ${champGames})`)
+    console.log(`✓ ${spec.name}: ${games.length} games COMPLETED with scores across ${weekends} weekends · per-team ${min}-${max} · championship weekend empty`)
     summary.push({ league: spec.name, leagueId: league.id, seasonId: season.id, teams: teamCount, games: games.length, weekends, perTeam: `${min}-${max}`, unscheduled: result.unscheduled.length })
   }
 
@@ -473,6 +537,12 @@ async function main() {
     console.log(`   teams ${s.teams} · games ${s.games} · weekends ${s.weekends} · per-team ${s.perTeam} · unscheduled ${s.unscheduled}`)
     console.log(`   manage: /manage/leagues/${s.leagueId}/seasons/${s.seasonId}/manage`)
     console.log(`   public: /league/${s.seasonId}`)
+    if (s.games === 0) {
+      console.log(`   plan wizard: /manage/leagues/${s.leagueId}/seasons/${s.seasonId}/plan`)
+    } else {
+      console.log(`   standings: /manage/leagues/${s.leagueId}/seasons/${s.seasonId}/manage?tab=standings`)
+      console.log(`   playoffs:  /manage/leagues/${s.leagueId}/seasons/${s.seasonId}/manage?tab=playoffs`)
+    }
   }
   console.log(`══════════════════════════════════════════════════════════`)
   console.log(`done in ${Math.round((Date.now() - t0) / 1000)}s`)

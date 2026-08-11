@@ -1148,3 +1148,10 @@ Rebuild NOT needed after env change (route reads env at request time) — but th
 - Gotcha captured in the seed: SeasonSessionDay dates must be LOCAL-midnight instants — the engine sets slot times with local setHours, so UTC-midnight day rows under TZ=America/Toronto land games a day early. Run seeds with `TZ=America/Toronto`.
 - Verified over HTTP as owner-nph@sportshub.demo: manage consoles + public /league pages 200, games render with real times, both leagues listed in /leagues.
 - Box: NOT seeded (local DB only, per task). Re-run the script on the box only on owner instruction.
+
+## #82 — 2026-08-11: NATIONAL CIRCUITS RESTAGED INTO TWO LIFECYCLE STATES — ✅ LOCAL ONLY, box pending
+- Owner wants to drive both product journeys himself, and #81's FINALIZED-with-schedule state locked the planner out (FINALIZED/IN_PROGRESS are LOCKED_SEASON_STATUSES). `scripts/seed-national-circuit.ts` now stages each league (idempotent; re-run reproduces both states):
+- **NJC = pre-season at the planning gate** (mirrors the Showcase upcoming season's gate: REGISTRATION status, one division per group, gradeScheduling/playoffConfig/playoffPlan cleared): 51 teams approved + paid with locked rosters, ZERO sessions/season venues/games/saved plans. Plan Your Season wizard opens at step 1 with 51 approved Junior teams and no gyms; POST + DELETE /api/seasons/:id/plans verified live.
+- **NSC = end of regular season, playoffs not planned**: all 160 games COMPLETED with deterministic prep-level scores (endseason-twin hash pattern, 45-84, zero ties), season IN_PROGRESS, standings full (e.g. BCP Regional 8-2), Mar 12-14 National Championship session kept empty and offered by the Playoffs tab as the planning entry (playoff-plan GET: plan null), public page renders finals.
+- Verified over HTTP as owner-nph: NJC manage + /plan wizard 200, schedule API 0 games; NSC manage/standings/playoff-plan/schedule/public all 200 with the right data.
+- Box: NOT seeded (local only). Same runbook action as #81 if the owner ever wants it there.
