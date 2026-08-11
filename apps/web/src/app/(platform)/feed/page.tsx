@@ -3,6 +3,7 @@ import { redirect } from "next/navigation"
 import Link from "next/link"
 import { authOptions } from "@/lib/auth"
 import { getSessionUserId, getUserTenants } from "@/lib/auth-helpers"
+import { requireOnboarded } from "@/lib/onboarding/guard"
 import { prisma } from "@youthbasketballhub/db"
 import { getFeedExtras, getFeedTargets, getSocialFeed, mergeFeedWithExtras } from "@/lib/queries/feed"
 import { FeedCard } from "@/components/social/feed-card"
@@ -26,6 +27,7 @@ export default async function FeedPage() {
   if (!session?.user) redirect("/sign-in?callbackUrl=/feed")
   const sessionInfo = await getSessionUserId()
   if (!sessionInfo) redirect("/sign-in?callbackUrl=/feed")
+  await requireOnboarded()
 
   const targets = await getFeedTargets(sessionInfo.userId)
   const [items, extras, tenants, ownedLeagues] = await Promise.all([

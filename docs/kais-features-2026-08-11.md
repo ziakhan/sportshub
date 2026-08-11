@@ -117,4 +117,24 @@ Template:
   their chevrons, time-button icon spacing fixed, footer readout renamed
   "Lasts" → "Duration" (my wording call). Signed off: perfect.
 
-<!-- Add changes below. Next ID: K-005 -->
+### K-005 · Onboarding is unskippable: direct navigation can no longer bypass the wizard · FIX · Built (local)
+- **What/why:** The role/handle/profile wizard fires right after signup on the
+  designed paths (signup form → /onboarding; SSO → /post-login → 307). But
+  E2E-testing a fresh account proved DIRECT navigation skipped it: a role-less,
+  un-onboarded account could open /dashboard, /calendar, /feed, /messages and
+  browse a bare app. The project docs describe a dashboard-layout onboarding
+  guard — it no longer existed on current master (regression).
+- **Where in the app:** new `lib/onboarding/guard.ts` (`requireOnboarded()` —
+  DB-checked so completing onboarding takes effect instantly; PlatformAdmin
+  exempt) applied to the dashboard layout + calendar, feed, and messages pages.
+  Deliberately NOT in the platform layout (it wraps /onboarding — would loop).
+- **Verified:** fresh-signup E2E before: /dashboard + /calendar rendered 200 for
+  a role-less account. After: both 307 → /onboarding. /post-login funnel
+  unchanged.
+- **Context:** investigated after my "onboarding should be richer" suggestion —
+  the 3-step wizard + /welcome checklist already exist on this build (role
+  cards, handle pick, per-role profile, role-aware setup checklist), so the
+  real gap was enforcement, not content.
+- **Status notes:** built + E2E-verified 2026-08-11; type-check clean.
+
+<!-- Add changes below. Next ID: K-006 -->

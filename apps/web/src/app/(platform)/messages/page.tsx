@@ -3,6 +3,7 @@ import { redirect } from "next/navigation"
 import { formatDistanceToNow } from "date-fns"
 import { prisma } from "@youthbasketballhub/db"
 import { getSessionUserId } from "@/lib/auth-helpers"
+import { requireOnboarded } from "@/lib/onboarding/guard"
 import { getChatTeamSummaries } from "@/lib/teams/chat-access"
 
 export const dynamic = "force-dynamic"
@@ -19,6 +20,7 @@ export const metadata = { title: "Chat" }
 export default async function MessagesPage() {
   const auth = await getSessionUserId()
   if (!auth) redirect("/sign-in?callbackUrl=/messages")
+  await requireOnboarded()
 
   const summaries = await getChatTeamSummaries(auth.userId)
 
