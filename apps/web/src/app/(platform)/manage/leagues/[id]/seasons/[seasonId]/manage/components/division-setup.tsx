@@ -44,9 +44,8 @@ const baseNameOf = (g: GradeState): string => {
 const DIV_COLORS = [
   { dot: "bg-play-500", head: "bg-play-50 text-play-800 border-play-200" },
   { dot: "bg-court-500", head: "bg-court-50 text-court-800 border-court-200" },
-  { dot: "bg-blue-600", head: "bg-blue-50 text-blue-800 border-blue-200" },
-  { dot: "bg-fuchsia-500", head: "bg-fuchsia-50 text-fuchsia-800 border-fuchsia-200" },
-  { dot: "bg-cyan-500", head: "bg-cyan-50 text-cyan-800 border-cyan-200" },
+  { dot: "bg-gold-500", head: "bg-gold-50 text-gold-800 border-gold-200" },
+  { dot: "bg-hoop-500", head: "bg-hoop-50 text-hoop-800 border-hoop-200" },
 ]
 const colorFor = (i: number) => DIV_COLORS[i % DIV_COLORS.length]
 
