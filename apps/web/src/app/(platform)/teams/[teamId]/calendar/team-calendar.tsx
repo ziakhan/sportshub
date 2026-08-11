@@ -7,7 +7,7 @@ import { AddToPhone } from "@/components/calendar/add-to-phone"
 import { AgendaList } from "@/components/calendar/agenda-list"
 import { ItemPopover } from "@/components/calendar/item-popover"
 import { RsvpControl, RsvpRollup } from "@/components/calendar/rsvp-control"
-import { DateTimePicker } from "@/components/ui"
+import { DateTimePicker, TimeRangePicker } from "@/components/ui"
 import { VenueSelector } from "@/components/venue-selector"
 
 /**
@@ -708,10 +708,21 @@ export function TeamCalendar({
                           {movingId === entry.practice.id ? (
                             <>
                               <DateTimePicker
-                                mode="datetime"
-                                value={moveValue}
-                                onChange={setMoveValue}
-                                className="w-52"
+                                mode="date"
+                                value={moveValue.split("T")[0] ?? ""}
+                                onChange={(v) =>
+                                  setMoveValue(v ? `${v}T${moveValue.split("T")[1] || "18:00"}` : "")
+                                }
+                                className="w-36"
+                              />
+                              <DateTimePicker
+                                mode="time"
+                                value={moveValue.split("T")[1] || ""}
+                                onChange={(v) => {
+                                  const d = moveValue.split("T")[0]
+                                  if (d) setMoveValue(`${d}T${v}`)
+                                }}
+                                className="w-28"
                               />
                               <button
                                 onClick={() =>
@@ -936,7 +947,8 @@ function AddEventForm({
   onCreated: () => void
 }) {
   const [title, setTitle] = useState("")
-  const [startAt, setStartAt] = useState("")
+  const [date, setDate] = useState("")
+  const [time, setTime] = useState("18:00")
   const [duration, setDuration] = useState("60")
   const [eventType, setEventType] = useState("OTHER")
   const [venueId, setVenueId] = useState("")
@@ -964,7 +976,7 @@ function AddEventForm({
   }, [tenantId, teamId])
 
   async function submit() {
-    if (!title.trim() || !startAt || saving) return
+    if (!title.trim() || !date || saving) return
     setSaving(true)
     setError(null)
     try {
@@ -975,7 +987,7 @@ function AddEventForm({
           teamIds: [teamId, ...extraIds],
           title: title.trim(),
           eventType,
-          startAt: new Date(startAt).toISOString(),
+          startAt: new Date(`${date}T${time}`).toISOString(),
           durationMinutes: Number(duration),
           venueId: venueId || undefined,
           location: location.trim() || undefined,
@@ -1026,23 +1038,19 @@ function AddEventForm({
           </select>
         </div>
         <div>
-          <label className="text-ink-700 mb-1 block text-xs font-semibold">When</label>
-          <DateTimePicker
-            mode="datetime"
-            value={startAt}
-            onChange={setStartAt}
-          />
+          <label className="text-ink-700 mb-1 block text-xs font-semibold">Date</label>
+          <DateTimePicker mode="date" value={date} onChange={setDate} placeholder="Pick a date…" />
         </div>
         <div>
-          <label className="text-ink-700 mb-1 block text-xs font-semibold">Duration</label>
-          <select value={duration} onChange={(e) => setDuration(e.target.value)} className={inputClass}>
-            <option value="30">30 min</option>
-            <option value="60">1 hour</option>
-            <option value="90">1.5 hours</option>
-            <option value="120">2 hours</option>
-            <option value="180">3 hours</option>
-            <option value="240">4 hours</option>
-          </select>
+          <label className="text-ink-700 mb-1 block text-xs font-semibold">Time</label>
+          <TimeRangePicker
+            time={time}
+            minutes={Number(duration)}
+            onChange={(next) => {
+              setTime(next.time)
+              setDuration(String(next.minutes))
+            }}
+          />
         </div>
         <div className="sm:col-span-2">
           <label className="text-ink-700 mb-1 block text-xs font-semibold">
@@ -1118,7 +1126,7 @@ function AddEventForm({
         </p>
         <button
           onClick={submit}
-          disabled={saving || !title.trim() || !startAt}
+          disabled={saving || !title.trim() || !date}
           className="bg-play-600 hover:bg-play-700 shrink-0 rounded-xl px-4 py-2 text-sm font-semibold text-white disabled:opacity-40"
         >
           {saving ? "Adding…" : "Add Event"}

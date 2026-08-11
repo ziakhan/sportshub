@@ -6,7 +6,7 @@ import Link from "next/link"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
-import { Badge, Button, Card, PanelHeader, DateTimePicker, SmartBack } from "@/components/ui"
+import { Badge, Button, Card, PanelHeader, DateTimePicker, TimeRangePicker, SmartBack } from "@/components/ui"
 import { VenueSelector } from "@/components/venue-selector"
 import { VenueConflictNotice } from "@/components/venues/venue-conflict-notice"
 import { AgePolicySelect } from "@/components/registration/age-policy-select"
@@ -90,8 +90,14 @@ function CreateTryoutForm() {
       fee: 0,
       isPublic: true,
       agePolicy: "STRICT",
+      duration: 90,
     },
   })
+
+  // Time half of the split Date / Time & duration fields; merged into the
+  // form's scheduledAt ("YYYY-MM-DDTHH:mm") whenever either half changes.
+  const [timePart, setTimePart] = useState("18:00")
+  const datePart = (watch("scheduledAt") || "").split("T")[0] ?? ""
 
   const [publishOnCreate, setPublishOnCreate] = useState(false)
 
@@ -327,14 +333,16 @@ function CreateTryoutForm() {
             <div className="grid gap-4 sm:grid-cols-2">
               <div>
                 <label htmlFor="scheduledAt" className="block text-sm font-medium text-ink-700">
-                  Date & Time <span className="text-red-500">*</span>
+                  Date <span className="text-red-500">*</span>
                 </label>
                 <DateTimePicker
                   id="scheduledAt"
-                  mode="datetime"
-                  value={watch("scheduledAt") || ""}
-                  onChange={(v) => setValue("scheduledAt", v, { shouldValidate: true })}
-                  placeholder="Pick a date & time"
+                  mode="date"
+                  value={datePart}
+                  onChange={(v) =>
+                    setValue("scheduledAt", v ? `${v}T${timePart}` : "", { shouldValidate: true })
+                  }
+                  placeholder="Pick a date"
                 />
                 {errors.scheduledAt && (
                   <p className="mt-1 text-sm text-red-600">{errors.scheduledAt.message}</p>
@@ -342,15 +350,20 @@ function CreateTryoutForm() {
               </div>
 
               <div>
-                <label htmlFor="duration" className="block text-sm font-medium text-ink-700">
-                  Duration (minutes)
+                <label htmlFor="tryout-time" className="block text-sm font-medium text-ink-700">
+                  Time
                 </label>
-                <input
-                  {...register("duration")}
-                  type="number"
-                  id="duration"
-                  className={inputCls}
-                  placeholder="90"
+                <TimeRangePicker
+                  id="tryout-time"
+                  time={timePart}
+                  minutes={Number(watch("duration")) || 90}
+                  onChange={(next) => {
+                    setTimePart(next.time)
+                    if (datePart) {
+                      setValue("scheduledAt", `${datePart}T${next.time}`, { shouldValidate: true })
+                    }
+                    setValue("duration", next.minutes)
+                  }}
                 />
               </div>
             </div>

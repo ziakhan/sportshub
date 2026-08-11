@@ -93,4 +93,25 @@ Template:
   opens in custom mode automatically, so nothing existing breaks.
 - **Status notes:** built 2026-08-11; type-check clean; awaiting my local test.
 
-<!-- Add changes below. Next ID: K-004 -->
+### K-004 · Program schedules: Date and Time are separate fields; Time is a start–finish range (no duration dropdown) · UI · Built (local)
+- **What/why:** The combined date+time button hides the time selector below the
+  calendar — easy to miss, easy to forget the time entirely. And duration as a
+  separate concept is unnecessary: picking a start and finish time says it all.
+- **Where in the app:** Tryout create + edit, training program form (one-time
+  AND weekly recurring), team calendar add-event + practice reschedule. Camps,
+  house leagues, tournaments, and team practice slots already had split
+  date/time fields — with this, NO combined date+time button remains outside
+  the scheduling fence.
+- **How it works:** "Date" opens just a calendar and closes on pick. "Time" is
+  one button reading like "6:00 – 7:30 PM" — a panel with Starts and Ends rows
+  (12-hour, AM/PM); how long it lasts is derived and shown as a hint ("Lasts
+  1 hr 30 min"), never asked as its own dropdown. Saves the same data the
+  APIs always stored (start + minutes) — no server changes.
+- **Provenance:** designed and built on my earlier practice branch (Aug 4,
+  P-001 in `tester-change-proposals-2026-08-04.md`); ported here unchanged —
+  the base files hadn't drifted in 224 commits. The league schedule quick-add
+  from the original work was deliberately NOT ported (scheduling fence; the
+  developers rewrote that area).
+- **Status notes:** ported 2026-08-11; type-check clean; awaiting my local test.
+
+<!-- Add changes below. Next ID: K-005 -->
