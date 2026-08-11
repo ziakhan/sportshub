@@ -167,7 +167,7 @@ export function TimeRangePicker({
       </button>
 
       {open && (
-        <div className="border-ink-200 shadow-panel absolute z-50 mt-2 w-[288px] space-y-3 rounded-2xl border bg-white p-3">
+        <div className="border-ink-200 shadow-panel absolute z-50 mt-2 w-[336px] max-w-[calc(100vw-2rem)] space-y-3 rounded-2xl border bg-white p-3">
           <TimeRow label="Starts" hh={shh} mm={smm} onPick={pickStart} />
           <div className="border-ink-100 border-t pt-3">
             <TimeRow
