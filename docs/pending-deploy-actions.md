@@ -1155,3 +1155,11 @@ Rebuild NOT needed after env change (route reads env at request time) — but th
 - **NSC = end of regular season, playoffs not planned**: all 160 games COMPLETED with deterministic prep-level scores (endseason-twin hash pattern, 45-84, zero ties), season IN_PROGRESS, standings full (e.g. BCP Regional 8-2), Mar 12-14 National Championship session kept empty and offered by the Playoffs tab as the planning entry (playoff-plan GET: plan null), public page renders finals.
 - Verified over HTTP as owner-nph: NJC manage + /plan wizard 200, schedule API 0 games; NSC manage/standings/playoff-plan/schedule/public all 200 with the right data.
 - Box: NOT seeded (local only). Same runbook action as #81 if the owner ever wants it there.
+
+## #83 — 2026-08-11: NATIONAL CIRCUIT RESTRUCTURED TO ONE LEAGUE, TWO AGE UNITS, TWO SEASONS — ✅ LOCAL ONLY, box pending
+- Owner ruling: the circuit is ONE league; NJC/NSC are its AGE DIVISIONS like the Showcase's grade groups. `scripts/seed-national-circuit.ts` rewritten (idempotent end-state): deletes the two legacy leagues, builds league "National Circuit" under the NPH org (owner-nph).
+- Units modeled the Showcase way: Division.ageGroup carries the short unit chip ("Junior"/"Senior" — planner builds `age:<ageGroup>` unit keys and labels from ageGroup), Division.name carries branding ("Junior (NJC)" 51 teams, "Senior (NSC)" 32). Same 83 Team rows shared by both seasons.
+- Season "Fall/Winter 2026-27" = planning gate (REGISTRATION, 83 approved+paid submissions with locked rosters, zero sessions/venues/plans/games, planning fields cleared). Wizard step-1 world verified: units [age:Junior 51, age:Senior 32]; throwaway plan POST+DELETE 200.
+- Season "Fall/Winter 2025-26 (completed)" = end-of-season twin (Showcase twin's "(completed)" label + IN_PROGRESS): 415 games (255 Junior + 160 Senior) on the circuits' REAL 2025-26 blocks at Six Park East (Oct 10-12 … Feb 13-15), all COMPLETED, hash scores 45-84, zero ties, per-team exactly 10; per-unit standings verified (Junior 51 rows, Senior 32); Mar 13-15 championship session empty, playoff-plan null so the Playoffs tab offers planning.
+- /leagues and /org/north-pole-hoops list only "National Circuit"; old league APIs 404. All pages 200 as owner-nph.
+- Box: NOT seeded (local only).
