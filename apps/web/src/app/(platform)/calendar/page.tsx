@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation"
 import { getSessionUserId } from "@/lib/auth-helpers"
+import { requireOnboarded } from "@/lib/onboarding/guard"
 import Link from "next/link"
 import { MyCalendar } from "./my-calendar"
 import { getNavShape } from "@/lib/queries/nav-shape"
@@ -15,6 +16,7 @@ export const dynamic = "force-dynamic"
 export default async function MyCalendarPage() {
   const auth = await getSessionUserId()
   if (!auth) redirect("/sign-in?callbackUrl=/calendar")
+  await requireOnboarded()
 
   // Role-aware purpose (owner ask 2026-07-14): the personal calendar means
   // something for participants, club staff (whole-club schedule) and league
