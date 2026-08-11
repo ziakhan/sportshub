@@ -110,7 +110,7 @@ export function GradeChip({
       data-highlight={highlight ?? undefined}
       data-unit={unit.key}
       data-reason={reason ?? undefined}
-      className={`inline-flex min-h-[34px] items-center gap-1 rounded-lg border pl-1 text-[12px] font-bold shadow-sm ${
+      className={`group inline-flex min-h-[34px] items-center gap-1 rounded-lg border pl-1 text-[12px] font-bold shadow-sm ${
         muted ? "border-ink-200 bg-ink-50 text-ink-500" : (tint ?? "border-ink-300 bg-white")
       } ${interactive ? "cursor-grab active:cursor-grabbing" : ""} ${ring} ${
         highlight === "off" ? FILTER_DIM : ""
@@ -124,7 +124,7 @@ export function GradeChip({
           viewBox="0 0 10 16"
           aria-hidden
           focusable="false"
-          className={`h-3.5 w-2 shrink-0 ${ink}`}
+          className={`h-3.5 w-2 shrink-0 opacity-0 transition-opacity group-hover:opacity-100 ${ink}`}
         >
           <circle cx="3" cy="4" r="1.1" fill="currentColor" />
           <circle cx="7" cy="4" r="1.1" fill="currentColor" />
@@ -189,7 +189,7 @@ export function GradeChip({
             onRemove()
           }}
           aria-label={`Take ${unit.label} off ${weekendLabel}`}
-          className={`hover:text-hoop-700 min-h-[34px] cursor-pointer px-1.5 ${ink}`}
+          className={`hover:text-hoop-700 min-h-[34px] cursor-pointer px-1.5 opacity-0 transition-opacity focus-visible:opacity-100 group-hover:opacity-100 ${ink}`}
         >
           ×
         </button>

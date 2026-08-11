@@ -215,7 +215,13 @@ export function BoardView({
   }, [ghosts])
 
   return (
-    <div className="overflow-x-auto pb-2" ref={scrollRef} data-testid="board-scroll">
+    // Figure/ground (QA T-008.5): the board surface is faintly tinted so the
+    // white cards separate from the page instead of white-on-white.
+    <div
+      className="bg-ink-50/60 overflow-x-auto rounded-2xl p-2 pb-2"
+      ref={scrollRef}
+      data-testid="board-scroll"
+    >
       <div
         className="grid gap-2.5"
         style={{
@@ -608,7 +614,7 @@ function GhostDateRow({
           {offer.label}
         </button>
       ) : (
-        <span className="text-ink-300 ml-auto text-[10.5px]">not planned</span>
+        <span className="text-ink-300 ml-auto text-[10.5px]">Not planned</span>
       )}
     </div>
   )

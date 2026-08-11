@@ -96,17 +96,8 @@ export function ScheduleTab({
     utilization: any
   } | null>(null)
   const [previewLoading, setPreviewLoading] = useState(false)
-  // Variation number (owner 2026-07-31): 0 = the season's standard plan;
-  // Shuffle rolls deterministic variations. Commit sends the SAME number,
-  // so what you previewed is exactly what gets saved.
-  const [shuffle, setShuffle] = useState(0)
-  // Scenario recommendations (owner 2026-08-01): the engine runs 3-4
-  // automatic variants (compact days, free a court, trim hours) and the
-  // operator picks — a recommendation, never a league setting. The chosen
-  // descriptor rides preview AND commit so "Use this" saves what was shown.
-  const [scenarios, setScenarios] = useState<any | null>(null)
-  const [scenariosLoading, setScenariosLoading] = useState(false)
-  const [activeScenario, setActiveScenario] = useState<any | null>(null)
+  /* Shuffle + Scenarios retired (owner kill-list 2026-08-10): both drove
+     the v1 engine; v2 is deterministic and the plan is the one lever. */
   // Fill-the-gaps preview active (dropout/late-add recovery): existing games
   // are ALL survivors; the preview holds only the additions.
   const [fillPreview, setFillPreview] = useState(false)
@@ -230,11 +221,10 @@ export function ScheduleTab({
     setPreview(null) // stale against the new plan
   }
 
-  const runPreview = async (shuffleOverride?: number) => {
+  const runPreview = async () => {
     setFillPreview(false)
     setReport(null)
-    const attempt = shuffleOverride ?? shuffle
-    if (shuffleOverride !== undefined) setShuffle(shuffleOverride)
+
     setPreviewLoading(true)
     setScheduleError(null)
     const res = await fetch(`/api/seasons/${seasonId}/schedule/preview`, {
@@ -243,8 +233,6 @@ export function ScheduleTab({
       body: JSON.stringify({
         sessionUnits,
         sessionIds: scopeSessionIds,
-        varietyShuffle: attempt || undefined,
-        scenario: activeScenario?.descriptor ?? undefined,
       }),
     })
     if (!res.ok) {
@@ -257,31 +245,6 @@ export function ScheduleTab({
       setPreview(await res.json())
     }
     setPreviewLoading(false)
-  }
-
-  const runScenarios = async () => {
-    if (scenarios) {
-      setScenarios(null)
-      return
-    }
-    setScenariosLoading(true)
-    setScheduleError(null)
-    const res = await fetch(`/api/seasons/${seasonId}/schedule/scenarios`, { method: "POST" })
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}))
-      setScheduleError(
-        Array.isArray(err?.errors) ? err.errors.join("; ") : err?.error || "Scenarios failed"
-      )
-    } else {
-      setScenarios(await res.json())
-    }
-    setScenariosLoading(false)
-  }
-
-  const applyScenario = (card: any) => {
-    setActiveScenario(card.descriptor ? card : null)
-    setScenarios(null)
-    setPreview(null)
   }
 
   const selectedSession = regularSessions.find((s: any) => s.id === selectedSessionId)
@@ -301,8 +264,6 @@ export function ScheduleTab({
         replaceExisting: true,
         sessionUnits,
         sessionIds: scopeSessionIds,
-        varietyShuffle: shuffle || undefined,
-        scenario: activeScenario?.descriptor ?? undefined,
       }),
     })
     if (!res.ok) {
@@ -318,8 +279,12 @@ export function ScheduleTab({
   }
 
   const wipeSchedule = async () => {
-    if (!confirm("Delete all scheduled games? (games that have moved past SCHEDULED are kept)"))
-      return
+    // A destructive verb earns a typed guard (owner kill-list 2026-08-10):
+    // the word, not a reflex OK click.
+    const answer = window.prompt(
+      "This deletes every scheduled game (played or live games are kept). Type DELETE to confirm."
+    )
+    if (answer !== "DELETE") return
     const res = await fetch(`/api/seasons/${seasonId}/schedule`, { method: "DELETE" })
     if (!res.ok) {
       const err = await res.json().catch(() => ({}))
@@ -691,48 +656,6 @@ export function ScheduleTab({
                 ? `Preview ${selectedSession?.label || "session"}`
                 : "Preview whole season"}
           </Button>
-          <span title="Roll a different matchup/time variation — previewing and committing keep the exact variation shown">
-            <Button
-              size="sm"
-              variant="secondary"
-              onClick={() => runPreview(shuffle + 1)}
-              disabled={previewLoading || (mode === "session" && !selectedSessionId)}
-            >
-              Shuffle
-            </Button>
-          </span>
-          {shuffle > 0 && (
-            <span className="bg-play-100 text-play-700 flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold">
-              Variation #{shuffle}
-              <button
-                onClick={() => runPreview(0)}
-                className="hover:text-play-900 underline decoration-dotted"
-                title="Back to the season's standard plan"
-              >
-                reset
-              </button>
-            </span>
-          )}
-          <span title="Run a few automatic what-ifs — compact days, freeing a court, shrinking hours — and pick one">
-            <Button size="sm" variant="secondary" onClick={runScenarios} disabled={scenariosLoading}>
-              {scenariosLoading ? "Running scenarios…" : scenarios ? "Hide scenarios" : "Scenarios"}
-            </Button>
-          </span>
-          {activeScenario && (
-            <span className="bg-gold-100 text-gold-800 flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold">
-              {activeScenario.title}
-              <button
-                onClick={() => {
-                  setActiveScenario(null)
-                  setPreview(null)
-                }}
-                className="underline decoration-dotted"
-                title="Back to the as-configured plan"
-              >
-                reset
-              </button>
-            </span>
-          )}
           <span title={!canCommit ? "Finalize the season before committing" : ""}>
             <Button
               size="sm"
@@ -753,65 +676,6 @@ export function ScheduleTab({
             </Button>
           )}
         </div>
-
-        {scenarios && (
-          <div className="border-ink-100 mb-4 rounded-xl border bg-white px-3 py-3">
-            <p className="text-ink-900 text-xs font-bold uppercase tracking-wide">
-              Scenarios — pick how to use your court time
-            </p>
-            <p className="text-ink-500 mt-0.5 text-[11px]">
-              Each one is a full schedule run. Choosing one previews it; committing saves exactly
-              what you saw.
-            </p>
-            {scenarios.advice && (
-              <p className="text-amber-800 bg-amber-50 border-amber-200 mt-2 rounded-lg border px-2 py-1.5 text-[11px]">
-                {scenarios.advice}
-              </p>
-            )}
-            <div className="mt-2 grid gap-2 md:grid-cols-2">
-              {(scenarios.cards ?? []).map((card: any) => (
-                <div
-                  key={card.key}
-                  className={`rounded-lg border p-2.5 ${
-                    (activeScenario?.key ?? "baseline") === card.key
-                      ? "border-play-400 bg-play-50"
-                      : "border-ink-100"
-                  }`}
-                >
-                  <p className="text-ink-900 text-xs font-semibold">{card.title}</p>
-                  {card.wins.map((w: string) => (
-                    <p key={w} className="text-court-700 mt-0.5 text-[11px]">
-                      ✓ {w}
-                    </p>
-                  ))}
-                  <p className="text-ink-500 mt-1 text-[11px]">
-                    {card.totals.games} games · {card.totals.backToBackTeamDays} back-to-backs ·{" "}
-                    {card.totals.preferenceViolations} preference misses · days end ~
-                    {Math.floor(card.totals.latestEndMin / 60)}:
-                    {String(card.totals.latestEndMin % 60).padStart(2, "0")}
-                  </p>
-                  {card.tradeoffs.length > 0 && (
-                    <p className="text-ink-400 mt-0.5 text-[11px]">{card.tradeoffs[0]}</p>
-                  )}
-                  <Button
-                    size="sm"
-                    variant={
-                      (activeScenario?.key ?? "baseline") === card.key ? "primary" : "secondary"
-                    }
-                    className="mt-1.5"
-                    onClick={() => {
-                      applyScenario(card)
-                    }}
-                  >
-                    {(activeScenario?.key ?? "baseline") === card.key
-                      ? "Selected"
-                      : "Use this scenario"}
-                  </Button>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
 
         {gapTeams.length > 0 && (
           <div className="border-amber-200 bg-amber-50 mb-4 rounded-xl border px-3 py-2.5">

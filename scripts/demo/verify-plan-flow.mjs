@@ -1156,9 +1156,14 @@ if (worldPlan) {
     (await strandedBanner.count()) === 1,
     (await strandedBanner.innerText().catch(() => "")).replace(/\n/g, " ").slice(0, 120) || "no banner"
   )
+  // The rail is COLLAPSED BY DEFAULT since the 2026-08-10 board polish
+  // (QA T-006): the slim tab carries the count; open it to read the rail.
+  const railTab = page.locator('[data-testid="rail-tab"]')
+  if ((await railTab.count()) > 0) await railTab.click()
+  await page.waitForTimeout(400)
   const railOpen = await page.locator('[data-testid="rail-open-count"]').innerText().catch(() => "")
   ok(
-    "the rail counts it as open work",
+    "the rail counts it as open work (opened from its collapsed tab)",
     /open/.test(railOpen),
     railOpen.replace(/\n/g, " ")
   )

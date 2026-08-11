@@ -207,23 +207,27 @@ export const VENUE_HUES = [
     chip: "border-play-200 bg-play-50 text-play-800",
     chipQuiet: "text-play-600",
   },
+  /* One hue, one meaning (QA T-005, 2026-08-10): the warning families
+     (gold/amber, hoop/orange-red) are STATUS colours on this board — a gym
+     wearing them made chips read as alerts. Identity draws from calm
+     families only. */
   {
-    fill: "bg-gold-50",
-    stripe: "border-l-gold-500",
-    swatch: "bg-gold-500",
-    name: "text-gold-600",
-    bar: "bg-gold-500",
-    chip: "border-gold-400 bg-gold-50 text-gold-600",
-    chipQuiet: "text-gold-600",
+    fill: "bg-sky-50",
+    stripe: "border-l-sky-500",
+    swatch: "bg-sky-500",
+    name: "text-sky-700",
+    bar: "bg-sky-500",
+    chip: "border-sky-200 bg-sky-50 text-sky-800",
+    chipQuiet: "text-sky-600",
   },
   {
-    fill: "bg-hoop-50",
-    stripe: "border-l-hoop-500",
-    swatch: "bg-hoop-500",
-    name: "text-hoop-700",
-    bar: "bg-hoop-500",
-    chip: "border-hoop-200 bg-hoop-50 text-hoop-800",
-    chipQuiet: "text-hoop-600",
+    fill: "bg-violet-50",
+    stripe: "border-l-violet-500",
+    swatch: "bg-violet-500",
+    name: "text-violet-700",
+    bar: "bg-violet-500",
+    chip: "border-violet-200 bg-violet-50 text-violet-800",
+    chipQuiet: "text-violet-600",
   },
 ]
 

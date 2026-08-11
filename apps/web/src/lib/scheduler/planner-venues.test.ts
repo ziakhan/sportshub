@@ -1005,10 +1005,11 @@ describe("weekendStory: the weekend in numbers", () => {
   })
 
   it("says an empty weekend is spare, and a full one is a full house", () => {
-    const units = [unit("Grade 8", 4), unit("Grade 9", 17)]
+    const units = [unit("Grade 8", 6), unit("Grade 9", 17)]
     const w = weekend("dec12", "2026-12-12", [gym("home", "The Playground", 24, "home")])
     expect(story(units, w, []).caption).toBe("spare capacity")
-    // 21 of 24 is past the tight line, and nothing else happened.
+    // 23 of 24 is past the tight line (0.95 since the 2026-08-10 badge
+    // restraint: a well-packed weekend is normal, not a warning).
     expect(story(units, w, ["age:Grade 8", "age:Grade 9"]).caption).toBe("full house")
   })
 

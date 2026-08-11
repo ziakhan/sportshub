@@ -1,5 +1,6 @@
 "use client"
 
+import { useState } from "react"
 import { AskSheet, GymList, NoticeSlot } from "./plan-ui"
 import { PlanStepPointer } from "./plan-session"
 import { StripView } from "./season-strip"
@@ -173,6 +174,12 @@ export function CalendarStep({
     fridayFits,
     ghostRoom,
   } = m
+
+  /* Rail collapsed by default (QA T-006, 2026-08-10): expanded it hid the
+     season's last column; the slim tab keeps the count in sight. */
+  const [railOpen, setRailOpen] = useState(false)
+  const railCount =
+    blocks.filter((b) => b.venueId === null && b.games > 0).length + stranded.length
   // Only "save a copy" is still called from this file (owner ruling
   // 2026-08-07, #4: autosave ate the rest of the save-control row).
   // savePlan now runs only from the autosave effect inside useBoardPlans, and
@@ -417,7 +424,9 @@ export function CalendarStep({
              * stage takes overflow-x: clip off <main> rather than hidden: a
              * scroll container that never scrolls kills sticky outright.
              */}
-            <div className="grid items-start gap-3 xl:grid-cols-[minmax(0,1fr)_340px]">
+            <div
+              className={`grid items-start gap-3 ${railOpen ? "xl:grid-cols-[minmax(0,1fr)_340px]" : ""}`}
+            >
               <div className="min-w-0">
                 {view === "board" ? (
                   zoomWeekend ? (
@@ -514,15 +523,39 @@ export function CalendarStep({
                 )}
               </div>
 
-              {/* The work rail, and the two things an operator reads next to
-                  it: what this calendar rents, and what they have to go and
-                  book. All three follow the board down the page. */}
-              {!showingKept && (
+              {/* The work rail, COLLAPSED BY DEFAULT (QA T-006 follow-up,
+                  2026-08-10): expanded it was hiding the season's last
+                  column behind itself. The slim tab keeps the count in
+                  sight; opening it gives the full detail back. */}
+              {!showingKept && !railOpen && (
+                <button
+                  type="button"
+                  data-testid="rail-tab"
+                  onClick={() => setRailOpen(true)}
+                  className="border-ink-300 bg-ink-50 text-ink-700 hover:border-play-400 fixed right-2 top-1/3 z-30 flex flex-col items-center gap-1 rounded-xl border px-1.5 py-2.5 text-[11px] font-bold shadow-md"
+                  title="What is left to do"
+                >
+                  <span
+                    className={`rounded-full px-1.5 ${railCount > 0 ? "bg-gold-100 text-gold-800" : "bg-court-100 text-court-700"}`}
+                  >
+                    {railCount}
+                  </span>
+                  <span style={{ writingMode: "vertical-rl" }}>What is left</span>
+                </button>
+              )}
+              {!showingKept && railOpen && (
                 <aside
                   className="flex flex-col gap-2.5 xl:sticky xl:top-3"
                   data-testid="work-rail"
                   aria-label="What is left to do"
                 >
+                  <button
+                    type="button"
+                    onClick={() => setRailOpen(false)}
+                    className="text-ink-500 hover:text-ink-700 self-end text-[11px] font-semibold"
+                  >
+                    Collapse rail ✕
+                  </button>
                   <WorkRail
                     state={board}
                     assignment={gone.assignment}

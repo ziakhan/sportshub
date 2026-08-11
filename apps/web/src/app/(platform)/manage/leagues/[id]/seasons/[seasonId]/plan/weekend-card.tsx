@@ -590,7 +590,11 @@ export function WeekendCard({
       // picked-out grade play here.
       data-target={holding ? (isTarget ? "1" : "0") : undefined}
       data-highlight={!anyLens ? undefined : highlighted ? "1" : "0"}
-      className={`mb-2.5 rounded-xl border px-2.5 py-2 shadow-sm motion-safe:transition-opacity ${
+      className={`mb-2.5 rounded-xl border shadow-sm motion-safe:transition-opacity ${
+        // An empty weekend earns a slim row, not a full card (QA T-008.4) —
+        // it grows back the moment something is held over the board.
+        tone === "empty" && !holding ? "px-2.5 py-0.5 opacity-80" : "px-2.5 py-2"
+      } ${
         CARD_TONE[tone]
       } ${canTakeArmed || canTakeBlock || canTakeSection ? TARGET_RING : ""} ${
         cardDim ? NOT_TARGET : ""

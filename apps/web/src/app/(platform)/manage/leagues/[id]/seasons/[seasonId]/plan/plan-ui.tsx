@@ -957,7 +957,7 @@ export function GymList({
                     data-testid="gym-home-tag"
                     className="border-ink-300 text-ink-600 rounded-md border px-1 text-[10.5px] font-bold"
                   >
-                    home gym
+                    Home gym
                   </span>
                 )}
                 {backup && (
@@ -965,11 +965,11 @@ export function GymList({
                     data-testid="gym-backup-tag"
                     className="border-ink-400 bg-ink-100 text-ink-700 rounded-md border px-1 text-[10.5px] font-bold"
                   >
-                    backup
+                    Backup
                   </span>
                 )}
                 <span className="text-ink-400 text-[11px] font-semibold tabular-nums">
-                  on {weekendsWord(gym.weekends)}
+                  On {weekendsWord(gym.weekends)}
                 </span>
               </button>
             </div>

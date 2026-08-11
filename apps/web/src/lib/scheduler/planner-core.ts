@@ -435,7 +435,10 @@ export function weekendDemand(
  * courts an operator is out of room to absorb a late entry or a double
  * booking, which is exactly when they want to see amber and think again.
  */
-export const TIGHT_RATIO = 0.85
+/** 0.95 since 2026-08-10 (QA T-008 badge restraint): at 0.85 a WELL-PACKED
+ *  board — which is the solver's goal — wore amber everywhere, so real
+ *  fires vanished. Amber now means "one more game might not fit". */
+export const TIGHT_RATIO = 0.95
 
 export type WeekendTone = "unavailable" | "empty" | "roomy" | "tight" | "over"
 

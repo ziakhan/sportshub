@@ -266,7 +266,11 @@ export function VenueSelector({ value, venueName, onSelect, onClear }: VenueSele
   }
 
   return (
-    <div ref={wrapperRef} className="relative">
+    // While the dropdown is open the WHOLE selector must sit above the form
+    // fields below it — z-50 on the inner list alone loses to any sibling
+    // that makes its own stacking context (owner bug 2026-08-10: the list
+    // rendered behind the next input, first entry unreadable).
+    <div ref={wrapperRef} className={`relative ${showDropdown ? "z-50" : ""}`}>
       <div className="relative">
         <input
           type="text"
