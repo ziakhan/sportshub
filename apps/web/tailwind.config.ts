@@ -77,6 +77,9 @@ const config = {
         live: tailwindTokens.colors.live,
         // Highlight / featured / standings-leader accent. Used sparingly.
         gold: tailwindTokens.colors.gold,
+        // The planning board's "brown" gym identity — a muted clay, kept
+        // visually apart from hoop (alert orange) and gold (tight yellow).
+        clay: tailwindTokens.colors.clay,
         // Energy Pass semantic tokens — CSS-var backed so the admin-chosen
         // palette (PlatformSettings.themePalette → <html> style stamp) reskins
         // the site with zero rebuild. NOTE: plain var() colors don't support

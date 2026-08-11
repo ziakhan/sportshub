@@ -41,11 +41,14 @@ const baseNameOf = (g: GradeState): string => {
 
 /** Division identity colors — the same dot follows a division into Team
  *  Check and the playoff cards (design §3). Cycle of four brand hues. */
+// The board's one-word-per-gym palette (owner 2026-08-11): pink, green,
+// blue, brown, gray. Yellow/orange/red never appear as identities here.
 const DIV_COLORS = [
-  { dot: "bg-play-500", head: "bg-play-50 text-play-800 border-play-200" },
+  { dot: "bg-fuchsia-600", head: "bg-fuchsia-50 text-fuchsia-800 border-fuchsia-200" },
   { dot: "bg-court-500", head: "bg-court-50 text-court-800 border-court-200" },
-  { dot: "bg-gold-500", head: "bg-gold-50 text-gold-800 border-gold-200" },
-  { dot: "bg-hoop-500", head: "bg-hoop-50 text-hoop-800 border-hoop-200" },
+  { dot: "bg-blue-600", head: "bg-blue-50 text-blue-800 border-blue-200" },
+  { dot: "bg-clay-500", head: "bg-clay-50 text-clay-800 border-clay-200" },
+  { dot: "bg-slate-500", head: "bg-slate-50 text-slate-800 border-slate-300" },
 ]
 const colorFor = (i: number) => DIV_COLORS[i % DIV_COLORS.length]
 

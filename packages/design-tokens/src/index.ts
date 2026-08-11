@@ -87,6 +87,22 @@ export const colors = {
     500: "#f59e0b",
     600: "#d97706",
   },
+  // A true muted brown — the "brown" identity word on the planning board
+  // (owner 2026-08-11, one-word-per-gym palette). Deliberately darker and
+  // greyer than hoop/gold at every step so a clay tint can never be read as
+  // the alert-orange or tight-yellow status families.
+  clay: {
+    50: "#faf3ed",
+    100: "#f3e4d7",
+    200: "#e7cbb2",
+    300: "#d9af8c",
+    400: "#c08a60",
+    500: "#a16642",
+    600: "#8a5434",
+    700: "#70432a",
+    800: "#5c3722",
+    900: "#4a2d1d",
+  },
 } as const
 
 /**
@@ -187,6 +203,7 @@ export const tailwindTokens = {
     play: colors.play,
     live: colors.live,
     gold: colors.gold,
+    clay: colors.clay,
     brand,
   },
   fontFamily: {
