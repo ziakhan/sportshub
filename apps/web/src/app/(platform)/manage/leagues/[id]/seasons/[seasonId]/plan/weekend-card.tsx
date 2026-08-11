@@ -545,6 +545,7 @@ export function WeekendCard({
     <Fraction
       is={packed.demand}
       of={packed.capacity}
+      label="games"
       tone={FRACTION_FOR_TONE[tone]}
       title={`${weekend.label}: ${packed.demand} games of ${packed.capacity} we hold`}
       testId="weekend-fraction"
@@ -710,6 +711,21 @@ export function WeekendCard({
             section.role === "pool" && venue
               ? courtsCapacityAt(venue, rentedCourts)
               : section.capacityGames
+          /* Courts used / total / free for the row (approved design):
+             home is measured against the building; a rental against the
+             larger of used and rented, inside the building's walls. */
+          const courtsTotalHere = Math.max(1, wired || rentedCourts || 1)
+          const courtsUsedHere =
+            section.role === "pool"
+              ? Math.min(courtsTotalHere, Math.max(usedCourts, 0))
+              : held > 0
+                ? Math.min(courtsTotalHere, Math.ceil((section.games * courtsTotalHere) / Math.max(1, held)))
+                : 0
+          const courtsFreeHere = Math.max(
+            0,
+            courtsTotalHere -
+              (section.role === "pool" ? Math.max(usedCourts, rentedCourts) : courtsUsedHere)
+          )
           const meter =
             section.over > 0 || held <= 0
               ? 100
@@ -827,7 +843,11 @@ export function WeekendCard({
                       )
                   : undefined
               }
-              className={`border-ink-200 rounded-lg border bg-white/70 px-1.5 py-1 motion-safe:transition-opacity ${
+              /* THE GYM IS A BOX IN ITS OWN COLOUR (owner 2026-08-10) — and
+                 an assumed rental wears a dashed edge, words beside it. */
+              className={`${paint.box ?? "border-ink-200"} ${
+                status === "assumed" ? "border-dashed" : ""
+              } rounded-lg border bg-white/70 px-1.5 py-1 motion-safe:transition-opacity ${
                 takesGym || takesSection || takesChip ? TARGET_RING : ""
               } ${armedHere ? "ring-play-500 ring-2" : ""} ${asideHere ? NOT_TARGET : ""} ${
                 filteredOut ? FILTER_DIM : litGym(section.venueId) ? FILTER_MATCH : ""
@@ -908,132 +928,23 @@ export function WeekendCard({
                     at 13px and truncates only once the meter is at its floor
                     (owner ruling 2026-08-05: gym names were too small). */}
                 <span
-                  className={`min-w-0 max-w-[150px] truncate text-[13px] font-bold ${paint.name}`}
+                  className={`min-w-[36px] flex-1 truncate text-[12.5px] font-bold ${paint.name}`}
+                  title={section.name}
                 >
                   {venueShortName(section.name)}
                 </span>
-                <span
-                  aria-hidden
-                  className="bg-ink-100 h-1.5 min-w-[48px] flex-1 overflow-hidden rounded-full"
-                >
-                  <i
-                    className={`block h-full rounded-full ${
-                      section.over > 0 ? "bg-hoop-600" : paint.bar
-                    }`}
-                    style={{ width: `${meter}%` }}
-                  />
-                </span>
-                <Fraction
-                  is={section.games}
-                  of={held}
-                  tone={sectionTone}
-                  title={`${venueShortName(section.name)}: ${section.games} games of ${held}${
-                    section.role === "pool" ? " rented" : ""
-                  }`}
-                  className="px-1.5"
-                  testId="gym-fraction"
-                />
-              </div>
-              {/* WHAT THIS SECTION IS (owner ruling 2026-08-03): the building
-                  you own wears a quiet mark, and a building you rent says how
-                  many courts of it this weekend takes, with where that booking
-                  stands. */}
-              <div className="mt-0.5 flex flex-wrap items-center gap-1.5 pl-3.5">
-                {section.role === "home" ? (
-                  <span
-                    data-testid="home-mark"
-                    className="text-ink-400 text-[10px] font-bold uppercase tracking-[0.06em]"
-                  >
-                    home
-                  </span>
-                ) : (
-                  <>
-                    {/* The courts of the BLOCK, not of the section: on a gym
-                        somebody has crammed past its courts, the block is what
-                        this building can actually give and the empty slot below
-                        carries the rest. Two numbers that add up to the ask,
-                        instead of two readings of the whole of it.
-
-                        AND WHEN THE OPERATOR RENTED MORE THAN THE GAMES NEED
-                        (owner ruling 2026-08-06, #5), the section says both
-                        numbers: what is used, and what is being paid for. */}
-                    <span
-                      data-testid="rental-mark"
-                      className="text-ink-600 text-[10.5px] font-bold"
-                    >
-                      {rentedCourts > usedCourts
-                        ? `${usedCourts} used of ${rentedCourts} rented`
-                        : `rented ${rentedCourts} of ${courtsWord(wired || rentedCourts)}`}
-                    </span>
-                    {/* "Confirmed" is the default and says nothing, so it is
-                        never drawn (owner ruling 2026-08-05). Only a booking
-                        nobody has made yet is worth a chip. */}
-                    {status === "assumed" && <BlockStatusMark status={status} />}
-                  </>
-                )}
-                {/* A gym somebody has already corrected says so, so a smaller
-                    meter never reads as a mistake. Renting MORE is not a
-                    correction and says nothing here: the rental mark above
-                    already reads "4 used of 6 rented". */}
-                {capped != null && capped < wired && (
-                  <span
-                    data-testid="courts-corrected"
-                    className="border-gold-400 bg-gold-50 text-gold-600 rounded-md border px-1.5 text-[10px] font-bold"
-                  >
-                    {courtsWord(capped)} of {wired} this weekend
-                  </span>
-                )}
-                {/* A gym on hours of its own that weekend, said where the hours
-                    were set (owner ruling 2026-08-06, #5). */}
-                {hoursHere.custom && (
-                  <span
-                    data-testid="hours-custom"
-                    className="border-gold-400 bg-gold-50 text-gold-600 rounded-md border px-1.5 text-[10px] font-bold tabular-nums"
-                  >
-                    {hoursHere.startTime} to {hoursHere.endTime}
-                  </span>
-                )}
-                {/**
-                 * MOVE THE WHOLE SECTION, SAID OUT LOUD (owner ruling
-                 * 2026-08-05, #3). The grip does this already, and the owner
-                 * never found it: six dots are a handle for somebody who
-                 * suspects there is one. This is the same verb with its name on
-                 * it, in the row where the section's other verbs live, and one
-                 * tap arms exactly what the grip arms.
-                 *
-                 * Unlike the grip it never steps aside for something already in
-                 * the operator's hand: a button that says "Move all" and then
-                 * quietly puts a gym down instead would be lying. Arming drops
-                 * whatever else was held, which is the board's standing rule of
-                 * one thing at a time.
-                 */}
-                {/* THE BUTTON MOVES THINGS (owner ruling 2026-08-06). It
-                    replaces "Move all…", which named a scope rather than a verb
-                    and hid the two destinations behind knowing to press it. */}
                 {canMoveAll && (
                   <MoveMenu
                     gymName={venueShortName(section.name)}
                     weekendLabel={weekend.label}
                     armed={Boolean(armedHere)}
-                    targets={() =>
-                      moveTargetsFor(section.venueId, section.unitKeys, games)
-                    }
+                    targets={() => moveTargetsFor(section.venueId, section.unitKeys, games)}
                     onMoveTo={(venueId) =>
-                      onMoveSection(
-                        section.unitKeys,
-                        weekend.sessionId,
-                        weekend.sessionId,
-                        venueId
-                      )
+                      onMoveSection(section.unitKeys, weekend.sessionId, weekend.sessionId, venueId)
                     }
                     onArmForWeekend={() => onArmSection(armedHere ? null : asArmed())}
                   />
                 )}
-                {/* EVERYTHING ABOUT THIS GYM ON THIS DATE (owner ruling
-                    2026-08-06, #5): its hours and its courts, both ways, in a ⋯
-                    menu on the section they are about. It replaces the "I do not
-                    have this" link, which could only ever go down and said
-                    nothing about hours at all. */}
                 {interactive && wired > 0 && (
                   <GymMenu
                     gymName={venueShortName(section.name)}
@@ -1055,15 +966,74 @@ export function WeekendCard({
                       onSetHours(weekend.sessionId, section.venueId, { startTime, endTime })
                     }
                     onResetHours={() => onSetHours(weekend.sessionId, section.venueId, null)}
+                    splitWhat={
+                      section.unitKeys.length > 0
+                        ? `the ${venueShortName(section.name)} block`
+                        : undefined
+                    }
+                    splitAxes={
+                      section.unitKeys.length > 0
+                        ? () => splitAxesFor(weekend.sessionId, section.unitKeys)
+                        : undefined
+                    }
                   />
                 )}
-                {interactive && section.unitKeys.length > 0 && (
-                  <SplitMenu
-                    what={`the ${venueShortName(section.name)} block`}
-                    axes={() => splitAxesFor(weekend.sessionId, section.unitKeys)}
-                  />
-                )}
+                {/* THE GYM ROW COUNTS COURTS (approved two-number law,
+                    2026-08-10): what is used of what the building has, free
+                    room in green words. The games detail rides the tooltip. */}
+                <span
+                  data-testid="gym-fraction"
+                  title={`${venueShortName(section.name)}: ${section.games} games of ${held}${
+                    section.role === "pool" ? " rented" : ""
+                  } · ${courtsUsedHere} of ${courtsTotalHere} courts${
+                    courtsFreeHere > 0 ? `, ${courtsFreeHere} free` : ""
+                  }`}
+                  className={`shrink-0 text-[11px] font-bold tabular-nums ${
+                    section.over > 0 ? "text-hoop-800" : "text-ink-600"
+                  }`}
+                >
+                  {courtsUsedHere}/{courtsTotalHere} courts
+                  {courtsFreeHere > 0 && (
+                    <span className="text-court-700 font-bold"> · {courtsFreeHere} free</span>
+                  )}
+                </span>
               </div>
+              {/* EXCEPTIONAL MARKS ONLY (approved design 2026-08-10): an
+                  assumed booking, a paying-for-more rental, a correction, or
+                  custom hours. Nothing routine prints here — home-ness reads
+                  from the rail; the box colour and tooltip carry the rest. */}
+              {(status === "assumed" ||
+                (section.role === "pool" && rentedCourts > usedCourts) ||
+                (capped != null && capped < wired) ||
+                hoursHere.custom) && (
+                <div className="mt-0.5 flex flex-wrap items-center gap-1.5 pl-3.5">
+                  {status === "assumed" && <BlockStatusMark status={status} />}
+                  {section.role === "pool" && rentedCourts > usedCourts && (
+                    <span
+                      data-testid="rental-mark"
+                      className="text-ink-600 text-[10px] font-bold"
+                    >
+                      rented {rentedCourts}
+                    </span>
+                  )}
+                  {capped != null && capped < wired && (
+                    <span
+                      data-testid="courts-corrected"
+                      className="border-gold-400 bg-gold-50 text-gold-600 rounded-md border px-1.5 text-[10px] font-bold"
+                    >
+                      {courtsWord(capped)} of {wired} this weekend
+                    </span>
+                  )}
+                  {hoursHere.custom && (
+                    <span
+                      data-testid="hours-custom"
+                      className="border-gold-400 bg-gold-50 text-gold-600 rounded-md border px-1.5 text-[10px] font-bold tabular-nums"
+                    >
+                      {hoursHere.startTime} to {hoursHere.endTime}
+                    </span>
+                  )}
+                </div>
+              )}
               <div className="mt-1 flex flex-wrap items-start gap-1">
                 {chips.map((k) => chipFor(k, section.venueId))}
                 {/* WHAT WAS HERE, AND WHERE IT WENT (owner ruling 2026-08-05,

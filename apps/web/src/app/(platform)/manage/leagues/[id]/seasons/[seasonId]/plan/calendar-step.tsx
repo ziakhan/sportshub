@@ -535,6 +535,15 @@ export function CalendarStep({
                   className="border-ink-300 bg-ink-50 text-ink-700 hover:border-play-400 fixed right-2 top-1/3 z-30 flex flex-col items-center gap-1 rounded-xl border px-1.5 py-2.5 text-[11px] font-bold shadow-md"
                   title="What is left to do"
                 >
+                  {/* Something to look at = a moving dot (owner 2026-08-10:
+                      "a dot on it... something to indicate"). Still + counted
+                      when all is well; motion respects reduced-motion. */}
+                  {railCount > 0 && (
+                    <span aria-hidden className="relative -mt-0.5 flex h-2 w-2">
+                      <span className="bg-gold-500 absolute inline-flex h-full w-full rounded-full opacity-75 motion-safe:animate-ping" />
+                      <span className="bg-gold-600 relative inline-flex h-2 w-2 rounded-full" />
+                    </span>
+                  )}
                   <span
                     className={`rounded-full px-1.5 ${railCount > 0 ? "bg-gold-100 text-gold-800" : "bg-court-100 text-court-700"}`}
                   >

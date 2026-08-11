@@ -383,10 +383,20 @@ ok(
  * are gone. The lever worth a button is beside Redraw, and the hours are edited
  * on the gym section they are about, one date at a time.
  */
-await page.waitForSelector('[data-testid="redraw-spread"]', { timeout: 60000 })
-await page.waitForTimeout(500)
+// RE-PINNED 2026-08-10 (approved toolbar diet): redraw, its spread
+// alternative, and fill-from-pool live behind one "Redraw ▾" trigger.
+await page.waitForSelector('[data-testid="redraw-menu"]', { timeout: 60000 })
+await page.locator('[data-testid="redraw-menu"]').click()
+await page.waitForSelector('[data-testid="redraw-spread"]', { timeout: 10000 })
+await page.waitForTimeout(300)
+// The popover may render outside <main>, so the element is the check.
+ok(
+  "the Redraw menu offers the spread redraw",
+  (await page.locator('[data-testid="redraw-spread"]').innerText()).length > 0
+)
 const step3 = await page.locator("main").innerText()
-ok("step 3 offers the spread redraw beside Redraw", /Redraw, spread out instead/i.test(step3))
+await page.keyboard.press("Escape").catch(() => {})
+await page.waitForTimeout(200)
 await page.waitForTimeout(200)
 const step3Hours = await page.locator("main").innerText()
 /**
@@ -1068,6 +1078,8 @@ if (worldPlan) {
       (await page.getByRole("button", { name: /^Undo changes/i }).count()) === 0
   )
   const assignmentBeforeRedraw = (await docOf(worldPlan.id))?.assignment ?? {}
+  await page.locator('[data-testid="redraw-menu"]').click()
+  await page.waitForSelector('[data-testid="redraw"]', { timeout: 10000 })
   const redrawBtn = page.locator('[data-testid="redraw"]')
   ok(
     "Redraw is offered now that the plan's world can hold a calendar",

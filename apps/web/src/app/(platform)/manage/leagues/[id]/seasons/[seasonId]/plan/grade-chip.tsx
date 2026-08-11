@@ -3,13 +3,22 @@
 import type { PlacementReason, PlannerUnit } from "@/lib/scheduler/planner-core"
 import type { Armed } from "./plan-shared"
 import { armAfterDragStarts, FILTER_DIM, FILTER_MATCH } from "./board-shared"
-import { REASON_GLYPH, ReasonGlyph, WhyPopover } from "./plan-ui"
+import { REASON_GLYPH } from "./plan-ui"
 
 /**
  * THE TWO SMALLEST THINGS ON THE BOARD: a grade, and the hole a grade left.
  * Both are drawn inside a gym section, both are drawn by the weekend card and
  * by the month column's bench, and neither knows anything about the plan.
  */
+
+/** "Grade 7" → "Gr 7", "Junior Girls" → "Jr Girls" — the approved slim
+ *  form (design artifact 2026-08-10); the full name rides in the tooltip. */
+function shortLabel(label: string): string {
+  const grade = label.match(/^grade\s*(\d+)/i)
+  if (grade) return `Gr ${grade[1]}`
+  if (/^junior girls$/i.test(label)) return "Jr Girls"
+  return label.length > 10 ? `${label.slice(0, 9)}…` : label
+}
 
 /** A grade, in the colour of the gym it plays in. Draggable for a mouse,
  *  tappable for everything else: one tap arms it, the next tap on a weekend
@@ -90,7 +99,17 @@ export function GradeChip({
         ? FILTER_MATCH
         : ""
   const ink = muted ? "text-ink-400" : (quiet ?? "text-ink-400")
-  const glyph = reason ? REASON_GLYPH[reason] : undefined
+  const glyphWord = reason ? (REASON_GLYPH[reason] ? String(reason) : null) : null
+  /* Everything that used to crowd the chip rides the tooltip instead
+     (approved design 2026-08-10): full name, teams, games here, and why. */
+  const tip = [
+    `${unit.label} · ${unit.teams} team${unit.teams === 1 ? "" : "s"}`,
+    games != null && games > 0 ? `${games} game${games === 1 ? "" : "s"} this weekend` : null,
+    why ?? (glyphWord ? glyphWord : null),
+    interactive ? "Drag to move" : null,
+  ]
+    .filter(Boolean)
+    .join(" — ")
   return (
     <span
       draggable={interactive}
@@ -110,30 +129,25 @@ export function GradeChip({
       data-highlight={highlight ?? undefined}
       data-unit={unit.key}
       data-reason={reason ?? undefined}
-      className={`group inline-flex min-h-[34px] items-center gap-1 rounded-lg border pl-1 text-[12px] font-bold shadow-sm ${
+      title={tip}
+      /* THE APPROVED PILL (design artifact 126519af, 2026-08-10): grip always
+         visible, short label, team count in brackets one weight lighter, the
+         ✕ floating over the corner on hover — nothing on the chip ever
+         reserves width it is not showing. Hover lifts; it never resizes. */
+      className={`group relative inline-flex min-h-[24px] items-center gap-[5px] rounded-[7px] border py-[3px] pl-1.5 pr-2 text-[11.5px] font-bold leading-snug shadow-sm motion-safe:transition-shadow ${
         muted ? "border-ink-200 bg-ink-50 text-ink-500" : (tint ?? "border-ink-300 bg-white")
-      } ${interactive ? "cursor-grab active:cursor-grabbing" : ""} ${ring} ${
+      } ${interactive ? "cursor-grab active:cursor-grabbing hover:shadow-md" : ""} ${ring} ${
         highlight === "off" ? FILTER_DIM : ""
       }`}
     >
-      {/* THE GRIP (owner ruling 2026-08-05). A chip you can pick up says so
-          before you try: six dots and a grab cursor, the way every draggable
-          thing on this board is marked. */}
-      {interactive && (
-        <svg
-          viewBox="0 0 10 16"
-          aria-hidden
-          focusable="false"
-          className={`h-3.5 w-2 shrink-0 opacity-0 transition-opacity group-hover:opacity-100 ${ink}`}
-        >
-          <circle cx="3" cy="4" r="1.1" fill="currentColor" />
-          <circle cx="7" cy="4" r="1.1" fill="currentColor" />
-          <circle cx="3" cy="8" r="1.1" fill="currentColor" />
-          <circle cx="7" cy="8" r="1.1" fill="currentColor" />
-          <circle cx="3" cy="12" r="1.1" fill="currentColor" />
-          <circle cx="7" cy="12" r="1.1" fill="currentColor" />
-        </svg>
-      )}
+      <span
+        aria-hidden
+        className="grid shrink-0 grid-cols-2 gap-[2px] opacity-55"
+      >
+        {[0, 1, 2, 3, 4, 5].map((i) => (
+          <span key={i} className="h-[2px] w-[2px] rounded-full bg-current" />
+        ))}
+      </span>
       <button
         type="button"
         disabled={!interactive}
@@ -148,39 +162,13 @@ export function GradeChip({
               : { unitKey: unit.key, label: unit.label, fromSessionId, window: windowLabel }
           )
         }}
-        className="min-h-[34px] cursor-pointer pr-0.5 disabled:cursor-default"
+        className="cursor-pointer whitespace-nowrap disabled:cursor-default"
       >
-        {unit.label}
+        {shortLabel(unit.label)}
+        {unit.teams > 0 && (
+          <span className={`font-semibold tabular-nums ${ink}`}> ({unit.teams})</span>
+        )}
       </button>
-      {games != null && games > 0 && (
-        <span className={`text-[11px] font-bold tabular-nums ${ink}`} aria-hidden>
-          {games}
-        </span>
-      )}
-      {/* The reason, drawn. The tap target is the whole height of the chip,
-          never the 12px mark on its own, and the sentence is behind it. */}
-      {glyph && why && (
-        <WhyPopover
-          text={why}
-          label={`Why ${unit.label} plays here`}
-          testId="chip-why"
-          className={`inline-flex min-h-[32px] items-center px-0.5 ${ink}`}
-        >
-          <ReasonGlyph glyph={glyph} />
-        </WhyPopover>
-      )}
-      {/**
-       * THE ⇄ IS GONE (owner ruling 2026-08-05, #2: "it guesses").
-       *
-       * It picked the destination itself — the next building along with room in
-       * it — so the operator pressed an arrow and found out afterwards where the
-       * grade had gone. A gym is not a thing to be assigned by wrap-around.
-       *
-       * The move it did is still there and it is now NAMED: pick the chip up and
-       * put it on the gym you want, by drag or by tap, and only the buildings
-       * that can really hold it light up (ruling #1). One less control, and the
-       * operator chooses the building instead of the board.
-       */}
       {interactive && onRemove && (
         <button
           type="button"
@@ -189,7 +177,7 @@ export function GradeChip({
             onRemove()
           }}
           aria-label={`Take ${unit.label} off ${weekendLabel}`}
-          className={`hover:text-hoop-700 min-h-[34px] cursor-pointer px-1.5 opacity-0 transition-opacity focus-visible:opacity-100 group-hover:opacity-100 ${ink}`}
+          className="border-ink-300 text-ink-500 hover:border-hoop-400 hover:text-hoop-700 absolute -right-1.5 -top-1.5 hidden h-[15px] w-[15px] items-center justify-center rounded-full border bg-white text-[10px] leading-none shadow-sm focus-visible:flex group-hover:flex"
         >
           ×
         </button>

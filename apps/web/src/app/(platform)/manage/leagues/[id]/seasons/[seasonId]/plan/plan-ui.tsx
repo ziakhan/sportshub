@@ -179,6 +179,7 @@ export function Fraction({
   is,
   tone,
   title,
+  label,
   className = "",
   testId,
 }: {
@@ -189,6 +190,9 @@ export function Fraction({
   tone: FractionTone
   /** What a screen reader hears instead of "61 slash 54". */
   title?: string
+  /** The unit, worn on the chip ("games") — the approved two-number law
+   *  (2026-08-10) says a number on a card always names its unit. */
+  label?: string
   className?: string
   testId?: string
 }) {
@@ -204,6 +208,7 @@ export function Fraction({
     >
       <span aria-hidden>
         {is}/{of}
+        {label ? <span className="pl-1 font-semibold opacity-75">{label}</span> : null}
       </span>
       {over > 0 && <OverMark by={over} />}
     </span>
@@ -1314,6 +1319,8 @@ export function GymMenu({
   onHours,
   onResetHours,
   onDropFriday,
+  splitWhat,
+  splitAxes,
 }: {
   gymName: string
   weekendLabel: string
@@ -1335,6 +1342,10 @@ export function GymMenu({
   onHours: (startTime: string, endTime: string) => void
   onResetHours: () => void
   onDropFriday?: () => void
+  /** Split lives INSIDE the ⋯ now (approved design 2026-08-10): present =
+   *  the menu ends with the split options for this block. */
+  splitWhat?: string
+  splitAxes?: () => SplitAxis[]
 }) {
   return (
     <ActionPopover
@@ -1350,6 +1361,7 @@ export function GymMenu({
       }
     >
       {(close) => (
+        <>
         <GymMenuBody
           gymName={gymName}
           weekendLabel={weekendLabel}
@@ -1380,8 +1392,66 @@ export function GymMenu({
             close()
           }}
         />
+        {splitWhat && splitAxes && <SplitInMenu what={splitWhat} axes={splitAxes} close={close} />}
+        </>
       )}
     </ActionPopover>
+  )
+}
+
+/** The split options, rendered INSIDE the gym ⋯ (approved design
+ *  2026-08-10) — same axes, same pricing, one less button on the card. */
+function SplitInMenu({
+  what,
+  axes,
+  close,
+}: {
+  what: string
+  axes: () => SplitAxis[]
+  close: () => void
+}) {
+  return (
+    <div className="border-ink-100 mt-3 border-t pt-2.5" data-testid="split-menu">
+      <p className="text-ink-900 text-[12.5px] font-bold">Split {what}</p>
+      <p className="text-ink-500 mt-0.5 text-[11.5px]">
+        The planner keeps a group together because two of anything costs more. You can overrule it.
+      </p>
+      <div className="mt-2 space-y-1.5">
+        {axes().map((axis) => (
+          <div
+            key={axis.key}
+            data-testid={`split-axis-${axis.key}`}
+            data-enabled={axis.price !== null}
+            className={`rounded-lg border px-2.5 py-2 ${
+              axis.price !== null ? "border-ink-200 bg-white" : "border-ink-100 bg-ink-50"
+            }`}
+          >
+            <p className={`text-[12px] font-bold ${axis.price !== null ? "text-ink-900" : "text-ink-400"}`}>
+              {axis.label}
+            </p>
+            {axis.detail && <p className="text-ink-500 mt-0.5 text-[11px]">{axis.detail}</p>}
+            {axis.price !== null && (
+              <>
+                <p className="text-gold-600 mt-1 text-[11px] font-bold" data-testid={`split-price-${axis.key}`}>
+                  {axis.price}
+                </p>
+                <button
+                  type="button"
+                  data-testid={`split-apply-${axis.key}`}
+                  onClick={() => {
+                    axis.onApply()
+                    close()
+                  }}
+                  className="border-play-300 bg-play-50 text-play-700 hover:bg-play-100 mt-1.5 min-h-[36px] rounded-lg border px-2.5 text-[12px] font-bold"
+                >
+                  Do it
+                </button>
+              </>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
   )
 }
 

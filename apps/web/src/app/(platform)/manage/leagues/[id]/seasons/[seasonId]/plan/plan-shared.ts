@@ -197,6 +197,9 @@ export const VENUE_HUES = [
     chip: "border-court-200 bg-court-50 text-court-800",
     /** The quieter ink inside that chip: the game count, the glyph. */
     chipQuiet: "text-court-600",
+    /** The gym BOX outline on a weekend card (owner 2026-08-10: "the
+     *  outline of the gyms should be the same color as the gym color"). */
+    box: "border-court-300",
   },
   {
     fill: "bg-play-50",
@@ -206,6 +209,9 @@ export const VENUE_HUES = [
     bar: "bg-play-500",
     chip: "border-play-200 bg-play-50 text-play-800",
     chipQuiet: "text-play-600",
+    /** The gym BOX outline on a weekend card (owner 2026-08-10: "the
+     *  outline of the gyms should be the same color as the gym color"). */
+    box: "border-play-300",
   },
   /* One hue, one meaning (QA T-005, 2026-08-10): the warning families
      (gold/amber, hoop/orange-red) are STATUS colours on this board — a gym
@@ -219,6 +225,9 @@ export const VENUE_HUES = [
     bar: "bg-sky-500",
     chip: "border-sky-200 bg-sky-50 text-sky-800",
     chipQuiet: "text-sky-600",
+    /** The gym BOX outline on a weekend card (owner 2026-08-10: "the
+     *  outline of the gyms should be the same color as the gym color"). */
+    box: "border-sky-300",
   },
   {
     fill: "bg-violet-50",
@@ -228,6 +237,9 @@ export const VENUE_HUES = [
     bar: "bg-violet-500",
     chip: "border-violet-200 bg-violet-50 text-violet-800",
     chipQuiet: "text-violet-600",
+    /** The gym BOX outline on a weekend card (owner 2026-08-10: "the
+     *  outline of the gyms should be the same color as the gym color"). */
+    box: "border-violet-300",
   },
 ]
 
