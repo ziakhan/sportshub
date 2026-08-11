@@ -80,4 +80,17 @@ Template:
   filed for the developers as T-009.
 - **Status notes:** built 2026-08-11; type-check clean; awaiting my local test.
 
-<!-- Add changes below. Next ID: K-003 -->
+### K-003 · Team suffix: "Custom…" free text instead of preset-only chips · UI · Built (local)
+- **What/why:** When a club fields multiple teams in one age group, the suffix
+  picker offered only preset filler chips (Blue/White/Black/Red/Gold/Green/2/3).
+  Clubs name teams their own way — the operator should be able to type their
+  own suffix. (The API always accepted any suffix ≤20 chars; only the chip UI
+  restricted it — so this is UI-only.)
+- **Where in the app:** Club → Teams → Create team, and the team Edit page.
+- **How it works when done:** the preset chips stay (fast path), plus a
+  "Custom…" chip that opens a free-text input (max 20 chars) feeding the same
+  live team-name preview. A team loaded in Edit whose suffix isn't a preset
+  opens in custom mode automatically, so nothing existing breaks.
+- **Status notes:** built 2026-08-11; type-check clean; awaiting my local test.
+
+<!-- Add changes below. Next ID: K-004 -->
