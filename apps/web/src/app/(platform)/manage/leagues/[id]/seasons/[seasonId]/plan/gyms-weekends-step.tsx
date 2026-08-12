@@ -129,6 +129,14 @@ export function GymsWeekendsStep({
    */
   const [bookingsFor, setBookingsFor] = useState<string | null>(null)
   const [addingGym, setAddingGym] = useState(false)
+  /**
+   * THE FRIDAYS DECLARATION (owner design 2026-08-11, QA T-018): "Can games
+   * run on Fridays?" Null = No, the default — and the owner's reasoning is
+   * the code's: nobody likes Fridays (work, school, travel), capacity
+   * pressure is the only honest reason, so never fill a Friday that Sat+Sun
+   * could absorb. A season-level fact, like which Saturdays exist.
+   */
+  const [fridayPolicy, setFridayPolicy] = useState<"IF_NEEDED" | "REGULAR" | null>(null)
 
   const load = useCallback(async () => {
     // no-store: capacity is the number this screen exists to get right, and a
@@ -143,6 +151,11 @@ export function GymsWeekendsStep({
     const data = await res.json()
     setSeasonGrid(data.grid)
     setLocked(["FINALIZED", "IN_PROGRESS", "COMPLETED"].includes(data.seasonStatus))
+    setFridayPolicy(
+      data.fridayPolicy === "IF_NEEDED" || data.fridayPolicy === "REGULAR"
+        ? data.fridayPolicy
+        : null
+    )
   }, [seasonId])
 
   useEffect(() => {
@@ -519,6 +532,48 @@ export function GymsWeekendsStep({
     )
   }
 
+  /**
+   * ANSWERING THE FRIDAYS QUESTION (QA T-018). The declaration is the
+   * SEASON's — whether this league runs Fridays is a fact about the league,
+   * like which Saturdays exist — so it writes the season even while a plan is
+   * open (the same exemption ensureSession has). The open plan then takes the
+   * answer into its own world too, so the very next draw on the board obeys
+   * it without waiting for a reload.
+   */
+  const declareFridays = async (value: "IF_NEEDED" | "REGULAR" | null) => {
+    if (locked || isReferencePlan(session.chosen) || busy !== null) return
+    if (value === fridayPolicy) return
+    setBusy("fridays")
+    setError(null)
+    setNotice(null)
+    setNoticeTone("court")
+    const res = await fetch(`/api/seasons/${seasonId}`, json({ fridayPolicy: value }, "PATCH")).catch(
+      () => null
+    )
+    if (!res?.ok) {
+      const data = await res?.json().catch(() => null)
+      setBusy(null)
+      setError(data?.error ?? "That didn't save. Try again.")
+      return
+    }
+    setFridayPolicy(value)
+    setBusy(null)
+    const said =
+      value === "REGULAR"
+        ? "Fridays are regular game days here. The next draw counts Friday evenings as normal capacity."
+        : value === "IF_NEEDED"
+          ? "Fridays only when a weekend can't fit otherwise. The draw fills Saturday and Sunday first and adds a Friday evening only where a weekend would run out of room."
+          : "No Fridays. The draw never fills one; the rescue suggestion still appears for a weekend in real trouble."
+    if (editsWorld) {
+      const next = { ...world() }
+      if (value) next.fridayPolicy = value
+      else delete next.fridayPolicy
+      await saveWorld(next, "fridays", said)
+    } else {
+      setNotice(said)
+    }
+  }
+
   if (!grid) {
     return <p className="text-ink-500 p-6 text-sm">{error ?? "Loading your gyms…"}</p>
   }
@@ -730,6 +785,94 @@ export function GymsWeekendsStep({
                 </tbody>
               </table>
             </div>
+          </div>
+        )}
+
+        {/* THE FRIDAYS QUESTION (owner design 2026-08-11, QA T-018). One
+            question, default No, zero new chrome after answering. Yes reveals
+            exactly one follow-up choice, defaulting to "only when a weekend
+            can't fit otherwise" — the owner's law: nobody likes Fridays, so a
+            Friday that Sat+Sun could absorb is never filled. */}
+        {weekends.length > 0 && (
+          <div
+            data-testid="friday-declaration"
+            className="border-ink-100 bg-ink-50/50 mb-3.5 rounded-2xl border px-4 py-3"
+          >
+            <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1.5">
+              <div>
+                <p className="text-ink-900 text-[13px] font-bold">Can games run on Fridays?</p>
+                <p className="text-ink-500 mt-0.5 text-[11.5px]">
+                  Saturday and Sunday fill first either way. This tells the draw whether Friday
+                  evenings may hold games at all.
+                </p>
+              </div>
+              <div className="border-ink-200 inline-flex overflow-hidden rounded-lg border bg-white text-xs">
+                {[
+                  { value: null, label: "No" },
+                  { value: "IF_NEEDED" as const, label: "Yes" },
+                ].map((o) => {
+                  const active = o.value === null ? fridayPolicy === null : fridayPolicy !== null
+                  return (
+                    <button
+                      key={o.label}
+                      type="button"
+                      data-testid={o.value === null ? "friday-no" : "friday-yes"}
+                      aria-pressed={active}
+                      disabled={locked || isReferencePlan(session.chosen) || busy !== null}
+                      onClick={() => declareFridays(o.value)}
+                      className={`px-3 py-1.5 font-semibold ${
+                        active ? "bg-play-600 text-white" : "text-ink-600 bg-white"
+                      }`}
+                    >
+                      {busy === "fridays" ? "…" : o.label}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+            {fridayPolicy !== null && (
+              <div className="mt-2.5 space-y-1.5" data-testid="friday-mode">
+                {[
+                  {
+                    value: "IF_NEEDED" as const,
+                    label: "Only when a weekend can't fit otherwise",
+                    detail:
+                      "The draw plans Saturday and Sunday first. A Friday evening enters only where a weekend would be over its room, or too tight to absorb one more game.",
+                  },
+                  {
+                    value: "REGULAR" as const,
+                    label: "Fridays are regular game days",
+                    detail:
+                      "Friday evenings count as normal capacity in every draw, at the gyms each weekend already uses.",
+                  },
+                ].map((o) => (
+                  <label
+                    key={o.value}
+                    className={`flex cursor-pointer items-start gap-2.5 rounded-xl border px-3 py-2 ${
+                      fridayPolicy === o.value
+                        ? "border-play-300 bg-play-50/60"
+                        : "border-ink-200 bg-white"
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="friday-mode"
+                      data-testid={o.value === "IF_NEEDED" ? "friday-if-needed" : "friday-regular"}
+                      checked={fridayPolicy === o.value}
+                      disabled={locked || isReferencePlan(session.chosen) || busy !== null}
+                      onChange={() => declareFridays(o.value)}
+                      className="mt-0.5 accent-play-600"
+                    />
+                    <span className="min-w-0">
+                      <span className="text-ink-900 block text-[12.5px] font-semibold">
+                        {o.label}
+                      </span>
+                      <span className="text-ink-500 block text-[11.5px]">{o.detail}</span>
+                    </span>
+                  </label>
+                ))}
+              </div>
+            )}
           </div>
         )}
 

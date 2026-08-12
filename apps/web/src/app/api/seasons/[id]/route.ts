@@ -155,6 +155,19 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
         ? new Date(body.rosterChangeDeadline)
         : null
     }
+    // The Fridays declaration (owner design 2026-08-11, QA T-018): null = No
+    // (the default), "IF_NEEDED" = only when a weekend can't fit otherwise,
+    // "REGULAR" = Fridays are regular game days.
+    if (body.fridayPolicy !== undefined) {
+      if (
+        body.fridayPolicy !== null &&
+        body.fridayPolicy !== "IF_NEEDED" &&
+        body.fridayPolicy !== "REGULAR"
+      ) {
+        return NextResponse.json({ error: "Unknown Friday policy" }, { status: 400 })
+      }
+      update.fridayPolicy = body.fridayPolicy
+    }
     if (body.ageGroupCutoffDate) update.ageGroupCutoffDate = new Date(body.ageGroupCutoffDate)
 
     let finalizeWarnings: string[] = []

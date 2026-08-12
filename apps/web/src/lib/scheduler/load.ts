@@ -8,6 +8,7 @@ import type {
 // Relative (not "@/") import: scripts/seed-nph-demo.ts pulls this module
 // straight through tsx without the app's path alias.
 import { effectiveSeasonConfig } from "../org/season-defaults"
+import { listRosterDrawExclusions } from "../rosters/roster-deadline"
 
 export interface LoadSchedulerOptions {
   /**
@@ -205,6 +206,13 @@ export async function loadSchedulerInput(
     gameSlotMinutes: (cfg.gameSlotMinutes as number) ?? 90,
     fridayStartTime: (cfg.fridayStartTime as string | null) ?? null,
     fridayEndTime: (cfg.fridayEndTime as string | null) ?? null,
+    // The Fridays declaration (owner design 2026-08-11, QA T-018) — a direct
+    // season field, deliberately NOT org-inheritable: whether a league runs
+    // Fridays is its own call, not rulebook policy.
+    fridayPolicy:
+      season.fridayPolicy === "IF_NEEDED" || season.fridayPolicy === "REGULAR"
+        ? season.fridayPolicy
+        : null,
     gameLengthMinutes: (cfg.gameLengthMinutes as number) ?? 40,
     idealGamesPerDayPerTeam: (cfg.idealGamesPerDayPerTeam as number) ?? 2,
     // Stable per-season variety: rotates repeat matchups + time assignments
@@ -253,6 +261,22 @@ export async function loadSchedulerInput(
         })),
       })),
     })),
+  }
+
+  // Roster-deadline enforcement (owner ruling 2026-08-11, QA T-017): once the
+  // season's roster deadline has passed, a team whose roster the club never
+  // FINALIZED is excluded from the planning draw — the same seam the plan's
+  // own left-out list uses below, so every consumer (wizard counts, board,
+  // preview, commit) plans around them identically. A locked roster counts as
+  // final (the league already closed it), and a season with no deadline
+  // enforces nothing. The teams hear about it in plain words when the plan is
+  // generated or published (notifyPlannedWithoutTeams).
+  const rosterGate = await listRosterDrawExclusions(seasonId)
+  if (rosterGate && rosterGate.excluded.length > 0) {
+    const unfinalized = new Set(rosterGate.excluded.map((t) => t.teamId))
+    for (const division of input.divisions) {
+      division.teams = division.teams.filter((t) => !unfinalized.has(t.teamId))
+    }
   }
 
   // Team-exclude (owner ruling 8, 2026-08-07): drop the plan's named teams

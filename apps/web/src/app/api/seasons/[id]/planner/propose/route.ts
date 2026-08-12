@@ -8,6 +8,7 @@ import {
   rentalAsk,
   suggestFor,
 } from "@/lib/scheduler/planner-core"
+import { fridayPolicyPrepass, fridayPolicyRescue, withFridayBlocks } from "@/lib/scheduler/plan-world"
 import { seasonPlannerAuth } from "@/lib/scheduler/planner-auth"
 
 export const dynamic = "force-dynamic"
@@ -28,8 +29,17 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
     const parsed = bodySchema.safeParse(await request.json().catch(() => ({})))
     if (!parsed.success) return NextResponse.json({ error: "Invalid lever" }, { status: 400 })
 
-    const state = await buildPlannerState(params.id)
-    const assignment = proposePlan(state, parsed.data.lever)
+    const base = await buildPlannerState(params.id)
+    // The Fridays declaration (owner design 2026-08-11, QA T-018): REGULAR
+    // folds the Friday windows in as normal capacity before the solve;
+    // IF_NEEDED plans Sat+Sun first and adds Friday supply only where the
+    // drawn load leaves a weekend over or tight. No declaration = both maps
+    // empty = the old path, byte for byte.
+    const pre = fridayPolicyPrepass(base)
+    const preState = withFridayBlocks(base, pre)
+    const assignment = proposePlan(preState, parsed.data.lever)
+    const rescue = fridayPolicyRescue(preState, assignment)
+    const state = withFridayBlocks(preState, rescue)
     const venues = packPlanVenues(state, assignment)
     // What the plan RENTS (owner ruling 2026-08-03). Derived, never stored:
     // the plan document keeps the calendar and the gyms, and the blocks are
@@ -42,6 +52,9 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
       // this straight back so the saved plan keeps the gyms it was scored on.
       venues,
       blocks,
+      // Friday blocks the declaration added (courtCapKey → courts). Additive:
+      // a reader that does not know about them still has the whole answer.
+      fridays: { ...pre, ...rescue },
       ask: rentalAsk(state, blocks),
       suggestions: suggestFor(state, assignment),
     })

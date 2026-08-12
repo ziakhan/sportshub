@@ -80,6 +80,11 @@ export interface SchedulerInput {
   /** The league's Friday-evening window, when it set one (owner 2026-08-07). */
   fridayStartTime?: string | null
   fridayEndTime?: string | null
+  /** The Fridays declaration (owner design 2026-08-11, QA T-018): null/absent
+   *  = No, "IF_NEEDED" = rescue-only supply, "REGULAR" = normal capacity.
+   *  Consumed by the planner's draw (buildPlannerState), not by buildSlots —
+   *  real Friday game DAYS still come from the sessions the plan takes on. */
+  fridayPolicy?: "IF_NEEDED" | "REGULAR" | null
   /** Analysis-only tap: called once per internal attempt with the candidate
    *  games and the selection key. Never alters behavior. */
   debugAttempt?: (attempt: number, games: ProposedGame[], key: number[]) => void

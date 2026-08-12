@@ -1,6 +1,7 @@
 import { prisma } from "@youthbasketballhub/db"
 import { notFound } from "next/navigation"
 import { evaluateRosterEdit } from "@/lib/seasons/roster-policy"
+import { effectiveRosterDeadline } from "@/lib/rosters/roster-deadline"
 import { Button, SmartBack } from "@/components/ui"
 import { LeagueRosterManager } from "./league-roster-manager"
 
@@ -47,7 +48,16 @@ export default async function LeagueRostersPage({
           status: true,
           rosterChangePolicy: true,
           rosterChangeDeadline: true,
-          league: { select: { id: true, name: true } },
+          // The roster deadline is the season's registration deadline,
+          // resolved season → org rulebook (owner ruling 2026-08-11, T-017).
+          registrationDeadline: true,
+          league: {
+            select: {
+              id: true,
+              name: true,
+              organization: { select: { seasonDefaults: true } },
+            },
+          },
         },
       },
       roster: {
@@ -56,6 +66,8 @@ export default async function LeagueRostersPage({
           isLocked: true,
           submittedAt: true,
           lockedAt: true,
+          finalizedAt: true,
+          finalizedById: true,
           players: {
             select: {
               playerId: true,
@@ -127,6 +139,27 @@ export default async function LeagueRostersPage({
     return { waiversTotal: waivers.length, waiversOutstanding: outstanding }
   }
 
+  // Who finalized each roster, by name (finalizedById is a plain id).
+  const finalizerIds = Array.from(
+    new Set(
+      submissions
+        .map((s) => s.roster?.finalizedById)
+        .filter((id): id is string => typeof id === "string" && id.length > 0)
+    )
+  )
+  const finalizers =
+    finalizerIds.length > 0
+      ? await prisma.user.findMany({
+          where: { id: { in: finalizerIds } },
+          select: { id: true, firstName: true, lastName: true },
+        })
+      : []
+  const finalizerName = (id: string | null | undefined): string | null => {
+    if (!id) return null
+    const u = finalizers.find((f: any) => f.id === id)
+    return u ? [u.firstName, u.lastName].filter(Boolean).join(" ") || null : null
+  }
+
   const versions = submissions
     .filter((s) => s.roster)
     .map((s) => {
@@ -135,6 +168,10 @@ export default async function LeagueRostersPage({
         policy: s.season.rosterChangePolicy,
         deadline: s.season.rosterChangeDeadline,
       })
+      const rosterDueAt = effectiveRosterDeadline(
+        s.season,
+        s.season.league.organization?.seasonDefaults
+      )
       return {
         submissionId: s.id,
         submissionStatus: s.status,
@@ -148,6 +185,9 @@ export default async function LeagueRostersPage({
           : null,
         isLocked: s.roster.isLocked,
         submittedAt: s.roster.submittedAt ? s.roster.submittedAt.toISOString() : null,
+        finalizedAt: s.roster.finalizedAt ? s.roster.finalizedAt.toISOString() : null,
+        finalizedByName: finalizerName(s.roster.finalizedById),
+        rosterDueAt: rosterDueAt ? rosterDueAt.toISOString() : null,
         canEdit: editability.canEdit,
         canRequest: editability.canRequest,
         reason: editability.reason,
@@ -217,6 +257,7 @@ export default async function LeagueRostersPage({
           versions={versions}
           clubRoster={clubRoster}
           highlight={searchParams.submission}
+          teamName={team.name}
         />
       )}
     </div>

@@ -333,3 +333,131 @@ export async function sendWaiverSignEmail({
   const text = `${greeting}\n\nBefore ${playerName} can participate with ${orgName}, a parent or guardian needs to review and sign: ${waiverTitle}.\n\nReview and sign: ${link}\n\nThis link is personal to ${playerName} and expires in 30 days.`
   return sendEmail({ to, subject, html, text })
 }
+
+/**
+ * Roster-deadline reminder to team staff (owner ruling 2026-08-11, QA T-017).
+ * One template for the whole cadence: the window decides the subject line and
+ * urgency, the body always carries the live player count and the one link
+ * that fixes it. `focus` is "finalize" for a roster that still needs the
+ * club's finalize action, "submit" when it is finalized but the league has
+ * never received it.
+ */
+export async function sendRosterReminderEmail({
+  to,
+  staffName,
+  teamName,
+  leagueName,
+  seasonLabel,
+  deadlineText,
+  playerCount,
+  window,
+  focus,
+  link,
+}: {
+  to: string
+  staffName?: string | null
+  teamName: string
+  leagueName: string
+  seasonLabel: string
+  deadlineText: string
+  playerCount: number
+  window: "t30" | "t14" | "t7" | "t24h" | "overdue"
+  focus: "finalize" | "submit"
+  link: string
+}) {
+  const greeting = staffName ? `Hi ${escapeHtml(staffName)},` : "Hi,"
+  const subject =
+    window === "overdue"
+      ? `Overdue: ${teamName}'s roster for ${leagueName} was due ${deadlineText}`
+      : window === "t24h"
+        ? `Last day: ${teamName}'s roster for ${leagueName} is due ${deadlineText}`
+        : `${teamName}'s roster for ${leagueName} is due ${deadlineText}`
+  const countLine = `${teamName} has ${playerCount} player${playerCount === 1 ? "" : "s"} on its ${escapeHtml(seasonLabel)} roster (minimum 5, 8 or more recommended).`
+  const askLine =
+    focus === "submit"
+      ? `The roster is finalized but has not reached ${escapeHtml(leagueName)} yet. Submit it so the league can plan with your team.`
+      : window === "overdue"
+        ? `The deadline has passed. Until the roster is finalized, the schedule is planned without ${escapeHtml(teamName)}.`
+        : `Finalize the roster before ${escapeHtml(deadlineText)} so the league can plan with your team.`
+  const html = `
+    <div style="font-family: -apple-system, 'Segoe UI', Roboto, Arial, sans-serif; max-width: 520px; margin: 0 auto; padding: 8px;">
+      <div style="background: #ffffff; border: 1px solid #e5e5e5; border-radius: 20px; padding: 32px;">
+        <p style="margin: 0; font-size: 11px; letter-spacing: 2px; text-transform: uppercase; color: #4f46e5; font-weight: 700;">${escapeHtml(leagueName)}</p>
+        <h1 style="margin: 10px 0 0; font-size: 21px; color: #18181b;">${window === "overdue" ? "Roster overdue" : "Roster deadline"}: ${escapeHtml(deadlineText)}</h1>
+        <p style="margin: 6px 0 0; font-size: 13px; color: #71717a;">${escapeHtml(teamName)} · ${escapeHtml(seasonLabel)}</p>
+        <p style="margin: 16px 0 0; font-size: 14px; line-height: 1.6; color: #3f3f46;">
+          ${greeting} ${countLine}
+        </p>
+        <p style="margin: 10px 0 0; font-size: 14px; line-height: 1.6; color: #3f3f46;">${askLine}</p>
+        <p style="margin: 22px 0 0;">
+          <a href="${link}" style="display: inline-block; padding: 13px 28px; background: #4f46e5; color: #ffffff; text-decoration: none; border-radius: 12px; font-weight: 700; font-size: 15px;">
+            ${focus === "submit" ? "Open the roster" : "Finalize the roster"}
+          </a>
+        </p>
+      </div>
+      ${transactionalFooter(leagueName)}
+    </div>
+  `
+  const text = `${greeting}\n\n${teamName} has ${playerCount} player${playerCount === 1 ? "" : "s"} on its ${seasonLabel} roster (minimum 5, 8 or more recommended).\n${askLine.replace(/<[^>]*>/g, "")}\n\nOpen the roster: ${link}`
+  return sendEmail({ to, subject, html, text })
+}
+
+/**
+ * League-operator digest (owner ruling 2026-08-11, QA T-017): "N teams still
+ * un-rostered", sent at T-7 and the day after the deadline so the operator
+ * can chase humans, not statuses.
+ */
+export async function sendRosterDigestEmail({
+  to,
+  operatorName,
+  leagueName,
+  seasonLabel,
+  deadlineText,
+  overdue,
+  teams,
+  link,
+}: {
+  to: string
+  operatorName?: string | null
+  leagueName: string
+  seasonLabel: string
+  deadlineText: string
+  overdue: boolean
+  teams: Array<{ name: string; clubName?: string | null; playerCount: number }>
+  link: string
+}) {
+  const greeting = operatorName ? `Hi ${escapeHtml(operatorName)},` : "Hi,"
+  const subject = overdue
+    ? `${teams.length} team${teams.length === 1 ? "" : "s"} missed the roster deadline for ${leagueName} ${seasonLabel}`
+    : `${teams.length} team${teams.length === 1 ? "" : "s"} still un-rostered for ${leagueName} ${seasonLabel}`
+  const rows = teams
+    .map(
+      (t) => `
+        <tr>
+          <td style="padding: 6px 10px; border-bottom: 1px solid #f4f4f5; font-size: 13px; color: #18181b;">${escapeHtml(t.name)}${t.clubName ? `<span style="color: #a1a1aa;"> · ${escapeHtml(t.clubName)}</span>` : ""}</td>
+          <td style="padding: 6px 10px; border-bottom: 1px solid #f4f4f5; font-size: 13px; color: #71717a; text-align: right;">${t.playerCount} player${t.playerCount === 1 ? "" : "s"}</td>
+        </tr>`
+    )
+    .join("")
+  const html = `
+    <div style="font-family: -apple-system, 'Segoe UI', Roboto, Arial, sans-serif; max-width: 520px; margin: 0 auto; padding: 8px;">
+      <div style="background: #ffffff; border: 1px solid #e5e5e5; border-radius: 20px; padding: 32px;">
+        <p style="margin: 0; font-size: 11px; letter-spacing: 2px; text-transform: uppercase; color: #4f46e5; font-weight: 700;">${escapeHtml(leagueName)}</p>
+        <h1 style="margin: 10px 0 0; font-size: 21px; color: #18181b;">${overdue ? "Rosters overdue" : "Rosters not final yet"}</h1>
+        <p style="margin: 6px 0 0; font-size: 13px; color: #71717a;">${escapeHtml(seasonLabel)} · rosters ${overdue ? "were due" : "due"} ${escapeHtml(deadlineText)}</p>
+        <p style="margin: 16px 0 0; font-size: 14px; line-height: 1.6; color: #3f3f46;">
+          ${greeting} these teams have not finalized their roster${overdue ? ", and the schedule will be planned without them until they do" : ""}:
+        </p>
+        <table style="margin: 14px 0 0; width: 100%; border-collapse: collapse;">${rows}</table>
+        <p style="margin: 22px 0 0;">
+          <a href="${link}" style="display: inline-block; padding: 13px 28px; background: #4f46e5; color: #ffffff; text-decoration: none; border-radius: 12px; font-weight: 700; font-size: 15px;">
+            Open the season
+          </a>
+        </p>
+      </div>
+      ${transactionalFooter(leagueName)}
+    </div>
+  `
+  const text = `${greeting}\n\nThese teams have not finalized their ${seasonLabel} roster (${overdue ? "was due" : "due"} ${deadlineText}):\n${teams.map((t) => `- ${t.name}${t.clubName ? ` (${t.clubName})` : ""}: ${t.playerCount} player${t.playerCount === 1 ? "" : "s"}`).join("\n")}\n\nOpen the season: ${link}`
+  return sendEmail({ to, subject, html, text })
+}

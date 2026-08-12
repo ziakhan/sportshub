@@ -196,6 +196,8 @@ export const planWorldSchema = z.object({
   gameSlotMinutes: z.number().int().min(10).max(240).optional(),
   fridayStart: z.string().regex(/^\d{1,2}:\d{2}$/).optional(),
   fridayEnd: z.string().regex(/^\d{1,2}:\d{2}$/).optional(),
+  // The Fridays declaration (owner design 2026-08-11, QA T-018). Absent = No.
+  fridayPolicy: z.enum(["IF_NEEDED", "REGULAR"]).optional(),
 })
 
 export const planSettingsSchema = z.object({

@@ -185,6 +185,18 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
       where: { seasonId: params.id, publishedAt: null },
     })
 
+    // One exception to the quiet commit (owner ruling 2026-08-11, QA T-017):
+    // a team the draw EXCLUDED for an unfinalized roster is told the season
+    // was generated without them — that is not schedule noise, it is the
+    // enforcement they were warned about. Send-once per team per season,
+    // best-effort.
+    try {
+      const { notifyPlannedWithoutTeams } = await import("@/lib/rosters/reminders")
+      await notifyPlannedWithoutTeams(params.id)
+    } catch (error) {
+      console.error("Planned-without notice failed:", error)
+    }
+
     return NextResponse.json({
       success: true,
       removed: writeCounts.removed,

@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { createPortal } from "react-dom"
 import { useRouter } from "next/navigation"
 import { format } from "date-fns"
 import { Badge, Button, PanelHeader, toneForStatus } from "@/components/ui"
@@ -27,6 +28,12 @@ interface RosterVersion {
   deadline: string | null
   isLocked: boolean
   submittedAt: string | null
+  /** Club-side finalize (owner ruling 2026-08-11, QA T-017). */
+  finalizedAt: string | null
+  finalizedByName: string | null
+  /** The league's roster deadline (= the season's registration deadline,
+   *  resolved season → org rulebook). Null = the league never set one. */
+  rosterDueAt: string | null
   canEdit: boolean
   canRequest: boolean
   reason: string
@@ -46,14 +53,97 @@ const POLICY_LABEL: Record<string, string> = {
   CLOSED: "no changes after lock",
 }
 
+/** Finalize thresholds (owner ruling 2026-08-11, QA T-017): under 5 the
+ *  button is blocked, 5-7 gets an "Are you sure?", 8+ goes straight through. */
+const MIN_PLAYERS = 5
+const COMFORTABLE_PLAYERS = 8
+
+/** Deadline dates are stored as date-only UTC midnights — format the calendar
+ *  date the league picked, not its local-time rendering (which reads a day
+ *  early in Toronto). */
+const dueDate = (iso: string) => format(new Date(`${iso.slice(0, 10)}T12:00:00`), "MMM d, yyyy")
+
+/**
+ * The 5-7 player "Are you sure?" (owner ruling 2026-08-11): a dedicated
+ * dialog, not an inline maze — it says why a thin roster is a risk and lets
+ * the operator finalize anyway or step back.
+ */
+function FinalizeConfirmDialog({
+  teamName,
+  seasonLabel,
+  leagueName,
+  playerCount,
+  busy,
+  onConfirm,
+  onClose,
+}: {
+  teamName: string
+  seasonLabel: string
+  leagueName: string
+  playerCount: number
+  busy: boolean
+  onConfirm: () => void
+  onClose: () => void
+}) {
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose()
+    }
+    window.addEventListener("keydown", onKey)
+    return () => window.removeEventListener("keydown", onKey)
+  }, [onClose])
+
+  return createPortal(
+    <div
+      className="fixed inset-0 z-50 overflow-y-auto bg-black/40"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Finalize a short roster"
+      data-testid="finalize-confirm"
+      onClick={onClose}
+    >
+      <div className="flex min-h-full items-start justify-center p-4 pt-[12vh]">
+        <div
+          className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <h3 className="text-ink-900 text-base font-bold">
+            Finalize with only {playerCount} players?
+          </h3>
+          <p className="text-ink-600 mt-2 text-sm leading-relaxed">
+            {playerCount} players meets the league minimum of {MIN_PLAYERS}, but it leaves no
+            room: one sick, injured or travelling player and {teamName} is at the forfeit line.
+            Most teams carry {COMFORTABLE_PLAYERS} or more.
+          </p>
+          <p className="text-ink-600 mt-2 text-sm leading-relaxed">
+            Finalizing tells {leagueName} this is the roster for {seasonLabel}. You can undo it
+            until the league locks rosters.
+          </p>
+          <div className="mt-5 flex items-center justify-end gap-2">
+            <Button variant="subtle" size="sm" onClick={onClose} disabled={busy}>
+              Go back
+            </Button>
+            <Button size="sm" tone="hoop" onClick={onConfirm} disabled={busy} data-testid="finalize-anyway">
+              {busy ? "Finalizing…" : `Finalize with ${playerCount} players`}
+            </Button>
+          </div>
+        </div>
+      </div>
+    </div>,
+    document.body
+  )
+}
+
 export function LeagueRosterManager({
   versions,
   clubRoster,
   highlight,
+  teamName,
 }: {
   versions: RosterVersion[]
   clubRoster: RosterPlayer[]
   highlight?: string
+  teamName?: string
 }) {
   const router = useRouter()
   const [editing, setEditing] = useState<string | null>(null)
@@ -64,6 +154,9 @@ export function LeagueRosterManager({
   const [requestRemoves, setRequestRemoves] = useState<Set<string>>(new Set())
   const [busy, setBusy] = useState(false)
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null)
+  // Finalize (owner ruling 2026-08-11, QA T-017): which version has the
+  // short-roster confirm dialog open.
+  const [finalizing, setFinalizing] = useState<string | null>(null)
   // Owner 2026-07-18: withdrawing an APPROVED team needs the league's
   // sign-off — track our pending withdrawal requests by submissionId.
   const [withdrawing, setWithdrawing] = useState<string | null>(null)
@@ -142,6 +235,69 @@ export function LeagueRosterManager({
     setMessage(null)
   }
 
+  /**
+   * Finalize (owner ruling 2026-08-11, QA T-017): under 5 the button never
+   * gets here (blocked with the reason on the card), 5-7 goes through the
+   * dedicated confirm dialog, 8+ finalizes directly.
+   */
+  const startFinalize = (v: RosterVersion) => {
+    setMessage(null)
+    if (v.players.length < COMFORTABLE_PLAYERS) {
+      setFinalizing(v.submissionId)
+      return
+    }
+    void finalize(v, false)
+  }
+
+  const finalize = async (v: RosterVersion, confirmShort: boolean) => {
+    setBusy(true)
+    setMessage(null)
+    try {
+      const res = await fetch(
+        `/api/seasons/${v.seasonId}/submissions/${v.submissionId}/roster/finalize`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ confirmShort }),
+        }
+      )
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || "Couldn't finalize the roster")
+      setMessage({
+        type: "success",
+        text: `Roster finalized (${data.playerCount} players). ${v.leagueName} now plans with this team.`,
+      })
+      setFinalizing(null)
+      router.refresh()
+    } catch (err) {
+      setMessage({ type: "error", text: err instanceof Error ? err.message : "Couldn't finalize" })
+      setFinalizing(null)
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  /** The undo half: finalizing is a declaration, revocable until the league
+   *  locks the roster. */
+  const unfinalize = async (v: RosterVersion) => {
+    setBusy(true)
+    setMessage(null)
+    try {
+      const res = await fetch(
+        `/api/seasons/${v.seasonId}/submissions/${v.submissionId}/roster/finalize`,
+        { method: "DELETE" }
+      )
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || "Couldn't undo the finalize")
+      setMessage({ type: "success", text: "Finalize undone. The roster is open again." })
+      router.refresh()
+    } catch (err) {
+      setMessage({ type: "error", text: err instanceof Error ? err.message : "Couldn't undo" })
+    } finally {
+      setBusy(false)
+    }
+  }
+
   const toggle = (playerId: string) => {
     setSelection((current) => {
       const next = new Set(current)
@@ -164,7 +320,9 @@ export function LeagueRosterManager({
       if (!res.ok) throw new Error(data.error || "Couldn't save the roster")
       setMessage({
         type: "success",
-        text: `Roster saved (${data.playerCount} players)${data.relocked ? " — the roster is locked again." : "."}`,
+        text: `Roster saved (${data.playerCount} players)${data.relocked ? " — the roster is locked again." : "."}${
+          data.finalizeCleared ? " Editing reopened the roster. Finalize it again when it is final." : ""
+        }`,
       })
       setEditing(null)
       router.refresh()
@@ -257,6 +415,15 @@ export function LeagueRosterManager({
         const isEditing = editing === v.submissionId
         const isRequesting = requesting === v.submissionId
         const highlighted = highlight === v.submissionId
+        // Finalize (owner ruling 2026-08-11, QA T-017): an explicit act on a
+        // live, unlocked, not-yet-final roster. Under the legal minimum the
+        // button is blocked and the card says why.
+        const liveSubmission =
+          v.submissionStatus !== "WITHDRAWN" && v.submissionStatus !== "REJECTED"
+        const showFinalize = liveSubmission && !v.isLocked && !v.finalizedAt
+        const belowMinimum = v.players.length < MIN_PLAYERS
+        const rosterOverdue =
+          !!v.rosterDueAt && new Date(v.rosterDueAt).getTime() < Date.now()
 
         return (
           <div
@@ -266,6 +433,17 @@ export function LeagueRosterManager({
               highlighted ? "ring-play-200 ring-2" : ""
             }`}
           >
+            {finalizing === v.submissionId && (
+              <FinalizeConfirmDialog
+                teamName={teamName ?? "this team"}
+                seasonLabel={v.seasonLabel}
+                leagueName={v.leagueName}
+                playerCount={v.players.length}
+                busy={busy}
+                onConfirm={() => void finalize(v, true)}
+                onClose={() => setFinalizing(null)}
+              />
+            )}
             <PanelHeader
               variant="band"
               title={
@@ -279,6 +457,32 @@ export function LeagueRosterManager({
               }
               action={
                 <span className="flex flex-wrap items-center gap-2">
+                  {showFinalize && (
+                    <Button
+                      size="sm"
+                      onClick={() => startFinalize(v)}
+                      disabled={busy || belowMinimum}
+                      title={
+                        belowMinimum
+                          ? `A roster needs at least ${MIN_PLAYERS} players to finalize (has ${v.players.length}).`
+                          : undefined
+                      }
+                      data-testid="finalize-roster"
+                    >
+                      Finalize roster
+                    </Button>
+                  )}
+                  {liveSubmission && v.finalizedAt && !v.isLocked && (
+                    <Button
+                      variant="subtle"
+                      size="sm"
+                      onClick={() => unfinalize(v)}
+                      disabled={busy}
+                      data-testid="undo-finalize"
+                    >
+                      Undo finalize
+                    </Button>
+                  )}
                   {v.canEdit && !isEditing && (
                     <Button size="sm" onClick={() => startEdit(v)}>
                       Edit roster
@@ -378,6 +582,24 @@ export function LeagueRosterManager({
                 <Badge tone={toneForStatus(v.isLocked ? "LOCKED" : "OPEN")} dot>
                   {v.isLocked ? "Locked" : "Open"}
                 </Badge>
+                {v.finalizedAt && (
+                  <Badge tone="court" dot>
+                    Finalized {format(new Date(v.finalizedAt), "MMM d")}
+                    {v.finalizedByName ? ` by ${v.finalizedByName}` : ""}
+                  </Badge>
+                )}
+                {v.rosterDueAt && !v.finalizedAt && !v.isLocked && (
+                  <span
+                    className={`rounded-full px-2.5 py-0.5 font-medium ${
+                      rosterOverdue ? "bg-hoop-50 text-hoop-700" : "bg-ink-50 text-ink-600"
+                    }`}
+                    data-testid="roster-due"
+                  >
+                    {rosterOverdue
+                      ? `roster was due ${dueDate(v.rosterDueAt)}`
+                      : `roster due ${dueDate(v.rosterDueAt)}`}
+                  </span>
+                )}
                 <span className="bg-ink-50 text-ink-600 rounded-full px-2.5 py-0.5 font-medium">
                   {POLICY_LABEL[v.policy] ?? v.policy}
                   {v.deadline ? ` (${format(new Date(v.deadline), "MMM d")})` : ""}
@@ -387,6 +609,18 @@ export function LeagueRosterManager({
                 )}
                 <span>{v.players.length} players</span>
               </div>
+              {showFinalize && belowMinimum && (
+                <p className="text-hoop-700 mt-2 text-xs" data-testid="finalize-blocked">
+                  Finalize needs at least {MIN_PLAYERS} players and this roster has{" "}
+                  {v.players.length}. Add players, then finalize.
+                </p>
+              )}
+              {rosterOverdue && !v.finalizedAt && !v.isLocked && liveSubmission && (
+                <p className="text-hoop-700 mt-2 text-xs">
+                  The deadline has passed. Until the roster is finalized, {v.leagueName} plans
+                  the season without this team.
+                </p>
+              )}
               {!v.canEdit && (
                 <p className="text-ink-400 mt-2 text-xs">{v.reason}</p>
               )}

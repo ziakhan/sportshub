@@ -34,6 +34,9 @@ export type AuditAction =
   | "ROSTER_JERSEY_CHANGE"
   | "ROSTER_VERSION_EDIT"
   | "LEAGUE_ROSTER_EDIT"
+  // Club-side finalize/unfinalize (owner ruling 2026-08-11, QA T-017)
+  | "ROSTER_FINALIZED"
+  | "ROSTER_UNFINALIZED"
   | "PLAYOFF_ELIGIBILITY_OVERRIDE"
   | "SEASON_CLONED"
   | "REFEREE_ASSIGN"

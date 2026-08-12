@@ -43,6 +43,10 @@ interface CommonProps {
   /** Full-width block button. */
   block?: boolean
   className?: string
+  /** Native tooltip — the polite place for "why is this disabled". */
+  title?: string
+  /** Test hook, passed straight through. */
+  "data-testid"?: string
 }
 
 interface LinkButtonProps extends CommonProps {
@@ -94,7 +98,14 @@ export function Button(props: ButtonProps) {
 
   if (props.href !== undefined) {
     return (
-      <Link href={props.href} onClick={props.onClick} className={cls} style={style}>
+      <Link
+        href={props.href}
+        onClick={props.onClick}
+        className={cls}
+        style={style}
+        title={props.title}
+        data-testid={props["data-testid"]}
+      >
         {icon}
         {children}
       </Link>
@@ -108,6 +119,8 @@ export function Button(props: ButtonProps) {
       disabled={props.disabled}
       className={cn(cls, props.disabled && "pointer-events-none opacity-50")}
       style={style}
+      title={props.title}
+      data-testid={props["data-testid"]}
     >
       {icon}
       {children}

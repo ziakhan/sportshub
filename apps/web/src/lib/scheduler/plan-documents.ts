@@ -186,6 +186,17 @@ export interface PlanWorld {
   /** The league's Friday-evening window, when it set one (owner 2026-08-07). */
   fridayStart?: string
   fridayEnd?: string
+  /**
+   * The Fridays declaration (owner design 2026-08-11, QA T-018). Absent = No,
+   * the default: no draw ever adds a Friday, only the operator (via the
+   * shortfall rescue suggestion) does. "IF_NEEDED" = the draw plans Sat+Sun
+   * first and adds Friday supply only where a weekend would otherwise be over
+   * or tight. "REGULAR" = Friday windows are normal capacity in the draw.
+   * The owner's reasoning: nobody likes Fridays (work, school, travel) —
+   * capacity pressure is the only honest reason, so never fill a Friday that
+   * Sat+Sun could absorb.
+   */
+  fridayPolicy?: "IF_NEEDED" | "REGULAR"
 }
 
 /** What SeasonPlan.settings holds. */

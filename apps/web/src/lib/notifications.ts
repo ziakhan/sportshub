@@ -121,6 +121,16 @@ export type NotificationType =
   | "rsvp_change"
   // Waivers: family nudge to sign before the league season starts (7d/24h)
   | "waiver_reminder"
+  // Roster deadline (owner ruling 2026-08-11, QA T-017): the escalating chase
+  // toward the league's roster deadline. Plain kind = the T-14 bell; urgent =
+  // T-7 / T-24h / day-after-overdue (these also push); digest = the league
+  // operator's "N teams still un-rostered" at T-7 and day-after.
+  | "roster_reminder"
+  | "roster_reminder_urgent"
+  | "roster_digest"
+  // The season was planned/generated WITHOUT this team because its roster was
+  // not finalized by the deadline (the enforcement half of T-017).
+  | "season_planned_without_team"
   // Program staff: you were assigned to run a camp / house league
   | "program_assigned"
 
@@ -171,6 +181,11 @@ const PUSH_TYPES: ReadonlySet<NotificationType> = new Set<NotificationType>([
   "rsvp_change",
   // Time-sensitive family action: unsigned waiver blocks play (owner 2026-07-20)
   "waiver_reminder",
+  // Roster deadline (owner 2026-08-11, T-017): push starts at T-7 — the plain
+  // "roster_reminder" (T-14) stays bell+email only so phones aren't nagged
+  // three weeks out. Being planned without your team is always push-worthy.
+  "roster_reminder_urgent",
+  "season_planned_without_team",
 ])
 
 /**

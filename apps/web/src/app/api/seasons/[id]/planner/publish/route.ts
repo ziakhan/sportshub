@@ -4,6 +4,7 @@ import { buildPlannerState } from "@/lib/scheduler/planner"
 import { currentAssignment, seasonCalendarMonths } from "@/lib/scheduler/planner-core"
 import { NO_PLAN_MESSAGE, seasonPlannerAuth } from "@/lib/scheduler/planner-auth"
 import { isSeasonLocked, SEASON_LOCKED_MESSAGE } from "@/lib/seasons/season-lock"
+import { notifyPlannedWithoutTeams } from "@/lib/rosters/reminders"
 
 export const dynamic = "force-dynamic"
 
@@ -45,6 +46,17 @@ export async function POST(_request: NextRequest, { params }: { params: { id: st
       where: { id: params.id },
       data: { planPublishedAt },
     })
+
+    // Roster-deadline enforcement, the honest half (owner ruling 2026-08-11,
+    // QA T-017): teams the draw excluded for an unfinalized roster are told in
+    // plain words that the published plan was made without them. Send-once
+    // per team per season, best-effort — a failed bell never blocks a publish.
+    try {
+      await notifyPlannedWithoutTeams(params.id)
+    } catch (error) {
+      console.error("Planned-without notice failed:", error)
+    }
+
     return NextResponse.json({ success: true, planPublishedAt })
   } catch (error) {
     console.error("Planner publish error:", error)

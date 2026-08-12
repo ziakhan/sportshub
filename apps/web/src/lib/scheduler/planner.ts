@@ -407,6 +407,7 @@ export async function buildPlannerState(
     gameSlotMinutes: input.gameSlotMinutes,
     fridayStart: input.fridayStartTime ?? undefined,
     fridayEnd: input.fridayEndTime ?? undefined,
+    fridayPolicy: input.fridayPolicy ?? undefined,
     gyms,
   }
 }

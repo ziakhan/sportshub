@@ -13,7 +13,10 @@ import {
   bookingStatusFor,
   drawnGyms,
   fridayFit,
+  fridayPolicyPrepass,
+  fridayPolicyRescue,
   fridaySentence,
+  withFridayBlocks,
   gymRanks,
   needsGymHealing,
   sharedGender,
@@ -2024,5 +2027,92 @@ describe("a Friday may never make a mixed gym-day", () => {
       "Grade 4 Boys already play this weekend"
     )
     expect(fridaySentence(fit as never, ["Grade 4 Boys"])).toContain("no third gym")
+  })
+})
+
+/**
+ * THE FRIDAYS DECLARATION (owner design 2026-08-11, QA T-018).
+ *
+ * One question — "Can games run on Fridays?" — and the owner's law behind it:
+ * nobody likes Fridays, capacity pressure is the only honest reason, so a
+ * Friday that Sat+Sun could absorb is never filled. No is the default and
+ * changes nothing; "IF_NEEDED" adds Friday supply only where a drawn weekend
+ * is over or tight; "REGULAR" makes the Friday window normal capacity before
+ * the solve. Both passes are deterministic and speak the working-map grain
+ * (courtCapKey → courts) the rescue suggestion already writes.
+ */
+describe("the Fridays declaration", () => {
+  const stateOf = (w: PlanWorld) =>
+    planStateFrom("s1", { settings: { capturedAt: "x", state: w } }) as PlannerState
+  /** The two-weekend world with one boys grade of `teams`, declared `policy`. */
+  const declared = (
+    policy: "IF_NEEDED" | "REGULAR" | undefined,
+    teams: number
+  ): PlannerState =>
+    stateOf({
+      ...world(),
+      ...(policy ? { fridayPolicy: policy } : {}),
+      units: [
+        { key: "age:Grade 9 Boys", label: "Grade 9 Boys", divisionIds: ["a"], teams, included: true },
+      ],
+    })
+  const KEY = courtCapKey("w-oct", "v-home")
+
+  it("No is the default and the draw adds nothing, even on an overflowing weekend", () => {
+    const state = declared(undefined, 80)
+    expect(fridayPolicyPrepass(state)).toEqual({})
+    expect(fridayPolicyRescue(state, { "w-oct": ["age:Grade 9 Boys"] })).toEqual({})
+  })
+
+  it("REGULAR puts the Friday evening on every runnable weekend's gyms before the solve", () => {
+    const state = declared("REGULAR", 12)
+    const pre = fridayPolicyPrepass(state)
+    // The chosen October weekend's home gym, at full usable courts; the
+    // unchosen November weekend gets nothing.
+    expect(pre).toEqual({ [KEY]: 3 })
+    // Applied, the weekend reads as capacity the solver may plan into:
+    // 3 courts × 2 days × 12, plus 3 courts × 4 games on the Friday evening.
+    const on = withFridayBlocks(state, pre)
+    expect(on.windows[0].weekends[0].capacityGames).toBe(72 + 12)
+    // And REGULAR never runs the rescue pass's math.
+    expect(fridayPolicyRescue(state, { "w-oct": ["age:Grade 9 Boys"] })).toEqual({})
+  })
+
+  it("IF_NEEDED stays silent for a weekend that fits comfortably", () => {
+    // 60 games against 72 is roomy (ratio 0.83): Sat+Sun absorb it, so the
+    // Friday is never filled — the owner's law, verbatim.
+    const state = declared("IF_NEEDED", 60)
+    expect(fridayPolicyPrepass(state)).toEqual({})
+    expect(fridayPolicyRescue(state, { "w-oct": ["age:Grade 9 Boys"] })).toEqual({})
+  })
+
+  it("IF_NEEDED adds the smallest Friday block that relieves a tight weekend", () => {
+    // 70 games against 72 is tight (0.97 ≥ 0.95). One Friday court adds four
+    // games: 70 against 76 is 0.92 — relieved. One court, not three.
+    const state = declared("IF_NEEDED", 70)
+    expect(fridayPolicyRescue(state, { "w-oct": ["age:Grade 9 Boys"] })).toEqual({ [KEY]: 1 })
+  })
+
+  it("IF_NEEDED takes the whole evening when even that cannot reach comfort", () => {
+    // 80 games against 72 is over. Even all three Friday courts (84) leave the
+    // weekend at 0.95 — partial relief is still supply the weekend needs, so
+    // the pass takes the whole evening rather than refusing to help.
+    const state = declared("IF_NEEDED", 80)
+    expect(fridayPolicyRescue(state, { "w-oct": ["age:Grade 9 Boys"] })).toEqual({ [KEY]: 3 })
+  })
+
+  it("never touches a weekend the operator already decided about, and is deterministic", () => {
+    const regular = declared("REGULAR", 12)
+    // The working map already holds an answer for this gym — a drop (0) or an
+    // add alike — and the declaration never overwrites the operator.
+    expect(fridayPolicyPrepass(regular, { [KEY]: 0 })).toEqual({})
+    const needed = declared("IF_NEEDED", 80)
+    expect(fridayPolicyRescue(needed, { "w-oct": ["age:Grade 9 Boys"] }, { [KEY]: 0 })).toEqual({})
+    // An unassigned weekend needs nothing.
+    expect(fridayPolicyRescue(needed, {})).toEqual({})
+    // Same world, same answer, twice.
+    expect(fridayPolicyRescue(needed, { "w-oct": ["age:Grade 9 Boys"] })).toEqual(
+      fridayPolicyRescue(needed, { "w-oct": ["age:Grade 9 Boys"] })
+    )
   })
 })

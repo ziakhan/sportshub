@@ -19,7 +19,17 @@ export async function GET(_request: NextRequest, { params }: { params: { id: str
     if (gate.status !== 200) return NextResponse.json({ error: gate.error }, { status: gate.status })
 
     const grid = await buildVenueWeekendGrid(params.id)
-    return NextResponse.json({ grid, seasonStatus: gate.seasonStatus })
+    // The Fridays declaration rides along (owner design 2026-08-11, QA
+    // T-018): step 2 asks the question and needs the season's current answer.
+    const season = (await (prisma as any).season.findUnique({
+      where: { id: params.id },
+      select: { fridayPolicy: true },
+    })) as any
+    return NextResponse.json({
+      grid,
+      seasonStatus: gate.seasonStatus,
+      fridayPolicy: season?.fridayPolicy ?? null,
+    })
   } catch (error) {
     console.error("Planner venue grid error:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })

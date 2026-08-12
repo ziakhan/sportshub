@@ -171,6 +171,14 @@ export function QuickSetupDialog({
   const [start, setStart] = useState("09:00")
   const [end, setEnd] = useState("17:00")
   const [gamesPerTeam, setGamesPerTeam] = useState(8)
+  /**
+   * The Fridays declaration (owner design 2026-08-11, QA T-018): "Can games
+   * run on Fridays?" Default No — nobody likes Fridays (work, school,
+   * travel); capacity pressure is the only honest reason, so the engine never
+   * fills a Friday that Sat+Sun could absorb. Prefilled with the season's
+   * current answer so quick setup never silently clears an earlier Yes.
+   */
+  const [fridayPolicy, setFridayPolicy] = useState<"IF_NEEDED" | "REGULAR" | null>(null)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -186,6 +194,10 @@ export function QuickSetupDialog({
           courtIds: (sv.venue?.courtList ?? []).map((c: any) => c.id),
         }))
       )
+      const seasonRes = await fetch(`/api/seasons/${seasonId}`).catch(() => null)
+      const seasonData = seasonRes?.ok ? await seasonRes.json() : null
+      const declared = seasonData?.season?.fridayPolicy ?? seasonData?.fridayPolicy ?? null
+      if (declared === "IF_NEEDED" || declared === "REGULAR") setFridayPolicy(declared)
     })()
   }, [seasonId])
 
@@ -197,6 +209,18 @@ export function QuickSetupDialog({
     setBusy(true)
     setError(null)
     try {
+      // The Fridays declaration lands on the SEASON first (owner design
+      // 2026-08-11, QA T-018), so the plan created below inherits it and the
+      // draw obeys it from the first solve.
+      const declareRes = await fetch(`/api/seasons/${seasonId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ fridayPolicy }),
+      })
+      if (!declareRes.ok) {
+        const data = await declareRes.json().catch(() => null)
+        throw new Error(data?.error ?? "Couldn't save the Fridays answer.")
+      }
       const perWeekend = Math.max(1, Math.min(10, Math.ceil(gamesPerTeam / validWeekends.length)))
       for (const [i, w] of validWeekends.entries()) {
         const dates = [w.date]
@@ -365,6 +389,71 @@ export function QuickSetupDialog({
                 onChange={(e) => setGamesPerTeam(Number(e.target.value))}
               />
             </label>
+          </div>
+
+          {/* THE FRIDAYS QUESTION (owner design 2026-08-11, QA T-018): one
+              question, default No, one follow-up choice on Yes. */}
+          <div className="mt-4" data-testid="quick-friday-declaration">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <p className="text-ink-800 text-sm font-semibold">Can games run on Fridays?</p>
+              <div className="border-ink-200 inline-flex overflow-hidden rounded-lg border text-xs">
+                {[
+                  { v: null, label: "No" },
+                  { v: "IF_NEEDED" as const, label: "Yes" },
+                ].map((o) => {
+                  const active = o.v === null ? fridayPolicy === null : fridayPolicy !== null
+                  return (
+                    <button
+                      key={o.label}
+                      type="button"
+                      aria-pressed={active}
+                      data-testid={o.v === null ? "quick-friday-no" : "quick-friday-yes"}
+                      onClick={() => setFridayPolicy(o.v)}
+                      className={`px-3 py-1 font-semibold ${
+                        active ? "bg-play-600 text-white" : "text-ink-600 bg-white"
+                      }`}
+                    >
+                      {o.label}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+            {fridayPolicy !== null && (
+              <div className="mt-2 space-y-1.5">
+                {[
+                  {
+                    v: "IF_NEEDED" as const,
+                    label: "Only when a weekend can't fit otherwise",
+                    detail: "Saturday and Sunday fill first. A Friday evening is used only where a weekend would run out of room.",
+                  },
+                  {
+                    v: "REGULAR" as const,
+                    label: "Fridays are regular game days",
+                    detail: "Friday evenings count as normal capacity in the draw.",
+                  },
+                ].map((o) => (
+                  <label
+                    key={o.v}
+                    className={`flex cursor-pointer items-start gap-2 rounded-xl border px-3 py-2 text-sm ${
+                      fridayPolicy === o.v ? "border-play-300 bg-play-50/60" : "border-ink-200 bg-white"
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="quick-friday-mode"
+                      checked={fridayPolicy === o.v}
+                      onChange={() => setFridayPolicy(o.v)}
+                      className="mt-0.5 accent-play-600"
+                    />
+                    <span className="min-w-0">
+                      <span className="text-ink-900 block text-xs font-semibold">{o.label}</span>
+                      <span className="text-ink-500 block text-[11px]">{o.detail}</span>
+                    </span>
+                  </label>
+                ))}
+              </div>
+            )}
           </div>
 
           {error && <p className="text-hoop-700 mt-3 text-xs font-semibold">{error}</p>}

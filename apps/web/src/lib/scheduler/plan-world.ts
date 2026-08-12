@@ -13,6 +13,8 @@ import {
   courtCapKey,
   courtsWiredAt,
   orderedVenues,
+  weekendDemand,
+  TIGHT_RATIO,
   type PlannerGym,
   type PlannerState,
   type PlannerUnit,
@@ -355,6 +357,7 @@ export function planStateFrom(
     gameSlotMinutes: world.gameSlotMinutes ?? DEFAULT_SLOT_MINUTES,
     fridayStart: world.fridayStart,
     fridayEnd: world.fridayEnd,
+    fridayPolicy: world.fridayPolicy,
     gyms: gyms.map((g) => ({ ...g })),
   }
 }
@@ -912,6 +915,124 @@ export function withFridayBlock(
       ),
     })),
   })
+}
+
+/* ------------------------- the Fridays declaration ----------------------- */
+
+/**
+ * THE FRIDAYS DECLARATION (owner design 2026-08-11, QA T-018).
+ *
+ * One question on the wizard and the quick setup: "Can games run on Fridays?"
+ * The owner's reasoning, encoded here on purpose: NOBODY LIKES FRIDAYS — work,
+ * school and travel all fight the evening — so capacity pressure is the only
+ * honest reason to use one, and a Friday that Saturday and Sunday could have
+ * absorbed must never be filled. Hence three answers, not two:
+ *
+ *  - No (absent, the default): the draw never adds a Friday. Only the operator
+ *    does, via the shortfall rescue suggestion — nothing changes for existing
+ *    leagues.
+ *  - "IF_NEEDED" (the default when the answer is Yes): the engine plans Sat+Sun
+ *    first, exactly as before, and Friday hours enter a weekend's capacity ONLY
+ *    where that weekend cannot fit its assigned load without them, or would
+ *    cross the tight threshold — fridayPolicyRescue, a post-draw pass.
+ *  - "REGULAR": Friday windows are normal capacity in the draw —
+ *    fridayPolicyPrepass puts the Friday block on every weekend's gyms BEFORE
+ *    the solve, so the solver treats the evening like any other court time.
+ *
+ * Both passes speak the machinery's own grain: they return a fridays map keyed
+ * by courtCapKey, the same working-copy shape the rescue suggestion's accept
+ * writes, so the blocks show on the gym menus, ride every save, and the
+ * per-weekend "Take the Friday back off" exception keeps working untouched.
+ * Keys already present in `existing` (the board's working map) are never
+ * overwritten: an operator's own add or drop always wins. The gender law is
+ * deliberately NOT applied here — it guards POOLING several grades into one
+ * rescue block, whereas a declared Friday is the weekend's own capacity for
+ * the weekend's own grades, and the day packer still decides who plays when.
+ */
+
+/** REGULAR mode, before the solve: the Friday evening at every gym of every
+ *  runnable weekend, at full usable courts. Deterministic; {} for other modes. */
+export function fridayPolicyPrepass(
+  state: PlannerState,
+  existing: Record<string, number> = {}
+): Record<string, number> {
+  if (state.fridayPolicy !== "REGULAR") return {}
+  if (fridayGamesPerCourt(state.gameSlotMinutes, state) <= 0) return {}
+  const out: Record<string, number> = {}
+  for (const win of state.windows) {
+    for (const w of win.weekends) {
+      if (w.chosen === false) continue
+      for (const v of w.venues) {
+        const key = courtCapKey(w.sessionId, v.venueId)
+        if (key in existing) continue
+        if ((v.fridayCourts ?? 0) > 0) continue
+        const courts = courtsWiredAt(v)
+        if (courts > 0) out[key] = courts
+      }
+    }
+  }
+  return out
+}
+
+/** IF_NEEDED mode, after the solve: Friday supply enters a weekend's capacity
+ *  only when that weekend cannot fit its assigned load without it (over), or
+ *  would cross the tight threshold. Right-sized — the smallest number of
+ *  courts that brings the weekend back under tight, capped at the host gym —
+ *  and placed at the home gym first (the league's own building costs nothing),
+ *  else the largest gym already on the weekend. Deterministic; {} otherwise. */
+export function fridayPolicyRescue(
+  state: PlannerState,
+  assigned: Record<string, string[]>,
+  existing: Record<string, number> = {}
+): Record<string, number> {
+  if (state.fridayPolicy !== "IF_NEEDED") return {}
+  const perCourt = fridayGamesPerCourt(state.gameSlotMinutes, state)
+  if (perCourt <= 0) return {}
+  const out: Record<string, number> = {}
+  for (const win of state.windows) {
+    for (const w of win.weekends) {
+      if (w.chosen === false) continue
+      const keys = assigned[w.sessionId] ?? []
+      if (keys.length === 0) continue
+      const demand = weekendDemand(state.units, w, keys)
+      const capacity = w.capacityGames
+      const over = demand > capacity
+      const tight = capacity > 0 && demand / capacity >= TIGHT_RATIO
+      if (!over && !tight) continue
+      // The host: home first, then the largest building already on the
+      // weekend; venueId breaks ties so the same world always picks the same
+      // gym. A gym the operator already decided about (working map) is left
+      // alone, and a gym whose Friday is already full cannot take more.
+      const host = [...w.venues]
+        .sort(
+          (a, b) =>
+            (a.role === "home" ? 0 : 1) - (b.role === "home" ? 0 : 1) ||
+            courtsWiredAt(b) - courtsWiredAt(a) ||
+            a.venueId.localeCompare(b.venueId)
+        )
+        .find(
+          (v) =>
+            !(courtCapKey(w.sessionId, v.venueId) in existing) &&
+            courtsWiredAt(v) > (v.fridayCourts ?? 0)
+        )
+      if (!host) continue
+      const hostCourts = courtsWiredAt(host)
+      const already = host.fridayCourts ?? 0
+      // The smallest block that lands the weekend back under tight; when even
+      // the whole building's evening cannot, take it all — partial relief is
+      // still supply the weekend needs.
+      let take = hostCourts
+      for (let courts = already + 1; courts <= hostCourts; courts++) {
+        const cap = capacity + (courts - already) * perCourt
+        if (demand < cap * TIGHT_RATIO) {
+          take = courts
+          break
+        }
+      }
+      out[courtCapKey(w.sessionId, host.venueId)] = take
+    }
+  }
+  return out
 }
 
 /* ------------------- where a grade could actually go --------------------- */
@@ -2053,6 +2174,7 @@ export function worldFromState(state: PlannerState): PlanWorld {
     gameSlotMinutes: state.gameSlotMinutes ?? DEFAULT_SLOT_MINUTES,
     ...(state.fridayStart ? { fridayStart: state.fridayStart } : {}),
     ...(state.fridayEnd ? { fridayEnd: state.fridayEnd } : {}),
+    ...(state.fridayPolicy ? { fridayPolicy: state.fridayPolicy } : {}),
   }
 }
 

@@ -24,9 +24,12 @@ import type { FridayFit } from "@/lib/scheduler/plan-world"
 import {
   bookingStatusFor,
   drawnGyms,
+  fridayPolicyPrepass,
+  fridayPolicyRescue,
   fridayWindowLabel,
   solvableState,
   weekendRooms,
+  withFridayBlocks,
   withWeekend,
   withWeekendInState,
   worldWeekends,
@@ -804,12 +807,31 @@ export function useBoardVerbs(m: BoardModel) {
     // the solver never gets to fill those. A chosen weekend with no gym time on
     // it yet is filled from the building the league owns (owner ruling
     // 2026-08-06), which is what solvableState puts on it.
-    const runs = solvableState(world)
+    const solvable = solvableState(world)
+    /**
+     * THE FRIDAYS DECLARATION (owner design 2026-08-11, QA T-018). "REGULAR"
+     * puts the Friday evening on every weekend's gyms BEFORE the solve, so
+     * the solver treats it as normal capacity; "IF_NEEDED" leaves the solve
+     * alone — Sat+Sun first, the owner's law — and adds Friday supply
+     * afterwards only where the drawn load left a weekend over or tight. The
+     * default (no declaration) computes two empty maps and this is exactly
+     * the old code path. The operator's own working-map entries (adds and
+     * drops alike) are never overwritten, and once a policy Friday lands in
+     * the map it behaves like an accepted rescue Friday: visible on the gym
+     * menu, droppable per weekend, riding every save.
+     */
+    const pre = fridayPolicyPrepass(solvable, fridays)
+    const runs = withFridayBlocks(solvable, pre)
     const assignment = proposePlan(runs, lever)
-    const venues = packPlanVenues(runs, assignment)
+    const rescue = fridayPolicyRescue(runs, assignment, fridays)
+    const solved = withFridayBlocks(runs, rescue)
+    const venues = packPlanVenues(solved, assignment)
     return {
       assignment,
       venues,
+      // Friday blocks the declaration added on this draw — merged into the
+      // working map by drawCalendar so they persist and can be taken back off.
+      policyFridays: { ...pre, ...rescue },
       // The buildings the solve had to put down, so the board draws the same
       // gyms the calendar was worked out in. The rented ones come back marked
       // assumed: nobody has phoned them (owner ruling 2026-08-06).
@@ -845,6 +867,12 @@ export function useBoardVerbs(m: BoardModel) {
     remember(undoLabel)
     setAssignment(next.assignment)
     setVenues(next.venues)
+    // Fridays the declaration put down on this draw (QA T-018): into the
+    // working map, under the operator's own entries, so they save with the
+    // plan and each one keeps its per-weekend off switch.
+    if (Object.keys(next.policyFridays).length > 0) {
+      setFridays((prev) => ({ ...next.policyFridays, ...prev }))
+    }
     // EVERY RENTAL THE SOLVER MADE IS ASSUMED (owner ruling 2026-08-06). It put
     // those buildings down itself, so they are gold until somebody phones them;
     // the league's own gym is not in the list, because nobody phones their own.

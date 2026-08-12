@@ -377,6 +377,11 @@ export interface PlannerState {
    *  default; Season.fridayStartTime/EndTime make it configuration. */
   fridayStart?: string
   fridayEnd?: string
+  /** The Fridays declaration (owner design 2026-08-11, QA T-018): absent =
+   *  No (the default — the draw never adds a Friday), "IF_NEEDED" = Friday
+   *  supply enters only where a weekend cannot fit its load without it,
+   *  "REGULAR" = Friday windows are normal capacity in the draw. */
+  fridayPolicy?: "IF_NEEDED" | "REGULAR"
   /** Every gym the season has, INCLUDING the ones no weekend uses yet. This is
    *  the roster a plan's world starts from. */
   gyms?: PlannerGym[]
