@@ -221,5 +221,47 @@ Template (copy for each new entry):
 - **Guideline basis:** motion must convey cause-and-effect, not decorate; one or two animated elements max (the moving chip, not the whole board); ease-out entries; reduced-motion respected; hover-only interactions forbidden on touch.
 - **Implementation note (cheap!):** the board already owns every primitive this needs — ghost chips, the lens/dimming system, persistent move marks, flashMove, and the undo pill. Preview = a dry-run of the same move verb rendered with existing ghosts + lens-dim; apply = the verb it already runs. This is composition, not new machinery.
 
+## Held items from `kais-features` — owner rulings
+
+Two items from the `kais-features` worklog (`docs/kais-features-2026-08-11.md`) were
+built there but held out of the partial merge (runbook #85) because each amended a
+documented rule. Both were ruled on 2026-08-12 and are now in this branch.
+
+### K-007 · Onboarding: handle merged into the profile step (3 steps → 2) · UI · SETTLED
+
+> **OWNER RULING (2026-08-12):** merge accepted, REQUIRED rejected. The wizard is two
+> steps (role → profile) with the @handle embedded at the top of the profile step,
+> prefilled with the default reserved at signup and editable. It stays **optional**:
+> QA-209 stands, so an empty handle keeps the reserved default and an unavailable one
+> does not block onboarding either. Kai's save-then-create ordering and back-target
+> rewiring are kept as built.
+>
+> **DEV RESPONSE (2026-08-12):** shipped. The taken-handle case is said out loud once
+> ("Pick another, or press Continue again to keep @default") and the next Continue goes
+> through on the reserved default, so the choice is never swallowed and the flow is
+> never trapped. A network failure saving the handle is ignored outright. Smoked over
+> HTTP: onboarding with the handle untouched returns 200, creates the Player row, and
+> leaves the reserved handle in place.
+
+### K-008 · Onboarding: 13+ players invite their parent from the profile step · FEATURE · SETTLED
+
+> **OWNER RULING (2026-08-12):** accepted and PROMOTED. Kids will find the platform
+> before their parents do, so the guardian ask is not an optional whisper: it is a
+> first-class block on the Player profile step that says why in plain words (your
+> parent or guardian approves payments and permissions; you need them linked to join
+> anything paid). Still skippable, never blocking. Kai's post-save send and his
+> retry/skip recovery screen are kept.
+>
+> This amends the event-driven-linking rule in the owner's favour for the
+> player-initiated direction only: a kid may ask for a guardian at any time, including
+> at onboarding. A parent is still never asked to link a child upfront.
+>
+> **DEV RESPONSE (2026-08-12):** shipped, plus the three rulings that came with it —
+> the claim check ("a parent already added me" turns the invite into a link request
+> against the profile that already exists), the standing dashboard nudge for unlinked
+> 13-17 self-owned accounts, and the money gate (a 13-17 self-owned account never sees
+> a payment form; the action becomes a request routed to the guardian). Full detail in
+> `docs/pending-deploy-actions.md` #90.
+
 <!-- Add findings below. Next ID: T-020 -->
 
