@@ -2,26 +2,31 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { redirect } from "next/navigation"
 import { prisma } from "@youthbasketballhub/db"
+import { findMergeCandidates } from "@/lib/family/claim-target"
 import { AcceptFamilyInvite } from "./accept-family-invite"
 
 export const dynamic = "force-dynamic"
 
 /**
- * /family/accept/[token] — the landing page for CHILD_LOGIN and GUARDIAN
- * invitations (family-accounts plan 2026-07-23). Anonymous visitors bounce
- * through sign-in/sign-up with this URL as the callback; the emailed invite
- * tells them to use the invited email address.
+ * /family/accept/[token] — the landing page for CHILD_LOGIN, GUARDIAN and
+ * CHILD_CLAIM invitations (family-accounts plan 2026-07-23; claim + merge
+ * added by the parent-child linking arc 2026-08-12). Anonymous visitors
+ * bounce through the public /family/invite landing, which explains the ask
+ * before asking anyone to make an account.
  */
 export default async function FamilyAcceptPage({ params }: { params: { token: string } }) {
   const session = await getServerSession(authOptions).catch(() => null)
   if (!session?.user?.id) {
-    redirect(`/sign-in?callbackUrl=${encodeURIComponent(`/family/accept/${params.token}`)}`)
+    redirect(`/family/invite/${params.token}`)
   }
 
   const invite = await (prisma as any).familyInvitation.findUnique({
     where: { token: params.token },
     include: {
-      player: { select: { firstName: true, lastName: true } },
+      player: {
+        select: { id: true, firstName: true, lastName: true, dateOfBirth: true },
+      },
+      targetPlayer: { select: { firstName: true, lastName: true } },
       invitedBy: { select: { firstName: true, lastName: true, email: true } },
     },
   })
@@ -32,6 +37,13 @@ export default async function FamilyAcceptPage({ params }: { params: { token: st
       invite.invitedBy.email
     : ""
   const expired = invite && invite.status === "PENDING" && new Date(invite.expiresAt) < new Date()
+
+  // A parent accepting a guardian invite may already have a row for the same
+  // kid. Offer the merge here rather than leaving two of them on the platform.
+  const mergeCandidates =
+    invite && invite.status === "PENDING" && !expired && invite.type === "GUARDIAN"
+      ? await findMergeCandidates(session.user.id, invite.player)
+      : []
 
   return (
     <div className="mx-auto max-w-lg px-4 py-12">
@@ -58,8 +70,18 @@ export default async function FamilyAcceptPage({ params }: { params: { token: st
           token={params.token}
           type={invite.type}
           playerName={playerName}
+          playerFirstName={invite.player.firstName}
           inviterName={inviterName}
           invitedEmail={invite.invitedEmail}
+          targetPlayerName={
+            invite.targetPlayer
+              ? `${invite.targetPlayer.firstName} ${invite.targetPlayer.lastName}`
+              : null
+          }
+          mergeCandidates={mergeCandidates.map((c) => ({
+            id: c.id,
+            name: `${c.firstName} ${c.lastName}`,
+          }))}
         />
       )}
     </div>

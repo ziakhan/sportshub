@@ -7,6 +7,7 @@ import { isCoppaMinor } from "@/lib/coppa"
 import { notifySafe } from "@/lib/notifications"
 import { sendEmail, appBaseUrl, escapeHtml, transactionalFooter } from "@/lib/email"
 import { normalizedEmailSchema } from "@/lib/validations/email"
+import { findClaimTarget } from "@/lib/family/claim-target"
 
 export const dynamic = "force-dynamic"
 
@@ -16,6 +17,15 @@ const createSchema = z.object({
   type: z.enum(["CHILD_LOGIN", "GUARDIAN"]),
   playerId: z.string(),
   email: normalizedEmailSchema("Enter a valid email address"),
+  /**
+   * The kid answered "yes, a parent already added me" (parent-child linking
+   * arc 2026-08-12). The server looks for a player row under that email
+   * matching this kid's name and birth year; a hit turns the guardian invite
+   * into a CHILD_CLAIM request. The answer never travels back — both
+   * outcomes return the same response, so this can't be used to find out
+   * whether an email has an account.
+   */
+  preferClaim: z.boolean().optional(),
 })
 
 /**
@@ -77,12 +87,35 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Guardian and claim are two shapes of the same ask — one pending
+    // request per player, whichever shape it took.
+    const sameAsk =
+      data.type === "CHILD_LOGIN" ? ["CHILD_LOGIN"] : ["GUARDIAN", "CHILD_CLAIM"]
     const existing = await (prisma as any).familyInvitation.findFirst({
-      where: { playerId: data.playerId, type: data.type, status: "PENDING", expiresAt: { gt: new Date() } },
+      where: {
+        playerId: data.playerId,
+        type: { in: sameAsk },
+        status: "PENDING",
+        expiresAt: { gt: new Date() },
+      },
       select: { id: true },
     })
     if (existing) {
       return NextResponse.json({ error: "There's already a pending invitation — cancel it first or wait for a response" }, { status: 409 })
+    }
+
+    // "A parent already added me": if that email holds a player row that is
+    // plainly this kid, ask the parent to link the two instead of starting a
+    // second world. No match falls through to the ordinary guardian invite,
+    // and the kid is told the same thing either way.
+    let resolvedType: "CHILD_LOGIN" | "GUARDIAN" | "CHILD_CLAIM" = data.type
+    let targetPlayerId: string | null = null
+    if (data.type === "GUARDIAN" && data.preferClaim) {
+      const target = await findClaimTarget({ parentEmail: data.email, kid: player })
+      if (target) {
+        resolvedType = "CHILD_CLAIM"
+        targetPlayerId = target.playerId
+      }
     }
 
     const invitedUser = await prisma.user.findFirst({
@@ -92,8 +125,9 @@ export async function POST(request: NextRequest) {
 
     const invite = await (prisma as any).familyInvitation.create({
       data: {
-        type: data.type,
+        type: resolvedType,
         playerId: data.playerId,
+        targetPlayerId,
         invitedEmail: data.email,
         invitedUserId: invitedUser?.id ?? null,
         invitedByUserId: session.userId,
@@ -102,43 +136,65 @@ export async function POST(request: NextRequest) {
     })
 
     const playerName = `${player.firstName} ${player.lastName}`
-    const acceptUrl = `${appBaseUrl()}/family/accept/${invite.token}`
+    // The emailed link lands on the PUBLIC invite page: an invited parent who
+    // has no account yet needs to see who is asking before being asked to
+    // sign up. Signed-in people are forwarded straight to the accept page.
+    const acceptUrl = `${appBaseUrl()}/family/invite/${invite.token}`
+
+    const title =
+      resolvedType === "CHILD_LOGIN"
+        ? "Your player login is waiting"
+        : resolvedType === "CHILD_CLAIM"
+          ? `${player.firstName} asked to link their login`
+          : "Guardian invitation"
+    const message =
+      resolvedType === "CHILD_LOGIN"
+        ? `You've been invited to take over ${playerName}'s player profile.`
+        : resolvedType === "CHILD_CLAIM"
+          ? `${playerName} says you already set up their profile and asked to sign in to it.`
+          : `${playerName} asked you to become their parent/guardian.`
 
     if (invitedUser) {
       await notifySafe({
         userId: invitedUser.id,
         type: "family_invite",
-        title: data.type === "CHILD_LOGIN" ? "Your player login is waiting" : "Guardian invitation",
-        message:
-          data.type === "CHILD_LOGIN"
-            ? `You've been invited to take over ${playerName}'s player profile.`
-            : `${playerName} asked you to become their parent/guardian.`,
+        title,
+        message,
         link: `/family/accept/${invite.token}`,
         referenceId: invite.id,
         referenceType: "FamilyInvitation",
       })
     }
 
+    const bodyCopy =
+      resolvedType === "CHILD_LOGIN"
+        ? `A parent set up <strong>${escapeHtml(playerName)}</strong>'s player profile on SportsHub and invited you to take it over with your own login. You'll see your stats, games, and schedule — payments stay with your parent.`
+        : resolvedType === "CHILD_CLAIM"
+          ? `<strong>${escapeHtml(playerName)}</strong> made their own SportsHub account and says you already set up a profile for them. Approving links their login to the profile you built, so there is only one of them on the platform. You stay the guardian and the payer.`
+          : `<strong>${escapeHtml(playerName)}</strong> plays basketball on SportsHub and asked you to be their parent/guardian. Accepting links their profile to your account: you approve followers, handle registrations, and payments for their programs go to you.`
+
     try {
       await sendEmail({
         to: data.email,
         subject:
-          data.type === "CHILD_LOGIN"
+          resolvedType === "CHILD_LOGIN"
             ? `Your SportsHub player login for ${playerName}`
-            : `${playerName} invited you as their parent/guardian on SportsHub`,
+            : resolvedType === "CHILD_CLAIM"
+              ? `${playerName} asked to link their login to your SportsHub profile`
+              : `${playerName} invited you as their parent/guardian on SportsHub`,
         html: `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-            <h2>${data.type === "CHILD_LOGIN" ? "Your player profile is ready for you" : "Guardian invitation"}</h2>
-            <p>
-              ${
-                data.type === "CHILD_LOGIN"
-                  ? `A parent set up <strong>${escapeHtml(playerName)}</strong>'s player profile on SportsHub and invited you to take it over with your own login. You'll see your stats, games, and schedule — payments stay with your parent.`
-                  : `<strong>${escapeHtml(playerName)}</strong> plays basketball on SportsHub and asked you to be their parent/guardian. Accepting links their profile to your account: you approve followers, handle registrations, and payments for their programs go to you.`
-              }
-            </p>
+            <h2>${
+              resolvedType === "CHILD_LOGIN"
+                ? "Your player profile is ready for you"
+                : resolvedType === "CHILD_CLAIM"
+                  ? "Link your player's login"
+                  : "Guardian invitation"
+            }</h2>
+            <p>${bodyCopy}</p>
             <p>
               <a href="${acceptUrl}" style="display: inline-block; padding: 12px 24px; background: #2563eb; color: #fff; text-decoration: none; border-radius: 6px;">
-                Accept invitation
+                ${resolvedType === "CHILD_CLAIM" ? "Review the request" : "Accept invitation"}
               </a>
             </p>
             <p style="color: #666; font-size: 13px;">If you don't have an account yet, sign up with this email address and the invitation will be waiting. The link expires in ${INVITE_TTL_DAYS} days.</p>
