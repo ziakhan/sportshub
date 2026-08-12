@@ -58,6 +58,11 @@ const SAVE_DEBOUNCE_MS = 600
 /** A grade label is a label, not an essay. */
 const MAX_GRADE_LABEL = 40
 
+/** The "+" of a grade row's stepper, one spelling, so every affordance that
+ *  hands the operator to the control that sets the number lands on the same
+ *  element (QA T-014). */
+const plusIdFor = (key: string) => `grade-plus-${key.replace(/[^a-z0-9]+/gi, "-")}`
+
 const CHIP = "rounded-full border px-2 py-0.5 text-[11px] font-bold"
 const CHIP_QUIET = `${CHIP} border-ink-100 bg-ink-50 text-ink-500`
 /** Caution, not failure: the season still works, the operator just planned
@@ -451,6 +456,54 @@ export function TeamsStep({
   }
 
   /**
+   * ADD THIS GRADE TO THE PLAN (QA T-014, root cause). A grade with NO unit
+   * object in the plan's world used to render the in/out pill anyway, and
+   * clicking it was a guaranteed no-op: withUnitIncluded maps over
+   * world.units and matches nothing, so the plan "saved" unchanged and the
+   * pill never flipped. The designed entry path for such grades is the row's
+   * own stepper — flush() creates the unit ("add-a-grade's stepper is the
+   * restore path") — so this button IS that path with one tap: it creates
+   * the unit, adopts the number already on the stepper (the registration
+   * hint), and hands focus to the stepper that changes it.
+   */
+  const addToPlan = async (row: GradeRow) => {
+    if (readOnly || !editsWorld || row.inPlanUnits) return
+    await flushNow()
+    let world = worldRef.current ?? session.world
+    if (!world) return
+    setSaving("saving")
+    const teams = Math.min(MAX_PER_GRADE, Math.max(0, countsRef.current[row.key] ?? 0))
+    if (!(world.units ?? []).some((u) => u.key === row.key)) {
+      world = {
+        ...world,
+        units: [
+          ...(world.units ?? []),
+          {
+            key: row.key,
+            label: row.label,
+            divisionIds: row.divisionIds,
+            teams: 0,
+            approved: row.approved,
+            expected: 0,
+            source: "none",
+            included: false,
+          },
+        ],
+      }
+    }
+    // A number already on the stepper becomes the estimate, the same write
+    // "Start from registrations" makes; a zero row comes in at zero,
+    // included, with the add-an-estimate chip pointing at its live stepper.
+    world =
+      teams > 0 ? withUnitTeams(world, row.key, teams) : withUnitIncluded(world, row.key, true)
+    worldRef.current = world
+    const ok = await session.saveWorld(world)
+    setSaving(ok ? "saved" : "idle")
+    if (!ok) setError("That didn't save. Try again.")
+    document.getElementById(plusIdFor(row.key))?.focus()
+  }
+
+  /**
    * REMOVE FROM THIS PLAN, ENTIRELY (owner ruling 2026-08-07, #8 first half).
    * Stronger than the in/out toggle: this drops the unit object outright, so
    * the grade falls back to the ordinary "not planned yet" season fold-in row
@@ -730,7 +783,7 @@ export function TeamsStep({
                 const out = readsWorld && !row.included
                 /** The "+" of this row's stepper, so the empty-estimate chip can
                  *  hand the operator straight to the control that fills it. */
-                const plusId = `grade-plus-${row.key.replace(/[^a-z0-9]+/gi, "-")}`
+                const plusId = plusIdFor(row.key)
                 return (
                   <tr
                     key={row.key}
@@ -777,8 +830,11 @@ export function TeamsStep({
                       <div className="flex flex-wrap items-center gap-1.5">
                         {/* IN OR OUT of this plan (owner ruling 2026-08-05).
                             Only a plan can hold a grade out: on the season's
-                            own rows that would mean deleting the division. */}
-                        {editsWorld && !readOnly && (
+                            own rows that would mean deleting the division.
+                            ONLY on a row the plan's world really HOLDS (QA
+                            T-014): on a zero-unit row this toggle was a dead
+                            control, since withUnitIncluded matches nothing. */}
+                        {editsWorld && !readOnly && row.inPlanUnits && (
                           <button
                             type="button"
                             data-testid="grade-in-out"
@@ -786,6 +842,11 @@ export function TeamsStep({
                             aria-pressed={!out}
                             disabled={session.docBusy}
                             onClick={() => void setIncluded(row, out)}
+                            title={
+                              out
+                                ? `Include ${row.label} in this plan`
+                                : `Hold ${row.label} out of this plan. It keeps its number.`
+                            }
                             className={`min-h-[26px] cursor-pointer rounded-full border px-2 py-0.5 text-[11px] font-bold transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
                               out
                                 ? "border-ink-300 text-ink-600 hover:border-ink-400 hover:bg-ink-50 bg-white"
@@ -793,6 +854,52 @@ export function TeamsStep({
                             }`}
                           >
                             {out ? "Not in this plan" : "In this plan"}
+                          </button>
+                        )}
+                        {/* A GRADE THE PLAN HAS NEVER HELD (QA T-014). The one
+                            honest action is ADDING it, through the code's own
+                            designated restore path (the stepper write that
+                            creates the unit). An action verb in the screen's
+                            actionable style — clearly apart from the dotted
+                            remove link beside it. */}
+                        {editsWorld && !readOnly && !row.inPlanUnits && (
+                          <button
+                            type="button"
+                            data-testid="grade-add-to-plan"
+                            disabled={session.docBusy}
+                            onClick={() => void addToPlan(row)}
+                            title={`Add ${row.label} to this plan`}
+                            className={`${BTN_SECONDARY} ${BTN_SM} rounded-full`}
+                          >
+                            + Add this grade
+                          </button>
+                        )}
+                        {/* THE PILL NEVER GOES SILENTLY DEAD (QA T-014
+                            escalation). With no owned plan open, on the
+                            read-only reference, or while a plan's world is
+                            loading, the state is shown visibly disabled WITH
+                            the reason — never a live-looking control that
+                            ignores clicks. */}
+                        {(!editsWorld || readOnly) && (
+                          <button
+                            type="button"
+                            data-testid="grade-in-out"
+                            data-in={row.included ? "1" : "0"}
+                            data-disabled="1"
+                            aria-disabled="true"
+                            onClick={(e) => e.preventDefault()}
+                            title={
+                              locked
+                                ? "This season is finalized, so plans are read only."
+                                : isReferencePlan(session.chosen)
+                                  ? "This is the imported reference. Open one of your plans to edit."
+                                  : pending
+                                    ? "This plan's numbers are still loading."
+                                    : "Open one of your plans to edit."
+                            }
+                            className="border-ink-200 bg-ink-50 text-ink-400 min-h-[26px] cursor-not-allowed rounded-full border px-2 py-0.5 text-[11px] font-bold"
+                          >
+                            {row.included ? "In this plan" : "Not in this plan"}
                           </button>
                         )}
                         {/* REMOVE FROM THIS PLAN, ENTIRELY (owner ruling
