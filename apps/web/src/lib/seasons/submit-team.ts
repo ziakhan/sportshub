@@ -26,6 +26,9 @@ export async function submitTeamToSeason(input: {
   teamId: string
   divisionId: string
   playerIds?: string[]
+  /** The 5-7 player "are you sure" pass-through (owner 2026-08-12: the
+   *  legality check lives at SUBMIT, the only state anyone cares about). */
+  confirmShort?: boolean
 }): Promise<SubmitTeamResult> {
   const season = (await prisma.season.findUnique({
     where: { id: input.seasonId },
@@ -97,6 +100,25 @@ export async function submitTeamToSeason(input: {
     return { ok: false, status: selection.status, error: selection.error, conflicts: selection.conflicts }
   }
   const teamPlayers = selection.players
+
+  // The legality check (owner ruling: <5 is not a legal team, 5-7 is one
+  // injury from forfeits so it needs an explicit confirm, 8+ passes).
+  if (teamPlayers.length < 5) {
+    return {
+      ok: false as const,
+      status: 400,
+      code: "BELOW_MINIMUM",
+      error: `A roster needs at least 5 players to submit. This roster has ${teamPlayers.length}. Add players first.`,
+    }
+  }
+  if (teamPlayers.length < 8 && !input.confirmShort) {
+    return {
+      ok: false as const,
+      status: 409,
+      code: "NEEDS_CONFIRM",
+      error: `${teamPlayers.length} players meets the legal minimum, but one sick or injured player and the team is at the forfeit line. Confirm to submit anyway.`,
+    }
+  }
 
   const result = await prisma.$transaction(async (tx: any) => {
     const submission = await tx.teamSubmission.create({

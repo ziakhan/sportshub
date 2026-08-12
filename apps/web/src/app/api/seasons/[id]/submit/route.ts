@@ -12,6 +12,8 @@ const submitTeamSchema = z.object({
   // Optional roster version: which of the club's ACTIVE players go into THIS
   // league. Omitted → whole active roster (legacy behavior).
   playerIds: z.array(z.string()).optional(),
+  // The 5-7 player "are you sure" acknowledgement (owner 2026-08-12).
+  confirmShort: z.boolean().optional(),
 })
 
 /**
@@ -66,6 +68,7 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
       teamId: data.teamId,
       divisionId: data.divisionId,
       playerIds: data.playerIds,
+      confirmShort: data.confirmShort,
     })
     if (!result.ok) {
       return NextResponse.json(

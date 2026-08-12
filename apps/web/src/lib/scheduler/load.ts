@@ -273,9 +273,9 @@ export async function loadSchedulerInput(
   // generated or published (notifyPlannedWithoutTeams).
   const rosterGate = await listRosterDrawExclusions(seasonId)
   if (rosterGate && rosterGate.excluded.length > 0) {
-    const unfinalized = new Set(rosterGate.excluded.map((t) => t.teamId))
+    const unsubmitted = new Set(rosterGate.excluded.map((t) => t.teamId))
     for (const division of input.divisions) {
-      division.teams = division.teams.filter((t) => !unfinalized.has(t.teamId))
+      division.teams = division.teams.filter((t) => !unsubmitted.has(t.teamId))
     }
   }
 

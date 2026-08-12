@@ -4,6 +4,7 @@ import { z } from "zod"
 import { auditSafe } from "@/lib/audit"
 import { getSessionUserId } from "@/lib/auth-helpers"
 import { canManageTeamRoster } from "@/lib/teams/roster-access"
+import { notifySafe } from "@/lib/notifications"
 
 export const dynamic = "force-dynamic"
 
@@ -11,6 +12,10 @@ const patchSchema = z.object({
   // null clears the number; releasing sets status INACTIVE + leftAt
   jerseyNumber: z.number().int().min(0).max(99).nullable().optional(),
   action: z.enum(["release", "reactivate"]).optional(),
+  // Acknowledges the pre-warning that this player sits on submitted league
+  // rosters (owner 2026-08-12): without it, a release that would strand a
+  // league roster 409s with the league names instead of proceeding.
+  confirmDeparture: z.boolean().optional(),
 })
 
 /**
@@ -53,10 +58,75 @@ export async function PATCH(
     }
 
     if (parsed.data.action === "release") {
+      // THE DEPARTURE NOTICE (owner 2026-08-12): the club roster is the
+      // club's to change, but a player sitting on a SUBMITTED league roster
+      // leaves a stale row behind. Warn first; on confirm, mark the league
+      // rows departed and tell each league operator in plain words.
+      const submittedSeats = await prisma.seasonRosterPlayer.findMany({
+        where: {
+          playerId: params.playerId,
+          departedAt: null,
+          roster: {
+            submittedAt: { not: null },
+            teamSubmission: {
+              teamId: params.id,
+              status: { in: ["PENDING", "APPROVED"] },
+            },
+          },
+        },
+        select: {
+          id: true,
+          roster: {
+            select: {
+              teamSubmission: {
+                select: {
+                  season: {
+                    select: {
+                      id: true,
+                      label: true,
+                      league: { select: { id: true, name: true, ownerId: true } },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      })
+      if (submittedSeats.length > 0 && !parsed.data.confirmDeparture) {
+        const leagues = submittedSeats
+          .map((seat) => seat.roster.teamSubmission?.season?.league?.name)
+          .filter((name): name is string => !!name)
+        return NextResponse.json(
+          {
+            error: `${playerName} is on the submitted roster for ${[...new Set(leagues)].join(", ")}. Removing them from the team will notify the league.`,
+            code: "ON_LEAGUE_ROSTER",
+            leagues: [...new Set(leagues)],
+          },
+          { status: 409 }
+        )
+      }
       await prisma.teamPlayer.update({
         where: { id: row.id },
         data: { status: "INACTIVE", leftAt: new Date() },
       })
+      if (submittedSeats.length > 0) {
+        await prisma.seasonRosterPlayer.updateMany({
+          where: { id: { in: submittedSeats.map((seat) => seat.id) } },
+          data: { departedAt: new Date() },
+        })
+        for (const seat of submittedSeats) {
+          const season = seat.roster.teamSubmission?.season
+          if (!season?.league?.ownerId) continue
+          await notifySafe({
+            userId: season.league.ownerId,
+            type: "roster_player_departed",
+            title: `${playerName} is no longer with ${team.name}`,
+            message: `${playerName} was removed from ${team.name}'s club roster and is marked as departed on the submitted ${season.label} roster. The club can request a roster change to replace them.`,
+            link: `/manage/leagues/${season.league.id}/seasons/${season.id}/manage?tab=teams`,
+          })
+        }
+      }
       await auditSafe({
         actorId: auth.realUserId,
         actorRole: auth.isPlatformAdmin ? "PlatformAdmin" : "Staff",

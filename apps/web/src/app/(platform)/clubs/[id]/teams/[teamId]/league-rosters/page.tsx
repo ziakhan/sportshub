@@ -66,8 +66,6 @@ export default async function LeagueRostersPage({
           isLocked: true,
           submittedAt: true,
           lockedAt: true,
-          finalizedAt: true,
-          finalizedById: true,
           players: {
             select: {
               playerId: true,
@@ -139,27 +137,6 @@ export default async function LeagueRostersPage({
     return { waiversTotal: waivers.length, waiversOutstanding: outstanding }
   }
 
-  // Who finalized each roster, by name (finalizedById is a plain id).
-  const finalizerIds = Array.from(
-    new Set(
-      submissions
-        .map((s) => s.roster?.finalizedById)
-        .filter((id): id is string => typeof id === "string" && id.length > 0)
-    )
-  )
-  const finalizers =
-    finalizerIds.length > 0
-      ? await prisma.user.findMany({
-          where: { id: { in: finalizerIds } },
-          select: { id: true, firstName: true, lastName: true },
-        })
-      : []
-  const finalizerName = (id: string | null | undefined): string | null => {
-    if (!id) return null
-    const u = finalizers.find((f: any) => f.id === id)
-    return u ? [u.firstName, u.lastName].filter(Boolean).join(" ") || null : null
-  }
-
   const versions = submissions
     .filter((s) => s.roster)
     .map((s) => {
@@ -185,8 +162,6 @@ export default async function LeagueRostersPage({
           : null,
         isLocked: s.roster.isLocked,
         submittedAt: s.roster.submittedAt ? s.roster.submittedAt.toISOString() : null,
-        finalizedAt: s.roster.finalizedAt ? s.roster.finalizedAt.toISOString() : null,
-        finalizedByName: finalizerName(s.roster.finalizedById),
         rosterDueAt: rosterDueAt ? rosterDueAt.toISOString() : null,
         canEdit: editability.canEdit,
         canRequest: editability.canRequest,

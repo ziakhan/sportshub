@@ -12,8 +12,9 @@
 //
 // Platform-wide defaults on purpose — the owner ruled leagues are NOT to be
 // burdened with reminder settings; chasing rosters is our responsibility.
-// Every touch is data-driven: a finalized-and-submitted roster silently ends
-// the cadence, a finalized-but-unsubmitted one keeps only submission-focused
+// Every touch is data-driven: a submitted roster silently ends the cadence,
+// and every message chases submission (owner 2026-08-12: submission is the
+// only state that matters; the finalize action was removed). Unsubmitted keeps
 // touches, and RosterReminder rows make each (season, team, window) send-once
 // — mirroring the WaiverReminder ledger — so a late-set deadline or a missed
 // cron day never double-sends. Runs from /api/cron/roster-reminders daily.
@@ -21,7 +22,7 @@
 import { prisma } from "@youthbasketballhub/db"
 import { notifySafe } from "@/lib/notifications"
 import { appBaseUrl, sendRosterDigestEmail, sendRosterReminderEmail } from "@/lib/email"
-import { isRosterFinal, isRosterSubmitted, effectiveRosterDeadline } from "./roster-deadline"
+import { isRosterFinal, effectiveRosterDeadline } from "./roster-deadline"
 
 const DAY_MS = 24 * 60 * 60 * 1000
 
@@ -193,7 +194,6 @@ export async function sendRosterReminders(now: Date = new Date()): Promise<Roste
         team: { select: { id: true, name: true, tenantId: true, tenant: { select: { name: true } } } },
         roster: {
           select: {
-            finalizedAt: true,
             isLocked: true,
             submittedAt: true,
             _count: { select: { players: true } },
@@ -206,12 +206,9 @@ export async function sendRosterReminders(now: Date = new Date()): Promise<Roste
     const laggards: Array<{ name: string; clubName: string | null; playerCount: number }> = []
 
     for (const submission of submissions) {
-      const final = isRosterFinal(submission.roster)
-      const submitted = isRosterSubmitted(submission.roster)
-      // Self-healing: a finalized, submitted roster ends the cadence in
-      // silence. Finalized but never submitted keeps only the
-      // submission-focused touch below.
-      if (final && submitted) {
+      // Self-healing: a submitted (or already locked) roster ends the
+      // cadence in silence.
+      if (isRosterFinal(submission.roster)) {
         result.healed++
         continue
       }
@@ -227,7 +224,6 @@ export async function sendRosterReminders(now: Date = new Date()): Promise<Roste
         continue
       }
 
-      const focus: "finalize" | "submit" = final && !submitted ? "submit" : "finalize"
       const link = `/clubs/${submission.team.tenantId}/teams/${submission.teamId}/league-rosters?submission=${submission.id}`
       const recipients = await chaseRecipients(
         submission.teamId,
@@ -243,11 +239,9 @@ export async function sendRosterReminders(now: Date = new Date()): Promise<Roste
             ? `Roster due tomorrow: ${submission.team.name}`
             : `Roster due ${when}: ${submission.team.name}`
       const message =
-        focus === "submit"
-          ? `${season.league.name} ${season.label}: the roster is finalized (${countClause}) but has not been submitted to the league. Submit it before ${when}.`
-          : window === "overdue"
-            ? `${season.league.name} ${season.label}: the roster deadline (${when}) has passed with ${countClause}. Until it is finalized, the schedule is planned without ${submission.team.name}.`
-            : `${season.league.name} ${season.label}: ${countClause}, due ${when}. Finalize it so the league can plan with your team.`
+        window === "overdue"
+          ? `${season.league.name} ${season.label}: the roster deadline (${when}) has passed with ${countClause}. Until it is submitted, the schedule is planned without ${submission.team.name}.`
+          : `${season.league.name} ${season.label}: ${countClause}, due ${when}. Submit it so the league can plan with your team.`
 
       for (const recipient of recipients) {
         // T-30 is email only; the bell starts at T-14, push at T-7 (the
@@ -274,7 +268,6 @@ export async function sendRosterReminders(now: Date = new Date()): Promise<Roste
               deadlineText: when,
               playerCount,
               window,
-              focus,
               link: `${base}${link}`,
             })
           } catch (error) {
@@ -337,7 +330,7 @@ export async function sendRosterReminders(now: Date = new Date()): Promise<Roste
 /**
  * The enforcement notice (owner ruling 2026-08-11): when the league generates
  * or publishes a season plan while teams stand excluded (deadline passed,
- * roster not finalized), those teams hear it in plain words — the season was
+ * roster not submitted), those teams hear it in plain words — the season was
  * planned without them, and what to do next. Send-once per (team, season) via
  * the "planned_without" ledger window, so generate-then-publish tells a team
  * exactly once. Best-effort by design: callers fire and forget.
@@ -364,7 +357,7 @@ export async function notifyPlannedWithoutTeams(seasonId: string): Promise<numbe
         userId: recipient.id,
         type: "season_planned_without_team",
         title: `Season planned without ${team.teamName}`,
-        message: `${season.league.name} ${season.label} was planned without ${team.teamName} because its roster was not finalized by ${when}. Finalize the roster (${team.playerCount} player${team.playerCount === 1 ? "" : "s"} now) and contact the league to be added back in.`,
+        message: `${season.league.name} ${season.label} was planned without ${team.teamName} because its roster was not submitted by ${when}. Submit the roster (${team.playerCount} player${team.playerCount === 1 ? "" : "s"} now) and contact the league to be added back in.`,
         link,
         referenceId: team.submissionId,
         referenceType: "TeamSubmission",

@@ -1,7 +1,6 @@
 import { prisma } from "@youthbasketballhub/db"
 import Link from "next/link"
 import { Badge, PanelHeader, SmartBack } from "@/components/ui"
-import { FinalizeButton } from "./finalize-button"
 import { RosterManager } from "./roster-manager"
 import { RosterRowActions } from "./roster-row-actions"
 import { WithdrawalRequestsPanel } from "@/components/withdrawal-requests-panel"
@@ -187,9 +186,6 @@ export default async function TeamRosterPage({
             {team.season ? ` - ${team.season}` : ""}
           </p>
         </div>
-        {hasAcceptedOffers && hasUnfinalized && (
-          <FinalizeButton teamId={team.id} teamName={team.name} />
-        )}
       </div>
 
       {/* Families asking for a release — the club signs off (owner 2026-07-18) */}

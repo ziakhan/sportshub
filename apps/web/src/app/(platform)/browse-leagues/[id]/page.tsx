@@ -87,7 +87,7 @@ function SeasonDetailSubmitInner() {
   // request the club approves (owner 2026-07-15)
   const needsClubApproval = !!selectedTeamObj && selectedTeamObj.canSubmitDirectly === false
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (confirmShort = false) => {
     if (!selectedTeam || !selectedDivision) {
       setMessage({ type: "error", text: "Select a team and division" })
       return
@@ -109,9 +109,20 @@ function SeasonDetailSubmitInner() {
           teamId: selectedTeam,
           divisionId: selectedDivision,
           ...(roster && roster.length > 0 ? { playerIds: [...selectedPlayers] } : {}),
+          ...(confirmShort ? { confirmShort: true } : {}),
         }),
       })
       const data = await res.json()
+      // The thin-roster "are you sure" (owner 2026-08-12): the server said 5-7
+      // players is legal but risky. Put the question to the operator plainly;
+      // OK submits for real, cancel leaves everything as it was.
+      if (res.status === 409 && data.code === "NEEDS_CONFIRM") {
+        setSubmitting(false)
+        if (window.confirm(`${data.error}`)) {
+          void handleSubmit(true)
+        }
+        return
+      }
       if (!res.ok) throw new Error(data.error || "Failed to submit")
       setMessage({ type: "success", text: data.message || "Team submitted successfully!" })
       const updated = await fetch(`/api/seasons/${seasonId}`).then((r) => r.json())
@@ -388,7 +399,7 @@ function SeasonDetailSubmitInner() {
                     )}
 
                     <button
-                      onClick={handleSubmit}
+                      onClick={() => void handleSubmit()}
                       disabled={submitting || !selectedTeam || !selectedDivision}
                       className="bg-play-600 hover:bg-play-700 w-full rounded-xl px-4 py-3 text-sm font-semibold text-white transition disabled:opacity-50"
                     >

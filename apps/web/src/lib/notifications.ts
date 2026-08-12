@@ -129,10 +129,12 @@ export type NotificationType =
   | "roster_reminder_urgent"
   | "roster_digest"
   // The season was planned/generated WITHOUT this team because its roster was
-  // not finalized by the deadline (the enforcement half of T-017).
+  // not submitted by the deadline (the enforcement half of T-017).
   | "season_planned_without_team"
   // Program staff: you were assigned to run a camp / house league
   | "program_assigned"
+  // A submitted league-roster player left the club team (owner 2026-08-12)
+  | "roster_player_departed"
 
 export interface NotificationInput {
   userId: string

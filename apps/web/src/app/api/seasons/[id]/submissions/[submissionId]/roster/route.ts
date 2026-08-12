@@ -45,7 +45,7 @@ async function loadSubmission(seasonId: string, submissionId: string) {
           league: { select: { id: true, name: true, ownerId: true } },
         },
       },
-      roster: { select: { id: true, isLocked: true, finalizedAt: true } },
+      roster: { select: { id: true, isLocked: true } },
     },
   }) as any
 }
@@ -194,14 +194,6 @@ export async function PATCH(
     const seasonLocked = isSeasonLocked(submission.season.status)
     const relock = !leagueOverride && seasonLocked && !submission.roster.isLocked
 
-    // A CLUB edit reopens a finalized roster (owner ruling 2026-08-11, QA
-    // T-017): "final" has to describe the roster as it stands, so changing
-    // the players clears finalizedAt and the deadline reminders pick the team
-    // back up. A LEAGUE removal keeps it — the club's declaration stands and
-    // a commissioner's correction must never silently expose the team to the
-    // draw exclusion.
-    const finalizeCleared = !leagueOverride && !!submission.roster.finalizedAt
-
     await prisma.$transaction(async (tx: any) => {
       await tx.seasonRosterPlayer.deleteMany({ where: { rosterId: submission.roster.id } })
       await tx.seasonRosterPlayer.createMany({
@@ -216,7 +208,6 @@ export async function PATCH(
         where: { id: submission.roster.id },
         data: {
           ...(relock ? { isLocked: true, lockedAt: new Date() } : {}),
-          ...(finalizeCleared ? { finalizedAt: null, finalizedById: null } : {}),
         },
       })
       if (leagueOverride) {
@@ -278,7 +269,6 @@ export async function PATCH(
       playerCount: selection.players.length,
       relocked: relock,
       leagueOverride,
-      finalizeCleared,
     })
   } catch (error) {
     console.error("Roster update error:", error)

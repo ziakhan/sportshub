@@ -14,21 +14,21 @@ import { effectiveSeasonConfig } from "../org/season-defaults"
  * every other config read is. A season without one is simply silent: no
  * reminders, no exclusions.
  *
- * "Final" for the draw means the club finalized the roster (finalizedAt, the
- * explicit club-side action) OR the league already locked it (isLocked — a
- * locked roster is a done deal; every season finalized before this feature
- * shipped stays whole).
+ * "Done" for the draw means the club SUBMITTED the roster to the league
+ * (submittedAt), or it is already locked for play (isLocked — a locked
+ * roster is a done deal). Submission is the only state the league, the
+ * reminders and the draw care about (owner ruling 2026-08-12: the separate
+ * finalize action was removed as a state with no consumer).
  */
 
 export interface RosterComplianceInput {
-  finalizedAt?: Date | string | null
   isLocked?: boolean | null
   submittedAt?: Date | string | null
 }
 
 export function isRosterFinal(roster: RosterComplianceInput | null | undefined): boolean {
   if (!roster) return false
-  return roster.finalizedAt != null || roster.isLocked === true
+  return roster.submittedAt != null || roster.isLocked === true
 }
 
 export function isRosterSubmitted(roster: RosterComplianceInput | null | undefined): boolean {
@@ -90,7 +90,6 @@ export async function listRosterDrawExclusions(
       team: { select: { name: true, tenantId: true, tenant: { select: { name: true } } } },
       roster: {
         select: {
-          finalizedAt: true,
           isLocked: true,
           submittedAt: true,
           _count: { select: { players: true } },

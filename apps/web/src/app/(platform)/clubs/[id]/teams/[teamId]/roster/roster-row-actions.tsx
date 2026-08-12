@@ -59,6 +59,25 @@ export function RosterRowActions({
       })
       if (!res.ok) {
         const data = await res.json().catch(() => ({}))
+        // The departure pre-warning (owner 2026-08-12): the player sits on a
+        // submitted league roster. Say which league(s); confirming releases
+        // AND notifies the league, cancel changes nothing.
+        if (res.status === 409 && data.code === "ON_LEAGUE_ROSTER") {
+          if (window.confirm(data.error)) {
+            const confirmed = await fetch(`/api/teams/${teamId}/players/${playerId}`, {
+              method: "PATCH",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ action: "release", confirmDeparture: true }),
+            })
+            if (!confirmed.ok) {
+              const d2 = await confirmed.json().catch(() => ({}))
+              window.alert(d2.error || "Couldn't release the player")
+              return
+            }
+            router.refresh()
+          }
+          return
+        }
         window.alert(data.error || "Couldn't release the player")
         return
       }

@@ -73,6 +73,7 @@ export default async function LeagueTeamDetailPage({
           players: {
             select: {
               jerseyNumber: true,
+              departedAt: true,
               player: { select: { id: true, firstName: true, lastName: true, dateOfBirth: true, position: true } },
             },
           },
@@ -127,7 +128,7 @@ export default async function LeagueTeamDetailPage({
 
   // Roster the league sees = the SUBMITTED roster; fall back to the club's
   // current active roster if nothing was submitted yet.
-  const rosterRows: Array<{ jerseyNumber: number | null; player: any }> =
+  const rosterRows: Array<{ jerseyNumber: number | null; departedAt?: Date | null; player: any }> =
     submission.roster?.players?.length ? submission.roster.players : submission.team.players
   const playerIds = rosterRows.map((r) => r.player.id)
 
@@ -398,6 +399,11 @@ export default async function LeagueTeamDetailPage({
                   <td className="text-ink-500 py-1.5 pr-2">{r.jerseyNumber ?? "—"}</td>
                   <td className="text-ink-900 py-1.5 pr-2 font-medium">
                     {r.player.firstName} {r.player.lastName}
+                    {r.departedAt && (
+                      <span className="bg-hoop-50 text-hoop-700 ml-2 rounded-full px-2 py-0.5 text-[10px] font-bold">
+                        no longer with the team
+                      </span>
+                    )}
                   </td>
                   <td className="text-ink-500 py-1.5 pr-2">{age(r.player.dateOfBirth) ?? "—"}</td>
                   <td className="text-ink-500 py-1.5 pr-2">{r.player.position ?? "—"}</td>
