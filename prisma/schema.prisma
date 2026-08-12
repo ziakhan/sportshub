@@ -1399,6 +1399,15 @@ model Season {
   /// planner's 18:00-22:00 default; these make it configuration, not code.
   fridayStartTime String?
   fridayEndTime   String?
+  /// The Fridays declaration (owner design 2026-08-11, QA T-018): can games
+  /// run on Fridays? Null = no (the default; nothing changes). "IF_NEEDED" =
+  /// the engine plans Sat+Sun first and Friday hours count as supply only
+  /// where a weekend would otherwise be over or tight. "REGULAR" = Friday
+  /// windows are normal capacity in the draw. The owner's reasoning: nobody
+  /// likes Fridays (work, school, travel) — capacity pressure is the only
+  /// honest reason to use one, so never fill a Friday that Sat+Sun could
+  /// absorb.
+  fridayPolicy String?
 
   schedulingPhilosophy         SchedulingPhilosophy?
   allowCrossDivisionScheduling Boolean              @default(false)
@@ -1686,6 +1695,16 @@ model SeasonRoster {
   isLocked    Boolean   @default(false)
   submittedAt DateTime?
   lockedAt    DateTime?
+
+  // Club-side FINALIZE (owner ruling 2026-08-11, QA T-017): the club or team
+  // staff declaring "this roster is final" — a different act from submitting
+  // (submittedAt) and from the league's lock (isLocked). Under 5 players it
+  // is refused, 5-7 needs an explicit confirm, 8+ goes straight through.
+  // Teams not finalized by the league's roster deadline are excluded from
+  // the planning draw. finalizedById is a plain User id (no relation — same
+  // grain as the reminder ledger below); a club edit clears both.
+  finalizedAt   DateTime?
+  finalizedById String?
 
   players        SeasonRosterPlayer[]
   changeRequests RosterChangeRequest[]
@@ -4310,5 +4329,25 @@ model WaiverReminder {
   sentAt       DateTime @default(now())
 
   @@unique([playerId, waiverId, seasonId, window])
+  @@index([seasonId])
+}
+
+// Roster-deadline reminder dedupe (owner ruling 2026-08-11, QA T-017): the
+// escalating cadence toward the league's roster deadline (T-30 email, T-14
+// +bell, T-7 +push, T-24h urgent, day-after overdue) sends each window ONCE
+// per team per season. Mirrors WaiverReminder: plain ids, no relations —
+// rows are a send-once ledger. teamSubmissionId also carries the synthetic
+// values "digest" (league-operator digest rows, windows digest_t7 /
+// digest_overdue) and the real submission id for the one-time
+// "planned_without" notice when a season is drawn without an unfinalized
+// team.
+model RosterReminder {
+  id               String   @id @default(uuid())
+  seasonId         String
+  teamSubmissionId String
+  window           String // "t30" | "t14" | "t7" | "t24h" | "overdue" | "digest_t7" | "digest_overdue" | "planned_without"
+  sentAt           DateTime @default(now())
+
+  @@unique([seasonId, teamSubmissionId, window])
   @@index([seasonId])
 }
