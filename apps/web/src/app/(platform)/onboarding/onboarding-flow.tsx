@@ -214,102 +214,109 @@ const secondaryButtonClass =
 const primaryButtonClass =
   "flex-1 rounded-xl bg-play-600 px-4 py-3 font-semibold text-white shadow-sm transition hover:bg-play-700 disabled:cursor-not-allowed disabled:bg-ink-400"
 
-function HandleStep({ onContinue, onBack }: { onContinue: () => void; onBack: () => void }) {
-  const [handle, setHandle] = useState<string | null>(null)
-  const [draft, setDraft] = useState("")
-  const [loading, setLoading] = useState(true)
-  const [busy, setBusy] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-
-  useEffect(() => {
-    fetch("/api/account/handle")
-      .then((r) => (r.ok ? r.json() : null))
-      .then((data) => {
-        setHandle(data?.handle ?? null)
-        setDraft(data?.handle ?? "")
-      })
-      .catch(() => {})
-      .finally(() => setLoading(false))
-  }, [])
-
-  const saveAndContinue = async () => {
-    setError(null)
-    const trimmed = draft.trim().toLowerCase()
-    if (!trimmed || trimmed === handle) {
-      onContinue()
-      return
-    }
-    setBusy(true)
-    try {
-      const res = await fetch("/api/account/handle", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ handle: trimmed }),
-      })
-      const data = await res.json().catch(() => ({}))
-      if (!res.ok) {
-        setError(data.error || "Couldn't save that handle")
-        setBusy(false)
-        return
-      }
-      onContinue()
-    } catch {
-      setError("Network error. Please try again.")
-      setBusy(false)
-    }
-  }
-
+/**
+ * K-007 (owner ruling 2026-08-12): the handle is a FIELD on the profile step,
+ * not a step of its own, and it is OPTIONAL again. QA-209 stands: every
+ * account already has a generated default reserved at signup, so an empty or
+ * unavailable handle keeps that default and onboarding carries on. Kai's
+ * required version is deliberately not taken.
+ */
+function HandleField({
+  draft,
+  reserved,
+  onChange,
+}: {
+  draft: string
+  reserved: string | null
+  onChange: (v: string) => void
+}) {
   return (
-    <div className="space-y-6">
-      <div>
-        <h2 className="text-ink-900 text-xl font-semibold">Pick your handle</h2>
-        <p className="text-ink-700 mt-1 text-sm">
-          This is your name across SportsHub. We reserved the default below for you at sign-up.
-          Keep it, or make it your own.
-        </p>
+    <div className="mb-6">
+      <label className="text-ink-700 block text-sm font-medium">
+        Your handle <span className="text-ink-400 font-normal">(optional)</span>
+      </label>
+      <div className="border-ink-200 focus-within:border-play-500 mt-1 flex w-full items-center rounded-xl border bg-white px-3 shadow-sm">
+        <span className="text-ink-400 text-sm">@</span>
+        <input
+          value={draft}
+          onChange={(e) => onChange(e.target.value.toLowerCase())}
+          className="text-ink-900 w-full border-0 bg-transparent px-1 py-2.5 text-sm focus:outline-none focus:ring-0"
+          placeholder="yourname"
+          maxLength={20}
+        />
       </div>
+      <p className="text-ink-500 mt-1 text-xs">
+        This is your name across SportsHub. Keep it, change it, or leave it blank and we&apos;ll
+        stay with {reserved ? `@${reserved}` : "the one we reserved for you"}.
+      </p>
+    </div>
+  )
+}
 
-      {loading ? (
-        <p className="text-ink-500 text-sm">Loading…</p>
-      ) : (
-        <div>
-          <div className="border-ink-200 focus-within:border-play-500 flex w-full items-center rounded-xl border bg-white px-3 shadow-sm">
-            <span className="text-ink-400 text-sm">@</span>
-            <input
-              value={draft}
-              onChange={(e) => setDraft(e.target.value.toLowerCase())}
-              className="text-ink-900 w-full border-0 bg-transparent px-1 py-2.5 text-sm focus:outline-none focus:ring-0"
-              placeholder="yourname"
-              maxLength={20}
-            />
-          </div>
-          {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
-          <p className="text-ink-500 mt-2 text-xs">
-            Skipping keeps your default handle{handle ? ` (@${handle})` : ""}.
-          </p>
-        </div>
-      )}
+/**
+ * K-008, promoted (owner ruling 2026-08-12). Kids find the platform before
+ * their parents do, so the guardian ask is a first-class block on the Player
+ * profile step with the reason spelled out, not an optional whisper. It is
+ * still skippable: leaving it blank never blocks onboarding.
+ *
+ * The "did a parent already add you" answer is what decides who reconciles a
+ * duplicate. Yes: the server looks for a profile under that email matching
+ * this kid and asks the parent to link it. No: the parent gets the ordinary
+ * guardian invite, and the merge is offered to them when they accept. Either
+ * way the family ends up with one profile, and the kid is never told whether
+ * that email has an account.
+ */
+function GuardianInviteBlock({
+  email,
+  onEmailChange,
+  alreadyAdded,
+  onAlreadyAddedChange,
+}: {
+  email: string
+  onEmailChange: (v: string) => void
+  alreadyAdded: boolean
+  onAlreadyAddedChange: (v: boolean) => void
+}) {
+  return (
+    <div className="border-play-100 bg-play-50/60 mb-6 rounded-2xl border p-5">
+      <h3 className="text-ink-900 text-base font-semibold">Add your parent or guardian</h3>
+      <p className="text-ink-700 mt-1 text-sm">
+        Your parent or guardian approves payments and permissions. You need them linked before you
+        can join anything that costs money, so getting it done now saves you a wait later.
+      </p>
 
-      <div className="flex items-center gap-4">
-        <button type="button" onClick={onBack} className={secondaryButtonClass}>
-          Back
-        </button>
-        <button
-          type="button"
-          onClick={onContinue}
-          className="text-ink-500 hover:text-ink-800 text-sm font-semibold"
-        >
-          Skip for now
-        </button>
-        <button
-          type="button"
-          onClick={saveAndContinue}
-          disabled={busy || loading}
-          className={primaryButtonClass}
-        >
-          {busy ? "Saving…" : "Continue"}
-        </button>
-      </div>
+      <label className="text-ink-700 mt-4 block text-sm font-medium" htmlFor="guardian-email">
+        Parent or guardian&apos;s email
+      </label>
+      <input
+        id="guardian-email"
+        type="email"
+        value={email}
+        onChange={(e) => onEmailChange(e.target.value)}
+        placeholder="parent@example.com"
+        className="border-ink-200 focus:border-play-500 mt-1 block w-full rounded-xl border bg-white px-3 py-2.5 text-sm shadow-sm focus:outline-none"
+      />
+
+      <label className="text-ink-700 mt-3 flex items-start gap-2.5 text-sm">
+        <input
+          type="checkbox"
+          checked={alreadyAdded}
+          onChange={(e) => onAlreadyAddedChange(e.target.checked)}
+          className="border-ink-300 mt-0.5 h-4 w-4 rounded"
+        />
+        <span>
+          A parent already added me to SportsHub
+          <span className="text-ink-500 mt-0.5 block text-xs">
+            If that matches, your parent will get a request to link this login to the profile they
+            already made, instead of starting a second one.
+          </span>
+        </span>
+      </label>
+
+      <p className="text-ink-500 mt-3 text-xs">
+        We email them a link. You keep your own login either way, and you can do this later from
+        your profile if you would rather.
+      </p>
     </div>
   )
 }
@@ -335,11 +342,40 @@ interface OnboardingFlowProps {
 }
 
 export function OnboardingFlow({ userName }: OnboardingFlowProps) {
-  const [step, setStep] = useState<"role" | "handle" | "profile">("role")
+  const [step, setStep] = useState<"role" | "profile" | "family">("role")
   const [selectedRole, setSelectedRole] = useState<string | null>(null)
   const [adultAttested, setAdultAttested] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  // K-007: the handle is a FIELD on the profile step now, not its own step:
+  // prefilled with the reserved default, saved non-blocking on submit.
+  const [reservedHandle, setReservedHandle] = useState<string | null>(null)
+  const [handleDraft, setHandleDraft] = useState("")
+  // An unavailable handle is told once, then stops mattering — the next
+  // Continue keeps the reserved default and moves on (QA-209 never-blocks).
+  const [handleWarned, setHandleWarned] = useState(false)
+  useEffect(() => {
+    fetch("/api/account/handle")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        setReservedHandle(data?.handle ?? null)
+        setHandleDraft(data?.handle ?? "")
+      })
+      .catch(() => {})
+  }, [])
+  // K-008, accepted and promoted (owner 2026-08-12): the guardian ask lives
+  // on the Player profile step and the invite fires right after the profile
+  // saves, because the Player record has to exist first. This is the
+  // player-initiated direction of the event-driven linking rule, surfaced
+  // early on purpose: kids find the platform before their parents do.
+  const [inviteEmail, setInviteEmail] = useState("")
+  // "A parent already added me": turns the guardian invite into a request to
+  // link the profile that already exists (resolved server-side).
+  const [parentAlreadyAdded, setParentAlreadyAdded] = useState(false)
+  const [inviteBusy, setInviteBusy] = useState(false)
+  const [inviteSent, setInviteSent] = useState(false)
+  const [inviteError, setInviteError] = useState<string | null>(null)
+  const [pendingDest, setPendingDest] = useState<string>("/post-login")
   const searchParams = useSearchParams()
   // Deep link the user was chasing before sign-up — honored at the terminal
   // step so onboarding drops them where they meant to go, not on dashboard.
@@ -356,10 +392,7 @@ export function OnboardingFlow({ userName }: OnboardingFlowProps) {
     }
 
     setError(null)
-
-    // QA-209: a light handle-pick step sits between role selection and the
-    // per-role profile form for every role.
-    setStep("handle")
+    setStep("profile")
   }
 
   const handleProfileSubmit = async (profileData: ProfileData) => {
@@ -378,9 +411,74 @@ export function OnboardingFlow({ userName }: OnboardingFlowProps) {
     await submitOnboarding(selectedRole!)
   }
 
+  /** K-008: look up the just-created Player and send the GUARDIAN invite.
+   *  Shared by the automatic post-save send and the recovery screen's retry. */
+  const sendParentInvite = async (): Promise<boolean> => {
+    setInviteBusy(true)
+    setInviteError(null)
+    try {
+      const pr = await fetch("/api/players")
+      const pd = await pr.json().catch(() => ({}))
+      const playerId = pd?.players?.[0]?.id
+      if (!playerId) {
+        throw new Error(
+          "Couldn't look up your player profile. You can invite them anytime from your profile page."
+        )
+      }
+      const r = await fetch("/api/family-invitations", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          type: "GUARDIAN",
+          playerId,
+          email: inviteEmail.trim(),
+          preferClaim: parentAlreadyAdded,
+        }),
+      })
+      const d = await r.json().catch(() => ({}))
+      if (!r.ok) throw new Error(d.error || "Couldn't send the invite")
+      setInviteSent(true)
+      return true
+    } catch (e) {
+      setInviteError(e instanceof Error ? e.message : "Couldn't send the invite")
+      return false
+    } finally {
+      setInviteBusy(false)
+    }
+  }
+
   const submitOnboarding = async (role: string, profileData?: ProfileData) => {
-    setIsSubmitting(true)
     setError(null)
+
+    // K-007 as ruled 2026-08-12: save the handle BEFORE creating the role
+    // (Kai's ordering, which is right), but never let it stop onboarding.
+    // Empty keeps the default reserved at signup. A taken handle is said out
+    // loud once so the choice isn't swallowed, and the next Continue goes
+    // through on the default.
+    const trimmedHandle = handleDraft.trim().toLowerCase()
+    setIsSubmitting(true)
+    if (trimmedHandle && trimmedHandle !== reservedHandle && !handleWarned) {
+      try {
+        const hr = await fetch("/api/account/handle", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ handle: trimmedHandle }),
+        })
+        const hd = await hr.json().catch(() => ({}))
+        if (!hr.ok) {
+          setError(
+            `${hd.error || "That handle isn't available."} Pick another, or press Continue again to keep ${reservedHandle ? `@${reservedHandle}` : "the one we reserved for you"}.`
+          )
+          setHandleWarned(true)
+          setIsSubmitting(false)
+          return
+        }
+        setReservedHandle(trimmedHandle)
+      } catch {
+        // Network trouble on a nice-to-have field is not a reason to trap
+        // someone in onboarding: the reserved default is already theirs.
+      }
+    }
 
     try {
       const res = await fetch("/api/onboarding", {
@@ -406,18 +504,87 @@ export function OnboardingFlow({ userName }: OnboardingFlowProps) {
       // checklist step is "Create your club". A full reload lets the server
       // layouts pick up the fresh session/roles; an explicit deep-link
       // callbackUrl still wins.
-      window.location.href = callbackUrl ?? "/post-login"
+      const dest = callbackUrl ?? "/post-login"
+      // K-008: the optional parent email collected on the profile step fires
+      // now — the Player record exists as of this successful POST. Success
+      // goes straight on; failure opens the recovery screen (retry/skip).
+      if (role === "Player" && inviteEmail.trim()) {
+        setPendingDest(dest)
+        const sent = await sendParentInvite()
+        if (!sent) {
+          setIsSubmitting(false)
+          setStep("family")
+          return
+        }
+      }
+      window.location.href = dest
     } catch {
       setError("Network error. Please try again.")
       setIsSubmitting(false)
     }
   }
 
-  if (step === "handle" && selectedRole) {
+  if (step === "family") {
     return (
       <div className="border-ink-100 rounded-3xl border bg-white p-8 shadow-[0_22px_70px_-42px_rgba(15,23,42,0.45)]">
-        <HandleStep onContinue={() => setStep("profile")} onBack={() => setStep("role")} />
-        <p className="text-ink-500 mt-4 text-center text-sm">Step 2 of 3: Pick your handle</p>
+        <div className="space-y-6">
+          <div>
+            <h2 className="text-ink-900 text-xl font-semibold">
+              One last thing, invite your parent or guardian
+              <span className="text-ink-400 font-normal"> (optional)</span>
+            </h2>
+            <p className="text-ink-700 mt-1 text-sm">
+              That email didn&apos;t go through. They approve payments and permissions, so it is
+              worth another try. You keep your own login either way.
+            </p>
+          </div>
+
+          {inviteSent ? (
+            <p className="text-court-700 border-court-200 bg-court-50/60 rounded-xl border p-4 text-sm font-semibold">
+              Sent. They&apos;ll get an email with a link to connect to your account.
+            </p>
+          ) : (
+            <div>
+              <input
+                type="email"
+                value={inviteEmail}
+                onChange={(e) => setInviteEmail(e.target.value)}
+                placeholder="parent@example.com"
+                className="border-ink-200 focus:border-play-500 block w-full rounded-xl border px-3 py-2.5 text-sm shadow-sm focus:outline-none"
+              />
+              {inviteError && <p className="mt-2 text-sm text-red-600">{inviteError}</p>}
+            </div>
+          )}
+
+          <div className="flex items-center gap-4">
+            <button
+              type="button"
+              onClick={() => (window.location.href = pendingDest)}
+              className="text-ink-500 hover:text-ink-800 text-sm font-semibold"
+            >
+              {inviteSent ? "Continue" : "Skip for now"}
+            </button>
+            {!inviteSent && (
+              <button
+                type="button"
+                disabled={inviteBusy || !inviteEmail.trim()}
+                onClick={() => void sendParentInvite()}
+                className={primaryButtonClass}
+              >
+                {inviteBusy ? "Sending…" : "Try again"}
+              </button>
+            )}
+            {inviteSent && (
+              <button
+                type="button"
+                onClick={() => (window.location.href = pendingDest)}
+                className={primaryButtonClass}
+              >
+                Continue
+              </button>
+            )}
+          </div>
+        </div>
       </div>
     )
   }
@@ -431,12 +598,23 @@ export function OnboardingFlow({ userName }: OnboardingFlowProps) {
           </div>
         )}
 
+        <HandleField draft={handleDraft} reserved={reservedHandle} onChange={setHandleDraft} />
+
+        {selectedRole === "Player" && (
+          <GuardianInviteBlock
+            email={inviteEmail}
+            onEmailChange={setInviteEmail}
+            alreadyAdded={parentAlreadyAdded}
+            onAlreadyAddedChange={setParentAlreadyAdded}
+          />
+        )}
+
         {selectedRole === "Parent" && (
           <>
             <ParentInfoCallouts />
             <ParentForm
               onSubmit={handleProfileSubmit}
-              onBack={() => setStep("handle")}
+              onBack={() => setStep("role")}
               isSubmitting={isSubmitting}
             />
           </>
@@ -444,14 +622,14 @@ export function OnboardingFlow({ userName }: OnboardingFlowProps) {
         {selectedRole === "Player" && (
           <PlayerForm
             onSubmit={handleProfileSubmit}
-            onBack={() => setStep("handle")}
+            onBack={() => setStep("role")}
             isSubmitting={isSubmitting}
           />
         )}
         {selectedRole === "Staff" && (
           <StaffForm
             onSubmit={handleProfileSubmit}
-            onBack={() => setStep("handle")}
+            onBack={() => setStep("role")}
             isSubmitting={isSubmitting}
           />
         )}
@@ -461,7 +639,7 @@ export function OnboardingFlow({ userName }: OnboardingFlowProps) {
             <div className="mt-6">
               <RefereeForm
                 onSubmit={handleProfileSubmit}
-                onBack={() => setStep("handle")}
+                onBack={() => setStep("role")}
                 isSubmitting={isSubmitting}
               />
             </div>
@@ -473,7 +651,7 @@ export function OnboardingFlow({ userName }: OnboardingFlowProps) {
             <div className="mt-6">
               <LeagueOwnerForm
                 onSubmit={handleProfileSubmit}
-                onBack={() => setStep("handle")}
+                onBack={() => setStep("role")}
                 isSubmitting={isSubmitting}
               />
             </div>
@@ -491,7 +669,7 @@ export function OnboardingFlow({ userName }: OnboardingFlowProps) {
             <div className="flex gap-4">
               <button
                 type="button"
-                onClick={() => setStep("handle")}
+                onClick={() => setStep("role")}
                 className="border-ink-200 rounded-xl border bg-white px-4 py-2.5 font-semibold text-ink-700 transition hover:bg-court-50"
               >
                 Back
@@ -508,7 +686,7 @@ export function OnboardingFlow({ userName }: OnboardingFlowProps) {
           </div>
         )}
 
-        <p className="text-ink-500 mt-4 text-center text-sm">Step 3 of 3: Complete your profile</p>
+        <p className="text-ink-500 mt-4 text-center text-sm">Step 2 of 2: Complete your profile</p>
       </div>
     )
   }
@@ -519,7 +697,7 @@ export function OnboardingFlow({ userName }: OnboardingFlowProps) {
       <h1 className="text-ink-900 mb-2 text-3xl font-semibold">Welcome, {userName}!</h1>
       <p className="text-ink-700 mb-8">
         What best describes you? Pick your primary role to get started. You can take on more roles
-        anytime — just add a child, create a club or league, or become a referee.
+        anytime by adding a child, creating a club or league, or becoming a referee.
       </p>
 
       <div className="space-y-3">
@@ -577,7 +755,7 @@ export function OnboardingFlow({ userName }: OnboardingFlowProps) {
         {isSubmitting ? "Setting up your account..." : "Continue"}
       </button>
 
-      <p className="text-ink-500 mt-4 text-center text-sm">Step 1 of 3: Choose your role</p>
+      <p className="text-ink-500 mt-4 text-center text-sm">Step 1 of 2: Choose your role</p>
     </div>
   )
 }
