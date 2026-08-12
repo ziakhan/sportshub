@@ -18,6 +18,12 @@ const PUBLIC_PAGE_PREFIXES = [
   "/reset-password",
   // Magic sign-in landing (emailed tokenized link — 2026-07-15)
   "/magic-link",
+  // Family invite landing (parent-child linking arc 2026-08-12). The primary
+  // journey is a kid inviting a parent who has NO account yet, so the invite
+  // has to say who is asking and why BEFORE asking anyone to sign up. Only
+  // /family/invite is public; /family/accept still needs a session, because
+  // accepting is the consent decision.
+  "/family/invite",
   "/marketplace",
   "/club",
   "/tryout",

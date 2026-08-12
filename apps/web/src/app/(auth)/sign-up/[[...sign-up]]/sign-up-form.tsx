@@ -24,9 +24,12 @@ export function SignUpForm({
 }) {
   const searchParams = useSearchParams()
   const callbackUrl = safeCallbackUrl(searchParams?.get("callbackUrl"))
+  // Invited people arrive with the address the invitation was sent to —
+  // signing up with a different one silently orphans the invite.
+  const invitedEmail = searchParams?.get("email") ?? ""
   const [firstName, setFirstName] = useState("")
   const [lastName, setLastName] = useState("")
-  const [email, setEmail] = useState("")
+  const [email, setEmail] = useState(invitedEmail)
   const [password, setPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
   const [platformMarketingConsent, setPlatformMarketingConsent] = useState(false)
@@ -179,6 +182,12 @@ export function SignUpForm({
               className={inputClass}
               placeholder="you@example.com"
             />
+            {invitedEmail ? (
+              <p className="text-ink-500 mt-1 text-xs">
+                This is the address your invitation was sent to. Keep it and the invitation will
+                be waiting when you land.
+              </p>
+            ) : null}
           </div>
 
           <div>

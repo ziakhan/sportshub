@@ -8,6 +8,7 @@
 import { randomBytes } from "crypto"
 import bcrypt from "bcryptjs"
 import { prisma } from "@youthbasketballhub/db"
+import { attachPendingFamilyInvitations } from "@/lib/family/pending-invitations"
 
 export async function ensureGoogleUser(input: {
   email: string
@@ -40,6 +41,10 @@ export async function ensureGoogleUser(input: {
       avatarUrl: input.avatarUrl || null,
     },
   })
+  // A kid invited this address before the parent had an account: the invite
+  // has to be waiting the moment they land, not only on the password path.
+  await attachPendingFamilyInvitations(created.id, created.email).catch(() => {})
+
   return {
     id: created.id,
     email: created.email,
