@@ -2,6 +2,8 @@ import { redirect } from "next/navigation"
 import Link from "next/link"
 import { getCurrentUser } from "@/lib/auth-helpers"
 import { getCompletionChecklist } from "@/lib/onboarding/checklist"
+import { getLinkParentNudge } from "@/lib/family/nudge"
+import { LinkParentBanner } from "@/components/family/link-parent-banner"
 import { getDashboardData } from "./get-dashboard-data"
 import { FinishSetupCard } from "./sections/finish-setup-card"
 import { AdminSection } from "./sections/admin-section"
@@ -22,9 +24,10 @@ export default async function DashboardPage() {
   }
 
   const roles = dbUser.roles.map((r: any) => r.role as string)
-  const [dashboardData, checklist] = await Promise.all([
+  const [dashboardData, checklist, linkParentNudge] = await Promise.all([
     getDashboardData(dbUser),
     getCompletionChecklist(dbUser as any),
+    getLinkParentNudge(dbUser.id),
   ])
 
   const hasAdminRole = roles.includes("PlatformAdmin")
@@ -54,6 +57,13 @@ export default async function DashboardPage() {
 
         </div>
       </div>
+
+      {linkParentNudge && (
+        <LinkParentBanner
+          playerId={linkParentNudge.playerId}
+          pendingEmail={linkParentNudge.pendingEmail}
+        />
+      )}
 
       <FinishSetupCard checklist={checklist} />
 
