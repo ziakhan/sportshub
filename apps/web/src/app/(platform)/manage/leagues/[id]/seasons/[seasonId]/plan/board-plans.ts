@@ -13,6 +13,7 @@ import {
 import {
   planStateFrom,
   withAssertedGymsInWorld,
+  withWeekendChosen,
   withWeekendHoursInWorld,
   withFridayBlocksInWorld,
   worldFromState,
@@ -83,6 +84,9 @@ export function useBoardPlans(m: BoardModel) {
     setAssertedGyms,
     fridays,
     setFridays,
+    released,
+    setReleased,
+    setPreview,
     setEmptyGyms,
     setUndoStack,
     dirty,
@@ -147,6 +151,8 @@ export function useBoardPlans(m: BoardModel) {
     setAssertedGyms({})
     setEmptyGyms({})
     setFridays({})
+    setReleased([])
+    setPreview(null)
     setFlashUnits([])
     setGhosts([])
     setArmedSection(null)
@@ -295,6 +301,8 @@ export function useBoardPlans(m: BoardModel) {
     setAssertedGyms({})
     setEmptyGyms({})
     setFridays({})
+    setReleased([])
+    setPreview(null)
     setHourOverrides({})
     setUndoStack([])
     setDirty(false)
@@ -410,9 +418,11 @@ export function useBoardPlans(m: BoardModel) {
     setVenues(shown.venues)
     setBlockStatus({})
     // The assertion and the hours are written down now, in the plan's own
-    // world, so the working copy stops carrying them.
+    // world, so the working copy stops carrying them. Released weekends too
+    // (QA T-016): the save wrote them into the world as chosen: false.
     setAssertedGyms({})
     setEmptyGyms({})
+    setReleased([])
     setHourOverrides({})
     // THE UNDO STACK SURVIVES A SAVE (drive finding, 2026-08-07). Autosave
     // fires a second after every edit; clearing here meant undo vanished
@@ -481,6 +491,8 @@ export function useBoardPlans(m: BoardModel) {
     setHourOverrides({})
     setAssertedGyms({})
     setEmptyGyms({})
+    setReleased([])
+    setPreview(null)
     setUndoStack([])
     setArmed(null)
     setArmedVenue(null)
@@ -542,14 +554,23 @@ export function useBoardPlans(m: BoardModel) {
     const nothingAsserted = Object.values(assertedGyms).every((ids) => (ids ?? []).length === 0)
     const noHours = Object.keys(hourOverrides).length === 0
     const noFridays = Object.keys(fridays).length === 0
-    if (nothingAsserted && noHours && noFridays) return null
+    const noReleases = released.length === 0
+    if (nothingAsserted && noHours && noFridays && noReleases) return null
     const base = planSettings?.state ?? (state ? worldFromState(state) : null)
     if (!base) return null
-    // The gyms first, because hours for a gym the world does not have on that
+    // Releases FIRST (QA T-016): a weekend taken off the plan sheds its gyms
+    // before anything below decorates other weekends. withWeekendChosen is
+    // the same write step 2's own toggle makes, so reopening the plan finds
+    // the weekend really not run.
+    const withoutReleased = released.reduce(
+      (world, sessionId) => withWeekendChosen(world, sessionId, false),
+      base
+    )
+    // The gyms next, because hours for a gym the world does not have on that
     // weekend would be written against nothing.
     return withFridayBlocksInWorld(
       withWeekendHoursInWorld(
-        withAssertedGymsInWorld(base, assertedGyms),
+        withAssertedGymsInWorld(withoutReleased, assertedGyms),
         hourOverrides
       ),
       // Last: a Friday is extra capacity at a gym the weekend already has, so

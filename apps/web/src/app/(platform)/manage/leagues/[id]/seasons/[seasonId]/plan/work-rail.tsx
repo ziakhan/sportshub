@@ -26,7 +26,7 @@ import {
 } from "@/lib/scheduler/plan-world"
 import { PILL_TONE, fractionTone, hueFor } from "./plan-shared"
 import { BlockSummary, CountChip, Fraction, WhyPopover } from "./plan-ui"
-import { plural } from "./board-shared"
+import { plural, sameMove, type PreviewView } from "./board-shared"
 
 /* ----------------------------- the rail ---------------------------------- */
 
@@ -41,6 +41,9 @@ import { plural } from "./board-shared"
 const OUTCOME: Record<SuggestionMove["resolves"], { words: string; tone: string }> = {
   shortage: { words: "clears shortage", tone: "bg-court-50 text-court-800" },
   "two-building": { words: "one building", tone: "bg-play-50 text-play-700" },
+  // QA T-016: the move empties a rented weekend and takes it off the plan,
+  // booking and all. The strongest saving on the price list after a building.
+  consolidate: { words: "releases the weekend", tone: "bg-court-50 text-court-800" },
 }
 
 /**
@@ -75,7 +78,10 @@ export function WorkRail({
   gymShort,
   aboutLabel = "this calendar",
   interactive,
-  onMove,
+  preview,
+  onPreview,
+  onPreviewEnd,
+  onApply,
   onJump,
 }: {
   state: PlannerState
@@ -103,7 +109,17 @@ export function WorkRail({
    *  is read next to a board that could be any season, so it says which one. */
   aboutLabel?: string
   interactive: boolean
-  onMove: (unitKey: string, from: string | null, to: string) => void
+  /** The suggestion on trial, if any (owner T-019 ruling): the board is
+   *  dimmed around it, and the row it belongs to wears the confirm. */
+  preview: PreviewView | null
+  /** Put a move on trial. `pin` when a click did it (the canonical path);
+   *  hover previews without pinning. */
+  onPreview: (move: SuggestionMove, pin: boolean) => void
+  /** The pointer left the row: a hover preview dissolves, a pinned one stays. */
+  onPreviewEnd: (move: SuggestionMove) => void
+  /** The confirm: apply the previewed move (and its release, if it carries
+   *  one). The one route a suggestion lands through. */
+  onApply: (move: SuggestionMove) => void
   /** Put a weekend under the rail. */
   onJump: (sessionId: string) => void
 }) {
@@ -306,7 +322,11 @@ export function WorkRail({
             hue={hue}
             gymShort={gymShort}
             interactive={interactive}
-            onMove={onMove}
+            previewing={Boolean(preview && sameMove(preview.move, s.move as SuggestionMove))}
+            pinned={Boolean(preview?.pinned && sameMove(preview.move, s.move as SuggestionMove))}
+            onPreview={onPreview}
+            onPreviewEnd={onPreviewEnd}
+            onApply={onApply}
             onJump={onJump}
           />
         ))}
@@ -433,7 +453,11 @@ function SuggestionRow({
   hue,
   gymShort,
   interactive,
-  onMove,
+  previewing,
+  pinned,
+  onPreview,
+  onPreviewEnd,
+  onApply,
   onJump,
 }: {
   state: PlannerState
@@ -450,7 +474,13 @@ function SuggestionRow({
   hue: Map<string, number>
   gymShort: (venueId: string) => string
   interactive: boolean
-  onMove: (unitKey: string, from: string | null, to: string) => void
+  /** THIS row's move is on trial (hover or click). The board is showing it. */
+  previewing: boolean
+  /** A click pinned it: the button is the confirm now (owner T-019 ruling). */
+  pinned: boolean
+  onPreview: (move: SuggestionMove, pin: boolean) => void
+  onPreviewEnd: (move: SuggestionMove) => void
+  onApply: (move: SuggestionMove) => void
   /** Both weekends a move names are jump targets: the rail is the index and
    *  the board is the page. */
   onJump: (sessionId: string) => void
@@ -487,6 +517,9 @@ function SuggestionRow({
   const takes = toWeekend ? weekendDemand(state.units, toWeekend, [move.unitKey]) : move.games
   const cost = [
     `${move.toLabel} takes ${plural(takes, "more game", "more games")}.`,
+    // What accepting a consolidation really does (QA T-016): the emptied
+    // weekend is released whole, booking and all.
+    move.releases ? `${move.fromLabel} comes off the plan, its gym booking off the ask sheet.` : null,
     // The move.lands data says the same thing in the popover; the row says it
     // in the words a parent would use.
     lands && home && lands !== home
@@ -498,8 +531,16 @@ function SuggestionRow({
 
   return (
     <div
-      className="border-ink-200 rounded-xl border bg-white px-3 py-2 shadow-sm"
+      className={`rounded-xl border bg-white px-3 py-2 shadow-sm ${
+        previewing ? "border-play-400 ring-play-200 ring-1" : "border-ink-200"
+      }`}
       data-testid="rail-idea"
+      // HOVER PREVIEWS FROM THE ROW, never from the button (owner T-019
+      // ruling: hover may ADD a preview on desktop). On the row, a pointer
+      // wandering between the row's own elements fires nothing, so the
+      // confirm's own click path has no state change racing it.
+      onMouseEnter={() => interactive && onPreview(move, false)}
+      onMouseLeave={() => interactive && onPreviewEnd(move)}
     >
       <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
         <i aria-hidden className={`h-2.5 w-2.5 flex-none rounded-full ${paint.swatch}`} />
@@ -543,25 +584,46 @@ function SuggestionRow({
           story={story}
           unitLabel={move.unitLabel}
         />
+        {/**
+          * PREVIEW, THEN CONFIRM (owner T-019 ruling, 2026-08-11). Nothing
+          * applies on first contact: hovering paints the move on the board
+          * (the dim, the ghosts, the before-and-after), the FIRST click pins
+          * that preview and this button becomes the confirm, and only the
+          * second click applies. Touch gets the same two taps, because hover
+          * is never the only path.
+          */}
         {interactive && (
           <button
             type="button"
-            data-testid="suggestion-move"
+            data-testid={pinned ? "suggestion-apply" : "suggestion-move"}
             data-unit-key={move.unitKey}
+            data-previewing={previewing ? "1" : "0"}
             onClick={(e) => {
               e.stopPropagation()
-              onMove(move.unitKey, move.fromSessionId, move.toSessionId)
+              if (pinned) onApply(move)
+              else onPreview(move, true)
             }}
-            aria-label={`Move ${move.unitLabel} from ${move.fromLabel} to ${move.toLabel}`}
-            className="border-play-300 bg-play-50 text-play-700 hover:bg-play-100 ml-auto min-h-[40px] shrink-0 cursor-pointer rounded-lg border px-3 text-[12px] font-bold"
+            aria-label={
+              pinned
+                ? `Apply: move ${move.unitLabel} from ${move.fromLabel} to ${move.toLabel}${
+                    move.releases ? ` and release ${move.fromLabel}` : ""
+                  }`
+                : `Preview moving ${move.unitLabel} from ${move.fromLabel} to ${move.toLabel}`
+            }
+            className={`ml-auto min-h-[40px] shrink-0 cursor-pointer rounded-lg border px-3 text-[12px] font-bold transition-colors ${
+              pinned
+                ? "border-play-700 bg-play-600 text-white hover:bg-play-700 shadow-sm"
+                : "border-play-300 bg-play-50 text-play-700 hover:bg-play-100"
+            }`}
           >
-            Move
+            {pinned ? "Apply move" : "Move"}
           </button>
         )}
       </div>
       {/* What it costs, every time. */}
       <p className="text-ink-500 mt-1 px-0.5 text-[11.5px]" data-testid="idea-cost">
         {cost}
+        {pinned ? " Showing on the board. Click Apply move to do it, or anywhere else to leave it." : ""}
       </p>
     </div>
   )

@@ -411,8 +411,19 @@ export interface SuggestionMove {
    * idle chosen weekend is the plan working, not a problem, so nothing offers a
    * button to undo it. The note itself still ships (see PlannerSuggestion.kind);
    * it simply has nothing to press.
+   *
+   * "consolidate" (QA T-016, 2026-08-11): a rented weekend carrying one lone
+   * load, when another weekend of the same month can absorb it. Taking it
+   * does MORE than the move — see `releases`.
    */
-  resolves: "shortage" | "two-building"
+  resolves: "shortage" | "two-building" | "consolidate"
+  /**
+   * A weekend the move RELEASES WHOLE (QA T-016, owner-confirmed): accepting
+   * does the move AND takes this weekend off the plan entirely, its gym
+   * booking off the ask sheet with it — the whole point is the un-spent
+   * rental, never a hollow booked date left behind. Absent on ordinary moves.
+   */
+  releases?: string
   /** Where the grade ends up standing when it gets there, when that is not the
    *  building it has been playing: "Lands at Six Park (The Playground holds
    *  Grade 10, 42 of 48)." Empty for the ordinary case, where it keeps its own
@@ -422,7 +433,7 @@ export interface SuggestionMove {
 }
 
 export interface PlannerSuggestion {
-  kind: "overflow" | "extend-hours" | "move-unit" | "idle-weekend" | "two-building"
+  kind: "overflow" | "extend-hours" | "move-unit" | "idle-weekend" | "two-building" | "consolidate"
   sessionId: string
   text: string
   /** Present when the suggestion is one tap away from being done. Additive:
@@ -3121,7 +3132,54 @@ export function suggestFor(
           placement.reasons[w.sessionId]
         )
         const rentedHere = gyms.sections.filter((s) => s.role === "pool")
-        if (rentedHere.length > 0 && gyms.sections.length > 1) {
+        /**
+         * A RENTED BUILDING HOLDING ONE LONE LOAD (QA T-016, 2026-08-11).
+         * The whole weekend exists for a single small grade in a gym the
+         * league pays for, while another weekend of the SAME month has room
+         * to absorb it. That is money on the table: the suggestion moves the
+         * grade AND RELEASES the weekend whole (owner-confirmed) — the
+         * booking comes off the ask sheet, because the point is the un-spent
+         * rental. The sentence quantifies the saving in rented court-days
+         * and, when the move lands the grade on a weekend it already plays,
+         * says out loud that its month compresses onto one weekend.
+         */
+        let consolidated = false
+        const rentedOnly = gyms.sections.length > 0 && rentedHere.length === gyms.sections.length
+        if (rentedOnly && here.length === 1 && demand > 0) {
+          const unit = here[0]
+          const savedCourtDays = rentedHere.reduce((sum, s) => sum + s.rentedCourtDays, 0)
+          if (savedCourtDays > 0) {
+            for (const to of roomFor(unit)) {
+              // Cheap by the price list, always: the release nets a weekend
+              // BACK, and the destination must absorb the games without a
+              // new building or anything left unhoused.
+              if (!freeOfCharge(unit, w, to)) continue
+              const compresses = (assignment[to.sessionId] ?? []).includes(unit.key)
+              const gymNames = nameList(rentedHere.map((s) => venueShortName(s.name)))
+              const month = win.label.split(" ")[0]
+              const { move, text } = moveFor(
+                unit,
+                to,
+                "consolidate",
+                `Releases ${w.label} whole: saves ${savedCourtDays} rented court-day${
+                  savedCourtDays === 1 ? "" : "s"
+                }, and the ${gymNames} booking comes off the ask sheet.${
+                  compresses ? ` ${unit.label}'s ${month} games land on one weekend.` : ""
+                }`
+              )
+              move.releases = w.sessionId
+              suggestions.push({
+                kind: "consolidate",
+                sessionId: w.sessionId,
+                text: `${w.label} rents ${gymNames} for ${unit.label} alone. ${text}`,
+                move,
+              })
+              consolidated = true
+              break
+            }
+          }
+        }
+        if (!consolidated && rentedHere.length > 0 && gyms.sections.length > 1) {
           const ownGym = gyms.sections.find((s) => s.role === "home")
           const rents = nameList(
             rentedHere.map(

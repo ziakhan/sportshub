@@ -1513,6 +1513,39 @@ export function withWeekendChosen(
   })
 }
 
+/**
+ * WEEKENDS THE WORKING COPY HAS RELEASED WHOLE (QA T-016), in the shape the
+ * board computes on. A released weekend is one the plan stops running: no
+ * gyms, no capacity, nothing chosen — it draws as a ghost row, the solver
+ * never fills it, and nothing about it reaches the ask sheet. The mirror of
+ * `withWeekendChosen(world, id, false)`, which is what a save writes into
+ * the plan's own world.
+ */
+export function withReleasedWeekends(state: PlannerState, sessionIds: string[]): PlannerState {
+  if (sessionIds.length === 0) return state
+  const drop = new Set(sessionIds)
+  let touchedAny = false
+  const windows = state.windows.map((win) => {
+    let touchedWindow = false
+    const weekends = win.weekends.map((w) => {
+      if (!drop.has(w.sessionId)) return w
+      touchedWindow = true
+      touchedAny = true
+      return {
+        ...w,
+        chosen: false,
+        venues: [],
+        capacityGames: 0,
+        largestVenueCapacity: 0,
+        assigned: [],
+        assignedVenues: {},
+      }
+    })
+    return touchedWindow ? { ...win, weekends } : win
+  })
+  return touchedAny ? { ...state, windows } : state
+}
+
 /** A gym on, or off, for every weekend this plan runs. Turning it on never
  *  invents a weekend: a weekend the plan does not run stays not run. */
 export function withGymEveryWeekend(world: PlanWorld, venueId: string, on: boolean): PlanWorld {

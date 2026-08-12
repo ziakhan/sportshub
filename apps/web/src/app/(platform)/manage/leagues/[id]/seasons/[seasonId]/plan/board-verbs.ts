@@ -18,6 +18,7 @@ import {
   weekendDemand,
   type PlannerLever,
   type PlannerState,
+  type SuggestionMove,
 } from "@/lib/scheduler/planner-core"
 import type { FridayFit } from "@/lib/scheduler/plan-world"
 import {
@@ -41,6 +42,7 @@ import {
   courtsWord,
   nameList,
   plural,
+  sameMove,
   type DragPayload,
   type GhostIntent,
   type PendingDrop,
@@ -88,6 +90,9 @@ export function useBoardVerbs(m: BoardModel) {
     setAssertedGyms,
     fridays,
     setFridays,
+    released,
+    setReleased,
+    setPreview,
     emptyGyms,
     setEmptyGyms,
     undoStack,
@@ -141,6 +146,7 @@ export function useBoardVerbs(m: BoardModel) {
           assertedGyms,
           emptyGyms,
           fridays,
+          released,
           dirty,
         },
       ].slice(-UNDO_DEPTH)
@@ -191,12 +197,26 @@ export function useBoardVerbs(m: BoardModel) {
    * clicked: a click that starts a new move clears the old marks and then writes
    * its own, and no handler can hide from it with stopPropagation.
    */
-  const endMoveMarks = useCallback(() => {
+  const endMoveMarks = useCallback((e?: { target?: EventTarget | null }) => {
     setFlashUnits((prev) => (prev.length === 0 ? prev : []))
     setGhosts((prev) => (prev.length === 0 ? prev : []))
+    /**
+     * A suggestion preview dissolves the same way (owner T-019 ruling):
+     * clicking anywhere else changes nothing and puts the board back.
+     *
+     * ANYWHERE ELSE means outside the suggestion's own row. Not a nicety — a
+     * discrete-priority update from this CAPTURE handler commits before the
+     * bubble phase dispatches, so clearing here on the confirm's own click
+     * re-rendered the button un-pinned mid-click and its handler re-pinned
+     * instead of applying. The row manages its own preview; everything else
+     * dissolves it.
+     */
+    const target = e?.target instanceof Element ? e.target : null
+    if (target?.closest?.('[data-testid="rail-idea"]')) return
+    setPreview((prev) => (prev === null ? prev : null))
     // The setters are React's own and never change identity, so this callback
     // is created once whatever the board is doing.
-  }, [setFlashUnits, setGhosts])
+  }, [setFlashUnits, setGhosts, setPreview])
 
   /** The gym a grade was playing in on a weekend, as the board has it drawn. */
   const gymOf = (sessionId: string | null | undefined, unitKey: string): string | null =>
@@ -248,6 +268,66 @@ export function useBoardVerbs(m: BoardModel) {
     setNotice(`${label} moved: ${weekendName(fromSessionId)} → ${weekendName(toSessionId)}`)
   }
 
+  /**
+   * MOVE THE LONE LOAD AND RELEASE THE WEEKEND (QA T-016, owner-confirmed
+   * clarification): accepting the consolidation idea does the move AND takes
+   * the emptied weekend off the plan entirely — its gym booking leaves the
+   * ask sheet with it, because the whole point is the un-spent rental, never
+   * a hollow booked date left behind. ONE undo entry restores everything:
+   * the assignment, the gyms, the weekend and its place on the ask sheet.
+   */
+  const consolidate = (unitKey: string, fromSessionId: string, toSessionId: string) => {
+    if (locked || fromSessionId === toSessionId) return
+    const label = unitByKey.get(unitKey)?.label ?? "that grade"
+    const from = weekendName(fromSessionId)
+    remember(`move ${label} and release ${from}`)
+    setAssignment((prev) => assignmentWithMove(prev, unitKey, fromSessionId, toSessionId))
+    setVenues((prev) => venuesWithoutUnit(prev, unitKey, [fromSessionId, toSessionId]))
+    setReleased((prev) => (prev.includes(fromSessionId) ? prev : [...prev, fromSessionId]))
+    setArmed(null)
+    setDirty(true)
+    setFromLever(false)
+    // No origin ghost: the released weekend folds down to a ghost ROW, which
+    // is itself the mark of what happened. The landing chip still rings.
+    flashMove([toSessionId], [{ sessionId: toSessionId, unitKey }], [])
+    setNotice(
+      `${label} moved: ${from} → ${weekendName(toSessionId)}. ${from} is off the plan, and its gym booking is off the ask sheet. Undo brings it all back.`
+    )
+  }
+
+  /**
+   * THE PREVIEW-CONFIRM PATH (owner T-019 ruling, 2026-08-11). A suggestion
+   * is never applied on first contact: hovering paints the preview on
+   * desktop, the FIRST CLICK pins it — board dims around the two weekends,
+   * ghosts show what lands where, both cards show before and after, and the
+   * row's button flips to the confirm — and only the SECOND click applies.
+   * Clicking anywhere else dissolves it and changes nothing (endMoveMarks).
+   */
+  const previewSuggestion = (suggested: SuggestionMove, pin: boolean) => {
+    if (locked) return
+    setPreview((prev) => {
+      // A hover never dislodges a PINNED preview (a click is a decision, a
+      // hover is a glance) — and it must not touch state at all when the
+      // pinned move IS this move, or the re-render lands between the
+      // confirm's mouseup and its click and the click misses.
+      if (!pin && prev?.pinned) return prev
+      return { move: suggested, pinned: pin || Boolean(prev?.pinned && sameMove(prev.move, suggested)) }
+    })
+  }
+
+  /** Mouse left the row: a hover preview goes, a pinned one stays. */
+  const endHoverPreview = (suggested: SuggestionMove) => {
+    setPreview((prev) => (prev && !prev.pinned && sameMove(prev.move, suggested) ? null : prev))
+  }
+
+  /** The confirm: the one route a suggestion lands through. A consolidation
+   *  releases its weekend; everything else is the ordinary move. */
+  const applySuggestion = (suggested: SuggestionMove) => {
+    setPreview(null)
+    if (suggested.releases) consolidate(suggested.unitKey, suggested.fromSessionId, suggested.toSessionId)
+    else move(suggested.unitKey, suggested.fromSessionId, suggested.toSessionId)
+  }
+
   /** Step one move back. Local only: what is on screen is what Keep saves, and
    *  nothing here has been written down yet. */
   const undoMove = () => {
@@ -261,6 +341,9 @@ export function useBoardVerbs(m: BoardModel) {
     setAssertedGyms(last.assertedGyms)
     setEmptyGyms(last.emptyGyms)
     setFridays(last.fridays)
+    // A released weekend comes back whole (QA T-016): its gyms, its place on
+    // the ask sheet, everything.
+    setReleased(last.released ?? [])
     setDirty(last.dirty)
     setUndoStack(undoStack.slice(0, -1))
     setArmed(null)
@@ -1377,6 +1460,10 @@ export function useBoardVerbs(m: BoardModel) {
     undoMove,
     /* moving what is on the board */
     move,
+    consolidate,
+    previewSuggestion,
+    endHoverPreview,
+    applySuggestion,
     removeUnit,
     moveBlock,
     moveSection,

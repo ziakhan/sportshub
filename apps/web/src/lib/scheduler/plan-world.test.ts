@@ -52,6 +52,7 @@ import {
   withGymEveryWeekend,
   withGymHours,
   withGymOnWeekend,
+  withReleasedWeekends,
   withGymRole,
   withUnitIncluded,
   withUnitRemoved,
@@ -560,6 +561,39 @@ describe("the weekends the solver is allowed to fill", () => {
     )
     const state = planStateFrom("s1", { settings: { capturedAt: "x", state: all } }) as PlannerState
     expect(solvableState(state)).toBe(state)
+  })
+})
+
+/**
+ * A WEEKEND RELEASED WHOLE (QA T-016, 2026-08-11). Accepting a consolidation
+ * idea moves the lone load and takes the emptied weekend off the plan — the
+ * board computes on this transform at once, and a save writes the same fact
+ * into the plan's world through withWeekendChosen(false).
+ */
+describe("a weekend released whole (QA T-016)", () => {
+  const stateOf = () =>
+    planStateFrom("s1", { settings: { capturedAt: "x", state: world() } }) as PlannerState
+
+  it("takes the weekend off the board's state: no gyms, no capacity, not chosen", () => {
+    const released = withReleasedWeekends(stateOf(), ["w-oct"])
+    const oct = released.windows[0].weekends.find((w) => w.sessionId === "w-oct")!
+    expect(oct.chosen).toBe(false)
+    expect(oct.venues).toEqual([])
+    expect(oct.capacityGames).toBe(0)
+    expect(oct.largestVenueCapacity).toBe(0)
+    expect(oct.assigned).toEqual([])
+    // The solver never fills it now...
+    expect(
+      solvableState(released).windows.flatMap((win) => win.weekends.map((w) => w.sessionId))
+    ).not.toContain("w-oct")
+    // ...and the board draws it as a ghost row, the mark of what happened.
+    expect(isGhostWeekend(oct)).toBe(true)
+  })
+
+  it("hands back the same object when nothing is released", () => {
+    const state = stateOf()
+    expect(withReleasedWeekends(state, [])).toBe(state)
+    expect(withReleasedWeekends(state, ["not-a-weekend"])).toBe(state)
   })
 })
 

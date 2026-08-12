@@ -31,6 +31,7 @@ import {
   weekendGymHours,
   withAssertedGyms,
   withFridayBlocks,
+  withReleasedWeekends,
   withWeekendHours,
   worldReadiness,
   type BoardColumn,
@@ -50,6 +51,8 @@ import {
   savedVenueMap,
   type BoardSnapshot,
   type PendingDrop,
+  type PreviewView,
+  type SuggestionPreview,
 } from "./board-shared"
 
 /**
@@ -162,6 +165,23 @@ export function useBoardState({
    * The solver never puts one here. Only the rail's accept does.
    */
   const [fridays, setFridays] = useState<Record<string, number>>({})
+  /**
+   * WEEKENDS RELEASED WHOLE (QA T-016): sessionIds a consolidation move took
+   * off the plan. Working-copy state like the fridays — the board computes on
+   * it at once (the weekend draws as a ghost, its booking leaves the ask
+   * sheet), one Undo puts it back, and a save writes it into the plan's own
+   * world as `chosen: false`.
+   */
+  const [released, setReleased] = useState<string[]>([])
+  /**
+   * A RAIL SUGGESTION ON TRIAL (owner T-019 ruling, 2026-08-11). Rendering
+   * state only — nothing in the working copy moves while a preview is up:
+   * the board dims around the two weekends the move names, the destination
+   * shows what would land, both cards show before and after, and the row's
+   * button becomes the confirm once a click pins it. Any other interaction
+   * dissolves it.
+   */
+  const [preview, setPreview] = useState<SuggestionPreview | null>(null)
   /**
    * A DROP THAT LANDED ON A DATE THE PLAN WAS NOT USING (owner ruling
    * 2026-08-06, slice B2): what the operator dropped, and the weekend it is
@@ -392,6 +412,8 @@ export function useBoardState({
     setAssertedGyms({})
     setEmptyGyms({})
     setFridays({})
+    setReleased([])
+    setPreview(null)
     setFlashUnits([])
     setGhosts([])
     setArmedSection(null)
@@ -419,7 +441,7 @@ export function useBoardState({
     const anythingArmed = Boolean(armed || armedVenue || armedBlock || armedSection)
     const anythingMarked = ghosts.length > 0 || flashUnits.length > 0
     const anyLens = gradeFilter.length > 0 || gymFilter.length > 0
-    if (!anythingArmed && !anythingMarked && !anyLens) return
+    if (!anythingArmed && !anythingMarked && !anyLens && !preview) return
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== "Escape") return
       setArmed(null)
@@ -428,6 +450,9 @@ export function useBoardState({
       setArmedSection(null)
       setFlashUnits([])
       setGhosts([])
+      // A suggestion preview is a glance, and Escape is the way out of any
+      // glance (owner T-019 ruling: dissolving changes nothing).
+      setPreview(null)
       // BOTH LENSES (owner ruling 2026-08-06, #4). They combine, so they clear
       // together: leaving one of them on would be a board still hiding things
       // after the operator asked for it back.
@@ -436,7 +461,7 @@ export function useBoardState({
     }
     window.addEventListener("keydown", onKey)
     return () => window.removeEventListener("keydown", onKey)
-  }, [armed, armedVenue, armedBlock, armedSection, ghosts, flashUnits, gradeFilter, gymFilter])
+  }, [armed, armedVenue, armedBlock, armedSection, ghosts, flashUnits, gradeFilter, gymFilter, preview])
 
   /**
    * Which building every grade plays in, for the WHOLE calendar at once: one
@@ -478,7 +503,9 @@ export function useBoardState({
         ? applyCourtCaps(
             withWeekendHours(
               withFridayBlocks(
-                withAssertedGyms(state, assertedGyms),
+                // Releases FIRST (QA T-016): a weekend taken off the plan has
+                // no gyms for anything later in the chain to decorate.
+                withAssertedGyms(withReleasedWeekends(state, released), assertedGyms),
                 fridays
               ),
               hourOverrides
@@ -486,7 +513,7 @@ export function useBoardState({
             courtOverrides
           )
         : null,
-    [state, assertedGyms, fridays, hourOverrides, courtOverrides]
+    [state, released, assertedGyms, fridays, hourOverrides, courtOverrides]
   )
 
   /**
@@ -657,6 +684,49 @@ export function useBoardState({
     for (const win of board?.windows ?? []) for (const w of win.weekends) out.set(w.sessionId, w)
     return out
   }, [board])
+
+  /**
+   * THE PREVIEW, PRICED FOR THE CARDS (owner T-019 ruling): both weekends'
+   * before-and-after, computed from the same demand arithmetic every card
+   * already wears, so the preview and the applied move can never disagree.
+   * Null while nothing is on trial, which every consumer reads as "draw
+   * normally".
+   */
+  const previewView = useMemo<PreviewView | null>(() => {
+    if (!preview || !board) return null
+    const m = preview.move
+    const from = weekendById.get(m.fromSessionId)
+    const to = weekendById.get(m.toSessionId)
+    if (!from || !to) return null
+    const fromBefore = weekendDemand(board.units, from, gone.assignment[m.fromSessionId] ?? [])
+    const toBefore = weekendDemand(board.units, to, gone.assignment[m.toSessionId] ?? [])
+    /** Counted on each weekend's OWN rate: the games leaving and arriving
+     *  are different numbers when the two weekends promise different games. */
+    const leaves = weekendDemand(board.units, from, [m.unitKey])
+    const takes = weekendDemand(board.units, to, [m.unitKey])
+    return {
+      move: m,
+      pinned: preview.pinned,
+      unitLabel: m.unitLabel,
+      releases: Boolean(m.releases),
+      from: {
+        sessionId: m.fromSessionId,
+        games: leaves,
+        before: { demand: fromBefore, capacity: from.capacityGames },
+        // A release takes the weekend off the plan whole; there is no
+        // "after" fraction to show, and the card says so in words.
+        after: m.releases
+          ? null
+          : { demand: Math.max(0, fromBefore - leaves), capacity: from.capacityGames },
+      },
+      to: {
+        sessionId: m.toSessionId,
+        games: takes,
+        before: { demand: toBefore, capacity: to.capacityGames },
+        after: { demand: toBefore + takes, capacity: to.capacityGames },
+      },
+    }
+  }, [preview, board, weekendById, gone.assignment])
 
   /**
    * The rentals behind the calendar ON SCREEN (owner ruling 2026-08-03), read
@@ -1069,6 +1139,11 @@ export function useBoardState({
     fridays,
     setFridays,
     fridayFits,
+    released,
+    setReleased,
+    preview,
+    setPreview,
+    previewView,
     emptyGyms,
     setEmptyGyms,
     placedGyms,

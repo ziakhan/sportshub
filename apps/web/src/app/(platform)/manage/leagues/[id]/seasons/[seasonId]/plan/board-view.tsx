@@ -21,6 +21,7 @@ import {
   ghostIntentFromDrag,
   plural,
   type GhostIntent,
+  type PreviewView,
 } from "./board-shared"
 import { GradeChip } from "./grade-chip"
 import { WeekendCard } from "./weekend-card"
@@ -49,6 +50,7 @@ export function BoardView({
   flashSessions,
   flashUnits,
   ghosts,
+  preview,
   columns,
   ghostRoom,
   gymShort,
@@ -120,6 +122,9 @@ export function BoardView({
   flashUnits: string[]
   /** "Grade 8 was here", for a few seconds, wherever a grade just left. */
   ghosts: GhostChip[]
+  /** A rail suggestion on trial (owner T-019 ruling): the board dims around
+   *  the two weekends it names, and those two draw what would change. */
+  preview: PreviewView | null
   /** THE WHOLE SEASON, month by month (owner ruling 2026-08-06, slice B2): every
    *  Saturday it spans, as a card where the plan uses it and as a thin ghost row
    *  where it does not. */
@@ -213,6 +218,37 @@ export function BoardView({
     for (const g of ghosts) out.set(g.sessionId, [...(out.get(g.sessionId) ?? []), g])
     return out
   }, [ghosts])
+
+  /**
+   * THE PREVIEW LENS (owner T-019 ruling, 2026-08-11): while a suggestion is
+   * on trial, everything except the move's two weekends steps back, the same
+   * opacity language the lenses and the drag targets already speak. Nothing
+   * under it moves by one game.
+   */
+  const previewDim = (sessionId: string | null | undefined): boolean =>
+    Boolean(preview) &&
+    sessionId !== preview?.from.sessionId &&
+    sessionId !== preview?.to.sessionId
+  const previewFor = (sessionId: string) =>
+    !preview
+      ? null
+      : sessionId === preview.from.sessionId
+        ? {
+            role: "from" as const,
+            unitLabel: preview.unitLabel,
+            games: preview.from.games,
+            before: preview.from.before,
+            after: preview.from.after,
+          }
+        : sessionId === preview.to.sessionId
+          ? {
+              role: "to" as const,
+              unitLabel: preview.unitLabel,
+              games: preview.to.games,
+              before: preview.to.before,
+              after: preview.to.after,
+            }
+          : null
 
   return (
     // Figure/ground (QA T-008.5): the board surface is faintly tinted so the
@@ -314,8 +350,13 @@ export function BoardView({
                   /* A DATE THIS PLAN IS NOT USING (owner ruling 2026-08-06,
                      slice B2). One thin dashed row, and a full drop target: the
                      first thing dropped on it turns it into a card. */
-                  <GhostDateRow
+                  <div
                     key={date.key}
+                    className={
+                      previewDim(date.ghost.sessionId) ? "opacity-40 motion-safe:transition-opacity" : ""
+                    }
+                  >
+                  <GhostDateRow
                     ghost={date.ghost}
                     windowLabel={win.label}
                     interactive={interactive}
@@ -332,10 +373,19 @@ export function BoardView({
                     gymShort={gymShort}
                     onGhostDrop={onGhostDrop}
                   />
+                  </div>
                 ) : (
-                  <WeekendCard
+                  <div
                     key={date.weekend.sessionId}
+                    className={
+                      previewDim(date.weekend.sessionId)
+                        ? "opacity-40 motion-safe:transition-opacity"
+                        : ""
+                    }
+                  >
+                  <WeekendCard
                     weekend={date.weekend}
+                    preview={previewFor(date.weekend.sessionId)}
                     fridayWhen={fridayWindowLabel(state)}
                     windowLabel={win.label}
                     units={state.units}
@@ -383,6 +433,7 @@ export function BoardView({
                     splitAxesFor={splitAxesFor}
                     onDisarm={() => onArm(null)}
                   />
+                  </div>
                 )
               )}
                   </>
@@ -391,7 +442,9 @@ export function BoardView({
 
               {missing.length > 0 && (
                 <div
-                  className="border-ink-200 rounded-xl border border-dashed p-2"
+                  className={`border-ink-200 rounded-xl border border-dashed p-2 ${
+                    preview ? "opacity-40 motion-safe:transition-opacity" : ""
+                  }`}
                   data-testid="bench-group"
                 >
                   <p className="text-ink-400 text-[10px] font-bold uppercase tracking-wide">

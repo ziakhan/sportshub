@@ -52,6 +52,7 @@ import {
   courtsWord,
   plural,
   armAfterDragStarts,
+  type CardPreview,
 } from "./board-shared"
 import { GhostMark, GradeChip } from "./grade-chip"
 
@@ -107,6 +108,7 @@ export function WeekendCard({
   onOpenWeekend,
   splitAxesFor,
   onDisarm,
+  preview = null,
 }: {
   weekend: PlannerWeekend
   windowLabel: string
@@ -213,6 +215,10 @@ export function WeekendCard({
   onOpenWeekend: (sessionId: string) => void
   splitAxesFor: (sessionId: string, unitKeys: string[]) => SplitAxis[]
   onDisarm: () => void
+  /** This card is one end of a previewed suggestion (owner T-019 ruling):
+   *  what would arrive or leave, and its numbers before and after. Null in
+   *  the ordinary case, which draws nothing extra. */
+  preview?: CardPreview | null
 }) {
   const load = weekendLoad(units, weekend, keys)
   // Grouping only: the buildings are already decided by the season-long pass,
@@ -652,6 +658,61 @@ export function WeekendCard({
             headerChip
           ))}
       </div>
+
+      {/**
+        * ONE END OF A PREVIEWED MOVE (owner T-019 ruling, 2026-08-11). The
+        * destination shows the ghost of what would land; the source shows
+        * what would leave, and when the move would release this weekend it
+        * says so in words. Both ends wear before → after in the same
+        * fraction language the header chip speaks. Dashed, because nothing
+        * here has happened yet — the confirm in the rail is what does it.
+        */}
+      {preview && (
+        <div
+          data-testid="weekend-preview"
+          data-role={preview.role}
+          className={`mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 rounded-lg border border-dashed px-2 py-1.5 ${
+            preview.role === "to" ? "border-court-400 bg-court-50/70" : "border-ink-300 bg-ink-50/70"
+          }`}
+        >
+          <span
+            data-testid="preview-landing"
+            className={`text-[11px] font-bold ${
+              preview.role === "to" ? "text-court-800" : "text-ink-600"
+            }`}
+          >
+            {preview.role === "to"
+              ? `+ ${preview.unitLabel} · ${plural(preview.games, "game", "games")} lands here`
+              : `− ${preview.unitLabel} · ${plural(preview.games, "game", "games")} leaves${
+                  preview.after === null ? ". This weekend comes off the plan" : ""
+                }`}
+          </span>
+          <span className="ml-auto inline-flex items-center gap-1.5">
+            <Fraction
+              is={preview.before.demand}
+              of={preview.before.capacity}
+              tone={fractionTone(preview.before.demand, preview.before.capacity)}
+              title={`${weekend.label} before this move: ${preview.before.demand} of ${preview.before.capacity}`}
+            />
+            <span aria-hidden className="text-ink-400 text-[11px] font-bold">
+              →
+            </span>
+            {preview.after ? (
+              <Fraction
+                is={preview.after.demand}
+                of={preview.after.capacity}
+                tone={fractionTone(preview.after.demand, preview.after.capacity)}
+                title={`${weekend.label} after this move: ${preview.after.demand} of ${preview.after.capacity}`}
+                testId="preview-after"
+              />
+            ) : (
+              <b data-testid="preview-after" className="text-court-800 text-[11px]">
+                off the plan
+              </b>
+            )}
+          </span>
+        </div>
+      )}
 
       {/* THE BUILDING WENT (owner ruling 2026-08-05, #4). Named on the card the
           games were on, so the dashed block below is never a mystery. */}

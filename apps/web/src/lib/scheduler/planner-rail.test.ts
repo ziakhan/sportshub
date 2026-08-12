@@ -438,6 +438,106 @@ describe("suggestFor: what a tidy-up move is allowed to cost", () => {
 })
 
 /**
+ * A RENTED WEEKEND CARRYING ONE LONE LOAD (QA T-016, 2026-08-11). The whole
+ * weekend's building is rented for a single grade while another weekend of
+ * the same month has room to absorb it. The suggestion moves the grade AND
+ * marks the weekend for release (move.releases), quantifies the saving in
+ * rented court-days, says the booking leaves the ask sheet, and — when the
+ * grade already plays the destination — names the compression trade-off.
+ */
+describe("suggestFor: consolidation releases a lone rented weekend (QA T-016)", () => {
+  /** w1 is ALL rental: Six Park holds Grade 8 alone. w2 is the home building
+   *  with room to absorb it. */
+  function october(homeCapacity: number, w2Assigned: string[]): {
+    state: PlannerState
+    assignment: Record<string, string[]>
+  } {
+    return {
+      state: {
+        seasonId: "season",
+        units: [unit("Gr7", 6), unit("Gr8", 10)],
+        errors: [],
+        windows: [
+          {
+            label: "Oct 2026",
+            weekends: [
+              weekend("w1", "2026-10-10", [SIXPARK]),
+              weekend("w2", "2026-10-24", [
+                gym("playground", "The Playground", homeCapacity, "home"),
+              ]),
+            ],
+          },
+        ],
+      },
+      assignment: { w1: ["age:Gr8"], w2: w2Assigned },
+    }
+  }
+
+  it("offers the move with the release, priced in rented court-days", () => {
+    // Gr7's 6 games + Gr8's 10 = 16 of 32: the home building absorbs it.
+    const { state, assignment } = october(32, ["age:Gr7"])
+    const all = suggestFor(state, assignment, {})
+    const idea = all.find((s) => s.kind === "consolidate")
+    expect(idea).toBeDefined()
+    expect(idea?.move?.unitKey).toBe("age:Gr8")
+    expect(idea?.move?.fromSessionId).toBe("w1")
+    expect(idea?.move?.toSessionId).toBe("w2")
+    expect(idea?.move?.resolves).toBe("consolidate")
+    // The owner-confirmed half: accepting releases the weekend whole.
+    expect(idea?.move?.releases).toBe("w1")
+    expect(idea?.text).toContain("for Gr8 alone")
+    expect(idea?.text).toContain("Releases w1 whole")
+    expect(idea?.text).toMatch(/saves \d+ rented court-days?/)
+    expect(idea?.text).toContain("off the ask sheet")
+    // No compression here: Gr8 was on one October weekend before and after.
+    expect(idea?.text).not.toContain("land on one weekend")
+    // One tap from done, so the rail shows it.
+    expect(railSuggestions(all).some((s) => s.kind === "consolidate")).toBe(true)
+    // And it replaces the two-building recap for that weekend rather than
+    // doubling up.
+    expect(all.some((s) => s.kind === "two-building" && s.sessionId === "w1")).toBe(false)
+  })
+
+  it("names the compression trade-off when the grade already plays the destination", () => {
+    // Gr8 plays BOTH October weekends (a split); the move merges its month
+    // onto one weekend, and the sentence has to say so.
+    const { state, assignment } = october(64, ["age:Gr7", "age:Gr8"])
+    const all = suggestFor(state, assignment, {})
+    const idea = all.find((s) => s.kind === "consolidate")
+    expect(idea?.move?.releases).toBe("w1")
+    expect(idea?.text).toContain("Gr8's Oct games land on one weekend")
+  })
+
+  it("stays silent when no weekend in the month can absorb the load", () => {
+    // Gr7's 6 games + Gr8's 10 = 16 > 12: the home building cannot take Gr8.
+    const { state, assignment } = october(12, ["age:Gr7"])
+    const all = suggestFor(state, assignment, {})
+    expect(all.some((s) => s.kind === "consolidate")).toBe(false)
+  })
+
+  it("stays silent when the weekend also uses the building the league owns", () => {
+    // A weekend with home-gym games is not a lone rented load; the ordinary
+    // two-building logic owns that shape.
+    const state: PlannerState = {
+      seasonId: "season",
+      units: [unit("Gr7", 6), unit("Gr8", 10)],
+      errors: [],
+      windows: [
+        {
+          label: "Oct 2026",
+          weekends: [
+            weekend("w1", "2026-10-10", [gym("playground", "The Playground", 12, "home"), SIXPARK]),
+            weekend("w2", "2026-10-24", [gym("playground", "The Playground", 64, "home")]),
+          ],
+        },
+      ],
+    }
+    const all = suggestFor(state, { w1: ["age:Gr7", "age:Gr8"], w2: [] }, {})
+    expect(all.some((s) => s.kind === "consolidate")).toBe(false)
+  })
+})
+
+/**
  * THE OWNER'S CASE, PINNED (owner ruling 2026-08-05, #5).
  *
  * He was looking at a month bundled onto one Saturday: the gym the league owns,

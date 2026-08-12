@@ -1,7 +1,63 @@
 import type { DragEvent } from "react"
-import type { PlannerLever, PlannerState, PlanSummary } from "@/lib/scheduler/planner-core"
+import type {
+  PlannerLever,
+  PlannerState,
+  PlanSummary,
+  SuggestionMove,
+} from "@/lib/scheduler/planner-core"
 import { PILL_TONE, type GhostChip } from "./plan-shared"
 import type { BlockStatus } from "./plan-ui"
+
+/**
+ * A RAIL SUGGESTION BEING PREVIEWED (owner T-019 ruling, 2026-08-11:
+ * suggestions preview before they apply). The move on trial, and whether a
+ * click PINNED it: hover paints the preview on desktop, but the canonical
+ * path is click-then-confirm — the first click pins the preview and flips
+ * the row's button to the confirm, the second click applies. Any other
+ * interaction with the board dissolves it and changes nothing.
+ */
+export interface SuggestionPreview {
+  move: SuggestionMove
+  pinned: boolean
+}
+
+/** The identity of a move, for "is THIS row the one being previewed":
+ *  suggestion objects are recomputed on every derivation, so identity is by
+ *  content, never by reference. */
+export const sameMove = (a: SuggestionMove, b: SuggestionMove): boolean =>
+  a.unitKey === b.unitKey && a.fromSessionId === b.fromSessionId && a.toSessionId === b.toSessionId
+
+/** One end of a previewed move, as a card wears it: what arrives or leaves,
+ *  and the weekend's numbers before and after. `after` is null on a weekend
+ *  the move would RELEASE — there is no fraction to show, the card says "off
+ *  the plan" in words. */
+export interface PreviewEnd {
+  sessionId: string
+  games: number
+  before: { demand: number; capacity: number }
+  after: { demand: number; capacity: number } | null
+}
+
+/** The preview, priced for the board (owner T-019 ruling): both ends of the
+ *  move, from the same demand arithmetic the cards already read. */
+export interface PreviewView {
+  move: SuggestionMove
+  pinned: boolean
+  unitLabel: string
+  releases: boolean
+  from: PreviewEnd
+  to: PreviewEnd
+}
+
+/** What ONE card draws of the preview: which end it is, what arrives or
+ *  leaves, and its own numbers before and after. */
+export interface CardPreview {
+  role: "from" | "to"
+  unitLabel: string
+  games: number
+  before: { demand: number; capacity: number }
+  after: { demand: number; capacity: number } | null
+}
 
 /**
  * WHAT THE WHOLE BOARD AGREES ON. Step 3 is one screen drawn by half a dozen
@@ -202,6 +258,10 @@ export interface BoardSnapshot {
   /** The Friday evenings taken, "<sessionId>|<venueId>" → courts (owner ruling
    *  2026-08-06). One undo puts the whole block back. */
   fridays: Record<string, number>
+  /** Weekends released whole by a consolidation move (QA T-016): sessionIds
+   *  the plan stopped running. One undo puts the weekend, its gyms and its
+   *  place on the ask sheet back together. */
+  released: string[]
   /** Whether the plan had unsaved changes at that point, so undoing back to
    *  the saved calendar puts the Keep button back to sleep. */
   dirty: boolean

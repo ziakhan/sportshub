@@ -173,6 +173,7 @@ export function CalendarStep({
     columns,
     fridayFits,
     ghostRoom,
+    previewView,
   } = m
 
   /* Rail collapsed by default (QA T-006, 2026-08-10): expanded it hid the
@@ -190,6 +191,9 @@ export function CalendarStep({
     endMoveMarks,
     undoMove,
     move,
+    previewSuggestion,
+    endHoverPreview,
+    applySuggestion,
     removeUnit,
     moveBlock,
     moveSection,
@@ -472,6 +476,10 @@ export function CalendarStep({
                       flashSessions={flashSessions}
                       flashUnits={flashUnits}
                       ghosts={ghosts}
+                      // A rail suggestion on trial (owner T-019 ruling): the
+                      // board dims around the move's two weekends and both
+                      // ends draw what would change. Nothing applies here.
+                      preview={previewView}
                       // THE WHOLE SEASON, cards and ghost dates together (owner
                       // ruling 2026-08-06, slice B2).
                       columns={columns}
@@ -582,7 +590,14 @@ export function CalendarStep({
                     // has a name the operator chose.
                     aboutLabel={selectedPlan?.name}
                     interactive={interactive}
-                    onMove={move}
+                    // Preview-then-confirm (owner T-019 ruling): hover paints,
+                    // the first click pins the preview and flips the button,
+                    // the second click applies through applySuggestion — the
+                    // one route that also releases a consolidated weekend.
+                    preview={previewView}
+                    onPreview={previewSuggestion}
+                    onPreviewEnd={endHoverPreview}
+                    onApply={applySuggestion}
                     onJump={jumpToWeekend}
                   />
                   {/* WHAT YOU NEED TO BOOK (owner ruling 2026-08-03): the
