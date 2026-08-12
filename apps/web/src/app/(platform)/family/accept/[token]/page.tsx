@@ -51,7 +51,7 @@ export default async function FamilyAcceptPage({ params }: { params: { token: st
         <div className="border-ink-100 rounded-2xl border bg-white p-8 text-center">
           <h1 className="text-ink-900 text-xl font-bold">Invitation not found</h1>
           <p className="text-ink-500 mt-2 text-sm">
-            The link may be incomplete — try opening it again from the email.
+            The link may be incomplete. Try opening it again from the email.
           </p>
         </div>
       ) : invite.status !== "PENDING" || expired ? (
