@@ -95,7 +95,12 @@ describe("enumerateSeasonWeekends", () => {
     expect(col.month).toBe("Oct")
   })
 
-  it("keeps a session whose days are not a weekend, without inventing a twin", () => {
+  /** RE-PINNED for QA T-015 (tester ruling 2026-08-11): league days are
+   *  Fri/Sat/Sun ONLY. A midweek session used to keep its own column
+   *  ("nothing the season already has disappears"); it is not planning
+   *  supply and never a runnable option now, so it gets no column at all.
+   *  Its days still widen the span like any real dates. */
+  it("drops a midweek session from planning supply (league days are Fri-Sun)", () => {
     const cols = enumerateSeasonWeekends({
       start: null,
       end: null,
@@ -105,19 +110,30 @@ describe("enumerateSeasonWeekends", () => {
       ],
     })
 
-    const odd = cols.find((c) => c.sessionId === "wed")!
-    expect(odd.satDateISO).toBeNull()
-    expect(odd.key).toBe("session:wed")
-    expect(odd.dayCount).toBe(1)
-    // Still in date order, between Oct 17 and Oct 24.
+    expect(cols.find((c) => c.sessionId === "wed")).toBeUndefined()
     expect(sats(cols)).toEqual([
       "2026-10-03",
       "2026-10-10",
       "2026-10-17",
-      null,
       "2026-10-24",
       "2026-10-31",
     ])
+    expect(cols.find((c) => c.satDateISO === day("2026-10-24").toISOString())?.sessionId).toBe(
+      "sat"
+    )
+  })
+
+  it("keeps a Friday-to-Sunday session: all three are league days (QA T-015)", () => {
+    const cols = enumerateSeasonWeekends({
+      start: null,
+      end: null,
+      sessions: [
+        { id: "fss", days: [day("2026-10-23"), day("2026-10-24"), day("2026-10-25")] },
+      ],
+    })
+    const col = cols.find((c) => c.sessionId === "fss")!
+    expect(col).toBeDefined()
+    expect(col.dayCount).toBe(3)
   })
 
   it("counts a Friday–Saturday session as owning its Saturday", () => {

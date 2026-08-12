@@ -2375,7 +2375,10 @@ async function seed() {
     })
     for (const [y, m, d] of s.dates) {
       const day = await p.seasonSessionDay.create({
-        data: { sessionId: session.id, date: new Date(Date.UTC(y, m, d)) },
+        // LOCAL midnight (QA T-015, same law as runbook #81): a UTC-midnight
+        // day row under TZ=America/Toronto reads a day early on every local
+        // surface and lands engine slots on the wrong local day.
+        data: { sessionId: session.id, date: new Date(y, m, d) },
         select: { id: true },
       })
       for (const v of showcaseAllVenues) {

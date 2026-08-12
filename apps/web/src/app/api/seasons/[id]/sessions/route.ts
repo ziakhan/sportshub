@@ -82,6 +82,20 @@ async function resolveVenuePlan(
   return [{ venueId: legacyVenueId, courtIds: (venue?.courtList ?? []).map((c) => c.id) }]
 }
 
+/**
+ * Day rows are LOCAL-midnight instants (QA T-015). `new Date("YYYY-MM-DD")`
+ * parses as UTC midnight, which under TZ=America/Toronto is the previous
+ * local evening: the engine's local setHours then lands games a day early
+ * and every local rendering reads the day before. A date-only string is
+ * pinned to local midnight of that calendar day; a full datetime keeps its
+ * own instant.
+ */
+function localMidnightOf(date: string): Date {
+  const dateOnly = /^(\d{4})-(\d{2})-(\d{2})$/.exec(date.trim())
+  if (dateOnly) return new Date(Number(dateOnly[1]), Number(dateOnly[2]) - 1, Number(dateOnly[3]))
+  return new Date(date)
+}
+
 async function createDays(
   tx: any,
   sessionId: string,
@@ -90,7 +104,7 @@ async function createDays(
 ) {
   for (const d of days) {
     const day = await tx.seasonSessionDay.create({
-      data: { sessionId, date: new Date(d.date) },
+      data: { sessionId, date: localMidnightOf(d.date) },
     })
     for (const v of plan) {
       const dayVenue = await tx.seasonSessionDayVenue.create({

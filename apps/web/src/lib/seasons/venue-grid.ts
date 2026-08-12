@@ -1,5 +1,5 @@
 import { prisma } from "@youthbasketballhub/db"
-import { weekendLabel } from "@/lib/scheduler/planner-core"
+import { isLeagueDay, weekendLabel } from "@/lib/scheduler/planner-core"
 import { loadVenueUnavailability } from "@/lib/seasons/venue-propagation"
 
 /**
@@ -254,6 +254,15 @@ export function enumerateSeasonWeekends(input: SeasonWeekendInput): VenueGridWee
      * could quietly choose; it simply has no column anywhere planning draws.
      */
     if (s.phase === "PLAYOFF") continue
+    /**
+     * NEITHER IS A SESSION OFF THE LEAGUE'S OWN DAYS (QA T-015, tester
+     * ruling 2026-08-11: league days are Fri/Sat/Sun ONLY). A session that
+     * sits on any other weekday — a midweek showcase, or a row written by
+     * the old UTC-midnight drift — must never be offered as a runnable
+     * planning date. Its Saturdays (if any) stay claimed above, so nothing
+     * reappears virtually either.
+     */
+    if (!s.days.every((d) => isLeagueDay(d))) continue
     columns.push(col)
   }
 

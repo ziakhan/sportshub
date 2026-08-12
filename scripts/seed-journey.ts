@@ -419,8 +419,11 @@ export async function seedJourneyStage1() {
         select: { id: true },
       })
       for (const offset of [0, 1]) {
-        const date = new Date(`${sat}T00:00:00Z`)
-        date.setUTCDate(date.getUTCDate() + offset)
+        // LOCAL midnight, no Z (QA T-015, same law as runbook #81): a
+        // UTC-midnight day row under TZ=America/Toronto reads a day early
+        // and lands engine slots on the wrong local day.
+        const date = new Date(`${sat}T00:00:00`)
+        date.setDate(date.getDate() + offset)
         const day = await p.seasonSessionDay.create({ data: { sessionId: session.id, date }, select: { id: true } })
         for (const key of venueKeys) {
           const v = venueByKey.get(key)!
@@ -595,8 +598,9 @@ export async function seedJourneyStage1() {
       select: { id: true },
     })
     for (const offset of [0, 1]) {
-      const date = new Date(`${track.sat}T00:00:00Z`)
-      date.setUTCDate(date.getUTCDate() + offset)
+      // LOCAL midnight, no Z (QA T-015): see the session-day law above.
+      const date = new Date(`${track.sat}T00:00:00`)
+      date.setDate(date.getDate() + offset)
       await p.seasonSessionDay.create({ data: { sessionId: session.id, date } })
     }
   }
@@ -606,8 +610,9 @@ export async function seedJourneyStage1() {
       select: { id: true },
     })
     for (const offset of [0, 1]) {
-      const date = new Date(`${fin.sat}T00:00:00Z`)
-      date.setUTCDate(date.getUTCDate() + offset)
+      // LOCAL midnight, no Z (QA T-015): see the session-day law above.
+      const date = new Date(`${fin.sat}T00:00:00`)
+      date.setDate(date.getDate() + offset)
       await p.seasonSessionDay.create({ data: { sessionId: session.id, date } })
     }
   }

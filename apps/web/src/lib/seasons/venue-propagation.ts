@@ -330,7 +330,20 @@ export async function ensureWeekendSession(
       select: { id: true },
     })
     for (const date of [sat, sun]) {
-      await tx.seasonSessionDay.create({ data: { sessionId: session.id, date } })
+      /**
+       * Day rows are LOCAL-midnight instants (QA T-015; same law as the
+       * national-circuit seed, runbook #81): the engine sets slot times with
+       * local setHours, so a UTC-midnight row under TZ=America/Toronto lands
+       * games a day early, and every local rendering of the date reads the
+       * previous day. The UTC calendar day is the intended one; this pins
+       * midnight of that day in the server's own timezone.
+       */
+      await tx.seasonSessionDay.create({
+        data: {
+          sessionId: session.id,
+          date: new Date(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()),
+        },
+      })
     }
     return session
   })

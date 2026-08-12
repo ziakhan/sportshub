@@ -21,6 +21,20 @@ import type { WindowPhase } from "./plan-documents"
  * the planner board, the gyms-and-weekends grid, and the published calendar
  * card must all spell the same weekend the same way.
  */
+/**
+ * THE DAYS A LEAGUE SESSION MAY SIT ON (QA T-015, tester ruling 2026-08-11):
+ * Friday, Saturday, Sunday. Nothing else is planning supply — a Monday or a
+ * Thursday must never appear as a runnable planning date. Read in UTC parts
+ * on purpose: day rows are stored as midnight instants (local-midnight since
+ * the TZ fix, UTC-midnight in older rows), and for a timezone west of UTC
+ * both conventions put the intended calendar day in the instant's UTC date.
+ */
+export const LEAGUE_DAY_DOWS: ReadonlySet<number> = new Set([5, 6, 0])
+
+export function isLeagueDay(date: Date | string): boolean {
+  return LEAGUE_DAY_DOWS.has(new Date(date).getUTCDay())
+}
+
 export function weekendLabel(dates: Array<string | Date>): string {
   const ds = dates.map((x) => new Date(x)).sort((a, b) => a.getTime() - b.getTime())
   const fmt = (d: Date) =>

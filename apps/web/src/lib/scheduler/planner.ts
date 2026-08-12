@@ -19,6 +19,7 @@ import { loadSchedulerInput } from "./load"
 export * from "./planner-core"
 import {
   currentAssignment,
+  isLeagueDay,
   orderedVenues,
   packWeekendVenues,
   planningTeams,
@@ -285,7 +286,15 @@ export async function buildPlannerState(
   const divisionAge = new Map<string, string>(divisions.map((d: any) => [d.id, d.ageGroup]))
 
   const weekends: PlannerWeekend[] = input.sessions
-    .filter((s) => s.phase === "REGULAR" && s.days.length > 0)
+    .filter(
+      (s) =>
+        s.phase === "REGULAR" &&
+        s.days.length > 0 &&
+        // League days are Fri/Sat/Sun ONLY (QA T-015). A session sitting on
+        // any other weekday is not planning supply and never a runnable
+        // option, so the planner does not draw it.
+        s.days.every((d) => isLeagueDay(d.date))
+    )
     .map((s) => {
       const venueSlots = bySession.get(s.id) ?? new Map<string, number>()
       const courtDaysHere = courtDaysBySession.get(s.id)
