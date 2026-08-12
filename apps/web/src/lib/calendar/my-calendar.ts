@@ -2,6 +2,7 @@ import { prisma } from "@youthbasketballhub/db"
 import type { RsvpStatus } from "@/lib/rsvp-shared"
 import { getRsvpsForItems } from "@/lib/rsvp"
 import { PUBLISHED_GAME } from "@/lib/games/visibility"
+import { getRefereeAssignedGameIds } from "@/lib/queries/referee-games"
 
 /**
  * My Calendar (docs/roadmap/my-calendar-plan.md) — ONE cross-team feed per
@@ -74,7 +75,7 @@ const fullName = (p: { firstName: string; lastName: string }) =>
   `${p.firstName} ${p.lastName}`.trim()
 
 export async function getMyCalendar(userId: string): Promise<MyCalendarPayload> {
-  const [roles, familyEntries, refereeRoles, leagueOwnerRoles] = await Promise.all([
+  const [roles, familyEntries, refereeGameIds, leagueOwnerRoles] = await Promise.all([
     prisma.userRole.findMany({
       where: { userId, role: { in: ["ClubOwner", "ClubManager", "Staff", "TeamManager"] } },
       select: { role: true, tenantId: true, teamId: true },
@@ -87,11 +88,10 @@ export async function getMyCalendar(userId: string): Promise<MyCalendarPayload> 
         player: { select: { firstName: true, lastName: true } },
       },
     }),
-    // Referee lens: games this user is assigned to officiate (per-game roles)
-    prisma.userRole.findMany({
-      where: { userId, role: "Referee", gameId: { not: null } },
-      select: { gameId: true },
-    }),
+    // Referee lens: games this user is assigned to officiate. Shared with the
+    // referee dashboard (lib/queries/referee-games) so both surfaces read the
+    // same assignment set — parity law, one data source per surface.
+    getRefereeAssignedGameIds(userId),
     // League lens: league owners see every game in their leagues (calendar
     // purpose for operators — owner ask 2026-07-14)
     prisma.userRole.findMany({
@@ -118,7 +118,7 @@ export async function getMyCalendar(userId: string): Promise<MyCalendarPayload> 
 
   const familyTeamIds = new Set(familyEntries.map((e: any) => e.teamId))
   const allTeamIds = [...new Set([...staffTeamIds, ...familyTeamIds])]
-  const refGameIds = [...new Set(refereeRoles.map((r: any) => r.gameId as string))]
+  const refGameIds = refereeGameIds
   const ownedLeagueIds = [...new Set(leagueOwnerRoles.map((r: any) => r.leagueId as string))]
   if (allTeamIds.length === 0 && refGameIds.length === 0 && ownedLeagueIds.length === 0) {
     return {

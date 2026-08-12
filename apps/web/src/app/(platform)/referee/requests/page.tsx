@@ -40,6 +40,9 @@ export default function RefereeRequestsPage() {
   const [end, setEnd] = useState("18:00")
   const [busy, setBusy] = useState<string | null>(null)
   const [note, setNote] = useState<string | null>(null)
+  // An accept produces a schedule — the confirmation offers the way to it
+  // instead of naming a page the referee then has to go hunting for (T-012).
+  const [noteLink, setNoteLink] = useState<string | null>(null)
 
   const load = useCallback(async () => {
     const [reqRes, avRes] = await Promise.all([
@@ -57,6 +60,7 @@ export default function RefereeRequestsPage() {
   const respond = async (id: string, action: "accept" | "decline") => {
     setBusy(id)
     setNote(null)
+    setNoteLink(null)
     try {
       const res = await fetch(`/api/referee-requests/${id}`, {
         method: "PATCH",
@@ -71,10 +75,11 @@ export default function RefereeRequestsPage() {
       setNote(
         action === "accept"
           ? data.gamesAssigned > 0
-            ? `You're booked: assigned to ${data.gamesAssigned} game${data.gamesAssigned !== 1 ? "s" : ""} that day. See them in My Calendar.`
-            : "You're booked. The league hasn't published that day's schedule yet, so your games will appear in My Calendar when it goes out."
+            ? `You're booked: assigned to ${data.gamesAssigned} game${data.gamesAssigned !== 1 ? "s" : ""} that day. See them in My games.`
+            : "You're booked. The league hasn't published that day's schedule yet, so your games will appear in My games when it goes out."
           : "Declined."
       )
+      setNoteLink(action === "accept" ? "/referee" : null)
       load()
     } catch (err) {
       setNote(err instanceof Error ? err.message : "Couldn't respond")
@@ -118,14 +123,27 @@ export default function RefereeRequestsPage() {
             Leagues book you by the day — keep your availability current and answer offers here.
           </p>
         </div>
-        <Link href="/referee/profile" className="text-play-600 text-sm font-semibold hover:underline">
-          My profile →
-        </Link>
+        <div className="flex items-center gap-4">
+          <Link href="/referee" className="text-play-600 text-sm font-semibold hover:underline">
+            My games
+          </Link>
+          <Link href="/referee/profile" className="text-play-600 text-sm font-semibold hover:underline">
+            My profile →
+          </Link>
+        </div>
       </div>
 
       {note && (
-        <div className="border-court-200 bg-court-50 text-court-700 rounded-xl border px-4 py-2 text-sm">
+        <div
+          role="status"
+          className="border-court-200 bg-court-50 text-court-700 rounded-xl border px-4 py-2 text-sm"
+        >
           {note}
+          {noteLink && (
+            <Link href={noteLink} className="ml-2 font-semibold underline">
+              Open My games
+            </Link>
+          )}
         </div>
       )}
 

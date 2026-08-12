@@ -209,7 +209,8 @@ describe("referee booking (integration)", () => {
     })
     expect(refBell).not.toBeNull()
     expect(refBell!.message).toContain("2 games")
-    expect(refBell!.link).toBe("/calendar")
+    // The referee's own schedule (QA T-012), not the generic calendar
+    expect(refBell!.link).toBe("/referee")
 
     actAs(ref1)
     expect((await respond(broadcastId, "accept")).status).toBe(409)

@@ -177,9 +177,10 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
       title: "You're booked",
       message:
         assigned > 0
-          ? `${req.league.name}: ${shiftDay}, ${req.startTime} to ${req.endTime}. You are assigned to ${assigned} game${assigned !== 1 ? "s" : ""}. See My Calendar.`
-          : `${req.league.name}: ${shiftDay}, ${req.startTime} to ${req.endTime}. The schedule for that day is not published yet. Your games will appear in My Calendar when it goes out.`,
-      link: "/calendar",
+          ? `${req.league.name}: ${shiftDay}, ${req.startTime} to ${req.endTime}. You are assigned to ${assigned} game${assigned !== 1 ? "s" : ""}. See My games.`
+          : `${req.league.name}: ${shiftDay}, ${req.startTime} to ${req.endTime}. The schedule for that day is not published yet. Your games will appear in My games when it goes out.`,
+      // The referee's own schedule (QA T-012) — not the generic calendar.
+      link: "/referee",
       referenceId: req.id,
       referenceType: "RefereeSessionRequest",
     })

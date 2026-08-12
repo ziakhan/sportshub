@@ -96,8 +96,9 @@ export async function attachAcceptedShiftsToPublishedGames(
       title: "Games added to your shift",
       message: `${shift.league.name}: ${added} game${added !== 1 ? "s" : ""} on ${new Date(
         shift.sessionDay.date
-      ).toLocaleDateString()} ${added !== 1 ? "are" : "is"} now on your schedule. See My Calendar.`,
-      link: "/calendar",
+      ).toLocaleDateString()} ${added !== 1 ? "are" : "is"} now on your schedule. See My games.`,
+      // The referee's own schedule (QA T-012) — not the generic calendar.
+      link: "/referee",
       referenceId: shift.id,
       referenceType: "RefereeSessionRequest",
     })
