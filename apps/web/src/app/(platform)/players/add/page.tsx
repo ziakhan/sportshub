@@ -114,7 +114,7 @@ function AddPlayerForm() {
               <div className="border-ink-200 bg-court-50/60 mb-6 rounded-2xl border p-4 text-left">
                 {inviteSent ? (
                   <p className="text-court-700 text-sm font-semibold">
-                    Invite sent ✓ — {createdPlayer.name.split(" ")[0]} has an email with their
+                    Invite sent ✓. {createdPlayer.name.split(" ")[0]} has an email with their
                     own login link.
                   </p>
                 ) : (
@@ -124,7 +124,7 @@ function AddPlayerForm() {
                       <span className="text-ink-400 font-normal"> (optional)</span>
                     </p>
                     <p className="text-ink-500 mt-0.5 text-xs">
-                      We&apos;ll email an invite — they get their own sign-in on the same player
+                      We&apos;ll email an invite: they get their own sign-in on the same player
                       profile. You stay the guardian.
                     </p>
                     <div className="mt-2 flex gap-2">

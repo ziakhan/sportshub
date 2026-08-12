@@ -1168,3 +1168,10 @@ Rebuild NOT needed after env change (route reads env at request time) — but th
 - Code: deploy.sh clean, "Deployed 88a2d24", web 200. Covers everything since 2d0d2a1: QA T-list batch (#79), slim board + one-word-per-gym palette + two-line gym boxes (#80), demo refresh w/ frozen /demo/classic, National Circuit seeder (#81-83).
 - Data: seed-national-circuit.ts run on box DB (TZ=America/Toronto), 18s: one National Circuit league, twin 2025-26 (415 games, standings, playoffs unplanned) + gate 2026-27 (83 teams, wizard open). Box ids differ from local (league 6440afbc-50a3-4144-aca0-a7a0f092559f; twin season 6f93ee95-b309-4af6-8475-524818eb616d; gate season 0b0261d4-5319-4046-9872-bf582c63c8c8).
 - Verified over HTTPS: twin public page renders finals + both branded divisions, gate shows Registration, /demo and /demo/classic both 200.
+
+## #85 — 2026-08-11: KAIS-FEATURES PARTIAL MERGE (owner-authorized after Fable review) — ✅ LOCAL, box pending
+- K-001..K-006 cherry-picked from origin/kais-features (base 88a2d24): referee rates in booking UI, capitalization sweep, custom team suffix, split Date/Time with range picker, onboarding guard restored (dashboard/calendar/feed/messages), 13+ child-login invite on add-player success.
+- Review fixes on top: em-dash sweep of the merged strings; tier autofill never clobbers a typed capacity; custom suffix trimmed (whitespace-only = none); retarget-to-broadcast clears an untouched ref-specific rate prefill. 08c4b74's package-lock churn and the branch worklog doc deliberately NOT merged.
+- HELD FOR OWNER RULINGS: K-007 (required handle amends QA-209 never-blocking; also web/native divergence) and K-008 (parent-email at onboarding amends the event-driven-linking rule). Both stay on origin/kais-features untouched.
+- Follow-ups queued: K-005 coverage gap (guard absent from /players, /account etc.), platform-wide em-dash sweep still owed by polish arc.
+- Gates: tsc + eslint clean after merge and fixes.

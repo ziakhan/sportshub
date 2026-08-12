@@ -266,7 +266,13 @@ export function TrainingSessionForm({
               setValues((v) => ({
                 ...v,
                 groupTier: tier,
-                capacity: TIER_CAPACITY[tier] ? String(TIER_CAPACITY[tier]) : v.capacity,
+                // Autofill only when the operator has not typed their own
+                // number: empty, or still the previous tier's default.
+                capacity:
+                  TIER_CAPACITY[tier] &&
+                  (v.capacity === "" || v.capacity === String(TIER_CAPACITY[v.groupTier] ?? ""))
+                    ? String(TIER_CAPACITY[tier])
+                    : v.capacity,
               }))
             }}
             className={inputClass}
@@ -291,7 +297,7 @@ export function TrainingSessionForm({
             className={inputClass}
           />
           <p className="mt-1 text-xs text-ink-400">
-            The signup limit — fills in from group size, adjust if needed.
+            The signup limit: fills in from group size, adjust if needed.
           </p>
         </div>
       </div>

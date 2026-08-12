@@ -270,7 +270,7 @@ export default function EditTeamPage() {
           clubName,
           shortName: clubShortName,
           ageGroup: watchedAgeGroup,
-          suffix: nameSuffix,
+          suffix: nameSuffix.trim(),
         })
       : currentName
 
@@ -399,7 +399,7 @@ export default function EditTeamPage() {
     try {
       const payload: Record<string, unknown> = {
         // No name — the server recomposes it from ageGroup + suffix.
-        nameSuffix: nameSuffix || null,
+        nameSuffix: nameSuffix.trim() || null,
         ageGroup: data.ageGroup,
         season: data.season || null,
         description: data.description || null,
@@ -544,7 +544,7 @@ export default function EditTeamPage() {
                   value={nameSuffix}
                   onChange={(e) => setNameSuffix(e.target.value)}
                   maxLength={20}
-                  placeholder="Your own suffix — e.g. Elite, North, 2B"
+                  placeholder="Your own suffix, e.g. Elite, North, 2B"
                   className="border-ink-200 focus:border-play-500 mt-2 block w-full rounded-xl border px-3 py-2 text-sm focus:outline-none"
                   autoFocus
                 />

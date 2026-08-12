@@ -147,7 +147,7 @@ export default function CreateTeamPage() {
           clubName,
           shortName: clubShortName,
           ageGroup: watchedAgeGroup,
-          suffix: nameSuffix,
+          suffix: nameSuffix.trim(),
         })
       : null
 
@@ -293,7 +293,7 @@ export default function CreateTeamPage() {
       const payload: Record<string, unknown> = {
         // No name — the server composes it from the club's short name +
         // age group + picked suffix (derived naming, nobody types names).
-        nameSuffix: nameSuffix || undefined,
+        nameSuffix: nameSuffix.trim() || undefined,
         ageGroup: data.ageGroup,
         tenantId: clubId,
         season: data.season || undefined,
@@ -489,7 +489,7 @@ export default function CreateTeamPage() {
                   value={nameSuffix}
                   onChange={(e) => setNameSuffix(e.target.value)}
                   maxLength={20}
-                  placeholder="Your own suffix — e.g. Elite, North, 2B"
+                  placeholder="Your own suffix, e.g. Elite, North, 2B"
                   className="border-ink-200 focus:border-play-500 mt-2 block w-full rounded-xl border px-3 py-2 text-sm focus:outline-none"
                   autoFocus
                 />

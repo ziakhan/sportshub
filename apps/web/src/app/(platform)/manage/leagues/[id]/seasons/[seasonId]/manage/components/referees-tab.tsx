@@ -281,6 +281,14 @@ export function RefereesTab({
                   (ratePerGame === "" || ratePerGame === String(prevFee ?? ""))
                 ) {
                   setRatePerGame(String(nextFee))
+                } else if (
+                  next === "" &&
+                  prevFee != null &&
+                  ratePerGame === String(prevFee)
+                ) {
+                  // Back to broadcast: an untouched ref-specific prefill would
+                  // silently price the whole pool at one ref's rate.
+                  setRatePerGame("")
                 }
                 setTarget(next)
               }}
@@ -330,7 +338,7 @@ export function RefereesTab({
           if (Number(ratePerGame) >= t.fee) return null
           return (
             <p className="text-hoop-700 mt-2 text-xs font-medium">
-              {t.name}&apos;s standard rate is ${t.fee}/game — your offer is below it.
+              {t.name}&apos;s standard rate is ${t.fee}/game. Your offer is below it.
             </p>
           )
         })()}
