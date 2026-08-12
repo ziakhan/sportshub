@@ -8,6 +8,7 @@ import {
   customerForCharges,
   resolveChargeContext,
 } from "@/lib/payments/installments"
+import { gateMinorPayment } from "@/lib/family/money-gate"
 
 export const dynamic = "force-dynamic"
 
@@ -41,8 +42,8 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
         status: true,
         seasonFee: true,
         expiresAt: true,
-        player: { select: { parentId: true } },
-        team: { select: { name: true, tenantId: true, tenant: { select: { currency: true } } } },
+        player: { select: { parentId: true, userId: true } },
+        team: { select: { name: true, tenantId: true, tenant: { select: { name: true, currency: true } } } },
         options: {
           select: {
             id: true,
@@ -55,9 +56,19 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
       },
     })
     if (!offer) return NextResponse.json({ error: "Offer not found" }, { status: 404 })
-    if (offer.player.parentId !== auth.userId) {
+    if (offer.player.parentId !== auth.userId && offer.player.userId !== auth.userId) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 })
     }
+    // The money gate (owner 2026-08-12): a 13-17 self-owned player never gets
+    // a client secret back. The ask goes to their guardian instead.
+    const gate = await gateMinorPayment({
+      userId: auth.userId,
+      what: `${offer.team.name} (${offer.team.tenant.name})`,
+      deepLink: "/offers",
+      amount: Number(offer.seasonFee ?? 0),
+      currency: offer.team.tenant.currency,
+    })
+    if (!gate.allowed) return gate.response
     if (offer.status !== "PENDING") {
       return NextResponse.json({ error: "This offer isn't open" }, { status: 400 })
     }

@@ -326,9 +326,12 @@ export async function GET(request: NextRequest) {
     }
 
     if (mine) {
-      // Parent-side: get offers for my players
+      // Family side: offers for the players I guard, plus the one I sign in
+      // as. A 13-17 player still sees their own offer once a guardian is
+      // attached; accepting a paid one routes to that guardian (money gate,
+      // owner 2026-08-12).
       const players = await prisma.player.findMany({
-        where: { parentId: userId },
+        where: { OR: [{ parentId: userId }, { userId }] },
         select: { id: true },
       })
       const playerIds = players.map((p: any) => p.id)

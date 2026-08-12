@@ -9,6 +9,7 @@ import { Button } from "@/components/ui"
 import { WaiverSignGate, type GateWaiver } from "@/components/waivers/waiver-sign-gate"
 import { computeCampFee } from "@/lib/registration/camp-pricing"
 import { campFeeFor, sessionDatesFor, type CampScheduleKind } from "@/lib/registration/camp-schedule"
+import { readMinorGate, MinorGateNotice, type MinorGateOutcome } from "@/components/family/minor-gate"
 
 /**
  * THE program registration panel — one component for camps, house leagues,
@@ -116,6 +117,9 @@ export function ProgramSignupForm({
   const [marketingConsent, setMarketingConsent] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  // The money gate answer, when a 13-17 self-owned account tried to join
+  // something that costs money (owner 2026-08-12).
+  const [minorGate, setMinorGate] = useState<MinorGateOutcome | null>(null)
   const [success, setSuccess] = useState<{ names: string[]; total: number } | null>(null)
   // Multi-kid waiver gating: the API 409s with waiversByPlayer; kids sign in
   // sequence, then the registration retries.
@@ -156,6 +160,7 @@ export function ProgramSignupForm({
 
   async function submitSignup() {
     setError(null)
+    setMinorGate(null)
     setIsSubmitting(true)
     try {
       const res = await fetch(endpoint, {
@@ -174,8 +179,16 @@ export function ProgramSignupForm({
           marketingConsent,
         }),
       })
+      const payload = await res.json().catch(() => ({}))
+      // The money gate (owner 2026-08-12): a paid signup by a 13-17
+      // self-owned account is a request to their guardian, not a signup.
+      const gateOutcome = readMinorGate(res, payload)
+      if (gateOutcome) {
+        setMinorGate(gateOutcome)
+        return
+      }
       if (!res.ok) {
-        const e = await res.json().catch(() => ({}))
+        const e = payload
         if (e.code === "WAIVERS_REQUIRED" && Array.isArray(e.waiversByPlayer) && e.waiversByPlayer.length > 0) {
           setWaiverQueue(e.waiversByPlayer)
           return
@@ -322,6 +335,7 @@ export function ProgramSignupForm({
           {error}
         </div>
       )}
+      {minorGate && <MinorGateNotice outcome={minorGate} />}
 
       <div>
         <span className={labelClass}>

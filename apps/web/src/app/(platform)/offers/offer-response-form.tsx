@@ -5,6 +5,10 @@ import { loadStripe } from "@stripe/stripe-js"
 import { Elements, PaymentElement, useElements, useStripe } from "@stripe/react-stripe-js"
 import { formatCurrency } from "@/lib/countries"
 import { WaiverSignGate, type GateWaiver } from "@/components/waivers/waiver-sign-gate"
+import { readMinorGate, MinorGateNotice, type MinorGateOutcome } from "@/components/family/minor-gate"
+
+/** Thrown to unwind the accept flow once the gate has already answered. */
+class MinorGateStop extends Error {}
 
 const publishableKey = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
 
@@ -93,6 +97,9 @@ export function OfferResponseForm({
   const [optionId, setOptionId] = useState<string>(options.length === 1 ? options[0].id : "")
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  // The money gate answer, when a 13-17 self-owned player tried to accept a
+  // paid offer (owner 2026-08-12).
+  const [minorGate, setMinorGate] = useState<MinorGateOutcome | null>(null)
 
   // Payment
   const [payInfo, setPayInfo] = useState<PaymentInfo | null>(null)
@@ -172,8 +179,16 @@ export function OfferResponseForm({
         jerseyPref3: jerseyPref3 ? parseInt(jerseyPref3) : undefined,
       }),
     })
+    const payload = await res.json().catch(() => ({}))
+    // The money gate (owner 2026-08-12): accepting a paid offer as a 13-17
+    // self-owned player is a request to their guardian, not an acceptance.
+    const gateOutcome = readMinorGate(res, payload)
+    if (gateOutcome) {
+      setMinorGate(gateOutcome)
+      return
+    }
     if (!res.ok) {
-      const e = await res.json().catch(() => ({}))
+      const e = payload
       if (e.code === "WAIVERS_REQUIRED" && Array.isArray(e.waivers)) {
         setWaiverGate({ waivers: e.waivers, intentId: depositPaymentIntentId })
         return
@@ -189,8 +204,14 @@ export function OfferResponseForm({
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ chosenOptionId: optionId || undefined, paymentPlan: plan, paymentMethodId }),
     })
-    if (!res.ok) throw new Error((await res.json()).error || "Couldn't start the payment")
-    return res.json()
+    const payload = await res.json().catch(() => ({}))
+    const gateOutcome = readMinorGate(res, payload)
+    if (gateOutcome) {
+      setMinorGate(gateOutcome)
+      throw new MinorGateStop()
+    }
+    if (!res.ok) throw new Error(payload.error || "Couldn't start the payment")
+    return payload
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -198,6 +219,7 @@ export function OfferResponseForm({
     const v = validate()
     if (v) return setError(v)
     setError(null)
+    setMinorGate(null)
     setIsSubmitting(true)
     try {
       // Offline club or nothing due → accept straight away
@@ -224,7 +246,10 @@ export function OfferResponseForm({
         throw new Error("Your card couldn't be charged — try a different card.")
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "An error occurred")
+      // The gate already put its own answer on screen.
+      if (!(err instanceof MinorGateStop)) {
+        setError(err instanceof Error ? err.message : "An error occurred")
+      }
     } finally {
       setIsSubmitting(false)
     }
@@ -234,6 +259,11 @@ export function OfferResponseForm({
 
   return (
     <div className="border-court-200 bg-court-50 mt-4 rounded-2xl border p-4">
+      {minorGate ? (
+        <div className="mb-4">
+          <MinorGateNotice outcome={minorGate} />
+        </div>
+      ) : null}
       {waiverGate ? (
         <WaiverSignGate
           waivers={waiverGate.waivers}

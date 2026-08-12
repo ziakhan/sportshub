@@ -8,6 +8,7 @@ import { ensureObligation } from "@/lib/payments/obligations"
 import { sendEmail, appBaseUrl, escapeHtml, formatMoney, transactionalFooter } from "@/lib/email"
 import { upsertImpliedConsent } from "@/lib/comms/consent"
 import { generateOneOnOneSlots } from "@/lib/training"
+import { gateMinorPayment } from "@/lib/family/money-gate"
 
 export const dynamic = "force-dynamic"
 
@@ -33,7 +34,10 @@ export async function POST(request: NextRequest, { params }: { params: { tenantI
     const data = bookSchema.parse(body)
 
     const player = await prisma.player.findFirst({
-      where: { id: data.playerId, parentId: sessionInfo.userId },
+      where: {
+        id: data.playerId,
+        OR: [{ parentId: sessionInfo.userId }, { userId: sessionInfo.userId }],
+      },
     })
     if (!player) return NextResponse.json({ error: "Player not found" }, { status: 403 })
 
@@ -75,6 +79,18 @@ export async function POST(request: NextRequest, { params }: { params: { tenantI
     }
 
     const fee = profile.oneOnOneFee != null ? Number(profile.oneOnOneFee) : 0
+
+    // The money gate (owner 2026-08-12): under-18 accounts never pay.
+    if (fee > 0) {
+      const gate = await gateMinorPayment({
+        userId: sessionInfo.userId,
+        what: `${profile.oneOnOneTitle} with ${tenant.name}`,
+        deepLink: `/training`,
+        amount: fee,
+        currency: tenant.currency ?? "CAD",
+      })
+      if (!gate.allowed) return gate.response
+    }
 
     // No-double-book: the CONFIRMED check + create run in one transaction.
     let booking: any

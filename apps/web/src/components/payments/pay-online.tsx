@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import { loadStripe } from "@stripe/stripe-js"
 import { Elements, PaymentElement, useElements, useStripe } from "@stripe/react-stripe-js"
 import { formatCurrency } from "@/lib/countries"
+import { readMinorGate, MinorGateNotice, type MinorGateOutcome } from "@/components/family/minor-gate"
 
 /**
  * "Pay online" → checkout API → Stripe PaymentElement → confirm → the
@@ -28,6 +29,7 @@ export function PayOnlineButton({
   const [clientSecret, setClientSecret] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [starting, setStarting] = useState(false)
+  const [gate, setGate] = useState<MinorGateOutcome | null>(null)
 
   async function start() {
     if (!publishableKey) {
@@ -43,6 +45,13 @@ export function PayOnlineButton({
     })
     setStarting(false)
     const body = await res.json().catch(() => ({}))
+    // The money gate (owner 2026-08-12): under-18 accounts get the ask routed
+    // to their guardian instead of a card form.
+    const minorGate = readMinorGate(res, body)
+    if (minorGate) {
+      setGate(minorGate)
+      return
+    }
     if (!res.ok) {
       setError(body.error || "Couldn't start the payment")
       return
@@ -62,6 +71,11 @@ export function PayOnlineButton({
         {starting ? "Starting…" : "Pay online"}
       </button>
       {error && <span className="text-xs text-hoop-700">{error}</span>}
+      {gate && (
+        <div className="mt-2 w-full">
+          <MinorGateNotice outcome={gate} />
+        </div>
+      )}
       {open && clientSecret && (
         <PayModal
           clientSecret={clientSecret}

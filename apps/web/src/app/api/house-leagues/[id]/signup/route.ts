@@ -11,6 +11,7 @@ import { getOutstandingRequiredWaivers, waiversRequiredResponse } from "@/lib/wa
 import { signupPayloadSchema, normalizeRegistrations } from "@/lib/registration/payload"
 import { checkEligibility } from "@/lib/registration/eligibility"
 import { ACTIVE_SIGNUPS } from "@/lib/registration/capacity"
+import { gateMinorPayment } from "@/lib/family/money-gate"
 
 export const dynamic = "force-dynamic"
 
@@ -35,7 +36,13 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
     }
 
     const players = await prisma.player.findMany({
-      where: { id: { in: entries.map((e) => e.playerId) }, parentId: sessionInfo.userId },
+      where: {
+        id: { in: entries.map((e) => e.playerId) },
+        // The guardian's kids, plus the profile this account signs in as: a
+        // 13-17 player can reach their own signup, and the money gate below
+        // turns a paid one into a request to their guardian.
+        OR: [{ parentId: sessionInfo.userId }, { userId: sessionInfo.userId }],
+      },
       select: { id: true, firstName: true, lastName: true, dateOfBirth: true, gender: true },
     })
     if (players.length !== entries.length) {
@@ -57,6 +64,19 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
 
     if (new Date(league.endDate) < new Date()) {
       return NextResponse.json({ error: "This house league has ended" }, { status: 400 })
+    }
+
+    // The money gate (owner 2026-08-12): a paid signup by a 13-17 self-owned
+    // account becomes a request to their guardian, or a prompt to add one.
+    if (Number(league.fee ?? 0) > 0) {
+      const gate = await gateMinorPayment({
+        userId: sessionInfo.userId,
+        what: `${league.name} (${league.tenant.name})`,
+        deepLink: `/house-league/${params.id}`,
+        amount: Number(league.fee),
+        currency: league.tenant.currency,
+      })
+      if (!gate.allowed) return gate.response
     }
 
     if (league.maxParticipants && league._count.signups + entries.length > league.maxParticipants) {

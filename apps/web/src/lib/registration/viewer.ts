@@ -82,7 +82,14 @@ export async function getRegistrationViewer(opts: {
   if (!opts.userId) return { kids: [], payment }
 
   const players = await prisma.player.findMany({
-    where: { parentId: opts.userId, deletedAt: null },
+    // The kids this account guards, plus the profile it signs in as. A 13-17
+    // player whose parent is attached still belongs in their own picker;
+    // paying is what routes to the guardian (money gate, owner 2026-08-12),
+    // not looking or signing up for something free.
+    where: {
+      deletedAt: null,
+      OR: [{ parentId: opts.userId }, { userId: opts.userId }],
+    },
     select: { id: true, firstName: true, lastName: true, dateOfBirth: true, gender: true },
     orderBy: { firstName: "asc" },
   })

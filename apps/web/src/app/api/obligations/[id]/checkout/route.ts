@@ -5,6 +5,7 @@ import { z } from "zod"
 import { getPaymentConfig, platformFeeFor } from "@/lib/payments/config"
 import { referenceToPaymentType, remainingAmount } from "@/lib/payments/obligations"
 import { getStripe, StripeNotConfiguredError } from "@/lib/payments/stripe"
+import { gateMinorPayment } from "@/lib/family/money-gate"
 
 export const dynamic = "force-dynamic"
 
@@ -52,6 +53,26 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
       }))
     if (!isPersonPayer && !isOrgPayer) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+    }
+
+    // The money gate (owner 2026-08-12). A 13-17 self-owned account never
+    // reaches a payment form: the bill moves to their guardian, who is the
+    // payer of record anyway, and lands on the guardian's payments page.
+    const gate = await gateMinorPayment({
+      userId,
+      what: obligation.description,
+      deepLink: "/payments",
+      amount: Number(obligation.amount),
+      currency: obligation.currency,
+    })
+    if (!gate.allowed) {
+      if (gate.context.parentUserId && isPersonPayer) {
+        await prisma.paymentObligation.update({
+          where: { id: obligation.id },
+          data: { payerUserId: gate.context.parentUserId },
+        })
+      }
+      return gate.response
     }
 
     if (!["PENDING", "PARTIALLY_PAID"].includes(obligation.status)) {

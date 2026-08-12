@@ -12,6 +12,7 @@ import { signupPayloadSchema, normalizeRegistrations } from "@/lib/registration/
 import { checkEligibility } from "@/lib/registration/eligibility"
 import { campFeeFor, sessionDatesFor, unitLabel } from "@/lib/registration/camp-schedule"
 import { ACTIVE_SIGNUPS } from "@/lib/registration/capacity"
+import { gateMinorPayment } from "@/lib/family/money-gate"
 
 export const dynamic = "force-dynamic"
 
@@ -37,7 +38,13 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
     }
 
     const players = await prisma.player.findMany({
-      where: { id: { in: entries.map((e) => e.playerId) }, parentId: sessionInfo.userId },
+      where: {
+        id: { in: entries.map((e) => e.playerId) },
+        // The guardian's kids, plus the profile this account signs in as: a
+        // 13-17 player can reach their own signup, and the money gate below
+        // turns a paid one into a request to their guardian.
+        OR: [{ parentId: sessionInfo.userId }, { userId: sessionInfo.userId }],
+      },
       select: { id: true, firstName: true, lastName: true, dateOfBirth: true, gender: true },
     })
     if (players.length !== entries.length) {
@@ -59,6 +66,18 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
 
     if (new Date(camp.endDate) < new Date()) {
       return NextResponse.json({ error: "This camp has ended" }, { status: 400 })
+    }
+
+    // The money gate (owner 2026-08-12): a paid signup by a 13-17 self-owned
+    // account becomes a request to their guardian, or a prompt to add one.
+    if (Number(camp.weeklyFee ?? 0) > 0 || Number(camp.fullCampFee ?? 0) > 0) {
+      const gate = await gateMinorPayment({
+        userId: sessionInfo.userId,
+        what: `${camp.name} (${camp.tenant.name})`,
+        deepLink: `/camp/${params.id}`,
+        currency: camp.tenant.currency,
+      })
+      if (!gate.allowed) return gate.response
     }
 
     if (camp.maxParticipants && camp._count.signups + entries.length > camp.maxParticipants) {

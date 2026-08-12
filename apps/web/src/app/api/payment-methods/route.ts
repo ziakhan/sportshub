@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { getSessionUserId } from "@/lib/auth-helpers"
 import { getStripe, StripeNotConfiguredError } from "@/lib/payments/stripe"
 import { getOrCreateStripeCustomer, listSavedCards } from "@/lib/payments/customer"
+import { getFamilyAccountContext } from "@/lib/family/account-context"
 
 export const dynamic = "force-dynamic"
 
@@ -30,6 +31,22 @@ export async function POST(_request: NextRequest) {
   try {
     const auth = await getSessionUserId()
     if (!auth) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+
+    // A card-on-file form is still a payment form (owner 2026-08-12): a
+    // 13-17 self-owned account never sees one. No routing to the parent
+    // here — there is nothing to approve, the parent's own cards live on
+    // their own account.
+    const ctx = await getFamilyAccountContext(auth.userId)
+    if (ctx.player && ctx.isMinor) {
+      return NextResponse.json(
+        {
+          error:
+            "Payments run through your parent or guardian until you turn 18, so there is no card to add here.",
+          code: "MINOR_NO_PAYMENT_METHODS",
+        },
+        { status: 403 }
+      )
+    }
 
     const customerId = await getOrCreateStripeCustomer(auth.userId)
     const stripe = getStripe()

@@ -6,6 +6,7 @@ import { acceptOffer, declineOffer, OfferResponseError } from "@/lib/offers/resp
 import { resolveChargeContext } from "@/lib/payments/installments"
 import { getOutstandingRequiredWaivers, waiversRequiredResponse } from "@/lib/waivers/inline"
 import { canActOnTeam } from "@/lib/authz/team-scope"
+import { gateMinorPayment } from "@/lib/family/money-gate"
 
 export const dynamic = "force-dynamic"
 
@@ -86,6 +87,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
             firstName: true,
             lastName: true,
             parentId: true,
+            userId: true,
             dateOfBirth: true,
             gender: true,
             position: true,
@@ -102,10 +104,14 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
       return NextResponse.json({ error: "Offer not found" }, { status: 404 })
     }
 
-    // Verify access: the player's parent, OR club staff scoped to the offer's
-    // team (security fix 2026-07-20 — was any tenant Staff, exposing every
-    // team's offers to a one-team coach).
-    const isParent = offer.player.parentId === sessionInfo.userId
+    // Verify access: the player's parent OR the player's own login (a kid
+    // has to be able to SEE their own offer even once a guardian is attached
+    // and the money moved to them), OR club staff scoped to the offer's team
+    // (security fix 2026-07-20 — was any tenant Staff, exposing every team's
+    // offers to a one-team coach).
+    const isParent =
+      offer.player.parentId === sessionInfo.userId ||
+      (offer.player as any).userId === sessionInfo.userId
     const isClubStaff =
       !isParent && (await canActOnTeam(sessionInfo.userId, offer.team.tenant.id, offer.teamId))
 
@@ -147,7 +153,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
       where: { id: params.id },
       include: {
         player: {
-          select: { id: true, parentId: true, firstName: true, lastName: true },
+          select: { id: true, parentId: true, userId: true, firstName: true, lastName: true },
         },
         team: {
           select: { id: true, name: true, tenantId: true, tenant: { select: { name: true, currency: true } } },
@@ -163,8 +169,11 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
       return NextResponse.json({ error: "Offer not found" }, { status: 404 })
     }
 
-    // Only the parent can respond
-    if (offer.player.parentId !== userId) {
+    // The guardian responds, or the player themself. A 13-17 self-owned
+    // player is caught by the money gate below the moment there is a fee.
+    const isGuardian = offer.player.parentId === userId
+    const isSelfPlayer = (offer.player as any).userId === userId
+    if (!isGuardian && !isSelfPlayer) {
       return NextResponse.json(
         { error: "Only the parent/guardian can respond to this offer" },
         { status: 403 }
@@ -185,6 +194,27 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
         data: { status: "EXPIRED" },
       })
       return NextResponse.json({ error: "This offer has expired" }, { status: 400 })
+    }
+
+    // The money gate (owner 2026-08-12). Accepting an offer that costs money
+    // is a payment decision, so a 13-17 self-owned player never completes it:
+    // it becomes a request routed to their guardian, or a prompt to add one.
+    // A free offer is theirs to accept.
+    if (data.action === "accept") {
+      const chosenOption = data.optionId
+        ? ((offer as any).options ?? []).find((o: any) => o.id === data.optionId)
+        : null
+      const feeToPay = Number(chosenOption?.seasonFee ?? offer.seasonFee ?? 0)
+      if (feeToPay > 0) {
+        const gate = await gateMinorPayment({
+          userId,
+          what: `${offer.team.name} (${offer.team.tenant.name})`,
+          deepLink: "/offers",
+          amount: feeToPay,
+          currency: offer.team.tenant.currency ?? "CAD",
+        })
+        if (!gate.allowed) return gate.response
+      }
     }
 
     // Owner ruling 2026-07-20 (waivers-esign): team-membership waivers are
