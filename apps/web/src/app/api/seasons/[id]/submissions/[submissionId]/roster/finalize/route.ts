@@ -105,7 +105,7 @@ export async function POST(
     if (playerCount < MIN_PLAYERS) {
       return NextResponse.json(
         {
-          error: `A roster needs at least ${MIN_PLAYERS} players to finalize — ${submission.team.name} has ${playerCount}. Add players first.`,
+          error: `A roster needs at least ${MIN_PLAYERS} players to finalize. ${submission.team.name} has ${playerCount}. Add players first.`,
           code: "BELOW_MINIMUM",
           playerCount,
         },
@@ -194,7 +194,7 @@ export async function DELETE(
     }
     if (submission.roster.isLocked) {
       return NextResponse.json(
-        { error: "The league has locked this roster — ask the league for changes instead." },
+        { error: "The league has locked this roster. Ask the league for changes instead." },
         { status: 409 }
       )
     }
