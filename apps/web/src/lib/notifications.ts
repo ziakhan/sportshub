@@ -111,6 +111,11 @@ export type NotificationType =
   | "referee_request_accepted"
   | "referee_request_declined"
   | "referee_request_cancelled"
+  // The referee's own side of the booking (QA T-013: only the league used to
+  // hear anything). Booked = your accept landed; games_added = games published
+  // after your accept were attached to your shift.
+  | "referee_shift_booked"
+  | "referee_shift_games_added"
   // RSVP: family nudge to answer; staff heads-up on a late "Not going"
   | "rsvp_reminder"
   | "rsvp_change"

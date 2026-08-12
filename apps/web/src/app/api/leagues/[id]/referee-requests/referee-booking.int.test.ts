@@ -6,24 +6,35 @@ import { GET as poolGET, POST as poolPOST } from "../referees/route"
 import { GET as offersGET, POST as offerPOST } from "./route"
 import { PATCH as respondPATCH } from "../../../referee-requests/[id]/route"
 import { POST as availabilityPOST } from "../../../referee/availability/route"
+import { POST as schedulePublishPOST } from "../../../seasons/[id]/schedule/publish/route"
 
 vi.mock("next-auth", () => ({ getServerSession: vi.fn(), default: vi.fn() }))
 
 /**
  * L2 — Uber-style referee booking: league pool, declared availability,
- * broadcast offers where the first accept wins the day and its games.
+ * broadcast offers where the first accept wins the day and its games — and
+ * the draft/publish reconcile (QA T-013): accept assigns PUBLISHED games
+ * only, and publishing attaches an already-accepted shift's referee to the
+ * newly published games inside the shift window.
  */
 
 let world: BuiltWorld
 let leagueOwnerId: string
 let leagueId: string
+let seasonId: string
 let dayId: string
 let dayDate: Date
+/** Second session day, for the accept-over-drafts / publish-after-accept arc. */
+let day2Id: string
+let day2Date: Date
 let ref1: string // declares availability
 let ref2: string // accepts the broadcast
 let ref3: string // NOT in the pool
 let gameIds: string[] = []
 let broadcastId: string
+let day2Published: string
+let day2Draft: string
+let day2DraftLate: string
 
 const addToPool = (userId: string) =>
   poolPOST(jsonRequest(`/api/leagues/${leagueId}/referees`, { userId }), {
@@ -56,7 +67,7 @@ beforeAll(async () => {
           {
             status: "IN_PROGRESS",
             divisions: [{ teams: 2, rosterSize: 3, submissionStatus: "APPROVED" }],
-            sessions: [{ days: 1, startInDays: 3 }],
+            sessions: [{ days: 2, startInDays: 3 }],
           },
         ],
       },
@@ -66,9 +77,13 @@ beforeAll(async () => {
   leagueOwnerId = league.owner.id
   leagueId = league.id
   const season = league.seasons[0]
+  seasonId = season.id
   const day = season.sessions[0].days[0]
   dayId = day.id
   dayDate = new Date(day.date)
+  const day2 = season.sessions[0].days[1]
+  day2Id = day2.id
+  day2Date = new Date(day2.date)
 
   const [r1, r2, r3] = await Promise.all([
     createUser(world.ctx, { localPart: "ref1", roles: [{ role: "Referee" }] }),
@@ -79,25 +94,40 @@ beforeAll(async () => {
   ref2 = r2.id
   ref3 = r3.id
 
-  // Two games on the session day, 10:00 and 12:00 — accept should grab both
   const [subA, subB] = season.divisions[0].submissions
-  for (const hour of [10, 12]) {
-    const at = new Date(dayDate)
+  const makeGame = async (
+    onDayId: string,
+    onDate: Date,
+    hour: number,
+    published: boolean
+  ): Promise<string> => {
+    const at = new Date(onDate)
     at.setHours(hour, 0, 0, 0)
     const game = await prisma.game.create({
       data: {
         seasonId: season.id,
-        homeTeamId: hour === 10 ? subA.teamId : subB.teamId,
-        awayTeamId: hour === 10 ? subB.teamId : subA.teamId,
-        dayId,
+        homeTeamId: hour % 4 < 2 ? subA.teamId : subB.teamId,
+        awayTeamId: hour % 4 < 2 ? subB.teamId : subA.teamId,
+        dayId: onDayId,
         scheduledAt: at,
         duration: 90,
         status: "SCHEDULED",
-      },
+        ...(published ? { publishedAt: new Date() } : {}),
+      } as any,
       select: { id: true },
     })
-    gameIds.push(game.id)
+    return game.id
   }
+
+  // Two PUBLISHED games on day 1, 10:00 and 12:00 — accept should grab both.
+  // (Published, because accept assigns only published games since QA T-013a.)
+  for (const hour of [10, 12]) gameIds.push(await makeGame(dayId, dayDate, hour, true))
+
+  // Day 2 is the draft/publish arc: one published 10:00 game, one DRAFT
+  // 12:00 game inside the shift window, one DRAFT 20:00 game outside it.
+  day2Published = await makeGame(day2Id, day2Date, 10, true)
+  day2Draft = await makeGame(day2Id, day2Date, 12, false)
+  day2DraftLate = await makeGame(day2Id, day2Date, 20, false)
 })
 
 afterAll(async () => {
@@ -171,6 +201,16 @@ describe("referee booking (integration)", () => {
     })
     expect(bell).not.toBeNull()
 
+    // ...and so does the referee themselves (QA T-013a: the "assigned to N
+    // games" message used to go to the league owner ONLY).
+    const refBell = await prisma.notification.findFirst({
+      where: { userId: ref2, type: "referee_shift_booked" },
+      select: { message: true, link: true },
+    })
+    expect(refBell).not.toBeNull()
+    expect(refBell!.message).toContain("2 games")
+    expect(refBell!.link).toBe("/calendar")
+
     actAs(ref1)
     expect((await respond(broadcastId, "accept")).status).toBe(409)
   })
@@ -203,4 +243,76 @@ describe("referee booking (integration)", () => {
     const statuses = listed.requests.map((r: any) => r.status).sort()
     expect(statuses).toEqual(["ACCEPTED", "CANCELLED", "DECLINED"])
   })
+  it("accept over a half-draft day assigns ONLY the published games and says what is pending", async () => {
+    actAs(leagueOwnerId)
+    const offer = await (
+      await sendOffer({
+        sessionDayId: day2Id,
+        startTime: "09:00",
+        endTime: "18:00",
+        targetUserId: ref1,
+      })
+    ).json()
+
+    actAs(ref1)
+    const res = await respond(offer.requestId, "accept")
+    expect(res.status).toBe(200)
+    const body = await res.json()
+    // The 10:00 published game only. The 12:00 draft is invisible to every
+    // referee surface (PUBLISHED_GAME law), so accept must not book onto it.
+    expect(body.gamesAssigned).toBe(1)
+    // The 12:00 draft is inside the window and still coming; the 20:00 draft
+    // is outside the shift and never counted.
+    expect(body.draftGamesPending).toBe(1)
+
+    const onPublished = await prisma.userRole.findFirst({
+      where: { userId: ref1, role: "Referee", gameId: day2Published },
+      select: { id: true },
+    })
+    expect(onPublished).not.toBeNull()
+    for (const gameId of [day2Draft, day2DraftLate]) {
+      const onDraft = await prisma.userRole.findFirst({
+        where: { userId: ref1, role: "Referee", gameId },
+        select: { id: true },
+      })
+      expect(onDraft).toBeNull()
+    }
+  })
+
+  it("publishing the schedule attaches the accepted shift's referee to the newly published games in the window", async () => {
+    actAs(leagueOwnerId)
+    const res = await schedulePublishPOST(
+      jsonRequest(`/api/seasons/${seasonId}/schedule/publish`, undefined),
+      { params: { id: seasonId } }
+    )
+    expect(res.status).toBe(200)
+
+    // The 12:00 game (inside ref1's 09:00-18:00 shift) is theirs now...
+    const attached = await prisma.userRole.findFirst({
+      where: { userId: ref1, role: "Referee", gameId: day2Draft },
+      select: { id: true },
+    })
+    expect(attached).not.toBeNull()
+
+    // ...the 20:00 game published too, but sits outside the shift window.
+    const late = await (prisma as any).game.findUnique({
+      where: { id: day2DraftLate },
+      select: { publishedAt: true },
+    })
+    expect(late.publishedAt).not.toBeNull()
+    const outside = await prisma.userRole.findFirst({
+      where: { userId: ref1, role: "Referee", gameId: day2DraftLate },
+      select: { id: true },
+    })
+    expect(outside).toBeNull()
+
+    // And the referee heard their schedule grew.
+    const bell = await prisma.notification.findFirst({
+      where: { userId: ref1, type: "referee_shift_games_added" },
+      select: { message: true },
+    })
+    expect(bell).not.toBeNull()
+    expect(bell!.message).toContain("1 game")
+  })
+
 })

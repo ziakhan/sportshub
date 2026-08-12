@@ -65,9 +65,14 @@ export default function RefereeRequestsPage() {
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || "Couldn't respond")
+      // Honest about the draft layer (QA T-013): only published games are
+      // assigned at accept, so a day the league has not published yet is a
+      // booking with games still to come, not an empty day.
       setNote(
         action === "accept"
-          ? `You're booked — assigned to ${data.gamesAssigned} game${data.gamesAssigned !== 1 ? "s" : ""} that day.`
+          ? data.gamesAssigned > 0
+            ? `You're booked: assigned to ${data.gamesAssigned} game${data.gamesAssigned !== 1 ? "s" : ""} that day. See them in My Calendar.`
+            : "You're booked. The league hasn't published that day's schedule yet, so your games will appear in My Calendar when it goes out."
           : "Declined."
       )
       load()

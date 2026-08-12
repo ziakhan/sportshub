@@ -3,7 +3,9 @@ import { prisma } from "@youthbasketballhub/db"
 import { z } from "zod"
 import { auditSafe } from "@/lib/audit"
 import { getSessionUserId } from "@/lib/auth-helpers"
+import { PUBLISHED_GAME } from "@/lib/games/visibility"
 import { notify, notifySafe } from "@/lib/notifications"
+import { assignRefereeToGames, inShiftWindow } from "@/lib/referees/shift-assign"
 
 export const dynamic = "force-dynamic"
 
@@ -126,35 +128,58 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
       return NextResponse.json({ error: "Another referee already took this day" }, { status: 409 })
     }
 
-    // Auto-assign every game on that day inside the shift window
+    /**
+     * Auto-assign every PUBLISHED game on that day inside the shift window
+     * (QA T-013a). Drafts are the operator's private working copy — the
+     * PUBLISHED_GAME law every public surface filters by — so booking a
+     * referee onto one produced assignments the referee could not see
+     * anywhere. Draft games in the window are counted instead, so the
+     * response can say honestly what is still to come: publishing attaches
+     * this shift's referee to them (see schedule/publish).
+     */
     const games = await prisma.game.findMany({
-      where: { dayId: req.sessionDay.id, status: { in: ["SCHEDULED", "LIVE"] } },
+      where: { dayId: req.sessionDay.id, status: { in: ["SCHEDULED", "LIVE"] }, ...PUBLISHED_GAME },
       select: { id: true, scheduledAt: true },
     })
-    const inWindow = games.filter((g: any) => {
-      const hhmm = new Date(g.scheduledAt).toTimeString().slice(0, 5)
-      return hhmm >= req.startTime && hhmm <= req.endTime
+    const inWindow = games.filter((g: any) => inShiftWindow(g.scheduledAt, req.startTime, req.endTime))
+    const assigned = await assignRefereeToGames(
+      auth.userId,
+      inWindow.map((g: any) => g.id)
+    )
+    const drafts = await prisma.game.findMany({
+      where: { dayId: req.sessionDay.id, status: "SCHEDULED", publishedAt: null },
+      select: { scheduledAt: true },
     })
-    let assigned = 0
-    for (const game of inWindow) {
-      const exists = await prisma.userRole.findFirst({
-        where: { userId: auth.userId, role: "Referee", gameId: game.id },
-        select: { id: true },
-      })
-      if (!exists) {
-        await prisma.userRole.create({
-          data: { userId: auth.userId, role: "Referee", gameId: game.id },
-        })
-        assigned++
-      }
-    }
+    const draftGamesPending = drafts.filter((g: any) =>
+      inShiftWindow(g.scheduledAt, req.startTime, req.endTime)
+    ).length
 
+    const shiftDay = new Date(req.sessionDay.date).toLocaleDateString()
     await notify(prisma, {
       userId: req.league.ownerId,
       type: "referee_request_accepted",
       title: "Referee booked",
-      message: `Your ${new Date(req.sessionDay.date).toLocaleDateString()} shift (${req.startTime}–${req.endTime}) was accepted — assigned to ${assigned} game${assigned !== 1 ? "s" : ""}.`,
+      message: `Your ${shiftDay} shift (${req.startTime} to ${req.endTime}) was accepted and the referee is assigned to ${assigned} published game${assigned !== 1 ? "s" : ""}.${
+        draftGamesPending > 0
+          ? ` ${draftGamesPending} draft game${draftGamesPending !== 1 ? "s" : ""} in the window will attach when you publish.`
+          : ""
+      }`,
       link: `/manage/leagues/${req.league.id}`,
+      referenceId: req.id,
+      referenceType: "RefereeSessionRequest",
+    })
+    // The referee hears about their own booking too (QA T-013a: only the
+    // league owner used to get a notification). Best effort, never a failed
+    // accept.
+    await notifySafe({
+      userId: auth.userId,
+      type: "referee_shift_booked",
+      title: "You're booked",
+      message:
+        assigned > 0
+          ? `${req.league.name}: ${shiftDay}, ${req.startTime} to ${req.endTime}. You are assigned to ${assigned} game${assigned !== 1 ? "s" : ""}. See My Calendar.`
+          : `${req.league.name}: ${shiftDay}, ${req.startTime} to ${req.endTime}. The schedule for that day is not published yet. Your games will appear in My Calendar when it goes out.`,
+      link: "/calendar",
       referenceId: req.id,
       referenceType: "RefereeSessionRequest",
     })
@@ -168,7 +193,15 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
       request,
     })
 
-    return NextResponse.json({ success: true, status: "ACCEPTED", gamesAssigned: assigned })
+    return NextResponse.json({
+      success: true,
+      status: "ACCEPTED",
+      gamesAssigned: assigned,
+      // Draft games inside the window: booked-but-not-published work the UI
+      // can be honest about instead of reporting "0 games" as if the day
+      // were empty (QA T-013a).
+      draftGamesPending,
+    })
   } catch (error) {
     console.error("Referee request resolve error:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })

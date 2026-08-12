@@ -4,6 +4,7 @@ import { prisma } from "@youthbasketballhub/db"
 import { notifyMany } from "@/lib/notifications"
 import { notifyTeam } from "@/lib/teams/practices"
 import { appBaseUrl } from "@/lib/email"
+import { attachAcceptedShiftsToPublishedGames } from "@/lib/referees/shift-assign"
 
 export const dynamic = "force-dynamic"
 
@@ -26,13 +27,31 @@ export async function POST(_request: NextRequest, { params }: { params: { id: st
     if (season.league.ownerId !== sessionInfo.userId && !sessionInfo.isPlatformAdmin)
       return NextResponse.json({ error: "Forbidden" }, { status: 403 })
 
+    // The drafts about to go out, captured BEFORE the stamp: the shift
+    // reconcile below needs to know exactly which games are newly published.
+    const drafts = await (prisma as any).game.findMany({
+      where: { seasonId: params.id, publishedAt: null },
+      select: { id: true, dayId: true, scheduledAt: true, status: true },
+    })
     const stamped = await (prisma as any).game.updateMany({
       where: { seasonId: params.id, publishedAt: null },
       data: { publishedAt: new Date() },
     })
     if (stamped.count === 0) {
-      return NextResponse.json({ error: "Nothing to publish — no draft games." }, { status: 400 })
+      return NextResponse.json({ error: "Nothing to publish. There are no draft games." }, { status: 400 })
     }
+
+    /**
+     * ACCEPTED SHIFTS MEET THE SCHEDULE HERE (QA T-013b). A referee who
+     * accepted a shift before this day's games were published was assigned to
+     * nothing — assignment used to be a one-time snapshot at accept. The
+     * newly published games on any session day with an ACCEPTED shift now
+     * attach that shift's referee, window respected, and the referee is told
+     * their schedule grew.
+     */
+    await attachAcceptedShiftsToPublishedGames(
+      drafts.filter((d: any) => d.dayId && ["SCHEDULED", "LIVE"].includes(d.status))
+    )
 
     // Fan the news out (moved here from commit — owner 2026-07-31: committing
     // saves a draft; publishing is the step families hear about): one
