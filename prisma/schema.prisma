@@ -116,14 +116,14 @@ model User {
   trainingSessionSignups    TrainingSessionSignup[]   @relation("TrainingSessionSignups")
   oneOnOneBookings          OneOnOneBooking[]         @relation("OneOnOneBookings")
 
-  createdAt                 DateTime            @default(now())
-  updatedAt                 DateTime            @updatedAt
+  createdAt                 DateTime              @default(now())
+  updatedAt                 DateTime              @updatedAt
   refereeProfile            RefereeProfile?
-  reviewInvites             ReviewInvite[]      @relation("ReviewInvites")
-  withdrawalRequestsMade    WithdrawalRequest[] @relation("WithdrawalRequestsMade")
-  withdrawalRequestsDecided WithdrawalRequest[] @relation("WithdrawalRequestsDecided")
-  scheduleRequestsMade    TeamScheduleRequest[] @relation("ScheduleRequestsMade")
-  scheduleRequestsDecided TeamScheduleRequest[] @relation("ScheduleRequestsDecided")
+  reviewInvites             ReviewInvite[]        @relation("ReviewInvites")
+  withdrawalRequestsMade    WithdrawalRequest[]   @relation("WithdrawalRequestsMade")
+  withdrawalRequestsDecided WithdrawalRequest[]   @relation("WithdrawalRequestsDecided")
+  scheduleRequestsMade      TeamScheduleRequest[] @relation("ScheduleRequestsMade")
+  scheduleRequestsDecided   TeamScheduleRequest[] @relation("ScheduleRequestsDecided")
 
   @@index([email])
   @@index([status])
@@ -261,8 +261,8 @@ enum Role {
 // ============================================
 
 model Tenant {
-  id                     String    @id @default(uuid())
-  slug                   String    @unique
+  id                     String     @id @default(uuid())
+  slug                   String     @unique
   // Solo-operator support (batch-backlog §5): a TRAINER tenant is a
   // one-person org that only runs programs — no teams/rosters/staff tabs.
   type                   TenantType @default(CLUB)
@@ -271,20 +271,20 @@ model Tenant {
   // Set once on club settings; every derived team name starts with it
   // ("Burlington Force" → "Burlington Force U15 Blue"). null = full name.
   shortName              String?
-  description            String?   @db.Text
+  description            String?    @db.Text
   phoneNumber            String?
   contactEmail           String?
   address                String?
   city                   String?
   state                  String?
   zipCode                String?
-  country                String    @default("US") // ISO 3166-1 alpha-2
-  currency               String    @default("CAD") // ISO 4217
+  country                String     @default("US") // ISO 3166-1 alpha-2
+  currency               String     @default("CAD") // ISO 4217
   website                String?
-  customDomain           String?   @unique
+  customDomain           String?    @unique
   // Custom-domain plumbing (seo-strategy §6c; inert until CUSTOM_DOMAINS_ENABLED)
   customDomainVerifiedAt DateTime? // set by the DNS Verify endpoint
-  customDomainCanonical  Boolean   @default(false) // false = mirror mode (their domain redirects to us)
+  customDomainCanonical  Boolean    @default(false) // false = mirror mode (their domain redirects to us)
 
   // Timezone (Recommended Addition)
   timezone String @default("America/New_York")
@@ -306,37 +306,37 @@ model Tenant {
   showRosterFillDefault Boolean @default(false)
 
   // Relationships
-  branding          TenantBranding?
-  features          TenantFeatures?
-  teams             Team[]
-  staff             UserRole[]
-  clubSeasonEntries ClubSeasonEntry[]
-  tryouts           Tryout[]
-  practices         Practice[]
-  venues            Venue[]
-  announcements     Announcement[]
-  payments          Payment[]           @relation("TenantPayments")
-  paymentConfig     PaymentConfig?
-  payerObligations  PaymentObligation[] @relation("TenantPayerObligations")
-  payeeObligations  PaymentObligation[] @relation("TenantPayeeObligations")
-  reviews           Review[]
-  staffInvitations  StaffInvitation[]
-  playerInvitations PlayerInvitation[]
-  clubClaims        ClubClaim[]
-  houseLeagues      HouseLeague[]
-  camps             Camp[]
-  offerTemplates    OfferTemplate[]
-  tournaments       Tournament[]
-  postTags          PostTag[]
-  follows           Follow[]
-  waiverDocuments   WaiverDocument[]
-  trainingSessions  TrainingSession[]
-  trainerProfile    TrainerProfile?
+  branding              TenantBranding?
+  features              TenantFeatures?
+  teams                 Team[]
+  staff                 UserRole[]
+  clubSeasonEntries     ClubSeasonEntry[]
+  tryouts               Tryout[]
+  practices             Practice[]
+  venues                Venue[]
+  announcements         Announcement[]
+  payments              Payment[]             @relation("TenantPayments")
+  paymentConfig         PaymentConfig?
+  payerObligations      PaymentObligation[]   @relation("TenantPayerObligations")
+  payeeObligations      PaymentObligation[]   @relation("TenantPayeeObligations")
+  reviews               Review[]
+  staffInvitations      StaffInvitation[]
+  playerInvitations     PlayerInvitation[]
+  clubClaims            ClubClaim[]
+  houseLeagues          HouseLeague[]
+  camps                 Camp[]
+  offerTemplates        OfferTemplate[]
+  tournaments           Tournament[]
+  postTags              PostTag[]
+  follows               Follow[]
+  waiverDocuments       WaiverDocument[]
+  trainingSessions      TrainingSession[]
+  trainerProfile        TrainerProfile?
   trainerAvailabilities TrainerAvailability[]
-  oneOnOneBookings  OneOnOneBooking[]
+  oneOnOneBookings      OneOnOneBooking[]
   // Club-wide polls (three-tier polls ruling, owner 2026-07-24) — a poll has
   // exactly one scope: teamId, tenantId, or leagueId.
-  polls             Poll[]
+  polls                 Poll[]
 
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
@@ -429,7 +429,7 @@ model Team {
 
   // Roster commitment cap (owner 2026-07-24, QA-103): counts PAID/committed
   // players, never offers — clubs over-offer on purpose. null = no cap.
-  maxPlayers Int?
+  maxPlayers     Int?
   // Show public roster-fill progress? null = inherit the club-wide default.
   showRosterFill Boolean?
 
@@ -764,7 +764,7 @@ model Poll {
   status      PollStatus @default(OPEN)
   closedAt    DateTime?
 
-  questions   PollQuestion[]
+  questions    PollQuestion[]
   // Set for every team chat this poll was posted/relayed into — a team
   // poll relays to its own team (0 or 1 row); a club poll may relay to
   // several selected teams; a league poll never relays (owner: maybe later).
@@ -868,6 +868,15 @@ model Player {
   // tryout signups, team rosters) but excludes from active listings.
   deletedAt DateTime?
 
+  // Duplicate absorption (parent-child linking arc 2026-08-12). When a kid's
+  // self-registered row and a parent-created row turn out to be the same
+  // person, the movable history moves to the survivor and the loser is
+  // stamped here + soft-deleted. Rows that cannot move safely (game stats,
+  // follows, tagged posts, signed waivers) stay on the absorbed record, which
+  // is why it is kept rather than deleted.
+  absorbedIntoPlayerId String?
+  absorbedAt           DateTime?
+
   // Parent/Guardian — the GUARDIAN + PAYER of record (family-accounts plan
   // 2026-07-23). For self-registered 13+ players this is their own user id
   // until a real guardian accepts a GUARDIAN FamilyInvitation.
@@ -882,20 +891,21 @@ model Player {
   userAccount User?   @relation("PlayerAccount", fields: [userId], references: [id], onDelete: SetNull)
 
   // Relationships
-  teams               TeamPlayer[]
-  stats               PlayerStat[]
+  teams                       TeamPlayer[]
+  stats                       PlayerStat[]
   playoffEligibilityOverrides PlayoffEligibilityOverride[]
-  offers              Offer[]
-  familyInvitations   FamilyInvitation[]
-  houseLeagueSignups  HouseLeagueSignup[]
-  campSignups         CampSignup[]
-  seasonRosterEntries SeasonRosterPlayer[]
-  postTags            PostTag[]
-  trainingSignups     TrainingSessionSignup[] @relation("PlayerTrainingSignups")
-  oneOnOneBookings    OneOnOneBooking[]       @relation("PlayerOneOnOneBookings")
-  potgGames           Game[]                  @relation("PlayerOfTheGame")
-  followers           Follow[]
-  stories             Story[]
+  offers                      Offer[]
+  familyInvitations           FamilyInvitation[]
+  claimInvitations            FamilyInvitation[]           @relation("FamilyInvitationClaimTargets")
+  houseLeagueSignups          HouseLeagueSignup[]
+  campSignups                 CampSignup[]
+  seasonRosterEntries         SeasonRosterPlayer[]
+  postTags                    PostTag[]
+  trainingSignups             TrainingSessionSignup[]      @relation("PlayerTrainingSignups")
+  oneOnOneBookings            OneOnOneBooking[]            @relation("PlayerOneOnOneBookings")
+  potgGames                   Game[]                       @relation("PlayerOfTheGame")
+  followers                   Follow[]
+  stories                     Story[]
 
   createdAt          DateTime            @default(now())
   updatedAt          DateTime            @updatedAt
@@ -948,8 +958,8 @@ model RefereeProfile {
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   // Certifications
-  certificationLevel  String? // "Level 1", "Level 2", etc. — self-declared
-  certificationExpiry DateTime?
+  certificationLevel        String? // "Level 1", "Level 2", etc. — self-declared
+  certificationExpiry       DateTime?
   // QA-208: proof of the self-declared level above. Data-URL upload (PDF or
   // image), same cap/shape as ClubClaim.proofDocumentUrl. verifiedById is a
   // plain id (no relation), matching ClubClaim.reviewedById.
@@ -994,7 +1004,7 @@ model Tryout {
   team   Team?   @relation(fields: [teamId], references: [id], onDelete: SetNull)
 
   title       String
-  description String? @db.Text
+  description String?   @db.Text
   ageGroup    String
   agePolicy   AgePolicy @default(STRICT)
   gender      Gender?
@@ -1281,15 +1291,15 @@ enum OfferStatus {
 // NPH runs many leagues — identity lives here once, leagues inherit
 // branding unless they override. docs/roadmap/league-operator-orgs.md.
 model Organization {
-  id           String  @id @default(uuid())
-  name         String
-  slug         String  @unique
-  logoUrl      String? @db.Text
-  bannerUrl    String? @db.Text
-  primaryColor String?
-  tagline      String?
-  socials      Json?
-  description  String? @db.Text
+  id             String  @id @default(uuid())
+  name           String
+  slug           String  @unique
+  logoUrl        String? @db.Text
+  bannerUrl      String? @db.Text
+  primaryColor   String?
+  tagline        String?
+  socials        Json?
+  description    String? @db.Text
   // Org-wide season rulebook (Phase A): zod-validated shape in
   // lib/org/season-defaults.ts. Leagues/seasons inherit any field they leave
   // unset; a season's explicit value is a deliberate override.
@@ -1302,14 +1312,14 @@ model Organization {
 }
 
 model League {
-  id              String  @id @default(uuid())
+  id              String        @id @default(uuid())
   name            String
-  description     String? @db.Text
+  description     String?       @db.Text
   ownerId         String
   organizationId  String?
   organization    Organization? @relation(fields: [organizationId], references: [id])
-  currency        String  @default("CAD")
-  stripeAccountId String? @unique
+  currency        String        @default("CAD")
+  stripeAccountId String?       @unique
 
   // Customizable public page branding (docs/roadmap/customizable-pages.md).
   logoUrl      String? @db.Text
@@ -1332,20 +1342,20 @@ model League {
   perks     String[] @default([])
   perksNote String?  @db.Text
 
-  seasons         Season[]
-  staff           UserRole[]
-  reviews         Review[]
-  paymentConfig   PaymentConfig?
-  obligations     PaymentObligation[]     @relation("LeagueObligations")
-  leagueReferees  LeagueReferee[]
-  refereeRequests RefereeSessionRequest[] @relation("LeagueRefereeRequests")
+  seasons            Season[]
+  staff              UserRole[]
+  reviews            Review[]
+  paymentConfig      PaymentConfig?
+  obligations        PaymentObligation[]     @relation("LeagueObligations")
+  leagueReferees     LeagueReferee[]
+  refereeRequests    RefereeSessionRequest[] @relation("LeagueRefereeRequests")
   refereeSettlements RefereeSettlement[]
-  postTags        PostTag[]
-  follows         Follow[]
-  waiverDocuments WaiverDocument[]
+  postTags           PostTag[]
+  follows            Follow[]
+  waiverDocuments    WaiverDocument[]
   // League-wide polls (three-tier polls ruling, owner 2026-07-24) — a poll
   // has exactly one scope: teamId, tenantId, or leagueId.
-  polls           Poll[]
+  polls              Poll[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -1393,7 +1403,7 @@ model Season {
   // last slot. Capacity everywhere reads usable courts = max(0, courts −
   // buffer): the planner's weekends, the rental blocks, the ask sheet and
   // the scheduler's own slots. 0 = plan to the full building.
-  courtBuffer Int @default(0)
+  courtBuffer     Int     @default(0)
   /// The Friday-evening window this league may add to a weekend (owner
   /// 2026-08-07, NJC/NSC constraint: Fri-Sun blocks are real). Null = the
   /// planner's 18:00-22:00 default; these make it configuration, not code.
@@ -1407,10 +1417,10 @@ model Season {
   /// likes Fridays (work, school, travel) — capacity pressure is the only
   /// honest reason to use one, so never fill a Friday that Sat+Sun could
   /// absorb.
-  fridayPolicy String?
+  fridayPolicy    String?
 
   schedulingPhilosophy         SchedulingPhilosophy?
-  allowCrossDivisionScheduling Boolean              @default(false)
+  allowCrossDivisionScheduling Boolean               @default(false)
 
   tiebreakerOrder     String[]  @default([])
   tiebreakersLockedAt DateTime?
@@ -1424,58 +1434,58 @@ model Season {
   // without an operator session. Null = planned but never published.
   planPublishedAt DateTime?
 
-  playoffFormat String?
-  playoffTeams  Int?
+  playoffFormat             String?
+  playoffTeams              Int?
   // Scheduler v2 playoffs (owner 2026-08-08): per-division configuration
   // (qualifiers/format/guarantee/extras) and the generated STRUCTURAL
   // schedule — placed games carrying placeholder slots ("SEED:3",
   // "WINNER:G2", "POOL:A:1"). Real Game rows materialize per game as
   // slots resolve; unresolved structure lives only here, so no public
   // surface ever meets a null team.
-  playoffConfig Json?
-  playoffPlan   Json?
+  playoffConfig             Json?
+  playoffPlan               Json?
   // Cross-division play per grade (owner 2026-08-09, Setting A):
   // { "<ageGroup>": "LOCKED" | "PREFER" | "OPEN" }. LOCKED = divisions
   // schedule only within themselves (default); PREFER = one grade pool
   // leaning same-division (NPH Gr10-12 measured pattern); OPEN = one free
   // grade pool (NPH Gr9 pattern).
-  gradeScheduling Json?
+  gradeScheduling           Json?
   // Playoff eligibility (owner 2026-07-29): minimum games played (from the
   // scorekeeper's attendance roll call) to be playoff-eligible. Null = off.
-  playoffMinGames Int?
+  playoffMinGames           Int?
   // Deposit-then-balance team fees (owner 2026-07-29, NPH terms): deposit %
   // due at approval, balance due N days before season start. Null = full
   // payment, no schedule.
-  depositPct Int?
+  depositPct                Int?
   // When the remaining balance is due, in days before startDate (owner
   // 2026-07-30: make the hardcoded 14 a setting). Null = 14.
   balanceDueDaysBeforeStart Int?
   // League's declared weekend shape for teams with no preference of their
   // own (owner 2026-08-01). Null = inherit org rulebook → SAME_DAY.
-  defaultWeekendStyle WeekendStyle?
+  defaultWeekendStyle       WeekendStyle?
   // Club-entry application questions (two-level registration): array of
   // strings, asked ONCE per club on their season entry — never per team.
-  applicationQuestions Json?
+  applicationQuestions      Json?
   // Game-day guest players (name+jersey, no account) — league can forbid.
   // null = inherit org default (system default: allowed).
-  allowGuestPlayers Boolean?
+  allowGuestPlayers         Boolean?
 
-  divisions          Division[]
-  teamSubmissions    TeamSubmission[]
-  submissionRequests TeamSubmissionRequest[]
-  sessions           SeasonSession[]
-  rounds          SessionRound[]
-  seasonVenues       SeasonVenue[]
+  divisions           Division[]
+  teamSubmissions     TeamSubmission[]
+  submissionRequests  TeamSubmissionRequest[]
+  sessions            SeasonSession[]
+  rounds              SessionRound[]
+  seasonVenues        SeasonVenue[]
   venueUnavailability SeasonVenueUnavailability[]
-  rosters            SeasonRoster[]
-  games              Game[]
-  schedulingGroups   SchedulingGroup[]
+  rosters             SeasonRoster[]
+  games               Game[]
+  schedulingGroups    SchedulingGroup[]
 
-  createdAt          DateTime            @default(now())
-  updatedAt          DateTime            @updatedAt
-  reviewInvites      ReviewInvite[]
-  waiverSignRequests WaiverSignRequest[]
-  waiverSignatures   WaiverSignature[]
+  createdAt                   DateTime                     @default(now())
+  updatedAt                   DateTime                     @updatedAt
+  reviewInvites               ReviewInvite[]
+  waiverSignRequests          WaiverSignRequest[]
+  waiverSignatures            WaiverSignature[]
   playoffEligibilityOverrides PlayoffEligibilityOverride[]
   clubEntries                 ClubSeasonEntry[]
   plans                       SeasonPlan[]
@@ -1511,14 +1521,14 @@ model Division {
   seasonId String
   season   Season @relation(fields: [seasonId], references: [id], onDelete: Cascade)
 
-  name     String
-  ageGroup String
-  gender   Gender?
-  tier     Int     @default(1)
-  maxTeams Int?
+  name            String
+  ageGroup        String
+  gender          Gender?
+  tier            Int     @default(1)
+  maxTeams        Int?
   // Season planner (owner 2026-08-02): the operator's pre-registration
   // estimate — planning runs off this until real approved teams exist.
-  expectedTeams Int?
+  expectedTeams   Int?
   // Travel fairness (owner 2026-08-02): this grade should ALTERNATE buildings
   // across weekends instead of keeping one gym all season.
   alternateVenues Boolean @default(false)
@@ -1696,7 +1706,6 @@ model SeasonRoster {
   submittedAt DateTime?
   lockedAt    DateTime?
 
-
   players        SeasonRosterPlayer[]
   changeRequests RosterChangeRequest[]
 
@@ -1754,8 +1763,8 @@ model SeasonRosterPlayer {
   rosterId String
   roster   SeasonRoster @relation(fields: [rosterId], references: [id], onDelete: Cascade)
 
-  playerId String
-  player   Player @relation(fields: [playerId], references: [id])
+  playerId   String
+  player     Player    @relation(fields: [playerId], references: [id])
   // Set when the player leaves the club team AFTER this league roster was
   // submitted (owner 2026-08-12): the league sees "no longer with the team"
   // instead of a silently stale row.
@@ -1800,10 +1809,10 @@ model GameGuestPlayer {
   gameId String
   game   Game   @relation(fields: [gameId], references: [id], onDelete: Cascade)
 
-  teamId       String
-  displayName  String
-  jerseyNumber Int?
-  addedById    String?
+  teamId         String
+  displayName    String
+  jerseyNumber   Int?
+  addedById      String?
   linkedPlayerId String?
 
   createdAt DateTime @default(now())
@@ -1822,7 +1831,7 @@ model SeasonPlan {
   seasonId String
   season   Season @relation(fields: [seasonId], references: [id], onDelete: Cascade)
 
-  name String
+  name   String
   // "imported" (the league's own published calendar, read-only reference) |
   // "proposed" (straight off the solver) | "manual" (the operator's edit).
   source String @default("manual")
@@ -1858,22 +1867,22 @@ model SeasonSession {
   season   Season @relation(fields: [seasonId], references: [id], onDelete: Cascade)
 
   label              String?
-  phase              SessionPhase @default(REGULAR)
+  phase              SessionPhase  @default(REGULAR)
   targetGamesPerTeam Int?
   /// The ROUND this weekend materializes (owner 2026-08-07: "sessions are
   /// announced, weekends are booked"). Nullable — rounds are optional
   /// structure, and a league that defines none behaves exactly as before.
-  roundId String?
-  round   SessionRound? @relation(fields: [roundId], references: [id], onDelete: SetNull)
+  roundId            String?
+  round              SessionRound? @relation(fields: [roundId], references: [id], onDelete: SetNull)
   // Which scheduling units play this session (owner 2026-08-01: NPH's real
   // calendar gives every grade its OWN weekends). Unit keys as the engine
   // knows them ("division:<id>" / "group:<id>"); empty = every unit.
-  unitKeys String[] @default([])
+  unitKeys           String[]      @default([])
   // Which BUILDING each unit plays in this session: { "division:<id>":
   // "<venueId>" } (owner 2026-08-02: every grade-weekend placement lives in
   // exactly one gym). Same semantics as unitKeys — empty/null = no venue
   // preference, the engine picks.
-  unitVenues Json?
+  unitVenues         Json?
 
   // Bracket/advancement plan JSON (lib/playoffs/generate.ts)
   playoffPlan Json?
@@ -1898,9 +1907,9 @@ model SessionRound {
   seasonId String
   season   Season @relation(fields: [seasonId], references: [id], onDelete: Cascade)
 
-  ordinal Int
+  ordinal     Int
   /// Null reads as the derived "Session <ordinal>".
-  label String?
+  label       String?
   /// "2026-10" — the month the league anchors this round to.
   monthAnchor String?
 
@@ -2063,14 +2072,14 @@ model SeasonVenue {
   // plan snapshots and the drift sentence can still read what a plan was
   // saved under; nothing in the planner scores on it any more. `role` below
   // is the live truth.
-  fillOrder Int?
+  fillOrder       Int?
   // What this gym IS to the league (owner ruling 2026-08-03, venue model v2):
   //   "home" — the building you own. Fills first, costs nothing, and there is
   //            at most one of it per season.
   //   "pool" — a gym you rent by the court-day when the home gym runs out.
   //            An unordered pool: which one you rent is a cost question, not
   //            a ranking.
-  role String @default("pool")
+  role            String  @default("pool")
 
   hours SeasonVenueHours[]
 
@@ -2207,8 +2216,8 @@ model Game {
   homeScore Int?
   awayScore Int?
 
-  isLocked    Boolean @default(false)
-  defaultedBy String?
+  isLocked     Boolean @default(false)
+  defaultedBy  String?
   // Why a game was cancelled/postponed/defaulted (owner 2026-08-01) — a
   // predefined reason families see in the notification.
   statusReason String?
@@ -2401,20 +2410,20 @@ model Venue {
   courts   Int? // Legacy count — courts[] is the source of truth going forward
   notes    String? @db.Text
 
-  games            Game[]
-  practices        Practice[]
-  practiceSlots    PracticeSlot[]
-  seasonVenues     SeasonVenue[]
+  games                Game[]
+  practices            Practice[]
+  practiceSlots        PracticeSlot[]
+  seasonVenues         SeasonVenue[]
   seasonUnavailability SeasonVenueUnavailability[]
-  dayVenues        SeasonSessionDayVenue[]
-  courtList        Court[]
-  venueHours       VenueHours[]
-  tournamentVenues TournamentVenue[]
-  tryouts          Tryout[]
-  camps            Camp[]
-  houseLeagues     HouseLeague[]
-  teamEvents       TeamEvent[]
-  trainingSessions TrainingSession[]
+  dayVenues            SeasonSessionDayVenue[]
+  courtList            Court[]
+  venueHours           VenueHours[]
+  tournamentVenues     TournamentVenue[]
+  tryouts              Tryout[]
+  camps                Camp[]
+  houseLeagues         HouseLeague[]
+  teamEvents           TeamEvent[]
+  trainingSessions     TrainingSession[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -2861,7 +2870,7 @@ model Post {
   reactions            PostReaction[]
   comments             Comment[]
   reposts              Repost[]
-  sharedInTeamMessages TeamMessage[]  @relation("TeamMessageSharedPost")
+  sharedInTeamMessages TeamMessage[]   @relation("TeamMessageSharedPost")
   sharedInDMs          DirectMessage[] @relation("DirectMessageSharedPost")
 
   createdAt DateTime @default(now())
@@ -3370,6 +3379,13 @@ model PlayerInvitation {
 enum FamilyInvitationType {
   CHILD_LOGIN
   GUARDIAN
+  // CHILD_CLAIM (parent-child linking arc 2026-08-12): the reversed
+  // initiator. A self-registered 13+ kid says "a parent already added me",
+  // names their parent's email, and the server finds a matching Player row
+  // (same name + birth year) under that parent. The parent approves and the
+  // kid's login attaches to THAT record; the kid's duplicate is absorbed.
+  // Kills the two-worlds problem at the source instead of after the fact.
+  CHILD_CLAIM
 }
 
 enum FamilyInvitationStatus {
@@ -3385,6 +3401,12 @@ model FamilyInvitation {
 
   playerId String
   player   Player @relation(fields: [playerId], references: [id], onDelete: Cascade)
+
+  // CHILD_CLAIM only: the parent's EXISTING player row the kid is claiming.
+  // `playerId` above stays the kid's own self-registered row (the one they
+  // control, and the one absorbed on approval).
+  targetPlayerId String?
+  targetPlayer   Player? @relation("FamilyInvitationClaimTargets", fields: [targetPlayerId], references: [id], onDelete: Cascade)
 
   invitedEmail  String
   // Backfilled at signup (mirrors StaffInvitation) so the invite surfaces
@@ -3482,7 +3504,7 @@ model HouseLeague {
   endTime    String // "12:00"
   location   String // Denormalized venue label / free-text fallback for legacy rows
   venueId    String?
-  venue      Venue?  @relation(fields: [venueId], references: [id], onDelete: SetNull)
+  venue      Venue?   @relation(fields: [venueId], references: [id], onDelete: SetNull)
 
   // Pricing
   fee Decimal @db.Decimal(10, 2)
@@ -3566,7 +3588,7 @@ model Camp {
   dailyEndTime   String // "16:00"
   location       String // Denormalized venue label / free-text fallback for legacy rows
   venueId        String?
-  venue          Venue?  @relation(fields: [venueId], references: [id], onDelete: SetNull)
+  venue          Venue?   @relation(fields: [venueId], references: [id], onDelete: SetNull)
 
   // Multi-week pricing
   numberOfWeeks Int      @default(1)
@@ -3646,13 +3668,13 @@ model CampSignup {
   playerId String
   player   Player @relation(fields: [playerId], references: [id], onDelete: Cascade)
 
-  weeksSelected Int     @default(1)
+  weeksSelected Int        @default(1)
   // Which specific weeks (1-based within the camp's numberOfWeeks). Empty for
   // legacy count-only signups; when set, weeksSelected == weekNumbers.length.
-  weekNumbers   Int[]   @default([])
+  weekNumbers   Int[]      @default([])
   // Pattern/daily camps: the specific session dates the family picked.
   selectedDates DateTime[] @default([])
-  totalFee      Decimal @db.Decimal(10, 2)
+  totalFee      Decimal    @db.Decimal(10, 2)
 
   status CampSignupStatus @default(REGISTERED)
   notes  String?          @db.Text
@@ -3699,24 +3721,24 @@ model TrainingSession {
   tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   title       String
-  description String? @db.Text
-  sessionType TrainingSessionType  @default(GROUP_TRAINING)
+  description String?             @db.Text
+  sessionType TrainingSessionType @default(GROUP_TRAINING)
   ageGroup    String?
-  agePolicy   AgePolicy @default(PREFERRED)
+  agePolicy   AgePolicy           @default(PREFERRED)
   gender      Gender?
 
   scheduleType TrainingScheduleType @default(ONE_TIME)
   // ONE_TIME
-  startAt DateTime?
+  startAt      DateTime?
   // RECURRING ("Tuesdays 18:00, Jan 6 – Mar 30")
-  dayOfWeek Int? // 0 = Sunday ... 6 = Saturday
+  dayOfWeek    Int? // 0 = Sunday ... 6 = Saturday
   // Multi-day recurrence (QA-203): when set, wins over dayOfWeek.
-  daysOfWeek Int[] @default([])
+  daysOfWeek   Int[]                @default([])
   // Group-size tier families filter by (QA-202).
-  groupTier  TrainingGroupTier?
-  startTime String? // "18:00" wall time in the app timezone
-  startDate DateTime?
-  endDate   DateTime?
+  groupTier    TrainingGroupTier?
+  startTime    String? // "18:00" wall time in the app timezone
+  startDate    DateTime?
+  endDate      DateTime?
 
   durationMinutes Int     @default(60)
   capacity        Int? // null = unlimited; small-group = 2-4
@@ -3811,7 +3833,7 @@ model OneOnOneBooking {
 
   startAt         DateTime // absolute UTC slot start
   durationMinutes Int
-  fee             Decimal @db.Decimal(10, 2)
+  fee             Decimal  @db.Decimal(10, 2)
 
   status OneOnOneBookingStatus @default(CONFIRMED)
   notes  String?
@@ -3893,10 +3915,10 @@ model PublicPageView {
 /// phases read from this table. No relations by design (PublicPageView
 /// precedent) — this is a high-volume append-only log, not a joined entity.
 model FeedEvent {
-  id     String  @id @default(uuid())
-  userId String? // null = anonymous (signed-out impression/tap)
-  postId String? // set when the item is a real Post; null for virtual cards
-  itemKey String // postId or a virtual-card key (e.g. digest date, milestone id)
+  id        String   @id @default(uuid())
+  userId    String? // null = anonymous (signed-out impression/tap)
+  postId    String? // set when the item is a real Post; null for virtual cards
+  itemKey   String // postId or a virtual-card key (e.g. digest date, milestone id)
   eventType String // impression | dwell | tap | like | share | comment | hide
   valueMs   Int? // dwell duration in ms
   surface   String // web-feed | web-news | native-social | native-news | native-home
@@ -3931,11 +3953,11 @@ model ClubClaim {
   attempts           Int       @default(0) // wrong-code counter (cap enforced in code)
 
   // v2 verification channel: EMAIL | SMS | PROOF (paper-proof -> admin review)
-  method        String?
-  contactPoint  String? // the exact email/phone the code went to
+  method           String?
+  contactPoint     String? // the exact email/phone the code went to
   // paper-proof path: how we reach the claimer (no account yet)
-  claimantEmail String?
-  proofNote     String? @db.Text
+  claimantEmail    String?
+  proofNote        String? @db.Text
   // Optional supporting document for the proof path (CRA letter, incorporation,
   // insurance cert, photo) — webp data URL, shown to the admin reviewer.
   proofDocumentUrl String? @db.Text
@@ -4180,9 +4202,9 @@ model RefereeSettlement {
   ratePerGame      Decimal? @db.Decimal(10, 2)
   total            Decimal? @db.Decimal(10, 2)
 
-  status      RefereeSettlementStatus @default(PENDING_CONFIRM)
+  status        RefereeSettlementStatus @default(PENDING_CONFIRM)
   confirmedById String?
-  confirmedAt DateTime?
+  confirmedAt   DateTime?
 
   createdAt DateTime @default(now())
 
@@ -4232,9 +4254,9 @@ model WaiverDocument {
   league   League? @relation(fields: [leagueId], references: [id], onDelete: Cascade)
 
   title    String
-  body     String     @db.Text
-  type     WaiverType @default(CUSTOM)
-  province String     @default("ON")
+  body     String         @db.Text
+  type     WaiverType     @default(CUSTOM)
+  province String         @default("ON")
   // Who signs (owner 2026-07-29): PARENT docs flow to families on roster
   // approval; CLUB_OFFICIAL docs are signed once by the club on its season
   // entry and are NEVER emailed to parents.

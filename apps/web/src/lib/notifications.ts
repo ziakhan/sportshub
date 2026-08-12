@@ -45,6 +45,9 @@ export type NotificationType =
   // Player invitations (G3)
   | "player_invite"
   | "family_invite"
+  // Parent-child linking arc (owner 2026-08-12)
+  | "family_linked" // a guardian link completed → both sides get the moment
+  | "payment_approval_request" // under-18 asked their parent to approve and pay
   | "team_full"
   | "player_invite_accepted"
   | "player_invite_declined"
@@ -166,6 +169,9 @@ const PUSH_TYPES: ReadonlySet<NotificationType> = new Set<NotificationType>([
   "follow_request",
   "follow_approved",
   "family_invite",
+  "family_linked",
+  // The kid is standing at a closed door until the parent taps it.
+  "payment_approval_request",
   "direct_message",
   "submission_request",
   "submission_request_decided",
