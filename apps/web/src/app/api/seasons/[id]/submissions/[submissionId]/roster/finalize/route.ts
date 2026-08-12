@@ -88,7 +88,7 @@ export async function POST(
     }
     if (submission.roster.isLocked) {
       return NextResponse.json(
-        { error: "The league has locked this roster, so it is already final." },
+        { error: "This roster was submitted for play and is locked, so it is already final." },
         { status: 409 }
       )
     }
@@ -194,7 +194,7 @@ export async function DELETE(
     }
     if (submission.roster.isLocked) {
       return NextResponse.json(
-        { error: "The league has locked this roster. Ask the league for changes instead." },
+        { error: "This roster is locked for play. If you need changes, ask the league to reopen it." },
         { status: 409 }
       )
     }
