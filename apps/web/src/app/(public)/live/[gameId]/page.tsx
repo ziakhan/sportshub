@@ -49,7 +49,7 @@ export default async function LiveGamePage({ params }: { params: { gameId: strin
           <div className="mt-2 flex items-center gap-2">
             <DemoBadge />
             <HintBalloon hintKey="live-game">
-              This is live scoring: the score and play-by-play update as the table scores — no
+              This is live scoring: the score and play-by-play update as the table scores. No
               refresh, no login. Every real game works this way.
             </HintBalloon>
           </div>

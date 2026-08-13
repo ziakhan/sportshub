@@ -200,7 +200,7 @@ export default async function PublicLeagueHubPage({ params }: { params: { id: st
           </div>
           <HintBalloon hintKey="league-hub">
             Standings update the second a scoresheet is signed, and live games tick in real
-            time. Tap a live game to watch the score move — no account needed.
+            time. Tap a live game to watch the score move, no account needed.
           </HintBalloon>
         </>
       )}

@@ -24,13 +24,13 @@ const GHOST_DELAY_MS = 8_000
 const GHOST_REPLIES = [
   "Sounds good, see you Saturday. Game's at The Yard, court 2.",
   "Thanks for the heads up!",
-  "Check the calendar — everything's up to date there.",
-  "Good question — it's all on the team page.",
+  "Check the calendar, everything's up to date there.",
+  "Good question, it's all on the team page.",
 ]
 
 const GHOST_RSVP_DECLINE = "No problem, thanks for letting me know."
 const GHOST_OFFER_WELCOME =
-  "Welcome to the team! Jersey sizes are in your offer — see you at first practice."
+  "Welcome to the team! Jersey sizes are in your offer. See you at first practice."
 
 export async function recordDemoAction(
   demoSessionId: string,

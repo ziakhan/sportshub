@@ -56,7 +56,7 @@ export function WelcomePopup() {
                 <span className="text-amber-400">already live.</span>
               </h2>
               <p className="relative mt-4 max-w-md text-[15px] leading-7 text-white/85">
-                Scores, schedules, standings and stories — see exactly what your season here
+                Scores, schedules, standings and stories. See exactly what your season here
                 will feel like.
               </p>
             </>
@@ -67,7 +67,7 @@ export function WelcomePopup() {
               </h2>
               <p className="relative mt-3 max-w-md text-[15px] leading-7 text-white/85">
                 Choose a role and step into the live season. You&apos;ll create a free account
-                first — it takes a minute, and it&apos;s ready when the real season starts.
+                first. It takes a minute, and it&apos;s ready when the real season starts.
               </p>
             </>
           )}
@@ -90,7 +90,7 @@ export function WelcomePopup() {
               </button>
             </div>
             <p className="text-ink-400 mt-4 text-center text-[13px]">
-              Looking around is open to everyone — no account needed.
+              Looking around is open to everyone, no account needed.
             </p>
           </div>
         ) : (

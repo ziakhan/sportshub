@@ -39,7 +39,7 @@ export default async function middleware(req: NextRequest) {
     return NextResponse.json(
       {
         demo: true,
-        error: "You're exploring the demo — this action is view-only. Exit the demo to do it for real.",
+        error: "You're exploring the preview, so this action is view-only. Exit the preview to do it for real.",
       },
       { status: 409 }
     )
