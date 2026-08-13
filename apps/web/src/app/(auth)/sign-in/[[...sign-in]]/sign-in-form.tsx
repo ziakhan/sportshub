@@ -122,8 +122,8 @@ export function SignInForm({
   }
 
   return (
-    <div className="flex min-h-[70vh] items-center justify-center">
-      <div className="border-ink-100 shadow-panel w-full max-w-md rounded-[30px] border bg-white/95 p-8 backdrop-blur-xl">
+    <div>
+      <div className="border-ink-100 shadow-panel w-full rounded-[30px] border bg-white/95 p-8 backdrop-blur-xl">
         {magicSent ? (
           <>
             <div className="mb-6 text-center">

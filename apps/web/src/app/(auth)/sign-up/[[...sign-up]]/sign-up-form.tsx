@@ -31,7 +31,7 @@ export function SignUpForm({
   const [lastName, setLastName] = useState("")
   const [email, setEmail] = useState(invitedEmail)
   const [password, setPassword] = useState("")
-  const [confirmPassword, setConfirmPassword] = useState("")
+  const [showPassword, setShowPassword] = useState(false)
   const [platformMarketingConsent, setPlatformMarketingConsent] = useState(false)
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
@@ -44,11 +44,6 @@ export function SignUpForm({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-
-    if (password !== confirmPassword) {
-      setError("Passwords do not match")
-      return
-    }
 
     if (password.length < 8) {
       setError("Password must be at least 8 characters")
@@ -95,9 +90,10 @@ export function SignUpForm({
     }
   }
 
+  // Centring + width now come from the split auth shell (layout.tsx)
   return (
-    <div className="flex min-h-[70vh] items-center justify-center">
-      <div className="border-ink-100 shadow-panel w-full max-w-md rounded-[30px] border bg-white/95 p-8 backdrop-blur-xl">
+    <div>
+      <div className="border-ink-100 shadow-panel w-full rounded-[30px] border bg-white/95 p-8 backdrop-blur-xl">
         <div className="mb-6 text-center">
           <div className="border-hoop-100 bg-hoop-50 text-hoop-600 mb-3 inline-flex rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em]">
             Join Sportshub
@@ -151,6 +147,7 @@ export function SignUpForm({
                 value={firstName}
                 onChange={(e) => setFirstName(e.target.value)}
                 required
+                autoComplete="given-name"
                 className={inputClass}
               />
             </div>
@@ -164,6 +161,7 @@ export function SignUpForm({
                 value={lastName}
                 onChange={(e) => setLastName(e.target.value)}
                 required
+                autoComplete="family-name"
                 className={inputClass}
               />
             </div>
@@ -179,6 +177,8 @@ export function SignUpForm({
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
+              autoComplete="email"
+              inputMode="email"
               className={inputClass}
               placeholder="you@example.com"
             />
@@ -190,34 +190,34 @@ export function SignUpForm({
             ) : null}
           </div>
 
+          {/* One password field with a reveal, not two (2026-08-13). A confirm
+              field measurably raises abandonment and stops catching typos the
+              moment the user can SEE what they typed. */}
           <div>
             <label htmlFor="password" className="text-ink-700 block text-sm font-medium">
               Password
             </label>
-            <input
-              id="password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              minLength={8}
-              className={inputClass}
-            />
-          </div>
-
-          <div>
-            <label htmlFor="confirmPassword" className="text-ink-700 block text-sm font-medium">
-              Confirm Password
-            </label>
-            <input
-              id="confirmPassword"
-              type="password"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              required
-              minLength={8}
-              className={inputClass}
-            />
+            <div className="relative">
+              <input
+                id="password"
+                type={showPassword ? "text" : "password"}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                minLength={8}
+                autoComplete="new-password"
+                className={`${inputClass} pr-12`}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword((s) => !s)}
+                className="text-ink-400 hover:text-ink-700 absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold uppercase tracking-wide transition"
+                aria-label={showPassword ? "Hide password" : "Show password"}
+              >
+                {showPassword ? "Hide" : "Show"}
+              </button>
+            </div>
+            <p className="text-ink-400 mt-1 text-xs">At least 8 characters.</p>
           </div>
 
           <label htmlFor="platformMarketingConsent" className="flex items-start gap-2.5">
@@ -238,6 +238,20 @@ export function SignUpForm({
           >
             {loading ? "Creating account..." : "Create Account"}
           </button>
+
+          {/* Terms + privacy were absent entirely — on a platform holding
+              children's data (COPPA) that is a legal gap, not a design nit. */}
+          <p className="text-ink-400 text-center text-xs leading-5">
+            By creating an account you agree to our{" "}
+            <Link href="/legal/terms" className="text-ink-600 font-semibold underline">
+              Terms
+            </Link>{" "}
+            and{" "}
+            <Link href="/legal/privacy" className="text-ink-600 font-semibold underline">
+              Privacy Policy
+            </Link>
+            .
+          </p>
         </form>
 
         <p className="text-ink-500 mt-6 text-center text-sm">
