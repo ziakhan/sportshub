@@ -90,13 +90,11 @@ export function AuthBrandPanel() {
 
   return (
     <aside className="relative hidden overflow-hidden bg-gradient-to-br from-[#4338ca] via-[#2f2d78] to-[#1b1a3d] p-10 text-white lg:flex lg:flex-col xl:p-14">
-      {/* Abstract shape accent — overlapping soft discs and a thin ring.
-          (Court diagrams read as clip art here; tester 2026-08-13.) */}
-      <div className="bg-hoop-500/30 pointer-events-none absolute -right-24 -top-24 h-[26rem] w-[26rem] rounded-full blur-3xl" />
-      <div className="bg-play-400/25 pointer-events-none absolute -left-28 top-1/3 h-80 w-80 rounded-full blur-3xl" />
-      <div className="pointer-events-none absolute -bottom-32 -right-10 h-[30rem] w-[30rem] rounded-full border border-white/10" />
-      <div className="pointer-events-none absolute -bottom-16 right-24 h-72 w-72 rounded-full border border-white/[0.07]" />
-      <div className="bg-hoop-500/80 pointer-events-none absolute right-16 top-1/2 h-3 w-3 rounded-full" />
+      {/* Light, not shapes (tester 2026-08-13). Every hard-edged motif tried
+          here — bullseye, half court, outline rings, a stray dot — read as
+          debris on a gradient. Soft glows just make the panel feel lit. */}
+      <div className="bg-hoop-500/30 pointer-events-none absolute -right-32 -top-32 h-[32rem] w-[32rem] rounded-full blur-[100px]" />
+      <div className="bg-play-400/25 pointer-events-none absolute -left-32 bottom-[-8rem] h-[30rem] w-[30rem] rounded-full blur-[110px]" />
 
       <div className="relative z-10">
         <BrandWordmark size="lg" variant="reverse" />
