@@ -193,6 +193,7 @@ export function MatchupCard({
   venue,
   note,
   watch,
+  href,
   eyebrow = "Matchup of the week",
 }: {
   home: MatchupSide
@@ -201,6 +202,8 @@ export function MatchupCard({
   venue: string
   note?: string
   watch?: { name: string; jersey: string; color: string; line: string }[]
+  /** Post permalink. Omitted on the design preview, set on real posts. */
+  href?: string
   eyebrow?: string
 }) {
   return (
@@ -271,9 +274,18 @@ export function MatchupCard({
             </div>
           </div>
         )}
-        <button className="text-play-700 hover:text-play-800 mt-4 text-[13.5px] font-extrabold">
-          Read the full preview →
-        </button>
+        {href ? (
+          <Link
+            href={href}
+            className="text-play-700 hover:text-play-800 mt-4 inline-block text-[13.5px] font-extrabold"
+          >
+            Read the full preview →
+          </Link>
+        ) : (
+          <span className="text-ink-300 mt-4 inline-block text-[13.5px] font-extrabold">
+            Read the full preview →
+          </span>
+        )}
       </div>
     </article>
   )
@@ -298,6 +310,7 @@ export function RivalryCard({
   stakes,
   keyPlayers,
   when,
+  href,
 }: {
   home: MatchupSide
   away: MatchupSide
@@ -308,6 +321,8 @@ export function RivalryCard({
   stakes?: string
   keyPlayers?: { name: string; jersey: string; color: string; line: string }[]
   when: string
+  /** Post permalink. Omitted on the design preview, set on real posts. */
+  href?: string
 }) {
   return (
     <article className={shell}>
@@ -402,7 +417,16 @@ export function RivalryCard({
 
       <div className="flex items-center justify-between gap-3 px-5 py-4 sm:px-6">
         <span className="text-ink-950 text-[13px] font-extrabold">{when}</span>
-        <span className="text-play-700 text-[13.5px] font-extrabold">Read the full story →</span>
+        {/* A real link when the post has a slug. It was a <span> — decorative
+            on the preview page, but a dead end once these became real posts
+            (tester 2026-08-13). */}
+        {href ? (
+          <Link href={href} className="text-play-700 hover:text-play-800 text-[13.5px] font-extrabold">
+            Read the full story →
+          </Link>
+        ) : (
+          <span className="text-ink-300 text-[13.5px] font-extrabold">Read the full story →</span>
+        )}
       </div>
     </article>
   )

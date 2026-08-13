@@ -5,6 +5,11 @@ import { getPostBySlug, getPublishedPost } from "@/lib/queries/content"
 import { getSessionUserId } from "@/lib/auth-helpers"
 import { canManageRecapPost } from "@/lib/content/recap-authz"
 import { Badge, Card, SmartBack } from "@/components/ui"
+import {
+  LeaderboardCard,
+  MatchupCard,
+  RivalryCard,
+} from "@/components/social/cards/showcase-cards"
 import { AdminBar } from "./admin-bar"
 import { prisma } from "@youthbasketballhub/db"
 import { publicPlayerName } from "@/lib/privacy/names"
@@ -41,6 +46,17 @@ export default async function NewsPostPage({ params }: { params: { slug: string 
   const images = (post.media ?? []).filter((m: any) => m.type === "IMAGE")
   const videos = (post.media ?? []).filter((m: any) => m.type === "VIDEO_EMBED")
 
+  /** Session-cadence kinds store a card payload as JSON rather than prose. */
+  const generatedPayload = (() => {
+    if (!["LEADERBOARD", "MATCHUP", "RIVALRY", "CLUTCH_PLAY"].includes(post.kind)) return null
+    try {
+      const v = JSON.parse(post.body)
+      return v && typeof v === "object" ? v : null
+    } catch {
+      return null
+    }
+  })()
+
   return (
     <div className="container mx-auto max-w-3xl px-4 py-10 sm:px-6">
       {post.status === "PUBLISHED" && (
@@ -48,7 +64,10 @@ export default async function NewsPostPage({ params }: { params: { slug: string 
           data={newsArticleJsonLd({
             slug: params.slug,
             title: post.title,
-            body: post.body,
+            // JSON payloads must never leak into search metadata.
+            body: generatedPayload
+              ? (generatedPayload.lede ?? generatedPayload.caption ?? post.title)
+              : post.body,
             publishedAt: post.publishedAt,
             imageUrls: images.map((m: any) => m.url).filter(Boolean),
           })}
@@ -93,11 +112,31 @@ export default async function NewsPostPage({ params }: { params: { slug: string 
           </div>
         )}
 
-        <div className="text-ink-700 space-y-4 text-base leading-8">
-          {post.body.split(/\n{2,}/).map((para: string, i: number) => (
-            <p key={i}>{para}</p>
-          ))}
-        </div>
+        {/* Generated kinds carry a JSON payload in `body`, not prose — render
+            the card and its written copy instead of dumping JSON on the page
+            (2026-08-13). Everything else reads as paragraphs, unchanged. */}
+        {generatedPayload ? (
+          <div className="space-y-5">
+            {post.kind === "LEADERBOARD" && <LeaderboardCard {...(generatedPayload as any)} />}
+            {post.kind === "MATCHUP" && <MatchupCard {...(generatedPayload as any)} />}
+            {post.kind === "RIVALRY" && <RivalryCard {...(generatedPayload as any)} />}
+            {typeof generatedPayload.lede === "string" && (
+              <p className="text-ink-700 text-base leading-8">{generatedPayload.lede}</p>
+            )}
+            {typeof generatedPayload.caption === "string" && (
+              <p className="text-ink-700 text-base leading-8">{generatedPayload.caption}</p>
+            )}
+            {typeof generatedPayload.note === "string" && (
+              <p className="text-ink-700 text-base leading-8">{generatedPayload.note}</p>
+            )}
+          </div>
+        ) : (
+          <div className="text-ink-700 space-y-4 text-base leading-8">
+            {post.body.split(/\n{2,}/).map((para: string, i: number) => (
+              <p key={i}>{para}</p>
+            ))}
+          </div>
+        )}
 
         {videos.length > 0 && (
           <div className="mt-6 space-y-4">

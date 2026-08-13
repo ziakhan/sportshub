@@ -429,8 +429,9 @@ export function FeedCard({ item, manageable = false }: { item: FeedItem; managea
       {generated ? (
         <div className="pt-1.5">
           {item.kind === "LEADERBOARD" && <LeaderboardCard {...(generated as any)} />}
-          {item.kind === "MATCHUP" && <MatchupCard {...(generated as any)} />}
-          {item.kind === "RIVALRY" && <RivalryCard {...(generated as any)} />}
+          {/* href makes "Read the full …" a real link to the post's page */}
+          {item.kind === "MATCHUP" && <MatchupCard {...(generated as any)} href={href} />}
+          {item.kind === "RIVALRY" && <RivalryCard {...(generated as any)} href={href} />}
         </div>
       ) : (
         <Link href={href} onClick={logTap} className="block px-4 pt-1.5">
