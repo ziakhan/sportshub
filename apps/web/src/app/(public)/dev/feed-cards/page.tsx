@@ -1,9 +1,9 @@
 import { notFound } from "next/navigation"
 import {
   FinalCard,
+  GameWinnerCard,
   LeaderboardCard,
   MatchupCard,
-  PlayOfGameCard,
   PlayerOfGameCard,
   RivalryCard,
 } from "@/components/social/cards/showcase-cards"
@@ -21,6 +21,66 @@ const LAKESIDE = "#4f46e5"
 const NORTHGATE = "#f24e1e"
 const IRONWOOD = "#16a34a"
 const HARBOUR = "#a16642"
+
+/** All five stats run every session — five names each means 25 kids featured
+ *  per week, not one. Threes and other splits can follow the same shape. */
+const LEADERBOARDS = [
+  {
+    statLabel: "Points",
+    unit: "Points",
+    rows: [
+      { rank: 1, name: "Marcus Reid", team: "Summit Select", teamColor: LAKESIDE, jersey: "12", value: 24.6 },
+      { rank: 2, name: "Elijah Carter", team: "Lakeside Storm", teamColor: IRONWOOD, jersey: "4", value: 21.2 },
+      { rank: 3, name: "Andre Boateng", team: "Northgate Wolves", teamColor: NORTHGATE, jersey: "23", value: 19.8 },
+      { rank: 4, name: "Tyrell Munro", team: "Harbour City", teamColor: HARBOUR, jersey: "7", value: 18.1 },
+      { rank: 5, name: "Devon Clarke", team: "Ironwood Elite", teamColor: IRONWOOD, jersey: "31", value: 17.4 },
+    ],
+  },
+  {
+    statLabel: "Rebounds",
+    unit: "Rebounds",
+    rows: [
+      { rank: 1, name: "Elijah Carter", team: "Lakeside Storm", teamColor: IRONWOOD, jersey: "4", value: 12.4 },
+      { rank: 2, name: "Kwame Osei", team: "Ironwood Elite", teamColor: IRONWOOD, jersey: "15", value: 10.8 },
+      { rank: 3, name: "Andre Boateng", team: "Northgate Wolves", teamColor: NORTHGATE, jersey: "23", value: 9.9 },
+      { rank: 4, name: "Marcus Reid", team: "Summit Select", teamColor: LAKESIDE, jersey: "12", value: 8.6 },
+      { rank: 5, name: "Sam Whitfield", team: "Harbour City", teamColor: HARBOUR, jersey: "9", value: 8.2 },
+    ],
+  },
+  {
+    statLabel: "Assists",
+    unit: "Assists",
+    rows: [
+      { rank: 1, name: "Tyrell Munro", team: "Harbour City", teamColor: HARBOUR, jersey: "7", value: 8.1 },
+      { rank: 2, name: "Marcus Reid", team: "Summit Select", teamColor: LAKESIDE, jersey: "12", value: 6.9 },
+      { rank: 3, name: "Jaden Cole", team: "Lakeside Storm", teamColor: LAKESIDE, jersey: "3", value: 6.2 },
+      { rank: 4, name: "Devon Clarke", team: "Ironwood Elite", teamColor: IRONWOOD, jersey: "31", value: 5.4 },
+      { rank: 5, name: "Noah Adeyemi", team: "Northgate Wolves", teamColor: NORTHGATE, jersey: "8", value: 4.8 },
+    ],
+  },
+  {
+    statLabel: "Steals",
+    unit: "Steals",
+    rows: [
+      { rank: 1, name: "Jaden Cole", team: "Lakeside Storm", teamColor: LAKESIDE, jersey: "3", value: 3.6 },
+      { rank: 2, name: "Noah Adeyemi", team: "Northgate Wolves", teamColor: NORTHGATE, jersey: "8", value: 3.1 },
+      { rank: 3, name: "Tyrell Munro", team: "Harbour City", teamColor: HARBOUR, jersey: "7", value: 2.8 },
+      { rank: 4, name: "Marcus Reid", team: "Summit Select", teamColor: LAKESIDE, jersey: "12", value: 2.4 },
+      { rank: 5, name: "Kwame Osei", team: "Ironwood Elite", teamColor: IRONWOOD, jersey: "15", value: 2.1 },
+    ],
+  },
+  {
+    statLabel: "Blocks",
+    unit: "Blocks",
+    rows: [
+      { rank: 1, name: "Kwame Osei", team: "Ironwood Elite", teamColor: IRONWOOD, jersey: "15", value: 3.2 },
+      { rank: 2, name: "Elijah Carter", team: "Lakeside Storm", teamColor: IRONWOOD, jersey: "4", value: 2.7 },
+      { rank: 3, name: "Sam Whitfield", team: "Harbour City", teamColor: HARBOUR, jersey: "9", value: 2.0 },
+      { rank: 4, name: "Andre Boateng", team: "Northgate Wolves", teamColor: NORTHGATE, jersey: "23", value: 1.6 },
+      { rank: 5, name: "Devon Clarke", team: "Ironwood Elite", teamColor: IRONWOOD, jersey: "31", value: 1.3 },
+    ],
+  },
+]
 
 export default function FeedCardsPreview() {
   // Belt and braces: `/dev` is already a DEV_ONLY_PREFIX in public-paths, so
@@ -47,18 +107,11 @@ export default function FeedCardsPreview() {
             when="Posts after each session or weekend"
             why="Turns the whole league into a competition instead of spotlighting one player. Five names per post, six stats to run — that is thirty kids featured a week, not one."
           >
-            <LeaderboardCard
-              statLabel="Points"
-              unit="Points"
-              period="Week 6 · Grade 10"
-              rows={[
-                { rank: 1, name: "Marcus Reid", team: "Summit Select", teamColor: LAKESIDE, jersey: "12", value: 24.6 },
-                { rank: 2, name: "Elijah Carter", team: "Lakeside Storm", teamColor: IRONWOOD, jersey: "4", value: 21.2 },
-                { rank: 3, name: "Andre Boateng", team: "Northgate Wolves", teamColor: NORTHGATE, jersey: "23", value: 19.8 },
-                { rank: 4, name: "Tyrell Munro", team: "Harbour City", teamColor: HARBOUR, jersey: "7", value: 18.1 },
-                { rank: 5, name: "Devon Clarke", team: "Ironwood Elite", teamColor: IRONWOOD, jersey: "31", value: 17.4 },
-              ]}
-            />
+            <div className="space-y-5">
+              {LEADERBOARDS.map((b) => (
+                <LeaderboardCard key={b.statLabel} {...b} period="Week 6 · Grade 10" />
+              ))}
+            </div>
           </Section>
 
           <Section
@@ -71,7 +124,13 @@ export default function FeedCardsPreview() {
               away={{ name: "Harbour City Hoops", short: "Harbour City", record: "8-2", color: HARBOUR, crest: "HC" }}
               when="Saturday · 2:30 PM"
               venue="Six Park East · Court 3"
-              note="First against second, and the only unbeaten record in Grade 10 is on the line."
+              note="Ironwood have not lost since October, and they have done it the hard way — four of their last six were decided by a single possession. Harbour City arrive as the only side to hold them under fifty, back in the November meeting Ironwood escaped 48–46. Win here and Harbour City draw level at the top with three to play."
+              watch={[
+                { name: "Kwame Osei", jersey: "15", color: IRONWOOD, line: "10.8 REB · 3.2 BLK" },
+                { name: "Devon Clarke", jersey: "31", color: IRONWOOD, line: "17.4 PTS · 5.4 AST" },
+                { name: "Tyrell Munro", jersey: "7", color: HARBOUR, line: "18.1 PTS · 8.1 AST" },
+                { name: "Sam Whitfield", jersey: "9", color: HARBOUR, line: "8.2 REB · 2.0 BLK" },
+              ]}
             />
           </Section>
 
@@ -93,11 +152,11 @@ export default function FeedCardsPreview() {
           </Section>
 
           <Section
-            title="Play of the game"
-            when="Posts after a final"
-            why="The play-by-play already flags scoring plays with a running score, so the go-ahead basket can be found automatically — no extra data entry."
+            title="Game winner"
+            when="Only when a game turns on one moment"
+            why="Renamed from 'play of the game' — posting one after every routine final would devalue it. Scarcity is what makes this worth opening. The play-by-play already flags scoring plays with a running score, so the go-ahead bucket is findable automatically."
           >
-            <PlayOfGameCard
+            <GameWinnerCard
               playerName="Marcus Reid"
               jersey="12"
               teamColor={LAKESIDE}
@@ -123,7 +182,14 @@ export default function FeedCardsPreview() {
                 { value: 11, unit: "REB" },
                 { value: 5, unit: "AST" },
               ]}
-              gameLine="A double-double in a six-point win, plus the block that ended it."
+              gameLine="A double-double in a six-point win, and the block with eleven seconds left that ended Northgate's last possession."
+              opponentAward={{
+                playerName: "Andre Boateng",
+                jersey: "23",
+                team: "Northgate Wolves",
+                teamColor: NORTHGATE,
+                stat: "19 PTS",
+              }}
             />
           </Section>
 
