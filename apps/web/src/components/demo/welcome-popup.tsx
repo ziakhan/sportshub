@@ -89,16 +89,96 @@ const ALSO_INCLUDED = [
   "E-transfers",
 ]
 
-const ROLES: { key: string; title: string; blurb: string; soon?: boolean }[] = [
-  { key: "parent", title: "Parent", blurb: "Your kids, one calendar, live games." },
-  { key: "player", title: "Player", blurb: "Your team, your stats, your season." },
-  { key: "coach", title: "Coach", blurb: "Roster, RSVPs, chat, game day." },
-  { key: "club", title: "Club owner", blurb: "Teams, tryouts, offers, payments." },
-  { key: "league", title: "League", blurb: "Schedule, standings, playoffs." },
-  { key: "referee", title: "Referee", blurb: "Shifts and sign-offs.", soon: true },
-  { key: "trainer", title: "Trainer", blurb: "Listings and bookings.", soon: true },
-  { key: "media", title: "Photo & video", blurb: "Shoot and tag the games.", soon: true },
+/**
+ * Step two (2026-08-13). Was eight cards, three of them dead "coming soon"
+ * boxes that stranded League — a live persona — in a row of disabled ones.
+ * Now: the five that actually work, each colour-coded on the platform's own
+ * token ramps with its own mark (colour NEVER carries the meaning alone —
+ * icon + label do), and the unreleased roles demoted to one quiet line.
+ * `tile`/`edge` shade pairs are picked per ramp: gold has no 200/700 step.
+ */
+const ROLES: {
+  key: string
+  title: string
+  blurb: string
+  tile: string
+  edge: string
+  icon: JSX.Element
+}[] = [
+  {
+    key: "parent",
+    title: "Parent",
+    blurb: "Your kids, one calendar, live games.",
+    tile: "bg-court-50 text-court-700 ring-court-200",
+    edge: "hover:border-court-300",
+    icon: (
+      <>
+        <path d="M16 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" />
+        <path d="M8 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z" />
+        <path d="M8 14c-3 0-5 1.5-5 4v1h10v-1c0-2.5-2-4-5-4Z" />
+        <path d="M16 13c2.2 0 4 1.1 4 3v1h-4" />
+      </>
+    ),
+  },
+  {
+    key: "player",
+    title: "Player",
+    blurb: "Your team, your stats, your season.",
+    tile: "bg-play-50 text-play-700 ring-play-200",
+    edge: "hover:border-play-300",
+    icon: (
+      <>
+        <circle cx="12" cy="12" r="8.5" />
+        <path d="M12 3.5a14 14 0 0 1 0 17M12 3.5a14 14 0 0 0 0 17M3.5 12h17" />
+      </>
+    ),
+  },
+  {
+    key: "coach",
+    title: "Coach",
+    blurb: "Roster, RSVPs, chat, game day.",
+    tile: "bg-hoop-50 text-hoop-700 ring-hoop-200",
+    edge: "hover:border-hoop-300",
+    icon: (
+      <>
+        <rect x="5" y="3.5" width="14" height="17" rx="2.5" />
+        <path d="M9 3.5h6v3H9z" />
+        <path d="M9 11h6M9 15h4" />
+      </>
+    ),
+  },
+  {
+    key: "club",
+    title: "Club owner",
+    blurb: "Teams, tryouts, offers, payments.",
+    tile: "bg-gold-50 text-gold-600 ring-gold-100",
+    edge: "hover:border-gold-400",
+    icon: (
+      <>
+        <path d="M3 10 12 4l9 6" />
+        <path d="M5 10v9.5h14V10" />
+        <path d="M9.5 19.5V14h5v5.5" />
+      </>
+    ),
+  },
+  {
+    key: "league",
+    title: "League",
+    blurb: "Schedule, standings, playoffs.",
+    tile: "bg-clay-50 text-clay-700 ring-clay-200",
+    edge: "hover:border-clay-300",
+    icon: (
+      <>
+        <path d="M7.5 4h9v5a4.5 4.5 0 0 1-9 0V4Z" />
+        <path d="M7.5 6H5a2.5 2.5 0 0 0 2.5 3M16.5 6H19a2.5 2.5 0 0 1-2.5 3" />
+        <path d="M12 13.5V17M9 20h6" />
+      </>
+    ),
+  },
 ]
+
+/** Not built yet — one line, not three dead cards. */
+const COMING_SOON = "Referee, trainer and photographer roles are coming soon."
 
 export function WelcomePopup() {
   const [open, setOpen] = useState(true)
@@ -111,18 +191,31 @@ export function WelcomePopup() {
       <div className="relative max-h-[92vh] w-full max-w-2xl overflow-y-auto rounded-[32px] bg-white shadow-2xl">
         {/* Court hero — shared by both steps */}
         <div className="relative overflow-hidden bg-gradient-to-br from-[#101c36] via-[#1b2a4a] to-[#0d1526] px-8 pb-8 pt-9 text-white sm:px-10">
+          {/* Half court seen from above — baseline, key, free-throw circle,
+              three-point arc, backboard and rim. The old motif was concentric
+              circles with a line through them, which read as an archery
+              target rather than basketball (tester, 2026-08-13). */}
           <svg
-            className="pointer-events-none absolute -right-16 -top-24 h-80 w-80 opacity-25"
+            className="pointer-events-none absolute -right-14 -top-16 h-72 w-72 opacity-[0.28] sm:h-80 sm:w-80"
             viewBox="0 0 200 200"
             fill="none"
             stroke="#f59e0b"
             strokeWidth="2.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
             aria-hidden
           >
-            <circle cx="100" cy="100" r="96" />
-            <circle cx="100" cy="100" r="58" />
-            <circle cx="100" cy="100" r="14" fill="#f59e0b" stroke="none" opacity="0.9" />
-            <path d="M4 100h192" />
+            {/* baseline */}
+            <path d="M8 12h184" />
+            {/* three-point line: corners straight off the baseline, then the arc */}
+            <path d="M24 12v40c0 72 152 72 152 0V12" />
+            {/* the key / paint */}
+            <path d="M70 12v68h60V12" />
+            {/* free-throw circle */}
+            <circle cx="100" cy="80" r="22" />
+            {/* backboard + rim */}
+            <path d="M86 25h28" strokeWidth="4" />
+            <circle cx="100" cy="33.5" r="4.5" />
           </svg>
           <p className="relative inline-flex items-center gap-2 rounded-full bg-amber-500 px-4 py-1.5 text-sm font-black uppercase tracking-[0.14em] text-amber-950 shadow">
             Launching this fall
@@ -142,11 +235,12 @@ export function WelcomePopup() {
           ) : (
             <>
               <h2 className="relative mt-4 text-3xl font-black leading-tight sm:text-4xl">
-                Pick your seat <span className="text-amber-400">in the gym.</span>
+                Which one <span className="text-amber-400">are you?</span>
               </h2>
               <p className="relative mt-3 max-w-md text-[15px] leading-7 text-white/85">
-                Choose a role and step into the live season. You&apos;ll create a free account
-                first. It takes a minute, and it&apos;s ready when the real season starts.
+                Pick your seat in the gym and step into the live season. You&apos;ll create a
+                free account first — it takes a minute, and it&apos;s ready when the real season
+                starts.
               </p>
             </>
           )}
@@ -230,34 +324,57 @@ export function WelcomePopup() {
           </div>
         ) : (
           <div className="p-7 sm:p-8">
-            <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
-              {ROLES.map((r) =>
-                r.soon ? (
-                  <div
-                    key={r.key}
-                    className="border-ink-100 rounded-2xl border bg-white p-3.5 opacity-60"
+            {/* Flex-wrap, not grid: five cards leave an orphan in a 3-col
+                grid, and the orphan was League — a live persona reading as
+                disabled next to the old "soon" boxes. Centred rows instead. */}
+            <div className="flex flex-wrap justify-center gap-2.5">
+              {ROLES.map((r, i) => (
+                <a
+                  key={r.key}
+                  href={`/demo/start?persona=${r.key}`}
+                  className={`group border-ink-100 reveal relative basis-[calc(50%-0.32rem)] rounded-2xl border bg-white p-4 transition hover:-translate-y-0.5 hover:shadow-lg sm:basis-[calc(33.333%-0.67rem)] ${r.edge}`}
+                  style={{ animationDelay: `${i * 55}ms` }}
+                >
+                  <span
+                    className={`flex h-10 w-10 items-center justify-center rounded-xl ring-1 ring-inset ${r.tile}`}
                   >
-                    <span className="text-ink-900 block text-[15px] font-bold">{r.title}</span>
-                    <span className="text-ink-500 mt-0.5 block text-xs leading-4">{r.blurb}</span>
-                    <span className="text-ink-500 mt-2 inline-block rounded-full bg-ink-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide">
-                      Coming soon
-                    </span>
-                  </div>
-                ) : (
-                  <a
-                    key={r.key}
-                    href={`/demo/start?persona=${r.key}`}
-                    className="rounded-2xl border border-amber-200 bg-amber-50/70 p-3.5 transition hover:-translate-y-0.5 hover:border-amber-400 hover:shadow-md"
+                    <svg
+                      className="h-5 w-5"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1.9"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      aria-hidden
+                    >
+                      {r.icon}
+                    </svg>
+                  </span>
+                  <span className="text-ink-950 mt-3 block text-[15.5px] font-bold leading-5">
+                    {r.title}
+                  </span>
+                  <span className="text-ink-500 mt-1 block text-[12.5px] leading-4">{r.blurb}</span>
+                  <span
+                    className="text-ink-300 group-hover:text-ink-500 absolute right-3.5 top-4 transition-transform group-hover:translate-x-0.5"
+                    aria-hidden
                   >
-                    <span className="text-ink-950 block text-[15px] font-bold">{r.title}</span>
-                    <span className="text-ink-600 mt-0.5 block text-xs leading-4">{r.blurb}</span>
-                    <span className="mt-2 inline-block text-[12px] font-bold text-amber-700">
-                      Start free →
-                    </span>
-                  </a>
-                )
-              )}
+                    <svg
+                      className="h-4 w-4"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2.4"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="M9 6l6 6-6 6" />
+                    </svg>
+                  </span>
+                </a>
+              ))}
             </div>
+            <p className="text-ink-400 mt-4 text-center text-[12.5px]">{COMING_SOON}</p>
             <div className="mt-5 flex items-center justify-between">
               <button
                 onClick={() => setStep(1)}
