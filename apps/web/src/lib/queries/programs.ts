@@ -27,6 +27,12 @@ export interface EventItem {
   currency: string
   primaryColor: string
   spotsInfo: string
+  /** Raw counts so the card can compute genuine scarcity ("3 spots left").
+   *  `spotsInfo` is a pre-baked string and can't be reasoned about. Research
+   *  on scarcity is explicit that it must be authentic and only shown near
+   *  the limit — that needs numbers, not prose. */
+  signups?: number
+  capacity?: number | null
   extra?: string
   status?: string
   feeUnit?: string
@@ -124,6 +130,8 @@ export async function getAllPrograms(): Promise<EventItem[]> {
       currency: t.tenant?.currency || "CAD",
       primaryColor: t.tenant?.branding?.primaryColor || "#f97316",
       spotsInfo: `${t._count.signups}${t.maxParticipants ? `/${t.maxParticipants}` : ""} signed up`,
+      signups: t._count.signups,
+      capacity: t.maxParticipants ?? null,
       href: `/tryout/${t.id}`,
       clubRating: ratingOf(t.tenantId)?.average,
       clubReviewCount: ratingOf(t.tenantId)?.count,
@@ -146,6 +154,8 @@ export async function getAllPrograms(): Promise<EventItem[]> {
       currency: l.tenant?.currency || "CAD",
       primaryColor: l.tenant?.branding?.primaryColor || "#f97316",
       spotsInfo: `${l._count.signups}${l.maxParticipants ? `/${l.maxParticipants}` : ""} registered`,
+      signups: l._count.signups,
+      capacity: l.maxParticipants ?? null,
       extra: `${l.daysOfWeek} ${l.startTime}-${l.endTime}`,
       href: `/house-league/${l.id}`,
       clubRating: ratingOf(l.tenantId)?.average,
@@ -170,6 +180,8 @@ export async function getAllPrograms(): Promise<EventItem[]> {
       currency: c.tenant?.currency || "CAD",
       primaryColor: c.tenant?.branding?.primaryColor || "#f97316",
       spotsInfo: `${c._count.signups}${c.maxParticipants ? `/${c.maxParticipants}` : ""} registered`,
+      signups: c._count.signups,
+      capacity: c.maxParticipants ?? null,
       extra: campIsConsecutive
         ? `${TYPE_LABELS[c.campType] || c.campType} • ${c.numberOfWeeks} week${c.numberOfWeeks !== 1 ? "s" : ""}`
         : `${TYPE_LABELS[c.campType] || c.campType} • ${campScheduleText(c)}`,
@@ -196,6 +208,8 @@ export async function getAllPrograms(): Promise<EventItem[]> {
       currency: s.tenant?.currency || "CAD",
       primaryColor: s.tenant?.branding?.primaryColor || "#f97316",
       spotsInfo: `${s._count.signups}${s.capacity ? `/${s.capacity}` : ""} registered`,
+      signups: s._count.signups,
+      capacity: s.capacity ?? null,
       extra: `${trainingTypeLabel(s.sessionType)} • ${formatTrainingSchedule(s)}`,
       href: `/training/${s.id}`,
       clubRating: ratingOf(s.tenantId)?.average,

@@ -58,6 +58,55 @@ export function EventsBrowser({
     return true
   })
 
+  /**
+   * Each product type is bought on a different fact (2026-08-13). A tryout is
+   * a deadline, a camp is a block of dates, a house league is its weekly
+   * shape, a tournament is the field, a training block is its cadence.
+   * Previously every card showed the same date/location/fee stack, so four
+   * genuinely different products read identically. This is the line that
+   * differs — same skeleton, different emphasis.
+   */
+  const typeLead = (e: EventItem): string => {
+    const start = new Date(e.startDate)
+    const days = Math.ceil((start.getTime() - Date.now()) / 86_400_000)
+    const dateRange = e.endDate
+      ? `${format(start, "MMM d")} – ${format(new Date(e.endDate), "MMM d")}`
+      : format(start, "EEE, MMM d")
+    switch (e.type) {
+      case "tryout":
+        return days > 0
+          ? `Tryout in ${days} day${days === 1 ? "" : "s"} · ${format(start, "MMM d")}`
+          : `Tryout ${dateRange}`
+      case "camp":
+        return `${dateRange}${e.extra ? ` · ${e.extra.split("·")[0].trim()}` : ""}`
+      case "house-league":
+        return e.extra ? `Weekly · ${e.extra}` : `Season from ${format(start, "MMM d")}`
+      case "tournament":
+        return `${dateRange} · ${e.spotsInfo}`
+      case "training":
+        return e.extra ?? `Starts ${format(start, "MMM d")}`
+      default:
+        return dateRange
+    }
+  }
+
+  /** Genuine remaining capacity, or null when a program has no cap. */
+  const spotsLeft = (e: EventItem): number | null =>
+    e.capacity != null && e.capacity > 0 && e.signups != null
+      ? Math.max(0, e.capacity - e.signups)
+      : null
+
+  /** "TL" from "Toronto Lords" — grade/age noise stripped. */
+  const crestOf = (name: string) =>
+    (name || "")
+      .replace(/\b(grade|gr\.?)\s*\d+\w*/gi, "")
+      .replace(/\bu\d+\b/gi, "")
+      .trim()
+      .split(/\s+/)
+      .slice(0, 2)
+      .map((w) => w[0]?.toUpperCase() ?? "")
+      .join("") || "SH"
+
   const typeBadge: Record<string, { bg: string; text: string; label: string }> = {
     tryout: { bg: "bg-hoop-50", text: "text-hoop-600", label: "Tryout" },
     "house-league": { bg: "bg-court-50", text: "text-court-700", label: "House League" },
@@ -112,57 +161,102 @@ export function EventsBrowser({
               <Link
                 key={`${event.type}-${event.id}`}
                 href={event.href}
-                className="card-lift rounded-[28px] border border-ink-100 bg-white overflow-hidden shadow-soft"
+                className="card-lift group flex flex-col overflow-hidden rounded-[28px] border border-ink-100 bg-white shadow-soft"
               >
-                <div className="h-2" style={{ backgroundColor: event.primaryColor }} />
-                <div className="p-5">
-                  <div className="flex items-start justify-between mb-2">
-                    <span className="flex flex-wrap items-center gap-1.5">
-                      <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${badge.bg} ${badge.text}`}>
-                        {badge.label}
-                      </span>
-                      {event.type === "tournament" && event.status === "REGISTRATION" && (
-                        <Badge tone="court" dot>Open for teams</Badge>
-                      )}
-                      {event.type === "tournament" && event.status === "IN_PROGRESS" && (
-                        <Badge tone="live" dot>Underway</Badge>
-                      )}
+                {/* Branded cover — no photos exist for programs, so the club's
+                    own colour and crest do the work (same idea as the recap
+                    matchup covers). Gives the grid the visual pull it lacked. */}
+                <div
+                  className="relative h-28 overflow-hidden"
+                  style={{
+                    background: `linear-gradient(125deg, ${event.primaryColor}, ${event.primaryColor}b0 55%, rgba(15,23,42,0.88))`,
+                  }}
+                >
+                  <span className="pointer-events-none absolute -right-6 -top-8 h-32 w-32 rounded-full bg-white/15 blur-2xl" />
+                  <span className="font-condensed pointer-events-none absolute -bottom-3 right-3 text-[4rem] font-black leading-none text-white/15">
+                    {crestOf(event.clubName)}
+                  </span>
+                  <div className="absolute inset-x-0 top-0 flex items-start justify-between gap-2 p-3.5">
+                    <span className="rounded-full bg-black/35 px-2.5 py-1 text-[10.5px] font-black uppercase tracking-[0.14em] text-white backdrop-blur-sm">
+                      {badge.label}
                     </span>
-                    <span className="text-xs text-ink-400">{event.spotsInfo}</span>
+                    {/* Authentic scarcity only: shown near the limit, never
+                        invented (research: fake urgency costs trust). */}
+                    {spotsLeft(event) != null && spotsLeft(event)! <= 5 && spotsLeft(event)! > 0 && (
+                      <span className="rounded-full bg-amber-400 px-2.5 py-1 text-[10.5px] font-black uppercase tracking-wider text-amber-950">
+                        {spotsLeft(event)} spot{spotsLeft(event) === 1 ? "" : "s"} left
+                      </span>
+                    )}
+                    {spotsLeft(event) === 0 && (
+                      <span className="rounded-full bg-ink-900/70 px-2.5 py-1 text-[10.5px] font-black uppercase tracking-wider text-white backdrop-blur-sm">
+                        Full
+                      </span>
+                    )}
+                  </div>
+                  {/* The line that differs BY TYPE — a tryout is bought on the
+                      deadline, a camp on the dates, a league on its shape. */}
+                  <p className="absolute bottom-3 left-3.5 right-24 truncate text-[13px] font-bold text-white">
+                    {typeLead(event)}
+                  </p>
+                </div>
+
+                <div className="flex flex-1 flex-col p-5">
+                  <div className="flex items-center gap-1.5">
+                    {event.type === "tournament" && event.status === "REGISTRATION" && (
+                      <Badge tone="court" dot>Open for teams</Badge>
+                    )}
+                    {event.type === "tournament" && event.status === "IN_PROGRESS" && (
+                      <Badge tone="live" dot>Underway</Badge>
+                    )}
                   </div>
 
-                  <h3 className="font-semibold text-ink-950 mb-1">{event.name}</h3>
+                  <h3 className="text-ink-950 mt-1 text-[17px] font-extrabold leading-snug">
+                    {event.name}
+                  </h3>
+
+                  {/* Club carries its own crest and colour — families choosing
+                      between two camps are largely choosing between two clubs. */}
                   {event.clubName && (
-                    <p className={`text-sm text-ink-500 ${event.clubRating != null ? "mb-0.5" : "mb-2"}`}>
-                      {event.clubName}
-                    </p>
-                  )}
-                  {event.clubRating != null && (
-                    <div className="mb-2">
-                      <StarRating rating={event.clubRating} count={event.clubReviewCount} />
+                    <div className="mt-2 flex items-center gap-2">
+                      <span
+                        className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-[10px] font-black text-white"
+                        style={{ backgroundColor: event.primaryColor }}
+                      >
+                        {crestOf(event.clubName)}
+                      </span>
+                      <span className="min-w-0 flex-1">
+                        <span className="text-ink-800 block truncate text-[13px] font-bold">
+                          {event.clubName}
+                        </span>
+                        {event.clubRating != null && (
+                          <StarRating rating={event.clubRating} count={event.clubReviewCount} />
+                        )}
+                      </span>
                     </div>
                   )}
 
-                  <div className="space-y-1 text-xs text-ink-500">
-                    <div>
-                      {format(new Date(event.startDate), "MMM d, yyyy")}
-                      {event.endDate && ` - ${format(new Date(event.endDate), "MMM d, yyyy")}`}
-                    </div>
+                  <div className="text-ink-500 mt-3 space-y-1 text-[12.5px]">
                     <div>{event.location}</div>
                     {(event.ageGroup || event.gender) && (
                       <div>
-                        {event.ageGroup}{event.gender ? ` • ${event.gender}` : ""}
+                        {event.ageGroup}
+                        {event.gender ? ` • ${event.gender}` : ""}
                       </div>
                     )}
-                    {event.extra && <div>{event.extra}</div>}
+                    {event.extra && <div className="truncate">{event.extra}</div>}
                   </div>
 
-                  <div className="mt-3 pt-3 border-t border-ink-100 flex items-center justify-between">
-                    <span className="text-lg font-bold text-hoop-600">
-                      {event.fee === 0 ? "FREE" : formatCurrency(event.fee, event.currency)}
-                      {event.feeUnit && event.fee !== 0 && (
-                        <span className="ml-1 text-xs font-normal text-ink-400">{event.feeUnit}</span>
-                      )}
+                  <div className="border-ink-100 mt-auto flex items-end justify-between gap-2 border-t pt-3">
+                    <span>
+                      <span className="font-condensed text-hoop-600 block text-[24px] font-black leading-none">
+                        {event.fee === 0 ? "FREE" : formatCurrency(event.fee, event.currency)}
+                      </span>
+                      <span className="text-ink-400 mt-0.5 block text-[11.5px] font-semibold">
+                        {event.feeUnit && event.fee !== 0 ? event.feeUnit : event.spotsInfo}
+                      </span>
+                    </span>
+                    <span className="text-play-700 group-hover:text-play-800 text-[12.5px] font-extrabold">
+                      View →
                     </span>
                   </div>
                 </div>

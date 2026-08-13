@@ -15,17 +15,31 @@ import { AuthBrandPanel } from "./auth-brand-panel"
 
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="min-h-screen lg:grid lg:grid-cols-[1fr_1fr] xl:grid-cols-[1.02fr_1fr]">
+    /**
+     * FLEX, not grid (2026-08-13). The grid version relied on the panel's
+     * `hidden`/`lg:flex` agreeing with `lg:grid-cols-[1fr_1fr]`; if the panel
+     * ever failed to claim its column the form could end up in a zero-width
+     * track and the page looked empty. Flex with an explicit basis on the
+     * panel and `flex-1 min-w-0` on the form means the FORM SIDE ALWAYS HAS
+     * WIDTH, at every viewport, whatever the panel does.
+     */
+    <div className="flex min-h-screen w-full">
       <Suspense
         fallback={
-          <aside className="hidden bg-gradient-to-br from-[#4338ca] via-[#2f2d78] to-[#1b1a3d] lg:block" />
+          <aside className="hidden shrink-0 basis-1/2 bg-gradient-to-br from-[#4338ca] via-[#2f2d78] to-[#1b1a3d] lg:block" />
         }
       >
         <AuthBrandPanel />
       </Suspense>
 
       {/* ── Form side ──────────────────────────────────────────────────── */}
-      <main className="bg-ink-50/70 relative flex min-h-screen flex-col items-center justify-center px-4 py-10 sm:px-8 lg:px-12">
+      {/* `overflow-hidden` is LOad-BEARING, not cosmetic: the two decorative
+          blobs below sit at -right-24/-left-24 (288px wide, 96px outside the
+          box). Unclipped they widen the document past the viewport, the page
+          gains a horizontal scrollbar, and scrolling into that gutter shows a
+          bare white strip with no content — which is exactly what the layout
+          "disappearing" at non-desktop widths was (owner, 2026-08-13). */}
+      <main className="bg-ink-50/70 relative flex min-h-screen w-full min-w-0 flex-1 flex-col items-center justify-center overflow-hidden px-4 py-10 sm:px-8 lg:px-12">
         <div className="bg-play-200/40 pointer-events-none absolute -right-24 top-10 h-72 w-72 rounded-full blur-3xl lg:hidden" />
         <div className="bg-hoop-200/40 pointer-events-none absolute -left-24 bottom-10 h-72 w-72 rounded-full blur-3xl lg:hidden" />
 
