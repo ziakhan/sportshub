@@ -1,5 +1,6 @@
 "use client"
 
+import Link from "next/link"
 import { useSearchParams } from "next/navigation"
 import { BrandWordmark } from "@/components/brand/wordmark"
 
@@ -16,65 +17,44 @@ import { BrandWordmark } from "@/components/brand/wordmark"
  * searchParams — only pages do — and this needs the query string.
  */
 
-type Pitch = { headline: string; accent: string; proof: [string, string, string] }
+/** The headline is the BRAND promise — constant for everyone, so the panel
+ *  always says the same thing about SportsHub. Only the proof points below
+ *  it retarget to whoever is arriving (tester ruling 2026-08-13). */
+const HEADLINE = { lead: "Every game, every kid,", accent: "one place." }
 
-const PITCHES: Record<string, Pitch> = {
-  parent: {
-    headline: "Every game, every kid,",
-    accent: "one place.",
-    proof: [
-      "Live scores when you can't be courtside",
-      "RSVP for every kid in one tap",
-      "Registration, waivers and fees, sorted",
-    ],
-  },
-  player: {
-    headline: "Your season,",
-    accent: "in your pocket.",
-    proof: [
-      "Your stat line after every game",
-      "Team chat, schedule and RSVPs",
-      "A player page worth sharing",
-    ],
-  },
-  coach: {
-    headline: "Your team,",
-    accent: "sorted.",
-    proof: [
-      "Who's in and who's out before you plan",
-      "Roster, chat and game day in one place",
-      "Practices the parents actually see",
-    ],
-  },
-  club: {
-    headline: "Run the club,",
-    accent: "not the paperwork.",
-    proof: [
-      "Tryouts, offers and rosters end to end",
-      "Payments, installments and receipts",
-      "One club page every family bookmarks",
-    ],
-  },
-  league: {
-    headline: "A whole season,",
-    accent: "built in one click.",
-    proof: [
-      "Schedules that respect every gym",
-      "Standings, divisions and playoffs",
-      "Referees assigned and settled",
-    ],
-  },
-}
-
-const DEFAULT_PITCH: Pitch = {
-  headline: "Every game, every kid,",
-  accent: "one place.",
-  proof: [
-    "Live scores, box scores and recaps",
-    "One calendar for every kid and team",
-    "Registration, waivers and payments in one place",
+const PROOF_BY_PERSONA: Record<string, [string, string, string]> = {
+  parent: [
+    "Live scores when you can't be courtside",
+    "RSVP for every kid in one tap",
+    "Registration, waivers and fees, sorted",
+  ],
+  player: [
+    "Your stat line after every game",
+    "Team chat, schedule and RSVPs",
+    "A player page worth sharing",
+  ],
+  coach: [
+    "Who's in and who's out before you plan",
+    "Roster, chat and game day in one place",
+    "Practices the parents actually see",
+  ],
+  club: [
+    "Tryouts, offers and rosters end to end",
+    "Payments, installments and receipts",
+    "One club page every family bookmarks",
+  ],
+  league: [
+    "Schedules that respect every gym",
+    "Standings, divisions and playoffs",
+    "Referees assigned and settled",
   ],
 }
+
+const DEFAULT_PROOF: [string, string, string] = [
+  "Live scores, box scores and recaps",
+  "One calendar for every kid and team",
+  "Registration, waivers and payments in one place",
+]
 
 /** Pull the demo persona back out of the callbackUrl we were handed. */
 function personaFrom(callbackUrl: string | null): string | null {
@@ -86,7 +66,7 @@ function personaFrom(callbackUrl: string | null): string | null {
 export function AuthBrandPanel() {
   const params = useSearchParams()
   const persona = personaFrom(params?.get("callbackUrl") ?? null)
-  const pitch = (persona && PITCHES[persona]) || DEFAULT_PITCH
+  const proof = (persona && PROOF_BY_PERSONA[persona]) || DEFAULT_PROOF
 
   return (
     <aside className="relative hidden overflow-hidden bg-gradient-to-br from-[#4338ca] via-[#2f2d78] to-[#1b1a3d] p-10 text-white lg:flex lg:flex-col xl:p-14">
@@ -97,17 +77,24 @@ export function AuthBrandPanel() {
       <div className="bg-play-400/25 pointer-events-none absolute -left-32 bottom-[-8rem] h-[30rem] w-[30rem] rounded-full blur-[110px]" />
 
       <div className="relative z-10">
-        <BrandWordmark size="lg" variant="reverse" />
+        {/* The lockup is the way home from any auth page (tester 2026-08-13) */}
+        <Link
+          href="/"
+          aria-label="SportsHub ONE — back to home"
+          className="inline-block rounded-lg transition hover:opacity-80 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
+        >
+          <BrandWordmark size="lg" variant="reverse" />
+        </Link>
       </div>
 
       <div className="relative z-10 flex flex-1 flex-col justify-center">
         <h2 className="font-display max-w-[27rem] text-[2.9rem] font-black leading-[1.05] xl:text-[3.35rem]">
-          {pitch.headline}
+          {HEADLINE.lead}
           <br />
-          <span className="text-hoop-400">{pitch.accent}</span>
+          <span className="text-hoop-400">{HEADLINE.accent}</span>
         </h2>
         <ul className="mt-10 space-y-4">
-          {pitch.proof.map((p) => (
+          {proof.map((p) => (
             <li key={p} className="flex items-start gap-3.5 text-[16.5px] leading-6 text-white/85">
               <span className="bg-hoop-500/20 text-hoop-300 mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full">
                 <svg

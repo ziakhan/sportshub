@@ -1,4 +1,5 @@
 import { Suspense } from "react"
+import Link from "next/link"
 import { BrandWordmark } from "@/components/brand/wordmark"
 import { AuthBrandPanel } from "./auth-brand-panel"
 
@@ -30,7 +31,9 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
 
         {/* Mobile keeps the wordmark — the brand panel is desktop-only */}
         <div className="relative z-10 mb-8 flex flex-col items-center text-center lg:hidden">
-          <BrandWordmark size="lg" />
+          <Link href="/" aria-label="SportsHub ONE — back to home" className="inline-block">
+            <BrandWordmark size="lg" />
+          </Link>
           <p className="text-ink-500 mx-auto mt-3 max-w-sm text-sm">
             The complete platform for youth basketball clubs, leagues, and families.
           </p>
