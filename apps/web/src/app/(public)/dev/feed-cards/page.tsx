@@ -1,7 +1,9 @@
 import { notFound } from "next/navigation"
 import { prisma } from "@youthbasketballhub/db"
 import { getSeasonLeaders } from "@/lib/queries/season-stats"
+import Link from "next/link"
 import {
+  ArticleTeaserCard,
   ClutchPlayCard,
   DualPlayerOfGameCard,
   FinalCard,
@@ -355,6 +357,26 @@ export default async function FeedCardsPreview() {
               ]}
               finalScore="Ironwood 54 — 53 Harbour City"
             />
+          </Section>
+
+          <Section
+            title="Article teaser → full article"
+            when="For any written piece: previews, features, season notebooks"
+            why="A schedule line gives nobody a reason to stay. This card's only job is to earn the click — kicker, headline, a written standfirst, byline and read time — and it opens into a real article with background, form and players. Tap it to see the article page."
+          >
+            <Link href="/dev/feed-cards/article" className="block">
+              <ArticleTeaserCard
+                kicker="Matchup of the week"
+                headline="Unbeaten and unconvincing: Ironwood face the one team that has already taken them to the wire"
+                dek="Ten wins, no losses, and a growing sense that the record flatters them. Harbour City arrive on Saturday with a two-point defeat still fresh and the personnel to repeat it."
+                byline="SportsHub One"
+                readMinutes={4}
+                publishedAt="Thursday"
+                accentFrom={IRONWOOD}
+                accentTo={HARBOUR}
+                tags={["Grade 10", "Ironwood Elite", "Harbour City"]}
+              />
+            </Link>
           </Section>
 
           <Section

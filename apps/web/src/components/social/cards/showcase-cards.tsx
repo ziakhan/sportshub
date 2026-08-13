@@ -913,6 +913,85 @@ export function RecapThrillerCard({
   )
 }
 
+/* ─────────────── 8. ARTICLE TEASER — the feed's doorway to prose ──────── */
+
+/**
+ * A written article's card in the feed. Its ONLY job is to make someone open
+ * it, so it carries the four things that decide that: a kicker saying what
+ * kind of piece it is, a headline, a dek (the standfirst — a real sentence,
+ * not a truncated paragraph), and the cost of reading it. Research on
+ * long-form: summaries let readers assess a piece quickly, and byline plus
+ * affiliation is what communicates authority.
+ */
+export function ArticleTeaserCard({
+  kicker,
+  headline,
+  dek,
+  byline,
+  readMinutes,
+  publishedAt,
+  accentFrom,
+  accentTo,
+  tags,
+}: {
+  kicker: string
+  headline: string
+  dek: string
+  byline: string
+  readMinutes: number
+  publishedAt: string
+  accentFrom: string
+  accentTo: string
+  tags?: string[]
+}) {
+  return (
+    <article className={shell}>
+      {/* Colour band stands in for the hero image these will eventually carry */}
+      <div
+        className="relative h-28 overflow-hidden sm:h-32"
+        style={{ background: `linear-gradient(115deg, ${accentFrom}, ${accentTo})` }}
+      >
+        <div className="pointer-events-none absolute -right-10 -top-14 h-48 w-48 rounded-full bg-white/15 blur-2xl" />
+        <div className="absolute inset-x-0 bottom-0 px-5 pb-3 sm:px-6">
+          <span className="inline-block rounded-full bg-black/35 px-2.5 py-1 text-[10.5px] font-black uppercase tracking-[0.18em] text-white backdrop-blur-sm">
+            {kicker}
+          </span>
+        </div>
+      </div>
+
+      <div className="px-5 py-4 sm:px-6">
+        <h3 className="font-display text-ink-950 text-[1.35rem] font-black leading-[1.2] sm:text-[1.5rem]">
+          {headline}
+        </h3>
+        {/* The dek — a written standfirst, not a chopped-off first paragraph */}
+        <p className="text-ink-600 mt-2.5 text-[14.5px] leading-7">{dek}</p>
+
+        {tags && tags.length > 0 && (
+          <div className="mt-3 flex flex-wrap gap-1.5">
+            {tags.map((t) => (
+              <span
+                key={t}
+                className="bg-ink-50 text-ink-600 ring-ink-100 rounded-full px-2.5 py-1 text-[11.5px] font-bold ring-1 ring-inset"
+              >
+                {t}
+              </span>
+            ))}
+          </div>
+        )}
+
+        <div className="border-ink-100 mt-4 flex flex-wrap items-center gap-x-3 gap-y-1 border-t pt-3">
+          <span className="text-ink-800 text-[12.5px] font-bold">{byline}</span>
+          <span className="text-ink-300">·</span>
+          <span className="text-ink-500 text-[12.5px] font-semibold">{publishedAt}</span>
+          <span className="text-ink-300">·</span>
+          <span className="text-ink-500 text-[12.5px] font-semibold">{readMinutes} min read</span>
+          <span className="text-play-700 ml-auto text-[13px] font-extrabold">Read →</span>
+        </div>
+      </div>
+    </article>
+  )
+}
+
 /* ───────────────────────────── 6. FINAL ──────────────────────────────── */
 
 export function FinalCard({
