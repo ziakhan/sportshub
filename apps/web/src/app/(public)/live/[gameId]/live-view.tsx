@@ -104,6 +104,8 @@ export function LiveView({ gameId }: { gameId: string }) {
   const [shareFor, setShareFor] = useState<string | null>(null)
   const [tab, setTab] = useState<Tab>("game")
   const [playFilter, setPlayFilter] = useState<"all" | "scoring" | number>("all")
+  /** Box score shows ONE team at a time behind a switcher, every viewport. */
+  const [boxSide, setBoxSide] = useState<"home" | "away">("home")
 
   // Sticky mini score chip (Yahoo pattern): appears when the hero scrolls off
   const heroRef = useRef<HTMLDivElement | null>(null)
@@ -1276,26 +1278,42 @@ export function LiveView({ gameId }: { gameId: string }) {
             <div className={`mx-auto mt-4 w-full max-w-5xl ${tab === "game" ? "block" : "hidden"}`}>
               {linescoreCard}
 
+              {/* Box score ABOVE leaders (2026-08-13): this is youth sport —
+                  the reader is overwhelmingly a parent whose first question
+                  after "did we win" is "how did MY kid do". Their child is
+                  often not a game leader, so the box score is the thing they
+                  came for; leaders read better as the finish than the gate. */}
+              <h3 className={sectionHeading}>Box score</h3>
+              <div className="bg-ink-100 mb-3 flex gap-1 rounded-xl p-1">
+                {(["home", "away"] as const).map((side) => {
+                  const tid = side === "home" ? game.homeTeamId : game.awayTeamId
+                  const tname = side === "home" ? game.homeTeamName : game.awayTeamName
+                  const score = side === "home" ? homeScore : awayScore
+                  const on = boxSide === side
+                  return (
+                    <button
+                      key={side}
+                      onClick={() => setBoxSide(side)}
+                      aria-pressed={on}
+                      className={`flex flex-1 items-center justify-center gap-2 truncate rounded-lg px-3 py-2 text-[13px] font-bold transition-colors ${
+                        on ? "text-white shadow-sm" : "text-ink-600 hover:bg-white/70"
+                      }`}
+                      style={on ? { backgroundColor: colorOf(tid) } : undefined}
+                    >
+                      <span className="truncate">{shortTeam(tname)}</span>
+                      <span className="font-condensed shrink-0 text-[15px] font-black tabular-nums">
+                        {score}
+                      </span>
+                    </button>
+                  )
+                })}
+              </div>
+              <div className="border-ink-100 overflow-hidden rounded-2xl border bg-white">
+                {statsTable(boxSide === "home" ? game.homeTeamId : game.awayTeamId)}
+              </div>
+
               <h3 className={sectionHeading}>Game leaders</h3>
               {leadersCard}
-
-              <h3 className={sectionHeading}>Box score</h3>
-              <div className="space-y-4">
-                {(
-                  [
-                    [game.homeTeamId, game.homeTeamName, homeScore],
-                    [game.awayTeamId, game.awayTeamName, awayScore],
-                  ] as Array<[string, string, number]>
-                ).map(([tid, tname, score]) => (
-                  <div
-                    key={tid}
-                    className="border-ink-100 overflow-hidden rounded-2xl border bg-white"
-                  >
-                    {boxHeader(tid, tname, score)}
-                    {statsTable(tid)}
-                  </div>
-                ))}
-              </div>
             </div>
 
             {/* TEAM STATS — its own view, so the comparison bars get room */}
