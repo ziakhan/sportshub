@@ -76,23 +76,40 @@ export function DemoChrome({ signedIn, inDemoSession = false }: { signedIn: bool
       {drawerOpen && (
         <div className="fixed inset-0 z-50" role="dialog" aria-label="Try the demo">
           <div className="absolute inset-0 bg-black/40" onClick={() => setDrawerOpen(false)} />
-          <div className="absolute right-0 top-0 flex h-full w-full max-w-sm flex-col gap-4 overflow-y-auto bg-white p-6 shadow-2xl">
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <p className="text-xs font-bold uppercase tracking-[0.16em] text-amber-600">Preview</p>
-                <h2 className="text-ink-950 mt-1 text-xl font-bold">Try the full app</h2>
-              </div>
-              <button
-                onClick={() => setDrawerOpen(false)}
-                className="text-ink-400 hover:text-ink-600 text-sm font-semibold"
+          <div className="absolute right-0 top-0 flex h-full w-full max-w-sm flex-col overflow-y-auto bg-white shadow-2xl">
+            <div className="relative overflow-hidden bg-gradient-to-br from-[#101c36] via-[#1b2a4a] to-[#0d1526] px-6 pb-6 pt-7 text-white">
+              <svg
+                className="pointer-events-none absolute -right-12 -top-16 h-56 w-56 opacity-25"
+                viewBox="0 0 200 200"
+                fill="none"
+                stroke="#f59e0b"
+                strokeWidth="2.5"
+                aria-hidden
               >
-                Close
-              </button>
+                <circle cx="100" cy="100" r="96" />
+                <circle cx="100" cy="100" r="58" />
+                <circle cx="100" cy="100" r="14" fill="#f59e0b" stroke="none" opacity="0.9" />
+              </svg>
+              <div className="relative flex items-start justify-between gap-3">
+                <span className="rounded-full bg-amber-500 px-3 py-1 text-[11px] font-black uppercase tracking-[0.14em] text-amber-950">
+                  Launching this fall
+                </span>
+                <button
+                  onClick={() => setDrawerOpen(false)}
+                  className="text-white/70 hover:text-white text-sm font-semibold"
+                >
+                  Close ✕
+                </button>
+              </div>
+              <h2 className="relative mt-3 text-2xl font-black leading-tight">
+                Pick your seat <span className="text-amber-400">in the gym.</span>
+              </h2>
+              <p className="relative mt-2 text-sm leading-6 text-white/80">
+                Step into the live season with real screens and a real schedule.
+                {signedIn ? "" : " You'll create a free account first."}
+              </p>
             </div>
-            <p className="text-ink-500 text-sm leading-6">
-              Step into a role and use SportsHub with demo data: real screens, a real season,
-              nothing to set up. {signedIn ? "" : "You'll create a free account first."}
-            </p>
+            <div className="flex flex-col gap-4 p-5">
             <div className="flex flex-col gap-3">
               {PERSONAS.map((p) => (
                 <button
@@ -118,9 +135,10 @@ export function DemoChrome({ signedIn, inDemoSession = false }: { signedIn: bool
               ))}
             </div>
             <p className="text-ink-400 text-xs leading-5">
-              Everything in the demo is artificial data and resets nightly. Your account and
-              anything real you add are never touched.
+              Everything here is preview data and resets nightly. Your account and anything
+              real you add are never touched.
             </p>
+            </div>
           </div>
         </div>
       )}
