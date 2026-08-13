@@ -1,5 +1,7 @@
 import { notFound } from "next/navigation"
 import {
+  ClutchPlayCard,
+  DualPlayerOfGameCard,
   FinalCard,
   GameWinnerCard,
   LeaderboardCard,
@@ -202,10 +204,8 @@ export default function FeedCardsPreview() {
               gameLine="A double-double in a six-point win, and the block with eleven seconds left that ended Northgate's last possession. Carter has now grabbed double-figure rebounds in five straight, and Lakeside are 6-1 when he does."
               seasonNote="It is his third Player of the Game this season — only Marcus Reid has more."
               seasonContext={[
-                { label: "Season PPG", value: "16.4" },
-                { label: "Season RPG", value: "12.4" },
-                { label: "Double-doubles", value: "7" },
-                { label: "Team record", value: "7-3" },
+                { label: "PPG", value: "16.4" },
+                { label: "RPG", value: "12.4" },
               ]}
               opponentAward={{
                 playerName: "Andre Boateng",
@@ -214,6 +214,62 @@ export default function FeedCardsPreview() {
                 teamColor: NORTHGATE,
                 stat: "19 PTS",
               }}
+            />
+          </Section>
+
+          <Section
+            title="Players of the game — both sides"
+            when="When the league honours one per team"
+            why="The other half of the proposed league setting. A head-to-head split rather than a winner plus a footnote, so both clubs get something worth resharing."
+          >
+            <DualPlayerOfGameCard
+              home={{
+                playerName: "Elijah Carter",
+                jersey: "4",
+                team: "Lakeside Storm",
+                teamColor: LAKESIDE,
+                tag: "Lakeside",
+                line: [
+                  { value: 24, unit: "PTS" },
+                  { value: 11, unit: "REB" },
+                  { value: 5, unit: "AST" },
+                ],
+              }}
+              away={{
+                playerName: "Andre Boateng",
+                jersey: "23",
+                team: "Northgate Wolves",
+                teamColor: NORTHGATE,
+                tag: "Northgate",
+                line: [
+                  { value: 19, unit: "PTS" },
+                  { value: 7, unit: "REB" },
+                  { value: 3, unit: "STL" },
+                ],
+              }}
+              note="Carter's double-double edged it, but Boateng kept Northgate within a possession until the final minute."
+            />
+          </Section>
+
+          <Section
+            title="Clutch stop"
+            when="When a game ends on defence"
+            why="Not every game turns on a shot — a block, a charge, a steal on the inbound. Different shape from the game-winner card: this one shows the closing sequence, so you see how the game actually ended."
+          >
+            <ClutchPlayCard
+              playerName="Kwame Osei"
+              jersey="15"
+              team="Ironwood Elite"
+              teamColor={IRONWOOD}
+              playType="Game-saving stop"
+              headline="Osei blocks it at the rim with four seconds left to save the unbeaten run"
+              sequence={[
+                { clock: "0:26", text: "Harbour City inbound trailing by one.", color: HARBOUR },
+                { clock: "0:11", text: "Munro drives the right side and draws two defenders.", color: HARBOUR },
+                { clock: "0:04", text: "Osei rotates over and blocks the layup off the glass.", color: IRONWOOD },
+                { clock: "0:00", text: "Ironwood rebound, run out the clock.", color: IRONWOOD },
+              ]}
+              finalScore="Ironwood 54 — 53 Harbour City"
             />
           </Section>
 

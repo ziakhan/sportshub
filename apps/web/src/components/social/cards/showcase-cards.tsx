@@ -495,7 +495,8 @@ export function PlayerOfGameCard({
           <h3 className="font-condensed mt-2 text-[2.5rem] font-black uppercase leading-[0.9] text-white sm:text-[3rem]">
             {playerName}
           </h3>
-          <p className="text-[13px] font-bold text-white/80">
+          {/* Dropped clear of the name — it was crowding it (tester) */}
+          <p className="mt-2 text-[13px] font-bold text-white/75">
             #{jersey} · {team}
           </p>
         </div>
@@ -553,6 +554,167 @@ export function PlayerOfGameCard({
           </span>
         </div>
       )}
+    </article>
+  )
+}
+
+/* ────────────────── 5b. PLAYERS OF THE GAME — BOTH SIDES ─────────────── */
+
+export interface DualPotgSide {
+  playerName: string
+  jersey: string
+  team: string
+  teamColor: string
+  tag: string
+  line: { value: number; unit: string }[]
+}
+
+/**
+ * The both-teams variant of the league setting: one honoured player per side,
+ * shown as a genuine head-to-head rather than a winner plus a footnote. Each
+ * half wears its own club colour so the split reads instantly; on phones they
+ * stack, because two three-stat blocks cannot share 390px.
+ */
+export function DualPlayerOfGameCard({
+  home,
+  away,
+  eyebrow = "Players of the game",
+  note,
+}: {
+  home: DualPotgSide
+  away: DualPotgSide
+  eyebrow?: string
+  note?: string
+}) {
+  const side = (p: DualPotgSide) => (
+    <div className="relative flex-1 overflow-hidden p-5" style={{ backgroundColor: `${p.teamColor}12` }}>
+      <span className="absolute inset-x-0 top-0 h-1" style={{ backgroundColor: p.teamColor }} />
+      <span
+        className="inline-block rounded-full px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-white"
+        style={{ backgroundColor: p.teamColor }}
+      >
+        {p.tag}
+      </span>
+      <div className="mt-3 flex items-center gap-3">
+        <Crest color={p.teamColor} label={p.jersey} size="h-12 w-12 text-[15px]" />
+        <div className="min-w-0">
+          <p className="text-ink-950 truncate text-[16px] font-extrabold leading-tight">
+            {p.playerName}
+          </p>
+          <p className="text-ink-500 truncate text-[12.5px] font-semibold">{p.team}</p>
+        </div>
+      </div>
+      <div className="mt-4 grid grid-cols-3 gap-2">
+        {p.line.map((s) => (
+          <div key={s.unit} className="rounded-xl bg-white/80 py-2.5 text-center shadow-sm">
+            <p className="font-condensed text-ink-950 text-[1.6rem] font-black leading-none tabular-nums">
+              {s.value}
+            </p>
+            <p className="text-ink-500 mt-1 text-[10px] font-black uppercase tracking-wider">
+              {s.unit}
+            </p>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+
+  return (
+    <article className={shell}>
+      <div className="bg-ink-950 px-5 py-3.5 text-center sm:px-6">
+        <p className="text-highlight text-[11px] font-black uppercase tracking-[0.22em]">{eyebrow}</p>
+      </div>
+      <div className="flex flex-col sm:flex-row">
+        {side(home)}
+        <div className="bg-ink-100 h-px w-full sm:h-auto sm:w-px" />
+        {side(away)}
+      </div>
+      {note && (
+        <p className="text-ink-600 border-ink-100 border-t px-5 py-3.5 text-[13.5px] leading-6 sm:px-6">
+          {note}
+        </p>
+      )}
+    </article>
+  )
+}
+
+/* ─────────────── 4b. CLUTCH STOP — the play that wasn't a bucket ───────── */
+
+/**
+ * Not every game turns on a shot. A charge taken, a block at the rim, a steal
+ * on the inbound — those decide youth games constantly and currently go
+ * unrecorded in the feed. Different shape from the game-winner card on
+ * purpose: this one shows the closing SEQUENCE, so you see how the game
+ * actually ended rather than a single line.
+ */
+export function ClutchPlayCard({
+  playerName,
+  jersey,
+  team,
+  teamColor,
+  headline,
+  playType,
+  sequence,
+  finalScore,
+}: {
+  playerName: string
+  jersey: string
+  team: string
+  teamColor: string
+  headline: string
+  playType: string
+  sequence: { clock: string; text: string; color?: string }[]
+  finalScore: string
+}) {
+  return (
+    <article className={shell}>
+      <div className="bg-ink-950 relative overflow-hidden px-5 py-6 sm:px-6">
+        <div
+          className="pointer-events-none absolute inset-0 opacity-40"
+          style={{ background: `radial-gradient(120% 100% at 100% 0%, ${teamColor}, transparent 60%)` }}
+        />
+        <span
+          className="relative inline-block rounded-full px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-white"
+          style={{ backgroundColor: teamColor }}
+        >
+          {playType}
+        </span>
+        <h3 className="font-display relative mt-3 text-[1.45rem] font-black leading-tight text-white sm:text-[1.7rem]">
+          {headline}
+        </h3>
+        <div className="relative mt-3.5 flex items-center gap-2.5">
+          <Crest color={teamColor} label={jersey} size="h-9 w-9 text-[12px]" />
+          <div className="min-w-0">
+            <p className="truncate text-[14px] font-extrabold text-white">{playerName}</p>
+            <p className="truncate text-[12px] font-semibold text-white/60">{team}</p>
+          </div>
+        </div>
+      </div>
+
+      {/* The closing sequence — what this card has that the winner card doesn't */}
+      <div className="px-5 py-4 sm:px-6">
+        <p className="text-ink-400 mb-2.5 text-[11px] font-black uppercase tracking-[0.16em]">
+          How it ended
+        </p>
+        <ol className="relative space-y-3 pl-5">
+          <span className="bg-ink-100 absolute bottom-2 left-[5px] top-2 w-px" />
+          {sequence.map((s, i) => (
+            <li key={i} className="relative">
+              <span
+                className="absolute -left-5 top-1 h-2.5 w-2.5 rounded-full ring-2 ring-white"
+                style={{ backgroundColor: s.color ?? "#cbd5e1" }}
+              />
+              <p className="text-ink-400 text-[11px] font-black uppercase tracking-wider">
+                {s.clock}
+              </p>
+              <p className="text-ink-800 text-[13.5px] font-semibold leading-6">{s.text}</p>
+            </li>
+          ))}
+        </ol>
+      </div>
+      <p className="bg-ink-50 text-ink-800 px-5 py-3 text-[13px] font-extrabold sm:px-6">
+        Final · {finalScore}
+      </p>
     </article>
   )
 }
