@@ -56,6 +56,148 @@ const DEFAULT_PROOF: [string, string, string] = [
   "Registration, waivers and payments in one place",
 ]
 
+/**
+ * The panel's centrepiece: a sample of the product's OWN card language,
+ * rendered in HTML rather than shipped as a screenshot — so it stays razor
+ * sharp at any size (the blurred phone shot is exactly what this replaces)
+ * and it retargets with the persona. Illustrative sample data, drawn from
+ * the fictional Maple Court demo world; never presented as live numbers.
+ */
+function Monogram({ initials, tone }: { initials: string; tone: string }) {
+  return (
+    <span
+      className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-[11px] font-black text-white ${tone}`}
+    >
+      {initials}
+    </span>
+  )
+}
+
+function SampleCard({ persona }: { persona: string | null }) {
+  const shell =
+    "w-[19.5rem] rounded-2xl bg-white p-4 shadow-2xl ring-1 ring-black/5 rotate-[-2.5deg]"
+  const eyebrow = "text-[10px] font-black uppercase tracking-[0.14em]"
+
+  if (persona === "coach") {
+    return (
+      <div className={shell}>
+        <div className="flex items-center justify-between">
+          <span className={`${eyebrow} text-play-600`}>Practice · Tue 6:00 PM</span>
+          <span className="text-ink-400 text-[11px] font-semibold">Gr 8</span>
+        </div>
+        <p className="text-ink-900 mt-2 text-[15px] font-bold">Northgate Wolves</p>
+        <div className="mt-3 flex items-center gap-2">
+          <span className="bg-court-50 text-court-700 rounded-full px-2.5 py-1 text-[11.5px] font-bold">
+            9 going
+          </span>
+          <span className="bg-hoop-50 text-hoop-700 rounded-full px-2.5 py-1 text-[11.5px] font-bold">
+            2 out
+          </span>
+          <span className="bg-ink-50 text-ink-500 rounded-full px-2.5 py-1 text-[11.5px] font-bold">
+            1 no reply
+          </span>
+        </div>
+      </div>
+    )
+  }
+
+  if (persona === "league") {
+    return (
+      <div className={shell}>
+        <div className="flex items-center justify-between">
+          <span className={`${eyebrow} text-play-600`}>Standings · Grade 10</span>
+          <span className="text-ink-400 text-[11px] font-semibold">Week 6</span>
+        </div>
+        <div className="mt-2.5 space-y-1.5">
+          {[
+            ["1", "Ironwood Elite", "10-0", "bg-play-600"],
+            ["2", "Harbour City Hoops", "8-2", "bg-hoop-500"],
+            ["3", "Summit Select", "7-3", "bg-court-600"],
+          ].map(([rank, name, rec, tone]) => (
+            <div key={name} className="flex items-center gap-2.5">
+              <span className="text-ink-400 w-3 text-[12px] font-bold">{rank}</span>
+              <Monogram initials={name.slice(0, 2).toUpperCase()} tone={tone} />
+              <span className="text-ink-800 flex-1 truncate text-[13px] font-semibold">{name}</span>
+              <span className="font-condensed text-ink-900 text-[14px] font-black tabular-nums">
+                {rec}
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+    )
+  }
+
+  if (persona === "club") {
+    return (
+      <div className={shell}>
+        <span className={`${eyebrow} text-court-700`}>Offer accepted</span>
+        <p className="text-ink-900 mt-2 text-[15px] font-bold">Elijah Carter · Gr 9</p>
+        <div className="border-ink-100 mt-3 flex items-end justify-between border-t pt-3">
+          <span className="text-ink-500 text-[12px] font-semibold">Paid in 3 · 1 of 3</span>
+          <span className="font-condensed text-ink-950 text-[22px] font-black tabular-nums">
+            $450
+          </span>
+        </div>
+      </div>
+    )
+  }
+
+  if (persona === "player") {
+    return (
+      <div className={shell}>
+        <div className="flex items-center justify-between">
+          <span className={`${eyebrow} text-play-600`}>Your game · Sat</span>
+          <span className="bg-court-50 text-court-700 rounded-full px-2 py-0.5 text-[10px] font-black uppercase">
+            Won
+          </span>
+        </div>
+        <div className="mt-3 grid grid-cols-3 gap-2 text-center">
+          {[
+            ["18", "PTS"],
+            ["6", "REB"],
+            ["4", "AST"],
+          ].map(([n, l]) => (
+            <div key={l} className="bg-ink-50 rounded-xl py-2">
+              <div className="font-condensed text-ink-950 text-[22px] font-black leading-none tabular-nums">
+                {n}
+              </div>
+              <div className="text-ink-400 mt-1 text-[10px] font-bold tracking-wide">{l}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+    )
+  }
+
+  // parent + organic: the live game card
+  return (
+    <div className={shell}>
+      <div className="flex items-center justify-between">
+        <span className="text-live-600 inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-[0.14em]">
+          <span className="bg-live-500 h-1.5 w-1.5 rounded-full motion-safe:animate-pulse" />
+          Live
+        </span>
+        <span className="text-ink-400 text-[11px] font-semibold">Q3 · 6:42</span>
+      </div>
+      <div className="mt-3 space-y-2">
+        {[
+          ["LS", "Lakeside Storm", "58", "bg-play-600"],
+          ["NW", "Northgate Wolves", "52", "bg-hoop-500"],
+        ].map(([ini, name, score, tone]) => (
+          <div key={name} className="flex items-center gap-2.5">
+            <Monogram initials={ini} tone={tone} />
+            <span className="text-ink-800 flex-1 truncate text-[13.5px] font-semibold">{name}</span>
+            <span className="font-condensed text-ink-950 text-[20px] font-black tabular-nums">
+              {score}
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 /** Pull the demo persona back out of the callbackUrl we were handed. */
 function personaFrom(callbackUrl: string | null): string | null {
   if (!callbackUrl) return null
@@ -113,6 +255,10 @@ export function AuthBrandPanel() {
             </li>
           ))}
         </ul>
+
+        <div className="mt-10 hidden xl:block">
+          <SampleCard persona={persona} />
+        </div>
       </div>
 
       <p className="relative z-10 text-[13px] text-white/45">
