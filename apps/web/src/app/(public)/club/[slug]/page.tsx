@@ -14,6 +14,7 @@ import { ClubSubNav } from "./club-subnav"
 import { JsonLd, clubJsonLd } from "@/lib/seo/jsonld"
 import { trackPublicView } from "@/lib/seo/track"
 import { getClubProfile } from "@/lib/queries/club-profile"
+import { DemoBadge } from "@/components/demo-badge"
 
 export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
   const tenant = await prisma.tenant.findUnique({
@@ -24,6 +25,7 @@ export async function generateMetadata({ params }: { params: { slug: string } })
       city: true,
       state: true,
       status: true,
+      isDemo: true,
       branding: { select: { tagline: true } },
       _count: { select: { teams: true } },
     },
@@ -33,10 +35,15 @@ export async function generateMetadata({ params }: { params: { slug: string } })
   // Min-content bar (seo-strategy §1.4, owner-decided 2026-07-12): imported
   // UNCLAIMED shells are indexable only once they carry something substantive
   // (a description or teams). Truly-empty shells stay crawlable but noindex.
+  // Demo-world clubs (limited launch) never enter the index at all.
   const isThinShell =
     tenant.status === "UNCLAIMED" && !tenant.description && tenant._count.teams === 0
   return {
-    ...(isThinShell ? { robots: { index: false, follow: true } } : {}),
+    ...(tenant.isDemo
+      ? { robots: { index: false, follow: false } }
+      : isThinShell
+        ? { robots: { index: false, follow: true } }
+        : {}),
     title: place
       ? `${tenant.name} — Youth Basketball Club in ${place}`
       : `${tenant.name} — Youth Basketball Club`,
@@ -163,8 +170,21 @@ export default async function ClubProfilePage({ params }: { params: { slug: stri
       : { value: String(staffCount), label: "Staff" },
   ]
 
+  const clubIsDemo = !!(await prisma.tenant.findUnique({
+    where: { id: club.id },
+    select: { isDemo: true },
+  }))?.isDemo
+
   return (
     <div className="font-barlow [scroll-behavior:smooth]" style={brandStyle(primary)}>
+      {clubIsDemo && (
+        <div className="flex flex-wrap items-center gap-3 border-b border-amber-200 bg-amber-50 px-4 py-2.5 sm:px-6">
+          <DemoBadge long />
+          <p className="text-sm text-amber-900">
+            A preview club with demo data. Real clubs run pages just like this one.
+          </p>
+        </div>
+      )}
       <JsonLd
         data={clubJsonLd({
           slug: params.slug,

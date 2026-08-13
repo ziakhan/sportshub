@@ -7,6 +7,7 @@ import { FollowButton } from "@/components/follow-button"
 import { perkLabel } from "@/lib/leagues/perks"
 import { getLeaguesDirectory, getDemoLeaguesDirectory } from "@/lib/queries/directory-leagues"
 import { DemoBadge } from "@/components/demo-badge"
+import { DemoCta } from "@/components/demo/demo-cta"
 
 export const dynamic = "force-dynamic"
 
@@ -170,6 +171,9 @@ export default async function PublicLeaguesPage() {
                     </Badge>
                   )}
                   <Badge tone="hoop">{l.season.label}</Badge>
+                  <span className="ml-auto">
+                    <DemoCta label="♡ Follow" />
+                  </span>
                 </div>
                 <h2 className="text-ink-950 group-hover:text-play-600 mb-2 text-2xl font-bold transition-colors">
                   {l.name}

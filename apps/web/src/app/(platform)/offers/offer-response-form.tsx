@@ -163,6 +163,26 @@ export function OfferResponseForm({
   }
 
   async function doAccept(depositPaymentIntentId: string | null) {
+    // Persona demo: accepting the staged offer is session-scoped — the
+    // visitor sees the welcome and "their kid on the roster" without any
+    // real offer/payment/waiver row changing. Skips the money/waiver gates
+    // by design: the demo never takes payment.
+    if (typeof document !== "undefined" && document.cookie.includes("demo-view-hint=")) {
+      const res = await fetch(`/api/demo/action/offer`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ targetId: offerId }),
+      })
+      const payload = await res.json().catch(() => ({}))
+      if (!res.ok) throw new Error(payload.error || "The demo could not accept this offer.")
+      if (payload.welcome) {
+        try {
+          window.alert(`${payload.welcome}\n\n(Demo: your acceptance is visible only to you and resets nightly.)`)
+        } catch {}
+      }
+      onDone()
+      return
+    }
     const res = await fetch(`/api/offers/${offerId}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },

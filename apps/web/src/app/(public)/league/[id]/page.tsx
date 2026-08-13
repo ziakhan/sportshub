@@ -21,6 +21,7 @@ import { SeasonCalendarSection } from "./season-calendar-section"
 import { isDemoSeason } from "@/lib/demo/demo-mode"
 import { DemoBadge } from "@/components/demo-badge"
 import { HintBalloon } from "@/components/demo/hint-balloon"
+import { DemoCta } from "@/components/demo/demo-cta"
 
 export const dynamic = "force-dynamic"
 
@@ -191,10 +192,11 @@ export default async function PublicLeagueHubPage({ params }: { params: { id: st
         <>
           <div className="mb-6 flex flex-wrap items-center gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3">
             <DemoBadge long />
-            <p className="text-sm text-amber-900">
+            <p className="min-w-0 flex-1 text-sm text-amber-900">
               This league is a preview built with demo data so you can see how
               SportsHub works. We launch for real this fall.
             </p>
+            <DemoCta label="♡ Follow this league" />
           </div>
           <HintBalloon hintKey="league-hub">
             Standings update the second a scoresheet is signed, and live games tick in real

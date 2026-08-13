@@ -195,11 +195,24 @@ export function MyCalendar() {
           : prev
       )
       try {
-        const res = await fetch("/api/rsvp", {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ playerId, itemType, itemId: item.id, status }),
-        })
+        // Persona demo: the RSVP lands in the session overlay (visible only
+        // to this browser session), never in real tables.
+        const inDemo =
+          typeof document !== "undefined" && document.cookie.includes("demo-view-hint=")
+        const res = inDemo
+          ? await fetch("/api/demo/action/rsvp", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                targetId: `${itemType}:${item.id}:${playerId}`,
+                status: status === "NOT_GOING" ? "DECLINED" : status,
+              }),
+            })
+          : await fetch("/api/rsvp", {
+              method: "PUT",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ playerId, itemType, itemId: item.id, status }),
+            })
         if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error)
       } catch (e: any) {
         setError(e?.message || "Couldn't save your RSVP — try again.")
