@@ -407,11 +407,7 @@ export function LiveView({ gameId }: { gameId: string }) {
     entry: { l: PlayerLine; value: number; unit: string } | null,
     teamId: string,
     sub: (l: PlayerLine) => string,
-    won: boolean,
-    /** Away side mirrors so the two cards face each other — restores the
-     *  original `right` behaviour, matches the team-stats comparison on the
-     *  same page, and closes the gutter on the right card. */
-    mirror = false
+    won: boolean
   ) => {
     const color = colorOf(teamId)
     if (!entry) {
@@ -423,41 +419,37 @@ export function LiveView({ gameId }: { gameId: string }) {
     }
     return (
       <div
-        // Tints were 8%/3% alpha — so pale the team colour barely registered.
-        // Deepened to 17%/9% (tester 2026-08-13: "a little too shallow").
-        className={`flex min-w-0 flex-1 items-center gap-3.5 rounded-2xl p-4 ${
-          mirror ? "flex-row-reverse text-right" : ""
-        }`}
-        style={{ backgroundColor: `${color}${won ? "2b" : "17"}` }}
+        className="relative min-w-0 flex-1 overflow-hidden rounded-2xl border p-3.5 transition-shadow hover:shadow-md"
+        style={{
+          borderColor: `${color}${won ? "59" : "26"}`,
+          backgroundColor: `${color}${won ? "14" : "0a"}`,
+        }}
       >
-        {/* The badge stands in for a headshot: players have no photo field, and
-            the platform's own rule is "real mark, else branded monogram". The
-            jersey number is how you identify a kid from the stands anyway — and
-            if photos ever ship, this circle becomes the photo slot unchanged. */}
-        <span
-          className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full text-[17px] font-black text-white shadow-md ring-2 ring-white/60"
-          style={{ backgroundColor: color }}
-        >
-          {jerseyOf(entry.l.playerId) ? `${jerseyOf(entry.l.playerId)}` : monogram(shortName(entry.l.playerId))}
-        </span>
-        <div className="min-w-0 flex-1">
+        <span className="absolute inset-y-0 left-0 w-1" style={{ backgroundColor: color }} />
+        <div className="flex items-center gap-2.5 pl-1.5">
+          <span
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-[11.5px] font-extrabold text-white shadow-sm"
+            style={{ backgroundColor: color }}
+          >
+            #{jerseyOf(entry.l.playerId)}
+          </span>
           {/* Platform law: every rendered entity is clickable. */}
           <Link
             href={`/player/${entry.l.playerId}`}
-            className="text-ink-950 hover:text-play-600 block truncate text-[15px] font-bold leading-tight transition-colors"
+            className="text-ink-950 hover:text-play-600 min-w-0 flex-1 truncate text-[15.5px] font-bold leading-tight transition-colors"
           >
             {shortName(entry.l.playerId)}
           </Link>
-          <div className={`mt-1 flex items-end gap-1.5 ${mirror ? "justify-end" : ""}`}>
-            <span className="font-condensed text-ink-950 text-[2.6rem] font-black leading-[0.85] tabular-nums">
-              <FlashNum value={entry.value} />
-            </span>
-            <span className="text-ink-600 pb-1 text-[12.5px] font-extrabold tracking-wide">
-              {entry.unit}
-            </span>
-          </div>
-          <p className="text-ink-600 mt-1 truncate text-[12.5px] font-semibold">{sub(entry.l)}</p>
         </div>
+        <div className="mt-2.5 flex items-end gap-2 pl-1.5">
+          <span className="font-condensed text-ink-950 text-[3.1rem] font-black leading-[0.85] tabular-nums">
+            <FlashNum value={entry.value} />
+          </span>
+          <span className="text-ink-600 pb-1.5 text-[13px] font-extrabold tracking-wide">
+            {entry.unit}
+          </span>
+        </div>
+        <p className="text-ink-600 mt-2 truncate pl-1.5 text-[13px] font-semibold">{sub(entry.l)}</p>
       </div>
     )
   }
@@ -539,19 +531,18 @@ export function LiveView({ gameId }: { gameId: string }) {
         if (!h && !a) return null
         const hWins = (h?.value ?? -1) >= (a?.value ?? -1)
         return (
-          // The category label lives BETWEEN the two players (2026-08-13) —
-          // mirroring alone just moved the gap from the outer edges into the
-          // middle. A shared centre axis is the head-to-head pattern, and it
-          // buys back the vertical space the old label row used.
-          <div
-            key={sec.label}
-            className="border-ink-100 flex items-center gap-2 rounded-2xl border bg-white p-1.5"
-          >
-            {leaderCell(h, game.homeTeamId, sec.sub, hWins)}
-            <span className="text-ink-800 w-16 shrink-0 text-center text-[12px] font-black uppercase leading-tight tracking-[0.12em] sm:w-24 sm:text-[13.5px]">
-              {sec.label}
-            </span>
-            {leaderCell(a, game.awayTeamId, sec.sub, !hWins, true)}
+          <div key={sec.label}>
+            <div className="mb-1.5 flex items-center gap-3">
+              <span className="bg-ink-100 h-px flex-1" />
+              <span className="text-ink-700 text-[12.5px] font-extrabold uppercase tracking-[0.16em]">
+                {sec.label}
+              </span>
+              <span className="bg-ink-100 h-px flex-1" />
+            </div>
+            <div className="flex items-stretch gap-2.5">
+              {leaderCell(h, game.homeTeamId, sec.sub, hWins)}
+              {leaderCell(a, game.awayTeamId, sec.sub, !hWins)}
+            </div>
           </div>
         )
       })}
