@@ -143,11 +143,28 @@ export default function FeedCardsPreview() {
               home={{ name: "Lakeside Storm", short: "Lakeside", record: "7-3", color: LAKESIDE, crest: "LS" }}
               away={{ name: "Northgate Wolves", short: "Northgate", record: "7-3", color: NORTHGATE, crest: "NW" }}
               seriesLine="Series tied 1–1"
+              headline="Third time settles it: Lakeside and Northgate meet with the season series level"
+              lede="They have split the year so far, and neither night looked like the other. Lakeside controlled the November meeting on the glass; Northgate answered in January by turning it into a track meet and winning the second half by fourteen. Both sit 7-3, both need this to stay in touch with Ironwood, and the winner takes the tiebreaker into seeding."
               meetings={[
-                { date: "Nov 9", result: "Lakeside 58 — 52 Northgate", winnerColor: LAKESIDE },
-                { date: "Jan 18", result: "Northgate 61 — 49 Lakeside", winnerColor: NORTHGATE },
+                {
+                  date: "Nov 9",
+                  result: "Lakeside 58 — 52 Northgate",
+                  winnerColor: LAKESIDE,
+                  note: "Lakeside +11 on the boards; Carter with 14 rebounds.",
+                },
+                {
+                  date: "Jan 18",
+                  result: "Northgate 61 — 49 Lakeside",
+                  winnerColor: NORTHGATE,
+                  note: "Northgate scored 34 after half-time; Boateng 24 points.",
+                },
               ]}
-              when="Sunday · 11:00 AM"
+              keyPlayers={[
+                { name: "Elijah Carter", jersey: "4", color: LAKESIDE, line: "14 REB in the first meeting" },
+                { name: "Andre Boateng", jersey: "23", color: NORTHGATE, line: "24 PTS in the rematch" },
+              ]}
+              stakes="Winner holds the head-to-head tiebreaker and stays within two of first place with three games to play."
+              when="Sunday · 11:00 AM · Six Park East"
             />
           </Section>
 
@@ -182,7 +199,14 @@ export default function FeedCardsPreview() {
                 { value: 11, unit: "REB" },
                 { value: 5, unit: "AST" },
               ]}
-              gameLine="A double-double in a six-point win, and the block with eleven seconds left that ended Northgate's last possession."
+              gameLine="A double-double in a six-point win, and the block with eleven seconds left that ended Northgate's last possession. Carter has now grabbed double-figure rebounds in five straight, and Lakeside are 6-1 when he does."
+              seasonNote="It is his third Player of the Game this season — only Marcus Reid has more."
+              seasonContext={[
+                { label: "Season PPG", value: "16.4" },
+                { label: "Season RPG", value: "12.4" },
+                { label: "Double-doubles", value: "7" },
+                { label: "Team record", value: "7-3" },
+              ]}
               opponentAward={{
                 playerName: "Andre Boateng",
                 jersey: "23",

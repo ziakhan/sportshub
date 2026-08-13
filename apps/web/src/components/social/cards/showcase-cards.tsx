@@ -245,55 +245,129 @@ export function MatchupCard({
 
 /* ───────────────────────────── 3. RIVALRY ────────────────────────────── */
 
+/**
+ * RIVALRY — rebuilt as an ARTICLE (tester 2026-08-13). The first version was
+ * a scoreline list, which told you what happened without telling you why it
+ * matters. A rematch is the best story youth sport generates for free, so it
+ * gets a headline, a written lede, the series as evidence, what is at stake,
+ * and the players who decided the earlier meetings.
+ */
 export function RivalryCard({
   home,
   away,
   seriesLine,
+  headline,
+  lede,
   meetings,
+  stakes,
+  keyPlayers,
   when,
 }: {
   home: MatchupSide
   away: MatchupSide
   seriesLine: string
-  meetings: { date: string; result: string; winnerColor: string }[]
+  headline: string
+  lede: string
+  meetings: { date: string; result: string; winnerColor: string; note?: string }[]
+  stakes?: string
+  keyPlayers?: { name: string; jersey: string; color: string; line: string }[]
   when: string
 }) {
   return (
     <article className={shell}>
-      <div className="bg-ink-950 relative overflow-hidden px-5 py-5 text-white sm:px-6">
+      <div className="bg-ink-950 relative overflow-hidden px-5 py-6 text-white sm:px-6">
         <div
-          className="pointer-events-none absolute inset-y-0 left-0 w-1/2 opacity-30"
+          className="pointer-events-none absolute inset-y-0 left-0 w-1/2 opacity-40"
           style={{ background: `linear-gradient(90deg, ${home.color}, transparent)` }}
         />
         <div
-          className="pointer-events-none absolute inset-y-0 right-0 w-1/2 opacity-30"
+          className="pointer-events-none absolute inset-y-0 right-0 w-1/2 opacity-40"
           style={{ background: `linear-gradient(270deg, ${away.color}, transparent)` }}
         />
-        <p className="text-hoop-400 relative text-[11px] font-black uppercase tracking-[0.22em]">
-          Rematch
-        </p>
-        <h3 className="font-condensed relative mt-1 text-[1.9rem] font-black uppercase leading-tight sm:text-[2.3rem]">
-          {home.short} <span className="text-white/40">vs</span> {away.short}
+        <div className="relative flex items-center justify-between gap-3">
+          <p className="text-hoop-400 text-[11px] font-black uppercase tracking-[0.22em]">Rivalry</p>
+          <span className="rounded-full bg-white/15 px-2.5 py-1 text-[11px] font-black uppercase tracking-wider">
+            {seriesLine}
+          </span>
+        </div>
+        {/* Headline, not a fixture label — this is a story */}
+        <h3 className="font-display relative mt-3 text-[1.55rem] font-black leading-tight sm:text-[1.9rem]">
+          {headline}
         </h3>
-        <p className="relative mt-2 inline-block rounded-full bg-white/15 px-3 py-1 text-[12px] font-extrabold uppercase tracking-wider">
-          {seriesLine}
+        <div className="relative mt-3 flex items-center gap-2 text-[12.5px] font-bold text-white/70">
+          <Crest color={home.color} label={home.crest} size="h-7 w-7 text-[10px]" />
+          <span className="truncate">{home.short}</span>
+          <span className="text-white/40">vs</span>
+          <Crest color={away.color} label={away.crest} size="h-7 w-7 text-[10px]" />
+          <span className="truncate">{away.short}</span>
+        </div>
+      </div>
+
+      <div className="px-5 pt-4 sm:px-6">
+        <p className="text-ink-700 text-[14.5px] leading-7">{lede}</p>
+      </div>
+
+      <div className="px-5 pt-4 sm:px-6">
+        <p className="text-ink-400 mb-2 text-[11px] font-black uppercase tracking-[0.16em]">
+          The series so far
         </p>
       </div>
       <ul className="divide-ink-50 divide-y">
         {meetings.map((m, i) => (
-          <li key={i} className="flex items-center gap-3 px-5 py-3 sm:px-6">
+          <li key={i} className="flex items-start gap-3 px-5 py-3 sm:px-6">
             <span
-              className="h-8 w-1 shrink-0 rounded-full"
+              className="mt-0.5 h-9 w-1 shrink-0 rounded-full"
               style={{ backgroundColor: m.winnerColor }}
             />
-            <span className="text-ink-500 w-24 shrink-0 text-[12.5px] font-bold">{m.date}</span>
-            <span className="text-ink-900 flex-1 text-[14px] font-bold tabular-nums">{m.result}</span>
+            <span className="text-ink-500 w-20 shrink-0 text-[12.5px] font-bold">{m.date}</span>
+            <span className="min-w-0 flex-1">
+              <span className="text-ink-900 block text-[14px] font-bold tabular-nums">
+                {m.result}
+              </span>
+              {m.note && <span className="text-ink-500 block text-[12.5px]">{m.note}</span>}
+            </span>
           </li>
         ))}
       </ul>
-      <p className="bg-ink-50 text-ink-700 px-5 py-3 text-[13px] font-extrabold sm:px-6">
-        Next: {when}
-      </p>
+
+      {keyPlayers && keyPlayers.length > 0 && (
+        <div className="px-5 pt-4 sm:px-6">
+          <p className="text-ink-400 mb-2 text-[11px] font-black uppercase tracking-[0.16em]">
+            Who decided it last time
+          </p>
+          <div className="grid gap-2 sm:grid-cols-2">
+            {keyPlayers.map((p) => (
+              <div
+                key={p.name}
+                className="flex items-center gap-2.5 rounded-xl p-2.5"
+                style={{ backgroundColor: `${p.color}12` }}
+              >
+                <Crest color={p.color} label={p.jersey} size="h-9 w-9 text-[11.5px]" />
+                <div className="min-w-0 flex-1">
+                  <p className="text-ink-950 truncate text-[13.5px] font-bold leading-tight">
+                    {p.name}
+                  </p>
+                  <p className="text-ink-500 truncate text-[11.5px] font-semibold">{p.line}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {stakes && (
+        <div className="border-hoop-100 bg-hoop-50 mx-5 mt-4 rounded-xl border px-3.5 py-3 sm:mx-6">
+          <p className="text-hoop-700 text-[11px] font-black uppercase tracking-[0.16em]">
+            What&apos;s at stake
+          </p>
+          <p className="text-ink-800 mt-1 text-[13.5px] font-semibold leading-6">{stakes}</p>
+        </div>
+      )}
+
+      <div className="flex items-center justify-between gap-3 px-5 py-4 sm:px-6">
+        <span className="text-ink-950 text-[13px] font-extrabold">{when}</span>
+        <span className="text-play-700 text-[13.5px] font-extrabold">Read the full story →</span>
+      </div>
     </article>
   )
 }
@@ -375,6 +449,8 @@ export function PlayerOfGameCard({
   line,
   gameLine,
   photoUrl,
+  seasonNote,
+  seasonContext,
   opponentAward,
 }: {
   playerName: string
@@ -384,6 +460,10 @@ export function PlayerOfGameCard({
   line: { value: number; unit: string }[]
   gameLine: string
   photoUrl?: string | null
+  /** One more beat of narrative — season arc, streak, first time, etc. */
+  seasonNote?: string
+  /** Small season-to-date strip so the night has context. */
+  seasonContext?: { label: string; value: string }[]
   /** Set when the league awards one from each side. */
   opponentAward?: { playerName: string; jersey: string; team: string; teamColor: string; stat: string }
 }) {
@@ -435,7 +515,28 @@ export function PlayerOfGameCard({
         ))}
       </div>
 
-      <p className="text-ink-700 px-5 py-4 text-[14px] font-semibold leading-6 sm:px-6">{gameLine}</p>
+      {/* Written, not just a stat dump — the card should say what the night
+          MEANT for this kid, and where it sits in their season (tester). */}
+      <div className="px-5 py-4 sm:px-6">
+        <p className="text-ink-800 text-[14.5px] leading-7">{gameLine}</p>
+        {seasonNote && (
+          <p className="text-ink-500 mt-2 text-[13px] leading-6">{seasonNote}</p>
+        )}
+        {seasonContext && seasonContext.length > 0 && (
+          <div className="border-ink-100 mt-3.5 flex flex-wrap gap-x-5 gap-y-2 rounded-xl border px-3.5 py-2.5">
+            {seasonContext.map((s) => (
+              <div key={s.label}>
+                <p className="text-ink-400 text-[10.5px] font-black uppercase tracking-wider">
+                  {s.label}
+                </p>
+                <p className="font-condensed text-ink-900 text-[17px] font-black tabular-nums">
+                  {s.value}
+                </p>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
 
       {opponentAward && (
         <div className="border-ink-100 bg-ink-50 flex items-center gap-3 border-t px-5 py-3 sm:px-6">
