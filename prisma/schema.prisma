@@ -28,7 +28,7 @@ model User {
   country      String  @default("CA") // ISO 3166-1 alpha-2
 
   // Operator roles require an 18+ attestation at onboarding (owner
-  // 2026-07-24, QA-106) — we don't collect adult DOBs, this is the record.
+  // 2026-07-24, QA-106) â€” we don't collect adult DOBs, this is the record.
   adultAttestedAt DateTime?
 
   // Universal handle (owner 2026-07-23): EVERY account reserves one at
@@ -43,16 +43,16 @@ model User {
   // Onboarding
   onboardedAt DateTime?
 
-  // Payments — the user's Stripe Customer (platform account). Cards live in
+  // Payments â€” the user's Stripe Customer (platform account). Cards live in
   // Stripe's vault, referenced by this id; we never store card data.
   stripeCustomerId String? @unique
 
-  // Personal iCal feed token (/api/calendar/[token]) — practices + games
+  // Personal iCal feed token (/api/calendar/[token]) â€” practices + games
   // for every team the user belongs to; minted on first "add to calendar"
   calendarToken String? @unique
 
-  // Push quiet hours (M3) — "HH:MM" wall time in APP_TIMEZONE; the window
-  // may wrap midnight (22:00 → 08:00). Null = no quiet hours.
+  // Push quiet hours (M3) â€” "HH:MM" wall time in APP_TIMEZONE; the window
+  // may wrap midnight (22:00 â†’ 08:00). Null = no quiet hours.
   pushQuietStart String?
   pushQuietEnd   String?
 
@@ -139,7 +139,7 @@ enum UserStatus {
 // Native-app push devices (M3, docs/roadmap/native-app-execution-plan.md).
 // One row per push token; token changes create new rows, sign-out and
 // Expo DeviceNotRegistered receipts set revokedAt. `provider` allows the
-// later Expo→FCM-direct swap without a schema change.
+// later Expoâ†’FCM-direct swap without a schema change.
 model Device {
   id         String         @id @default(uuid())
   userId     String
@@ -176,7 +176,7 @@ model RefreshToken {
   user        User      @relation("UserRefreshTokens", fields: [userId], references: [id], onDelete: Cascade)
   tokenHash   String    @unique // sha256 hex of the opaque token
   familyId    String // constant across rotations of one device login
-  deviceLabel String? // e.g. "Pixel 8" — for a future sessions/devices UI
+  deviceLabel String? // e.g. "Pixel 8" â€” for a future sessions/devices UI
   expiresAt   DateTime // 60d, sliding on rotation
   revokedAt   DateTime?
   lastUsedAt  DateTime?
@@ -187,7 +187,7 @@ model RefreshToken {
 }
 
 // Magic sign-in (Slack-style, 2026-07-15): one row per requested email, carrying
-// BOTH redemption shapes — the tokenized link and the 6-digit code the user can
+// BOTH redemption shapes â€” the tokenized link and the 6-digit code the user can
 // type on another device. Stored hashed only; single-use via atomic consume;
 // the code path is brute-force-bound by `attempts` (row dies at MAX_CODE_ATTEMPTS).
 model LoginToken {
@@ -263,8 +263,8 @@ enum Role {
 model Tenant {
   id                     String     @id @default(uuid())
   slug                   String     @unique
-  // Solo-operator support (batch-backlog §5): a TRAINER tenant is a
-  // one-person org that only runs programs — no teams/rosters/staff tabs.
+  // Solo-operator support (batch-backlog Â§5): a TRAINER tenant is a
+  // one-person org that only runs programs â€” no teams/rosters/staff tabs.
   type                   TenantType @default(CLUB)
   // Limited-launch demo world (limited-launch-demo-build-2026-08.md):
   // demo entities badge everywhere, sit in their own directory section,
@@ -274,7 +274,7 @@ model Tenant {
   reviewInviteOverride   String? // null = inherit platform reviewInvitePolicy
   name                   String
   // Set once on club settings; every derived team name starts with it
-  // ("Burlington Force" → "Burlington Force U15 Blue"). null = full name.
+  // ("Burlington Force" â†’ "Burlington Force U15 Blue"). null = full name.
   shortName              String?
   description            String?    @db.Text
   phoneNumber            String?
@@ -287,7 +287,7 @@ model Tenant {
   currency               String     @default("CAD") // ISO 4217
   website                String?
   customDomain           String?    @unique
-  // Custom-domain plumbing (seo-strategy §6c; inert until CUSTOM_DOMAINS_ENABLED)
+  // Custom-domain plumbing (seo-strategy Â§6c; inert until CUSTOM_DOMAINS_ENABLED)
   customDomainVerifiedAt DateTime? // set by the DNS Verify endpoint
   customDomainCanonical  Boolean    @default(false) // false = mirror mode (their domain redirects to us)
 
@@ -306,7 +306,7 @@ model Tenant {
   // Paid placement: spotlighted in discovery surfaces (admin-toggled)
   isFeatured Boolean @default(false)
 
-  // Club-wide default for showing how full teams are (owner 2026-07-24) —
+  // Club-wide default for showing how full teams are (owner 2026-07-24) â€”
   // off by default so slow fills don't deter families; teams can override.
   showRosterFillDefault Boolean @default(false)
 
@@ -339,7 +339,7 @@ model Tenant {
   trainerProfile        TrainerProfile?
   trainerAvailabilities TrainerAvailability[]
   oneOnOneBookings      OneOnOneBooking[]
-  // Club-wide polls (three-tier polls ruling, owner 2026-07-24) — a poll has
+  // Club-wide polls (three-tier polls ruling, owner 2026-07-24) â€” a poll has
   // exactly one scope: teamId, tenantId, or leagueId.
   polls                 Poll[]
 
@@ -386,7 +386,7 @@ model TenantBranding {
   customCss      String? @db.Text
 
   // Customizable public page ("your website"): brand + layout.
-  // Images stored as compressed data URLs (@db.Text) — no external blob infra.
+  // Images stored as compressed data URLs (@db.Text) â€” no external blob infra.
   bannerUrl  String? @db.Text
   tagline    String?
   socials    Json? // { instagram, facebook, x, youtube, tiktok, ... }
@@ -423,17 +423,17 @@ model Team {
   tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   name        String
-  // Derived naming (league-ia-redesign §4): name = composed from the club's
+  // Derived naming (league-ia-redesign Â§4): name = composed from the club's
   // shortName + ageGroup (+ picked suffix) by lib/teams/naming.ts. The column
   // stays authoritative for display; legacy typed names persist until edited.
-  nameSuffix  String? // picked (Blue/White/2…), never typed
+  nameSuffix  String? // picked (Blue/White/2â€¦), never typed
   ageGroup    String // U10, U12, U14, etc.
   gender      Gender?
   season      String? // "Spring 2026"
   description String? @db.Text
 
   // Roster commitment cap (owner 2026-07-24, QA-103): counts PAID/committed
-  // players, never offers — clubs over-offer on purpose. null = no cap.
+  // players, never offers â€” clubs over-offer on purpose. null = no cap.
   maxPlayers     Int?
   // Show public roster-fill progress? null = inherit the club-wide default.
   showRosterFill Boolean?
@@ -467,10 +467,10 @@ model Team {
   // the public team page shows practice days only after this.
   practiceScheduleAnnouncedAt DateTime?
 
-  // Season continuity (docs/season-continuity-plan.md §2, owner-approved):
+  // Season continuity (docs/season-continuity-plan.md Â§2, owner-approved):
   // archived teams disappear from active lists but keep all history (games,
   // stats, chat read-only); lineage links a program's season instances
-  // (Huskies U13 2025-26 → U14 2026-27) for rollover + future multi-season stats.
+  // (Huskies U13 2025-26 â†’ U14 2026-27) for rollover + future multi-season stats.
   archivedAt      DateTime?
   continuedFromId String?
   continuedFrom   Team?     @relation("TeamLineage", fields: [continuedFromId], references: [id], onDelete: SetNull)
@@ -556,8 +556,8 @@ model ChatMute {
   @@unique([userId, teamId])
 }
 
-// Direct messages (2026-07-15): 1:1 threads inside a team context —
-// adult-to-adult (staff↔parent, staff↔staff). pairKey = sorted
+// Direct messages (2026-07-15): 1:1 threads inside a team context â€”
+// adult-to-adult (staffâ†”parent, staffâ†”staff). pairKey = sorted
 // "userA:userB:teamId" so a pair has exactly one thread per team.
 model Conversation {
   id        String   @id @default(uuid())
@@ -596,7 +596,7 @@ model DirectMessage {
   editedAt       DateTime?
   deletedAt      DateTime?
 
-  // Social share-to-chat (social-feed-plan P5) — same contract as TeamMessage
+  // Social share-to-chat (social-feed-plan P5) â€” same contract as TeamMessage
   sharedPostId String?
   sharedPost   Post?   @relation("DirectMessageSharedPost", fields: [sharedPostId], references: [id], onDelete: SetNull)
 
@@ -605,7 +605,7 @@ model DirectMessage {
   @@index([conversationId, createdAt])
 }
 
-// Per-member read cursor for a team chat — unread badges + notification
+// Per-member read cursor for a team chat â€” unread badges + notification
 // debounce both derive from it.
 model TeamChatRead {
   userId String
@@ -619,8 +619,8 @@ model TeamChatRead {
   @@index([teamId])
 }
 
-// Team events (owner ask 2026-07-07): arbitrary calendar entries — photo
-// day, film session, fundraiser — living in the SAME team calendar as
+// Team events (owner ask 2026-07-07): arbitrary calendar entries â€” photo
+// day, film session, fundraiser â€” living in the SAME team calendar as
 // practices and games. One event can span multiple teams (club managers
 // push club-wide, league owners push across their league's teams); staff
 // of every attached team can edit. Members get a bell+email on add/change.
@@ -645,7 +645,7 @@ enum SubmissionRequestStatus {
 }
 
 // Coach/TeamManager "add my team to this league" REQUEST (2026-07-15):
-// staff can't submit directly (payments hang off it) — a club operator
+// staff can't submit directly (payments hang off it) â€” a club operator
 // approves, and approval performs the actual TeamSubmission.
 model TeamSubmissionRequest {
   id       String @id @default(uuid())
@@ -655,7 +655,7 @@ model TeamSubmissionRequest {
   team     Team   @relation(fields: [teamId], references: [id], onDelete: Cascade)
 
   divisionId String
-  // Roster version chosen by the requester (playerIds) — used at approval.
+  // Roster version chosen by the requester (playerIds) â€” used at approval.
   playerIds  Json?
 
   requestedById String
@@ -710,7 +710,7 @@ model TeamEvent {
   startAt         DateTime
   durationMinutes Int      @default(60)
 
-  // Typed events (2026-07-15): workout/lift, training, scrimmage… shown as
+  // Typed events (2026-07-15): workout/lift, training, scrimmageâ€¦ shown as
   // chips on every calendar surface
   eventType TeamEventKind @default(OTHER)
 
@@ -736,15 +736,15 @@ model TeamEventTeam {
   @@index([teamId])
 }
 
-// Team polls & surveys (engagement v1 — docs/engagement-features-plan.md).
+// Team polls & surveys (engagement v1 â€” docs/engagement-features-plan.md).
 // Same membership as team chat: staff create, staff + rostered families
 // vote and see results. A poll holds 1..N questions so it doubles as a
 // lightweight survey ("which tournaments should we enter?").
 //
 // Three-tier polls (owner ruling 2026-07-24): a poll now has exactly ONE
-// scope — teamId (unchanged), tenantId (club-wide, ClubOwner/ClubManager),
+// scope â€” teamId (unchanged), tenantId (club-wide, ClubOwner/ClubManager),
 // or leagueId (league-wide, LeagueOwner/LeagueManager). Enforced at the API
-// layer (no DB check constraint via Prisma) — see lib/polls/scope.ts.
+// layer (no DB check constraint via Prisma) â€” see lib/polls/scope.ts.
 enum PollStatus {
   OPEN
   CLOSED
@@ -770,7 +770,7 @@ model Poll {
   closedAt    DateTime?
 
   questions    PollQuestion[]
-  // Set for every team chat this poll was posted/relayed into — a team
+  // Set for every team chat this poll was posted/relayed into â€” a team
   // poll relays to its own team (0 or 1 row); a club poll may relay to
   // several selected teams; a league poll never relays (owner: maybe later).
   chatMessages TeamMessage[]
@@ -855,8 +855,8 @@ model Player {
   consentGivenAt       DateTime?
   canLogin             Boolean   @default(false) // Only true if 13+
 
-  // Parental media consent — gates player-tagged public content AND opts
-  // into full names on public stats/rosters/leaders (plan §5/§11.1)
+  // Parental media consent â€” gates player-tagged public content AND opts
+  // into full names on public stats/rosters/leaders (plan Â§5/Â§11.1)
   mediaConsent MediaConsent @default(UNSET)
 
   // Social layer (social-feed-plan P3): gates DISTRIBUTION only (follows
@@ -864,12 +864,12 @@ model Player {
   // stays untouched either way; mediaConsent keeps gating RENDERING.
   socialVisibility SocialVisibility @default(PRIVATE)
 
-  // Player handle — the marketable identity (docs/roadmap/player-handles-plan.md
+  // Player handle â€” the marketable identity (docs/roadmap/player-handles-plan.md
   // P0). Claimed by the parent (or 13+ self); /p/<handle> resolves to the
   // player page. Lowercase, validated + reserved-word checked in lib/handles.
   handle String? @unique
 
-  // Soft delete — set when parent removes the child. Preserves history (offers,
+  // Soft delete â€” set when parent removes the child. Preserves history (offers,
   // tryout signups, team rosters) but excludes from active listings.
   deletedAt DateTime?
 
@@ -882,7 +882,7 @@ model Player {
   absorbedIntoPlayerId String?
   absorbedAt           DateTime?
 
-  // Parent/Guardian — the GUARDIAN + PAYER of record (family-accounts plan
+  // Parent/Guardian â€” the GUARDIAN + PAYER of record (family-accounts plan
   // 2026-07-23). For self-registered 13+ players this is their own user id
   // until a real guardian accepts a GUARDIAN FamilyInvitation.
   parentId String
@@ -890,7 +890,7 @@ model Player {
 
   // The player's OWN login account (family-accounts plan): set for
   // self-registered 13+ players and for parent-added kids who accepted a
-  // CHILD_LOGIN invite. Distinct from parentId — guardianship/payment vs
+  // CHILD_LOGIN invite. Distinct from parentId â€” guardianship/payment vs
   // "who can sign in as this player" are different concerns.
   userId      String? @unique
   userAccount User?   @relation("PlayerAccount", fields: [userId], references: [id], onDelete: SetNull)
@@ -963,7 +963,7 @@ model RefereeProfile {
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   // Certifications
-  certificationLevel        String? // "Level 1", "Level 2", etc. — self-declared
+  certificationLevel        String? // "Level 1", "Level 2", etc. â€” self-declared
   certificationExpiry       DateTime?
   // QA-208: proof of the self-declared level above. Data-URL upload (PDF or
   // image), same cap/shape as ClubClaim.proofDocumentUrl. verifiedById is a
@@ -982,7 +982,7 @@ model RefereeProfile {
   stripeAccountId     String? @unique
   stripeAccountStatus String?
 
-  // Scoresheet sign-off PIN (bcrypt hash) — entered at the scorer's table to
+  // Scoresheet sign-off PIN (bcrypt hash) â€” entered at the scorer's table to
   // approve a final score as the assigned referee
   signoffPinHash String?
 
@@ -1064,7 +1064,7 @@ model TryoutSignup {
   notes String? @db.Text
 
   // Tryout-day roll-call: set when the player arrives, cleared if mis-tapped.
-  // Orthogonal to status (payment/offer pipeline) — null after the tryout = no-show.
+  // Orthogonal to status (payment/offer pipeline) â€” null after the tryout = no-show.
   checkedInAt DateTime?
 
   // Relationships
@@ -1109,7 +1109,7 @@ model OfferTemplate {
   gamesMax Int?
 
   // Program structure is prose, not checkboxes (owner ruling 2026-07-24):
-  // "2 leagues, 2 tournaments, about 18 games" — free text, club's own words.
+  // "2 leagues, 2 tournaments, about 18 games" â€” free text, club's own words.
   programDescription String? @db.Text
 
   // Custom extras beyond the fixed gear checklist below (owner ruling
@@ -1156,7 +1156,7 @@ model Offer {
   practiceSessions Int     @default(0)
 
   // Games headline + program prose + custom extras, snapshotted from the
-  // template at creation (owner ruling 2026-07-24, refines QA-211) — same
+  // template at creation (owner ruling 2026-07-24, refines QA-211) â€” same
   // pattern as the fields above.
   gamesMin           Int?
   gamesMax           Int?
@@ -1206,7 +1206,7 @@ model Offer {
 }
 
 // One package choice on a multi-option offer ("Returning Player $950" /
-// "New Player $1,250"). A COPY seeded from a template at send time —
+// "New Player $1,250"). A COPY seeded from a template at send time â€”
 // later template edits never disturb sent offers.
 model OfferOption {
   id      String @id @default(uuid())
@@ -1271,8 +1271,8 @@ model ConnectedCustomer {
   id         String @id @default(uuid())
   userId     String
   user       User   @relation("ConnectedCustomers", fields: [userId], references: [id], onDelete: Cascade)
-  accountId  String // the club's connected account (acct_…)
-  customerId String // the Stripe customer on that account (cus_…)
+  accountId  String // the club's connected account (acct_â€¦)
+  customerId String // the Stripe customer on that account (cus_â€¦)
 
   createdAt DateTime @default(now())
 
@@ -1293,7 +1293,7 @@ enum OfferStatus {
 // ============================================
 
 // League OPERATOR (owner 2026-07-29 committed: "we have to build it"):
-// NPH runs many leagues — identity lives here once, leagues inherit
+// NPH runs many leagues â€” identity lives here once, leagues inherit
 // branding unless they override. docs/roadmap/league-operator-orgs.md.
 model Organization {
   id             String  @id @default(uuid())
@@ -1320,7 +1320,7 @@ model League {
   id              String        @id @default(uuid())
   name            String
   description     String?       @db.Text
-  // Demo world flag — see Tenant.isDemo. Seasons/games/posts derive.
+  // Demo world flag â€” see Tenant.isDemo. Seasons/games/posts derive.
   isDemo          Boolean       @default(false)
   ownerId         String
   organizationId  String?
@@ -1335,7 +1335,7 @@ model League {
   primaryColor String  @default("#1a73e8")
   socials      Json?
 
-  // Live-scoring configuration (docs/live-scoring-design.md) — owner-confirmed
+  // Live-scoring configuration (docs/live-scoring-design.md) â€” owner-confirmed
   // defaults: STANDARD depth, simple clock ON.
   statDepth              StatDepth  @default(STANDARD)
   gameClockMode          ClockMode  @default(SIMPLE)
@@ -1344,7 +1344,7 @@ model League {
   // Referee signs the scoresheet before a game can be finalized
   requireRefereeApproval Boolean    @default(false)
 
-  // League perks / "what's included" (QA-205) — predefined perk keys mixed
+  // League perks / "what's included" (QA-205) â€” predefined perk keys mixed
   // with free-text custom entries, plus an optional short "why join" blurb.
   perks     String[] @default([])
   perksNote String?  @db.Text
@@ -1360,7 +1360,7 @@ model League {
   postTags           PostTag[]
   follows            Follow[]
   waiverDocuments    WaiverDocument[]
-  // League-wide polls (three-tier polls ruling, owner 2026-07-24) — a poll
+  // League-wide polls (three-tier polls ruling, owner 2026-07-24) â€” a poll
   // has exactly one scope: teamId, tenantId, or leagueId.
   polls              Poll[]
 
@@ -1389,7 +1389,7 @@ model Season {
   currency String   @default("CAD")
 
   // Org-inheritable policy (league-ia-redesign plan, Phase A): null = inherit
-  // the Organization's seasonDefaults, else the system default — resolved by
+  // the Organization's seasonDefaults, else the system default â€” resolved by
   // lib/org/season-defaults.ts effectiveSeasonConfig. Explicit values are
   // deliberate per-season overrides.
   gameSlotMinutes     Int?
@@ -1407,7 +1407,7 @@ model Season {
   // Courts the league deliberately leaves empty, at every gym, every day
   // (owner ruling 2026-08-03). Overruns interleave and teams arrive late in
   // the summer, so an operator holds a court back rather than plan to the
-  // last slot. Capacity everywhere reads usable courts = max(0, courts −
+  // last slot. Capacity everywhere reads usable courts = max(0, courts âˆ’
   // buffer): the planner's weekends, the rental blocks, the ask sheet and
   // the scheduler's own slots. 0 = plan to the full building.
   courtBuffer     Int     @default(0)
@@ -1421,7 +1421,7 @@ model Season {
   /// the engine plans Sat+Sun first and Friday hours count as supply only
   /// where a weekend would otherwise be over or tight. "REGULAR" = Friday
   /// windows are normal capacity in the draw. The owner's reasoning: nobody
-  /// likes Fridays (work, school, travel) — capacity pressure is the only
+  /// likes Fridays (work, school, travel) â€” capacity pressure is the only
   /// honest reason to use one, so never fill a Friday that Sat+Sun could
   /// absorb.
   fridayPolicy    String?
@@ -1445,7 +1445,7 @@ model Season {
   playoffTeams              Int?
   // Scheduler v2 playoffs (owner 2026-08-08): per-division configuration
   // (qualifiers/format/guarantee/extras) and the generated STRUCTURAL
-  // schedule — placed games carrying placeholder slots ("SEED:3",
+  // schedule â€” placed games carrying placeholder slots ("SEED:3",
   // "WINNER:G2", "POOL:A:1"). Real Game rows materialize per game as
   // slots resolve; unresolved structure lives only here, so no public
   // surface ever meets a null team.
@@ -1468,12 +1468,12 @@ model Season {
   // 2026-07-30: make the hardcoded 14 a setting). Null = 14.
   balanceDueDaysBeforeStart Int?
   // League's declared weekend shape for teams with no preference of their
-  // own (owner 2026-08-01). Null = inherit org rulebook → SAME_DAY.
+  // own (owner 2026-08-01). Null = inherit org rulebook â†’ SAME_DAY.
   defaultWeekendStyle       WeekendStyle?
   // Club-entry application questions (two-level registration): array of
-  // strings, asked ONCE per club on their season entry — never per team.
+  // strings, asked ONCE per club on their season entry â€” never per team.
   applicationQuestions      Json?
-  // Game-day guest players (name+jersey, no account) — league can forbid.
+  // Game-day guest players (name+jersey, no account) â€” league can forbid.
   // null = inherit org default (system default: allowed).
   allowGuestPlayers         Boolean?
 
@@ -1534,7 +1534,7 @@ model Division {
   tier            Int     @default(1)
   maxTeams        Int?
   // Season planner (owner 2026-08-02): the operator's pre-registration
-  // estimate — planning runs off this until real approved teams exist.
+  // estimate â€” planning runs off this until real approved teams exist.
   expectedTeams   Int?
   // Travel fairness (owner 2026-08-02): this grade should ALTERNATE buildings
   // across weekends instead of keeping one gym all season.
@@ -1546,7 +1546,7 @@ model Division {
   @@index([seasonId])
 }
 
-// Level-1 registration (owner 2026-07-29): the CLUB commits to a season —
+// Level-1 registration (owner 2026-07-29): the CLUB commits to a season â€”
 // application answers, planned team counts (capacity planning), and the
 // club official's signature on the league's CLUB_OFFICIAL agreement.
 // Team submissions are level 2. Optional layer v1 (not enforced).
@@ -1607,10 +1607,10 @@ model TeamSubmission {
 
   // Weekend scheduling preference (owner 2026-08-01): the TEAM's choice
   // overrides the league's default. NO_PREFERENCE/null = schedule the way
-  // the league prefers (season → org rulebook → SAME_DAY).
+  // the league prefers (season â†’ org rulebook â†’ SAME_DAY).
   weekendStyle WeekendStyle?
 
-  // Schedule requests (owner 2026-08-01): OFF by default — the league flips
+  // Schedule requests (owner 2026-08-01): OFF by default â€” the league flips
   // this per team "upon request" before the club sees any request UI.
   scheduleRequestsEnabled Boolean @default(false)
 
@@ -1638,7 +1638,7 @@ model TeamScheduleRequest {
   kind   ScheduleRequestKind
   status ScheduleRequestStatus @default(PENDING)
 
-  // Which day this constrains — recurring weekday (0=Sunday…6=Saturday) OR
+  // Which day this constrains â€” recurring weekday (0=Sundayâ€¦6=Saturday) OR
   // one specific date, never both (enforced in zod + service layer).
   dayOfWeek Int?
   date      DateTime?
@@ -1723,7 +1723,7 @@ model SeasonRoster {
 }
 
 // Club asks the league to reopen a locked season roster; commissioner
-// approves (one-shot unlock — the next roster save re-locks) or denies.
+// approves (one-shot unlock â€” the next roster save re-locks) or denies.
 model RosterChangeRequest {
   id       String       @id @default(uuid())
   rosterId String
@@ -1735,7 +1735,7 @@ model RosterChangeRequest {
   message String @db.Text
 
   // Structured changes (2026-07-15): playerIds to add / roster playerIds to
-  // remove — approval APPLIES them to the locked roster. Free-text `message`
+  // remove â€” approval APPLIES them to the locked roster. Free-text `message`
   // stays as the optional note.
   additions Json?
   removals  Json?
@@ -1788,8 +1788,8 @@ model SeasonRosterPlayer {
 }
 
 // Commissioner ruling on a player's playoff eligibility, overriding the
-// games-played math (owner 2026-07-29). Note is REQUIRED — the audit trail
-// is the point ("injury exemption — league approved").
+// games-played math (owner 2026-07-29). Note is REQUIRED â€” the audit trail
+// is the point ("injury exemption â€” league approved").
 model PlayoffEligibilityOverride {
   id       String @id @default(uuid())
   seasonId String
@@ -1809,7 +1809,7 @@ model PlayoffEligibilityOverride {
 }
 
 // Game-day pickup player (owner 2026-07-29): name + jersey only, ONE game,
-// no account/roster/email — flagged everywhere, excluded from official
+// no account/roster/email â€” flagged everywhere, excluded from official
 // season stats until linked to a real Player (linkedPlayerId, later).
 model GameGuestPlayer {
   id     String @id @default(uuid())
@@ -1828,7 +1828,7 @@ model GameGuestPlayer {
 }
 
 // Plans as documents (owner 2026-08-02): a season holds MANY named calendars
-// — the one imported from the league's published schedule ("NPH plan"), plus
+// â€” the one imported from the league's published schedule ("NPH plan"), plus
 // whatever the operator saves off the solver. Exactly one is active, and the
 // active one is the one written onto SeasonSession.unitKeys/unitVenues, so
 // everything downstream keeps reading the column it always has. A plan row is
@@ -1843,18 +1843,18 @@ model SeasonPlan {
   // "proposed" (straight off the solver) | "manual" (the operator's edit).
   source String @default("manual")
 
-  // sessionId → unit keys ("age:<ageGroup>"), and sessionId → { unitKey →
-  // venueId }. Grade clusters, exactly as the board speaks them — applying a
+  // sessionId â†’ unit keys ("age:<ageGroup>"), and sessionId â†’ { unitKey â†’
+  // venueId }. Grade clusters, exactly as the board speaks them â€” applying a
   // plan expands them to division keys (lib/scheduler/planner applyAssignment).
   assignment Json
   venues     Json
 
   // The WORLD the plan was made in (owner 2026-08-02: "a new plan also could
-  // have different venues, it could have different settings — how are you
+  // have different venues, it could have different settings â€” how are you
   // going to save it and how do you remember? It could be a different team
   // combination"). { capturedAt, state } where state is the planner's own
-  // serializable input — team estimates per grade, the gyms each weekend with
-  // their capacity and fill order, hours-derived capacity, games per team —
+  // serializable input â€” team estimates per grade, the gyms each weekend with
+  // their capacity and fill order, hours-derived capacity, games per team â€”
   // minus the per-weekend assignment, which is what the two columns above
   // already are. Null on rows saved before world-tracking existed; every
   // reader falls back to the season's live settings.
@@ -1877,7 +1877,7 @@ model SeasonSession {
   phase              SessionPhase  @default(REGULAR)
   targetGamesPerTeam Int?
   /// The ROUND this weekend materializes (owner 2026-08-07: "sessions are
-  /// announced, weekends are booked"). Nullable — rounds are optional
+  /// announced, weekends are booked"). Nullable â€” rounds are optional
   /// structure, and a league that defines none behaves exactly as before.
   roundId            String?
   round              SessionRound? @relation(fields: [roundId], references: [id], onDelete: SetNull)
@@ -1887,7 +1887,7 @@ model SeasonSession {
   unitKeys           String[]      @default([])
   // Which BUILDING each unit plays in this session: { "division:<id>":
   // "<venueId>" } (owner 2026-08-02: every grade-weekend placement lives in
-  // exactly one gym). Same semantics as unitKeys — empty/null = no venue
+  // exactly one gym). Same semantics as unitKeys â€” empty/null = no venue
   // preference, the engine picks.
   unitVenues         Json?
 
@@ -1906,8 +1906,8 @@ enum SessionPhase {
   PLAYOFF
 }
 
-/// A month-anchored round the league ANNOUNCES ("Session 1 · October", "the
-/// January session" — owner naming 2026-08-07). Weekends are its per-grade
+/// A month-anchored round the league ANNOUNCES ("Session 1 Â· October", "the
+/// January session" â€” owner naming 2026-08-07). Weekends are its per-grade
 /// materialization via SeasonSession.roundId. Optional per league.
 model SessionRound {
   id       String @id @default(uuid())
@@ -1917,7 +1917,7 @@ model SessionRound {
   ordinal     Int
   /// Null reads as the derived "Session <ordinal>".
   label       String?
-  /// "2026-10" — the month the league anchors this round to.
+  /// "2026-10" â€” the month the league anchors this round to.
   monthAnchor String?
 
   sessions  SeasonSession[]
@@ -1942,7 +1942,7 @@ model SeasonSessionDay {
   @@index([date])
 }
 
-// The league's own referee pool — refs the commissioner knows and books
+// The league's own referee pool â€” refs the commissioner knows and books
 model LeagueReferee {
   id       String @id @default(uuid())
   leagueId String
@@ -1995,7 +1995,7 @@ model RefereeSessionRequest {
   // games officiated, not time; the shift is a scheduling estimate). Shown
   // to the ref BEFORE accepting; accepting = agreeing to this rate.
   offeredRatePerGame Decimal? @db.Decimal(10, 2)
-  // Stamped from offeredRatePerGame at accept — the agreement of record.
+  // Stamped from offeredRatePerGame at accept â€” the agreement of record.
   agreedRatePerGame  Decimal? @db.Decimal(10, 2)
 
   status       RefereeRequestStatus @default(PENDING)
@@ -2034,8 +2034,8 @@ model SeasonSessionDayVenue {
   // venue model v2). A rented block has a lifecycle the plan has to be honest
   // about, because "the solver put us here" and "the gym said yes" are not the
   // same fact:
-  //   "assumed"   — the solver assigned it from the pool. Nobody has booked it.
-  //   "confirmed" — the operator asserted the booking is real.
+  //   "assumed"   â€” the solver assigned it from the pool. Nobody has booked it.
+  //   "confirmed" â€” the operator asserted the booking is real.
   // The home gym is implicitly confirmed, and so is every row written before
   // this column existed, which is why the default is "confirmed": an existing
   // season must not wake up looking unbooked.
@@ -2081,9 +2081,9 @@ model SeasonVenue {
   // is the live truth.
   fillOrder       Int?
   // What this gym IS to the league (owner ruling 2026-08-03, venue model v2):
-  //   "home" — the building you own. Fills first, costs nothing, and there is
+  //   "home" â€” the building you own. Fills first, costs nothing, and there is
   //            at most one of it per season.
-  //   "pool" — a gym you rent by the court-day when the home gym runs out.
+  //   "pool" â€” a gym you rent by the court-day when the home gym runs out.
   //            An unordered pool: which one you rent is a cost question, not
   //            a ranking.
   role            String  @default("pool")
@@ -2095,8 +2095,8 @@ model SeasonVenue {
 }
 
 // A league's PRIVATE scheduling window at a venue for one season
-// (batch-backlog §2b). Global VenueHours = the venue's real operating hours,
-// shared by every org — scheduling edits must never write there.
+// (batch-backlog Â§2b). Global VenueHours = the venue's real operating hours,
+// shared by every org â€” scheduling edits must never write there.
 model SeasonVenueHours {
   id            String      @id @default(uuid())
   seasonVenueId String
@@ -2114,7 +2114,7 @@ model SeasonVenueHours {
 // ruling 2026-08-02: Six Park East is taken by the NJC/NSC circuits on six
 // known 2026-27 weekends, and the platform has to be able to say so).
 // Releasing a weekend leaves no row anywhere, so before this there was
-// nowhere to hang a reason — the grid could only read "off".
+// nowhere to hang a reason â€” the grid could only read "off".
 //
 // Defaults are pre-marked from real knowledge; the operator always wins.
 // Turning the cell on deletes the row (an override), so an attachment and a
@@ -2127,7 +2127,7 @@ model SeasonVenueUnavailability {
   venueId String
   venue   Venue  @relation(fields: [venueId], references: [id])
 
-  satDate DateTime // Saturday UTC midnight — the weekend key
+  satDate DateTime // Saturday UTC midnight â€” the weekend key
   reason  String? // "Taken: NJC/NSC"
 
   createdAt DateTime @default(now())
@@ -2217,7 +2217,7 @@ model Game {
 
   // Draft/publish layer (Schedule Studio P0, owner 2026-07-31): null = DRAFT,
   // visible only in the operator console. Publishing stamps the timestamp and
-  // sends the one schedule fanout — commits and edits before that are silent.
+  // sends the one schedule fanout â€” commits and edits before that are silent.
   publishedAt DateTime?
 
   homeScore Int?
@@ -2225,18 +2225,18 @@ model Game {
 
   isLocked     Boolean @default(false)
   defaultedBy  String?
-  // Why a game was cancelled/postponed/defaulted (owner 2026-08-01) — a
+  // Why a game was cancelled/postponed/defaulted (owner 2026-08-01) â€” a
   // predefined reason families see in the notification.
   statusReason String?
 
   // Scorekeeper's pre-game clock choice (owner 2026-07-15): null inherits the
-  // league's gameClockMode; true/false overrides per game — an unoperated
+  // league's gameClockMode; true/false overrides per game â€” an unoperated
   // clock is worse than none, so the person at the table decides.
   clockEnabled Boolean?
 
   // Playoffs (owner 2026-07-18): round number (1 = first round) + slot index
   // within the round. Later-round games are created by advancePlayoffs() as
-  // winners emerge — the bracket plan lives on the session's playoffPlan.
+  // winners emerge â€” the bracket plan lives on the session's playoffPlan.
   playoffRound Int?
   playoffSlot  Int?
 
@@ -2251,7 +2251,7 @@ model Game {
   // Drawn signature (PNG data URL from the console's signature pad)
   refereeSignature String?   @db.Text
   // True when the sign-off was PIN-verified against the ASSIGNED referee's
-  // account (UserRole role=Referee gameId=this game) — the strong approval.
+  // account (UserRole role=Referee gameId=this game) â€” the strong approval.
   refereeVerified  Boolean   @default(false)
 
   // Player of the Game (social-feed-plan P1): scorekeeper picks at finalize,
@@ -2300,7 +2300,7 @@ enum GameStatus {
 }
 
 // Append-only scoring stream (docs/live-scoring-design.md). Nothing is ever
-// edited or deleted — corrections VOID events. Score, box score, on-floor
+// edited or deleted â€” corrections VOID events. Score, box score, on-floor
 // state and PlayerStat rows are all derived by folding this stream.
 model GameEvent {
   id     String @id @default(uuid())
@@ -2397,7 +2397,7 @@ model PlayerStat {
 
 model Venue {
   id       String  @id @default(uuid())
-  tenantId String? // Optional — venues are global
+  tenantId String? // Optional â€” venues are global
   tenant   Tenant? @relation(fields: [tenantId], references: [id], onDelete: SetNull)
 
   name        String
@@ -2414,7 +2414,7 @@ model Venue {
   longitude Float?
 
   capacity Int?
-  courts   Int? // Legacy count — courts[] is the source of truth going forward
+  courts   Int? // Legacy count â€” courts[] is the source of truth going forward
   notes    String? @db.Text
 
   games                Game[]
@@ -2479,7 +2479,7 @@ model Practice {
 
   venueId  String?
   venue    Venue?  @relation(fields: [venueId], references: [id])
-  // Free-text fallback ("Main Gym") — practices rarely justify a Venue row
+  // Free-text fallback ("Main Gym") â€” practices rarely justify a Venue row
   location String?
 
   scheduledAt DateTime
@@ -2501,16 +2501,16 @@ model Practice {
   @@index([scheduledAt])
 }
 
-// Recurring practice pattern ("Tue 6:30 PM, 90 min, Main Gym") — defined at
+// Recurring practice pattern ("Tue 6:30 PM, 90 min, Main Gym") â€” defined at
 // team creation or later (TBD = no slots). Announce generates Practice
 // occurrences from these and notifies the team
-// (docs/engagement-features-plan.md → practices).
+// (docs/engagement-features-plan.md â†’ practices).
 model PracticeSlot {
   id     String @id @default(uuid())
   teamId String
   team   Team   @relation(fields: [teamId], references: [id], onDelete: Cascade)
 
-  dayOfWeek       Int // 0 = Sunday … 6 = Saturday
+  dayOfWeek       Int // 0 = Sunday â€¦ 6 = Saturday
   startTime       String // "18:30" wall time in the app timezone
   durationMinutes Int     @default(90)
   venueId         String?
@@ -2531,7 +2531,7 @@ enum PracticeStatus {
 }
 
 // ============================================
-// RSVP (calendar items — docs/feature-backlog.md spec)
+// RSVP (calendar items â€” docs/feature-backlog.md spec)
 // ============================================
 
 enum RsvpStatus {
@@ -2548,7 +2548,7 @@ enum RsvpItemType {
 
 // Keyed on the PLAYER (whose attendance matters); submitted by the parent
 // or the 13+ self-player (respondedBy). itemId is a soft reference into
-// Practice/Game/TeamEvent by itemType — items live in three tables, so no
+// Practice/Game/TeamEvent by itemType â€” items live in three tables, so no
 // FK; the API validates existence + roster membership.
 model EventRsvp {
   id String @id @default(uuid())
@@ -2588,7 +2588,7 @@ enum ProgramStaffDesignation {
 }
 
 // Who runs a program: a LEAD (person in charge) + ASSISTANTs. Soft ref by
-// (programType, programId) — camps/HLs/tournaments live in three tables
+// (programType, programId) â€” camps/HLs/tournaments live in three tables
 // with no shared parent (same pattern as EventRsvp). Assignment grants
 // manage-lite (view registrants, check-in, edit description/schedule);
 // pricing/publish/delete stay with club admins.
@@ -2621,7 +2621,7 @@ model Payment {
   // Stripe
   stripePaymentIntentId      String? @unique
   stripeChargeId             String? @unique
-  // Connected account the charge lives on (CONNECT_DIRECT) — null = platform
+  // Connected account the charge lives on (CONNECT_DIRECT) â€” null = platform
   stripeAccountId            String?
   // PLATFORM_COLLECT destination charges: the connected account the club's
   // share transfers to at charge time; refunds must reverse_transfer.
@@ -2630,8 +2630,8 @@ model Payment {
   // Cron finalizes it on the due date; Stripe charges + Smart-Retries + duns.
   stripeInvoiceId            String? @unique
 
-  // Parties — payer may be a person (family flows) or an organization via
-  // the obligation (club→league team fees), hence nullable.
+  // Parties â€” payer may be a person (family flows) or an organization via
+  // the obligation (clubâ†’league team fees), hence nullable.
   payerId String?
   payer   User?   @relation("PayerPayments", fields: [payerId], references: [id])
 
@@ -2729,7 +2729,7 @@ enum ObligationStatus {
 }
 
 // Per-merchant payment configuration (docs/payments-design.md). A merchant is
-// a club (tenant) today; leagues join in phase 2 — hence the polymorphic
+// a club (tenant) today; leagues join in phase 2 â€” hence the polymorphic
 // owner, exactly one of tenantId/leagueId set. Platform admin controls the
 // allowlist + fees; the merchant chooses within it.
 model PaymentConfig {
@@ -2739,7 +2739,7 @@ model PaymentConfig {
   leagueId String? @unique
   league   League? @relation(fields: [leagueId], references: [id], onDelete: Cascade)
 
-  // Platform-admin allowlist overrides — null inherits PlatformSettings.pay*
+  // Platform-admin allowlist overrides â€” null inherits PlatformSettings.pay*
   offlineAllowed         Boolean?
   connectAllowed         Boolean?
   platformCollectAllowed Boolean?
@@ -2749,12 +2749,12 @@ model PaymentConfig {
   offlineMethods PaymentMethod[] @default([CASH, ETRANSFER])
   onlineMode     OnlineMode? // null inherits payDefaultOnlineMode
 
-  // Installment reminders (payments v2 Stage F) — our branded pre-due nudge
+  // Installment reminders (payments v2 Stage F) â€” our branded pre-due nudge
   reminderLeadDays Int     @default(3)
   reminderEmail    Boolean @default(true)
   reminderPush     Boolean @default(false) // web push is a fast-follow
 
-  // Platform fee overrides on ONLINE charges — null inherits PlatformSettings
+  // Platform fee overrides on ONLINE charges â€” null inherits PlatformSettings
   platformFeeBps  Int?
   platformFeeFlat Decimal? @db.Decimal(10, 2)
 
@@ -2767,18 +2767,18 @@ model PaymentConfig {
 }
 
 // What is OWED, separate from the payments made against it. One obligation
-// per product row (tryout signup, offer, camp signup, …); payments — cash or
-// Stripe alike — reference it, so offline and online revenue report the same.
+// per product row (tryout signup, offer, camp signup, â€¦); payments â€” cash or
+// Stripe alike â€” reference it, so offline and online revenue report the same.
 model PaymentObligation {
   id String @id @default(uuid())
 
-  // Payer — a person (family flows) or a club (club→league/club flows, phase 2)
+  // Payer â€” a person (family flows) or a club (clubâ†’league/club flows, phase 2)
   payerUserId   String?
   payerUser     User?   @relation("UserObligations", fields: [payerUserId], references: [id])
   payerTenantId String?
   payerTenant   Tenant? @relation("TenantPayerObligations", fields: [payerTenantId], references: [id])
 
-  // Merchant (payee) — club now, league in phase 2
+  // Merchant (payee) â€” club now, league in phase 2
   payeeTenantId String?
   payeeTenant   Tenant? @relation("TenantPayeeObligations", fields: [payeeTenantId], references: [id])
   payeeLeagueId String?
@@ -2830,7 +2830,7 @@ model Announcement {
 
   isPinned Boolean @default(false)
   // Public announcements flow into the homepage/entity news feeds
-  // (docs/public-site-content-plan.md §6)
+  // (docs/public-site-content-plan.md Â§6)
   isPublic Boolean @default(false)
 
   createdAt DateTime @default(now())
@@ -2844,7 +2844,7 @@ model Announcement {
 
 // ============================================
 // PUBLIC CONTENT & FOLLOWS
-// (docs/public-site-content-plan.md — P1: RECAP_AI posts + Follow;
+// (docs/public-site-content-plan.md â€” P1: RECAP_AI posts + Follow;
 //  P2 adds creator posts + MediaAsset)
 // ============================================
 
@@ -2887,9 +2887,9 @@ model Post {
   @@index([kind, status, publishedAt])
 }
 
-// Media on a post (plan §5/§9): IMAGE covers photos (Vercel Blob in P2;
+// Media on a post (plan Â§5/Â§9): IMAGE covers photos (Vercel Blob in P2;
 // external URLs fine for embeds/demo), VIDEO_EMBED is YouTube/Vimeo (P2 PoC
-// per §11.3), VIDEO_NATIVE arrives with P3 (Mux/Cloudflare Stream).
+// per Â§11.3), VIDEO_NATIVE arrives with P3 (Mux/Cloudflare Stream).
 model MediaAsset {
   id     String @id @default(uuid())
   postId String
@@ -2924,11 +2924,20 @@ enum PostKind {
   ANNOUNCEMENT
   STAT_CARD // a player's own game stat-line card, shared to their profile
   PLAYER_OF_GAME // the POTG card (player-shared or the system final post)
-  // System-generated milestone card (business-model-v2 §12/§16 S1): player
+  // System-generated milestone card (business-model-v2 Â§12/Â§16 S1): player
   // milestones (PostTag playerId+gameId) or team standings-movement
-  // (PostTag teamId+gameId, no playerId). Feed Class A — never collapsed
+  // (PostTag teamId+gameId, no playerId). Feed Class A â€” never collapsed
   // into the routine-finals digest, same treatment as PLAYER_OF_GAME.
   MILESTONE
+  // Session/é€±-cadence content (2026-08-13). These are the first kinds that
+  // do NOT come from a single game finalize â€” they are computed across a
+  // session or a fixture list, which is why the feed goes quiet midweek
+  // today. `body` carries a JSON payload the card renderer reads; `title`
+  // stays human-readable for notifications and share sheets.
+  LEADERBOARD // top five in a stat across a session (players tagged)
+  MATCHUP // upcoming game of the week, written preview
+  RIVALRY // rematch between teams with history
+  CLUTCH_PLAY // a game-winner or a game-saving defensive stop
 }
 
 enum PostStatus {
@@ -3038,7 +3047,7 @@ enum PhotoScreenState {
 }
 
 // 24h story of a system-generated card (social-feed-plan P4). Render-params
-// only — the image is drawn on demand by /api/live/[gameId]/card*. Rows are
+// only â€” the image is drawn on demand by /api/live/[gameId]/card*. Rows are
 // KEPT after expiry (the family "My moments" archive); every public query
 // filters expiresAt > now().
 model Story {
@@ -3057,7 +3066,7 @@ model Story {
   customPhotoUrl   String?           @db.Text
   photoScreenState PhotoScreenState?
 
-  // Who actually tapped share — the parent for minors, the player if 13+
+  // Who actually tapped share â€” the parent for minors, the player if 13+
   createdByUserId String?
   createdBy       User?   @relation("StoriesCreated", fields: [createdByUserId], references: [id], onDelete: SetNull)
 
@@ -3083,7 +3092,7 @@ model StoryView {
   @@index([storyId])
 }
 
-// Fixed-emoji reactions on posts — same semantics as chat's MessageReaction.
+// Fixed-emoji reactions on posts â€” same semantics as chat's MessageReaction.
 model PostReaction {
   id     String @id @default(uuid())
   postId String
@@ -3101,11 +3110,11 @@ model PostReaction {
 enum CommentStatus {
   VISIBLE
   HIDDEN // auto-hidden at the report threshold, pending review
-  REMOVED_ORG // removed by the post's owner/org — soft, audit stays
-  REMOVED_AUTHOR // removed by the commenter — soft, audit stays
+  REMOVED_ORG // removed by the post's owner/org â€” soft, audit stays
+  REMOVED_AUTHOR // removed by the commenter â€” soft, audit stays
 }
 
-// Flat text comments (no threading — youth platform). Soft-delete only.
+// Flat text comments (no threading â€” youth platform). Soft-delete only.
 model Comment {
   id       String @id @default(uuid())
   postId   String
@@ -3153,9 +3162,9 @@ model Repost {
   @@index([userId, createdAt])
 }
 
-// Parental media consent (docs/public-site-content-plan.md §5). GRANTED also
-// opts the player INTO full names on public surfaces (owner decision §11.1);
-// otherwise public pages show "First L." — participants see full names.
+// Parental media consent (docs/public-site-content-plan.md Â§5). GRANTED also
+// opts the player INTO full names on public surfaces (owner decision Â§11.1);
+// otherwise public pages show "First L." â€” participants see full names.
 enum MediaConsent {
   UNSET
   GRANTED
@@ -3225,7 +3234,7 @@ model ReviewInvite {
 // Withdrawals need the other party's sign-off (owner 2026-07-18): installment
 // commitments make unilateral exits wrong. Clubs request out of a league
 // season (league approves); parents request a child's release from a roster
-// (club approves). League-side direct withdrawal stays — running the league
+// (club approves). League-side direct withdrawal stays â€” running the league
 // is their right; SELF-withdrawal is what goes through here.
 enum WithdrawalType {
   CLUB_FROM_LEAGUE
@@ -3301,7 +3310,7 @@ model StaffInvitation {
   type   InvitationType
   status InvitationStatus @default(PENDING)
 
-  // Lazy expiry (checked on access, no cron) — stale PENDING invites used to
+  // Lazy expiry (checked on access, no cron) â€” stale PENDING invites used to
   // block re-inviting the same person forever. Null = legacy rows, never expire.
   expiresAt DateTime?
 
@@ -3377,10 +3386,10 @@ model PlayerInvitation {
 
 // ============================================
 // FAMILY INVITATIONS (family-accounts plan 2026-07-23)
-// The parent↔child linking layer that never existed: CHILD_LOGIN gives a
+// The parentâ†”child linking layer that never existed: CHILD_LOGIN gives a
 // parent-added 13+ kid their own account attached to the SAME Player row;
 // GUARDIAN attaches a real parent (guardian+payer) to a self-registered
-// 13+ player. Under-13: never — COPPA keeps them parent-managed only.
+// 13+ player. Under-13: never â€” COPPA keeps them parent-managed only.
 // ============================================
 
 enum FamilyInvitationType {
@@ -3703,7 +3712,7 @@ enum CampSignupStatus {
 }
 
 // ============================================
-// TRAINER PROGRAMS (batch-backlog §5)
+// TRAINER PROGRAMS (batch-backlog Â§5)
 // Solo-operator (TenantType TRAINER) offerings. Camps reuse the Camp model;
 // everything session-shaped (group training, clinics, S&C, open workouts)
 // lives here. 1-on-1 booking = TrainerProfile + availability windows that
@@ -3737,7 +3746,7 @@ model TrainingSession {
   scheduleType TrainingScheduleType @default(ONE_TIME)
   // ONE_TIME
   startAt      DateTime?
-  // RECURRING ("Tuesdays 18:00, Jan 6 – Mar 30")
+  // RECURRING ("Tuesdays 18:00, Jan 6 â€“ Mar 30")
   dayOfWeek    Int? // 0 = Sunday ... 6 = Saturday
   // Multi-day recurrence (QA-203): when set, wins over dayOfWeek.
   daysOfWeek   Int[]                @default([])
@@ -3792,7 +3801,7 @@ enum TrainingSignupStatus {
   CANCELLED
 }
 
-// One row per trainer tenant — the 1-on-1 offering ("One-on-One Training",
+// One row per trainer tenant â€” the 1-on-1 offering ("One-on-One Training",
 // owner ruling 2026-07-21: ONE generic program; parents book INTO it by
 // picking a generated slot of slotMinutes length).
 model TrainerProfile {
@@ -3805,13 +3814,13 @@ model TrainerProfile {
   oneOnOneEnabled Boolean  @default(false)
   oneOnOneTitle   String   @default("One-on-One Training")
   oneOnOneFee     Decimal? @db.Decimal(10, 2)
-  slotMinutes     Int      @default(60) // 30/45/60/90... — generated slot length
+  slotMinutes     Int      @default(60) // 30/45/60/90... â€” generated slot length
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
 
-// Trainer-declared availability windows (mirrors RefereeAvailability) —
+// Trainer-declared availability windows (mirrors RefereeAvailability) â€”
 // slots of TrainerProfile.slotMinutes are generated inside these windows.
 model TrainerAvailability {
   id       String @id @default(uuid())
@@ -3862,9 +3871,9 @@ enum OneOnOneBookingStatus {
 // PLATFORM SETTINGS (singleton)
 // ============================================
 
-// Session-scoped demo actions (limited-launch-demo-build-2026-08.md §3):
-// whitelisted things a demo visitor "really does" — chat messages, RSVPs,
-// the offer accept — stored here, keyed by their demo session, merged into
+// Session-scoped demo actions (limited-launch-demo-build-2026-08.md Â§3):
+// whitelisted things a demo visitor "really does" â€” chat messages, RSVPs,
+// the offer accept â€” stored here, keyed by their demo session, merged into
 // reads ONLY for that session, purged at the nightly reset. Real tables
 // never see demo-visitor writes; ghost coach replies live here too.
 model DemoSessionAction {
@@ -3884,7 +3893,7 @@ model PlatformSettings {
   enabledCountries String[] // ISO codes: ["US", "CA"]
 
   // Which demo scenario/stage the world currently holds (admin demo loader,
-  // owner 2026-08-01). {scenario, stage, loadedAt} — null = unknown/manual.
+  // owner 2026-08-01). {scenario, stage, loadedAt} â€” null = unknown/manual.
   demoState Json?
 
   // Limited-launch kill switch (limited-launch-demo-build-2026-08.md):
@@ -3893,7 +3902,7 @@ model PlatformSettings {
   // demo era disappears; data stays, unlisted. Flip on real-launch day.
   demoModeEnabled Boolean @default(false)
 
-  // Platform-wide payment policy — the defaults every merchant inherits.
+  // Platform-wide payment policy â€” the defaults every merchant inherits.
   // Per-merchant PaymentConfig rows override field-by-field (null = inherit).
   payOfflineAllowed         Boolean    @default(true)
   payConnectAllowed         Boolean    @default(true)
@@ -3904,7 +3913,7 @@ model PlatformSettings {
 
   // Global search-engine switch (owner-controlled from admin settings).
   // OFF = site-wide noindex + robots disallow + empty sitemap, regardless of
-  // per-page rules. Flip ON at go-live (docs/roadmap/seo-strategy.md §9).
+  // per-page rules. Flip ON at go-live (docs/roadmap/seo-strategy.md Â§9).
   seoIndexingEnabled Boolean @default(false)
 
   // Platform theme palette (admin-switchable; Energy Pass 2026-07-15).
@@ -3922,7 +3931,7 @@ model PlatformSettings {
 
 /// First-party view tracking for PUBLIC pages (SEO analytics). One row per
 /// server render of a tracked page; `source` classifies the referrer so we
-/// can report organic-search landings per club — the "your page got N Google
+/// can report organic-search landings per club â€” the "your page got N Google
 /// visits without you doing anything" claim-pitch number.
 model PublicPageView {
   id         String   @id @default(uuid())
@@ -3939,11 +3948,11 @@ model PublicPageView {
   @@index([source, createdAt])
 }
 
-/// Recsys S0 (business-model-v2.md §11/§16): raw interaction log for the feed
+/// Recsys S0 (business-model-v2.md Â§11/Â§16): raw interaction log for the feed
 /// and news surfaces, web + native, signed-in or anonymous. One row per
 /// client-batched event; Phase 1 heuristic ranking (UserAffinity) and later
 /// phases read from this table. No relations by design (PublicPageView
-/// precedent) — this is a high-volume append-only log, not a joined entity.
+/// precedent) â€” this is a high-volume append-only log, not a joined entity.
 model FeedEvent {
   id        String   @id @default(uuid())
   userId    String? // null = anonymous (signed-out impression/tap)
@@ -3968,7 +3977,7 @@ model ClubClaim {
   tenantId String
   tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
-  // v2 (owner 2026-07-18): claims start ANONYMOUS — ownership binds to a User
+  // v2 (owner 2026-07-18): claims start ANONYMOUS â€” ownership binds to a User
   // at completion, never to a contact point. Null until the completion token
   // is redeemed (v1 signed-in claims still set it up front).
   userId String?
@@ -3989,7 +3998,7 @@ model ClubClaim {
   claimantEmail    String?
   proofNote        String? @db.Text
   // Optional supporting document for the proof path (CRA letter, incorporation,
-  // insurance cert, photo) — webp data URL, shown to the admin reviewer.
+  // insurance cert, photo) â€” webp data URL, shown to the admin reviewer.
   proofDocumentUrl String? @db.Text
 
   // Reservation + binding: a verified-but-unregistered claim holds the club
@@ -4034,7 +4043,7 @@ model Tournament {
   name        String
   description String? @db.Text
 
-  // Owner (the user who created it — club owner or league owner)
+  // Owner (the user who created it â€” club owner or league owner)
   ownerId String
   owner   User   @relation(fields: [ownerId], references: [id])
 
@@ -4149,7 +4158,7 @@ model TournamentVenue {
 }
 
 // ============================================
-// COMMUNICATIONS & CONSENT (CASL) — 2026-07-09
+// COMMUNICATIONS & CONSENT (CASL) â€” 2026-07-09
 // ============================================
 
 enum ConsentScope {
@@ -4159,14 +4168,14 @@ enum ConsentScope {
 }
 
 enum ConsentStatus {
-  EXPRESS // explicit checkbox — durable until withdrawn
-  IMPLIED // existing business relationship (registration/purchase) — ~2y window
+  EXPRESS // explicit checkbox â€” durable until withdrawn
+  IMPLIED // existing business relationship (registration/purchase) â€” ~2y window
   WITHDRAWN
 }
 
 /// Marketing-email consent, scoped PER SENDING ORG (CASL: the sender is the
 /// club/league, not the platform). Transactional email is out of scope here.
-/// Bare ids (no FK relations) by design — consent must survive org deletion.
+/// Bare ids (no FK relations) by design â€” consent must survive org deletion.
 model CommunicationConsent {
   id     String @id @default(uuid())
   userId String
@@ -4178,7 +4187,7 @@ model CommunicationConsent {
   status ConsentStatus
   source String // e.g. "registration:camp:<id>" | "checkbox:signup" | "unsubscribe-link"
 
-  /// Rolls forward on each new registration — anchors the implied-consent window.
+  /// Rolls forward on each new registration â€” anchors the implied-consent window.
   lastEngagedAt DateTime  @default(now())
   withdrawnAt   DateTime?
 
@@ -4262,14 +4271,14 @@ model MessageLog {
   @@index([senderId])
 }
 
-// ── Waivers + e-signature (docs/roadmap/waivers-esign.md, owner spec 2026-07-20) ──
+// â”€â”€ Waivers + e-signature (docs/roadmap/waivers-esign.md, owner spec 2026-07-20) â”€â”€
 // Issued by leagues (auto-sent to roster parents on team-submission approval)
-// AND clubs (attached to registration paths — phase B). Ontario-structured
+// AND clubs (attached to registration paths â€” phase B). Ontario-structured
 // templates; province differences live in lib/waivers/templates.ts, not here.
 
 enum WaiverType {
   ACKNOWLEDGMENT_INDEMNITY // Acknowledgment of risk + parent indemnity (ON: naive liability waivers for minors are likely unenforceable)
-  CONCUSSION_CODE // Rowan's Law concussion code of conduct — annual renewal
+  CONCUSSION_CODE // Rowan's Law concussion code of conduct â€” annual renewal
   MEDIA_CONSENT
   CUSTOM
 }
@@ -4310,7 +4319,7 @@ model WaiverDocument {
   @@index([leagueId])
 }
 
-// One emailed signing link (tokenized, public page — token hash at rest,
+// One emailed signing link (tokenized, public page â€” token hash at rest,
 // mechanics copied from lib/auth-magic.ts). Re-sends mint new rows.
 model WaiverSignRequest {
   id       String         @id @default(uuid())
@@ -4341,7 +4350,7 @@ model WaiverSignature {
   seasonId String?
   season   Season?        @relation(fields: [seasonId], references: [id])
 
-  // Exact text signed — retrievable forever regardless of later edits
+  // Exact text signed â€” retrievable forever regardless of later edits
   waiverVersion Int
   bodySnapshot  String @db.Text
 
@@ -4365,7 +4374,7 @@ model WaiverSignature {
 
 // Waiver reminder dedupe (owner 2026-07-20: push + reminder 7 days / 24 hours
 // before the league season starts for unsigned required waivers). Plain ids on
-// purpose — no relations, rows are a send-once ledger.
+// purpose â€” no relations, rows are a send-once ledger.
 model WaiverReminder {
   id           String   @id @default(uuid())
   playerId     String
@@ -4382,7 +4391,7 @@ model WaiverReminder {
 // Roster-deadline reminder dedupe (owner ruling 2026-08-11, QA T-017): the
 // escalating cadence toward the league's roster deadline (T-30 email, T-14
 // +bell, T-7 +push, T-24h urgent, day-after overdue) sends each window ONCE
-// per team per season. Mirrors WaiverReminder: plain ids, no relations —
+// per team per season. Mirrors WaiverReminder: plain ids, no relations â€”
 // rows are a send-once ledger. teamSubmissionId also carries the synthetic
 // values "digest" (league-operator digest rows, windows digest_t7 /
 // digest_overdue) and the real submission id for the one-time

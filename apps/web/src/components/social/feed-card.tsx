@@ -8,6 +8,12 @@ import { logFeedEvent } from "@/lib/feed-telemetry"
 
 const EMOJIS = ["👍", "❤️", "😂", "🎉", "🔥", "🏀"] as const
 
+import {
+  LeaderboardCard,
+  MatchupCard,
+  RivalryCard,
+} from "@/components/social/cards/showcase-cards"
+
 interface CommentRow {
   id: string
   body: string
@@ -38,10 +44,26 @@ const IC = {
   send: "M22 2 11 13M22 2l-7 20-4-9-9-4 20-7Z",
 }
 
+/** Kinds whose `body` is a JSON payload for a designed card, not prose. */
+const GENERATED_KINDS = new Set(["LEADERBOARD", "MATCHUP", "RIVALRY", "CLUTCH_PLAY"])
+function safeJson(body: string | null | undefined) {
+  if (!body) return null
+  try {
+    const v = JSON.parse(body)
+    return v && typeof v === "object" ? v : null
+  } catch {
+    return null
+  }
+}
+
 const KIND_CHIP: Record<string, { label: string; cls: string }> = {
   PLAYER_OF_GAME: { label: "🏀 Player of the Game", cls: "bg-gold-50 text-gold-700 ring-gold-200" },
   STAT_CARD: { label: "📊 Game stats", cls: "bg-play-50 text-play-700 ring-play-200" },
   RECAP_AI: { label: "📰 Recap", cls: "bg-ink-50 text-ink-600 ring-ink-200" },
+  LEADERBOARD: { label: "Leaders", cls: "bg-gold-50 text-gold-700 ring-gold-200" },
+  MATCHUP: { label: "Matchup", cls: "bg-play-50 text-play-700 ring-play-200" },
+  RIVALRY: { label: "Rivalry", cls: "bg-hoop-50 text-hoop-700 ring-hoop-200" },
+  CLUTCH_PLAY: { label: "Clutch", cls: "bg-live-50 text-live-600 ring-live-100" },
   ANNOUNCEMENT: { label: "📣 Announcement", cls: "bg-court-50 text-court-700 ring-court-200" },
   ARTICLE: { label: "📰 Club post", cls: "bg-ink-50 text-ink-600 ring-ink-200" },
   PHOTO_SET: { label: "📷 Photos", cls: "bg-hoop-50 text-hoop-700 ring-hoop-200" },
@@ -312,6 +334,14 @@ export function FeedCard({ item, manageable = false }: { item: FeedItem; managea
 
   if (deleted) return null
 
+  /**
+   * Session-cadence card kinds (2026-08-13) carry a JSON payload in `body`
+   * and render as their own designed card rather than the generic
+   * chip-headline-paragraph shell. They keep the engagement bar underneath,
+   * so likes/comments/reposts work exactly as on every other post.
+   */
+  const generated = GENERATED_KINDS.has(item.kind) ? safeJson(item.body) : null
+
   const authorLabel = item.authorName ?? "SportsHub One"
   const chip = item.isSystemFinal
     ? { label: "🏁 Final score", cls: "bg-court-50 text-court-700 ring-court-200" }
@@ -388,12 +418,23 @@ export function FeedCard({ item, manageable = false }: { item: FeedItem; managea
         </span>
       </div>
 
-      <Link href={href} onClick={logTap} className="block px-4 pt-1.5">
-        <h3 className="text-ink-950 text-[15px] font-bold leading-snug">{item.title}</h3>
-        {caption.trim() && !editing && (
-          <p className="text-ink-600 mt-1 line-clamp-3 text-sm">{caption}</p>
-        )}
-      </Link>
+      {/* Session-cadence kinds render their own designed card in place of the
+          headline+caption block, and keep this post's header and engagement
+          bar so likes, comments and reposts behave identically. */}
+      {generated ? (
+        <div className="pt-1.5">
+          {item.kind === "LEADERBOARD" && <LeaderboardCard {...(generated as any)} />}
+          {item.kind === "MATCHUP" && <MatchupCard {...(generated as any)} />}
+          {item.kind === "RIVALRY" && <RivalryCard {...(generated as any)} />}
+        </div>
+      ) : (
+        <Link href={href} onClick={logTap} className="block px-4 pt-1.5">
+          <h3 className="text-ink-950 text-[15px] font-bold leading-snug">{item.title}</h3>
+          {caption.trim() && !editing && (
+            <p className="text-ink-600 mt-1 line-clamp-3 text-sm">{caption}</p>
+          )}
+        </Link>
+      )}
       {editing && (
         <div className="space-y-2 px-4 pt-2">
           <textarea
