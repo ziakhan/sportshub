@@ -66,5 +66,14 @@ export async function POST(req: Request) {
     maxAge: 60 * 60 * 12,
     path: "/",
   })
+  // Client-readable mirror so client components (chat dock) can branch to
+  // the overlay endpoints. Carries no authority — the signed cookie does.
+  res.cookies.set("demo-view-hint", persona, {
+    httpOnly: false,
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
+    maxAge: 60 * 60 * 12,
+    path: "/",
+  })
   return res
 }

@@ -32,6 +32,26 @@ interface DockMessage {
 const POLL_MS = 5000
 const SUMMARY_POLL_MS = 30_000
 
+// Persona demo (limited-launch): sends route to the session overlay and
+// ghost-coach replies merge in on poll. The hint cookie mirrors the
+// httpOnly demo-view cookie so client components can branch.
+function inDemoSession(): boolean {
+  return typeof document !== "undefined" && document.cookie.includes("demo-view-hint=")
+}
+
+function overlayToDockMessage(row: { id: string; kind: string; text: string; at: string }, userId: string): DockMessage {
+  return {
+    id: `demo-${row.id}`,
+    body: row.text,
+    createdAt: row.at,
+    poll: null,
+    sender:
+      row.kind === "you"
+        ? { id: userId, name: "You", isStaff: false }
+        : { id: "demo-ghost-coach", name: "Coach", isStaff: true, context: "Head Coach" },
+  }
+}
+
 export function ChatDock({ userId }: { userId: string }) {
   const [teams, setTeams] = useState<DockTeam[] | null>(null)
   const [open, setOpen] = useState(false)
@@ -223,7 +243,14 @@ function DockConversation({ teamId, userId }: { teamId: string; userId: string }
     const data = await res.json()
     mergeNewer(data.messages)
     applyPollUpdates(data.pollUpdates)
-  }, [teamId, messages, mergeNewer, applyPollUpdates])
+    if (inDemoSession()) {
+      const overlay = await fetch(`/api/demo/action/chat?targetId=${teamId}`).catch(() => null)
+      if (overlay?.ok) {
+        const od = await overlay.json()
+        mergeNewer((od.messages ?? []).map((m: any) => overlayToDockMessage(m, userId)))
+      }
+    }
+  }, [teamId, messages, mergeNewer, applyPollUpdates, userId])
 
   // Realtime ping for the open conversation; poll stretches while connected
   const { connected } = useRealtime({
@@ -248,6 +275,26 @@ function DockConversation({ teamId, userId }: { teamId: string; userId: string }
     if (!body || sending) return
     setSending(true)
     try {
+      if (inDemoSession()) {
+        // Demo: the message lands in the session overlay; the ghost coach
+        // answers on a later poll. Real tables never see it.
+        const res = await fetch(`/api/demo/action/chat`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ targetId: teamId, text: body }),
+        })
+        if (res.ok) {
+          const data = await res.json()
+          setInput("")
+          mergeNewer([
+            overlayToDockMessage(
+              { id: data.id, kind: "you", text: body, at: new Date().toISOString() },
+              userId
+            ),
+          ])
+        }
+        return
+      }
       const res = await fetch(`/api/teams/${teamId}/messages`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
