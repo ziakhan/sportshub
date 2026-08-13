@@ -133,8 +133,9 @@ export default async function HomePage() {
     <>
       {/* Welcome pop-up: server-rendered into the first HTML so it paints
           within a second (owner ruling 2026-08-13) — home page, signed-out,
-          every load, never inside a persona session. */}
-      {!userId && (await isDemoModeEnabled()) && !readDemoView() && <WelcomePopup />}
+          every load. A demo-view cookie WITHOUT a session is a zombie (the
+          demo requires sign-in), so it never suppresses the greeting. */}
+      {!userId && (await isDemoModeEnabled()) && <WelcomePopup />}
       {/* Live scoring pings re-render the scoreboard strip (debounced) */}
       <RealtimeRefresh rooms={["scores"]} events={["game.update"]} />
       {userId && <HomePersonalBand userId={userId} />}

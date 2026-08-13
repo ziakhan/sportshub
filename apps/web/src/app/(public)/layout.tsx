@@ -178,7 +178,7 @@ export default async function PublicLayout({ children }: { children: React.React
           drawer stays available inside a persona session too (switching
           personas is one tap); the pop-up hides there. */}
       {(await isDemoModeEnabled()) && (
-        <DemoChrome signedIn={isLoggedIn} inDemoSession={!!readDemoView()} />
+        <DemoChrome signedIn={isLoggedIn} inDemoSession={isLoggedIn && !!readDemoView()} />
       )}
 
       <footer className="bg-ink-950 mt-auto border-t border-white/5 py-14 text-white">
