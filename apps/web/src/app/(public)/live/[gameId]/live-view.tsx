@@ -445,13 +445,17 @@ export function LiveView({ gameId }: { gameId: string }) {
           {/* Platform law: every rendered entity is clickable. */}
           <Link
             href={`/player/${entry.l.playerId}`}
-            className="text-ink-950 hover:text-play-600 min-w-0 flex-1 truncate text-[15.5px] font-bold leading-tight transition-colors"
+            className={`text-ink-950 hover:text-play-600 min-w-0 flex-1 truncate text-[15.5px] font-bold leading-tight transition-colors ${
+              mirror ? "text-right" : ""
+            }`}
           >
             {shortName(entry.l.playerId)}
           </Link>
         </div>
+        {/* justify-end, NOT flex-row-reverse — reversing turned "24 PTS" into
+            "PTS 24". Reading order stays; only the alignment flips. */}
         <div
-          className={`mt-2.5 flex items-end gap-2 ${mirror ? "flex-row-reverse pr-1.5" : "pl-1.5"}`}
+          className={`mt-2.5 flex items-end gap-2 ${mirror ? "justify-end pr-1.5" : "pl-1.5"}`}
         >
           <span className="font-condensed text-ink-950 text-[3.1rem] font-black leading-[0.85] tabular-nums">
             <FlashNum value={entry.value} />
