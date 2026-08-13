@@ -407,7 +407,11 @@ export function LiveView({ gameId }: { gameId: string }) {
     entry: { l: PlayerLine; value: number; unit: string } | null,
     teamId: string,
     sub: (l: PlayerLine) => string,
-    won: boolean
+    won: boolean,
+    /** Away side mirrors so the two cards face each other — restores the
+     *  original `right` behaviour, matches the team-stats comparison on the
+     *  same page, and closes the gutter on the right card. */
+    mirror = false
   ) => {
     const color = colorOf(teamId)
     if (!entry) {
@@ -425,8 +429,13 @@ export function LiveView({ gameId }: { gameId: string }) {
           backgroundColor: `${color}${won ? "14" : "0a"}`,
         }}
       >
-        <span className="absolute inset-y-0 left-0 w-1" style={{ backgroundColor: color }} />
-        <div className="flex items-center gap-2.5 pl-1.5">
+        <span
+          className={`absolute inset-y-0 w-1 ${mirror ? "right-0" : "left-0"}`}
+          style={{ backgroundColor: color }}
+        />
+        <div
+          className={`flex items-center gap-2.5 ${mirror ? "flex-row-reverse pr-1.5" : "pl-1.5"}`}
+        >
           <span
             className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-[11.5px] font-extrabold text-white shadow-sm"
             style={{ backgroundColor: color }}
@@ -441,7 +450,9 @@ export function LiveView({ gameId }: { gameId: string }) {
             {shortName(entry.l.playerId)}
           </Link>
         </div>
-        <div className="mt-2.5 flex items-end gap-2 pl-1.5">
+        <div
+          className={`mt-2.5 flex items-end gap-2 ${mirror ? "flex-row-reverse pr-1.5" : "pl-1.5"}`}
+        >
           <span className="font-condensed text-ink-950 text-[3.1rem] font-black leading-[0.85] tabular-nums">
             <FlashNum value={entry.value} />
           </span>
@@ -449,7 +460,13 @@ export function LiveView({ gameId }: { gameId: string }) {
             {entry.unit}
           </span>
         </div>
-        <p className="text-ink-600 mt-2 truncate pl-1.5 text-[13px] font-semibold">{sub(entry.l)}</p>
+        <p
+          className={`text-ink-600 mt-2 truncate text-[13px] font-semibold ${
+            mirror ? "pr-1.5 text-right" : "pl-1.5"
+          }`}
+        >
+          {sub(entry.l)}
+        </p>
       </div>
     )
   }
@@ -541,7 +558,7 @@ export function LiveView({ gameId }: { gameId: string }) {
             </div>
             <div className="flex items-stretch gap-2.5">
               {leaderCell(h, game.homeTeamId, sec.sub, hWins)}
-              {leaderCell(a, game.awayTeamId, sec.sub, !hWins)}
+              {leaderCell(a, game.awayTeamId, sec.sub, !hWins, true)}
             </div>
           </div>
         )
