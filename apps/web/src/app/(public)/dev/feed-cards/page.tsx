@@ -181,22 +181,30 @@ export default async function FeedCardsPreview() {
             when="Posts after each session or weekend"
             why="Turns the whole league into a competition instead of spotlighting one player. Five names per post, six stats to run — that is thirty kids featured a week, not one."
           >
-            {live ? (
+            {/* BOTH, deliberately: the sample set is the one to show people
+                (clean names, tidy numbers), the live set proves it works
+                against real data. Neither replaces the other. */}
+            <div className="space-y-8">
               <div className="space-y-5">
-                <p className="border-court-200 bg-court-50 text-court-800 mb-1 rounded-xl border px-3 py-2 text-[12.5px] font-bold">
-                  Live data — real players, clubs and averages from {live.label}
+                <p className="border-play-200 bg-play-50 text-play-800 rounded-xl border px-3 py-2 text-[12.5px] font-bold">
+                  Sample data — the demo set, safe to show anyone
                 </p>
-                {live.boards.map((b: any) => (
-                  <LeaderboardCard key={b.statLabel} {...b} period={live.label} />
-                ))}
-              </div>
-            ) : (
-              <div className="space-y-5">
                 {LEADERBOARDS.map((b) => (
-                  <LeaderboardCard key={b.statLabel} {...b} period="Week 6 · Grade 10" />
+                  <LeaderboardCard key={`sample-${b.statLabel}`} {...b} period="Week 6 · Grade 10" />
                 ))}
               </div>
-            )}
+
+              {live && (
+                <div className="space-y-5">
+                  <p className="border-court-200 bg-court-50 text-court-800 rounded-xl border px-3 py-2 text-[12.5px] font-bold">
+                    Live data — real players, clubs and averages from {live.label}
+                  </p>
+                  {live.boards.map((b: any) => (
+                    <LeaderboardCard key={`live-${b.statLabel}`} {...b} period={live.label} />
+                  ))}
+                </div>
+              )}
+            </div>
           </Section>
 
           <Section
