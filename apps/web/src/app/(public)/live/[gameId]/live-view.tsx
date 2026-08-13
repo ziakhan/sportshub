@@ -1288,25 +1288,29 @@ export function LiveView({ gameId }: { gameId: string }) {
                 {(["home", "away"] as const).map((side) => {
                   const tid = side === "home" ? game.homeTeamId : game.awayTeamId
                   const tname = side === "home" ? game.homeTeamName : game.awayTeamName
-                  const score = side === "home" ? homeScore : awayScore
                   const on = boxSide === side
+                  const color = colorOf(tid)
                   return (
                     <button
                       key={side}
                       onClick={() => setBoxSide(side)}
                       aria-pressed={on}
-                      className={`flex flex-1 items-center justify-center gap-2 truncate rounded-lg px-3 py-2 text-[13px] font-bold transition-colors ${
-                        on ? "text-white shadow-sm" : "text-ink-600 hover:bg-white/70"
+                      className={`flex flex-1 items-center justify-center gap-2 truncate rounded-lg px-3 py-2.5 text-[13.5px] font-bold transition-colors ${
+                        on ? "text-white shadow-sm" : "hover:bg-white/70"
                       }`}
-                      style={on ? { backgroundColor: colorOf(tid) } : undefined}
+                      style={on ? { backgroundColor: color } : { color }}
                     >
-                      {/* Full team name, not the abbreviation — this switcher
-                          decides which roster you are looking at, so it has to
-                          be unambiguous (tester 2026-08-13). */}
+                      {/* The score is dropped — it is already large in the hero
+                          right above. Colour does the identifying instead: the
+                          idle team wears its own colour as text with a dot, the
+                          active one fills with it (tester 2026-08-13). */}
+                      <span
+                        className="h-2.5 w-2.5 shrink-0 rounded-full"
+                        style={{ backgroundColor: on ? "#ffffff" : color }}
+                      />
+                      {/* Full name, not an abbreviation — this switcher decides
+                          which roster you are looking at, so it must be plain. */}
                       <span className="truncate">{tname}</span>
-                      <span className="font-condensed shrink-0 text-[15px] font-black tabular-nums">
-                        {score}
-                      </span>
                     </button>
                   )
                 })}
