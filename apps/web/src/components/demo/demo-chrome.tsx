@@ -78,17 +78,44 @@ export function DemoChrome({ signedIn, inDemoSession = false }: { signedIn: bool
           <div className="absolute inset-0 bg-black/40" onClick={() => setDrawerOpen(false)} />
           <div className="absolute right-0 top-0 flex h-full w-full max-w-sm flex-col overflow-y-auto bg-white shadow-2xl">
             <div className="relative overflow-hidden bg-gradient-to-br from-[#101c36] via-[#1b2a4a] to-[#0d1526] px-6 pb-6 pt-7 text-white">
+              {/* Same shaded basketball as the welcome modal, small in the
+                  corner — the drawer was still wearing the old concentric-
+                  circle mark, which read as a target (tester 2026-08-13).
+                  Own gradient id: both can be mounted at once. */}
               <svg
-                className="pointer-events-none absolute -right-12 -top-16 h-56 w-56 opacity-25"
+                className="pointer-events-none absolute -right-6 -top-8 h-36 w-36 opacity-[0.55]"
                 viewBox="0 0 200 200"
-                fill="none"
-                stroke="#f59e0b"
-                strokeWidth="2.5"
                 aria-hidden
               >
-                <circle cx="100" cy="100" r="96" />
-                <circle cx="100" cy="100" r="58" />
-                <circle cx="100" cy="100" r="14" fill="#f59e0b" stroke="none" opacity="0.9" />
+                <defs>
+                  <radialGradient id="sh-ball-drawer" cx="34%" cy="28%" r="78%">
+                    <stop offset="0%" stopColor="#fde68a" />
+                    <stop offset="45%" stopColor="#f59e0b" />
+                    <stop offset="100%" stopColor="#9a3412" />
+                  </radialGradient>
+                </defs>
+                <circle cx="100" cy="100" r="90" fill="url(#sh-ball-drawer)" />
+                <g
+                  fill="none"
+                  stroke="#7c2d12"
+                  strokeWidth="3.5"
+                  strokeLinecap="round"
+                  opacity="0.85"
+                >
+                  <path d="M100 10v180" />
+                  <path d="M10 100h180" />
+                  <path d="M42 31c36 34 36 104 0 138" />
+                  <path d="M158 31c-36 34-36 104 0 138" />
+                </g>
+                <ellipse
+                  cx="68"
+                  cy="58"
+                  rx="26"
+                  ry="17"
+                  fill="#fffbeb"
+                  opacity="0.22"
+                  transform="rotate(-28 68 58)"
+                />
               </svg>
               <div className="relative flex items-start justify-between gap-3">
                 <span className="rounded-full bg-amber-500 px-3 py-1 text-[11px] font-black uppercase tracking-[0.14em] text-amber-950">
