@@ -1,5 +1,6 @@
 "use client"
 
+import { useEffect, useState } from "react"
 import Link from "next/link"
 import { useSearchParams } from "next/navigation"
 import { BrandWordmark } from "@/components/brand/wordmark"
@@ -198,6 +199,78 @@ function SampleCard({ persona }: { persona: string | null }) {
   )
 }
 
+const ROTATION = ["parent", "player", "coach", "club", "league"] as const
+
+/** matchMedia hook — auto-rotation must not run for reduced-motion users. */
+function usePrefersReducedMotion() {
+  const [reduced, setReduced] = useState(false)
+  useEffect(() => {
+    const mq = window.matchMedia("(prefers-reduced-motion: reduce)")
+    setReduced(mq.matches)
+    const on = (e: MediaQueryListEvent) => setReduced(e.matches)
+    mq.addEventListener("change", on)
+    return () => mq.removeEventListener("change", on)
+  }, [])
+  return reduced
+}
+
+/**
+ * Organic visitors haven't told us who they are, so instead of guessing we
+ * show all five — one card at a time, crossfading every ~4s. It previews the
+ * breadth of the product without a wall of copy, and the dots let someone
+ * take control (WCAG 2.2.2: auto-updating content needs a way to stop).
+ * Hovering pauses; reduced-motion never starts it.
+ */
+function RotatingSample() {
+  const reduced = usePrefersReducedMotion()
+  const [index, setIndex] = useState(0)
+  const [paused, setPaused] = useState(false)
+
+  useEffect(() => {
+    if (reduced || paused) return
+    const id = window.setInterval(() => setIndex((i) => (i + 1) % ROTATION.length), 4000)
+    return () => window.clearInterval(id)
+  }, [reduced, paused])
+
+  return (
+    <div
+      onMouseEnter={() => setPaused(true)}
+      onMouseLeave={() => setPaused(false)}
+      onFocusCapture={() => setPaused(true)}
+      onBlurCapture={() => setPaused(false)}
+    >
+      <div className="relative h-[11.5rem]">
+        {ROTATION.map((p, i) => (
+          <div
+            key={p}
+            aria-hidden={i !== index}
+            className={`absolute left-0 top-0 transition-all duration-700 ease-out ${
+              i === index
+                ? "translate-y-0 opacity-100"
+                : "pointer-events-none translate-y-3 opacity-0"
+            }`}
+          >
+            <SampleCard persona={p} />
+          </div>
+        ))}
+      </div>
+
+      <div className="mt-1 flex items-center gap-2">
+        {ROTATION.map((p, i) => (
+          <button
+            key={p}
+            onClick={() => setIndex(i)}
+            aria-label={`Show the ${p} example`}
+            className={`h-1.5 rounded-full transition-all duration-300 ${
+              i === index ? "bg-hoop-400 w-6" : "w-1.5 bg-white/30 hover:bg-white/60"
+            }`}
+          />
+        ))}
+      </div>
+    </div>
+  )
+}
+
 /** Pull the demo persona back out of the callbackUrl we were handed. */
 function personaFrom(callbackUrl: string | null): string | null {
   if (!callbackUrl) return null
@@ -256,8 +329,13 @@ export function AuthBrandPanel() {
           ))}
         </ul>
 
+        {/* Known visitor → their card. Organic → all five, rotating. */}
         <div className="mt-10 hidden xl:block">
-          <SampleCard persona={persona} />
+          {persona && PROOF_BY_PERSONA[persona] ? (
+            <SampleCard persona={persona} />
+          ) : (
+            <RotatingSample />
+          )}
         </div>
       </div>
 

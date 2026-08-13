@@ -25,6 +25,7 @@ const PERSONAS: { key: string; title: string; blurb: string; soon?: boolean }[] 
 
 export function DemoChrome({ signedIn, inDemoSession = false }: { signedIn: boolean; inDemoSession?: boolean }) {
   const [drawerOpen, setDrawerOpen] = useState(false)
+  const [bloom, setBloom] = useState(false)
   const [entering, setEntering] = useState<string | null>(null)
   const router = useRouter()
 
@@ -32,8 +33,17 @@ export function DemoChrome({ signedIn, inDemoSession = false }: { signedIn: bool
     // The SSR welcome pop-up (welcome-popup.tsx) asks us to open the
     // drawer via this event — it can't reach our state directly.
     const open = () => setDrawerOpen(true)
+    // …and tells us when it has flown into the tab, so we can bloom.
+    const hint = () => {
+      setBloom(true)
+      window.setTimeout(() => setBloom(false), 1900)
+    }
     window.addEventListener("sh-open-demo-drawer", open)
-    return () => window.removeEventListener("sh-open-demo-drawer", open)
+    window.addEventListener("sh-demo-hint", hint)
+    return () => {
+      window.removeEventListener("sh-open-demo-drawer", open)
+      window.removeEventListener("sh-demo-hint", hint)
+    }
   }, [])
 
   async function enterDemo(persona: string) {
@@ -62,15 +72,28 @@ export function DemoChrome({ signedIn, inDemoSession = false }: { signedIn: bool
 
   return (
     <>
-      {/* Right-edge drawer tab — unmissable by design (owner ruling). */}
-      <button
-        onClick={() => setDrawerOpen(true)}
-        className="fixed right-0 top-1/2 z-40 -translate-y-1/2 rounded-l-2xl bg-amber-500 px-2.5 py-6 text-sm font-bold uppercase tracking-[0.14em] text-amber-950 shadow-lg hover:bg-amber-400"
-        style={{ writingMode: "vertical-rl" }}
-        aria-label="Open the demo"
-      >
-        Try the demo
-      </button>
+      {/* Right-edge drawer tab — unmissable by design (owner ruling). The
+          welcome modal flies into this on dismiss and then fires
+          `sh-demo-hint`, so the tab blooms and the eye lands on where the
+          demo went. */}
+      <div className="fixed right-0 top-1/2 z-40 -translate-y-1/2">
+        {bloom && (
+          <span
+            className="demo-bloom pointer-events-none absolute inset-0 origin-center rounded-l-2xl bg-amber-400/70 blur-md"
+            aria-hidden
+          />
+        )}
+        <button
+          onClick={() => setDrawerOpen(true)}
+          className={`relative rounded-l-2xl bg-amber-500 px-2.5 py-6 text-sm font-bold uppercase tracking-[0.14em] text-amber-950 shadow-lg transition-transform duration-300 hover:bg-amber-400 ${
+            bloom ? "motion-safe:-translate-x-1" : ""
+          }`}
+          style={{ writingMode: "vertical-rl" }}
+          aria-label="Open the demo"
+        >
+          Try the demo
+        </button>
+      </div>
 
       {/* Drawer */}
       {drawerOpen && (

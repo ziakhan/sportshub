@@ -169,7 +169,30 @@
     animation: grow-x 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) both;
   }
 
+  /* The demo tab "blooms" once the welcome modal has flown into it, so the
+     eye lands where the demo now lives. Two soft pulses, then done. */
+  @keyframes demo-bloom {
+    0% {
+      transform: scale(0.92);
+      opacity: 0.6;
+    }
+    75% {
+      transform: scale(2.1);
+      opacity: 0;
+    }
+    100% {
+      transform: scale(2.1);
+      opacity: 0;
+    }
+  }
+  .demo-bloom {
+    animation: demo-bloom 900ms cubic-bezier(0.2, 0.8, 0.2, 1) 2;
+  }
+
   @media (prefers-reduced-motion: reduce) {
+    .demo-bloom {
+      animation: none;
+    }
     .marquee-track {
       animation: none;
     }

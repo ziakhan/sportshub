@@ -179,13 +179,41 @@ const COMING_SOON = "Referee, trainer and photographer demos are on the way."
 
 export function WelcomePopup() {
   const [open, setOpen] = useState(true)
+  const [closing, setClosing] = useState(false)
   const [step, setStep] = useState<1 | 2>(1)
+
+  /**
+   * Dismiss = fly into the demo tab (2026-08-13). The modal used to just
+   * vanish, so a visitor who chose "look around" had no idea the demo was
+   * still reachable. It now glides to the right edge — where the tab lives —
+   * and tells the tab to bloom once it lands, which answers "where did that
+   * go?" with movement instead of copy. Reduced-motion gets a plain fade,
+   * and the tab still blooms.
+   */
+  function dismiss() {
+    if (closing) return
+    setClosing(true)
+    window.setTimeout(() => {
+      setOpen(false)
+      window.dispatchEvent(new Event("sh-demo-hint"))
+    }, 420)
+  }
+
   if (!open) return null
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4" role="dialog" aria-label="Welcome">
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setOpen(false)} />
-      <div className="relative max-h-[92vh] w-full max-w-2xl overflow-y-auto rounded-[32px] bg-white shadow-2xl">
+      <div
+        className={`absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity duration-300 ${
+          closing ? "opacity-0" : "opacity-100"
+        }`}
+        onClick={dismiss}
+      />
+      <div
+        className={`relative max-h-[92vh] w-full max-w-2xl origin-right overflow-y-auto rounded-[32px] bg-white shadow-2xl transition-all duration-[420ms] ease-in ${
+          closing ? "opacity-0 motion-safe:translate-x-[42vw] motion-safe:scale-[0.22]" : ""
+        }`}
+      >
         {/* Court hero — shared by both steps */}
         <div className="relative overflow-hidden bg-gradient-to-br from-[#101c36] via-[#1b2a4a] to-[#0d1526] px-8 pb-8 pt-9 text-white sm:px-10">
           {/* A shaded basketball, bleeding off the corner (tester 2026-08-13 —
@@ -319,7 +347,7 @@ export function WelcomePopup() {
                 Try the live demo →
               </button>
               <button
-                onClick={() => setOpen(false)}
+                onClick={dismiss}
                 className="border-ink-200 text-ink-700 hover:border-ink-400 rounded-2xl border px-6 py-4 text-[17px] font-semibold transition"
               >
                 Look around first
@@ -397,7 +425,7 @@ export function WelcomePopup() {
                 ← Back
               </button>
               <button
-                onClick={() => setOpen(false)}
+                onClick={dismiss}
                 className="text-ink-500 hover:text-ink-800 text-sm font-semibold"
               >
                 Just look around
