@@ -38,9 +38,16 @@ export const getCurrentUser = cache(async function getCurrentUser() {
   // seam as getSessionUserId. Keeps the onboarding guard from bouncing a
   // demo visitor whose real account hasn't onboarded yet.
   {
-    const { readDemoView } = await import("@/lib/demo/persona-session")
+    const { readDemoView, PERSONA_EMAILS } = await import("@/lib/demo/persona-session")
     const demoView = readDemoView()
-    if (demoView) targetUserId = demoView.p
+    if (demoView) {
+      const personaEmail = PERSONA_EMAILS[demoView.k]
+      const persona = personaEmail
+        ? await prisma.user.findUnique({ where: { email: personaEmail }, select: { id: true } })
+        : null
+      if (persona) targetUserId = persona.id
+      // else: stale cookie after a reseed — ignore it, stay the real user.
+    }
   }
 
   const user = await prisma.user.findUnique({
@@ -117,14 +124,25 @@ export async function getSessionUserId(): Promise<{
   // persona id — the middleware rejects them outside the demo allowlist.
   // Web-only by design, same as impersonation (bearer path returns above).
   {
-    const { readDemoView } = await import("@/lib/demo/persona-session")
+    const { readDemoView, PERSONA_EMAILS } = await import("@/lib/demo/persona-session")
     const demoView = readDemoView()
     if (demoView) {
-      return {
-        userId: demoView.p,
-        realUserId: session.user.id,
-        isPlatformAdmin: false,
+      // Resolve by EMAIL, not the id baked into the cookie: the nightly
+      // reset rebuilds personas with fresh ids, and a stale cookie must
+      // survive that (or be ignored entirely if the persona is gone).
+      const personaEmail = PERSONA_EMAILS[demoView.k]
+      const persona = personaEmail
+        ? await prisma.user.findUnique({ where: { email: personaEmail }, select: { id: true } })
+        : null
+      if (persona) {
+        return {
+          userId: persona.id,
+          realUserId: session.user.id,
+          isPlatformAdmin: false,
+        }
       }
+      // Persona missing (mid-reseed or stale key): fall through to the
+      // real account rather than stranding the browser on a ghost.
     }
   }
 
