@@ -129,9 +129,10 @@ async function main() {
         .map(([pid, v]) => {
           const t: any = teamById.get(playerTeam.get(pid)!)
           return {
-            playerId: pid,
+            playerId: pid, // drives the profile link AND the @mention target
             rank: 0,
             name: v.name,
+            handle: v.name.split(" ")[0].toLowerCase(),
             team: t?.name ?? "Unknown",
             teamColor: colorFor(t?.id ?? pid, t?.tenant?.branding?.primaryColor),
             jersey: jersey.get(pid) ?? "–",
@@ -143,16 +144,60 @@ async function main() {
         .map((r, i) => ({ ...r, rank: i + 1 }))
       if (rows.length < 3) continue
 
+      // Handles must be UNIQUE — two Marcuses in one top five both rendered
+      // "@marcus", so a mention pointed at whichever the reader guessed.
+      // Collisions fall back to first name + last initial.
+      const firstNameCount = new Map<string, number>()
+      for (const r of rows) {
+        const f = r.name.split(" ")[0].toLowerCase()
+        firstNameCount.set(f, (firstNameCount.get(f) ?? 0) + 1)
+      }
+      for (const r of rows) {
+        const parts = r.name.split(" ")
+        const f = parts[0].toLowerCase()
+        r.handle =
+          (firstNameCount.get(f) ?? 0) > 1 && parts[1]
+            ? `${f}${parts[parts.length - 1][0].toLowerCase()}`
+            : f
+      }
+
+      // WRITTEN COPY (2026-08-13). A card with no words is a graphic, not a
+      // post — nobody reshares a bare table. Built from the real spread so it
+      // says something true: how far clear the leader is, who is chasing, and
+      // how tight the top five actually is.
+      const lead = rows[0]
+      const second = rows[1]
+      const gap = second ? Math.round((lead.value - second.value) * 10) / 10 : 0
+      const spread = Math.round((lead.value - rows[rows.length - 1].value) * 10) / 10
+      const noun = stat.label.toLowerCase()
+      // Gaps must be judged RELATIVE to the stat. An absolute 0.6 threshold
+      // called a 1.8-vs-1.4 blocks lead "right on their shoulder" — that is a
+      // 22% margin. Percentages travel across points, blocks and steals alike.
+      const close = second ? gap / Math.max(lead.value, 0.1) < 0.06 : false
+      const tight = rows.length >= 5 && spread / Math.max(lead.value, 0.1) < 0.25
+      const caption =
+        `${lead.name} leads ${season.league.name} at ${lead.value} ${noun} a game for ${lead.team}` +
+        (second
+          ? close
+            ? `, but ${second.name} is right on their shoulder at ${second.value} — this one is still anybody's.`
+            : `, ${gap} clear of ${second.name} (${second.value}).`
+          : ".") +
+        (rows.length >= 5
+          ? tight
+            ? ` Only ${spread} separates the whole top five.`
+            : ` ${rows[4].name} rounds out the top five at ${rows[4].value}.`
+          : "")
+
       const slug = `leaderboard-${season.id}-${stat.key}`
       const title = `${stat.label} leaders — ${season.league.name}`
       const post = await p.post.upsert({
         where: { slug },
-        update: { title, body: JSON.stringify({ statLabel: stat.label, unit: stat.unit, period: `${season.league.name} · ${season.label}`, rows }) },
+        update: { title, body: JSON.stringify({ statLabel: stat.label, unit: stat.unit, period: `${season.league.name} · ${season.label}`, rows, caption }) },
         create: {
           kind: "LEADERBOARD",
           title,
           slug,
-          body: JSON.stringify({ statLabel: stat.label, unit: stat.unit, period: `${season.league.name} · ${season.label}`, rows }),
+          body: JSON.stringify({ statLabel: stat.label, unit: stat.unit, period: `${season.league.name} · ${season.label}`, rows, caption }),
           status: "PUBLISHED",
           publishedAt: new Date(Date.now() - Math.random() * 3 * 86_400_000),
           visibility: "PUBLIC",

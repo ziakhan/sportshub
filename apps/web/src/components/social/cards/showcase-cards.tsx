@@ -18,6 +18,8 @@
  * and tested down to 360px.
  */
 
+import Link from "next/link"
+
 const shell =
   "ring-ink-950/10 overflow-hidden rounded-3xl bg-white shadow-[0_24px_60px_-18px_rgba(30,41,59,0.45)] ring-1"
 
@@ -44,6 +46,9 @@ export interface LeaderRow {
   teamColor: string
   jersey: string
   value: number
+  /** Present on real posts — makes the name and @handle link to the player. */
+  playerId?: string
+  handle?: string
 }
 
 export function LeaderboardCard({
@@ -51,11 +56,14 @@ export function LeaderboardCard({
   unit,
   period,
   rows,
+  caption,
 }: {
   statLabel: string
   unit: string
   period: string
   rows: LeaderRow[]
+  /** The written post. A card with no words is a graphic, not a post. */
+  caption?: string
 }) {
   const [first, ...rest] = rows
   return (
@@ -86,9 +94,18 @@ export function LeaderboardCard({
           </span>
           <Crest color={first.teamColor} label={first.jersey} size="h-12 w-12 text-[15px]" />
           <div className="min-w-0 flex-1">
-            <p className="text-ink-950 truncate text-[16px] font-extrabold leading-tight">
-              {first.name}
-            </p>
+            {first.playerId ? (
+              <Link
+                href={`/player/${first.playerId}`}
+                className="text-ink-950 hover:text-play-600 block truncate text-[16px] font-extrabold leading-tight transition-colors"
+              >
+                {first.name}
+              </Link>
+            ) : (
+              <p className="text-ink-950 truncate text-[16px] font-extrabold leading-tight">
+                {first.name}
+              </p>
+            )}
             <p className="text-ink-500 truncate text-[12.5px] font-semibold">{first.team}</p>
           </div>
           <span className="font-condensed text-ink-950 shrink-0 text-[2.6rem] font-black leading-none tabular-nums">
@@ -109,7 +126,13 @@ export function LeaderboardCard({
               {r.jersey}
             </span>
             <span className="text-ink-900 min-w-0 flex-1 truncate text-[14px] font-bold">
-              {r.name}
+              {r.playerId ? (
+                <Link href={`/player/${r.playerId}`} className="hover:text-play-600 transition-colors">
+                  {r.name}
+                </Link>
+              ) : (
+                r.name
+              )}
               <span className="text-ink-400 ml-1.5 font-semibold">· {r.team}</span>
             </span>
             <span className="font-condensed text-ink-900 shrink-0 text-[20px] font-black tabular-nums">
@@ -118,23 +141,36 @@ export function LeaderboardCard({
           </li>
         ))}
       </ol>
-      {/* Every listed player is TAGGED (PostTag already carries playerId), so
-          the post lands on their profile and they can reshare it to their own
-          story — five kids amplifying each post instead of one (tester). */}
+      {/* The written post — what a human would say about these numbers. */}
+      {caption && (
+        <p className="text-ink-700 border-ink-50 border-t px-5 py-3.5 text-[14px] leading-6 sm:px-6">
+          {caption}
+        </p>
+      )}
+
+      {/* Every listed player is TAGGED (PostTag carries playerId), so the post
+          lands on their profile and they can reshare it to their own story —
+          five kids amplifying each post instead of one. The handles are real
+          links; a mention that goes nowhere is just decoration. */}
       <div className="border-ink-50 flex flex-wrap items-center gap-1.5 border-t px-5 py-3 sm:px-6">
         <span className="text-ink-400 mr-1 text-[11px] font-black uppercase tracking-widest">
           {unit} · per game
         </span>
         <span className="flex-1" />
-        {rows.slice(0, 5).map((r) => (
-          <span
-            key={r.rank}
-            className="rounded-full px-2 py-0.5 text-[11px] font-bold"
-            style={{ backgroundColor: `${r.teamColor}1a`, color: r.teamColor }}
-          >
-            @{r.name.split(" ")[0].toLowerCase()}
-          </span>
-        ))}
+        {rows.slice(0, 5).map((r) => {
+          const handle = `@${r.handle ?? r.name.split(" ")[0].toLowerCase()}`
+          const pill = "rounded-full px-2 py-0.5 text-[11px] font-bold transition hover:brightness-95"
+          const style = { backgroundColor: `${r.teamColor}1a`, color: r.teamColor }
+          return r.playerId ? (
+            <Link key={r.rank} href={`/player/${r.playerId}`} className={pill} style={style}>
+              {handle}
+            </Link>
+          ) : (
+            <span key={r.rank} className={pill} style={style}>
+              {handle}
+            </span>
+          )
+        })}
       </div>
     </article>
   )
