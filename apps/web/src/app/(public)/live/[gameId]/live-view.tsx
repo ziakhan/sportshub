@@ -390,6 +390,19 @@ export function LiveView({ gameId }: { gameId: string }) {
    * a scoreboard-sized number and their team's colour, not 13px body text.
    * `won` gets a stronger tint so the better line reads first.
    */
+  /** Defined up here on purpose: the linescore and leaders both build their
+   *  JSX during render further down the file, so a later `const crest` put
+   *  it in the temporal dead zone and crashed the client. */
+  const crest = (teamId: string, size: string, text: string) => (
+    <span
+      className={`${size} flex shrink-0 items-center justify-center rounded-xl font-extrabold text-white shadow-sm`}
+      style={{ backgroundColor: colorOf(teamId) }}
+      aria-hidden="true"
+    >
+      {text}
+    </span>
+  )
+
   const leaderCell = (
     entry: { l: PlayerLine; value: number; unit: string } | null,
     teamId: string,
@@ -719,17 +732,6 @@ export function LiveView({ gameId }: { gameId: string }) {
   }
 
   // ---------- shared building blocks ----------
-
-  const crest = (teamId: string, size: string, text: string) => (
-    <span
-      className={`${size} flex shrink-0 items-center justify-center rounded-xl font-extrabold text-white shadow-sm`}
-      style={{ backgroundColor: colorOf(teamId) }}
-      aria-hidden="true"
-    >
-      {text}
-    </span>
-  )
-
 
   const statRow = (l: PlayerLine, teamColor: string, isTop: boolean, showMin: boolean) => (
     <tr
