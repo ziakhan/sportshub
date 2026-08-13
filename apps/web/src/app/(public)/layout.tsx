@@ -13,6 +13,9 @@ import { ChatDock } from "@/components/chat-dock"
 import { OverflowStrip } from "@/components/overflow-strip"
 import { SectionPills } from "@/components/public/section-pills"
 import { BrandWordmark } from "@/components/brand/wordmark"
+import { DemoChrome } from "@/components/demo/demo-chrome"
+import { isDemoModeEnabled } from "@/lib/demo/demo-mode"
+import { readDemoView } from "@/lib/demo/persona-session"
 
 export default async function PublicLayout({ children }: { children: React.ReactNode }) {
   let isLoggedIn = false
@@ -170,6 +173,11 @@ export default async function PublicLayout({ children }: { children: React.React
       </header>
 
       {children}
+
+      {/* Demo-era funnel chrome: welcome pop-up + right-edge drawer. Only
+          while the platform demo switch is on, and never while already
+          inside a persona session (the platform banner owns that state). */}
+      {(await isDemoModeEnabled()) && !readDemoView() && <DemoChrome signedIn={isLoggedIn} />}
 
       <footer className="bg-ink-950 mt-auto border-t border-white/5 py-14 text-white">
         <div className="container mx-auto grid gap-10 px-4 sm:px-6 lg:grid-cols-[1.5fr_repeat(3,1fr)]">

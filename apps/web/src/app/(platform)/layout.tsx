@@ -14,6 +14,8 @@ import { QuickIcons } from "@/components/nav/quick-icons"
 import { getNavShape } from "@/lib/queries/nav-shape"
 import { CompletionPill } from "./dashboard/completion-pill"
 import { ImpersonationBanner } from "./dashboard/impersonation-banner"
+import { DemoBanner } from "@/components/demo/demo-banner"
+import { readDemoView } from "@/lib/demo/persona-session"
 
 export default async function PlatformLayout({ children }: { children: React.ReactNode }) {
   const dbUser = await getCurrentUser()
@@ -108,6 +110,7 @@ export default async function PlatformLayout({ children }: { children: React.Rea
   const checklist = await getCompletionChecklist(dbUser as any)
 
   const impersonating = isImpersonating()
+  const demoView = readDemoView()
   const userName = [dbUser.firstName, dbUser.lastName].filter(Boolean).join(" ") || "User"
   const userEmail = dbUser.email
   const userInitials =
@@ -118,6 +121,7 @@ export default async function PlatformLayout({ children }: { children: React.Rea
   return (
     <div className="bg-ink-50 text-ink-950 flex min-h-screen flex-col">
       {impersonating && <ImpersonationBanner userName={userName} />}
+      {demoView && <DemoBanner personaKey={demoView.k} />}
 
       {/* backdrop-blur creates a stacking context — without an explicit
           z-index the whole bar (incl. the z-50 user menu + mobile drawer

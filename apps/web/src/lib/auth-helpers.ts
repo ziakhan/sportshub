@@ -103,6 +103,22 @@ export async function getSessionUserId(): Promise<{
   const session = await getServerSession(authOptions)
   if (!session?.user?.id) return null
 
+  // Persona demo (limited-launch): while the signed demo-view cookie lives,
+  // READS flow as the seeded persona. Mutations never reach here with the
+  // persona id — the middleware rejects them outside the demo allowlist.
+  // Web-only by design, same as impersonation (bearer path returns above).
+  {
+    const { readDemoView } = await import("@/lib/demo/persona-session")
+    const demoView = readDemoView()
+    if (demoView) {
+      return {
+        userId: demoView.p,
+        realUserId: session.user.id,
+        isPlatformAdmin: false,
+      }
+    }
+  }
+
   const adminRole = await prisma.userRole.findFirst({
     where: { userId: session.user.id, role: "PlatformAdmin" },
   })

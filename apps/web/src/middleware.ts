@@ -22,6 +22,29 @@ const RESERVED_SUBDOMAINS = new Set([
 export default async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl
 
+  // Persona demo write-block (limited-launch-demo-build-2026-08.md §2).
+  // While a demo-view cookie is present, every API mutation is rejected
+  // except the demo endpoints themselves (enter/exit + whitelisted
+  // session-scoped actions under /api/demo/) and auth. Cookie PRESENCE is
+  // the trigger — validity is enforced where reads are granted
+  // (auth-helpers, node runtime); a forged cookie only blocks its own
+  // browser. 409 + {demo:true} is the client's cue for the demo sheet.
+  if (
+    req.cookies.get("demo-view") &&
+    pathname.startsWith("/api") &&
+    !["GET", "HEAD", "OPTIONS"].includes(req.method) &&
+    !pathname.startsWith("/api/demo/") &&
+    !pathname.startsWith("/api/auth/")
+  ) {
+    return NextResponse.json(
+      {
+        demo: true,
+        error: "You're exploring the demo — this action is view-only. Exit the demo to do it for real.",
+      },
+      { status: 409 }
+    )
+  }
+
   // Host-based routing FIRST — a vanity URL must resolve to the public club
   // page regardless of auth state (an anonymous visitor on a club subdomain
   // should never be bounced to sign-in on the way).
