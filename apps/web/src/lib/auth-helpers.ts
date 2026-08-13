@@ -34,6 +34,15 @@ export const getCurrentUser = cache(async function getCurrentUser() {
     }
   }
 
+  // Persona demo (limited-launch): reads flow as the seeded persona, same
+  // seam as getSessionUserId. Keeps the onboarding guard from bouncing a
+  // demo visitor whose real account hasn't onboarded yet.
+  {
+    const { readDemoView } = await import("@/lib/demo/persona-session")
+    const demoView = readDemoView()
+    if (demoView) targetUserId = demoView.p
+  }
+
   const user = await prisma.user.findUnique({
     where: { id: targetUserId },
     include: {
