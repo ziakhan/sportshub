@@ -80,6 +80,11 @@ export interface PreviewFeedItem {
   title: string
   homeTeam: string
   awayTeam: string
+  homeColor: string | null
+  awayColor: string | null
+  /** The side the viewer follows, so the card can say "your team". */
+  mine: "home" | "away" | null
+  venueName: string | null
   scheduledAt: string
   sortAt: string
 }
@@ -515,8 +520,17 @@ export async function getFeedExtras(userId: string, targetsIn?: FeedTargets): Pr
       select: {
         id: true,
         scheduledAt: true,
-        homeTeam: { select: { name: true } },
-        awayTeam: { select: { name: true } },
+        // Enough to render a real matchup card, not a text line (2026-08-13):
+        // club colours, the venue, and which side is home.
+        venue: { select: { name: true } },
+        homeTeamId: true,
+        awayTeamId: true,
+        homeTeam: {
+          select: { name: true, tenant: { select: { branding: { select: { primaryColor: true } } } } },
+        },
+        awayTeam: {
+          select: { name: true, tenant: { select: { branding: { select: { primaryColor: true } } } } },
+        },
       },
       orderBy: { scheduledAt: "asc" },
       take: PREVIEW_LIMIT,
@@ -586,6 +600,15 @@ export async function getFeedExtras(userId: string, targetsIn?: FeedTargets): Pr
     title: `${previewDayLabel(g.scheduledAt)}: ${g.homeTeam.name} vs ${g.awayTeam.name}`,
     homeTeam: g.homeTeam.name,
     awayTeam: g.awayTeam.name,
+    homeColor: g.homeTeam.tenant?.branding?.primaryColor ?? null,
+    awayColor: g.awayTeam.tenant?.branding?.primaryColor ?? null,
+    /** Which of these teams the viewer follows — "your team" on the card. */
+    mine: teamIdList.includes(g.homeTeamId)
+      ? ("home" as const)
+      : teamIdList.includes(g.awayTeamId)
+        ? ("away" as const)
+        : null,
+    venueName: g.venue?.name ?? null,
     scheduledAt: g.scheduledAt.toISOString(),
     sortAt: g.scheduledAt.toISOString(),
   }))
