@@ -263,5 +263,15 @@ documented rule. Both were ruled on 2026-08-12 and are now in this branch.
 > a payment form; the action becomes a request routed to the guardian). Full detail in
 > `docs/pending-deploy-actions.md` #90.
 
-<!-- Add findings below. Next ID: T-020 -->
+### T-020 · DEPLOY REQUIREMENT · "Continue with Google / Apple" must be live when this branch ships · CONFIG · high · web + native
+- **This is not a code bug — the code is already correct.** `sign-up-form.tsx` renders `GoogleButton` / `AppleButton`, and it deliberately preserves the demo destination through SSO: the Google button is handed `/onboarding?callbackUrl=<original>`, so someone who picks a persona, signs in with Google, and finishes onboarding still lands in the demo they chose.
+- **The buttons are gated on credentials existing** (`apps/web/src/lib/auth.ts`): `googleEnabled = !!(GOOGLE_CLIENT_ID && GOOGLE_CLIENT_SECRET)`, same shape for Apple. With no credentials the buttons hide themselves — correct behaviour (a visible button with no OAuth client would dump users on an error page), but it means the whole SSO path silently disappears if the environment is missing them.
+- **Verified locally 2026-08-13:** neither `.env` nor `apps/web/.env.local` carries `GOOGLE_CLIENT_ID`/`GOOGLE_CLIENT_SECRET`/`APPLE_*`, so no SSO buttons render on this machine at all. Local-only observation; production was NOT checked from here.
+- **THE ASK — when this branch is deployed, confirm on the LIVE site, on the signup page reached FROM the demo, that:**
+  1. "Continue with Google" and "Continue with Apple" both render (i.e. the production environment carries all four credentials).
+  2. Completing Google sign-up from a demo entry actually lands the user in the persona they picked, not on the dashboard — the callback chain is `sign-up?callbackUrl=/demo/start?persona=X` → `/onboarding?callbackUrl=…` → persona demo.
+  3. The Google console's authorized redirect URIs include the production callback (`https://<host>/api/auth/callback/google`).
+- **Why it matters here specifically:** the demo funnel makes signup the gate (owner ruling). If the only way through that gate is typing an email and password, the gate gets materially heavier — and the research on demo funnels is that every unit of friction at that step costs conversions. Google sign-in shipped 2026-07-16 per `native-parity-audit.md`; this is about making sure it is actually present in the environment that ships.
+
+<!-- Add findings below. Next ID: T-021 -->
 
