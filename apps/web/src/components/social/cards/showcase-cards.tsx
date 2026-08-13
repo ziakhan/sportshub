@@ -719,6 +719,200 @@ export function ClutchPlayCard({
   )
 }
 
+/* ──────────────── 7. RECAP VARIANTS — one story, three shapes ────────── */
+
+export interface RecapSide {
+  name: string
+  color: string
+  crest: string
+  score: number
+}
+
+function Scoreline({ home, away }: { home: RecapSide; away: RecapSide }) {
+  const homeWon = home.score > away.score
+  return (
+    <div className="divide-ink-50 border-ink-100 divide-y border-b">
+      {(
+        [
+          [home, homeWon],
+          [away, !homeWon],
+        ] as Array<[RecapSide, boolean]>
+      ).map(([s, won]) => (
+        <div key={s.name} className="flex items-center gap-3 px-5 py-2.5 sm:px-6">
+          <span
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[11px] font-black text-white"
+            style={{ backgroundColor: s.color }}
+          >
+            {s.crest}
+          </span>
+          <span
+            className={`min-w-0 flex-1 truncate text-[14px] ${won ? "text-ink-950 font-extrabold" : "text-ink-500 font-semibold"}`}
+          >
+            {s.name}
+          </span>
+          <span
+            className={`font-condensed shrink-0 text-[1.5rem] font-black tabular-nums ${won ? "text-ink-950" : "text-ink-400"}`}
+          >
+            {s.score}
+          </span>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+/**
+ * A recap today is a chip, a headline and a paragraph — identical whether the
+ * game was a one-point thriller or a forty-point walkover. These three read
+ * the result first and dress the story to match, so a feed of recaps stops
+ * looking like one template repeating.
+ */
+
+/** A. SCORELINE LEAD — the default. Result first, then the story. */
+export function RecapScorelineCard({
+  home,
+  away,
+  headline,
+  body,
+  topPerformer,
+  meta,
+}: {
+  home: RecapSide
+  away: RecapSide
+  headline: string
+  body: string
+  topPerformer?: { name: string; line: string; color: string; jersey: string }
+  meta: string
+}) {
+  return (
+    <article className={shell}>
+      <div className="border-ink-100 flex items-center justify-between border-b px-5 py-2.5 sm:px-6">
+        <span className="text-ink-400 text-[11px] font-black uppercase tracking-[0.18em]">Recap</span>
+        <span className="text-ink-400 text-[12px] font-semibold">{meta}</span>
+      </div>
+      <Scoreline home={home} away={away} />
+      <div className="px-5 py-4 sm:px-6">
+        <h3 className="font-display text-ink-950 text-[1.3rem] font-black leading-tight">
+          {headline}
+        </h3>
+        <p className="text-ink-600 mt-2 text-[14px] leading-6">{body}</p>
+        {topPerformer && (
+          <div
+            className="mt-3.5 flex items-center gap-2.5 rounded-xl p-2.5"
+            style={{ backgroundColor: `${topPerformer.color}12` }}
+          >
+            <Crest color={topPerformer.color} label={topPerformer.jersey} size="h-9 w-9 text-[11.5px]" />
+            <div className="min-w-0 flex-1">
+              <p className="text-ink-950 truncate text-[13.5px] font-bold leading-tight">
+                {topPerformer.name}
+              </p>
+              <p className="text-ink-500 truncate text-[11.5px] font-semibold">{topPerformer.line}</p>
+            </div>
+          </div>
+        )}
+      </div>
+    </article>
+  )
+}
+
+/** B. BLOWOUT — the margin IS the headline. */
+export function RecapBlowoutCard({
+  winner,
+  loser,
+  headline,
+  body,
+  meta,
+}: {
+  winner: RecapSide
+  loser: RecapSide
+  headline: string
+  body: string
+  meta: string
+}) {
+  const margin = winner.score - loser.score
+  return (
+    <article className={shell}>
+      <div
+        className="relative overflow-hidden px-5 py-6 text-white sm:px-6"
+        style={{ background: `linear-gradient(130deg, ${winner.color}, rgba(10,16,30,0.9))` }}
+      >
+        <div className="pointer-events-none absolute -right-12 -top-12 h-48 w-48 rounded-full bg-white/10 blur-2xl" />
+        <p className="relative text-[11px] font-black uppercase tracking-[0.22em] text-white/75">
+          {meta}
+        </p>
+        <div className="relative mt-2 flex items-end gap-3">
+          <span className="font-condensed text-[4.5rem] font-black leading-[0.8]">+{margin}</span>
+          <span className="pb-2 text-[13px] font-black uppercase tracking-wider text-white/75">
+            point win
+          </span>
+        </div>
+        <p className="relative mt-3 text-[14px] font-bold">
+          {winner.name} {winner.score} — {loser.score} {loser.name}
+        </p>
+      </div>
+      <div className="px-5 py-4 sm:px-6">
+        <h3 className="font-display text-ink-950 text-[1.3rem] font-black leading-tight">
+          {headline}
+        </h3>
+        <p className="text-ink-600 mt-2 text-[14px] leading-6">{body}</p>
+      </div>
+    </article>
+  )
+}
+
+/** C. THRILLER — close game, so the finish leads. */
+export function RecapThrillerCard({
+  home,
+  away,
+  headline,
+  body,
+  closing,
+  meta,
+}: {
+  home: RecapSide
+  away: RecapSide
+  headline: string
+  body: string
+  closing: string
+  meta: string
+}) {
+  const margin = Math.abs(home.score - away.score)
+  return (
+    <article className={shell}>
+      <div className="bg-ink-950 relative overflow-hidden px-5 py-5 sm:px-6">
+        <div
+          className="pointer-events-none absolute inset-0 opacity-45"
+          style={{ background: `linear-gradient(100deg, ${home.color}, transparent 45%, ${away.color})` }}
+        />
+        <div className="relative flex items-center justify-between">
+          <span className="bg-live-600 rounded-full px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-white">
+            Decided by {margin}
+          </span>
+          <span className="text-[12px] font-semibold text-white/60">{meta}</span>
+        </div>
+        <p className="font-condensed relative mt-3 text-[2rem] font-black leading-none text-white sm:text-[2.4rem]">
+          {home.score} — {away.score}
+        </p>
+        <p className="relative mt-1.5 text-[13px] font-bold text-white/75">
+          {home.name} vs {away.name}
+        </p>
+      </div>
+      <div className="px-5 py-4 sm:px-6">
+        <h3 className="font-display text-ink-950 text-[1.3rem] font-black leading-tight">
+          {headline}
+        </h3>
+        <p className="text-ink-600 mt-2 text-[14px] leading-6">{body}</p>
+        <div className="border-hoop-100 bg-hoop-50 mt-3.5 rounded-xl border px-3.5 py-2.5">
+          <p className="text-hoop-700 text-[10.5px] font-black uppercase tracking-[0.16em]">
+            How it finished
+          </p>
+          <p className="text-ink-800 mt-1 text-[13.5px] font-semibold leading-6">{closing}</p>
+        </div>
+      </div>
+    </article>
+  )
+}
+
 /* ───────────────────────────── 6. FINAL ──────────────────────────────── */
 
 export function FinalCard({

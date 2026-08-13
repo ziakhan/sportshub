@@ -9,6 +9,9 @@ import {
   LeaderboardCard,
   MatchupCard,
   PlayerOfGameCard,
+  RecapBlowoutCard,
+  RecapScorelineCard,
+  RecapThrillerCard,
   RivalryCard,
 } from "@/components/social/cards/showcase-cards"
 
@@ -352,6 +355,38 @@ export default async function FeedCardsPreview() {
               ]}
               finalScore="Ironwood 54 — 53 Harbour City"
             />
+          </Section>
+
+          <Section
+            title="Recap — three variants"
+            when="Replaces today's single recap layout"
+            why="Right now every recap looks identical whether the game was a one-point thriller or a forty-point walkover: a grey chip, a headline, a paragraph. These read the RESULT first and dress the story to match, so a feed of recaps stops looking like one template repeating."
+          >
+            <div className="space-y-5">
+              <RecapScorelineCard
+                home={{ name: "Lakeside Storm", color: LAKESIDE, crest: "LS", score: 58 }}
+                away={{ name: "Northgate Wolves", color: NORTHGATE, crest: "NW", score: 52 }}
+                headline="Carter's double-double carries Lakeside past Northgate"
+                body="Lakeside controlled the glass all afternoon and never trailed after half-time, though Northgate cut it to three with under two minutes left before Carter's block ended the comeback."
+                topPerformer={{ name: "Elijah Carter", line: "24 PTS · 11 REB · 5 AST", color: LAKESIDE, jersey: "4" }}
+                meta="Grade 10 · Saturday"
+              />
+              <RecapBlowoutCard
+                winner={{ name: "Ironwood Elite", color: IRONWOOD, crest: "IE", score: 71 }}
+                loser={{ name: "Eastfield Eagles", color: HARBOUR, crest: "EE", score: 40 }}
+                headline="Ironwood stay unbeaten with their most complete performance yet"
+                body="A 22-2 run spanning the first and second quarters put this out of reach before half-time, and Ironwood emptied the bench for the last six minutes."
+                meta="Grade 10 · Sunday"
+              />
+              <RecapThrillerCard
+                home={{ name: "Harbour City", color: HARBOUR, crest: "HC", score: 53 }}
+                away={{ name: "Summit Select", color: LAKESIDE, crest: "SS", score: 54 }}
+                headline="Summit steal it at the buzzer after trailing the whole second half"
+                body="Harbour City led by as many as nine and still had the ball with thirty seconds left, but two empty possessions opened the door."
+                closing="Reid tied it with 0:18 on the clock, Harbour City turned it over on the inbound, and Reid hit the go-ahead jumper with four seconds left."
+                meta="Grade 10 · Saturday"
+              />
+            </div>
           </Section>
 
           <Section
