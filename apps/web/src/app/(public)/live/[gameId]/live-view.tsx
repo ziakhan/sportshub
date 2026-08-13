@@ -81,7 +81,7 @@ interface LivePayload {
  * ESPN's box score doesn't do that: one focused view at a time, each owning
  * the full width. Team stats also splits out of Game so its bars can breathe.
  */
-type Tab = "game" | "box" | "team" | "plays"
+type Tab = "game" | "team" | "plays"
 
 /** One heading treatment for every panel, so the tabs feel like one system. */
 const sectionHeading =
@@ -103,7 +103,6 @@ export function LiveView({ gameId }: { gameId: string }) {
   // Which of the viewer's players the share dialog is open for (P4)
   const [shareFor, setShareFor] = useState<string | null>(null)
   const [tab, setTab] = useState<Tab>("game")
-  const [boxSide, setBoxSide] = useState<"home" | "away">("home")
   const [playFilter, setPlayFilter] = useState<"all" | "scoring" | number>("all")
 
   // Sticky mini score chip (Yahoo pattern): appears when the hero scrolls off
@@ -702,7 +701,6 @@ export function LiveView({ gameId }: { gameId: string }) {
   })()
 
   const hasAnyStats = Object.keys(fold.players).length > 0
-  const boxTeamId = boxSide === "home" ? game.homeTeamId : game.awayTeamId
 
   // Play-by-play with a running score attached to scoring plays
   const SCORE_PTS: Record<string, number> = { SCORE_2PT: 2, SCORE_3PT: 3, SCORE_FT: 1 }
@@ -1249,7 +1247,6 @@ export function LiveView({ gameId }: { gameId: string }) {
                 {(
                   [
                     ["game", "Game"],
-                    ["box", "Box score"],
                     ["team", "Team stats"],
                     ["plays", "Play-by-play"],
                   ] as Array<[Tab, string]>
@@ -1271,55 +1268,40 @@ export function LiveView({ gameId }: { gameId: string }) {
               </div>
             </div>
 
-            {/* GAME — linescore, then leaders, stacked full width */}
+            {/* GAME — one scroll: quarters → leaders → both box scores.
+                Merged 2026-08-13 (tester + their devs: fewest clicks wins, and
+                Yahoo/ESPN put the whole game story on one scrolling page). Box
+                score is no longer its own tab, and the phone team-switcher is
+                gone with it — everything is simply below you now. */}
             <div className={`mx-auto mt-4 w-full max-w-5xl ${tab === "game" ? "block" : "hidden"}`}>
               {linescoreCard}
+
               <h3 className={sectionHeading}>Game leaders</h3>
               {leadersCard}
+
+              <h3 className={sectionHeading}>Box score</h3>
+              <div className="space-y-4">
+                {(
+                  [
+                    [game.homeTeamId, game.homeTeamName, homeScore],
+                    [game.awayTeamId, game.awayTeamName, awayScore],
+                  ] as Array<[string, string, number]>
+                ).map(([tid, tname, score]) => (
+                  <div
+                    key={tid}
+                    className="border-ink-100 overflow-hidden rounded-2xl border bg-white"
+                  >
+                    {boxHeader(tid, tname, score)}
+                    {statsTable(tid)}
+                  </div>
+                ))}
+              </div>
             </div>
 
             {/* TEAM STATS — its own view, so the comparison bars get room */}
             <div className={`mx-auto mt-4 w-full max-w-5xl ${tab === "team" ? "block" : "hidden"}`}>
               <h3 className={`${sectionHeading} mt-0`}>Team stats</h3>
               {teamStatsCard}
-            </div>
-
-            {/* BOX SCORE — both teams stacked full width (the ESPN shape).
-                Phones keep a team switcher: an 11-column table on a 390px
-                screen is one team at a time no matter what. */}
-            <div className={`mx-auto mt-4 w-full max-w-5xl ${tab === "box" ? "block" : "hidden"}`}>
-              <div className="bg-ink-100 mb-3 flex rounded-xl p-1 lg:hidden">
-                {(["home", "away"] as const).map((side) => {
-                  const tid = side === "home" ? game.homeTeamId : game.awayTeamId
-                  const on = boxSide === side
-                  return (
-                    <button
-                      key={side}
-                      onClick={() => setBoxSide(side)}
-                      className={`flex-1 truncate rounded-lg px-2 py-1.5 text-xs font-bold transition-colors ${
-                        on ? "text-white shadow-sm" : "text-ink-500"
-                      }`}
-                      style={on ? { backgroundColor: colorOf(tid) } : undefined}
-                    >
-                      {side === "home" ? game.homeTeamName : game.awayTeamName}
-                    </button>
-                  )
-                })}
-              </div>
-              <div className="border-ink-100 overflow-hidden rounded-2xl border bg-white lg:hidden">
-                {statsTable(boxTeamId)}
-              </div>
-
-              <div className="hidden lg:block">
-                <div className="border-ink-100 overflow-hidden rounded-2xl border bg-white">
-                  {boxHeader(game.homeTeamId, game.homeTeamName, homeScore)}
-                  {statsTable(game.homeTeamId)}
-                </div>
-                <div className="border-ink-100 mt-4 overflow-hidden rounded-2xl border bg-white">
-                  {boxHeader(game.awayTeamId, game.awayTeamName, awayScore)}
-                  {statsTable(game.awayTeamId)}
-                </div>
-              </div>
             </div>
 
             {/* PLAY-BY-PLAY — its own full-width view, free to run long */}
