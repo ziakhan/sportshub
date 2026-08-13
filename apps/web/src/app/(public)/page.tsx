@@ -1,6 +1,7 @@
 import Link from "next/link"
 import { getServerSession } from "next-auth"
 import { WelcomePopup } from "@/components/demo/welcome-popup"
+import { HintBalloon } from "@/components/demo/hint-balloon"
 import { isDemoModeEnabled } from "@/lib/demo/demo-mode"
 import { readDemoView } from "@/lib/demo/persona-session"
 import { prisma } from "@youthbasketballhub/db"
@@ -115,6 +116,7 @@ export default async function HomePage() {
   // (hero, "three ways in", the org feature bento, "patchwork" + the club
   // CTA) are for prospects only. Their teams, scores, news, leaders and
   // program discovery carry the page (docs/home-redesign-plan.md).
+  const demoOn = await isDemoModeEnabled()
   const marketing = !userId
   // Owner law #4 (2026-07-17): participants get THEIR material first — one
   // compact live-scores link instead of a wall of other games, and news
@@ -135,7 +137,7 @@ export default async function HomePage() {
           within a second (owner ruling 2026-08-13) — home page, signed-out,
           every load. A demo-view cookie WITHOUT a session is a zombie (the
           demo requires sign-in), so it never suppresses the greeting. */}
-      {!userId && (await isDemoModeEnabled()) && <WelcomePopup />}
+      {!userId && demoOn && <WelcomePopup />}
       {/* Live scoring pings re-render the scoreboard strip (debounced) */}
       <RealtimeRefresh rooms={["scores"]} events={["game.update"]} />
       {userId && <HomePersonalBand userId={userId} />}
@@ -156,7 +158,17 @@ export default async function HomePage() {
           </div>
         </section>
       ) : (
-        <ScoreboardStrip games={scoreboard} />
+        <>
+          <ScoreboardStrip games={scoreboard} />
+          {!userId && demoOn && (
+            <div className="container mx-auto px-4 sm:px-6">
+              <HintBalloon hintKey="home-scores">
+                Those games up top are live right now. Tap one and watch the score and
+                play-by-play move, no account needed.
+              </HintBalloon>
+            </div>
+          )}
+        </>
       )}
       {marketing && (
       <section className="mesh-surface border-ink-100 relative overflow-hidden border-b bg-[#fafafa] pb-10 pt-8 sm:pb-16 sm:pt-16">
