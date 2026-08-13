@@ -1300,7 +1300,10 @@ export function LiveView({ gameId }: { gameId: string }) {
                       }`}
                       style={on ? { backgroundColor: colorOf(tid) } : undefined}
                     >
-                      <span className="truncate">{shortTeam(tname)}</span>
+                      {/* Full team name, not the abbreviation — this switcher
+                          decides which roster you are looking at, so it has to
+                          be unambiguous (tester 2026-08-13). */}
+                      <span className="truncate">{tname}</span>
                       <span className="font-condensed shrink-0 text-[15px] font-black tabular-nums">
                         {score}
                       </span>
