@@ -1,5 +1,8 @@
 import Link from "next/link"
 import { getServerSession } from "next-auth"
+import { WelcomePopup } from "@/components/demo/welcome-popup"
+import { isDemoModeEnabled } from "@/lib/demo/demo-mode"
+import { readDemoView } from "@/lib/demo/persona-session"
 import { prisma } from "@youthbasketballhub/db"
 import { authOptions } from "@/lib/auth"
 import { getHighlightPosts, getPublicFeed, getScoreboardGames } from "@/lib/queries/content"
@@ -128,6 +131,10 @@ export default async function HomePage() {
 
   return (
     <>
+      {/* Welcome pop-up: server-rendered into the first HTML so it paints
+          within a second (owner ruling 2026-08-13) — home page, signed-out,
+          every load, never inside a persona session. */}
+      {!userId && (await isDemoModeEnabled()) && !readDemoView() && <WelcomePopup />}
       {/* Live scoring pings re-render the scoreboard strip (debounced) */}
       <RealtimeRefresh rooms={["scores"]} events={["game.update"]} />
       {userId && <HomePersonalBand userId={userId} />}
