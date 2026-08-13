@@ -634,25 +634,34 @@ export function LiveView({ gameId }: { gameId: string }) {
       <div className="border-ink-100 rounded-2xl border bg-white">
         {/* Crest + name + score anchors each column, so you never have to
             scroll back to the hero to remember which side is which. */}
-        <div className="border-ink-100 flex items-center justify-between gap-3 border-b px-4 py-3">
-          <div className="flex min-w-0 items-center gap-2">
-            {crest(game.homeTeamId, "h-8 w-8 text-[11px]", monogram(game.homeTeamName))}
+        {/* Full team name, not the abbreviation, and given real height — this
+            header anchors both columns so it should read like a matchup bar
+            rather than a caption (tester 2026-08-13). */}
+        <div className="border-ink-100 flex items-center justify-between gap-3 border-b px-4 py-4">
+          <div className="flex min-w-0 flex-1 items-center gap-2.5">
+            {crest(game.homeTeamId, "h-10 w-10 text-[13px]", monogram(game.homeTeamName))}
             <div className="min-w-0">
-              <p className="text-ink-950 truncate text-[13.5px] font-extrabold leading-tight">
-                {shortTeam(game.homeTeamName)}
+              <p className="text-ink-950 truncate text-[15px] font-extrabold leading-tight">
+                {game.homeTeamName}
               </p>
-              <p className="font-condensed text-[19px] font-black leading-none tabular-nums" style={{ color: homeColor }}>
+              <p
+                className="font-condensed text-[24px] font-black leading-none tabular-nums"
+                style={{ color: homeColor }}
+              >
                 {homeScore}
               </p>
             </div>
           </div>
-          <div className="flex min-w-0 flex-row-reverse items-center gap-2 text-right">
-            {crest(game.awayTeamId, "h-8 w-8 text-[11px]", monogram(game.awayTeamName))}
+          <div className="flex min-w-0 flex-1 flex-row-reverse items-center gap-2.5 text-right">
+            {crest(game.awayTeamId, "h-10 w-10 text-[13px]", monogram(game.awayTeamName))}
             <div className="min-w-0">
-              <p className="text-ink-950 truncate text-[13.5px] font-extrabold leading-tight">
-                {shortTeam(game.awayTeamName)}
+              <p className="text-ink-950 truncate text-[15px] font-extrabold leading-tight">
+                {game.awayTeamName}
               </p>
-              <p className="font-condensed text-[19px] font-black leading-none tabular-nums" style={{ color: awayColor }}>
+              <p
+                className="font-condensed text-[24px] font-black leading-none tabular-nums"
+                style={{ color: awayColor }}
+              >
                 {awayScore}
               </p>
             </div>
@@ -1295,10 +1304,10 @@ export function LiveView({ gameId }: { gameId: string }) {
                     <button
                       key={String(key)}
                       onClick={() => setPlayFilter(key)}
-                      className={`whitespace-nowrap rounded-full px-2.5 py-0.5 text-[11px] font-bold transition-colors ${
+                      className={`whitespace-nowrap rounded-full px-3.5 py-1.5 text-[13px] font-extrabold transition-colors ${
                         playFilter === key
-                          ? "bg-ink-950 text-white"
-                          : "text-ink-500 border-ink-200 border bg-white"
+                          ? "bg-ink-950 text-white shadow-sm"
+                          : "text-ink-600 border-ink-200 hover:border-ink-400 border bg-white"
                       }`}
                     >
                       {label}
@@ -1310,7 +1319,7 @@ export function LiveView({ gameId }: { gameId: string }) {
                     e.eventType.startsWith("PERIOD") ? (
                       <li
                         key={i}
-                        className="bg-ink-100 text-ink-600 border-ink-200 sticky top-0 z-10 border-y px-4 py-1.5 text-center text-[11.5px] font-extrabold uppercase tracking-widest"
+                        className="bg-ink-200/80 text-ink-800 border-ink-300 sticky top-0 z-10 border-y px-4 py-2.5 text-center text-[13.5px] font-black uppercase tracking-[0.18em] backdrop-blur-sm"
                       >
                         {e.eventType === "PERIOD_START" ? describe(e) : "End of period"}
                       </li>
