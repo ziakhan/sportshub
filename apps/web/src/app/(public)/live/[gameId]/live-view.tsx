@@ -423,12 +423,12 @@ export function LiveView({ gameId }: { gameId: string }) {
     }
     return (
       <div
-        // Tints were 8%/3% alpha — so pale the team colour barely registered.
-        // Deepened to 17%/9% (tester 2026-08-13: "a little too shallow").
+        // Tint history: 8%/3% read as almost nothing, 17%/9% was a touch hot.
+        // Settled at 14%/8% (tester 2026-08-13, "ever so slightly" dimmer).
         className={`flex min-w-0 flex-1 items-center gap-3.5 rounded-2xl p-4 ${
           mirror ? "flex-row-reverse text-right" : ""
         }`}
-        style={{ backgroundColor: `${color}${won ? "2b" : "17"}` }}
+        style={{ backgroundColor: `${color}${won ? "24" : "14"}` }}
       >
         {/* The badge stands in for a headshot: players have no photo field, and
             the platform's own rule is "real mark, else branded monogram". The
