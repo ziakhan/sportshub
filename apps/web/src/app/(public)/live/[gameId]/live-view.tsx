@@ -420,9 +420,13 @@ export function LiveView({ gameId }: { gameId: string }) {
           >
             #{jerseyOf(entry.l.playerId)}
           </span>
-          <p className="text-ink-950 min-w-0 flex-1 truncate text-[14px] font-bold leading-tight">
+          {/* Platform law: every rendered entity is clickable. */}
+          <Link
+            href={`/player/${entry.l.playerId}`}
+            className="text-ink-950 hover:text-play-600 min-w-0 flex-1 truncate text-[14px] font-bold leading-tight transition-colors"
+          >
             {shortName(entry.l.playerId)}
-          </p>
+          </Link>
         </div>
         <div className="mt-2.5 flex items-end gap-1.5 pl-1.5">
           <span className="font-condensed text-ink-950 text-[2.4rem] font-black leading-none tabular-nums">
@@ -542,27 +546,49 @@ export function LiveView({ gameId }: { gameId: string }) {
     const hShare = total === 0 ? 50 : (h / total) * 100
     const hWins = h > a
     const aWins = a > h
+    // Two-sided bars growing from the centre (2026-08-13): a 1.5px split rail
+    // made every stat look the same. Now the mismatch is legible at a glance
+    // and the winning side carries full team colour.
     const num = (wins: boolean, value: number, display?: string) => (
       <span
-        className={`text-[15px] tabular-nums ${wins ? "text-ink-950 font-extrabold" : "text-ink-500 font-semibold"}`}
+        className={`font-condensed text-[26px] leading-none tabular-nums ${
+          wins ? "text-ink-950 font-black" : "text-ink-400 font-bold"
+        }`}
       >
         {display ?? <FlashNum value={value} />}
       </span>
     )
     return (
-      <div key={label} className="px-4 py-2.5">
-        <div className="flex items-baseline justify-between gap-3">
+      <div key={label} className="px-4 py-3">
+        <div className="flex items-center justify-between gap-3">
           {num(hWins, h, displayH)}
-          <span className="text-ink-600 text-[12px] font-extrabold uppercase tracking-wide">
+          <span className="text-ink-500 text-[11.5px] font-extrabold uppercase tracking-[0.14em]">
             {label}
           </span>
           {num(aWins, a, displayA)}
         </div>
-        <div className="mt-1.5 flex h-1.5 gap-0.5 overflow-hidden rounded-full">
-          <span
-            style={{ width: `${hShare}%`, backgroundColor: homeColor, opacity: hWins ? 1 : 0.3 }}
-          />
-          <span className="flex-1" style={{ backgroundColor: awayColor, opacity: aWins ? 1 : 0.3 }} />
+        <div className="mt-2 flex h-2.5 items-center gap-1">
+          <div className="flex flex-1 justify-end overflow-hidden rounded-l-full">
+            <span
+              className="h-2.5 rounded-l-full transition-all duration-500"
+              style={{
+                width: `${hShare}%`,
+                backgroundColor: homeColor,
+                opacity: hWins ? 1 : 0.35,
+              }}
+            />
+          </div>
+          <span className="bg-ink-200 h-2.5 w-px shrink-0" />
+          <div className="flex flex-1 overflow-hidden rounded-r-full">
+            <span
+              className="h-2.5 rounded-r-full transition-all duration-500"
+              style={{
+                width: `${100 - hShare}%`,
+                backgroundColor: awayColor,
+                opacity: aWins ? 1 : 0.35,
+              }}
+            />
+          </div>
         </div>
       </div>
     )
@@ -708,7 +734,7 @@ export function LiveView({ gameId }: { gameId: string }) {
   const statRow = (l: PlayerLine, teamColor: string, isTop: boolean, showMin: boolean) => (
     <tr
       key={l.playerId}
-      className="border-ink-50 hover:bg-ink-50 border-t transition-colors"
+      className="border-ink-50 even:bg-ink-50/60 hover:bg-ink-100/70 border-t transition-colors"
       style={isTop ? { backgroundColor: `${teamColor}14` } : undefined}
     >
       <td className="text-ink-900 whitespace-nowrap py-2 pl-4 pr-2 font-semibold">
@@ -923,7 +949,10 @@ export function LiveView({ gameId }: { gameId: string }) {
           backgroundImage: `radial-gradient(90% 140% at 0% 0%, ${homeColor}38 0%, transparent 50%), radial-gradient(90% 140% at 100% 0%, ${awayColor}38 0%, transparent 50%), linear-gradient(135deg, var(--stage), var(--stage-2))`,
         }}
       >
-        <div className="mx-auto w-full max-w-[1760px] px-4 pb-5 pt-4 sm:px-6">
+        {/* Hero content shares the tabs' 5xl column (2026-08-13) — it used to
+            run to 1760px while everything below sat at 1024px, so nothing
+            lined up and the scoreboard read off-centre. */}
+        <div className="mx-auto w-full max-w-5xl px-4 pb-6 pt-5 sm:px-6">
           <p className="text-center text-xs font-semibold text-white/60">
             {game.seasonId && game.leagueName ? (
               <Link href={`/league/${game.seasonId}`} className="text-highlight hover:underline">
@@ -945,7 +974,7 @@ export function LiveView({ gameId }: { gameId: string }) {
               <div key={tid} className={`text-center ${i === 1 ? "order-3" : "order-1"}`}>
                 {crest(
                   tid,
-                  "mx-auto h-14 w-14 text-lg lg:h-[72px] lg:w-[72px] lg:text-2xl",
+                  "mx-auto h-16 w-16 text-xl shadow-lg ring-2 ring-white/15 lg:h-[88px] lg:w-[88px] lg:text-3xl",
                   monogram(tname)
                 )}
                 <Link
