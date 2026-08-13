@@ -273,5 +273,19 @@ documented rule. Both were ruled on 2026-08-12 and are now in this branch.
   3. The Google console's authorized redirect URIs include the production callback (`https://<host>/api/auth/callback/google`).
 - **Why it matters here specifically:** the demo funnel makes signup the gate (owner ruling). If the only way through that gate is typing an email and password, the gate gets materially heavier — and the research on demo funnels is that every unit of friction at that step costs conversions. Google sign-in shipped 2026-07-16 per `native-parity-audit.md`; this is about making sure it is actually present in the environment that ships.
 
-<!-- Add findings below. Next ID: T-021 -->
+### T-021 · Reposting works but gives the user no evidence it did · UI · med · web
+- **Where:** `/feed` → repost button on any post.
+- **Tested end to end (not assumed):** signed in as `persona-parent@sportshub.demo`, called `POST /api/posts/[id]/repost` → **200 `{reposted:true}`**, repost row created (`before=0 after=1`), and `getPublicFeed` reads it back so the button stays filled after refresh. **The API and persistence are correct.**
+- **The actual problem:** a user's own repost never appears in their own main feed — by design, `getPublicFeed` only surfaces reposts made by *parents of players the viewer follows* (`reposterIds`). So you tap repost, the icon fills, and nothing else happens anywhere you can see. It reads as broken.
+- It DOES land in the **"My posts"** tab (`getMyPosts` includes the viewer's reposts) — but nothing tells the user that.
+- **Fix ideas:** a confirmation toast ("Reposted — see it in My posts"), and/or surface the viewer's own reposts in their feed the way every other social product does.
+
+### T-022 · Stories can't carry the new generated card types (schema-shaped limitation) · IDEA · med · web + native
+- **Where:** `Story` model + `POST /api/stories` + the stories rail on `/feed`.
+- **What exists:** a real 24-hour story feature — API, rail, share dialog, photo pre-screen — but `StoryCardType` accepts only **`STAT_CARD`** and **`POTG`**, and rows are keyed on **`(playerId, gameId, cardType)`**. The whole model assumes *one player's card from one specific game*.
+- **Why the new kinds don't fit:** a LEADERBOARD post has five players and no single game; MATCHUP and RIVALRY have two teams and (for previews) a game that hasn't happened. There is nowhere to put them in the current key.
+- **Direction when it's picked up:** a story type that references a **Post id** rather than a player-game pair, so any shareable post can go to a story. Needs a schema change plus API and share-dialog work — deliberately NOT attempted in this session (tester ruling 2026-08-13: the creative/story surface is a larger piece of work for later).
+- **Related:** the leaderboard cards already tag all five players via `PostTag.playerId`, so the moment stories can reference a Post, the "player reshares the leaderboard they're on" loop closes.
+
+<!-- Add findings below. Next ID: T-023 -->
 
