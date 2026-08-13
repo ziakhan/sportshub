@@ -23,7 +23,7 @@ import { useState } from "react"
 const PROMISES: { title: string; proof: string; icon: JSX.Element }[] = [
   {
     title: "Live scores & stats",
-    proof: "Box scores, play-by-play, player pages",
+    proof: "Box scores, play-by-play, player stats",
     icon: <path d="M3 12h4l3-8 4 16 3-8h4" />,
   },
   {
@@ -47,18 +47,18 @@ const PROMISES: { title: string; proof: string; icon: JSX.Element }[] = [
     ),
   },
   {
-    title: "Team chat & announcements",
+    title: "Team chat",
     proof: "Coaches and parents, one thread",
     icon: <path d="M20 11.5a7 7 0 0 1-7 7H8l-4 3v-6.2a7 7 0 0 1 7-9.3h2a7 7 0 0 1 7 5.5Z" />,
   },
   {
     title: "Automatic scheduling",
-    proof: "Divisions, rosters, referees — one click",
+    proof: "A whole season in one click",
     icon: <path d="m13 2-9 12h7l-1 8 9-12h-7l1-8Z" />,
   },
   {
     title: "Standings & playoffs",
-    proof: "Brackets, stat leaders, game recaps",
+    proof: "Brackets, right through to a champion",
     icon: (
       <>
         <path d="M7.5 4h9v5a4.5 4.5 0 0 1-9 0V4Z" />
@@ -70,60 +70,23 @@ const PROMISES: { title: string; proof: string; icon: JSX.Element }[] = [
 ]
 
 /**
- * Second tier (2026-08-13): real capabilities that shouldn't headline but
- * shouldn't be hidden either. Same tile language as the promises, one size
- * down and label-only — an earlier grey-pill version read as leftovers.
+ * Second tier (2026-08-13): grey on purpose — it needs CONTRAST against the
+ * amber promise tiles, not a smaller copy of them (an icon-tile version read
+ * as the same thing twice). Between this list and the six proof lines above,
+ * every capability the old thirty-item wall claimed is still represented.
  */
-const ALSO_INCLUDED: { title: string; icon: JSX.Element }[] = [
-  {
-    title: "Game recaps",
-    icon: (
-      <>
-        <rect x="4" y="3" width="16" height="18" rx="2.5" />
-        <path d="M8 8.5h8M8 12.5h8M8 16.5h5" />
-      </>
-    ),
-  },
-  {
-    title: "Player pages",
-    icon: (
-      <>
-        <circle cx="12" cy="8" r="3.5" />
-        <path d="M5.5 20a6.5 6.5 0 0 1 13 0" />
-      </>
-    ),
-  },
-  {
-    title: "Club pages",
-    icon: (
-      <>
-        <path d="M4 21V7.5L12 3l8 4.5V21" />
-        <path d="M9.5 21v-6h5v6" />
-      </>
-    ),
-  },
-  {
-    title: "Rosters",
-    icon: (
-      <>
-        <path d="M9 6.5h11M9 12h11M9 17.5h11" />
-        <path d="M4.5 6.5h.01M4.5 12h.01M4.5 17.5h.01" />
-      </>
-    ),
-  },
-  {
-    title: "Referee assignments",
-    icon: <path d="M12 3.5l7.5 3v5.7c0 4.2-3.1 7.3-7.5 9.3-4.4-2-7.5-5.1-7.5-9.3V6.5l7.5-3Z" />,
-  },
-  {
-    title: "Announcements",
-    icon: (
-      <>
-        <path d="M4 10.5v3a1 1 0 0 0 1 1h3l6 4V5.5l-6 4H5a1 1 0 0 0-1 1Z" />
-        <path d="M18 9.5a4 4 0 0 1 0 5" />
-      </>
-    ),
-  },
+const ALSO_INCLUDED = [
+  "Player pages",
+  "Club pages",
+  "Game recaps",
+  "Stat leaders",
+  "Rosters",
+  "Divisions",
+  "Referee assignments",
+  "Announcements",
+  "Follows",
+  "Stories",
+  "E-transfers",
 ]
 
 const ROLES: { key: string; title: string; blurb: string; soon?: boolean }[] = [
@@ -231,35 +194,20 @@ export function WelcomePopup() {
                 down — tile, icon, label, no proof line. Hierarchy comes from
                 SIZE, not from draining the colour out (the grey-chip version
                 read as leftovers). */}
-            <p className="text-ink-400 font-condensed mb-3 text-[11.5px] font-bold uppercase tracking-[0.18em]">
-              Also included
-            </p>
-            <div className="mb-6 grid grid-cols-2 gap-x-5 gap-y-3.5 sm:grid-cols-3">
-              {ALSO_INCLUDED.map((f, i) => (
-                <div
-                  key={f.title}
-                  className="reveal flex items-center gap-2.5"
-                  style={{ animationDelay: `${240 + i * 45}ms` }}
-                >
-                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-amber-50 text-amber-600 ring-1 ring-inset ring-amber-200/80">
-                    <svg
-                      className="h-[18px] w-[18px]"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="1.9"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      aria-hidden
-                    >
-                      {f.icon}
-                    </svg>
+            <div className="reveal mb-6" style={{ animationDelay: "300ms" }}>
+              <p className="text-ink-400 font-condensed mb-2.5 text-[11.5px] font-bold uppercase tracking-[0.18em]">
+                Also included
+              </p>
+              <div className="flex flex-wrap gap-1.5">
+                {ALSO_INCLUDED.map((x) => (
+                  <span
+                    key={x}
+                    className="bg-ink-50 text-ink-700 ring-ink-200/70 rounded-lg px-2.5 py-1.5 text-[13px] font-semibold leading-none ring-1 ring-inset"
+                  >
+                    {x}
                   </span>
-                  <span className="text-ink-800 text-[13.5px] font-semibold leading-4">
-                    {f.title}
-                  </span>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
 
             <div className="flex flex-col gap-3 sm:flex-row">
