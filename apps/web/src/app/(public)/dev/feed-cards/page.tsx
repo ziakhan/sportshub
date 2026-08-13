@@ -1,4 +1,6 @@
 import { notFound } from "next/navigation"
+import { prisma } from "@youthbasketballhub/db"
+import { getSeasonLeaders } from "@/lib/queries/season-stats"
 import {
   ClutchPlayCard,
   DualPlayerOfGameCard,
@@ -84,10 +86,75 @@ const LEADERBOARDS = [
   },
 ]
 
-export default function FeedCardsPreview() {
+/** Deterministic colour per team when a club hasn't set branding. */
+const PALETTE = ["#4f46e5", "#f24e1e", "#16a34a", "#a16642", "#0891b2", "#c026d3", "#ca8a04"]
+function colorFor(teamId: string, branded?: string | null) {
+  if (branded) return branded
+  let h = 0
+  for (let i = 0; i < teamId.length; i++) h = (h * 31 + teamId.charCodeAt(i)) >>> 0
+  return PALETTE[h % PALETTE.length]
+}
+
+/**
+ * REAL leaderboards from the database (2026-08-13). The season with the most
+ * completed games wins, and `getSeasonLeaders` — the same query the public
+ * league leaders page uses — supplies points/rebounds/assists/steals/blocks.
+ * So these cards carry actual players, actual clubs and actual numbers, which
+ * is the point: they have to look right for every team, not for sample data.
+ */
+async function realLeaderboards() {
+  const season = await (prisma as any).game.groupBy({
+    by: ["seasonId"],
+    where: { status: "COMPLETED", seasonId: { not: null } },
+    _count: { _all: true },
+    orderBy: { _count: { seasonId: "desc" } },
+    take: 1,
+  })
+  const seasonId: string | undefined = season?.[0]?.seasonId
+  if (!seasonId) return null
+  const leaders = await getSeasonLeaders(seasonId, 5)
+  if (!leaders) return null
+
+  const teamIds = [...new Set(leaders.categories.flatMap((c: any) => c.rows.map((r: any) => r.teamId)))]
+  const teams = await (prisma as any).team.findMany({
+    where: { id: { in: teamIds } },
+    select: { id: true, tenant: { select: { branding: { select: { primaryColor: true } } } } },
+  })
+  const colors = new Map<string, string>(
+    teams.map((t: any) => [t.id, colorFor(t.id, t.tenant?.branding?.primaryColor)])
+  )
+
+  const jerseys = await (prisma as any).teamPlayer.findMany({
+    where: { teamId: { in: teamIds } },
+    select: { teamId: true, playerId: true, jerseyNumber: true },
+  })
+  const jerseyOf = new Map<string, string>(
+    jerseys.map((j: any) => [`${j.teamId}:${j.playerId}`, j.jerseyNumber ? String(j.jerseyNumber) : "–"])
+  )
+
+  return {
+    label: `${leaders.season.leagueName} · ${leaders.season.label}`,
+    boards: leaders.categories.map((cat: any) => ({
+      statLabel: cat.label,
+      unit: cat.label,
+      rows: cat.rows.slice(0, 5).map((r: any, i: number) => ({
+        rank: i + 1,
+        name: `${r.firstName} ${r.lastName}`.trim(),
+        team: r.teamName,
+        teamColor: colors.get(r.teamId) ?? PALETTE[0],
+        jersey: jerseyOf.get(`${r.teamId}:${r.playerId}`) ?? "–",
+        value: Math.round(r.value * 10) / 10,
+      })),
+    })),
+  }
+}
+
+export default async function FeedCardsPreview() {
   // Belt and braces: `/dev` is already a DEV_ONLY_PREFIX in public-paths, so
   // middleware gates it too. This makes the page itself refuse to render live.
   if (process.env.NODE_ENV === "production") notFound()
+
+  const live = await realLeaderboards()
 
   return (
     <main className="bg-ink-50/70 min-h-screen py-10">
@@ -109,11 +176,22 @@ export default function FeedCardsPreview() {
             when="Posts after each session or weekend"
             why="Turns the whole league into a competition instead of spotlighting one player. Five names per post, six stats to run — that is thirty kids featured a week, not one."
           >
-            <div className="space-y-5">
-              {LEADERBOARDS.map((b) => (
-                <LeaderboardCard key={b.statLabel} {...b} period="Week 6 · Grade 10" />
-              ))}
-            </div>
+            {live ? (
+              <div className="space-y-5">
+                <p className="border-court-200 bg-court-50 text-court-800 mb-1 rounded-xl border px-3 py-2 text-[12.5px] font-bold">
+                  Live data — real players, clubs and averages from {live.label}
+                </p>
+                {live.boards.map((b: any) => (
+                  <LeaderboardCard key={b.statLabel} {...b} period={live.label} />
+                ))}
+              </div>
+            ) : (
+              <div className="space-y-5">
+                {LEADERBOARDS.map((b) => (
+                  <LeaderboardCard key={b.statLabel} {...b} period="Week 6 · Grade 10" />
+                ))}
+              </div>
+            )}
           </Section>
 
           <Section
@@ -206,6 +284,9 @@ export default function FeedCardsPreview() {
               seasonContext={[
                 { label: "PPG", value: "16.4" },
                 { label: "RPG", value: "12.4" },
+                { label: "APG", value: "3.1" },
+                { label: "Double-doubles", value: "7" },
+                { label: "Team record", value: "7-3" },
               ]}
               opponentAward={{
                 playerName: "Andre Boateng",
