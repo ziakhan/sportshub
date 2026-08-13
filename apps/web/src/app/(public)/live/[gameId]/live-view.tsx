@@ -73,7 +73,19 @@ interface LivePayload {
 }
 
 
-type Tab = "game" | "box" | "plays"
+/**
+ * Tabs are REAL at every width as of 2026-08-13. They used to be phone-only
+ * (`lg:hidden`), so desktop rendered every panel at once and the layout had
+ * to cram them into escalating grids — leaders beside team stats, both box
+ * scores beside each other, and a play-by-play rail that outran the page.
+ * ESPN's box score doesn't do that: one focused view at a time, each owning
+ * the full width. Team stats also splits out of Game so its bars can breathe.
+ */
+type Tab = "game" | "box" | "team" | "plays"
+
+/** One heading treatment for every panel, so the tabs feel like one system. */
+const sectionHeading =
+  "text-ink-950 mb-2 mt-6 px-1 text-[17px] font-extrabold uppercase tracking-[0.04em]"
 
 const HOME_FALLBACK = "#4f46e5" // play-600
 const AWAY_FALLBACK = "#16a34a" // court-600
@@ -1089,94 +1101,92 @@ export function LiveView({ gameId }: { gameId: string }) {
         {/* ---------- Game | Stats | Plays (Yahoo pattern, phones) ---------- */}
         {hasAnyStats && (
           <>
-            <div className="bg-ink-100 mt-3 flex rounded-xl p-1 lg:hidden">
-              {(
-                [
-                  ["game", "Game"],
-                  ["box", "Stats"],
-                  ["plays", "Plays"],
-                ] as Array<[Tab, string]>
-              ).map(([key, label]) => (
-                <button
-                  key={key}
-                  onClick={() => setTab(key)}
-                  className={`flex-1 rounded-lg py-2 text-sm font-bold transition-colors ${
-                    tab === key ? "bg-play-600 text-white shadow-sm" : "text-ink-500"
-                  }`}
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
-
-            {/* Game tab: linescore + leaders + team stats (always on desktop) */}
-            <div className={`mt-3 ${tab === "game" ? "block" : "hidden"} lg:block`}>
-              {linescoreCard}
-              <div className="grid grid-cols-1 items-start gap-x-4 lg:grid-cols-2">
-                <div>
-                  <h3 className="text-ink-950 mb-2 mt-5 px-1 text-[17px] font-extrabold uppercase tracking-[0.04em]">
-                    Game leaders
-                  </h3>
-                  {leadersCard}
-                </div>
-                <div>
-                  <h3 className="text-ink-950 mb-2 mt-5 px-1 text-[17px] font-extrabold uppercase tracking-[0.04em]">
-                    Team stats
-                  </h3>
-                  {teamStatsCard}
-                </div>
+            <div className="mx-auto mt-4 w-full max-w-5xl">
+              <div
+                role="tablist"
+                aria-label="Game views"
+                className="border-ink-100 flex gap-1 overflow-x-auto rounded-2xl border bg-white p-1.5 shadow-sm"
+              >
+                {(
+                  [
+                    ["game", "Game"],
+                    ["box", "Box score"],
+                    ["team", "Team stats"],
+                    ["plays", "Play-by-play"],
+                  ] as Array<[Tab, string]>
+                ).map(([key, label]) => (
+                  <button
+                    key={key}
+                    role="tab"
+                    aria-selected={tab === key}
+                    onClick={() => setTab(key)}
+                    className={`flex-1 whitespace-nowrap rounded-xl px-3 py-2.5 text-[13.5px] font-bold transition-colors ${
+                      tab === key
+                        ? "bg-play-600 text-white shadow-sm"
+                        : "text-ink-500 hover:bg-ink-50 hover:text-ink-800"
+                    }`}
+                  >
+                    {label}
+                  </button>
+                ))}
               </div>
             </div>
 
-            <div className="mt-3 grid grid-cols-1 items-start gap-4 xl:grid-cols-[minmax(0,1fr)_380px] 2xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_400px]">
-              {/* phone: one team behind a color-coded switcher; desktop: both in full */}
-              <div className={`${tab === "box" ? "block" : "hidden"} lg:block`}>
-                <div className="bg-ink-100 mb-2 flex rounded-xl p-1 lg:hidden">
-                  {(["home", "away"] as const).map((side) => {
-                    const tid = side === "home" ? game.homeTeamId : game.awayTeamId
-                    const on = boxSide === side
-                    return (
-                      <button
-                        key={side}
-                        onClick={() => setBoxSide(side)}
-                        className={`flex-1 truncate rounded-lg px-2 py-1.5 text-xs font-bold transition-colors ${
-                          on ? "text-white shadow-sm" : "text-ink-500"
-                        }`}
-                        style={on ? { backgroundColor: colorOf(tid) } : undefined}
-                      >
-                        {side === "home" ? game.homeTeamName : game.awayTeamName}
-                      </button>
-                    )
-                  })}
-                </div>
-                {/* phone: selected team only — the switcher IS the header
-                    (score already lives in the hero; no repeated bar) */}
-                <div className="border-ink-100 overflow-hidden rounded-2xl border bg-white lg:hidden">
-                  {statsTable(boxTeamId)}
-                </div>
-                {/* desktop: home box (away box is the next grid cell) */}
-                <div className="border-ink-100 hidden overflow-hidden rounded-2xl border bg-white lg:block">
+            {/* GAME — linescore, then leaders, stacked full width */}
+            <div className={`mx-auto mt-4 w-full max-w-5xl ${tab === "game" ? "block" : "hidden"}`}>
+              {linescoreCard}
+              <h3 className={sectionHeading}>Game leaders</h3>
+              {leadersCard}
+            </div>
+
+            {/* TEAM STATS — its own view, so the comparison bars get room */}
+            <div className={`mx-auto mt-4 w-full max-w-5xl ${tab === "team" ? "block" : "hidden"}`}>
+              <h3 className={`${sectionHeading} mt-0`}>Team stats</h3>
+              {teamStatsCard}
+            </div>
+
+            {/* BOX SCORE — both teams stacked full width (the ESPN shape).
+                Phones keep a team switcher: an 11-column table on a 390px
+                screen is one team at a time no matter what. */}
+            <div className={`mx-auto mt-4 w-full max-w-5xl ${tab === "box" ? "block" : "hidden"}`}>
+              <div className="bg-ink-100 mb-3 flex rounded-xl p-1 lg:hidden">
+                {(["home", "away"] as const).map((side) => {
+                  const tid = side === "home" ? game.homeTeamId : game.awayTeamId
+                  const on = boxSide === side
+                  return (
+                    <button
+                      key={side}
+                      onClick={() => setBoxSide(side)}
+                      className={`flex-1 truncate rounded-lg px-2 py-1.5 text-xs font-bold transition-colors ${
+                        on ? "text-white shadow-sm" : "text-ink-500"
+                      }`}
+                      style={on ? { backgroundColor: colorOf(tid) } : undefined}
+                    >
+                      {side === "home" ? game.homeTeamName : game.awayTeamName}
+                    </button>
+                  )
+                })}
+              </div>
+              <div className="border-ink-100 overflow-hidden rounded-2xl border bg-white lg:hidden">
+                {statsTable(boxTeamId)}
+              </div>
+
+              <div className="hidden lg:block">
+                <div className="border-ink-100 overflow-hidden rounded-2xl border bg-white">
                   {boxHeader(game.homeTeamId, game.homeTeamName, homeScore)}
                   {statsTable(game.homeTeamId)}
                 </div>
+                <div className="border-ink-100 mt-4 overflow-hidden rounded-2xl border bg-white">
+                  {boxHeader(game.awayTeamId, game.awayTeamName, awayScore)}
+                  {statsTable(game.awayTeamId)}
+                </div>
               </div>
+            </div>
 
-              <div className="border-ink-100 hidden overflow-hidden rounded-2xl border bg-white lg:block xl:col-start-1 2xl:col-start-2 2xl:row-start-1">
-                {boxHeader(game.awayTeamId, game.awayTeamName, awayScore)}
-                {statsTable(game.awayTeamId)}
-              </div>
-
-              {/* play-by-play — rail on desktop, tab on phones */}
-              <div
-                className={`border-ink-100 overflow-hidden rounded-2xl border bg-white ${
-                  tab === "plays" ? "block" : "hidden"
-                } lg:block xl:sticky xl:top-[76px] xl:col-start-2 xl:row-start-1 xl:row-span-2 2xl:col-start-3 2xl:row-span-1`}
-              >
-                {/* chips only on phones (the tab already says "Play-by-play") */}
-                <div className="border-ink-100 flex items-center gap-1.5 overflow-x-auto border-b px-4 py-2">
-                  <h3 className="text-ink-600 hidden flex-1 text-[11.5px] font-bold uppercase tracking-[0.14em] lg:block">
-                    Play-by-play
-                  </h3>
+            {/* PLAY-BY-PLAY — its own full-width view, free to run long */}
+            <div className={`mx-auto mt-4 w-full max-w-5xl ${tab === "plays" ? "block" : "hidden"}`}>
+              <div className="border-ink-100 overflow-hidden rounded-2xl border bg-white">
+                <div className="border-ink-100 flex items-center gap-1.5 overflow-x-auto border-b px-4 py-2.5">
                   {(
                     [
                       ["all", "All"],
@@ -1197,7 +1207,7 @@ export function LiveView({ gameId }: { gameId: string }) {
                     </button>
                   ))}
                 </div>
-                <ul className="max-h-[420px] overflow-y-auto xl:max-h-[calc(100vh-190px)]">
+                <ul className="max-h-[70vh] overflow-y-auto">
                   {visiblePlays.map(({ e, score, tail }, i) =>
                     e.eventType.startsWith("PERIOD") ? (
                       <li
