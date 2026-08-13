@@ -17,17 +17,17 @@ export const DEMO_VIEW_COOKIE = "demo-view"
 /** Personas are seeded users at FIXED addresses (spec-driven seeder). */
 export const PERSONA_EMAILS = {
   parent: "persona-parent@sportshub.demo",
+  player: "persona-player@sportshub.demo",
   coach: "persona-coach@sportshub.demo",
   club: "persona-club@sportshub.demo",
-  // League operator persona exists in the world but is NOT offered in the
-  // public drawer (assumption: meetings-only until the owner rules).
   league: "persona-league@sportshub.demo",
 } as const
 
 export type PersonaKey = keyof typeof PERSONA_EMAILS
 
-/** Public drawer offers these three; operator persona held back. */
-export const PUBLIC_PERSONAS: PersonaKey[] = ["parent", "coach", "club"]
+/** Owner ruling 2026-08-13: all five live personas are public. Referee,
+ * trainer, and media personas join once their worlds are seeded. */
+export const PUBLIC_PERSONAS: PersonaKey[] = ["parent", "player", "coach", "club", "league"]
 
 const TTL_MS = 1000 * 60 * 60 * 12 // half a day; nightly reset outlives it
 

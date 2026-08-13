@@ -220,49 +220,9 @@ export default async function HomePage() {
               </p>
             </div>
 
-            <div className="mx-auto mb-4 grid max-w-3xl gap-3 text-left sm:grid-cols-3">
-              {[
-                {
-                  href: "/for-clubs",
-                  title: "For clubs",
-                  body: "Run tryouts, send offers, collect payments and build your rosters.",
-                  cta: "See how it works",
-                },
-                {
-                  href: "/for-leagues",
-                  title: "For leagues",
-                  body: "Registration, scheduling, referees, live scores and standings.",
-                  cta: "See how it works",
-                },
-                {
-                  href: "/for-parents",
-                  title: "For parents & players",
-                  body: "Sign up and pay in minutes, then follow every game live.",
-                  cta: "See your side of it",
-                },
-              ].map((c) => (
-                <Link
-                  key={c.href}
-                  href={c.href}
-                  className="border-ink-100 card-lift shadow-soft group flex flex-col rounded-2xl border bg-white p-5 transition"
-                >
-                  <span className="text-ink-950 text-[15px] font-bold">{c.title}</span>
-                  <span className="text-ink-500 mt-1.5 block flex-1 text-[13px] leading-5">{c.body}</span>
-                  <span className="bg-play-50 text-play-700 group-hover:bg-play-100 mt-3 inline-flex w-fit items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[12.5px] font-bold transition-colors">
-                    {c.cta}
-                    <svg
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2.5"
-                      className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5"
-                    >
-                      <path d="M5 12h14M12 5l7 7-7 7" />
-                    </svg>
-                  </span>
-                </Link>
-              ))}
-            </div>
+            {/* Role-pitch cards removed from the home page (owner 2026-08-13):
+                the for-clubs/for-leagues/for-parents pages stay reachable from
+                the header dropdown; the home page belongs to the product. */}
 
 
             <p className="text-ink-400 mb-6 text-[13px] font-medium sm:mb-8">

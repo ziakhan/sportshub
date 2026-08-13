@@ -136,7 +136,11 @@ const PERSONAS = {
   coach: { email: `persona-coach@${EMAIL_DOMAIN}`, firstName: "Dre", lastName: "Wilson" },
   club: { email: `persona-club@${EMAIL_DOMAIN}`, firstName: "Jordan", lastName: "Blake" },
   league: { email: `persona-league@${EMAIL_DOMAIN}`, firstName: "Alex", lastName: "Morgan" },
+  // Owner 2026-08-13: the player persona ("the most important one") — a
+  // Gr10 self-owned player (13+ pattern: parentId = own user id).
+  player: { email: `persona-player@${EMAIL_DOMAIN}`, firstName: "Marcus", lastName: "Reid" },
 }
+const PLAYER_PERSONA_CLUB_KEY = "select" // Marcus plays Gr10 for Summit Select
 // Sam's two kids (spec §5): Gr8 boy on Northgate Wolves, Gr10 boy on Lakeside
 // Storm — both already rostered on the (completed) regular season.
 const SAM_GR8_KID = { firstName: "Miles", lastName: "Carter" }
@@ -574,7 +578,9 @@ async function seed() {
   const personaCoach = await mkUser(PERSONAS.coach.email, PERSONAS.coach.firstName, PERSONAS.coach.lastName)
   const personaClub = await mkUser(PERSONAS.club.email, PERSONAS.club.firstName, PERSONAS.club.lastName)
   const personaLeague = await mkUser(PERSONAS.league.email, PERSONAS.league.firstName, PERSONAS.league.lastName)
-  console.log("✓ 4 personas created (Sam Carter, Dre Wilson, Jordan Blake, Alex Morgan)")
+  const personaPlayer = await mkUser(PERSONAS.player.email, PERSONAS.player.firstName, PERSONAS.player.lastName)
+  await p.userRole.create({ data: { userId: personaPlayer.id, role: "Player" } })
+  console.log("✓ 5 personas created (Sam Carter, Dre Wilson, Jordan Blake, Alex Morgan, Marcus Reid)")
 
   // ── Venues + courts (find-or-create, global registry) ──────────────────
   const venueRows = new Map<string, { id: string; courtIds: string[] }>()
@@ -721,10 +727,14 @@ async function seed() {
       for (let i = 0; i < ROSTER_SIZE; i++) {
         const isSamGr8 = club.key === WOLVES_KEY && grade === WOLVES_COACH_GRADE && i === 0
         const isSamGr10 = club.key === STORM_KEY && grade === 10 && i === 0
+        const isMarcus = club.key === PLAYER_PERSONA_CLUB_KEY && grade === 10 && i === 0
 
         let parentId: string
         if (isSamGr8 || isSamGr10) {
           parentId = personaParent.id
+        } else if (isMarcus) {
+          // 13+ self-owned player: parentId = the player's own user id.
+          parentId = personaPlayer.id
         } else {
           const parent = await mkUser(
             `${MCL_PREFIX}parent-${club.key}-g${grade}-${i}@${EMAIL_DOMAIN}`,
@@ -736,8 +746,8 @@ async function seed() {
           parentId = parent.id
         }
 
-        const firstName = isSamGr8 ? SAM_GR8_KID.firstName : isSamGr10 ? SAM_GR10_KID.firstName : pick(BOY_NAMES)
-        const lastName = isSamGr8 || isSamGr10 ? "Carter" : pick(LAST_NAMES)
+        const firstName = isSamGr8 ? SAM_GR8_KID.firstName : isSamGr10 ? SAM_GR10_KID.firstName : isMarcus ? PERSONAS.player.firstName : pick(BOY_NAMES)
+        const lastName = isSamGr8 || isSamGr10 ? "Carter" : isMarcus ? PERSONAS.player.lastName : pick(LAST_NAMES)
         const player = await p.player.create({
           data: {
             firstName,
@@ -746,6 +756,7 @@ async function seed() {
             gender: "MALE",
             isMinor: true,
             parentId,
+            ...(isMarcus ? { userId: personaPlayer.id, canLogin: true } : {}),
             position: pick(["Guard", "Guard", "Forward", "Forward", "Center"]),
           },
           select: { id: true },
@@ -1254,7 +1265,7 @@ function printSummary(result: Awaited<ReturnType<typeof seed>>) {
     ` persona-parent@${EMAIL_DOMAIN}   ⭐ Sam Carter — 2 kids, offer waiting`,
     ` persona-coach@${EMAIL_DOMAIN}    ⭐ Dre Wilson — Northgate Wolves Gr8 HeadCoach`,
     ` persona-club@${EMAIL_DOMAIN}     ⭐ Jordan Blake — Lakeside Storm ClubOwner`,
-    ` persona-league@${EMAIL_DOMAIN}   ⭐ Alex Morgan — Maple Court League LeagueOwner`,
+    ` persona-player@${EMAIL_DOMAIN}   ⭐ Marcus Reid — Gr10 player, Summit Select\n persona-league@${EMAIL_DOMAIN}   ⭐ Alex Morgan — Maple Court League LeagueOwner`,
     "─".repeat(70),
     ` Clubs: ${result.clubs}  ·  Teams: ${result.teams}  ·  Personas: ${result.personas}`,
     ` Regular season: ${result.regularSeasonGames} games (COMPLETED)  ·  Playoffs: ${result.playoffGames} games`,

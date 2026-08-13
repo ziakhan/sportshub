@@ -5,9 +5,10 @@ import { useState } from "react"
 
 const PERSONA_LABEL: Record<string, string> = {
   parent: "Sam, a parent of two",
+  player: "Marcus, a Grade 10 player",
   coach: "Coach Dre",
   club: "Jordan, a club owner",
-  league: "a league operator",
+  league: "Alex, the league operator",
 }
 
 /**
