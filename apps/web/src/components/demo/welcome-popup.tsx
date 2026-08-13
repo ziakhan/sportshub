@@ -23,7 +23,7 @@ import { useState } from "react"
 const PROMISES: { title: string; proof: string; icon: JSX.Element }[] = [
   {
     title: "Live scores & stats",
-    proof: "Box scores, play-by-play, stat leaders",
+    proof: "Box scores, play-by-play, player pages",
     icon: <path d="M3 12h4l3-8 4 16 3-8h4" />,
   },
   {
@@ -47,18 +47,18 @@ const PROMISES: { title: string; proof: string; icon: JSX.Element }[] = [
     ),
   },
   {
-    title: "Team chat",
+    title: "Team chat & announcements",
     proof: "Coaches and parents, one thread",
     icon: <path d="M20 11.5a7 7 0 0 1-7 7H8l-4 3v-6.2a7 7 0 0 1 7-9.3h2a7 7 0 0 1 7 5.5Z" />,
   },
   {
     title: "Automatic scheduling",
-    proof: "A whole season in one click",
+    proof: "Divisions, rosters, referees — one click",
     icon: <path d="m13 2-9 12h7l-1 8 9-12h-7l1-8Z" />,
   },
   {
     title: "Standings & playoffs",
-    proof: "Divisions, brackets, a champion",
+    proof: "Brackets, stat leaders, game recaps",
     icon: (
       <>
         <path d="M7.5 4h9v5a4.5 4.5 0 0 1-9 0V4Z" />
@@ -67,24 +67,6 @@ const PROMISES: { title: string; proof: string; icon: JSX.Element }[] = [
       </>
     ),
   },
-]
-
-/**
- * The breadth layer (tester call 2026-08-13): the six promises alone dropped
- * twelve real capabilities. Progressive disclosure rather than a wall — the
- * outcomes lead, these quiet chips prove the rest of the surface area for the
- * operator who IS shopping on breadth. Everything here is deliberately NOT in
- * a promise line above; together they cover the original thirty.
- */
-const ALSO_INCLUDED = [
-  "Game recaps",
-  "Player pages",
-  "Club pages",
-  "Rosters",
-  "Referee assignments",
-  "Announcements",
-  "Follows",
-  "E-transfers",
 ]
 
 const ROLES: { key: string; title: string; blurb: string; soon?: boolean }[] = [
@@ -98,7 +80,12 @@ const ROLES: { key: string; title: string; blurb: string; soon?: boolean }[] = [
   { key: "media", title: "Photo & video", blurb: "Shoot and tag the games.", soon: true },
 ]
 
-export function WelcomePopup() {
+export function WelcomePopup({
+  stats,
+}: {
+  /** Live counts from the seeded demo season; omitted → strip hides. */
+  stats?: { clubs: number; teams: number; games: number } | null
+}) {
   const [open, setOpen] = useState(true)
   const [step, setStep] = useState<1 | 2>(1)
   if (!open) return null
@@ -184,22 +171,28 @@ export function WelcomePopup() {
               ))}
             </div>
 
-            {/* Breadth, quietly: the outcomes sell, these prove the surface area. */}
-            <div className="border-ink-100 mb-6 border-t pt-4">
-              <p className="text-ink-400 font-condensed mb-2.5 text-[11.5px] font-bold uppercase tracking-[0.18em]">
-                Also included
-              </p>
-              <div className="flex flex-wrap gap-1.5">
-                {ALSO_INCLUDED.map((x) => (
-                  <span
-                    key={x}
-                    className="bg-ink-50 text-ink-600 ring-ink-100 rounded-full px-2.5 py-1 text-[12.5px] font-semibold ring-1 ring-inset"
-                  >
-                    {x}
-                  </span>
+            {/* The proof, as a scoreboard (2026-08-13): a feature list can only
+                CLAIM breadth — these numbers are the demo season that already
+                exists behind the button, which is the one thing no competitor's
+                modal can say. Condensed face is the app's score/tabular font. */}
+            {stats && (
+              <div className="border-ink-100 bg-ink-50/60 mb-6 grid grid-cols-3 gap-2 rounded-2xl border px-4 py-3.5">
+                {[
+                  { n: stats.clubs, label: "Clubs" },
+                  { n: stats.teams, label: "Teams" },
+                  { n: stats.games, label: "Games played" },
+                ].map((s) => (
+                  <div key={s.label} className="text-center">
+                    <div className="font-condensed text-[28px] font-black leading-none text-amber-600 tabular-nums">
+                      {s.n}
+                    </div>
+                    <div className="text-ink-500 mt-1 text-[11px] font-bold uppercase tracking-[0.1em]">
+                      {s.label}
+                    </div>
+                  </div>
                 ))}
               </div>
-            </div>
+            )}
 
             <div className="flex flex-col gap-3 sm:flex-row">
               <button

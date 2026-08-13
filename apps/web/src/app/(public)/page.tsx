@@ -2,7 +2,7 @@ import Link from "next/link"
 import { getServerSession } from "next-auth"
 import { WelcomePopup } from "@/components/demo/welcome-popup"
 import { HintBalloon } from "@/components/demo/hint-balloon"
-import { isDemoModeEnabled } from "@/lib/demo/demo-mode"
+import { demoSeasonStats, isDemoModeEnabled } from "@/lib/demo/demo-mode"
 import { readDemoView } from "@/lib/demo/persona-session"
 import { prisma } from "@youthbasketballhub/db"
 import { authOptions } from "@/lib/auth"
@@ -137,7 +137,7 @@ export default async function HomePage() {
           within a second (owner ruling 2026-08-13) — home page, signed-out,
           every load. A demo-view cookie WITHOUT a session is a zombie (the
           demo requires sign-in), so it never suppresses the greeting. */}
-      {!userId && demoOn && <WelcomePopup />}
+      {!userId && demoOn && <WelcomePopup stats={await demoSeasonStats()} />}
       {/* Live scoring pings re-render the scoreboard strip (debounced) */}
       <RealtimeRefresh rooms={["scores"]} events={["game.update"]} />
       {userId && <HomePersonalBand userId={userId} />}
