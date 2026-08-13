@@ -423,54 +423,39 @@ export function LiveView({ gameId }: { gameId: string }) {
     }
     return (
       <div
-        className="relative min-w-0 flex-1 overflow-hidden rounded-2xl border p-3.5 transition-shadow hover:shadow-md"
-        style={{
-          borderColor: `${color}${won ? "59" : "26"}`,
-          backgroundColor: `${color}${won ? "14" : "0a"}`,
-        }}
+        className={`flex min-w-0 flex-1 items-center gap-3 rounded-2xl p-3 ${
+          mirror ? "flex-row-reverse text-right" : ""
+        }`}
+        style={{ backgroundColor: `${color}${won ? "14" : "08"}` }}
       >
+        {/* The badge stands in for a headshot: players have no photo field, and
+            the platform's own rule is "real mark, else branded monogram". The
+            jersey number is how you identify a kid from the stands anyway — and
+            if photos ever ship, this circle becomes the photo slot unchanged. */}
         <span
-          className={`absolute inset-y-0 w-1 ${mirror ? "right-0" : "left-0"}`}
+          className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full text-[17px] font-black text-white shadow-md ring-2 ring-white/60"
           style={{ backgroundColor: color }}
-        />
-        <div
-          className={`flex items-center gap-2.5 ${mirror ? "flex-row-reverse pr-1.5" : "pl-1.5"}`}
         >
-          <span
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-[11.5px] font-extrabold text-white shadow-sm"
-            style={{ backgroundColor: color }}
-          >
-            #{jerseyOf(entry.l.playerId)}
-          </span>
+          {jerseyOf(entry.l.playerId) ? `${jerseyOf(entry.l.playerId)}` : monogram(shortName(entry.l.playerId))}
+        </span>
+        <div className="min-w-0 flex-1">
           {/* Platform law: every rendered entity is clickable. */}
           <Link
             href={`/player/${entry.l.playerId}`}
-            className={`text-ink-950 hover:text-play-600 min-w-0 flex-1 truncate text-[15.5px] font-bold leading-tight transition-colors ${
-              mirror ? "text-right" : ""
-            }`}
+            className="text-ink-950 hover:text-play-600 block truncate text-[15px] font-bold leading-tight transition-colors"
           >
             {shortName(entry.l.playerId)}
           </Link>
+          <div className={`mt-1 flex items-end gap-1.5 ${mirror ? "justify-end" : ""}`}>
+            <span className="font-condensed text-ink-950 text-[2.6rem] font-black leading-[0.85] tabular-nums">
+              <FlashNum value={entry.value} />
+            </span>
+            <span className="text-ink-600 pb-1 text-[12.5px] font-extrabold tracking-wide">
+              {entry.unit}
+            </span>
+          </div>
+          <p className="text-ink-600 mt-1 truncate text-[12.5px] font-semibold">{sub(entry.l)}</p>
         </div>
-        {/* justify-end, NOT flex-row-reverse — reversing turned "24 PTS" into
-            "PTS 24". Reading order stays; only the alignment flips. */}
-        <div
-          className={`mt-2.5 flex items-end gap-2 ${mirror ? "justify-end pr-1.5" : "pl-1.5"}`}
-        >
-          <span className="font-condensed text-ink-950 text-[3.1rem] font-black leading-[0.85] tabular-nums">
-            <FlashNum value={entry.value} />
-          </span>
-          <span className="text-ink-600 pb-1.5 text-[13px] font-extrabold tracking-wide">
-            {entry.unit}
-          </span>
-        </div>
-        <p
-          className={`text-ink-600 mt-2 truncate text-[13px] font-semibold ${
-            mirror ? "pr-1.5 text-right" : "pl-1.5"
-          }`}
-        >
-          {sub(entry.l)}
-        </p>
       </div>
     )
   }
@@ -552,18 +537,19 @@ export function LiveView({ gameId }: { gameId: string }) {
         if (!h && !a) return null
         const hWins = (h?.value ?? -1) >= (a?.value ?? -1)
         return (
-          <div key={sec.label}>
-            <div className="mb-1.5 flex items-center gap-3">
-              <span className="bg-ink-100 h-px flex-1" />
-              <span className="text-ink-700 text-[12.5px] font-extrabold uppercase tracking-[0.16em]">
-                {sec.label}
-              </span>
-              <span className="bg-ink-100 h-px flex-1" />
-            </div>
-            <div className="flex items-stretch gap-2.5">
-              {leaderCell(h, game.homeTeamId, sec.sub, hWins)}
-              {leaderCell(a, game.awayTeamId, sec.sub, !hWins, true)}
-            </div>
+          // The category label lives BETWEEN the two players (2026-08-13) —
+          // mirroring alone just moved the gap from the outer edges into the
+          // middle. A shared centre axis is the head-to-head pattern, and it
+          // buys back the vertical space the old label row used.
+          <div
+            key={sec.label}
+            className="border-ink-100 flex items-center gap-2 rounded-2xl border bg-white p-1.5"
+          >
+            {leaderCell(h, game.homeTeamId, sec.sub, hWins)}
+            <span className="text-ink-500 w-16 shrink-0 text-center text-[11px] font-extrabold uppercase leading-tight tracking-[0.12em] sm:w-20 sm:text-[12px]">
+              {sec.label}
+            </span>
+            {leaderCell(a, game.awayTeamId, sec.sub, !hWins, true)}
           </div>
         )
       })}
@@ -857,17 +843,19 @@ export function LiveView({ gameId }: { gameId: string }) {
       { pts: 0, reb: 0, ast: 0, stl: 0, blk: 0, to: 0, pf: 0 }
     )
     const header = (
-      <thead className="text-ink-500 text-left text-[11.5px] uppercase tracking-wide">
+      // Column head: was 11.5px semi-grey and disappeared under the rows.
+      // Now 13px black in near-ink on a tinted band (tester 2026-08-13).
+      <thead className="bg-ink-50 text-ink-800 border-ink-200 border-b text-left text-[13px] uppercase tracking-[0.08em]">
         <tr>
-          <th className="py-2 pl-4 pr-2 font-bold">Player</th>
-          {showMinutes && <th className="px-1.5 text-right font-bold">Min</th>}
-          <th className="px-1.5 text-right font-bold">Pts</th>
-          <th className="px-1.5 text-right font-bold">Reb</th>
-          <th className="px-1.5 text-right font-bold">Ast</th>
-          <th className="px-1.5 text-right font-bold">Stl</th>
-          <th className="hidden px-1.5 text-right font-bold sm:table-cell">Blk</th>
-          <th className="px-1.5 pr-4 text-right font-bold sm:pr-1.5">TO</th>
-          <th className="hidden px-1.5 pr-4 text-right font-bold sm:table-cell">PF</th>
+          <th className="py-2.5 pl-4 pr-2 font-black">Player</th>
+          {showMinutes && <th className="px-1.5 text-right font-black">Min</th>}
+          <th className="px-1.5 text-right font-black">Pts</th>
+          <th className="px-1.5 text-right font-black">Reb</th>
+          <th className="px-1.5 text-right font-black">Ast</th>
+          <th className="px-1.5 text-right font-black">Stl</th>
+          <th className="hidden px-1.5 text-right font-black sm:table-cell">Blk</th>
+          <th className="px-1.5 pr-4 text-right font-black sm:pr-1.5">TO</th>
+          <th className="hidden px-1.5 pr-4 text-right font-black sm:table-cell">PF</th>
         </tr>
       </thead>
     )
@@ -881,7 +869,7 @@ export function LiveView({ gameId }: { gameId: string }) {
               <tr>
                 <td
                   colSpan={cols}
-                  className="bg-ink-50 text-ink-500 border-ink-100 border-y px-4 py-1 text-[10.5px] font-extrabold uppercase tracking-widest"
+                  className="bg-ink-100 text-ink-800 border-ink-200 border-y px-4 py-2 text-[13px] font-black uppercase tracking-[0.16em]"
                 >
                   {groupLabel}
                 </td>
@@ -892,7 +880,7 @@ export function LiveView({ gameId }: { gameId: string }) {
               <tr>
                 <td
                   colSpan={cols}
-                  className="bg-ink-50 text-ink-500 border-ink-100 border-y px-4 py-1 text-[10.5px] font-extrabold uppercase tracking-widest"
+                  className="bg-ink-100 text-ink-800 border-ink-200 border-y px-4 py-2 text-[13px] font-black uppercase tracking-[0.16em]"
                 >
                   Bench
                 </td>
