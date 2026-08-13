@@ -55,29 +55,6 @@ export async function demoLeaguesForDirectory() {
   })
 }
 
-/**
- * Scoreboard for the welcome modal: what the seeded demo world actually
- * contains. A feature list can only claim breadth; these numbers prove a
- * real season is already sitting behind the button. Returns null when the
- * switch is off or nothing is seeded, so the strip simply hides.
- */
-export async function demoSeasonStats(): Promise<{
-  clubs: number
-  teams: number
-  games: number
-} | null> {
-  if (!(await isDemoModeEnabled())) return null
-  const [clubs, teams, games] = await Promise.all([
-    prisma.tenant.count({ where: { isDemo: true, status: "ACTIVE" } }),
-    prisma.team.count({ where: { tenant: { isDemo: true } } }),
-    prisma.game.count({
-      where: { status: "COMPLETED", season: { league: { isDemo: true } } },
-    }),
-  ])
-  if (clubs === 0 && teams === 0 && games === 0) return null
-  return { clubs, teams, games }
-}
-
 /** Derivation for surfaces that only hold a game id. */
 export async function isDemoGame(gameId: string): Promise<boolean> {
   const game = await prisma.game.findUnique({

@@ -69,6 +69,63 @@ const PROMISES: { title: string; proof: string; icon: JSX.Element }[] = [
   },
 ]
 
+/**
+ * Second tier (2026-08-13): real capabilities that shouldn't headline but
+ * shouldn't be hidden either. Same tile language as the promises, one size
+ * down and label-only — an earlier grey-pill version read as leftovers.
+ */
+const ALSO_INCLUDED: { title: string; icon: JSX.Element }[] = [
+  {
+    title: "Game recaps",
+    icon: (
+      <>
+        <rect x="4" y="3" width="16" height="18" rx="2.5" />
+        <path d="M8 8.5h8M8 12.5h8M8 16.5h5" />
+      </>
+    ),
+  },
+  {
+    title: "Player pages",
+    icon: (
+      <>
+        <circle cx="12" cy="8" r="3.5" />
+        <path d="M5.5 20a6.5 6.5 0 0 1 13 0" />
+      </>
+    ),
+  },
+  {
+    title: "Club pages",
+    icon: (
+      <>
+        <path d="M4 21V7.5L12 3l8 4.5V21" />
+        <path d="M9.5 21v-6h5v6" />
+      </>
+    ),
+  },
+  {
+    title: "Rosters",
+    icon: (
+      <>
+        <path d="M9 6.5h11M9 12h11M9 17.5h11" />
+        <path d="M4.5 6.5h.01M4.5 12h.01M4.5 17.5h.01" />
+      </>
+    ),
+  },
+  {
+    title: "Referee assignments",
+    icon: <path d="M12 3.5l7.5 3v5.7c0 4.2-3.1 7.3-7.5 9.3-4.4-2-7.5-5.1-7.5-9.3V6.5l7.5-3Z" />,
+  },
+  {
+    title: "Announcements",
+    icon: (
+      <>
+        <path d="M4 10.5v3a1 1 0 0 0 1 1h3l6 4V5.5l-6 4H5a1 1 0 0 0-1 1Z" />
+        <path d="M18 9.5a4 4 0 0 1 0 5" />
+      </>
+    ),
+  },
+]
+
 const ROLES: { key: string; title: string; blurb: string; soon?: boolean }[] = [
   { key: "parent", title: "Parent", blurb: "Your kids, one calendar, live games." },
   { key: "player", title: "Player", blurb: "Your team, your stats, your season." },
@@ -80,12 +137,7 @@ const ROLES: { key: string; title: string; blurb: string; soon?: boolean }[] = [
   { key: "media", title: "Photo & video", blurb: "Shoot and tag the games.", soon: true },
 ]
 
-export function WelcomePopup({
-  stats,
-}: {
-  /** Live counts from the seeded demo season; omitted → strip hides. */
-  stats?: { clubs: number; teams: number; games: number } | null
-}) {
+export function WelcomePopup() {
   const [open, setOpen] = useState(true)
   const [step, setStep] = useState<1 | 2>(1)
   if (!open) return null
@@ -143,8 +195,12 @@ export function WelcomePopup({
               Everything a season needs
             </p>
             <div className="mb-6 grid grid-cols-1 gap-x-6 gap-y-5 sm:grid-cols-2">
-              {PROMISES.map((f) => (
-                <div key={f.title} className="flex items-start gap-3.5">
+              {PROMISES.map((f, i) => (
+                <div
+                  key={f.title}
+                  className="reveal flex items-start gap-3.5"
+                  style={{ animationDelay: `${i * 55}ms` }}
+                >
                   <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-100 text-amber-700 ring-1 ring-inset ring-amber-200/70">
                     <svg
                       className="h-5 w-5"
@@ -171,28 +227,40 @@ export function WelcomePopup({
               ))}
             </div>
 
-            {/* The proof, as a scoreboard (2026-08-13): a feature list can only
-                CLAIM breadth — these numbers are the demo season that already
-                exists behind the button, which is the one thing no competitor's
-                modal can say. Condensed face is the app's score/tabular font. */}
-            {stats && (
-              <div className="border-ink-100 bg-ink-50/60 mb-6 grid grid-cols-3 gap-2 rounded-2xl border px-4 py-3.5">
-                {[
-                  { n: stats.clubs, label: "Clubs" },
-                  { n: stats.teams, label: "Teams" },
-                  { n: stats.games, label: "Games played" },
-                ].map((s) => (
-                  <div key={s.label} className="text-center">
-                    <div className="font-condensed text-[28px] font-black leading-none text-amber-600 tabular-nums">
-                      {s.n}
-                    </div>
-                    <div className="text-ink-500 mt-1 text-[11px] font-bold uppercase tracking-[0.1em]">
-                      {s.label}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
+            {/* Second tier: same visual language as the promises, one size
+                down — tile, icon, label, no proof line. Hierarchy comes from
+                SIZE, not from draining the colour out (the grey-chip version
+                read as leftovers). */}
+            <p className="text-ink-400 font-condensed mb-3 text-[11.5px] font-bold uppercase tracking-[0.18em]">
+              Also included
+            </p>
+            <div className="mb-6 grid grid-cols-2 gap-x-5 gap-y-3.5 sm:grid-cols-3">
+              {ALSO_INCLUDED.map((f, i) => (
+                <div
+                  key={f.title}
+                  className="reveal flex items-center gap-2.5"
+                  style={{ animationDelay: `${240 + i * 45}ms` }}
+                >
+                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-amber-50 text-amber-600 ring-1 ring-inset ring-amber-200/80">
+                    <svg
+                      className="h-[18px] w-[18px]"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1.9"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      aria-hidden
+                    >
+                      {f.icon}
+                    </svg>
+                  </span>
+                  <span className="text-ink-800 text-[13.5px] font-semibold leading-4">
+                    {f.title}
+                  </span>
+                </div>
+              ))}
+            </div>
 
             <div className="flex flex-col gap-3 sm:flex-row">
               <button
