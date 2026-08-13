@@ -788,7 +788,7 @@ export function LiveView({ gameId }: { gameId: string }) {
   const statRow = (l: PlayerLine, teamColor: string, isTop: boolean, showMin: boolean) => (
     <tr
       key={l.playerId}
-      className="border-ink-50 even:bg-ink-50/60 hover:bg-ink-100/70 border-t transition-colors"
+      className="border-ink-50 hover:bg-ink-50 lg:even:bg-ink-50/60 lg:hover:bg-ink-100/70 border-t transition-colors"
       style={isTop ? { backgroundColor: `${teamColor}14` } : undefined}
     >
       <td className="text-ink-900 whitespace-nowrap py-2 pl-4 pr-2 font-semibold">
@@ -845,19 +845,21 @@ export function LiveView({ gameId }: { gameId: string }) {
       { pts: 0, reb: 0, ast: 0, stl: 0, blk: 0, to: 0, pf: 0 }
     )
     const header = (
-      // Column head: was 11.5px semi-grey and disappeared under the rows.
-      // Now 13px black in near-ink on a tinted band (tester 2026-08-13).
-      <thead className="bg-ink-50 text-ink-800 border-ink-200 border-b text-left text-[13px] uppercase tracking-[0.08em]">
+      // Mobile keeps the original light head (tester 2026-08-13: phone view
+      // was already right); the bold 13px band is a DESKTOP-only treatment,
+      // applied at lg — the same breakpoint where the layout stops using the
+      // one-team switcher and stacks both boxes.
+      <thead className="text-ink-500 lg:bg-ink-50 lg:text-ink-800 lg:border-ink-200 text-left text-[11.5px] uppercase tracking-wide lg:border-b lg:text-[13px] lg:tracking-[0.08em]">
         <tr>
-          <th className="py-2.5 pl-4 pr-2 font-black">Player</th>
-          {showMinutes && <th className="px-1.5 text-right font-black">Min</th>}
-          <th className="px-1.5 text-right font-black">Pts</th>
-          <th className="px-1.5 text-right font-black">Reb</th>
-          <th className="px-1.5 text-right font-black">Ast</th>
-          <th className="px-1.5 text-right font-black">Stl</th>
-          <th className="hidden px-1.5 text-right font-black sm:table-cell">Blk</th>
-          <th className="px-1.5 pr-4 text-right font-black sm:pr-1.5">TO</th>
-          <th className="hidden px-1.5 pr-4 text-right font-black sm:table-cell">PF</th>
+          <th className="py-2 pl-4 pr-2 font-bold lg:py-2.5 lg:font-black">Player</th>
+          {showMinutes && <th className="px-1.5 text-right font-bold lg:font-black">Min</th>}
+          <th className="px-1.5 text-right font-bold lg:font-black">Pts</th>
+          <th className="px-1.5 text-right font-bold lg:font-black">Reb</th>
+          <th className="px-1.5 text-right font-bold lg:font-black">Ast</th>
+          <th className="px-1.5 text-right font-bold lg:font-black">Stl</th>
+          <th className="hidden px-1.5 text-right font-bold sm:table-cell lg:font-black">Blk</th>
+          <th className="px-1.5 pr-4 text-right font-bold sm:pr-1.5 lg:font-black">TO</th>
+          <th className="hidden px-1.5 pr-4 text-right font-bold sm:table-cell lg:font-black">PF</th>
         </tr>
       </thead>
     )
@@ -871,7 +873,7 @@ export function LiveView({ gameId }: { gameId: string }) {
               <tr>
                 <td
                   colSpan={cols}
-                  className="bg-ink-100 text-ink-800 border-ink-200 border-y px-4 py-2 text-[13px] font-black uppercase tracking-[0.16em]"
+                  className="bg-ink-50 text-ink-500 border-ink-100 lg:bg-ink-100 lg:text-ink-800 lg:border-ink-200 border-y px-4 py-1 text-[10.5px] font-extrabold uppercase tracking-widest lg:py-2 lg:text-[13px] lg:font-black lg:tracking-[0.16em]"
                 >
                   {groupLabel}
                 </td>
@@ -882,7 +884,7 @@ export function LiveView({ gameId }: { gameId: string }) {
               <tr>
                 <td
                   colSpan={cols}
-                  className="bg-ink-100 text-ink-800 border-ink-200 border-y px-4 py-2 text-[13px] font-black uppercase tracking-[0.16em]"
+                  className="bg-ink-50 text-ink-500 border-ink-100 lg:bg-ink-100 lg:text-ink-800 lg:border-ink-200 border-y px-4 py-1 text-[10.5px] font-extrabold uppercase tracking-widest lg:py-2 lg:text-[13px] lg:font-black lg:tracking-[0.16em]"
                 >
                   Bench
                 </td>
