@@ -13,7 +13,10 @@ function safeCallbackUrl(raw: string | null | undefined): string | null {
 }
 
 const inputClass =
-  "border-ink-200 text-ink-950 placeholder-ink-400 focus:border-play-400 focus:ring-play-500/10 mt-1 block w-full rounded-2xl border bg-white px-3 py-3 focus:outline-none focus:ring-4"
+  // Roomier than the old px-3/py-3: single-column forms shouldn't get much
+  // WIDER than ~480px, so presence comes from scale — taller targets, larger
+  // text — not from stretching the column.
+  "border-ink-200 text-ink-950 placeholder-ink-400 focus:border-play-400 focus:ring-play-500/10 mt-1.5 block w-full rounded-2xl border bg-white px-4 py-3.5 text-[15.5px] focus:outline-none focus:ring-4"
 
 export function SignUpForm({
   googleEnabled,
@@ -93,14 +96,16 @@ export function SignUpForm({
   // Centring + width now come from the split auth shell (layout.tsx)
   return (
     <div>
-      <div className="border-ink-100 shadow-panel w-full rounded-[30px] border bg-white/95 p-8 backdrop-blur-xl">
+      <div className="border-ink-100 shadow-panel w-full rounded-[30px] border bg-white/95 p-8 backdrop-blur-xl sm:p-10">
         <div className="mb-6 text-center">
           <div className="border-hoop-100 bg-hoop-50 text-hoop-600 mb-3 inline-flex rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em]">
             Join Sportshub
           </div>
         </div>
 
-        <h1 className="text-ink-950 mb-2 text-center text-3xl font-bold">Create your account</h1>
+        <h1 className="text-ink-950 mb-2 text-center text-[2rem] font-bold leading-tight">
+          Create your account
+        </h1>
         <p className="text-ink-500 mb-6 text-center text-sm">
           One account for every team, club, and league in the family.
         </p>
@@ -234,7 +239,7 @@ export function SignUpForm({
           <button
             type="submit"
             disabled={loading}
-            className="bg-ink-950 hover:bg-ink-800 disabled:bg-ink-300 w-full rounded-2xl px-4 py-3 font-semibold text-white transition disabled:cursor-not-allowed"
+            className="bg-ink-950 hover:bg-ink-800 disabled:bg-ink-300 w-full rounded-2xl px-4 py-4 text-[16px] font-semibold text-white transition disabled:cursor-not-allowed"
           >
             {loading ? "Creating account..." : "Create Account"}
           </button>
