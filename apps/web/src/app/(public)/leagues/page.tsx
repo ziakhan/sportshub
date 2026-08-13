@@ -5,7 +5,8 @@ import { authOptions } from "@/lib/auth"
 import { Badge, SectionHeader } from "@/components/ui"
 import { FollowButton } from "@/components/follow-button"
 import { perkLabel } from "@/lib/leagues/perks"
-import { getLeaguesDirectory } from "@/lib/queries/directory-leagues"
+import { getLeaguesDirectory, getDemoLeaguesDirectory } from "@/lib/queries/directory-leagues"
+import { DemoBadge } from "@/components/demo-badge"
 
 export const dynamic = "force-dynamic"
 
@@ -28,7 +29,12 @@ const STATUS_LABEL: Record<string, { label: string; tone: "court" | "play" | "ne
 export default async function PublicLeaguesPage() {
   // Directory ordering (active content first, drafts last) is applied inside
   // getLeaguesDirectory() so the web page and native app never drift again.
-  const leagues = await getLeaguesDirectory()
+  // Demo-world leagues arrive separately and render in their own labeled
+  // Preview section ([] whenever the platform demo switch is off).
+  const [leagues, demoLeagues] = await Promise.all([
+    getLeaguesDirectory(),
+    getDemoLeaguesDirectory(),
+  ])
 
   // Follow (favorite) state per league for the signed-in viewer
   const session = await getServerSession(authOptions).catch(() => null)
@@ -138,6 +144,49 @@ export default async function PublicLeaguesPage() {
             )
           })}
         </div>
+      )}
+
+      {demoLeagues.length > 0 && (
+        <section className="mt-14">
+          <SectionHeader
+            eyebrow="Preview"
+            title="Explore the demo league"
+            description="A complete season built with demo data so you can see exactly how SportsHub works before we launch for real this fall."
+            accent="hoop"
+            className="mb-6"
+          />
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+            {demoLeagues.map((l) => (
+              <Link
+                key={l.id}
+                href={`/league/${l.season.id}`}
+                className="card-lift shadow-soft group flex flex-col rounded-[28px] border border-amber-200 bg-amber-50/40 p-7"
+              >
+                <div className="mb-3 flex flex-wrap items-center gap-2">
+                  <DemoBadge long />
+                  {l.liveGames > 0 && (
+                    <Badge tone="live" dot>
+                      {l.liveGames} live now
+                    </Badge>
+                  )}
+                  <Badge tone="hoop">{l.season.label}</Badge>
+                </div>
+                <h2 className="text-ink-950 group-hover:text-play-600 mb-2 text-2xl font-bold transition-colors">
+                  {l.name}
+                </h2>
+                {l.description && (
+                  <p className="text-ink-500 mb-4 line-clamp-2 text-sm leading-6">{l.description}</p>
+                )}
+                <span className="text-play-600 group-hover:text-play-700 mt-auto inline-flex items-center gap-1 text-sm font-semibold">
+                  Scores, standings &amp; leaders
+                  <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                    <path d="M5 12h14M12 5l7 7-7 7" />
+                  </svg>
+                </span>
+              </Link>
+            ))}
+          </div>
+        </section>
       )}
 
       <div className="border-ink-100 mt-10 flex flex-wrap items-center justify-between gap-4 rounded-[28px] border bg-white p-6">

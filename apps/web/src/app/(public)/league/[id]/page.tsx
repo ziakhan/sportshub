@@ -18,6 +18,8 @@ import { FollowButton } from "@/components/follow-button"
 import { perkLabel } from "@/lib/leagues/perks"
 import { PUBLISHED_GAME } from "@/lib/games/visibility"
 import { SeasonCalendarSection } from "./season-calendar-section"
+import { isDemoSeason } from "@/lib/demo/demo-mode"
+import { DemoBadge } from "@/components/demo-badge"
 
 export const dynamic = "force-dynamic"
 
@@ -25,10 +27,13 @@ export async function generateMetadata({ params }: { params: { id: string } }) {
   const season = await getPublicSeason(params.id)
   if (!season) return { title: "Season not found" }
   const name = season.league?.name || "League Season"
+  // Demo-world seasons never enter search indexes (limited-launch design).
+  const demo = await isDemoSeason(params.id)
   return {
     title: `${name} ${season.label ?? ""} — Scores, Standings & Leaders`,
     description: `Live scores, standings, stat leaders, schedule and game recaps for ${name}.`,
     alternates: { canonical: `/league/${params.id}` },
+    ...(demo ? { robots: { index: false, follow: false } } : {}),
   }
 }
 
@@ -46,6 +51,7 @@ const gameCardSelect = {
 export default async function PublicLeagueHubPage({ params }: { params: { id: string } }) {
   const season = await getPublicSeason(params.id)
   if (!season) notFound()
+  const isDemo = await isDemoSeason(params.id)
   const leagueId = season.league?.id
   const leagueName = season.league?.name
   const rawBrand: any = leagueId
@@ -180,6 +186,15 @@ export default async function PublicLeagueHubPage({ params }: { params: { id: st
       className="container font-barlow mx-auto px-4 py-10 sm:px-6"
       style={brandStyle(brand?.primaryColor)}
     >
+      {isDemo && (
+        <div className="mb-6 flex flex-wrap items-center gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3">
+          <DemoBadge long />
+          <p className="text-sm text-amber-900">
+            This league is a preview built with demo data so you can see how
+            SportsHub works. We launch for real this fall.
+          </p>
+        </div>
+      )}
       <div className="mb-6 flex items-center justify-between gap-4">
         <SmartBack fallback="/leagues" fallbackLabel="Leagues" className="-ml-1" />
       </div>

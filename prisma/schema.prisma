@@ -266,6 +266,11 @@ model Tenant {
   // Solo-operator support (batch-backlog §5): a TRAINER tenant is a
   // one-person org that only runs programs — no teams/rosters/staff tabs.
   type                   TenantType @default(CLUB)
+  // Limited-launch demo world (limited-launch-demo-build-2026-08.md):
+  // demo entities badge everywhere, sit in their own directory section,
+  // noindex, and vanish from public surfaces when the platform demo
+  // switch is off. Children (teams/programs/games) derive from this.
+  isDemo                 Boolean    @default(false)
   reviewInviteOverride   String? // null = inherit platform reviewInvitePolicy
   name                   String
   // Set once on club settings; every derived team name starts with it
@@ -1315,6 +1320,8 @@ model League {
   id              String        @id @default(uuid())
   name            String
   description     String?       @db.Text
+  // Demo world flag — see Tenant.isDemo. Seasons/games/posts derive.
+  isDemo          Boolean       @default(false)
   ownerId         String
   organizationId  String?
   organization    Organization? @relation(fields: [organizationId], references: [id])
@@ -3862,6 +3869,12 @@ model PlatformSettings {
   // Which demo scenario/stage the world currently holds (admin demo loader,
   // owner 2026-08-01). {scenario, stage, loadedAt} — null = unknown/manual.
   demoState Json?
+
+  // Limited-launch kill switch (limited-launch-demo-build-2026-08.md):
+  // ON = demo tenants/leagues listed publicly (Preview section), welcome
+  // pop-up + Demo drawer render, persona sessions may start. OFF = the
+  // demo era disappears; data stays, unlisted. Flip on real-launch day.
+  demoModeEnabled Boolean @default(false)
 
   // Platform-wide payment policy — the defaults every merchant inherits.
   // Per-merchant PaymentConfig rows override field-by-field (null = inherit).

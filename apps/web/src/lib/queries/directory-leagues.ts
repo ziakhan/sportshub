@@ -39,13 +39,33 @@ export interface DirectoryLeague {
   season: DirectoryLeagueSeason
   completedGames: number
   liveGames: number
+  /** Demo-world league (limited launch). Real leagues: always false. */
+  isDemo: boolean
 }
 
 export async function getLeaguesDirectory(): Promise<DirectoryLeague[]> {
+  return leaguesDirectoryQuery(false)
+}
+
+/**
+ * Demo-world leagues for the labeled "Preview" directory section
+ * (limited-launch-demo-build-2026-08.md). Returns [] when the platform
+ * demo switch is off. Kept as a SEPARATE entry point so existing
+ * consumers (native Browse) never gain unlabeled demo rows — native adds
+ * its own Preview section in the native pass of this arc.
+ */
+export async function getDemoLeaguesDirectory(): Promise<DirectoryLeague[]> {
+  const { isDemoModeEnabled } = await import("@/lib/demo/demo-mode")
+  if (!(await isDemoModeEnabled())) return []
+  return leaguesDirectoryQuery(true)
+}
+
+async function leaguesDirectoryQuery(demo: boolean): Promise<DirectoryLeague[]> {
   const leagues = await (prisma as any).league.findMany({
     // Any league with a season — NOT narrowed to REGISTRATION/IN_PROGRESS.
     // A league in DRAFT or between seasons still belongs in the directory.
-    where: { seasons: { some: {} } },
+    // Demo-world leagues live in their own Preview section, never here.
+    where: { seasons: { some: {} }, isDemo: demo },
     select: {
       id: true,
       name: true,
@@ -89,6 +109,7 @@ export async function getLeaguesDirectory(): Promise<DirectoryLeague[]> {
           name: l.name,
           description: l.description,
           perks: l.perks ?? [],
+          isDemo: demo,
           season: {
             id: season.id,
             label: season.label,
