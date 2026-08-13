@@ -436,22 +436,20 @@ export function LiveView({ gameId }: { gameId: string }) {
           {/* Platform law: every rendered entity is clickable. */}
           <Link
             href={`/player/${entry.l.playerId}`}
-            className="text-ink-950 hover:text-play-600 min-w-0 flex-1 truncate text-[14px] font-bold leading-tight transition-colors"
+            className="text-ink-950 hover:text-play-600 min-w-0 flex-1 truncate text-[15.5px] font-bold leading-tight transition-colors"
           >
             {shortName(entry.l.playerId)}
           </Link>
         </div>
-        <div className="mt-2.5 flex items-end gap-1.5 pl-1.5">
-          <span className="font-condensed text-ink-950 text-[2.4rem] font-black leading-none tabular-nums">
+        <div className="mt-2.5 flex items-end gap-2 pl-1.5">
+          <span className="font-condensed text-ink-950 text-[3.1rem] font-black leading-[0.85] tabular-nums">
             <FlashNum value={entry.value} />
           </span>
-          <span className="text-ink-500 pb-1 text-[11px] font-extrabold tracking-wide">
+          <span className="text-ink-600 pb-1.5 text-[13px] font-extrabold tracking-wide">
             {entry.unit}
           </span>
         </div>
-        <p className="text-ink-500 mt-1.5 truncate pl-1.5 text-[11.5px] font-medium">
-          {sub(entry.l)}
-        </p>
+        <p className="text-ink-600 mt-2 truncate pl-1.5 text-[13px] font-semibold">{sub(entry.l)}</p>
       </div>
     )
   }
@@ -465,7 +463,7 @@ export function LiveView({ gameId }: { gameId: string }) {
       <div className="border-ink-100 overflow-x-auto rounded-2xl border bg-white">
         <table className="w-full text-center text-[15px] font-bold tabular-nums">
           <thead>
-            <tr className="text-ink-600 border-ink-100 border-b text-[12px] uppercase tracking-wide">
+            <tr className="text-ink-600 border-ink-100 border-b text-[12.5px] uppercase tracking-[0.1em]">
               <th className="py-2 pl-4 text-left font-extrabold" />
               {displayPeriods.map((p) => (
                 <th key={p} className="px-2.5 py-2 font-extrabold sm:px-4">
@@ -504,7 +502,10 @@ export function LiveView({ gameId }: { gameId: string }) {
                   </span>
                 </td>
                 {displayPeriods.map((p) => (
-                  <td key={p} className="text-ink-600 px-2.5 py-2.5 sm:px-4">
+                  <td
+                    key={p}
+                    className="font-condensed text-ink-900 px-2.5 py-2.5 text-[20px] font-black leading-none sm:px-4"
+                  >
                     {playedPeriods.has(p) ? (
                       <FlashNum value={periodPoints(tid, p)} />
                     ) : (
@@ -533,7 +534,7 @@ export function LiveView({ gameId }: { gameId: string }) {
           <div key={sec.label}>
             <div className="mb-1.5 flex items-center gap-3">
               <span className="bg-ink-100 h-px flex-1" />
-              <span className="text-ink-500 text-[11px] font-extrabold uppercase tracking-[0.16em]">
+              <span className="text-ink-700 text-[12.5px] font-extrabold uppercase tracking-[0.16em]">
                 {sec.label}
               </span>
               <span className="bg-ink-100 h-px flex-1" />
@@ -562,43 +563,58 @@ export function LiveView({ gameId }: { gameId: string }) {
     // Two-sided bars growing from the centre (2026-08-13): a 1.5px split rail
     // made every stat look the same. Now the mismatch is legible at a glance
     // and the winning side carries full team colour.
-    const num = (wins: boolean, value: number, display?: string) => (
-      <span
-        className={`font-condensed text-[26px] leading-none tabular-nums ${
-          wins ? "text-ink-950 font-black" : "text-ink-400 font-bold"
-        }`}
-      >
-        {display ?? <FlashNum value={value} />}
-      </span>
-    )
+    // Shooting rows pass a STRING ("12-25 · 48%"), which at 26px condensed
+    // was far too wide for the slot and read as a font glitch. Strings get a
+    // smaller, plainer treatment; raw counts keep the big score face.
+    const num = (wins: boolean, value: number, display?: string) =>
+      display ? (
+        <span
+          className={`text-[15px] tabular-nums ${
+            wins ? "text-ink-950 font-extrabold" : "text-ink-400 font-semibold"
+          }`}
+        >
+          {display}
+        </span>
+      ) : (
+        <span
+          className={`font-condensed text-[28px] leading-none tabular-nums ${
+            wins ? "text-ink-950 font-black" : "text-ink-400 font-bold"
+          }`}
+        >
+          <FlashNum value={value} />
+        </span>
+      )
     return (
       <div key={label} className="px-4 py-3">
         <div className="flex items-center justify-between gap-3">
           {num(hWins, h, displayH)}
-          <span className="text-ink-500 text-[11.5px] font-extrabold uppercase tracking-[0.14em]">
+          <span className="text-ink-700 text-[13px] font-extrabold uppercase tracking-[0.12em]">
             {label}
           </span>
           {num(aWins, a, displayA)}
         </div>
-        <div className="mt-2 flex h-2.5 items-center gap-1">
-          <div className="flex flex-1 justify-end overflow-hidden rounded-l-full">
+        {/* Each side sits on its own grey track, so a lopsided stat reads as
+            "measured against a scale" instead of leaving an empty gutter
+            (tester 2026-08-13). */}
+        <div className="mt-2 flex h-3 items-center gap-1">
+          <div className="bg-ink-100 flex flex-1 justify-end overflow-hidden rounded-l-full">
             <span
-              className="h-2.5 rounded-l-full transition-all duration-500"
+              className="h-3 rounded-l-full transition-all duration-500"
               style={{
                 width: `${hShare}%`,
                 backgroundColor: homeColor,
-                opacity: hWins ? 1 : 0.35,
+                opacity: hWins ? 1 : 0.4,
               }}
             />
           </div>
-          <span className="bg-ink-200 h-2.5 w-px shrink-0" />
-          <div className="flex flex-1 overflow-hidden rounded-r-full">
+          <span className="bg-ink-300 h-3 w-px shrink-0" />
+          <div className="bg-ink-100 flex flex-1 overflow-hidden rounded-r-full">
             <span
-              className="h-2.5 rounded-r-full transition-all duration-500"
+              className="h-3 rounded-r-full transition-all duration-500"
               style={{
                 width: `${100 - hShare}%`,
                 backgroundColor: awayColor,
-                opacity: aWins ? 1 : 0.35,
+                opacity: aWins ? 1 : 0.4,
               }}
             />
           </div>
@@ -616,13 +632,31 @@ export function LiveView({ gameId }: { gameId: string }) {
     const pct = (m: number, at: number) => (at === 0 ? 0 : m / at)
     return (
       <div className="border-ink-100 rounded-2xl border bg-white">
-        <div className="border-ink-100 flex items-center justify-between border-b px-4 py-2.5">
-          <span className="text-[13px] font-extrabold" style={{ color: homeColor }}>
-            {shortTeam(game.homeTeamName)}
-          </span>
-          <span className="text-[13px] font-extrabold" style={{ color: awayColor }}>
-            {shortTeam(game.awayTeamName)}
-          </span>
+        {/* Crest + name + score anchors each column, so you never have to
+            scroll back to the hero to remember which side is which. */}
+        <div className="border-ink-100 flex items-center justify-between gap-3 border-b px-4 py-3">
+          <div className="flex min-w-0 items-center gap-2">
+            {crest(game.homeTeamId, "h-8 w-8 text-[11px]", monogram(game.homeTeamName))}
+            <div className="min-w-0">
+              <p className="text-ink-950 truncate text-[13.5px] font-extrabold leading-tight">
+                {shortTeam(game.homeTeamName)}
+              </p>
+              <p className="font-condensed text-[19px] font-black leading-none tabular-nums" style={{ color: homeColor }}>
+                {homeScore}
+              </p>
+            </div>
+          </div>
+          <div className="flex min-w-0 flex-row-reverse items-center gap-2 text-right">
+            {crest(game.awayTeamId, "h-8 w-8 text-[11px]", monogram(game.awayTeamName))}
+            <div className="min-w-0">
+              <p className="text-ink-950 truncate text-[13.5px] font-extrabold leading-tight">
+                {shortTeam(game.awayTeamName)}
+              </p>
+              <p className="font-condensed text-[19px] font-black leading-none tabular-nums" style={{ color: awayColor }}>
+                {awayScore}
+              </p>
+            </div>
+          </div>
         </div>
         <div className="divide-ink-50 divide-y">
           {compareRow("Field goals", pct(H.fgm, H.fga), pct(A.fgm, A.fga), shooting(H.fgm, H.fga), shooting(A.fgm, A.fga))}
@@ -1276,15 +1310,15 @@ export function LiveView({ gameId }: { gameId: string }) {
                     e.eventType.startsWith("PERIOD") ? (
                       <li
                         key={i}
-                        className="bg-ink-50 text-ink-500 border-ink-100 border-b px-4 py-1 text-center text-[10px] font-extrabold uppercase tracking-widest"
+                        className="bg-ink-100 text-ink-600 border-ink-200 sticky top-0 z-10 border-y px-4 py-1.5 text-center text-[11.5px] font-extrabold uppercase tracking-widest"
                       >
                         {e.eventType === "PERIOD_START" ? describe(e) : "End of period"}
                       </li>
                     ) : (
                       <li
                         key={i}
-                        className={`border-ink-50 flex items-center gap-2.5 border-b px-4 py-1.5 text-xs ${
-                          score ? "text-ink-950 font-semibold" : "text-ink-600"
+                        className={`border-ink-50 flex items-center gap-2.5 border-b px-4 py-2 text-[13.5px] ${
+                          score ? "bg-ink-50/60 text-ink-950 font-semibold" : "text-ink-600"
                         }`}
                       >
                         <span
@@ -1296,7 +1330,7 @@ export function LiveView({ gameId }: { gameId: string }) {
                           {tail}
                         </span>
                         {score && (
-                          <span className="text-ink-900 shrink-0 text-[11px] font-bold tabular-nums">
+                          <span className="font-condensed text-ink-950 shrink-0 text-[15px] font-black tabular-nums">
                             {score}
                           </span>
                         )}
