@@ -425,8 +425,12 @@ export function LiveView({ gameId }: { gameId: string }) {
       <div
         // Tint history: 8%/3% read as almost nothing, 17%/9% was a touch hot.
         // Settled at 14%/8% (tester 2026-08-13, "ever so slightly" dimmer).
-        className={`flex min-w-0 flex-1 items-center gap-3.5 rounded-2xl p-4 ${
-          mirror ? "flex-row-reverse text-right" : ""
+        // Mirroring is a DESKTOP idea: on a phone the two cards stack full
+        // width, so a right-aligned one just looks broken. Sizes step down on
+        // phones too — at 390px a 56px badge plus a 2.6rem number could not
+        // fit beside a centre label and the row wrapped (tester 2026-08-13).
+        className={`flex min-w-0 flex-1 items-center gap-3 rounded-2xl p-3 md:gap-3.5 md:p-4 ${
+          mirror ? "md:flex-row-reverse md:text-right" : ""
         }`}
         style={{ backgroundColor: `${color}${won ? "24" : "14"}` }}
       >
@@ -435,7 +439,7 @@ export function LiveView({ gameId }: { gameId: string }) {
             jersey number is how you identify a kid from the stands anyway — and
             if photos ever ship, this circle becomes the photo slot unchanged. */}
         <span
-          className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full text-[17px] font-black text-white shadow-md ring-2 ring-white/60"
+          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-[15px] font-black text-white shadow-md ring-2 ring-white/60 md:h-14 md:w-14 md:text-[17px]"
           style={{ backgroundColor: color }}
         >
           {jerseyOf(entry.l.playerId) ? `${jerseyOf(entry.l.playerId)}` : monogram(shortName(entry.l.playerId))}
@@ -448,8 +452,8 @@ export function LiveView({ gameId }: { gameId: string }) {
           >
             {shortName(entry.l.playerId)}
           </Link>
-          <div className={`mt-1 flex items-end gap-1.5 ${mirror ? "justify-end" : ""}`}>
-            <span className="font-condensed text-ink-950 text-[2.6rem] font-black leading-[0.85] tabular-nums">
+          <div className={`mt-1 flex items-end gap-1.5 ${mirror ? "md:justify-end" : ""}`}>
+            <span className="font-condensed text-ink-950 text-[2rem] font-black leading-[0.85] tabular-nums md:text-[2.6rem]">
               <FlashNum value={entry.value} />
             </span>
             <span className="text-ink-600 pb-1 text-[12.5px] font-extrabold tracking-wide">
@@ -543,15 +547,21 @@ export function LiveView({ gameId }: { gameId: string }) {
           // mirroring alone just moved the gap from the outer edges into the
           // middle. A shared centre axis is the head-to-head pattern, and it
           // buys back the vertical space the old label row used.
+          // Phones stack (label on top, then both players full width); the
+          // centre-axis layout only makes sense once there's room for it.
           <div
             key={sec.label}
-            className="border-ink-100 flex items-center gap-2 rounded-2xl border bg-white p-1.5"
+            className="border-ink-100 flex flex-col gap-1.5 rounded-2xl border bg-white p-1.5 md:flex-row md:items-center md:gap-2"
           >
-            {leaderCell(h, game.homeTeamId, sec.sub, hWins)}
-            <span className="text-ink-800 w-16 shrink-0 text-center text-[12px] font-black uppercase leading-tight tracking-[0.12em] sm:w-24 sm:text-[13.5px]">
+            <span className="text-ink-800 order-1 w-full shrink-0 pt-1.5 text-center text-[11.5px] font-black uppercase leading-tight tracking-[0.12em] md:order-2 md:w-24 md:pt-0 md:text-[13.5px]">
               {sec.label}
             </span>
-            {leaderCell(a, game.awayTeamId, sec.sub, !hWins, true)}
+            <div className="order-2 flex min-w-0 flex-1 md:order-1">
+              {leaderCell(h, game.homeTeamId, sec.sub, hWins)}
+            </div>
+            <div className="order-3 flex min-w-0 flex-1">
+              {leaderCell(a, game.awayTeamId, sec.sub, !hWins, true)}
+            </div>
           </div>
         )
       })}
@@ -1035,7 +1045,9 @@ export function LiveView({ gameId }: { gameId: string }) {
               <div key={tid} className={`text-center ${i === 1 ? "order-3" : "order-1"}`}>
                 {crest(
                   tid,
-                  "mx-auto h-16 w-16 text-xl shadow-lg ring-2 ring-white/15 lg:h-[88px] lg:w-[88px] lg:text-3xl",
+                  // Phones keep the smaller 56px crest — 64px crowded the
+                  // 84px min column next to a 60px score at 390px.
+                  "mx-auto h-14 w-14 text-lg shadow-lg ring-2 ring-white/15 sm:h-16 sm:w-16 sm:text-xl lg:h-[88px] lg:w-[88px] lg:text-3xl",
                   monogram(tname)
                 )}
                 <Link
@@ -1066,7 +1078,7 @@ export function LiveView({ gameId }: { gameId: string }) {
                       remaining is the thing you look for first on a live game,
                       so it leads the column instead of trailing it. */}
                   {clockOn && clockDisplay != null && (
-                    <p className="font-condensed text-highlight mb-1.5 text-4xl font-black leading-none tabular-nums lg:text-5xl">
+                    <p className="font-condensed text-highlight mb-1.5 text-3xl font-black leading-none tabular-nums sm:text-4xl lg:text-5xl">
                       {Math.floor(clockDisplay / 60)}:
                       {String(clockDisplay % 60).padStart(2, "0")}
                     </p>
