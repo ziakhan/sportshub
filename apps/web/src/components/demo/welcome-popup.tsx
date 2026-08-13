@@ -192,7 +192,13 @@ export function WelcomePopup() {
               line-art court diagrams read as noise here). Radial shading plus
               a specular highlight give it volume against the navy. */}
           <svg
-            className="pointer-events-none absolute -right-10 -top-14 h-56 w-56 opacity-[0.55] sm:h-64 sm:w-64"
+            className={`pointer-events-none absolute opacity-[0.55] ${
+              step === 1
+                ? "-right-10 -top-14 h-56 w-56 sm:h-64 sm:w-64"
+                : // Step two's hero is shorter (smaller heading, less copy), so
+                  // the same ball crowds it — scale down to keep it an accent.
+                  "-right-8 -top-10 h-40 w-40 sm:h-48 sm:w-48"
+            }`}
             viewBox="0 0 200 200"
             aria-hidden
           >
