@@ -23,12 +23,12 @@ import { useState } from "react"
 const PROMISES: { title: string; proof: string; icon: JSX.Element }[] = [
   {
     title: "Live scores & stats",
-    proof: "Box scores, play-by-play, leaders",
+    proof: "Box scores, play-by-play, stat leaders",
     icon: <path d="M3 12h4l3-8 4 16 3-8h4" />,
   },
   {
     title: "One family calendar",
-    proof: "Every kid, every team, one place",
+    proof: "RSVPs, practices, instant alerts",
     icon: (
       <>
         <rect x="3" y="5" width="18" height="16" rx="2.5" />
@@ -67,6 +67,24 @@ const PROMISES: { title: string; proof: string; icon: JSX.Element }[] = [
       </>
     ),
   },
+]
+
+/**
+ * The breadth layer (tester call 2026-08-13): the six promises alone dropped
+ * twelve real capabilities. Progressive disclosure rather than a wall — the
+ * outcomes lead, these quiet chips prove the rest of the surface area for the
+ * operator who IS shopping on breadth. Everything here is deliberately NOT in
+ * a promise line above; together they cover the original thirty.
+ */
+const ALSO_INCLUDED = [
+  "Game recaps",
+  "Player pages",
+  "Club pages",
+  "Rosters",
+  "Referee assignments",
+  "Announcements",
+  "Follows",
+  "E-transfers",
 ]
 
 const ROLES: { key: string; title: string; blurb: string; soon?: boolean }[] = [
@@ -137,7 +155,7 @@ export function WelcomePopup() {
             <p className="text-ink-400 font-condensed mb-4 text-[12px] font-bold uppercase tracking-[0.18em]">
               Everything a season needs
             </p>
-            <div className="mb-7 grid grid-cols-1 gap-x-6 gap-y-5 sm:grid-cols-2">
+            <div className="mb-6 grid grid-cols-1 gap-x-6 gap-y-5 sm:grid-cols-2">
               {PROMISES.map((f) => (
                 <div key={f.title} className="flex items-start gap-3.5">
                   <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-100 text-amber-700 ring-1 ring-inset ring-amber-200/70">
@@ -165,6 +183,24 @@ export function WelcomePopup() {
                 </div>
               ))}
             </div>
+
+            {/* Breadth, quietly: the outcomes sell, these prove the surface area. */}
+            <div className="border-ink-100 mb-6 border-t pt-4">
+              <p className="text-ink-400 font-condensed mb-2.5 text-[11.5px] font-bold uppercase tracking-[0.18em]">
+                Also included
+              </p>
+              <div className="flex flex-wrap gap-1.5">
+                {ALSO_INCLUDED.map((x) => (
+                  <span
+                    key={x}
+                    className="bg-ink-50 text-ink-600 ring-ink-100 rounded-full px-2.5 py-1 text-[12.5px] font-semibold ring-1 ring-inset"
+                  >
+                    {x}
+                  </span>
+                ))}
+              </div>
+            </div>
+
             <div className="flex flex-col gap-3 sm:flex-row">
               <button
                 onClick={() => setStep(2)}
