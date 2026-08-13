@@ -77,14 +77,14 @@ export function WelcomePopup() {
           <div className="p-7 sm:p-8">
             <div className="mb-6 grid grid-cols-1 gap-x-6 gap-y-2 sm:grid-cols-2">
               {[
-                "Live scoring with play-by-play",
-                "A full season scheduled in seconds",
-                "One calendar for every kid and team",
-                "Instant alerts when anything changes",
-                "Standings and stat leaders, always current",
-                "Registration, offers and payments online",
-                "Playoffs and brackets built from results",
-                "A recap written after every game",
+                "Watch your kid's game live from anywhere",
+                "Every basket becomes a real stat line",
+                "One calendar for every kid, every team",
+                "Your phone knows the moment a game moves",
+                "Your name in the recap after every game",
+                "Sign up, sign waivers and pay from your phone",
+                "Clubs: tryouts to rosters with zero spreadsheets",
+                "Leagues: a whole season scheduled in seconds",
               ].map((f) => (
                 <div key={f} className="flex items-start gap-2.5">
                   <svg
