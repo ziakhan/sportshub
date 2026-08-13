@@ -136,8 +136,9 @@ const PUBLIC_API_ANY_METHOD_PREFIXES = [
   "/api/feed/events",
 ] as const
 
-/** Dev-only utilities — never public in production. */
-const DEV_ONLY_PREFIXES = ["/api/dev", "/api/create-test-users"] as const
+/** Dev-only utilities — never public in production. `/dev` holds design
+ *  previews (e.g. /dev/feed-cards) that must never be reachable live. */
+const DEV_ONLY_PREFIXES = ["/api/dev", "/api/create-test-users", "/dev"] as const
 
 const READ_METHODS = new Set(["GET", "HEAD", "OPTIONS"])
 
