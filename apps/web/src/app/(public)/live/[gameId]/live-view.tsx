@@ -423,10 +423,12 @@ export function LiveView({ gameId }: { gameId: string }) {
     }
     return (
       <div
-        className={`flex min-w-0 flex-1 items-center gap-3 rounded-2xl p-3 ${
+        // Tints were 8%/3% alpha — so pale the team colour barely registered.
+        // Deepened to 17%/9% (tester 2026-08-13: "a little too shallow").
+        className={`flex min-w-0 flex-1 items-center gap-3.5 rounded-2xl p-4 ${
           mirror ? "flex-row-reverse text-right" : ""
         }`}
-        style={{ backgroundColor: `${color}${won ? "14" : "08"}` }}
+        style={{ backgroundColor: `${color}${won ? "2b" : "17"}` }}
       >
         {/* The badge stands in for a headshot: players have no photo field, and
             the platform's own rule is "real mark, else branded monogram". The
@@ -546,7 +548,7 @@ export function LiveView({ gameId }: { gameId: string }) {
             className="border-ink-100 flex items-center gap-2 rounded-2xl border bg-white p-1.5"
           >
             {leaderCell(h, game.homeTeamId, sec.sub, hWins)}
-            <span className="text-ink-500 w-16 shrink-0 text-center text-[11px] font-extrabold uppercase leading-tight tracking-[0.12em] sm:w-20 sm:text-[12px]">
+            <span className="text-ink-800 w-16 shrink-0 text-center text-[12px] font-black uppercase leading-tight tracking-[0.12em] sm:w-24 sm:text-[13.5px]">
               {sec.label}
             </span>
             {leaderCell(a, game.awayTeamId, sec.sub, !hWins, true)}
