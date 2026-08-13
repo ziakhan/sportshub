@@ -384,39 +384,60 @@ export function LiveView({ gameId }: { gameId: string }) {
     },
   ]
 
+  /**
+   * Leaders as cards, not list rows (2026-08-13). A youth game page is the
+   * keepsake a parent opens after the final buzzer — the kid's line deserves
+   * a scoreboard-sized number and their team's colour, not 13px body text.
+   * `won` gets a stronger tint so the better line reads first.
+   */
   const leaderCell = (
     entry: { l: PlayerLine; value: number; unit: string } | null,
     teamId: string,
     sub: (l: PlayerLine) => string,
-    right: boolean
-  ) => (
-    <div
-      className={`flex min-w-0 flex-1 items-center gap-2.5 ${right ? "flex-row-reverse text-right" : ""}`}
-    >
-      {entry ? (
-        <>
+    won: boolean
+  ) => {
+    const color = colorOf(teamId)
+    if (!entry) {
+      return (
+        <div className="border-ink-100 text-ink-300 flex min-w-0 flex-1 items-center justify-center rounded-2xl border border-dashed py-6 text-xs">
+          —
+        </div>
+      )
+    }
+    return (
+      <div
+        className="relative min-w-0 flex-1 overflow-hidden rounded-2xl border p-3.5 transition-shadow hover:shadow-md"
+        style={{
+          borderColor: `${color}${won ? "59" : "26"}`,
+          backgroundColor: `${color}${won ? "14" : "0a"}`,
+        }}
+      >
+        <span className="absolute inset-y-0 left-0 w-1" style={{ backgroundColor: color }} />
+        <div className="flex items-center gap-2.5 pl-1.5">
           <span
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-[12px] font-extrabold text-white"
-            style={{ backgroundColor: colorOf(teamId) }}
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-[11.5px] font-extrabold text-white shadow-sm"
+            style={{ backgroundColor: color }}
           >
             #{jerseyOf(entry.l.playerId)}
           </span>
-          <div className="min-w-0">
-            <p className="text-ink-900 truncate text-[13px] font-bold leading-tight">
-              {shortName(entry.l.playerId)}
-            </p>
-            <p className="text-ink-950 text-lg font-extrabold leading-tight tabular-nums">
-              <FlashNum value={entry.value} />{" "}
-              <span className="text-ink-600 text-[10px] font-extrabold">{entry.unit}</span>
-            </p>
-            <p className="text-ink-600 truncate text-[11px]">{sub(entry.l)}</p>
-          </div>
-        </>
-      ) : (
-        <span className="text-ink-300 text-xs">—</span>
-      )}
-    </div>
-  )
+          <p className="text-ink-950 min-w-0 flex-1 truncate text-[14px] font-bold leading-tight">
+            {shortName(entry.l.playerId)}
+          </p>
+        </div>
+        <div className="mt-2.5 flex items-end gap-1.5 pl-1.5">
+          <span className="font-condensed text-ink-950 text-[2.4rem] font-black leading-none tabular-nums">
+            <FlashNum value={entry.value} />
+          </span>
+          <span className="text-ink-500 pb-1 text-[11px] font-extrabold tracking-wide">
+            {entry.unit}
+          </span>
+        </div>
+        <p className="text-ink-500 mt-1.5 truncate pl-1.5 text-[11.5px] font-medium">
+          {sub(entry.l)}
+        </p>
+      </div>
+    )
+  }
 
   // Always show all four quarters — a dash marks the unplayed ones (owner:
   // fixed columns read better); overtime columns append only when reached.
@@ -444,13 +465,22 @@ export function LiveView({ gameId }: { gameId: string }) {
                 [game.awayTeamId, game.awayTeamName, awayScore],
               ] as Array<[string, string, number]>
             ).map(([tid, tname, total]) => (
-              <tr key={tid} className="border-ink-50 border-b last:border-0">
-                <td className="py-2.5 pl-4 text-left">
-                  <span className="flex items-center gap-2">
-                    <span
-                      className="h-4 w-4 shrink-0 rounded"
-                      style={{ backgroundColor: colorOf(tid) }}
-                    />
+              <tr
+                key={tid}
+                className="border-ink-50 border-b last:border-0"
+                style={
+                  final && total === Math.max(homeScore, awayScore) && homeScore !== awayScore
+                    ? { backgroundColor: `${colorOf(tid)}0a` }
+                    : undefined
+                }
+              >
+                <td className="relative py-3 pl-4 text-left">
+                  <span
+                    className="absolute inset-y-0 left-0 w-1"
+                    style={{ backgroundColor: colorOf(tid) }}
+                  />
+                  <span className="flex items-center gap-2 pl-1">
+                    {crest(tid, "h-6 w-6 text-[10px]", monogram(tname))}
                     <span className="text-ink-900 whitespace-nowrap font-extrabold">
                       {shortTeam(tname)}
                     </span>
@@ -465,7 +495,7 @@ export function LiveView({ gameId }: { gameId: string }) {
                     )}
                   </td>
                 ))}
-                <td className="text-ink-950 px-3 py-2.5 pr-4 font-extrabold">
+                <td className="bg-ink-50/70 text-ink-950 font-condensed px-3 py-2.5 pr-4 text-[22px] font-black leading-none">
                   <FlashNum value={total} />
                 </td>
               </tr>
@@ -476,25 +506,28 @@ export function LiveView({ gameId }: { gameId: string }) {
     ) : null
 
   const leadersCard = (
-    <div className="border-ink-100 rounded-2xl border bg-white">
-      <div className="divide-ink-50 divide-y">
-        {LEADER_SECTIONS.map((sec) => {
-          const h = sec.pick(game.homeTeamId)
-          const a = sec.pick(game.awayTeamId)
-          if (!h && !a) return null
-          return (
-            <div key={sec.label} className="px-4 py-3">
-              <p className="text-ink-600 mb-1.5 text-center text-[11.5px] font-extrabold uppercase tracking-widest">
+    <div className="space-y-3">
+      {LEADER_SECTIONS.map((sec) => {
+        const h = sec.pick(game.homeTeamId)
+        const a = sec.pick(game.awayTeamId)
+        if (!h && !a) return null
+        const hWins = (h?.value ?? -1) >= (a?.value ?? -1)
+        return (
+          <div key={sec.label}>
+            <div className="mb-1.5 flex items-center gap-3">
+              <span className="bg-ink-100 h-px flex-1" />
+              <span className="text-ink-500 text-[11px] font-extrabold uppercase tracking-[0.16em]">
                 {sec.label}
-              </p>
-              <div className="flex items-center gap-3">
-                {leaderCell(h, game.homeTeamId, sec.sub, false)}
-                {leaderCell(a, game.awayTeamId, sec.sub, true)}
-              </div>
+              </span>
+              <span className="bg-ink-100 h-px flex-1" />
             </div>
-          )
-        })}
-      </div>
+            <div className="flex items-stretch gap-2.5">
+              {leaderCell(h, game.homeTeamId, sec.sub, hWins)}
+              {leaderCell(a, game.awayTeamId, sec.sub, !hWins)}
+            </div>
+          </div>
+        )
+      })}
     </div>
   )
 
