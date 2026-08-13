@@ -6,7 +6,8 @@ import { cn } from "@/components/ui/cn"
 import type { FeedItem } from "@/lib/queries/feed"
 import { logFeedEvent } from "@/lib/feed-telemetry"
 
-const EMOJIS = ["👍", "❤️", "😂", "🎉", "🔥", "🏀"] as const
+/** One reaction, not six. Stored as an emoji so old reactions still count. */
+const LIKE_EMOJI = "❤️"
 
 import {
   LeaderboardCard,
@@ -99,7 +100,8 @@ export function FeedCard({ item, manageable = false }: { item: FeedItem; managea
   const [deleted, setDeleted] = useState(false)
   const [reactionCount, setReactionCount] = useState(item.counts.reactions)
   const [myEmojis, setMyEmojis] = useState<string[]>(item.myEmojis)
-  const [pickerOpen, setPickerOpen] = useState(false)
+  /** Liked = the viewer has ANY reaction on this post (legacy emoji or heart). */
+  const liked = myEmojis.length > 0
   const [commentsOpen, setCommentsOpen] = useState(false)
   const [comments, setComments] = useState<CommentRow[] | null>(null)
   const [commentCount, setCommentCount] = useState(item.counts.comments)
@@ -172,9 +174,12 @@ export function FeedCard({ item, manageable = false }: { item: FeedItem; managea
       : `/news/${item.slug}`
 
   const react = async (emoji: string) => {
-    setPickerOpen(false)
-    const had = myEmojis.includes(emoji)
-    setMyEmojis((m) => (had ? m.filter((e) => e !== emoji) : [...m, emoji]))
+    // Unliking must clear ANY existing reaction, including legacy emoji from
+    // before the picker was removed — otherwise an old 🔥 leaves the post
+    // stuck in the liked state with no way to undo it.
+    const had = myEmojis.length > 0
+    const target = had ? myEmojis[0] : emoji
+    setMyEmojis((m) => (had ? m.filter((e) => e !== target) : [...m, emoji]))
     setReactionCount((c) => c + (had ? -1 : 1))
     if (!had) {
       logFeedEvent({ itemKey: item.id, postId: item.id, eventType: "like", surface: "web-feed" })
@@ -183,7 +188,7 @@ export function FeedCard({ item, manageable = false }: { item: FeedItem; managea
       const res = await fetch(`/api/posts/${item.id}/reactions`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ emoji }),
+        body: JSON.stringify({ emoji: target }),
       })
       if (res.ok) {
         const data = await res.json()
@@ -479,36 +484,23 @@ export function FeedCard({ item, manageable = false }: { item: FeedItem; managea
 
       <div className="text-ink-800 mt-1 flex items-center gap-1 px-2.5 py-1 text-[13px] font-semibold">
         <span className="relative">
+          {/* A Like is a Like (2026-08-13). The emoji picker made the simplest
+              action on the page a two-step decision — tap, then choose from
+              six. Reactions with nuance belong in comments; this button just
+              says "I liked it". The API still stores an emoji, so existing
+              reactions keep counting; we simply always send the heart. */}
           <button
-            onClick={() => setPickerOpen((o) => !o)}
+            onClick={() => react(LIKE_EMOJI)}
+            aria-pressed={liked}
+            aria-label={liked ? "Unlike" : "Like"}
             className={cn(
               "hover:bg-hoop-50 hover:text-hoop-600 flex items-center gap-1.5 rounded-full px-3 py-2 transition",
-              myEmojis.length > 0 && "text-hoop-600"
+              liked && "text-hoop-600"
             )}
           >
-            {myEmojis.length > 0 ? (
-              <span className="text-sm leading-none">{myEmojis.join("")}</span>
-            ) : (
-              <Ic d={IC.heart} />
-            )}
+            <Ic d={IC.heart} className={cn("h-[18px] w-[18px]", liked && "fill-current")} />
             {reactionCount > 0 ? reactionCount : ""}
           </button>
-          {pickerOpen && (
-            <span className="border-ink-100 absolute bottom-full left-0 z-10 mb-1 flex gap-1 rounded-full border bg-white px-2 py-1.5 shadow-lg">
-              {EMOJIS.map((e) => (
-                <button
-                  key={e}
-                  onClick={() => react(e)}
-                  className={cn(
-                    "rounded-full px-1 text-lg transition hover:scale-125",
-                    myEmojis.includes(e) && "bg-play-50"
-                  )}
-                >
-                  {e}
-                </button>
-              ))}
-            </span>
-          )}
         </span>
         <button
           onClick={openComments}
