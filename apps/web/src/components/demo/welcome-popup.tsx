@@ -10,6 +10,65 @@ import { useState } from "react"
  * visitor copy — this is "experience the live season".
  */
 
+/**
+ * The six promises (2026-08-13). Was a 30-item checkmark wall; research —
+ * the "feature-rich showcase" pattern (4-6 cards, one message each), modal
+ * cognitive-load findings, and the category leaders (TeamSnap shows 3,
+ * SportsEngine 5, both benefit-led) — all say a first-visit modal converts
+ * on a short outcome list, not a spec sheet. The exhaustive list belongs on
+ * a feature page. Labels lead with the terms families and operators actually
+ * search (live scores, calendar, registration, payments, scheduling,
+ * standings, playoffs) so the copy earns its SEO keep too.
+ */
+const PROMISES: { title: string; proof: string; icon: JSX.Element }[] = [
+  {
+    title: "Live scores & stats",
+    proof: "Box scores, play-by-play, leaders",
+    icon: <path d="M3 12h4l3-8 4 16 3-8h4" />,
+  },
+  {
+    title: "One family calendar",
+    proof: "Every kid, every team, one place",
+    icon: (
+      <>
+        <rect x="3" y="5" width="18" height="16" rx="2.5" />
+        <path d="M3 10.5h18M8 3v4M16 3v4" />
+      </>
+    ),
+  },
+  {
+    title: "Registration & payments",
+    proof: "Tryouts, offers, waivers, installments",
+    icon: (
+      <>
+        <rect x="2.5" y="5.5" width="19" height="13" rx="2.5" />
+        <path d="M2.5 10.5h19" />
+      </>
+    ),
+  },
+  {
+    title: "Team chat",
+    proof: "Coaches and parents, one thread",
+    icon: <path d="M20 11.5a7 7 0 0 1-7 7H8l-4 3v-6.2a7 7 0 0 1 7-9.3h2a7 7 0 0 1 7 5.5Z" />,
+  },
+  {
+    title: "Automatic scheduling",
+    proof: "A whole season in one click",
+    icon: <path d="m13 2-9 12h7l-1 8 9-12h-7l1-8Z" />,
+  },
+  {
+    title: "Standings & playoffs",
+    proof: "Divisions, brackets, a champion",
+    icon: (
+      <>
+        <path d="M7.5 4h9v5a4.5 4.5 0 0 1-9 0V4Z" />
+        <path d="M7.5 6H5a2.5 2.5 0 0 0 2.5 3M16.5 6H19a2.5 2.5 0 0 1-2.5 3" />
+        <path d="M12 13.5V17M9 20h6" />
+      </>
+    ),
+  },
+]
+
 const ROLES: { key: string; title: string; blurb: string; soon?: boolean }[] = [
   { key: "parent", title: "Parent", blurb: "Your kids, one calendar, live games." },
   { key: "player", title: "Player", blurb: "Your team, your stats, your season." },
@@ -56,8 +115,8 @@ export function WelcomePopup() {
                 <span className="text-amber-400">already live.</span>
               </h2>
               <p className="relative mt-4 max-w-md text-[15px] leading-7 text-white/85">
-                Scores, schedules, standings and stories. See exactly what your season here
-                will feel like.
+                A full youth basketball season — live scores, schedules, standings and
+                stories. Step in and see exactly what yours will feel like.
               </p>
             </>
           ) : (
@@ -75,31 +134,34 @@ export function WelcomePopup() {
 
         {step === 1 ? (
           <div className="p-7 sm:p-8">
-            <div className="mb-6 grid grid-cols-2 gap-x-4 gap-y-2.5 sm:grid-cols-3">
-              {[
-                "Live scores", "Box scores", "Play-by-play",
-                "Player stats", "Stat leaders", "Player pages",
-                "Game recaps", "Stories", "Follows",
-                "One calendar", "Instant alerts", "RSVPs",
-                "Team chat", "Sign-ups", "Waivers",
-                "Payments", "Installments", "E-transfers",
-                "Tryouts", "Offers", "Rosters",
-                "Practices", "Club pages", "Announcements",
-                "Auto-scheduling", "Standings", "Divisions",
-                "Playoffs", "Brackets", "Referees",
-              ].map((f) => (
-                <div key={f} className="flex items-start gap-2.5">
-                  <svg
-                    className="mt-0.5 h-4 w-4 shrink-0 text-amber-500"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="3.5"
-                    aria-hidden
-                  >
-                    <path d="M4 12.5l5 5L20 6.5" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                  <span className="text-ink-900 text-[16px] font-bold leading-5">{f}</span>
+            <p className="text-ink-400 font-condensed mb-4 text-[12px] font-bold uppercase tracking-[0.18em]">
+              Everything a season needs
+            </p>
+            <div className="mb-7 grid grid-cols-1 gap-x-6 gap-y-5 sm:grid-cols-2">
+              {PROMISES.map((f) => (
+                <div key={f.title} className="flex items-start gap-3.5">
+                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-100 text-amber-700 ring-1 ring-inset ring-amber-200/70">
+                    <svg
+                      className="h-5 w-5"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1.9"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      aria-hidden
+                    >
+                      {f.icon}
+                    </svg>
+                  </span>
+                  <span className="min-w-0">
+                    <span className="text-ink-900 block text-[16px] font-bold leading-5">
+                      {f.title}
+                    </span>
+                    <span className="text-ink-500 mt-1 block text-[13.5px] leading-5">
+                      {f.proof}
+                    </span>
+                  </span>
                 </div>
               ))}
             </div>
