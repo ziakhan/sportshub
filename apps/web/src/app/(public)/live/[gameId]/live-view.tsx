@@ -1046,6 +1046,15 @@ export function LiveView({ gameId }: { gameId: string }) {
             <div className="order-2 min-w-0 self-center text-center">
               {live && (
                 <>
+                  {/* Clock sits ABOVE the LIVE pill (tester 2026-08-13) — time
+                      remaining is the thing you look for first on a live game,
+                      so it leads the column instead of trailing it. */}
+                  {clockOn && clockDisplay != null && (
+                    <p className="font-condensed text-highlight mb-1.5 text-4xl font-black leading-none tabular-nums lg:text-5xl">
+                      {Math.floor(clockDisplay / 60)}:
+                      {String(clockDisplay % 60).padStart(2, "0")}
+                    </p>
+                  )}
                   <span className="bg-live-600 inline-flex items-center gap-1.5 rounded-full px-3.5 py-1 text-xs font-extrabold uppercase tracking-[0.14em] text-white">
                     <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-white" />
                     Live
@@ -1053,11 +1062,6 @@ export function LiveView({ gameId }: { gameId: string }) {
                   <p className="font-condensed mt-1.5 text-2xl font-bold text-white">
                     {periodLabel(fold.period)}
                   </p>
-                  {clockOn && clockDisplay != null && (
-                    <p className="text-highlight mt-0.5 text-lg font-extrabold tabular-nums">
-                      {Math.floor(clockDisplay / 60)}:{String(clockDisplay % 60).padStart(2, "0")}
-                    </p>
-                  )}
                 </>
               )}
               {final && (
