@@ -75,16 +75,18 @@ export function WelcomePopup() {
 
         {step === 1 ? (
           <div className="p-7 sm:p-8">
-            <div className="mb-6 grid grid-cols-1 gap-x-6 gap-y-2 sm:grid-cols-2">
+            <div className="mb-6 grid grid-cols-2 gap-x-4 gap-y-2.5 sm:grid-cols-3">
               {[
-                "Watch your kid's game live from anywhere",
-                "Every basket becomes a real stat line",
-                "One calendar for every kid, every team",
-                "Your phone knows the moment a game moves",
-                "Your name in the recap after every game",
-                "Sign up, sign waivers and pay from your phone",
-                "Clubs: tryouts to rosters with zero spreadsheets",
-                "Leagues: a whole season scheduled in seconds",
+                "Live scores", "Box scores", "Play-by-play",
+                "Player stats", "Stat leaders", "Player pages",
+                "Game recaps", "Stories", "Follows",
+                "One calendar", "Instant alerts", "RSVPs",
+                "Team chat", "Sign-ups", "Waivers",
+                "Payments", "Installments", "E-transfers",
+                "Tryouts", "Offers", "Rosters",
+                "Practices", "Club pages", "Announcements",
+                "Auto-scheduling", "Standings", "Divisions",
+                "Playoffs", "Brackets", "Referees",
               ].map((f) => (
                 <div key={f} className="flex items-start gap-2.5">
                   <svg
@@ -97,7 +99,7 @@ export function WelcomePopup() {
                   >
                     <path d="M4 12.5l5 5L20 6.5" strokeLinecap="round" strokeLinejoin="round" />
                   </svg>
-                  <span className="text-ink-800 text-[14px] font-semibold leading-5">{f}</span>
+                  <span className="text-ink-900 text-[16px] font-bold leading-5">{f}</span>
                 </div>
               ))}
             </div>
