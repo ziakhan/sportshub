@@ -23,24 +23,19 @@ const PERSONAS: { key: string; title: string; blurb: string; soon?: boolean }[] 
   { key: "media", title: "Demo as a photographer or videographer", blurb: "Shoot the games, tag the players.", soon: true },
 ]
 
-export function DemoChrome({ signedIn }: { signedIn: boolean }) {
+export function DemoChrome({ signedIn, inDemoSession = false }: { signedIn: boolean; inDemoSession?: boolean }) {
   const [popupOpen, setPopupOpen] = useState(false)
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [entering, setEntering] = useState<string | null>(null)
   const router = useRouter()
 
   useEffect(() => {
-    try {
-      if (!localStorage.getItem(SEEN_KEY)) setPopupOpen(true)
-    } catch {
-      // Storage unavailable — skip the pop-up rather than nag every page.
-    }
-  }, [])
+    // Testing phase (owner 2026-08-13): show on EVERY page load so it's
+    // easy to review; frequency gets tuned before launch (SEEN_KEY ready).
+    if (!inDemoSession) setPopupOpen(true)
+  }, [inDemoSession])
 
   function dismissPopup() {
-    try {
-      localStorage.setItem(SEEN_KEY, "1")
-    } catch {}
     setPopupOpen(false)
   }
 

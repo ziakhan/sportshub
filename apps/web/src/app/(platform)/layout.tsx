@@ -15,6 +15,8 @@ import { getNavShape } from "@/lib/queries/nav-shape"
 import { CompletionPill } from "./dashboard/completion-pill"
 import { ImpersonationBanner } from "./dashboard/impersonation-banner"
 import { DemoBanner } from "@/components/demo/demo-banner"
+import { DemoChrome } from "@/components/demo/demo-chrome"
+import { isDemoModeEnabled } from "@/lib/demo/demo-mode"
 import { readDemoView } from "@/lib/demo/persona-session"
 
 export default async function PlatformLayout({ children }: { children: React.ReactNode }) {
@@ -122,6 +124,11 @@ export default async function PlatformLayout({ children }: { children: React.Rea
     <div className="bg-ink-50 text-ink-950 flex min-h-screen flex-col">
       {impersonating && <ImpersonationBanner userName={userName} />}
       {demoView && <DemoBanner personaKey={demoView.k} />}
+      {/* Demo drawer available on signed-in pages too (owner 2026-08-13);
+          the pop-up itself hides inside persona sessions. */}
+      {(await isDemoModeEnabled()) && (
+        <DemoChrome signedIn={true} inDemoSession={!!demoView} />
+      )}
 
       {/* backdrop-blur creates a stacking context — without an explicit
           z-index the whole bar (incl. the z-50 user menu + mobile drawer
