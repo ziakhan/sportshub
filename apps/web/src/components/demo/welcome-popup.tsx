@@ -29,7 +29,7 @@ export function WelcomePopup() {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4" role="dialog" aria-label="Welcome">
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setOpen(false)} />
-      <div className="relative w-full max-w-2xl overflow-hidden rounded-[32px] bg-white shadow-2xl">
+      <div className="relative max-h-[92vh] w-full max-w-2xl overflow-y-auto rounded-[32px] bg-white shadow-2xl">
         {/* Court hero — shared by both steps */}
         <div className="relative overflow-hidden bg-gradient-to-br from-[#101c36] via-[#1b2a4a] to-[#0d1526] px-8 pb-8 pt-9 text-white sm:px-10">
           <svg
@@ -75,6 +75,32 @@ export function WelcomePopup() {
 
         {step === 1 ? (
           <div className="p-7 sm:p-8">
+            <div className="mb-6 grid grid-cols-1 gap-x-6 gap-y-2 sm:grid-cols-2">
+              {[
+                "Live scoring with play-by-play",
+                "A full season scheduled in seconds",
+                "One calendar for every kid and team",
+                "Instant alerts when anything changes",
+                "Standings and stat leaders, always current",
+                "Registration, offers and payments online",
+                "Playoffs and brackets built from results",
+                "A recap written after every game",
+              ].map((f) => (
+                <div key={f} className="flex items-start gap-2.5">
+                  <svg
+                    className="mt-0.5 h-4 w-4 shrink-0 text-amber-500"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="3.5"
+                    aria-hidden
+                  >
+                    <path d="M4 12.5l5 5L20 6.5" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                  <span className="text-ink-800 text-[14px] font-semibold leading-5">{f}</span>
+                </div>
+              ))}
+            </div>
             <div className="flex flex-col gap-3 sm:flex-row">
               <button
                 onClick={() => setStep(2)}
