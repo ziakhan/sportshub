@@ -2,6 +2,9 @@ import { notFound } from "next/navigation"
 import { prisma } from "@youthbasketballhub/db"
 import { SmartBack } from "@/components/ui"
 import { LiveView } from "./live-view"
+import { isDemoGame } from "@/lib/demo/demo-mode"
+import { DemoBadge } from "@/components/demo-badge"
+import { HintBalloon } from "@/components/demo/hint-balloon"
 
 export const dynamic = "force-dynamic"
 
@@ -37,10 +40,20 @@ export default async function LiveGamePage({ params }: { params: { gameId: strin
   // Real 404 for unknown ids (the client view handles its own polling)
   const game = await getGameHead(params.gameId)
   if (!game) notFound()
+  const demo = await isDemoGame(params.gameId)
   return (
     <div>
       <div className="mx-auto w-full max-w-[1760px] px-4 pt-3 sm:px-6">
         <SmartBack fallback="/scores" fallbackLabel="Scores" className="-ml-1" />
+        {demo && (
+          <div className="mt-2 flex items-center gap-2">
+            <DemoBadge />
+            <HintBalloon hintKey="live-game">
+              This is live scoring: the score and play-by-play update as the table scores — no
+              refresh, no login. Every real game works this way.
+            </HintBalloon>
+          </div>
+        )}
       </div>
       <LiveView gameId={params.gameId} />
     </div>

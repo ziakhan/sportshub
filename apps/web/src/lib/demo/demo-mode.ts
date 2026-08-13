@@ -55,6 +55,15 @@ export async function demoLeaguesForDirectory() {
   })
 }
 
+/** Derivation for surfaces that only hold a game id. */
+export async function isDemoGame(gameId: string): Promise<boolean> {
+  const game = await prisma.game.findUnique({
+    where: { id: gameId },
+    select: { season: { select: { league: { select: { isDemo: true } } } } },
+  })
+  return (game as any)?.season?.league?.isDemo ?? false
+}
+
 /** Derivation for surfaces that only hold a season id. */
 export async function isDemoSeason(seasonId: string): Promise<boolean> {
   const season = await prisma.season.findUnique({

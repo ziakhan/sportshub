@@ -20,6 +20,7 @@ import { PUBLISHED_GAME } from "@/lib/games/visibility"
 import { SeasonCalendarSection } from "./season-calendar-section"
 import { isDemoSeason } from "@/lib/demo/demo-mode"
 import { DemoBadge } from "@/components/demo-badge"
+import { HintBalloon } from "@/components/demo/hint-balloon"
 
 export const dynamic = "force-dynamic"
 
@@ -187,13 +188,19 @@ export default async function PublicLeagueHubPage({ params }: { params: { id: st
       style={brandStyle(brand?.primaryColor)}
     >
       {isDemo && (
-        <div className="mb-6 flex flex-wrap items-center gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3">
-          <DemoBadge long />
-          <p className="text-sm text-amber-900">
-            This league is a preview built with demo data so you can see how
-            SportsHub works. We launch for real this fall.
-          </p>
-        </div>
+        <>
+          <div className="mb-6 flex flex-wrap items-center gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3">
+            <DemoBadge long />
+            <p className="text-sm text-amber-900">
+              This league is a preview built with demo data so you can see how
+              SportsHub works. We launch for real this fall.
+            </p>
+          </div>
+          <HintBalloon hintKey="league-hub">
+            Standings update the second a scoresheet is signed, and live games tick in real
+            time. Tap a live game to watch the score move — no account needed.
+          </HintBalloon>
+        </>
       )}
       <div className="mb-6 flex items-center justify-between gap-4">
         <SmartBack fallback="/leagues" fallbackLabel="Leagues" className="-ml-1" />

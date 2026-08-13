@@ -3862,6 +3862,23 @@ enum OneOnOneBookingStatus {
 // PLATFORM SETTINGS (singleton)
 // ============================================
 
+// Session-scoped demo actions (limited-launch-demo-build-2026-08.md §3):
+// whitelisted things a demo visitor "really does" — chat messages, RSVPs,
+// the offer accept — stored here, keyed by their demo session, merged into
+// reads ONLY for that session, purged at the nightly reset. Real tables
+// never see demo-visitor writes; ghost coach replies live here too.
+model DemoSessionAction {
+  id            String   @id @default(uuid())
+  demoSessionId String
+  type          String // CHAT_MESSAGE | GHOST_REPLY | RSVP | OFFER_ACCEPT | POLL_VOTE
+  targetId      String // chat/event/offer/poll id the action points at
+  payload       Json?
+  createdAt     DateTime @default(now())
+
+  @@index([demoSessionId, targetId, type])
+  @@index([createdAt])
+}
+
 model PlatformSettings {
   id               String   @id @default("default")
   enabledCountries String[] // ISO codes: ["US", "CA"]
