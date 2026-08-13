@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { useRouter } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 
 /**
  * Public-site demo chrome (limited-launch-demo-build-2026-08.md §4):
@@ -28,12 +28,15 @@ export function DemoChrome({ signedIn, inDemoSession = false }: { signedIn: bool
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [entering, setEntering] = useState<string | null>(null)
   const router = useRouter()
+  const pathname = usePathname()
 
   useEffect(() => {
-    // Testing phase (owner 2026-08-13): show on EVERY page load so it's
-    // easy to review; frequency gets tuned before launch (SEEN_KEY ready).
-    if (!inDemoSession) setPopupOpen(true)
-  }, [inDemoSession])
+    // Owner ruling 2026-08-13: the pop-up greets the HOME PAGE only, for
+    // signed-out visitors only, on every load (frequency tuned later —
+    // SEEN_KEY plumbing stays ready). The drawer stays everywhere.
+    if (!inDemoSession && !signedIn && pathname === "/") setPopupOpen(true)
+    else setPopupOpen(false)
+  }, [inDemoSession, signedIn, pathname])
 
   function dismissPopup() {
     setPopupOpen(false)
