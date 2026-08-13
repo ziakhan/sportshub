@@ -6,8 +6,14 @@ import { useState } from "react"
  * Home-page welcome (owner rulings 2026-08-13): server-rendered open so it
  * paints with the first HTML; BIGGER; "this fall" loud; one line for
  * everybody; and the role picker is STEP TWO of the same modal (no drawer
- * hop) with the registration ask stated plainly. "Demo" is downplayed in
- * visitor copy — this is "experience the live season".
+ * hop) with the registration ask stated plainly.
+ *
+ * ⚠ OWNER-RULING CONFLICT (tester 2026-08-13): the ruling above said "demo"
+ * should be DOWNPLAYED in visitor copy ("experience the live season"). The
+ * tester's read is the opposite — demo language sets the right expectation
+ * (you're being shown a working product, not signed up for one) and the
+ * drawer tab already says "Try the demo", so downplaying it here was
+ * inconsistent. CTA now reads "Try the live demo". Needs owner sign-off.
  */
 
 /**
@@ -92,25 +98,24 @@ const ALSO_INCLUDED = [
 /**
  * Step two (2026-08-13). Was eight cards, three of them dead "coming soon"
  * boxes that stranded League — a live persona — in a row of disabled ones.
- * Now: the five that actually work, each colour-coded on the platform's own
- * token ramps with its own mark (colour NEVER carries the meaning alone —
- * icon + label do), and the unreleased roles demoted to one quiet line.
- * `tile`/`edge` shade pairs are picked per ramp: gold has no 200/700 step.
+ * Now the five that actually work.
+ *
+ * ONE accent, not five (tester call): per-persona colours only earn their
+ * keep if the product uses them consistently elsewhere, and it doesn't — a
+ * parent is not "green" anywhere in SportsHub, so five hues fragmented a
+ * small modal for decoration. Amber is the demo's own identity (drawer tab,
+ * badge, CTAs); the icons carry the differentiation.
  */
 const ROLES: {
   key: string
   title: string
   blurb: string
-  tile: string
-  edge: string
   icon: JSX.Element
 }[] = [
   {
     key: "parent",
     title: "Parent",
     blurb: "Your kids, one calendar, live games.",
-    tile: "bg-court-50 text-court-700 ring-court-200",
-    edge: "hover:border-court-300",
     icon: (
       <>
         <path d="M16 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" />
@@ -124,8 +129,6 @@ const ROLES: {
     key: "player",
     title: "Player",
     blurb: "Your team, your stats, your season.",
-    tile: "bg-play-50 text-play-700 ring-play-200",
-    edge: "hover:border-play-300",
     icon: (
       <>
         <circle cx="12" cy="12" r="8.5" />
@@ -137,8 +140,6 @@ const ROLES: {
     key: "coach",
     title: "Coach",
     blurb: "Roster, RSVPs, chat, game day.",
-    tile: "bg-hoop-50 text-hoop-700 ring-hoop-200",
-    edge: "hover:border-hoop-300",
     icon: (
       <>
         <rect x="5" y="3.5" width="14" height="17" rx="2.5" />
@@ -151,8 +152,6 @@ const ROLES: {
     key: "club",
     title: "Club owner",
     blurb: "Teams, tryouts, offers, payments.",
-    tile: "bg-gold-50 text-gold-600 ring-gold-100",
-    edge: "hover:border-gold-400",
     icon: (
       <>
         <path d="M3 10 12 4l9 6" />
@@ -165,8 +164,6 @@ const ROLES: {
     key: "league",
     title: "League",
     blurb: "Schedule, standings, playoffs.",
-    tile: "bg-clay-50 text-clay-700 ring-clay-200",
-    edge: "hover:border-clay-300",
     icon: (
       <>
         <path d="M7.5 4h9v5a4.5 4.5 0 0 1-9 0V4Z" />
@@ -177,8 +174,8 @@ const ROLES: {
   },
 ]
 
-/** Not built yet — one line, not three dead cards. */
-const COMING_SOON = "Referee, trainer and photographer roles are coming soon."
+/** Not built yet — one flagged line, not three dead cards. */
+const COMING_SOON = "Referee, trainer and photographer demos are on the way."
 
 export function WelcomePopup() {
   const [open, setOpen] = useState(true)
@@ -191,31 +188,36 @@ export function WelcomePopup() {
       <div className="relative max-h-[92vh] w-full max-w-2xl overflow-y-auto rounded-[32px] bg-white shadow-2xl">
         {/* Court hero — shared by both steps */}
         <div className="relative overflow-hidden bg-gradient-to-br from-[#101c36] via-[#1b2a4a] to-[#0d1526] px-8 pb-8 pt-9 text-white sm:px-10">
-          {/* Half court seen from above — baseline, key, free-throw circle,
-              three-point arc, backboard and rim. The old motif was concentric
-              circles with a line through them, which read as an archery
-              target rather than basketball (tester, 2026-08-13). */}
+          {/* A shaded basketball, bleeding off the corner (tester 2026-08-13 —
+              line-art court diagrams read as noise here). Radial shading plus
+              a specular highlight give it volume against the navy. */}
           <svg
-            className="pointer-events-none absolute -right-14 -top-16 h-72 w-72 opacity-[0.28] sm:h-80 sm:w-80"
+            className="pointer-events-none absolute -right-10 -top-14 h-56 w-56 opacity-[0.55] sm:h-64 sm:w-64"
             viewBox="0 0 200 200"
-            fill="none"
-            stroke="#f59e0b"
-            strokeWidth="2.5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
             aria-hidden
           >
-            {/* baseline */}
-            <path d="M8 12h184" />
-            {/* three-point line: corners straight off the baseline, then the arc */}
-            <path d="M24 12v40c0 72 152 72 152 0V12" />
-            {/* the key / paint */}
-            <path d="M70 12v68h60V12" />
-            {/* free-throw circle */}
-            <circle cx="100" cy="80" r="22" />
-            {/* backboard + rim */}
-            <path d="M86 25h28" strokeWidth="4" />
-            <circle cx="100" cy="33.5" r="4.5" />
+            <defs>
+              <radialGradient id="sh-ball" cx="34%" cy="28%" r="78%">
+                <stop offset="0%" stopColor="#fde68a" />
+                <stop offset="45%" stopColor="#f59e0b" />
+                <stop offset="100%" stopColor="#9a3412" />
+              </radialGradient>
+            </defs>
+            <circle cx="100" cy="100" r="90" fill="url(#sh-ball)" />
+            <g
+              fill="none"
+              stroke="#7c2d12"
+              strokeWidth="3.5"
+              strokeLinecap="round"
+              opacity="0.85"
+            >
+              <path d="M100 10v180" />
+              <path d="M10 100h180" />
+              <path d="M42 31c36 34 36 104 0 138" />
+              <path d="M158 31c-36 34-36 104 0 138" />
+            </g>
+            {/* specular highlight */}
+            <ellipse cx="68" cy="58" rx="26" ry="17" fill="#fffbeb" opacity="0.22" transform="rotate(-28 68 58)" />
           </svg>
           <p className="relative inline-flex items-center gap-2 rounded-full bg-amber-500 px-4 py-1.5 text-sm font-black uppercase tracking-[0.14em] text-amber-950 shadow">
             Launching this fall
@@ -228,8 +230,8 @@ export function WelcomePopup() {
                 <span className="text-amber-400">already live.</span>
               </h2>
               <p className="relative mt-4 max-w-md text-[15px] leading-7 text-white/85">
-                A full youth basketball season — live scores, schedules, standings and
-                stories. Step in and see exactly what yours will feel like.
+                Real scores, schedules, standings and stories from a full youth basketball
+                season. Look around freely, or try it as a parent, coach or league.
               </p>
             </>
           ) : (
@@ -238,9 +240,8 @@ export function WelcomePopup() {
                 Which one <span className="text-amber-400">are you?</span>
               </h2>
               <p className="relative mt-3 max-w-md text-[15px] leading-7 text-white/85">
-                Pick your seat in the gym and step into the live season. You&apos;ll create a
-                free account first — it takes a minute, and it&apos;s ready when the real season
-                starts.
+                Pick a role and try the demo as them. You&apos;ll make a free account first —
+                a minute, and it&apos;s ready for the real season.
               </p>
             </>
           )}
@@ -309,7 +310,7 @@ export function WelcomePopup() {
                 onClick={() => setStep(2)}
                 className="flex-1 rounded-2xl bg-amber-500 px-6 py-4 text-[17px] font-bold text-amber-950 shadow-md transition hover:bg-amber-400"
               >
-                Experience the live season →
+                Try the live demo →
               </button>
               <button
                 onClick={() => setOpen(false)}
@@ -324,57 +325,64 @@ export function WelcomePopup() {
           </div>
         ) : (
           <div className="p-7 sm:p-8">
-            {/* Flex-wrap, not grid: five cards leave an orphan in a 3-col
-                grid, and the orphan was League — a live persona reading as
-                disabled next to the old "soon" boxes. Centred rows instead. */}
-            <div className="flex flex-wrap justify-center gap-2.5">
-              {ROLES.map((r, i) => (
-                <a
-                  key={r.key}
-                  href={`/demo/start?persona=${r.key}`}
-                  className={`group border-ink-100 reveal relative basis-[calc(50%-0.32rem)] rounded-2xl border bg-white p-4 transition hover:-translate-y-0.5 hover:shadow-lg sm:basis-[calc(33.333%-0.67rem)] ${r.edge}`}
-                  style={{ animationDelay: `${i * 55}ms` }}
-                >
-                  <span
-                    className={`flex h-10 w-10 items-center justify-center rounded-xl ring-1 ring-inset ${r.tile}`}
+            {/* The choice sits on its own tinted panel so it reads as one
+                deliberate group, and flex-wrap centres the rows — five cards
+                in a 3-col grid leave an orphan, and that orphan was League. */}
+            <div className="border-amber-200/60 bg-amber-50/60 rounded-[22px] border p-3 sm:p-3.5">
+              <div className="flex flex-wrap justify-center gap-2.5">
+                {ROLES.map((r, i) => (
+                  <a
+                    key={r.key}
+                    href={`/demo/start?persona=${r.key}`}
+                    className="group reveal relative basis-[calc(50%-0.32rem)] rounded-2xl border border-amber-200/80 bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:border-amber-400 hover:shadow-lg sm:basis-[calc(33.333%-0.67rem)]"
+                    style={{ animationDelay: `${i * 55}ms` }}
                   >
-                    <svg
-                      className="h-5 w-5"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="1.9"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
+                    <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-100 text-amber-700 ring-1 ring-inset ring-amber-200/70 transition group-hover:bg-amber-500 group-hover:text-white group-hover:ring-amber-500">
+                      <svg
+                        className="h-5 w-5"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="1.9"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        aria-hidden
+                      >
+                        {r.icon}
+                      </svg>
+                    </span>
+                    <span className="text-ink-950 mt-3 block text-[15.5px] font-bold leading-5">
+                      {r.title}
+                    </span>
+                    <span className="text-ink-500 mt-1 block text-[12.5px] leading-4">
+                      {r.blurb}
+                    </span>
+                    <span
+                      className="absolute right-3.5 top-4 text-amber-300 transition-transform group-hover:translate-x-0.5 group-hover:text-amber-600"
                       aria-hidden
                     >
-                      {r.icon}
-                    </svg>
-                  </span>
-                  <span className="text-ink-950 mt-3 block text-[15.5px] font-bold leading-5">
-                    {r.title}
-                  </span>
-                  <span className="text-ink-500 mt-1 block text-[12.5px] leading-4">{r.blurb}</span>
-                  <span
-                    className="text-ink-300 group-hover:text-ink-500 absolute right-3.5 top-4 transition-transform group-hover:translate-x-0.5"
-                    aria-hidden
-                  >
-                    <svg
-                      className="h-4 w-4"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2.4"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
-                      <path d="M9 6l6 6-6 6" />
-                    </svg>
-                  </span>
-                </a>
-              ))}
+                      <svg
+                        className="h-4 w-4"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2.4"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <path d="M9 6l6 6-6 6" />
+                      </svg>
+                    </span>
+                  </a>
+                ))}
+              </div>
             </div>
-            <p className="text-ink-400 mt-4 text-center text-[12.5px]">{COMING_SOON}</p>
+            <p className="text-ink-500 mt-3.5 text-center text-[12.5px]">
+              <span className="bg-ink-100 text-ink-600 mr-1.5 rounded px-1.5 py-0.5 text-[10.5px] font-bold uppercase tracking-wide">
+                Soon
+              </span>
+              {COMING_SOON}
+            </p>
             <div className="mt-5 flex items-center justify-between">
               <button
                 onClick={() => setStep(1)}
