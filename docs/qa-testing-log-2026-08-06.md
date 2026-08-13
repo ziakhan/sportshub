@@ -273,13 +273,5 @@ documented rule. Both were ruled on 2026-08-12 and are now in this branch.
   3. The Google console's authorized redirect URIs include the production callback (`https://<host>/api/auth/callback/google`).
 - **Why it matters here specifically:** the demo funnel makes signup the gate (owner ruling). If the only way through that gate is typing an email and password, the gate gets materially heavier — and the research on demo funnels is that every unit of friction at that step costs conversions. Google sign-in shipped 2026-07-16 per `native-parity-audit.md`; this is about making sure it is actually present in the environment that ships.
 
-### T-021 · Shooting percentages read 100% when a league doesn't record misses · BUG · med · web
-- **Where:** Game page → Team stats (`(public)/live/[gameId]/live-view.tsx`, the `shooting()` helper feeding Field goals / 3-pointers / Free throws).
-- **The engine is fine.** `lib/scoring/fold.ts` supports misses — a `SCORE_2PT` / `SCORE_3PT` / `SCORE_FT` event carries a made flag, and a miss increments `fgMiss2` / `fgMiss3` / `ftMiss`. Percentages are architecturally correct.
-- **The data often isn't.** Checked a real completed game (`9bc2812b…`): its recorded events are `SCORE_2PT ×36`, `SCORE_3PT ×18`, `SCORE_FT ×18` and **zero misses** — whoever scored it logged only makes. Attempts therefore equal makes, so every shooting row renders "36-36 · 100%" / "18-18 · 100%". That's not a blank stat, it's a *wrong* one that looks authoritative.
-- **Note the nuance:** free throws MADE are tracked correctly (18 of them). It is only attempts/misses that are missing, so FT counts are trustworthy while FT percentage is not.
-- **Suggested fix (data-driven, not a league setting):** when a team has zero recorded misses across a shot family, show makes only ("18 FT") and suppress the ratio and percentage. A league that does record misses keeps full percentages automatically; one that doesn't never publishes a fake 100%.
-- **Tester ruling 2026-08-13:** leave the current behaviour for leagues that DO track attempts — this note is for the stat-richer leagues and for whoever hardens the display.
-
-<!-- Add findings below. Next ID: T-022 -->
+<!-- Add findings below. Next ID: T-021 -->
 
