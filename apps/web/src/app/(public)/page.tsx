@@ -12,7 +12,7 @@ import { getYourTeams } from "@/lib/queries/home"
 import { getNavShape } from "@/lib/queries/nav-shape"
 import { getViewerScope } from "@/lib/privacy/participants"
 import { isTestWorldSlug } from "@/lib/demo-data"
-import { CourtBackdropLayer } from "@/components/ui"
+import { CourtBackdrop, CourtBackdropLayer } from "@/components/ui"
 import { ClubSearch } from "./club-search"
 import { HighlightsRow, NewsAndLeaders, ScoreboardStrip, YourTeamsRail } from "./home-sections"
 import { StoriesRail } from "@/components/social/stories-rail"
@@ -98,6 +98,8 @@ async function getHomePageData() {
 export default async function HomePage() {
   const session = await getServerSession(authOptions).catch(() => null)
   const userId = (session?.user as any)?.id ?? null
+  // Greeting name off the session that is already loaded: no extra lookup.
+  const firstName = (session?.user?.name ?? "").trim().split(/\s+/)[0] || null
 
   const [{ featuredClubs, upcomingTryouts, stats }, scoreboard, feed, highlights, featuredSeasonId, yourTeams, scope] =
     await Promise.all([
@@ -141,24 +143,64 @@ export default async function HomePage() {
       {!userId && demoOn && <WelcomePopup />}
       {/* Live scoring pings re-render the scoreboard strip (debounced) */}
       <RealtimeRefresh rooms={["scores"]} events={["game.update"]} />
-      {userId && <HomePersonalBand userId={userId} />}
-      {/* Stories rail (social-feed-plan P4): followed players + own kids;
-          renders nothing when empty */}
-      {userId && <StoriesRail chrome="home" />}
-      <YourTeamsRail cards={yourTeams} />
-      {participantView ? (
-        <section className="border-ink-100 border-b bg-white">
-          <div className="container mx-auto px-4 py-3 sm:px-6">
-            <Link
-              href="/scores"
-              className="bg-stage text-ink-50 flex items-center justify-between rounded-2xl px-4 py-3 text-sm font-semibold"
-            >
-              <span>Live scores &amp; this week&rsquo;s games</span>
-              <span aria-hidden>&rarr;</span>
-            </Link>
+      {/* Court system v2, ambient tier (2026-08-14): the signed-in home was the
+          one surface the court never reached, so members landed on dead white.
+          Their sections now sit on the dashboard's plank grain, with the
+          greeting card carrying the arena night inside the band. Scoped to the
+          signed-in stack so the marketing hero and walls below stay untouched
+          (spec R1: one court per screen). */}
+      {userId && (
+        <CourtBackdrop variant="daylight" intensity="ambient" className="bg-[#faf8f4]">
+          {/* The greeting is the one loud card on the signed-in home, the same
+              arena-night card the dashboard leads with. It is page-level on
+              purpose: the personal band renders nothing for accounts with no
+              week and nothing due, and those members still deserve a decorated
+              landing instead of a blank strip. */}
+          <div className="container mx-auto px-4 py-6 sm:px-6">
+            <div className="shadow-soft relative isolate overflow-hidden rounded-[30px]">
+              <CourtBackdropLayer variant="navy" intensity="band" />
+              <div className="relative z-10 p-6 sm:p-8">
+                <div className="text-gold-400 mb-2 text-[11px] font-black uppercase tracking-[0.22em]">
+                  Your hub
+                </div>
+                <h1 className="font-display text-2xl font-black tracking-[-0.02em] text-white sm:text-3xl">
+                  Welcome back{firstName ? `, ${firstName}` : ""}
+                </h1>
+                <p className="text-ink-200 mt-2 max-w-2xl text-sm sm:text-base">
+                  Your week, your teams and the scores that matter to you.
+                </p>
+              </div>
+            </div>
           </div>
-        </section>
-      ) : (
+          <HomePersonalBand userId={userId} />
+        </CourtBackdrop>
+      )}
+      {/* Stories rail (social-feed-plan P4): followed players + own kids;
+          renders nothing when empty. Stays outside the grain wrapper so its
+          fullscreen viewer keeps competing with the sticky header at the top
+          stacking level. */}
+      {userId && <StoriesRail chrome="home" />}
+      {/* yourTeams is empty for signed-out visitors (the rail renders nothing),
+          so the teams + scores block lives inside the signed-in shell. */}
+      {userId && (
+        <CourtBackdrop variant="daylight" intensity="ambient" className="bg-[#faf8f4]">
+          <YourTeamsRail cards={yourTeams} />
+          {participantView && (
+            <section className="border-ink-100 border-b">
+              <div className="container mx-auto px-4 py-3 sm:px-6">
+                <Link
+                  href="/scores"
+                  className="bg-stage text-ink-50 flex items-center justify-between rounded-2xl px-4 py-3 text-sm font-semibold"
+                >
+                  <span>Live scores &amp; this week&rsquo;s games</span>
+                  <span aria-hidden>&rarr;</span>
+                </Link>
+              </div>
+            </section>
+          )}
+        </CourtBackdrop>
+      )}
+      {!participantView && (
         <>
           <ScoreboardStrip games={scoreboard} />
           {!userId && demoOn && (

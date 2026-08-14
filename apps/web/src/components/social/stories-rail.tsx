@@ -63,7 +63,10 @@ export function StoriesRail({
 
   const wrap = (children: ReactNode) =>
     chrome === "home" ? (
-      <div className="border-ink-100 border-b bg-white">
+      // Court system v2: the home chrome matches the signed-in page floor
+      // colour instead of white, so the rail does not cut a bright stripe
+      // through the ambient grain above and below it.
+      <div className="border-ink-100 border-b bg-[#faf8f4]">
         <div className="container mx-auto px-4 py-1 sm:px-6">{children}</div>
       </div>
     ) : (

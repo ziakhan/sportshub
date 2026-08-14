@@ -5,9 +5,14 @@ import { getMyContexts } from "@/lib/queries/my-contexts"
 
 /**
  * The Home personal band (site-ia-plan §5.6.3): the signed-in participant's
- * week + actions due, ABOVE the public content. Order encodes priority —
+ * week + actions due, ABOVE the public content. Order encodes priority:
  * money/attendance first, then the week. Renders nothing for accounts with
  * no participant contexts (operators keep their dashboard world).
+ *
+ * Court system v2 (2026-08-14): the band sits under the page's navy greeting
+ * card on the ambient plank grain, so it carries no background of its own and
+ * the week list is a white card on the floor (spec R1: one court per screen,
+ * and the loud card is the greeting).
  */
 export async function HomePersonalBand({ userId }: { userId: string }) {
   let ctx
@@ -24,7 +29,7 @@ export async function HomePersonalBand({ userId }: { userId: string }) {
     actionCards.push({
       href: "/offers",
       title: `Offer for ${offer.playerName}`,
-      detail: `${offer.teamName} — accept or decline`,
+      detail: `${offer.teamName} · accept or decline`,
       tone: "border-hoop-200 bg-hoop-50 text-hoop-800",
     })
   }
@@ -75,8 +80,8 @@ export async function HomePersonalBand({ userId }: { userId: string }) {
   }
 
   return (
-    <section className="border-ink-100 border-b bg-white">
-      <div className="container mx-auto px-4 py-6 sm:px-6">
+    <section className="border-ink-100 border-b">
+      <div className="container mx-auto px-4 pb-6 sm:px-6">
         {actionCards.length > 0 && (
           <div className="mb-5">
             <h2 className="text-ink-600 mb-2 text-[12.5px] font-semibold uppercase tracking-[0.16em]">
@@ -107,7 +112,7 @@ export async function HomePersonalBand({ userId }: { userId: string }) {
                 Full calendar &rarr;
               </Link>
             </div>
-            <div className="border-ink-100 divide-y divide-ink-50 overflow-hidden rounded-2xl border">
+            <div className="border-ink-100 divide-y divide-ink-50 shadow-soft overflow-hidden rounded-2xl border bg-white">
               {groups.slice(0, 4).map((group) => (
                 <div key={group.label}>
                   <div className="bg-ink-50/60 text-ink-500 px-4 py-1.5 text-[11px] font-semibold uppercase tracking-wide">

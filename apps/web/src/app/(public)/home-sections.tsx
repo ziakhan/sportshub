@@ -200,7 +200,9 @@ export function HighlightsRow({ highlights }: { highlights: HighlightItem[] }) {
 export function YourTeamsRail({ cards }: { cards: YourTeamCard[] }) {
   if (cards.length === 0) return null
   return (
-    <section className="border-ink-100 border-b bg-white py-10">
+    // No bg here: the signed-in home wraps this rail in the ambient court
+    // tier, so the white cards read as cards on plank grain (court system v2).
+    <section className="border-ink-100 border-b py-10">
       <div className="container mx-auto px-4 sm:px-6">
         <SectionHeader eyebrow="Your teams" title="Catch up on your squad" accent="hoop" className="mb-6" />
         <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
