@@ -159,8 +159,12 @@ export async function absorbDuplicatePlayer(
  * Three questions, asked inside the transaction so a row that changed hands
  * a moment ago cannot slip through:
  *  - is the surviving row still there?
- *  - does it belong to the person asking?
+ *  - does it belong to the guardian it is supposed to belong to?
  *  - is somebody else already signing in to it?
+ *
+ * `guardianUserId` is who the survivor must belong to, and defaults to the
+ * caller. It differs only when a kid merges away their own duplicate: they
+ * are the actor, but the row that survives is their guardian's.
  *
  * `loginUserId` moves the kid's login onto the survivor. Null leaves the
  * survivor's login alone, which is what merging two parent-managed rows
@@ -170,11 +174,13 @@ export async function absorbIntoGuardianRow(
   tx: any,
   {
     actorUserId,
+    guardianUserId,
     source,
     targetId,
     loginUserId,
   }: {
     actorUserId: string
+    guardianUserId?: string
     source: { id: string; userId: string | null }
     targetId: string
     loginUserId: string | null
@@ -185,7 +191,9 @@ export async function absorbIntoGuardianRow(
     select: { id: true, parentId: true, userId: true, deletedAt: true },
   })
   if (!target || target.deletedAt) throw new Error("CLAIM_TARGET_GONE")
-  if (target.parentId !== actorUserId) throw new Error("CLAIM_TARGET_NOT_YOURS")
+  if (target.parentId !== (guardianUserId ?? actorUserId)) {
+    throw new Error("CLAIM_TARGET_NOT_YOURS")
+  }
   if (target.userId && target.userId !== source.userId) throw new Error("CLAIM_TARGET_TAKEN")
 
   const absorbed = await absorbDuplicatePlayer(tx, { sourceId: source.id, targetId: target.id })

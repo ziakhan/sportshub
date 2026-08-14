@@ -29,13 +29,20 @@ export const dynamic = "force-dynamic"
  * absorbed, soft-deleted, and its login moves to the survivor.
  *
  * Authorization is the whole endpoint, so it reuses the guard the invitation
- * accept path has always run rather than a second version of it:
- *  - the caller must be able to act for the source (guardian, or its own
- *    login) AND the target must be one of the caller's own player rows;
+ * accept path has always run rather than a second version of it. Two callers
+ * are allowed, and only two:
+ *  - the guardian who holds the survivor and can act for the duplicate;
+ *  - the kid who signs in to the duplicate, once a real guardian is attached
+ *    to it and that same guardian holds the survivor. This is the shape a
+ *    PARENT_INVITES_CHILD redemption leaves behind, and the kid is the one
+ *    giving something up, so they get to say yes to it. No link yet, or a
+ *    different household on the other row, means no merge.
+ * Then:
  *  - inside the transaction absorbIntoGuardianRow re-asks, so a row that
- *    changed hands in between cannot be swept up;
+ *    changed hands in between cannot be swept up (for a kid caller the
+ *    source row is re-read too, so the guardian it names is the current one);
  *  - and the two rows must still look like the same person by name and birth
- *    year, so a parent cannot merge two different children by mistyping.
+ *    year, so nobody can merge two different children by mistyping.
  * Every entitlement failure gives the same 403 and the same sentence.
  */
 
@@ -78,25 +85,44 @@ export async function POST(request: NextRequest) {
     ])
     if (!source || !target) return forbidden()
 
-    // The survivor has to be the caller's own row, live. This is the same
-    // test findMergeCandidates applies when it offers the merge.
-    if (target.deletedAt || target.absorbedAt || target.parentId !== session.userId) {
-      return forbidden()
-    }
-
-    if (source.id === target.id) {
-      return NextResponse.json({ error: "Those are already the same profile" }, { status: 409 })
-    }
+    // The survivor has to be live and unabsorbed, whoever is asking.
+    if (target.deletedAt || target.absorbedAt) return forbidden()
 
     // Tapping the button twice on a slow phone is not an error: if this exact
-    // merge already happened, say so again. Safe to answer because the
-    // survivor is already known to be the caller's.
+    // merge already happened, say so again. Answerable by either side, since
+    // after the merge the survivor carries the parent AND the kid's login.
     if (source.absorbedAt && source.absorbedIntoPlayerId === target.id) {
+      const holdsSurvivor =
+        target.parentId === session.userId || target.userId === session.userId
+      if (!holdsSurvivor) return forbidden()
       return NextResponse.json({ merged: true, survivingPlayerId: target.id })
     }
 
     if (source.deletedAt || source.absorbedAt) return forbidden()
-    if (!(await canActForPlayer(session.userId, source.id))) return forbidden()
+
+    // Two people may ask, and only these two.
+    //
+    // The guardian holding both rows: the ordinary case, a parent tidying up
+    // after a link.
+    const asGuardian =
+      target.parentId === session.userId && (await canActForPlayer(session.userId, source.id))
+
+    // The kid giving up their own duplicate. After redeeming a parent's link
+    // code they hold the login on the source row but the survivor is the
+    // parent's, so the guardian test above can never pass for them. Narrow on
+    // purpose: it has to be their own login row, a real guardian has to be
+    // attached already, and it has to be the SAME guardian who holds the
+    // survivor. No link yet means no merge.
+    const asLinkedKid =
+      source.userId === session.userId &&
+      source.parentId !== session.userId &&
+      source.parentId === target.parentId
+
+    if (!asGuardian && !asLinkedKid) return forbidden()
+
+    if (source.id === target.id) {
+      return NextResponse.json({ error: "Those are already the same profile" }, { status: 409 })
+    }
 
     // Both rows are theirs, so the answer from here on can be specific.
     if (!looksLikeSamePlayer(source, target)) {
@@ -107,8 +133,31 @@ export async function POST(request: NextRequest) {
     }
 
     await prisma.$transaction(async (tx: any) => {
+      // Whose row the survivor must be. The guardian answers for themself; a
+      // kid answers for the guardian they are linked to, re-read here so a
+      // household that changed between the check and the write cannot be
+      // swept up.
+      let guardianUserId = session.userId
+      if (!asGuardian) {
+        const fresh = await tx.player.findUnique({
+          where: { id: source.id },
+          select: { userId: true, parentId: true, deletedAt: true, absorbedAt: true },
+        })
+        if (
+          !fresh ||
+          fresh.deletedAt ||
+          fresh.absorbedAt ||
+          fresh.userId !== session.userId ||
+          fresh.parentId === session.userId
+        ) {
+          throw new Error("CLAIM_TARGET_NOT_YOURS")
+        }
+        guardianUserId = fresh.parentId
+      }
+
       await absorbIntoGuardianRow(tx, {
         actorUserId: session.userId,
+        guardianUserId,
         source: { id: source.id, userId: source.userId },
         targetId: target.id,
         loginUserId: source.userId,

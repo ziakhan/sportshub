@@ -485,8 +485,80 @@ describe("POST /api/family/merge", () => {
     expect(absorbed!.absorbedIntoPlayerId).toBe(parentRow.id)
   })
 
-  it("403s anyone who does not hold both rows, with one sentence", async () => {
-    const { parent, parentRow, kid, kidRow } = await linkedDuplicate("Notyours")
+  it("the kid applies the merge from their side after redeeming a parent's code", async () => {
+    const { parent, parentRow, kid, kidRow } = await linkedDuplicate("Kidside")
+
+    // The kid is the one giving up their duplicate, so they may say yes to it.
+    actAs(kid.id)
+    const res = await merge(kidRow.id, parentRow.id)
+    expect(res.status).toBe(200)
+    expect(await res.json()).toEqual({ merged: true, survivingPlayerId: parentRow.id })
+
+    const survivor = await prisma.player.findUnique({ where: { id: parentRow.id } })
+    expect(survivor!.userId).toBe(kid.id)
+    expect(survivor!.canLogin).toBe(true)
+    expect(survivor!.parentId).toBe(parent.id)
+
+    const absorbed = await prisma.player.findUnique({ where: { id: kidRow.id } })
+    expect(absorbed!.absorbedIntoPlayerId).toBe(parentRow.id)
+    expect(absorbed!.userId).toBeNull()
+
+    // And asking twice still answers, now from the kid's own login on the
+    // surviving row.
+    const again = await merge(kidRow.id, parentRow.id)
+    expect(again.status).toBe(200)
+    expect(await again.json()).toEqual({ merged: true, survivingPlayerId: parentRow.id })
+  })
+
+  it("403s a kid with no guardian linked yet, and one linked to a different parent", async () => {
+    const expect403 = async (res: Response) => {
+      expect(res.status).toBe(403)
+      expect((await res.json()).error).toBe("Those profiles are not both yours.")
+    }
+
+    // No link yet: the kid is still their own guardian, so there is no
+    // household connecting the two rows.
+    const unlinkedKid = await namedUser("unlinked-kid", "Unlinked", `Mergeable${tag}`)
+    const unlinkedRow = await selfRegisteredPlayer(
+      unlinkedKid.id,
+      "Unlinked",
+      `Mergeable${tag}`,
+      YEAR_A
+    )
+    const otherParent = await createUser(world.ctx, { localPart: "unlinked-parent" })
+    const otherRow = await parentCreatedPlayer(
+      otherParent.id,
+      "Unlinked",
+      `Mergeable${tag}`,
+      YEAR_A
+    )
+
+    actAs(unlinkedKid.id)
+    await expect403(await merge(unlinkedRow.id, otherRow.id))
+
+    // Linked, but to somebody else: a matching row in another household is
+    // still not theirs to absorb.
+    const { kid, kidRow } = await linkedDuplicate("Crossed")
+    const strangerParent = await createUser(world.ctx, { localPart: "crossed-parent" })
+    const strangerRow = await parentCreatedPlayer(
+      strangerParent.id,
+      "Crossed",
+      `Mergeable${tag}`,
+      YEAR_A
+    )
+    actAs(kid.id)
+    await expect403(await merge(kidRow.id, strangerRow.id))
+
+    // Nothing moved in either household.
+    for (const id of [unlinkedRow.id, kidRow.id, otherRow.id, strangerRow.id]) {
+      const row = await prisma.player.findUnique({ where: { id } })
+      expect(row!.absorbedAt).toBeNull()
+      expect(row!.deletedAt).toBeNull()
+    }
+  })
+
+  it("403s anyone who holds neither row, with one sentence", async () => {
+    const { parent, parentRow, kidRow } = await linkedDuplicate("Notyours")
     const stranger = await createUser(world.ctx, { localPart: "notyours-stranger" })
 
     const expect403 = async (res: Response) => {
@@ -495,10 +567,6 @@ describe("POST /api/family/merge", () => {
     }
 
     actAs(stranger.id)
-    await expect403(await merge(kidRow.id, parentRow.id))
-
-    // The kid holds the source but the surviving row is not theirs.
-    actAs(kid.id)
     await expect403(await merge(kidRow.id, parentRow.id))
 
     // A survivor that belongs to somebody else, asked for by its own guardian.
@@ -510,7 +578,6 @@ describe("POST /api/family/merge", () => {
     // Untouched throughout.
     const stillThere = await prisma.player.findUnique({ where: { id: kidRow.id } })
     expect(stillThere!.absorbedAt).toBeNull()
-    expect(outsiderRow.id).toBeTruthy()
   })
 
   it("409s two children who are not the same person, even for their own parent", async () => {

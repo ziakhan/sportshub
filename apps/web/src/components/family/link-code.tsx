@@ -129,13 +129,13 @@ export function useRedeemCode() {
 /**
  * The merge a link offers but never applies on its own.
  *
- * ⚠ Contract note (verified against apps/web/src/app/api/family/merge/route.ts):
- * the merge endpoint requires the SURVIVING row to belong to the caller
- * (`target.parentId !== session.userId → 403`). After a kid redeems their
- * parent's code both rows belong to the PARENT, so a kid tapping this gets the
- * 403. We still offer the choice, because saying "keep them together" is the
- * decision worth capturing, and we answer a refusal with the truth: the parent
- * finishes it. Nothing here can block the screen it sits on.
+ * Contract note (verified against apps/web/src/app/api/family/merge/route.ts):
+ * the endpoint admits the guardian (survivor is theirs) AND the linked kid
+ * (source is their own login row, already linked into the same household), so
+ * merging right after a code redemption succeeds from the kid's side too. A
+ * genuine refusal (household changed mid-flight, rows stopped matching) gets
+ * the fallback copy: the parent finishes it from their account. Nothing here
+ * can block the screen it sits on.
  */
 export function MergeOffer({
   sourcePlayerId,
