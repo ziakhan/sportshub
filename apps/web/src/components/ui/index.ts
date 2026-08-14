@@ -32,6 +32,8 @@ export {
   CourtBackdrop,
   CourtBackdropLayer,
   type CourtBackdropVariant,
+  type CourtBackdropFloor,
+  type CourtBackdropIntensity,
 } from "./court-backdrop"
 export { BrandListbox, type BrandListboxOption } from "./brand-listbox"
 export { ChipGroup, type ChipOption } from "./chip-group"

@@ -123,48 +123,118 @@ export default function ControlKitPreview() {
         {/* ── Court backdrop ─────────────────────────────────────────────── */}
         <Section
           title="Court backdrop"
-          note="One cropped half court, masked through the middle"
-          why="Three variants off one component. The court is drawn once at 150 percent of the box, anchored off the corner and faded where a card sits, so it reads as part of the surface instead of a shape floating on it."
+          note="Regulation half court on real hardwood"
+          why="Three finishes and three intensities off one component. A regulation half court (10 units per foot: 16 ft paint, R 23'9 arc with corner threes, dashed inner free-throw circle, restricted arc) is drawn once over a CSS wood floor, cropped by an edge and faded where a card sits, so it reads as the surface instead of a shape floating on it."
         >
           <div className="space-y-4">
-            <CourtBackdrop
-              variant="navy"
-              className="rounded-3xl"
-              contentClassName="flex items-center justify-center px-6 py-14"
+            <BackdropSample
+              caption="Arena night"
+              specs={["variant navy", "floor parquet", "wash navy trio", "amber lines 20%", "immersive"]}
             >
-              <SampleCard
-                tone="dark"
-                eyebrow="Navy"
-                title="A whole season, already live."
-                body="The house standard. Hero panels, welcome surfaces, anything that has to feel like game night."
-              />
-            </CourtBackdrop>
+              <CourtBackdrop
+                variant="navy"
+                className="rounded-3xl"
+                contentClassName="flex items-center justify-center px-6 py-14"
+              >
+                <SampleCard
+                  tone="dark"
+                  eyebrow="Navy"
+                  title="A whole season, already live."
+                  body="The house standard. Hero panels, welcome surfaces, anything that has to feel like game night."
+                />
+              </CourtBackdrop>
+            </BackdropSample>
 
-            <CourtBackdrop
-              variant="daylight"
-              className="rounded-3xl"
-              contentClassName="flex items-center justify-center px-6 py-14"
+            <BackdropSample
+              caption="Game day"
+              specs={["variant daylight", "floor planks", "wash warm white", "sienna lines 15%", "immersive"]}
             >
-              <SampleCard
-                tone="light"
-                eyebrow="Daylight"
-                title="Find a club near you."
-                body="Warm and open. Signed-out browse pages, marketing, anything a first-time visitor lands on."
-              />
-            </CourtBackdrop>
+              <CourtBackdrop
+                variant="daylight"
+                className="rounded-3xl"
+                contentClassName="flex items-center justify-center px-6 py-14"
+              >
+                <SampleCard
+                  tone="light"
+                  eyebrow="Daylight"
+                  title="Find a club near you."
+                  body="Warm and open. Signed-out browse pages, marketing, anything a first-time visitor lands on."
+                />
+              </CourtBackdrop>
+            </BackdropSample>
 
-            <CourtBackdrop
-              variant="ink"
-              className="rounded-3xl"
-              contentClassName="flex items-center justify-center px-6 py-14"
+            <BackdropSample
+              caption="Chalk board"
+              specs={["variant ink", "floor planks (dark under the ink wash)", "amber lines 12%", "immersive"]}
             >
-              <SampleCard
-                tone="dark"
-                eyebrow="Ink"
-                title="That page has moved."
-                body="Neutral and quiet. Error and maintenance pages, where warmth would read as decoration on bad news."
-              />
-            </CourtBackdrop>
+              <CourtBackdrop
+                variant="ink"
+                className="rounded-3xl"
+                contentClassName="flex items-center justify-center px-6 py-14"
+              >
+                <SampleCard
+                  tone="dark"
+                  eyebrow="Ink"
+                  title="That page has moved."
+                  body="Neutral and quiet. Error and maintenance pages, where warmth would read as decoration on bad news."
+                />
+              </CourtBackdrop>
+            </BackdropSample>
+
+            <BackdropSample
+              caption="Header band"
+              specs={["intensity band", "court rotated off the top corner", "no height assumptions"]}
+            >
+              <CourtBackdrop
+                variant="daylight"
+                intensity="band"
+                className="rounded-3xl"
+                contentClassName="px-6 py-7"
+              >
+                <p className="text-[11px] font-black uppercase tracking-[0.18em] text-[#b45309]">
+                  Game day
+                </p>
+                <h3 className="text-ink-950 mt-1 text-[28px] font-black leading-none">Scores</h3>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {["Today", "Yesterday", "This week", "Junior", "Senior"].map((chip, i) => (
+                    <span
+                      key={chip}
+                      className={`rounded-full px-3.5 py-1.5 text-[12.5px] font-bold ${
+                        i === 0
+                          ? "bg-play-600 text-white"
+                          : "border-ink-200 text-ink-700 border bg-white"
+                      }`}
+                    >
+                      {chip}
+                    </span>
+                  ))}
+                </div>
+              </CourtBackdrop>
+            </BackdropSample>
+
+            <BackdropSample
+              caption="Ambient"
+              specs={["intensity ambient", "floor only at 5%", "no lines", "no wash"]}
+            >
+              <CourtBackdrop
+                variant="daylight"
+                intensity="ambient"
+                className="bg-ink-50/60 rounded-3xl"
+                contentClassName="grid gap-3 px-6 py-7 sm:grid-cols-2"
+              >
+                {[
+                  ["This week", "Fri 6:00 PM practice · Sat 4:00 PM vs Lords"],
+                  ["Payments", "$120 fall season · $45 tournament fee"],
+                ].map(([label, body]) => (
+                  <div key={label} className="border-ink-100 rounded-2xl border bg-white p-4">
+                    <p className="text-ink-400 text-[10.5px] font-black uppercase tracking-[0.16em]">
+                      {label}
+                    </p>
+                    <p className="text-ink-700 mt-2 text-[13.5px] leading-5">{body}</p>
+                  </div>
+                ))}
+              </CourtBackdrop>
+            </BackdropSample>
           </div>
         </Section>
 
@@ -387,6 +457,34 @@ function Field({
         <p className={labelClass}>{label}</p>
       )}
       {children}
+    </div>
+  )
+}
+
+/** One backdrop sample with the knobs that produced it spelled out under it. */
+function BackdropSample({
+  caption,
+  specs,
+  children,
+}: {
+  caption: string
+  specs: string[]
+  children: React.ReactNode
+}) {
+  return (
+    <div>
+      {children}
+      <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1.5">
+        <span className="text-ink-800 text-[13px] font-black">{caption}</span>
+        {specs.map((spec) => (
+          <span
+            key={spec}
+            className="border-ink-200 text-ink-500 rounded-full border px-2 py-0.5 font-mono text-[10.5px] tracking-tight"
+          >
+            {spec}
+          </span>
+        ))}
+      </div>
     </div>
   )
 }
