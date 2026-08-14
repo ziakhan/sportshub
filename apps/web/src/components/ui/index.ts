@@ -25,3 +25,15 @@ export { StarRating } from "./star-rating"
 export { DateTimePicker } from "./date-time-picker"
 export { TimeRangePicker } from "./time-range-picker"
 export { SmartBack } from "./smart-back"
+
+// Brand surfaces + form controls (design-system elevation 2026-08-13).
+// Preview them all at /dev/control-kit.
+export {
+  CourtBackdrop,
+  CourtBackdropLayer,
+  type CourtBackdropVariant,
+} from "./court-backdrop"
+export { BrandListbox, type BrandListboxOption } from "./brand-listbox"
+export { ChipGroup, type ChipOption } from "./chip-group"
+export { ChoiceCardGroup, type ChoiceCardOption } from "./choice-card"
+export { BrandCheckbox } from "./brand-checkbox"
