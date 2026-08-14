@@ -4,6 +4,7 @@ import { useState, useEffect } from "react"
 import Link from "next/link"
 import { Button, Card } from "@/components/ui"
 import RemovePlayerButton from "./remove-player-button"
+import { FamilyCodeCard } from "@/components/family/family-code-card"
 import { calculateAge } from "@/lib/coppa"
 
 interface PlayerTeam {
@@ -76,6 +77,12 @@ export default function PlayersPage() {
           </Button>
         </div>
       </Card>
+
+      {/* The in-person way to link a kid's own login to this account, next to
+          the list of kids it is about (parent-child linking arc 2026-08-13). */}
+      <div className="reveal" style={{ animationDelay: "60ms" }}>
+        <FamilyCodeCard />
+      </div>
 
       {error && (
         <div className="border-hoop-200 bg-hoop-50 text-hoop-700 rounded-xl border p-3 text-sm font-medium">

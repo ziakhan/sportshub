@@ -3,7 +3,7 @@ import { BrandWordmark } from "@/components/brand/wordmark"
 import { redirect } from "next/navigation"
 import Link from "next/link"
 import { prisma } from "@youthbasketballhub/db"
-import { getCurrentUser, isImpersonating } from "@/lib/auth-helpers"
+import { getCurrentUser, getRealUserId, isImpersonating } from "@/lib/auth-helpers"
 import { getCompletionChecklist } from "@/lib/onboarding/checklist"
 import { Sidebar } from "./dashboard/sidebar"
 import { MobileNav } from "./dashboard/mobile-nav"
@@ -113,6 +113,20 @@ export default async function PlatformLayout({ children }: { children: React.Rea
 
   const impersonating = isImpersonating()
   const demoView = readDemoView()
+  // Inside a demo session dbUser is the persona, so the banner has to ask
+  // separately whether the REAL account has finished setup — that is what
+  // decides where "Exit demo" lands them (owner 2026-08-13).
+  let realUserOnboarded = true
+  if (demoView) {
+    const realUserId = await getRealUserId()
+    if (realUserId) {
+      const real = await prisma.user.findUnique({
+        where: { id: realUserId },
+        select: { onboardedAt: true },
+      })
+      realUserOnboarded = !!real?.onboardedAt
+    }
+  }
   const userName = [dbUser.firstName, dbUser.lastName].filter(Boolean).join(" ") || "User"
   const userEmail = dbUser.email
   const userInitials =
@@ -123,7 +137,9 @@ export default async function PlatformLayout({ children }: { children: React.Rea
   return (
     <div className="bg-ink-50 text-ink-950 flex min-h-screen flex-col">
       {impersonating && <ImpersonationBanner userName={userName} />}
-      {demoView && <DemoBanner personaKey={demoView.k} />}
+      {demoView && (
+        <DemoBanner personaKey={demoView.k} realUserOnboarded={realUserOnboarded} />
+      )}
       {/* Demo drawer available on signed-in pages too (owner 2026-08-13);
           the pop-up itself hides inside persona sessions. */}
       {(await isDemoModeEnabled()) && (

@@ -7,6 +7,7 @@ import {
   getCountryConfig,
   type Country,
 } from "@/lib/countries"
+import { BrandListbox } from "@/components/ui"
 
 interface CountryStateSelectorProps {
   countryValue: string
@@ -15,7 +16,18 @@ interface CountryStateSelectorProps {
   onStateChange: (state: string) => void
   countryError?: string
   stateError?: string
+  /**
+   * "grid" (default, unchanged) wraps the fields in their own two-column row.
+   * "flat" drops the wrapper so the fields become cells of whatever grid the
+   * form already has — which is how the compact onboarding forms put City and
+   * Province on one line. Optional, so every existing caller is untouched.
+   */
+  layout?: "grid" | "flat"
 }
+
+const labelClass = "block text-sm font-medium text-ink-800"
+const inputClass =
+  "border-ink-200 text-ink-900 placeholder-ink-400 focus:border-play-500 focus:ring-play-500/20 mt-1 block min-h-[44px] w-full rounded-xl border bg-white px-3 py-2.5 text-sm shadow-sm transition duration-200 focus:outline-none focus:ring-2"
 
 export function CountryStateSelector({
   countryValue,
@@ -24,6 +36,7 @@ export function CountryStateSelector({
   onStateChange,
   countryError,
   stateError,
+  layout = "grid",
 }: CountryStateSelectorProps) {
   const [enabledCountries, setEnabledCountries] = useState<Country[]>(SUPPORTED_COUNTRIES)
   const [singleCountry, setSingleCountry] = useState<string | null>(null)
@@ -57,57 +70,61 @@ export function CountryStateSelector({
 
   // If only one country enabled, hide the country dropdown
   const showCountrySelector = !singleCountry && enabledCountries.length > 1
+  const subdivisionLabel = config?.subdivisionLabel || "State/Region"
 
-  return (
-    <div className={showCountrySelector ? "grid grid-cols-2 gap-4" : ""}>
+  const fields = (
+    <>
       {showCountrySelector && (
         <div>
-          <label className="block text-sm font-medium text-gray-700">
+          <label htmlFor="country-select" className={labelClass}>
             Country <span className="text-red-500">*</span>
           </label>
-          <select
-            value={countryValue}
-            onChange={(e) => onCountryChange(e.target.value)}
-            className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
-          >
-            {enabledCountries.map((c) => (
-              <option key={c.code} value={c.code}>
-                {c.name}
-              </option>
-            ))}
-          </select>
+          <div className="mt-1">
+            <BrandListbox
+              id="country-select"
+              ariaLabel="Country"
+              value={countryValue}
+              onChange={onCountryChange}
+              error={!!countryError}
+              options={enabledCountries.map((c) => ({ value: c.code, label: c.name }))}
+            />
+          </div>
           {countryError && <p className="mt-1 text-sm text-red-600">{countryError}</p>}
         </div>
       )}
 
       <div>
-        <label className="block text-sm font-medium text-gray-700">
-          {config?.subdivisionLabel || "State/Region"} <span className="text-red-500">*</span>
+        <label htmlFor="subdivision-select" className={labelClass}>
+          {subdivisionLabel} <span className="text-red-500">*</span>
         </label>
         {subdivisions ? (
-          <select
-            value={stateValue}
-            onChange={(e) => onStateChange(e.target.value)}
-            className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
-          >
-            <option value="">Select {config?.subdivisionLabel || "region"}...</option>
-            {subdivisions.map((s) => (
-              <option key={s.code} value={s.code}>
-                {s.name}
-              </option>
-            ))}
-          </select>
+          <div className="mt-1">
+            <BrandListbox
+              id="subdivision-select"
+              ariaLabel={subdivisionLabel}
+              value={stateValue}
+              onChange={onStateChange}
+              error={!!stateError}
+              placeholder={`Select ${subdivisionLabel.toLowerCase()}`}
+              options={subdivisions.map((s) => ({ value: s.code, label: s.name }))}
+            />
+          </div>
         ) : (
           <input
+            id="subdivision-select"
             type="text"
             value={stateValue}
             onChange={(e) => onStateChange(e.target.value)}
-            placeholder={config?.subdivisionLabel || "Region"}
-            className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
+            placeholder={subdivisionLabel}
+            className={inputClass}
           />
         )}
         {stateError && <p className="mt-1 text-sm text-red-600">{stateError}</p>}
       </div>
-    </div>
+    </>
   )
+
+  if (layout === "flat") return fields
+
+  return <div className={showCountrySelector ? "grid gap-4 sm:grid-cols-2" : ""}>{fields}</div>
 }

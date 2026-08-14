@@ -1,74 +1,106 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, type ReactNode } from "react"
 import { useSearchParams } from "next/navigation"
 import type { ProfileData } from "@/lib/validations/onboarding"
+import { BrandCheckbox } from "@/components/ui"
+import { MergeOffer, type MergeCandidate } from "@/components/family/link-code"
 import { ParentForm } from "./forms/parent-form"
 import { PlayerForm } from "./forms/player-form"
 import { StaffForm } from "./forms/staff-form"
 import { RefereeForm } from "./forms/referee-form"
 import { LeagueOwnerForm } from "./forms/league-owner-form"
+import { GuardianBlock, EMPTY_GUARDIAN, type GuardianState } from "./guardian-block"
+
+/**
+ * Onboarding, rebuilt 2026-08-13 after the owner walked it.
+ *
+ * Four complaints, four answers:
+ *  1. It asked the role again after the visitor had already picked one in the
+ *     welcome pop-up. `initialRole` (from ?role=) now starts on the profile
+ *     step with a quiet "Change" way back.
+ *  2. The handle said "(optional)" while one was already reserved. It is a
+ *     chip in the hero that shows what is theirs, with one word to change it.
+ *  3. The guardian block was long and asked the kid a thing the server can
+ *     answer. See guardian-block.tsx.
+ *  4. A plain white card on a blank page, and the player form ran off the
+ *     screen. Court-navy hero, two-column form, one viewport.
+ *
+ * The behaviour contracts underneath are unchanged: the handle never blocks
+ * (QA-209), it saves before the role is created, operator roles attest 18+,
+ * callbackUrl wins at the end, and a player's guardian invite only fires once
+ * the profile POST has created the Player row.
+ */
 
 const ROLE_OPTIONS = [
   {
     id: "Parent",
-    title: "I'm a Parent",
-    description: "Find tryouts and teams for my child. Track schedules, games, and stats.",
+    label: "parent",
+    title: "Parent",
+    description: "Your kids' teams, schedules and payments.",
     icon: "parent",
   },
   {
-    id: "ClubOwner",
-    title: "I run a Club",
-    description: "Create a basketball club, organize teams, run tryouts, and accept payments.",
-    icon: "club",
-  },
-  {
-    id: "Staff",
-    title: "I'm a Staff Member",
-    description: "Manage teams, rosters, practices, and game preparation.",
-    icon: "staff",
-  },
-  {
-    id: "Referee",
-    title: "I'm a Referee",
-    description: "Officiate youth basketball games, set availability, and track assignments.",
-    icon: "referee",
-  },
-  {
     id: "Player",
-    title: "I'm a Player (13+)",
-    description:
-      "View my team, schedule, games, and stats. Must be 13 or older to create an account.",
+    label: "player",
+    title: "Player",
+    description: "Your team, your stats, your season. Ages 13 and up.",
     icon: "player",
   },
   {
+    id: "Staff",
+    label: "coach",
+    title: "Coach or staff",
+    description: "Roster, practices, RSVPs, game day.",
+    icon: "staff",
+  },
+  {
+    id: "ClubOwner",
+    label: "club owner",
+    title: "Club owner",
+    description: "Teams, tryouts, offers and getting paid.",
+    icon: "club",
+  },
+  {
     id: "LeagueOwner",
-    title: "I run a League",
-    description:
-      "Organize competitive basketball leagues with divisions, schedules, and standings.",
+    label: "league operator",
+    title: "League operator",
+    description: "Schedule a season, standings, playoffs.",
     icon: "league",
   },
   {
+    id: "Referee",
+    label: "referee",
+    title: "Referee",
+    description: "Assignments, availability, scoresheets.",
+    icon: "referee",
+  },
+  {
     id: "Trainer",
-    title: "I'm a Trainer",
-    description:
-      "Run skills training, camps, group workouts, and 1-on-1 sessions families can book.",
+    label: "trainer",
+    title: "Trainer",
+    description: "Skills training, camps and bookings.",
     icon: "trainer",
   },
 ] as const
 
-function RoleIcon({ icon }: { icon: (typeof ROLE_OPTIONS)[number]["icon"] }) {
-  const iconClass = "h-5 w-5"
+type RoleIconName = (typeof ROLE_OPTIONS)[number]["icon"]
+
+function RoleIcon({ icon }: { icon: RoleIconName }) {
+  const shared = {
+    viewBox: "0 0 24 24",
+    fill: "none",
+    stroke: "currentColor",
+    strokeWidth: 1.9,
+    strokeLinecap: "round" as const,
+    strokeLinejoin: "round" as const,
+    className: "h-5 w-5",
+    "aria-hidden": true,
+  }
 
   if (icon === "parent") {
     return (
-      <svg
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        className={iconClass}
-      >
+      <svg {...shared}>
         <path d="M16 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" />
         <path d="M8 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z" />
         <path d="M8 14c-3 0-5 1.5-5 4v1h10v-1c0-2.5-2-4-5-4Z" />
@@ -76,101 +108,52 @@ function RoleIcon({ icon }: { icon: (typeof ROLE_OPTIONS)[number]["icon"] }) {
       </svg>
     )
   }
-
   if (icon === "club") {
     return (
-      <svg
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        className={iconClass}
-      >
+      <svg {...shared}>
         <path d="M3 10 12 4l9 6" />
-        <path d="M5 10v9h14v-9" />
-        <path d="M9 19v-5h6v5" />
+        <path d="M5 10v9.5h14V10" />
+        <path d="M9.5 19.5V14h5v5.5" />
       </svg>
     )
   }
-
   if (icon === "staff") {
     return (
-      <svg
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        className={iconClass}
-      >
-        <rect x="4" y="3" width="16" height="18" rx="2" />
-        <path d="M8 7h8" />
-        <path d="M8 11h8" />
-        <path d="M8 15h5" />
+      <svg {...shared}>
+        <rect x="5" y="3.5" width="14" height="17" rx="2.5" />
+        <path d="M9 3.5h6v3H9z" />
+        <path d="M9 11h6M9 15h4" />
       </svg>
     )
   }
-
   if (icon === "referee") {
     return (
-      <svg
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        className={iconClass}
-      >
-        <rect x="4" y="3" width="16" height="18" rx="2" />
-        <path d="M12 3v18" />
-        <path d="M8 3v18" />
-        <path d="M16 3v18" />
+      <svg {...shared}>
+        <rect x="4" y="3.5" width="16" height="17" rx="2.5" />
+        <path d="M9 3.5v17M15 3.5v17" />
       </svg>
     )
   }
-
   if (icon === "player") {
     return (
-      <svg
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        className={iconClass}
-      >
-        <circle cx="12" cy="12" r="8" />
-        <path d="M12 4a14 14 0 0 1 0 16" />
-        <path d="M12 4a14 14 0 0 0 0 16" />
-        <path d="M4 12h16" />
+      <svg {...shared}>
+        <circle cx="12" cy="12" r="8.5" />
+        <path d="M12 3.5a14 14 0 0 1 0 17M12 3.5a14 14 0 0 0 0 17M3.5 12h17" />
       </svg>
     )
   }
-
   if (icon === "trainer") {
     return (
-      <svg
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        className={iconClass}
-      >
-        <path d="M6 7v10" />
-        <path d="M18 7v10" />
-        <path d="M3 9v6" />
-        <path d="M21 9v6" />
-        <path d="M6 12h12" />
+      <svg {...shared}>
+        <path d="M6 7v10M18 7v10M3 9.5v5M21 9.5v5M6 12h12" />
       </svg>
     )
   }
-
   return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      className={iconClass}
-    >
-      <path d="m12 3 2.7 5.5 6.1.9-4.4 4.2 1 6-5.4-2.8-5.4 2.8 1-6L3.2 9.4l6.1-.9L12 3Z" />
+    <svg {...shared}>
+      <path d="M7.5 4h9v5a4.5 4.5 0 0 1-9 0V4Z" />
+      <path d="M7.5 6H5a2.5 2.5 0 0 0 2.5 3M16.5 6H19a2.5 2.5 0 0 1-2.5 3" />
+      <path d="M12 13.5V17M9 20h6" />
     </svg>
   )
 }
@@ -179,181 +162,192 @@ function RoleIcon({ icon }: { icon: (typeof ROLE_OPTIONS)[number]["icon"] }) {
 // require an 18+ attestation at onboarding. Parent/Player/Staff are unchanged.
 const OPERATOR_ROLES = ["ClubOwner", "LeagueOwner", "Referee", "Trainer"]
 
-function AdultAttestationCheckbox({
-  checked,
-  onChange,
-}: {
-  checked: boolean
-  onChange: (checked: boolean) => void
-}) {
-  return (
-    <label className="border-ink-200 bg-court-50/60 flex items-start gap-2.5 rounded-xl border p-4 text-sm text-ink-700">
-      <input
-        type="checkbox"
-        checked={checked}
-        onChange={(e) => onChange(e.target.checked)}
-        className="border-ink-300 mt-0.5 h-4 w-4 rounded"
-      />
-      <span>
-        I confirm I am 18 years of age or older
-        <span className="text-ink-500 mt-0.5 block text-xs">
-          Operator roles (running clubs, leagues, or officiating) are for adults.
-        </span>
-      </span>
-    </label>
-  )
-}
-
-// QA-209: every account already gets a generated default handle reserved at
-// signup (settings-only until now, via /api/account/handle). This is a
-// light, non-blocking step — Continue tries to save an edited handle but
-// always moves on even if that fails or nothing changed, so onboarding never
-// stalls on it.
-const secondaryButtonClass =
-  "rounded-xl border border-ink-200 bg-white px-4 py-2.5 font-semibold text-ink-700 transition hover:bg-court-50"
 const primaryButtonClass =
-  "flex-1 rounded-xl bg-play-600 px-4 py-3 font-semibold text-white shadow-sm transition hover:bg-play-700 disabled:cursor-not-allowed disabled:bg-ink-400"
+  "min-h-[44px] flex-1 cursor-pointer rounded-xl bg-play-600 px-4 py-3 font-semibold text-white shadow-sm transition-colors duration-200 hover:bg-play-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-play-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:bg-ink-400"
+const quietButtonClass =
+  "min-h-[44px] cursor-pointer rounded-xl px-3 py-2.5 text-sm font-semibold text-ink-500 transition-colors duration-200 hover:text-ink-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-play-500 focus-visible:ring-offset-2"
+const changeLinkClass =
+  "cursor-pointer rounded text-[13px] font-semibold text-play-700 underline decoration-play-300 underline-offset-2 transition-colors duration-200 hover:text-play-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-play-500 focus-visible:ring-offset-2"
+
+/** The shaded ball the welcome pop-up uses, bleeding off the hero corner. */
+function HeroBall() {
+  return (
+    <svg
+      className="pointer-events-none absolute -right-8 -top-12 h-40 w-40 opacity-[0.5] sm:h-48 sm:w-48"
+      viewBox="0 0 200 200"
+      aria-hidden="true"
+    >
+      <defs>
+        <radialGradient id="sh-ball-onboarding" cx="34%" cy="28%" r="78%">
+          <stop offset="0%" stopColor="#fde68a" />
+          <stop offset="45%" stopColor="#f59e0b" />
+          <stop offset="100%" stopColor="#9a3412" />
+        </radialGradient>
+      </defs>
+      <circle cx="100" cy="100" r="90" fill="url(#sh-ball-onboarding)" />
+      <g fill="none" stroke="#7c2d12" strokeWidth="3.5" strokeLinecap="round" opacity="0.85">
+        <path d="M100 10v180" />
+        <path d="M10 100h180" />
+        <path d="M42 31c36 34 36 104 0 138" />
+        <path d="M158 31c-36 34-36 104 0 138" />
+      </g>
+      <ellipse cx="68" cy="58" rx="26" ry="17" fill="#fffbeb" opacity="0.22" transform="rotate(-28 68 58)" />
+    </svg>
+  )
+}
 
 /**
- * K-007 (owner ruling 2026-08-12): the handle is a FIELD on the profile step,
- * not a step of its own, and it is OPTIONAL again. QA-209 stands: every
- * account already has a generated default reserved at signup, so an empty or
- * unavailable handle keeps that default and onboarding carries on. Kai's
- * required version is deliberately not taken.
+ * K-007 (owner 2026-08-12) plus the 2026-08-13 rebuild: the handle is not a
+ * form field with an "(optional)" apology. Everyone already has one reserved
+ * at signup, so the hero states it and offers one word to change it. QA-209
+ * still governs the save: empty or unavailable keeps the reserved default and
+ * onboarding carries on.
  */
-function HandleField({
-  draft,
+function HandleChip({
   reserved,
-  onChange,
+  draft,
+  loaded,
+  editing,
+  onDraftChange,
+  onEditingChange,
 }: {
-  draft: string
   reserved: string | null
-  onChange: (v: string) => void
+  draft: string
+  loaded: boolean
+  editing: boolean
+  onDraftChange: (v: string) => void
+  onEditingChange: (v: boolean) => void
 }) {
-  return (
-    <div className="mb-6">
-      <label className="text-ink-700 block text-sm font-medium">
-        Your handle <span className="text-ink-400 font-normal">(optional)</span>
-      </label>
-      <div className="border-ink-200 focus-within:border-play-500 mt-1 flex w-full items-center rounded-xl border bg-white px-3 shadow-sm">
-        <span className="text-ink-400 text-sm">@</span>
-        <input
-          value={draft}
-          onChange={(e) => onChange(e.target.value.toLowerCase())}
-          className="text-ink-900 w-full border-0 bg-transparent px-1 py-2.5 text-sm focus:outline-none focus:ring-0"
-          placeholder="yourname"
-          maxLength={20}
-        />
+  if (!loaded) {
+    return (
+      <span className="inline-flex min-h-[44px] items-center rounded-full bg-white/10 px-4 text-sm text-white/60">
+        Reserving your name...
+      </span>
+    )
+  }
+
+  if (editing) {
+    return (
+      <div className="flex flex-wrap items-center gap-2">
+        <div className="flex min-h-[44px] items-center rounded-full border border-amber-400/60 bg-white/10 px-3.5 transition-colors duration-200 focus-within:border-amber-300">
+          <span className="text-[15px] font-black text-amber-300">@</span>
+          <input
+            id="handle"
+            aria-label="Your handle"
+            value={draft}
+            onChange={(e) => onDraftChange(e.target.value.toLowerCase())}
+            maxLength={20}
+            placeholder="yourname"
+            className="w-44 bg-transparent px-1 py-2 text-[15px] font-bold text-white placeholder-white/40 focus:outline-none"
+          />
+        </div>
+        <button
+          type="button"
+          onClick={() => onEditingChange(false)}
+          className="min-h-[44px] cursor-pointer rounded-full px-3 text-[13px] font-bold text-white underline underline-offset-2 transition-colors duration-200 hover:text-amber-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-300"
+        >
+          Done
+        </button>
       </div>
-      <p className="text-ink-500 mt-1 text-xs">
-        This is your name across SportsHub. Keep it, change it, or leave it blank and we&apos;ll
-        stay with {reserved ? `@${reserved}` : "the one we reserved for you"}.
-      </p>
+    )
+  }
+
+  return (
+    <span className="inline-flex min-h-[44px] items-center gap-2.5 rounded-full bg-amber-500/15 px-4 py-1.5 ring-1 ring-inset ring-amber-400/40">
+      <span className="text-[15px] font-black text-amber-200">@{draft || reserved}</span>
+      <span className="font-condensed text-[10.5px] font-bold uppercase tracking-[0.16em] text-amber-100/80">
+        yours
+      </span>
+      <span className="h-4 w-px bg-amber-300/35" aria-hidden="true" />
+      <button
+        type="button"
+        onClick={() => onEditingChange(true)}
+        className="cursor-pointer rounded text-[13px] font-bold text-white underline underline-offset-2 transition-colors duration-200 hover:text-amber-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-300"
+      >
+        change
+      </button>
+    </span>
+  )
+}
+
+function Shell({ hero, children }: { hero: ReactNode; children: ReactNode }) {
+  return (
+    <div className="w-full overflow-hidden rounded-[30px] bg-white shadow-[0_40px_110px_-45px_rgba(2,6,23,0.85)]">
+      {hero}
+      <div className="p-5 sm:p-6">{children}</div>
     </div>
   )
 }
 
-/**
- * K-008, promoted (owner ruling 2026-08-12). Kids find the platform before
- * their parents do, so the guardian ask is a first-class block on the Player
- * profile step with the reason spelled out, not an optional whisper. It is
- * still skippable: leaving it blank never blocks onboarding.
- *
- * The "did a parent already add you" answer is what decides who reconciles a
- * duplicate. Yes: the server looks for a profile under that email matching
- * this kid and asks the parent to link it. No: the parent gets the ordinary
- * guardian invite, and the merge is offered to them when they accept. Either
- * way the family ends up with one profile, and the kid is never told whether
- * that email has an account.
- */
-function GuardianInviteBlock({
-  email,
-  onEmailChange,
-  alreadyAdded,
-  onAlreadyAddedChange,
+function Hero({
+  stepLabel,
+  greeting,
+  subtitle,
+  children,
 }: {
-  email: string
-  onEmailChange: (v: string) => void
-  alreadyAdded: boolean
-  onAlreadyAddedChange: (v: boolean) => void
+  stepLabel: string
+  greeting: ReactNode
+  subtitle: string
+  children?: ReactNode
 }) {
   return (
-    <div className="border-play-100 bg-play-50/60 mb-6 rounded-2xl border p-5">
-      <h3 className="text-ink-900 text-base font-semibold">Add your parent or guardian</h3>
-      <p className="text-ink-700 mt-1 text-sm">
-        Your parent or guardian approves payments and permissions. You need them linked before you
-        can join anything that costs money, so getting it done now saves you a wait later.
-      </p>
-
-      <label className="text-ink-700 mt-4 block text-sm font-medium" htmlFor="guardian-email">
-        Parent or guardian&apos;s email
-      </label>
-      <input
-        id="guardian-email"
-        type="email"
-        value={email}
-        onChange={(e) => onEmailChange(e.target.value)}
-        placeholder="parent@example.com"
-        className="border-ink-200 focus:border-play-500 mt-1 block w-full rounded-xl border bg-white px-3 py-2.5 text-sm shadow-sm focus:outline-none"
-      />
-
-      <label className="text-ink-700 mt-3 flex items-start gap-2.5 text-sm">
-        <input
-          type="checkbox"
-          checked={alreadyAdded}
-          onChange={(e) => onAlreadyAddedChange(e.target.checked)}
-          className="border-ink-300 mt-0.5 h-4 w-4 rounded"
-        />
-        <span>
-          A parent already added me to SportsHub
-          <span className="text-ink-500 mt-0.5 block text-xs">
-            If that matches, your parent will get a request to link this login to the profile they
-            already made, instead of starting a second one.
-          </span>
-        </span>
-      </label>
-
-      <p className="text-ink-500 mt-3 text-xs">
-        We email them a link. You keep your own login either way, and you can do this later from
-        your profile if you would rather.
-      </p>
+    <div className="relative overflow-hidden bg-gradient-to-br from-[#101c36] via-[#1b2a4a] to-[#0d1526] px-5 pb-5 pt-5 text-white sm:px-7">
+      <HeroBall />
+      <div className="relative flex flex-wrap items-center justify-between gap-2">
+        <p className="font-condensed text-[11.5px] font-bold uppercase tracking-[0.18em] text-amber-300">
+          Set up your account
+        </p>
+        <p className="text-[11.5px] font-semibold uppercase tracking-[0.14em] text-white/70">
+          {stepLabel}
+        </p>
+      </div>
+      <h1 className="relative mt-2 text-[25px] font-black leading-tight sm:text-[28px]">
+        {greeting}
+      </h1>
+      <p className="relative mt-1.5 max-w-md text-[14px] leading-6 text-white/80">{subtitle}</p>
+      {children && <div className="relative mt-3">{children}</div>}
     </div>
   )
 }
 
-// QA-209(b/c): Parent-role copy-only callouts surfaced during onboarding —
-// no links, non-blocking, additive to the existing ParentForm.
-function ParentInfoCallouts() {
+function ErrorBox({ children }: { children: ReactNode }) {
   return (
-    <div className="mb-6 space-y-3">
-      <div className="border-ink-200 bg-court-50/60 rounded-xl border p-4 text-sm text-ink-700">
-        Adding your kids next? You can also give a 13+ child their own login later from their
-        profile page.
-      </div>
-      <div className="border-ink-200 bg-court-50/60 rounded-xl border p-4 text-sm text-ink-700">
-        Player profiles are private by default. You approve who follows your kids.
-      </div>
+    <div className="mb-4 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+      {children}
     </div>
   )
 }
+
+/** What the terminal screen has to say once the profile is saved. */
+type Outcome =
+  | { kind: "invite-failed" }
+  | { kind: "claim-sent" }
+  | { kind: "linked"; playerId: string; mergeCandidate?: MergeCandidate }
+  | { kind: "code-failed"; message: string }
 
 interface OnboardingFlowProps {
   userName: string
+  /** Pre-picked role from ?role= (validated server-side). */
+  initialRole?: string | null
 }
 
-export function OnboardingFlow({ userName }: OnboardingFlowProps) {
-  const [step, setStep] = useState<"role" | "profile" | "family">("role")
-  const [selectedRole, setSelectedRole] = useState<string | null>(null)
+export function OnboardingFlow({ userName, initialRole = null }: OnboardingFlowProps) {
+  const preset = initialRole && ROLE_OPTIONS.some((r) => r.id === initialRole) ? initialRole : null
+
+  const [step, setStep] = useState<"role" | "profile" | "family">(preset ? "profile" : "role")
+  const [selectedRole, setSelectedRole] = useState<string | null>(preset)
   const [adultAttested, setAdultAttested] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  // K-007: the handle is a FIELD on the profile step now, not its own step:
-  // prefilled with the reserved default, saved non-blocking on submit.
+
   const [reservedHandle, setReservedHandle] = useState<string | null>(null)
+  const [handleLoaded, setHandleLoaded] = useState(false)
   const [handleDraft, setHandleDraft] = useState("")
+  const [handleEditing, setHandleEditing] = useState(false)
   // An unavailable handle is told once, then stops mattering — the next
   // Continue keeps the reserved default and moves on (QA-209 never-blocks).
   const [handleWarned, setHandleWarned] = useState(false)
+
   useEffect(() => {
     fetch("/api/account/handle")
       .then((r) => (r.ok ? r.json() : null))
@@ -362,20 +356,21 @@ export function OnboardingFlow({ userName }: OnboardingFlowProps) {
         setHandleDraft(data?.handle ?? "")
       })
       .catch(() => {})
+      .finally(() => setHandleLoaded(true))
   }, [])
-  // K-008, accepted and promoted (owner 2026-08-12): the guardian ask lives
-  // on the Player profile step and the invite fires right after the profile
-  // saves, because the Player record has to exist first. This is the
-  // player-initiated direction of the event-driven linking rule, surfaced
-  // early on purpose: kids find the platform before their parents do.
-  const [inviteEmail, setInviteEmail] = useState("")
-  // "A parent already added me": turns the guardian invite into a request to
-  // link the profile that already exists (resolved server-side).
-  const [parentAlreadyAdded, setParentAlreadyAdded] = useState(false)
+
+  // The guardian ask on the Player step. Everything it collects is spent
+  // AFTER the profile POST, because the Player row has to exist first.
+  const [guardian, setGuardian] = useState<GuardianState>(EMPTY_GUARDIAN)
+  const [playerDob, setPlayerDob] = useState("")
+
+  const [outcome, setOutcome] = useState<Outcome>({ kind: "invite-failed" })
+  const [recoveryEmail, setRecoveryEmail] = useState("")
   const [inviteBusy, setInviteBusy] = useState(false)
   const [inviteSent, setInviteSent] = useState(false)
   const [inviteError, setInviteError] = useState<string | null>(null)
   const [pendingDest, setPendingDest] = useState<string>("/post-login")
+
   const searchParams = useSearchParams()
   // Deep link the user was chasing before sign-up — honored at the terminal
   // step so onboarding drops them where they meant to go, not on dashboard.
@@ -385,19 +380,21 @@ export function OnboardingFlow({ userName }: OnboardingFlowProps) {
       ? rawCallback
       : null
 
-  const handleRoleContinue = async () => {
+  const roleOption = ROLE_OPTIONS.find((r) => r.id === selectedRole) ?? null
+  const firstName = userName || "there"
+
+  const handleRoleContinue = () => {
     if (!selectedRole) {
-      setError("Please select a role to continue.")
+      setError("Pick one to continue.")
       return
     }
-
     setError(null)
     setStep("profile")
   }
 
   const handleProfileSubmit = async (profileData: ProfileData) => {
     if (OPERATOR_ROLES.includes(selectedRole!) && !adultAttested) {
-      setError("Please confirm you are 18 years of age or older to continue.")
+      setError("Confirm you are 18 or older to continue.")
       return
     }
     await submitOnboarding(selectedRole!, profileData)
@@ -405,56 +402,109 @@ export function OnboardingFlow({ userName }: OnboardingFlowProps) {
 
   const handleOperatorContinue = async () => {
     if (!adultAttested) {
-      setError("Please confirm you are 18 years of age or older to continue.")
+      setError("Confirm you are 18 or older to continue.")
       return
     }
     await submitOnboarding(selectedRole!)
   }
 
-  /** K-008: look up the just-created Player and send the GUARDIAN invite.
-   *  Shared by the automatic post-save send and the recovery screen's retry. */
-  const sendParentInvite = async (): Promise<boolean> => {
+  /** The Player row created by the profile POST. */
+  async function ownPlayerId(): Promise<string | null> {
+    try {
+      const res = await fetch("/api/players")
+      const data = await res.json().catch(() => ({}))
+      return data?.players?.[0]?.id ?? null
+    } catch {
+      return null
+    }
+  }
+
+  /** K-008: send the GUARDIAN invite. Shared with the recovery screen retry. */
+  const sendParentInvite = async (email: string): Promise<boolean> => {
     setInviteBusy(true)
     setInviteError(null)
     try {
-      const pr = await fetch("/api/players")
-      const pd = await pr.json().catch(() => ({}))
-      const playerId = pd?.players?.[0]?.id
+      const playerId = await ownPlayerId()
       if (!playerId) {
         throw new Error(
-          "Couldn't look up your player profile. You can invite them anytime from your profile page."
+          "We couldn't find your player profile. You can invite them anytime from your profile page."
         )
       }
       const r = await fetch("/api/family-invitations", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          type: "GUARDIAN",
-          playerId,
-          email: inviteEmail.trim(),
-          preferClaim: parentAlreadyAdded,
-        }),
+        body: JSON.stringify({ type: "GUARDIAN", playerId, email: email.trim() }),
       })
       const d = await r.json().catch(() => ({}))
-      if (!r.ok) throw new Error(d.error || "Couldn't send the invite")
+      if (!r.ok) throw new Error(d.error || "We couldn't send that invite")
       setInviteSent(true)
       return true
     } catch (e) {
-      setInviteError(e instanceof Error ? e.message : "Couldn't send the invite")
+      setInviteError(e instanceof Error ? e.message : "We couldn't send that invite")
       return false
     } finally {
       setInviteBusy(false)
     }
   }
 
+  /**
+   * MATCH state: no email, no name, no address. The server already knows
+   * which parent made the profile, so it resolves the target itself
+   * (autoClaim). birthYear is the cross-check the API asks for.
+   */
+  async function sendAutoClaim(): Promise<boolean> {
+    try {
+      const playerId = await ownPlayerId()
+      if (!playerId) return false
+      const r = await fetch("/api/family-invitations", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          type: "GUARDIAN",
+          playerId,
+          autoClaim: true,
+          ...(guardian.birthYear ? { birthYear: guardian.birthYear } : {}),
+        }),
+      })
+      return r.ok
+    } catch {
+      return false
+    }
+  }
+
+  /** CODE state: redeem after the Player row exists, never before. */
+  async function redeemGuardianCode(): Promise<Outcome> {
+    try {
+      const r = await fetch("/api/family/link-code/redeem", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code: guardian.code.trim() }),
+      })
+      const d = await r.json().catch(() => ({}))
+      if (!r.ok) {
+        return {
+          kind: "code-failed",
+          message: d.error || "That code did not work. Check it and try again.",
+        }
+      }
+      const mine = await ownPlayerId()
+      return {
+        kind: "linked",
+        playerId: d.playerId || mine || "",
+        mergeCandidate: d.mergeCandidate,
+      }
+    } catch {
+      return { kind: "code-failed", message: "That code did not work. Check it and try again." }
+    }
+  }
+
   const submitOnboarding = async (role: string, profileData?: ProfileData) => {
     setError(null)
 
-    // K-007 as ruled 2026-08-12: save the handle BEFORE creating the role
-    // (Kai's ordering, which is right), but never let it stop onboarding.
-    // Empty keeps the default reserved at signup. A taken handle is said out
-    // loud once so the choice isn't swallowed, and the next Continue goes
-    // through on the default.
+    // K-007 as ruled 2026-08-12: save the handle BEFORE creating the role,
+    // but never let it stop onboarding. Empty keeps the default reserved at
+    // signup. A taken handle is said out loud once so the choice isn't
+    // swallowed, and the next Continue goes through on the default.
     const trimmedHandle = handleDraft.trim().toLowerCase()
     setIsSubmitting(true)
     if (trimmedHandle && trimmedHandle !== reservedHandle && !handleWarned) {
@@ -467,9 +517,10 @@ export function OnboardingFlow({ userName }: OnboardingFlowProps) {
         const hd = await hr.json().catch(() => ({}))
         if (!hr.ok) {
           setError(
-            `${hd.error || "That handle isn't available."} Pick another, or press Continue again to keep ${reservedHandle ? `@${reservedHandle}` : "the one we reserved for you"}.`
+            `${hd.error || "That handle isn't available."} Pick another, or press Finish again to keep ${reservedHandle ? `@${reservedHandle}` : "the one we reserved for you"}.`
           )
           setHandleWarned(true)
+          setHandleEditing(true)
           setIsSubmitting(false)
           return
         }
@@ -499,22 +550,39 @@ export function OnboardingFlow({ userName }: OnboardingFlowProps) {
         return
       }
 
-      // Every role now finishes through /post-login, which runs the onboarding
-      // soft gate (the /welcome checklist) — including club owners, whose first
-      // checklist step is "Create your club". A full reload lets the server
+      // Every role finishes through /post-login, which runs the onboarding
+      // soft gate (the /welcome checklist). A full reload lets the server
       // layouts pick up the fresh session/roles; an explicit deep-link
       // callbackUrl still wins.
       const dest = callbackUrl ?? "/post-login"
-      // K-008: the optional parent email collected on the profile step fires
-      // now — the Player record exists as of this successful POST. Success
-      // goes straight on; failure opens the recovery screen (retry/skip).
-      if (role === "Player" && inviteEmail.trim()) {
-        setPendingDest(dest)
-        const sent = await sendParentInvite()
-        if (!sent) {
+      setPendingDest(dest)
+
+      // K-008: the guardian ask fires now — the Player record exists as of
+      // this successful POST, and all three paths need it.
+      if (role === "Player") {
+        if (guardian.mode === "claim" && guardian.matched) {
+          const ok = await sendAutoClaim()
           setIsSubmitting(false)
+          setOutcome(ok ? { kind: "claim-sent" } : { kind: "invite-failed" })
           setStep("family")
           return
+        }
+        if (guardian.mode === "code" && guardian.code.trim()) {
+          const result = await redeemGuardianCode()
+          setIsSubmitting(false)
+          setOutcome(result)
+          setStep("family")
+          return
+        }
+        if (guardian.mode === "email" && guardian.email.trim()) {
+          const sent = await sendParentInvite(guardian.email)
+          if (!sent) {
+            setIsSubmitting(false)
+            setRecoveryEmail(guardian.email)
+            setOutcome({ kind: "invite-failed" })
+            setStep("family")
+            return
+          }
         }
       }
       window.location.href = dest
@@ -524,238 +592,366 @@ export function OnboardingFlow({ userName }: OnboardingFlowProps) {
     }
   }
 
+  const goToDest = () => {
+    window.location.href = pendingDest
+  }
+
+  // ---------------------------------------------------------------- terminal
   if (step === "family") {
+    const done = outcome.kind === "claim-sent" || outcome.kind === "linked"
     return (
-      <div className="border-ink-100 rounded-3xl border bg-white p-8 shadow-[0_22px_70px_-42px_rgba(15,23,42,0.45)]">
-        <div className="space-y-6">
-          <div>
-            <h2 className="text-ink-900 text-xl font-semibold">
-              One last thing, invite your parent or guardian
-              <span className="text-ink-400 font-normal"> (optional)</span>
-            </h2>
-            <p className="text-ink-700 mt-1 text-sm">
-              That email didn&apos;t go through. They approve payments and permissions, so it is
-              worth another try. You keep your own login either way.
+      <Shell
+        hero={
+          <Hero
+            stepLabel="Almost there"
+            greeting={
+              done ? (
+                <>
+                  You&apos;re <span className="text-amber-400">in.</span>
+                </>
+              ) : (
+                <>
+                  One last <span className="text-amber-400">thing.</span>
+                </>
+              )
+            }
+            subtitle={
+              done
+                ? "Your account is ready. Here is what happens next."
+                : "Your account is ready. This part is optional."
+            }
+          />
+        }
+      >
+        {outcome.kind === "claim-sent" && (
+          <div className="space-y-5">
+            <p className="border-court-200 bg-court-50/70 text-court-800 rounded-xl border p-4 text-sm font-semibold">
+              Done. Your parent will get a request to approve.
             </p>
-          </div>
-
-          {inviteSent ? (
-            <p className="text-court-700 border-court-200 bg-court-50/60 rounded-xl border p-4 text-sm font-semibold">
-              Sent. They&apos;ll get an email with a link to connect to your account.
-            </p>
-          ) : (
-            <div>
-              <input
-                type="email"
-                value={inviteEmail}
-                onChange={(e) => setInviteEmail(e.target.value)}
-                placeholder="parent@example.com"
-                className="border-ink-200 focus:border-play-500 block w-full rounded-xl border px-3 py-2.5 text-sm shadow-sm focus:outline-none"
-              />
-              {inviteError && <p className="mt-2 text-sm text-red-600">{inviteError}</p>}
-            </div>
-          )}
-
-          <div className="flex items-center gap-4">
-            <button
-              type="button"
-              onClick={() => (window.location.href = pendingDest)}
-              className="text-ink-500 hover:text-ink-800 text-sm font-semibold"
-            >
-              {inviteSent ? "Continue" : "Skip for now"}
+            <button type="button" onClick={goToDest} className={`${primaryButtonClass} w-full`}>
+              Continue
             </button>
-            {!inviteSent && (
-              <button
-                type="button"
-                disabled={inviteBusy || !inviteEmail.trim()}
-                onClick={() => void sendParentInvite()}
-                className={primaryButtonClass}
-              >
-                {inviteBusy ? "Sending…" : "Try again"}
-              </button>
-            )}
-            {inviteSent && (
-              <button
-                type="button"
-                onClick={() => (window.location.href = pendingDest)}
-                className={primaryButtonClass}
-              >
+          </div>
+        )}
+
+        {outcome.kind === "linked" && (
+          <div className="space-y-5">
+            <p className="border-court-200 bg-court-50/70 text-court-800 rounded-xl border p-4 text-sm font-semibold">
+              Linked. Your parent can see your account now.
+            </p>
+            {outcome.mergeCandidate ? (
+              <MergeOffer
+                sourcePlayerId={outcome.playerId}
+                candidate={outcome.mergeCandidate}
+                onDone={goToDest}
+              />
+            ) : (
+              <button type="button" onClick={goToDest} className={`${primaryButtonClass} w-full`}>
                 Continue
               </button>
             )}
           </div>
-        </div>
-      </div>
+        )}
+
+        {(outcome.kind === "invite-failed" || outcome.kind === "code-failed") && (
+          <div className="space-y-5">
+            <p className="text-ink-700 text-sm leading-6">
+              {outcome.kind === "code-failed"
+                ? `${outcome.message} You can send them an email instead.`
+                : "That email didn't go through. They approve payments and permissions, so it is worth another try."}
+            </p>
+
+            {inviteSent ? (
+              <p className="border-court-200 bg-court-50/70 text-court-800 rounded-xl border p-4 text-sm font-semibold">
+                Sent. They get an email with a link to connect to your account.
+              </p>
+            ) : (
+              <div>
+                <label htmlFor="recovery-email" className="text-ink-800 block text-sm font-medium">
+                  Parent or guardian email
+                </label>
+                <input
+                  id="recovery-email"
+                  type="email"
+                  value={recoveryEmail}
+                  onChange={(e) => setRecoveryEmail(e.target.value)}
+                  placeholder="parent@example.com"
+                  className="border-ink-200 focus:border-play-500 focus:ring-play-500/20 mt-1 block min-h-[44px] w-full rounded-xl border px-3 py-2.5 text-sm shadow-sm transition duration-200 focus:outline-none focus:ring-2"
+                />
+                {inviteError && <p className="mt-2 text-sm text-red-600">{inviteError}</p>}
+              </div>
+            )}
+
+            <div className="flex items-center gap-3">
+              <button type="button" onClick={goToDest} className={quietButtonClass}>
+                {inviteSent ? "Continue" : "Skip for now"}
+              </button>
+              {!inviteSent && (
+                <button
+                  type="button"
+                  disabled={inviteBusy || !recoveryEmail.trim()}
+                  onClick={() => void sendParentInvite(recoveryEmail)}
+                  className={primaryButtonClass}
+                >
+                  {inviteBusy ? "Sending..." : "Send it"}
+                </button>
+              )}
+              {inviteSent && (
+                <button type="button" onClick={goToDest} className={primaryButtonClass}>
+                  Continue
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+      </Shell>
     )
   }
 
+  // ----------------------------------------------------------------- profile
   if (step === "profile" && selectedRole) {
+    const isOperatorOnly = selectedRole === "ClubOwner" || selectedRole === "Trainer"
+    const showBack = !preset
+
     return (
-      <div className="border-ink-100 rounded-3xl border bg-white p-8 shadow-[0_22px_70px_-42px_rgba(15,23,42,0.45)]">
-        {error && (
-          <div className="border-hoop-200 text-hoop-700 mb-6 rounded-lg border bg-red-50 p-3 text-sm">
-            {error}
-          </div>
-        )}
+      <Shell
+        hero={
+          <Hero
+            stepLabel={preset ? "Last step" : "Step 2 of 2"}
+            greeting={
+              <>
+                Welcome, <span className="text-amber-400">{firstName}.</span>
+              </>
+            }
+            subtitle={
+              selectedRole === "Player"
+                ? "A few details and your season page is live. You must be 13 or older."
+                : "A few details and you are set up."
+            }
+          >
+            <HandleChip
+              reserved={reservedHandle}
+              draft={handleDraft}
+              loaded={handleLoaded}
+              editing={handleEditing}
+              onDraftChange={setHandleDraft}
+              onEditingChange={setHandleEditing}
+            />
+          </Hero>
+        }
+      >
+        {error && <ErrorBox>{error}</ErrorBox>}
 
-        <HandleField draft={handleDraft} reserved={reservedHandle} onChange={setHandleDraft} />
-
-        {selectedRole === "Player" && (
-          <GuardianInviteBlock
-            email={inviteEmail}
-            onEmailChange={setInviteEmail}
-            alreadyAdded={parentAlreadyAdded}
-            onAlreadyAddedChange={setParentAlreadyAdded}
-          />
-        )}
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+          <span className="border-play-100 bg-play-50 text-play-700 inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-[12.5px] font-bold">
+            <RoleIcon icon={roleOption?.icon ?? "player"} />
+            {roleOption?.title}
+          </span>
+          {preset && (
+            <button type="button" onClick={() => setStep("role")} className={changeLinkClass}>
+              Not a {roleOption?.label}? Change
+            </button>
+          )}
+        </div>
 
         {selectedRole === "Parent" && (
           <>
-            <ParentInfoCallouts />
             <ParentForm
               onSubmit={handleProfileSubmit}
               onBack={() => setStep("role")}
               isSubmitting={isSubmitting}
+              showBack={showBack}
             />
+            <p className="text-ink-500 mt-4 text-[13px] leading-5">
+              Player profiles are private by default, and you approve who follows your kids. You can
+              give a 13+ child their own login later.
+            </p>
           </>
         )}
+
         {selectedRole === "Player" && (
           <PlayerForm
             onSubmit={handleProfileSubmit}
             onBack={() => setStep("role")}
             isSubmitting={isSubmitting}
+            showBack={showBack}
+            onDateOfBirthChange={setPlayerDob}
+            afterFields={
+              <GuardianBlock
+                dateOfBirth={playerDob}
+                state={guardian}
+                onChange={setGuardian}
+                onCheckResult={(matched, birthYear) =>
+                  setGuardian((g) =>
+                    g.matched === matched && g.birthYear === birthYear
+                      ? g
+                      : { ...g, matched, birthYear }
+                  )
+                }
+              />
+            }
           />
         )}
+
         {selectedRole === "Staff" && (
           <StaffForm
             onSubmit={handleProfileSubmit}
             onBack={() => setStep("role")}
             isSubmitting={isSubmitting}
+            showBack={showBack}
           />
         )}
+
         {selectedRole === "Referee" && (
-          <>
-            <AdultAttestationCheckbox checked={adultAttested} onChange={setAdultAttested} />
-            <div className="mt-6">
-              <RefereeForm
-                onSubmit={handleProfileSubmit}
-                onBack={() => setStep("role")}
-                isSubmitting={isSubmitting}
-              />
-            </div>
-          </>
+          <div className="space-y-4">
+            <BrandCheckbox
+              checked={adultAttested}
+              onChange={setAdultAttested}
+              label="I am 18 years of age or older"
+              subLabel="Running clubs and leagues, officiating and training are adult roles."
+            />
+            <RefereeForm
+              onSubmit={handleProfileSubmit}
+              onBack={() => setStep("role")}
+              isSubmitting={isSubmitting}
+              showBack={showBack}
+            />
+          </div>
         )}
+
         {selectedRole === "LeagueOwner" && (
-          <>
-            <AdultAttestationCheckbox checked={adultAttested} onChange={setAdultAttested} />
-            <div className="mt-6">
-              <LeagueOwnerForm
-                onSubmit={handleProfileSubmit}
-                onBack={() => setStep("role")}
-                isSubmitting={isSubmitting}
-              />
-            </div>
-          </>
+          <div className="space-y-4">
+            <BrandCheckbox
+              checked={adultAttested}
+              onChange={setAdultAttested}
+              label="I am 18 years of age or older"
+              subLabel="Running clubs and leagues, officiating and training are adult roles."
+            />
+            <LeagueOwnerForm
+              onSubmit={handleProfileSubmit}
+              onBack={() => setStep("role")}
+              isSubmitting={isSubmitting}
+              showBack={showBack}
+            />
+          </div>
         )}
-        {(selectedRole === "ClubOwner" || selectedRole === "Trainer") && (
-          <div className="space-y-6">
-            <div>
-              <h2 className="text-ink-900 text-xl font-semibold">
-                {selectedRole === "ClubOwner" ? "Before you create your club" : "Before you set up training"}
-              </h2>
-              <p className="text-ink-700 mt-1 text-sm">One quick confirmation before we continue.</p>
-            </div>
-            <AdultAttestationCheckbox checked={adultAttested} onChange={setAdultAttested} />
-            <div className="flex gap-4">
-              <button
-                type="button"
-                onClick={() => setStep("role")}
-                className="border-ink-200 rounded-xl border bg-white px-4 py-2.5 font-semibold text-ink-700 transition hover:bg-court-50"
-              >
-                Back
-              </button>
+
+        {isOperatorOnly && (
+          <div className="space-y-4">
+            <p className="text-ink-700 text-sm leading-6">
+              {selectedRole === "ClubOwner"
+                ? "One confirmation, then you can create your club."
+                : "One confirmation, then you can set up your training."}
+            </p>
+            <BrandCheckbox
+              checked={adultAttested}
+              onChange={setAdultAttested}
+              label="I am 18 years of age or older"
+              subLabel="Running clubs and leagues, officiating and training are adult roles."
+            />
+            <div className="flex gap-3">
+              {showBack && (
+                <button
+                  type="button"
+                  onClick={() => setStep("role")}
+                  className="border-ink-200 text-ink-700 hover:bg-court-50 min-h-[44px] cursor-pointer rounded-xl border bg-white px-4 py-2.5 font-semibold transition-colors duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-play-500 focus-visible:ring-offset-2"
+                >
+                  Back
+                </button>
+              )}
               <button
                 type="button"
                 onClick={handleOperatorContinue}
                 disabled={isSubmitting || !adultAttested}
-                className="bg-play-600 hover:bg-play-700 disabled:bg-ink-400 flex-1 rounded-xl px-4 py-3 font-semibold text-white shadow-sm transition disabled:cursor-not-allowed"
+                className={primaryButtonClass}
               >
                 {isSubmitting ? "Setting up..." : "Continue"}
               </button>
             </div>
           </div>
         )}
-
-        <p className="text-ink-500 mt-4 text-center text-sm">Step 2 of 2: Complete your profile</p>
-      </div>
+      </Shell>
     )
   }
 
-  // Step 1: Role Selection
+  // -------------------------------------------------------------------- role
   return (
-    <div className="border-ink-100 rounded-3xl border bg-white p-8 shadow-[0_22px_70px_-42px_rgba(15,23,42,0.45)]">
-      <h1 className="text-ink-900 mb-2 text-3xl font-semibold">Welcome, {userName}!</h1>
-      <p className="text-ink-700 mb-8">
-        What best describes you? Pick your primary role to get started. You can take on more roles
-        anytime by adding a child, creating a club or league, or becoming a referee.
-      </p>
+    <Shell
+      hero={
+        <Hero
+          stepLabel="Step 1 of 2"
+          greeting={
+            <>
+              Welcome, <span className="text-amber-400">{firstName}.</span>
+            </>
+          }
+          subtitle="Pick what you do most. You can add more later, any time."
+        >
+          <HandleChip
+            reserved={reservedHandle}
+            draft={handleDraft}
+            loaded={handleLoaded}
+            editing={handleEditing}
+            onDraftChange={setHandleDraft}
+            onEditingChange={setHandleEditing}
+          />
+        </Hero>
+      }
+    >
+      {error && <ErrorBox>{error}</ErrorBox>}
 
-      <div className="space-y-3">
+      <div role="radiogroup" aria-label="Your role" className="grid gap-2.5 sm:grid-cols-2">
         {ROLE_OPTIONS.map((option) => {
           const isSelected = selectedRole === option.id
-
           return (
             <button
               key={option.id}
               type="button"
+              role="radio"
+              aria-checked={isSelected}
               onClick={() => setSelectedRole(option.id)}
-              className={`flex w-full items-center gap-4 rounded-2xl border px-5 py-4 text-left transition ${
+              className={`flex min-h-[44px] w-full cursor-pointer items-start gap-3 rounded-2xl border px-3.5 py-3 text-left transition-colors duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-play-500 focus-visible:ring-offset-2 ${
                 isSelected
                   ? "border-play-500 bg-play-50"
-                  : "border-ink-100 hover:border-play-300 hover:bg-play-50/50 bg-white"
+                  : "border-ink-200 hover:border-play-300 hover:bg-play-50/50 bg-white"
               }`}
             >
-              {/* Radio circle */}
-              <div
-                className={`flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full border-2 transition ${
+              <span
+                className={`mt-1 flex h-[18px] w-[18px] flex-shrink-0 items-center justify-center rounded-full border-2 transition-colors duration-200 ${
                   isSelected ? "border-play-500 bg-play-500" : "border-ink-300 bg-white"
                 }`}
+                aria-hidden="true"
               >
-                {isSelected && <div className="h-2 w-2 rounded-full bg-white" />}
-              </div>
-
-              {/* Icon */}
-              <div
-                className={`rounded-xl p-2 ${isSelected ? "text-play-700 bg-white" : "bg-court-50 text-ink-700"}`}
+                {isSelected && <span className="h-1.5 w-1.5 rounded-full bg-white" />}
+              </span>
+              <span
+                className={`flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl transition-colors duration-200 ${
+                  isSelected ? "text-play-700 bg-white" : "bg-court-50 text-ink-700"
+                }`}
               >
                 <RoleIcon icon={option.icon} />
-              </div>
-
-              {/* Text */}
-              <div className="flex-1">
-                <div className="text-ink-900 text-lg font-semibold">{option.title}</div>
-                <div className="text-ink-700 mt-0.5 text-sm">{option.description}</div>
-              </div>
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="text-ink-900 block text-[15px] font-bold leading-5">
+                  {option.title}
+                </span>
+                <span className="text-ink-600 mt-0.5 block text-[12.5px] leading-4">
+                  {option.description}
+                </span>
+              </span>
             </button>
           )
         })}
       </div>
 
-      {error && (
-        <div className="border-hoop-200 text-hoop-700 mt-6 rounded-lg border bg-red-50 p-3 text-sm">
-          {error}
-        </div>
-      )}
-
       <button
+        type="button"
         onClick={handleRoleContinue}
         disabled={isSubmitting || !selectedRole}
-        className="bg-play-600 hover:bg-play-700 disabled:bg-ink-400 mt-8 w-full rounded-xl px-6 py-4 text-lg font-semibold text-white transition disabled:cursor-not-allowed"
+        className="bg-play-600 hover:bg-play-700 disabled:bg-ink-400 mt-5 min-h-[44px] w-full cursor-pointer rounded-xl px-6 py-3.5 text-[16px] font-semibold text-white shadow-sm transition-colors duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-play-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed"
       >
-        {isSubmitting ? "Setting up your account..." : "Continue"}
+        Continue
       </button>
-
-      <p className="text-ink-500 mt-4 text-center text-sm">Step 1 of 2: Choose your role</p>
-    </div>
+    </Shell>
   )
 }
