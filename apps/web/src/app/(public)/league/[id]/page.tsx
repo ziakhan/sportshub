@@ -11,7 +11,16 @@ import { getSeasonLeaders } from "@/lib/queries/season-stats"
 import { resolveCoverUrl } from "@/lib/queries/content"
 import { getViewerScope, isParticipant } from "@/lib/privacy/participants"
 import { playerDisplayName } from "@/lib/privacy/names"
-import { Badge, Card, NewsCard, ScoreCard, SectionHeader, SmartBack, StandingsTable } from "@/components/ui"
+import {
+  Badge,
+  Card,
+  CourtBackdropLayer,
+  NewsCard,
+  ScoreCard,
+  SectionHeader,
+  SmartBack,
+  StandingsTable,
+} from "@/components/ui"
 import { socialLinks } from "@/lib/club-page/blocks"
 import { brandStyle } from "@/lib/club-page/brand"
 import { FollowButton } from "@/components/follow-button"
@@ -208,124 +217,153 @@ export default async function PublicLeagueHubPage({ params }: { params: { id: st
         <SmartBack fallback="/leagues" fallbackLabel="Leagues" className="-ml-1" />
       </div>
 
-      {/* Branded league hero (customizable — docs/roadmap/customizable-pages.md) */}
-      <header
-        className="relative mb-10 overflow-hidden rounded-3xl text-white"
-        style={{ backgroundColor: brand?.primaryColor || "#1d4ed8" }}
-      >
+      {/* Branded league hero (customizable — docs/roadmap/customizable-pages.md).
+          Court system v2: the daylight band, same treatment as EntityHeader on
+          the team / org hubs. The league's colour carries the crest and the 4px
+          baseline stripe; chips are white-on-ring so they read on the maple. */}
+      <header className="relative mb-10 overflow-hidden rounded-3xl border border-[#e7dbc4]">
+        {/* A league that uploaded cover art keeps it, as the strip above the
+            identity band instead of a wash under white text. */}
         {brand?.bannerUrl && (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={brand.bannerUrl} alt="" className="absolute inset-0 h-full w-full object-cover" />
-        )}
-        <div className="absolute inset-0 bg-gradient-to-br from-black/25 via-black/45 to-black/80" />
-        <div aria-hidden className="absolute -right-16 -top-20 h-72 w-72 rounded-full bg-white/10 blur-2xl" />
-        <div className="relative p-6 sm:p-8">
-          {canManageLeague && leagueId && (
-            <Link
-              href={`/manage/leagues/${leagueId}/customize`}
-              className="brand-focus absolute right-4 top-4 inline-flex items-center gap-1.5 rounded-lg border border-white/40 bg-white/15 px-3 py-1.5 text-xs font-semibold text-white backdrop-blur transition hover:bg-white/25"
-            >
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-3.5 w-3.5">
-                <path d="M4 20h4L18 10l-4-4L4 16v4z" strokeLinejoin="round" />
-                <path d="M13.5 6.5l4 4" strokeLinecap="round" />
-              </svg>
-              Edit page
-            </Link>
-          )}
-          <div className="flex flex-wrap items-end gap-4">
-            {brand?.logoUrl && (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={brand.logoUrl}
-                alt={`${leagueName} logo`}
-                className="h-16 w-16 flex-shrink-0 rounded-2xl border-2 border-white/50 bg-white object-cover shadow sm:h-24 sm:w-24"
-              />
-            )}
-            <div className="min-w-0 flex-1">
-              <h1 className="font-condensed text-3xl font-bold uppercase leading-[0.95] tracking-tight drop-shadow sm:text-5xl">
-                {leagueName ?? "League"}
-              </h1>
-              {brand?.tagline && (
-                <p className="mt-2 text-sm font-medium text-white/90 drop-shadow sm:text-base">
-                  {brand.tagline}
-                </p>
-              )}
-              <div className="mt-2.5 flex flex-wrap items-center gap-2 text-xs">
-                {season.status === "IN_PROGRESS" && (
-                  <span className="bg-gold-400 text-ink-950 rounded-full px-2.5 py-1 font-bold uppercase tracking-wide">
-                    Season underway
-                  </span>
-                )}
-                {isOpen && !deadlinePassed && (
-                  <span className="bg-court-400 text-court-950 inline-flex items-center gap-1 rounded-full px-2.5 py-1 font-bold uppercase tracking-wide">
-                    <span aria-hidden className="bg-court-700 h-1.5 w-1.5 rounded-full" />
-                    Registration open
-                  </span>
-                )}
-                {season.label && (
-                  <span className="rounded-full bg-white/15 px-2.5 py-1 font-medium backdrop-blur">
-                    {season.label}
-                  </span>
-                )}
-                {isOpen && !deadlinePassed && (
-                  <Link
-                    href={`/seasons/${season.id}/enter`}
-                    className="bg-white/90 text-ink-900 rounded-full px-2.5 py-1 font-bold uppercase tracking-wide transition hover:bg-white"
-                  >
-                    Enter as a club &rarr;
-                  </Link>
-                )}
-                {runBy && (
-                  <Link
-                    href={`/org/${runBy.slug}`}
-                    className="rounded-full bg-white/15 px-2.5 py-1 font-medium backdrop-blur transition hover:bg-white/25"
-                  >
-                    Run by {runBy.name} &rarr;
-                  </Link>
-                )}
-              </div>
-            </div>
-            {leagueId && (
-              <FollowButton
-                leagueId={leagueId}
-                initialFollowing={leagueFollowed}
-                isAuthenticated={!!viewerId}
-                variant="banner"
-              />
-            )}
+          <div className="h-24 w-full overflow-hidden border-b border-[#e7dbc4] sm:h-32">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={brand.bannerUrl} alt="" className="h-full w-full object-cover" />
           </div>
-          {season.league?.description && (
-            <p className="mt-3 max-w-2xl text-sm leading-relaxed text-white/85 line-clamp-3">
-              {season.league.description}
-            </p>
-          )}
-          {socialLinks(brand?.socials).length > 0 && (
-            <div className="mt-3 flex flex-wrap gap-2">
-              {socialLinks(brand?.socials).map((l) => (
-                <a
-                  key={l.key}
-                  href={l.href}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="brand-focus inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-white/30 bg-white/10 px-2.5 py-1 text-xs font-medium text-white transition hover:bg-white/20"
-                >
-                  <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-white/70" />
-                  {l.label}
-                </a>
-              ))}
-            </div>
-          )}
-          {/* Quick-stats strip */}
-          <div className="mt-6 grid grid-cols-2 gap-px overflow-hidden rounded-2xl border border-white/15 bg-white/10 sm:grid-cols-4">
-            {leagueStats.map((s) => (
-              <div key={s.label} className="bg-black/10 px-4 py-3 backdrop-blur">
-                <div className="font-condensed text-3xl font-bold leading-none">{s.value}</div>
-                <div className="mt-1 text-[11px] font-medium uppercase tracking-wide text-white/75">
-                  {s.label}
+        )}
+        <div className="relative isolate overflow-hidden">
+          <CourtBackdropLayer variant="daylight" intensity="band" />
+          <div className="relative z-10 p-6 pb-7 sm:p-8 sm:pb-9">
+            {canManageLeague && leagueId && (
+              <Link
+                href={`/manage/leagues/${leagueId}/customize`}
+                className="brand-focus border-ink-200 text-ink-700 absolute right-4 top-4 inline-flex items-center gap-1.5 rounded-lg border bg-white/90 px-3 py-1.5 text-xs font-semibold shadow-sm transition hover:bg-white"
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-3.5 w-3.5">
+                  <path d="M4 20h4L18 10l-4-4L4 16v4z" strokeLinejoin="round" />
+                  <path d="M13.5 6.5l4 4" strokeLinecap="round" />
+                </svg>
+                Edit page
+              </Link>
+            )}
+            <div className="flex flex-wrap items-end gap-4">
+              {/* Crest: the logo when there is one, otherwise the league colour
+                  carrying its initial (same rule as EntityHeader). */}
+              <span
+                className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-2xl text-2xl font-black text-white shadow-lg sm:h-24 sm:w-24 sm:text-3xl"
+                style={{
+                  backgroundColor: brand?.logoUrl ? "#ffffff" : brand?.primaryColor || "#1d4ed8",
+                }}
+              >
+                {brand?.logoUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={brand.logoUrl}
+                    alt={`${leagueName} logo`}
+                    className="h-full w-full object-cover"
+                  />
+                ) : (
+                  (leagueName ?? "League").slice(0, 1).toUpperCase()
+                )}
+              </span>
+              {/* min-w keeps the name column readable: on a phone the crest
+                  takes its own line instead of squeezing the title into two
+                  words (same rule as EntityHeader). */}
+              <div className="min-w-[15rem] flex-1">
+                <h1 className="font-display text-ink-950 text-[28px] font-black leading-[1.03] tracking-[-0.02em] break-words sm:text-[42px]">
+                  {leagueName ?? "League"}
+                </h1>
+                {brand?.tagline && (
+                  <p className="text-ink-600 mt-1.5 text-sm font-medium sm:text-base">
+                    {brand.tagline}
+                  </p>
+                )}
+                <div className="mt-3 flex flex-wrap items-center gap-2 text-xs">
+                  {season.status === "IN_PROGRESS" && (
+                    <span className="rounded-full border border-[#f5d489] bg-white/90 px-3 py-1 font-bold uppercase tracking-wide text-[#b45309] shadow-sm">
+                      Season underway
+                    </span>
+                  )}
+                  {isOpen && !deadlinePassed && (
+                    <span className="border-court-200 text-court-700 inline-flex items-center gap-1.5 rounded-full border bg-white/90 px-3 py-1 font-bold uppercase tracking-wide shadow-sm">
+                      <span aria-hidden className="bg-court-500 h-1.5 w-1.5 rounded-full" />
+                      Registration open
+                    </span>
+                  )}
+                  {season.label && (
+                    <span className="border-ink-200 text-ink-700 rounded-full border bg-white/90 px-3 py-1 font-semibold shadow-sm">
+                      {season.label}
+                    </span>
+                  )}
+                  {isOpen && !deadlinePassed && (
+                    <Link
+                      href={`/seasons/${season.id}/enter`}
+                      className="border-ink-200 rounded-full border bg-white/90 px-3 py-1 font-bold uppercase tracking-wide text-[color:var(--brand-ink)] shadow-sm transition hover:bg-white"
+                    >
+                      Enter as a club &rarr;
+                    </Link>
+                  )}
+                  {runBy && (
+                    <Link
+                      href={`/org/${runBy.slug}`}
+                      className="border-ink-200 text-ink-700 rounded-full border bg-white/90 px-3 py-1 font-semibold shadow-sm transition hover:bg-white"
+                    >
+                      Run by {runBy.name} &rarr;
+                    </Link>
+                  )}
                 </div>
               </div>
-            ))}
+              {leagueId && (
+                <FollowButton
+                  leagueId={leagueId}
+                  initialFollowing={leagueFollowed}
+                  isAuthenticated={!!viewerId}
+                  /* The band is daylight now: the dark-banner styling would
+                     disappear on the maple. */
+                  variant="light"
+                />
+              )}
+            </div>
+            {season.league?.description && (
+              <p className="text-ink-600 mt-4 max-w-2xl text-sm leading-relaxed line-clamp-3">
+                {season.league.description}
+              </p>
+            )}
+            {socialLinks(brand?.socials).length > 0 && (
+              <div className="mt-3 flex flex-wrap gap-2">
+                {socialLinks(brand?.socials).map((l) => (
+                  <a
+                    key={l.key}
+                    href={l.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="brand-focus border-ink-200 text-ink-700 inline-flex cursor-pointer items-center gap-1.5 rounded-lg border bg-white/90 px-2.5 py-1 text-xs font-semibold shadow-sm transition hover:bg-white"
+                  >
+                    <span aria-hidden className="bg-ink-300 h-1.5 w-1.5 rounded-full" />
+                    {l.label}
+                  </a>
+                ))}
+              </div>
+            )}
+            {/* Quick-stats strip */}
+            <div className="mt-6 grid grid-cols-2 gap-px overflow-hidden rounded-2xl border border-[#e7dbc4] bg-[#e7dbc4] sm:grid-cols-4">
+              {leagueStats.map((s) => (
+                <div key={s.label} className="bg-white/85 px-4 py-3 backdrop-blur">
+                  <div className="font-display text-ink-950 text-3xl font-black leading-none">
+                    {s.value}
+                  </div>
+                  <div className="text-ink-500 mt-1 text-[11px] font-semibold uppercase tracking-wide">
+                    {s.label}
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
+          {/* The baseline: the league's own colour, 4px along the bottom edge. */}
+          <span
+            aria-hidden="true"
+            className="absolute inset-x-0 bottom-0 z-10 h-1"
+            style={{ backgroundColor: brand?.primaryColor || "#1d4ed8" }}
+          />
         </div>
       </header>
 
