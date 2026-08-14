@@ -7,26 +7,39 @@ import { isCoppaMinor } from "@/lib/coppa"
 import { notifySafe } from "@/lib/notifications"
 import { sendEmail, appBaseUrl, escapeHtml, transactionalFooter } from "@/lib/email"
 import { normalizedEmailSchema } from "@/lib/validations/email"
-import { findClaimTarget } from "@/lib/family/claim-target"
+import { findClaimTarget, resolveAutoClaimTarget } from "@/lib/family/claim-target"
 
 export const dynamic = "force-dynamic"
 
 const INVITE_TTL_DAYS = 14
 
-const createSchema = z.object({
-  type: z.enum(["CHILD_LOGIN", "GUARDIAN"]),
-  playerId: z.string(),
-  email: normalizedEmailSchema("Enter a valid email address"),
-  /**
-   * The kid answered "yes, a parent already added me" (parent-child linking
-   * arc 2026-08-12). The server looks for a player row under that email
-   * matching this kid's name and birth year; a hit turns the guardian invite
-   * into a CHILD_CLAIM request. The answer never travels back — both
-   * outcomes return the same response, so this can't be used to find out
-   * whether an email has an account.
-   */
-  preferClaim: z.boolean().optional(),
-})
+const createSchema = z
+  .object({
+    type: z.enum(["CHILD_LOGIN", "GUARDIAN"]),
+    playerId: z.string(),
+    email: normalizedEmailSchema("Enter a valid email address").optional(),
+    /**
+     * The kid answered "yes, a parent already added me" (parent-child linking
+     * arc 2026-08-12). The server looks for a player row under that email
+     * matching this kid's name and birth year; a hit turns the guardian invite
+     * into a CHILD_CLAIM request. The answer never travels back — both
+     * outcomes return the same response, so this can't be used to find out
+     * whether an email has an account.
+     */
+    preferClaim: z.boolean().optional(),
+    /**
+     * The same ask with no email at all (2026-08-13). Onboarding already found
+     * the profile via /api/family/claim-check, so the kid taps "yes, that's
+     * me" and the server resolves which parent to write to. GUARDIAN only.
+     */
+    autoClaim: z.boolean().optional(),
+    /** Optional cross-check: must agree with the player row's own year. */
+    birthYear: z.number().int().optional(),
+  })
+  .refine((d) => !!d.email || (d.autoClaim === true && d.type === "GUARDIAN"), {
+    message: "Enter a valid email address",
+    path: ["email"],
+  })
 
 /**
  * POST /api/family-invitations — the parent↔child linking layer
@@ -39,6 +52,15 @@ const createSchema = z.object({
  *  GUARDIAN — a self-registered 13+ player invites a parent; on accept the
  *  parent becomes Player.parentId (guardian AND payer of record for future
  *  fees). The player keeps their own login via Player.userId.
+ *
+ * Body:
+ *  { type: "CHILD_LOGIN" | "GUARDIAN", playerId, email, preferClaim? }
+ *  { type: "GUARDIAN", playerId, autoClaim: true, birthYear? } — no email:
+ *  the server matches the kid's name and birth year platform-wide, resolves
+ *  the parent who created that profile, and sends the CHILD_CLAIM to them.
+ *
+ * Every success returns the same `{ success: true, id }`, whichever shape the
+ * request took and whichever type the server resolved.
  */
 export async function POST(request: NextRequest) {
   try {
@@ -66,6 +88,9 @@ export async function POST(request: NextRequest) {
     if (!player) return NextResponse.json({ error: "Player not found" }, { status: 404 })
 
     if (data.type === "CHILD_LOGIN") {
+      if (!data.email) {
+        return NextResponse.json({ error: "Enter a valid email address" }, { status: 400 })
+      }
       if (isCoppaMinor(new Date(player.dateOfBirth))) {
         return NextResponse.json(
           { error: "Players under 13 can't have their own login — you manage everything from your account until they turn 13." },
@@ -110,7 +135,8 @@ export async function POST(request: NextRequest) {
     // and the kid is told the same thing either way.
     let resolvedType: "CHILD_LOGIN" | "GUARDIAN" | "CHILD_CLAIM" = data.type
     let targetPlayerId: string | null = null
-    if (data.type === "GUARDIAN" && data.preferClaim) {
+    let inviteEmail = data.email ?? ""
+    if (data.type === "GUARDIAN" && data.preferClaim && data.email) {
       const target = await findClaimTarget({ parentEmail: data.email, kid: player })
       if (target) {
         resolvedType = "CHILD_CLAIM"
@@ -118,8 +144,31 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Auto-claim: no email was typed, so the profile itself names the parent.
+    // A miss here says only what /api/family/claim-check already told this
+    // same account about their own name and birth year, so the 409 gives
+    // nothing away; a hit is byte-identical to the ordinary create.
+    if (data.type === "GUARDIAN" && data.autoClaim && !data.email) {
+      if (
+        data.birthYear !== undefined &&
+        data.birthYear !== new Date(player.dateOfBirth).getFullYear()
+      ) {
+        return NextResponse.json({ error: "That birth year doesn't match your profile" }, { status: 400 })
+      }
+      const target = await resolveAutoClaimTarget(player)
+      if (!target) {
+        return NextResponse.json(
+          { error: "We couldn't find that profile. Ask your parent for their email or a link code." },
+          { status: 409 }
+        )
+      }
+      resolvedType = "CHILD_CLAIM"
+      targetPlayerId = target.playerId
+      inviteEmail = target.parentEmail
+    }
+
     const invitedUser = await prisma.user.findFirst({
-      where: { email: { equals: data.email, mode: "insensitive" } },
+      where: { email: { equals: inviteEmail, mode: "insensitive" } },
       select: { id: true },
     })
 
@@ -128,7 +177,7 @@ export async function POST(request: NextRequest) {
         type: resolvedType,
         playerId: data.playerId,
         targetPlayerId,
-        invitedEmail: data.email,
+        invitedEmail: inviteEmail,
         invitedUserId: invitedUser?.id ?? null,
         invitedByUserId: session.userId,
         expiresAt: new Date(Date.now() + INVITE_TTL_DAYS * 24 * 3600 * 1000),
@@ -175,7 +224,7 @@ export async function POST(request: NextRequest) {
 
     try {
       await sendEmail({
-        to: data.email,
+        to: inviteEmail,
         subject:
           resolvedType === "CHILD_LOGIN"
             ? `Your SportsHub player login for ${playerName}`

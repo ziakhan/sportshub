@@ -61,6 +61,8 @@ import { getServerSession } from "next-auth"
  *        toggle-season skip + report, attach-route override)
  *   1148 season plans as documents (lazy NPH snapshot, create/list order,
  *        rename vs imported-content 409, activate write-through, delete rules)
+ *   1149 family linking wave 2 (claim-check bit, email-free auto-claim,
+ *        link codes both directions + redeem, parent-side add-check)
  */
 
 export function actAs(userId: string | null): void {

@@ -2,8 +2,9 @@ import { NextRequest, NextResponse } from "next/server"
 import { getSessionUserId } from "@/lib/auth-helpers"
 import { prisma } from "@youthbasketballhub/db"
 import { notifySafe } from "@/lib/notifications"
-import { absorbDuplicatePlayer, type AbsorbResult } from "@/lib/family/merge-players"
+import { absorbIntoGuardianRow, type AbsorbResult } from "@/lib/family/merge-players"
 import { findMergeCandidates } from "@/lib/family/claim-target"
+import { ensureParentRole, linkGuardianToPlayer } from "@/lib/family/link-guardian"
 
 export const dynamic = "force-dynamic"
 
@@ -144,23 +145,13 @@ export async function PATCH(request: NextRequest, { params }: { params: { token:
     await prisma.$transaction(async (tx: any) => {
       if (survivorId) {
         // The parent's row survives; the kid's self-registered duplicate is
-        // absorbed and their login moves across.
-        const target = await tx.player.findUnique({
-          where: { id: survivorId },
-          select: { id: true, parentId: true, userId: true, deletedAt: true },
-        })
-        if (!target || target.deletedAt) throw new Error("CLAIM_TARGET_GONE")
-        if (target.parentId !== session.userId) throw new Error("CLAIM_TARGET_NOT_YOURS")
-        if (target.userId && target.userId !== invite.player.userId) throw new Error("CLAIM_TARGET_TAKEN")
-
-        const kidUserId = invite.player.userId ?? invite.invitedByUserId
-        absorbed = await absorbDuplicatePlayer(tx, {
-          sourceId: invite.player.id,
-          targetId: target.id,
-        })
-        await tx.player.update({
-          where: { id: target.id },
-          data: { userId: kidUserId, canLogin: true },
+        // absorbed and their login moves across. Same guard the apply-merge
+        // endpoint runs, so both doors ask the same three questions.
+        absorbed = await absorbIntoGuardianRow(tx, {
+          actorUserId: session.userId,
+          source: { id: invite.player.id, userId: invite.player.userId },
+          targetId: survivorId,
+          loginUserId: invite.player.userId ?? invite.invitedByUserId,
         })
       } else if (invite.type === "CHILD_LOGIN") {
         if (invite.player.userId) throw new Error("ALREADY_LINKED")
@@ -174,21 +165,16 @@ export async function PATCH(request: NextRequest, { params }: { params: { token:
       } else {
         // GUARDIAN, no merge: parentId becomes the accepting parent —
         // guardian + payer of record for everything from here on. Existing
-        // obligations keep their payer.
-        await tx.player.update({
-          where: { id: invite.player.id },
-          data: { parentId: session.userId },
+        // obligations keep their payer. Same helper the link-code redemption
+        // runs, so both doors leave the family in one shape.
+        await linkGuardianToPlayer(tx, {
+          playerId: invite.player.id,
+          parentUserId: session.userId,
         })
       }
 
       if (invite.type !== "CHILD_LOGIN") {
-        const hasParentRole = await tx.userRole.findFirst({
-          where: { userId: session.userId, role: "Parent", tenantId: null, teamId: null },
-          select: { id: true },
-        })
-        if (!hasParentRole) {
-          await tx.userRole.create({ data: { userId: session.userId, role: "Parent" } })
-        }
+        await ensureParentRole(tx, session.userId)
       }
 
       await tx.familyInvitation.update({

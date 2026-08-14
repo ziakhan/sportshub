@@ -152,6 +152,53 @@ export async function absorbDuplicatePlayer(
 }
 
 /**
+ * The guard that has always stood in front of an absorb, lifted out of the
+ * invitation accept route (2026-08-13) so the apply-merge endpoint cannot
+ * drift from it.
+ *
+ * Three questions, asked inside the transaction so a row that changed hands
+ * a moment ago cannot slip through:
+ *  - is the surviving row still there?
+ *  - does it belong to the person asking?
+ *  - is somebody else already signing in to it?
+ *
+ * `loginUserId` moves the kid's login onto the survivor. Null leaves the
+ * survivor's login alone, which is what merging two parent-managed rows
+ * wants.
+ */
+export async function absorbIntoGuardianRow(
+  tx: any,
+  {
+    actorUserId,
+    source,
+    targetId,
+    loginUserId,
+  }: {
+    actorUserId: string
+    source: { id: string; userId: string | null }
+    targetId: string
+    loginUserId: string | null
+  }
+): Promise<AbsorbResult> {
+  const target = await tx.player.findUnique({
+    where: { id: targetId },
+    select: { id: true, parentId: true, userId: true, deletedAt: true },
+  })
+  if (!target || target.deletedAt) throw new Error("CLAIM_TARGET_GONE")
+  if (target.parentId !== actorUserId) throw new Error("CLAIM_TARGET_NOT_YOURS")
+  if (target.userId && target.userId !== source.userId) throw new Error("CLAIM_TARGET_TAKEN")
+
+  const absorbed = await absorbDuplicatePlayer(tx, { sourceId: source.id, targetId: target.id })
+  if (loginUserId) {
+    await tx.player.update({
+      where: { id: target.id },
+      data: { userId: loginUserId, canLogin: true },
+    })
+  }
+  return absorbed
+}
+
+/**
  * Same person? Name and birth year, nothing cleverer. Names are compared
  * case- and space-insensitively; the birth year is the platform's single
  * age key everywhere else, so a day-off date of birth still matches.

@@ -61,6 +61,7 @@ model User {
   players                   Player[]                  @relation("ParentPlayers")
   playerAccount             Player?                   @relation("PlayerAccount")
   familyInvitationsSent     FamilyInvitation[]        @relation("FamilyInvitationsSent")
+  familyLinkCodesCreated    FamilyLinkCode[]          @relation("FamilyLinkCodesCreated")
   refereeSettlements        RefereeSettlement[]       @relation("RefereeSettlements")
   tryoutSignups             TryoutSignup[]
   rsvpResponses             EventRsvp[]               @relation("RsvpResponses")
@@ -902,6 +903,7 @@ model Player {
   offers                      Offer[]
   familyInvitations           FamilyInvitation[]
   claimInvitations            FamilyInvitation[]           @relation("FamilyInvitationClaimTargets")
+  familyLinkCodes             FamilyLinkCode[]             @relation("FamilyLinkCodePlayers")
   houseLeagueSignups          HouseLeagueSignup[]
   campSignups                 CampSignup[]
   seasonRosterEntries         SeasonRosterPlayer[]
@@ -3442,6 +3444,52 @@ model FamilyInvitation {
   @@index([invitedEmail])
   @@index([invitedUserId, status])
   @@index([playerId, status])
+}
+
+// ============================================
+// FAMILY LINK CODES (parent-child linking arc, 2026-08-13)
+// The in-person half of the same job. A parent and a kid standing next to
+// each other read six characters across the table instead of trading an
+// email and waiting for a tap. Handing the code over IS the consent, so
+// redeeming links the two accounts on the spot.
+// ============================================
+
+enum FamilyLinkDirection {
+  // A parent made the code; a kid with their own login redeems it.
+  PARENT_INVITES_CHILD
+  // A kid made the code; the parent standing next to them redeems it.
+  CHILD_INVITES_PARENT
+}
+
+model FamilyLinkCode {
+  id String @id @default(uuid())
+
+  // Six characters from an alphabet with no O/0 or I/1 lookalikes, so it
+  // survives being read out loud.
+  code String @unique
+
+  createdByUserId String
+  createdBy       User   @relation("FamilyLinkCodesCreated", fields: [createdByUserId], references: [id], onDelete: Cascade)
+
+  direction FamilyLinkDirection
+
+  // CHILD_INVITES_PARENT: the kid's own player row, always set.
+  // PARENT_INVITES_CHILD: optional, names which of the parent's players the
+  // code was made for.
+  playerId String?
+  player   Player? @relation("FamilyLinkCodePlayers", fields: [playerId], references: [id], onDelete: Cascade)
+
+  expiresAt DateTime
+
+  // Single use. The redeemer is kept for the audit trail, not as a foreign
+  // key, mirroring FamilyInvitation.invitedUserId.
+  usedAt       DateTime?
+  usedByUserId String?
+
+  createdAt DateTime @default(now())
+
+  @@index([createdByUserId, usedAt])
+  @@index([expiresAt])
 }
 
 model Notification {
