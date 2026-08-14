@@ -8,6 +8,7 @@ import Link from "next/link"
 import { CountryStateSelector } from "@/components/country-state-selector"
 import { getCountryConfig, getCurrencyForCountry, getTimezonesForCountry } from "@/lib/countries"
 import { PRIMARY_DOMAIN } from "@/lib/domains"
+import { BrandListbox } from "@/components/ui"
 
 const createClubSchema = z.object({
   name: z.string().min(3, "Club name must be at least 3 characters").max(100),
@@ -390,13 +391,16 @@ export function CreateClubForm() {
         <label htmlFor="timezone" className={labelClass}>
           Timezone <span className="text-red-500">*</span>
         </label>
-        <select {...register("timezone")} id="timezone" className={inputClass}>
-          {getTimezonesForCountry(watch("country") || "US").map((tz) => (
-            <option key={tz.value} value={tz.value}>
-              {tz.label}
-            </option>
-          ))}
-        </select>
+        <BrandListbox
+          id="timezone"
+          ariaLabel="Timezone"
+          value={watch("timezone") || ""}
+          onChange={(v) => setValue("timezone", v, { shouldValidate: true })}
+          options={getTimezonesForCountry(watch("country") || "US").map((tz) => ({
+            value: tz.value,
+            label: tz.label,
+          }))}
+        />
         {errors.timezone && <p className="mt-1 text-sm text-red-600">{errors.timezone.message}</p>}
       </div>
 

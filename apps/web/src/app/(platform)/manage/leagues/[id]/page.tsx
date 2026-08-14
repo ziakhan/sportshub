@@ -14,6 +14,7 @@ import {
   Badge,
   DateTimePicker,
   SmartBack,
+  ChipGroup,
   type BadgeTone,
 } from "@/components/ui"
 
@@ -377,16 +378,17 @@ function LeagueDashboard() {
               </div>
               <div>
                 <label className={labelClass}>Season Type</label>
-                <select
+                <ChipGroup
+                  ariaLabel="Season Type"
                   value={type}
-                  onChange={(e) => setType(e.target.value as SeasonTypeKey)}
-                  className={inputClass}
-                >
-                  <option value="FALL_WINTER">Fall / Winter</option>
-                  <option value="SPRING">Spring</option>
-                  <option value="SUMMER">Summer</option>
-                  <option value="CUSTOM">Custom</option>
-                </select>
+                  onChange={(v) => setType(v as SeasonTypeKey)}
+                  options={[
+                    { value: "FALL_WINTER", label: "Fall / Winter" },
+                    { value: "SPRING", label: "Spring" },
+                    { value: "SUMMER", label: "Summer" },
+                    { value: "CUSTOM", label: "Custom" },
+                  ]}
+                />
               </div>
             </div>
             <div className="grid grid-cols-3 gap-4">

@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
-import { Button, PanelHeader } from "@/components/ui"
+import { Button, PanelHeader, BrandListbox, ChipGroup } from "@/components/ui"
 import { panelClass } from "./types"
 
 /**
@@ -406,81 +406,81 @@ function PlayoffPlanSection({ seasonId, seasonStatus }: { seasonId: string; seas
               </div>
               {isOpen && (
                 <div className="border-ink-100 mt-2 space-y-2 border-t pt-2 text-xs">
-                  <label className="flex flex-wrap items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
                     <span className="text-ink-700 w-32 font-semibold">Who makes it?</span>
-                    <select
-                      className="border-ink-200 rounded-lg border px-2 py-1"
+                    <BrandListbox
+                      className="w-48"
+                      ariaLabel="Who makes it?"
                       value={String(c.qualifiers)}
-                      onChange={(e) =>
+                      onChange={(v) =>
                         void updateConfig(d.id, {
-                          qualifiers: e.target.value === "all" ? "all" : Number(e.target.value),
+                          qualifiers: v === "all" ? "all" : Number(v),
                         })
                       }
-                    >
-                      <option value="all">Everybody ({d.teams})</option>
-                      {[4, 6, 8, 10, 12, 14, 16, 20, 24].filter((n) => n < d.teams).map((n) => (
-                        <option key={n} value={n}>
-                          Top {n}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                  <label className="flex flex-wrap items-center gap-2">
+                      options={[
+                        { value: "all", label: `Everybody (${d.teams})` },
+                        ...[4, 6, 8, 10, 12, 14, 16, 20, 24]
+                          .filter((n) => n < d.teams)
+                          .map((n) => ({ value: String(n), label: `Top ${n}` })),
+                      ]}
+                    />
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2">
                     <span className="text-ink-700 w-32 font-semibold">Every team plays</span>
-                    <select
-                      className="border-ink-200 rounded-lg border px-2 py-1"
+                    <ChipGroup
+                      ariaLabel="Every team plays"
                       value={String(c.guaranteedGames)}
-                      onChange={(e) => void updateConfig(d.id, { guaranteedGames: Number(e.target.value) })}
-                    >
-                      {[1, 2, 3, 4].map((n) => (
-                        <option key={n} value={n}>
-                          at least {n} game{n === 1 ? "" : "s"}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                  <label className="flex flex-wrap items-center gap-2">
+                      onChange={(v) => void updateConfig(d.id, { guaranteedGames: Number(v) })}
+                      options={[1, 2, 3, 4].map((n) => ({
+                        value: String(n),
+                        label: `at least ${n} game${n === 1 ? "" : "s"}`,
+                      }))}
+                    />
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2">
                     <span className="text-ink-700 w-32 font-semibold">Which weekend?</span>
-                    <select
-                      className="border-ink-200 rounded-lg border px-2 py-1"
+                    <BrandListbox
+                      className="w-56"
+                      ariaLabel="Which weekend?"
+                      placeholder="Choose a weekend"
                       value={c.weekendId ?? ""}
-                      onChange={(e) => void updateConfig(d.id, { weekendId: e.target.value || null })}
-                    >
-                      {data.weekends.map((w: any) => (
-                        <option key={w.id} value={w.id}>
-                          {w.label ?? "Playoff weekend"}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
+                      onChange={(v) => void updateConfig(d.id, { weekendId: v || null })}
+                      options={data.weekends.map((w: any) => ({
+                        value: w.id,
+                        label: w.label ?? "Playoff weekend",
+                      }))}
+                    />
+                  </div>
                   <details>
                     <summary className="text-ink-500 cursor-pointer font-semibold">Advanced</summary>
                     <div className="mt-2 space-y-2">
-                      <label className="flex flex-wrap items-center gap-2">
+                      <div className="flex flex-wrap items-center gap-2">
                         <span className="text-ink-700 w-32 font-semibold">Format</span>
-                        <select
-                          className="border-ink-200 rounded-lg border px-2 py-1"
+                        <ChipGroup
+                          ariaLabel="Format"
                           value={c.formatOverride ?? ""}
-                          onChange={(e) => void updateConfig(d.id, { formatOverride: e.target.value || null })}
-                        >
-                          <option value="">Automatic</option>
-                          <option value="BRACKET">Knockout bracket</option>
-                          <option value="POOLS">Pools, then medal games</option>
-                          <option value="PLACEMENT">Everyone plays a set number, standings decide</option>
-                        </select>
-                      </label>
+                          onChange={(v) => void updateConfig(d.id, { formatOverride: v || null })}
+                          options={[
+                            { value: "", label: "Automatic" },
+                            { value: "BRACKET", label: "Knockout bracket" },
+                            { value: "POOLS", label: "Pools, then medal games" },
+                            { value: "PLACEMENT", label: "Everyone plays a set number, standings decide" },
+                          ]}
+                        />
+                      </div>
                       {d.divisionCount > 1 && (
-                        <label className="flex flex-wrap items-center gap-2">
+                        <div className="flex flex-wrap items-center gap-2">
                           <span className="text-ink-700 w-32 font-semibold">Opening round</span>
-                          <select
-                            className="border-ink-200 rounded-lg border px-2 py-1"
+                          <ChipGroup
+                            ariaLabel="Opening round"
                             value={c.openingRound ?? "SEEDED"}
-                            onChange={(e) => void updateConfig(d.id, { openingRound: e.target.value })}
-                          >
-                            <option value="SEEDED">by seeding</option>
-                            <option value="DIVISION_FIRST">within divisions first (NPH day 1)</option>
-                          </select>
-                        </label>
+                            onChange={(v) => void updateConfig(d.id, { openingRound: v })}
+                            options={[
+                              { value: "SEEDED", label: "by seeding" },
+                              { value: "DIVISION_FIRST", label: "within divisions first (NPH day 1)" },
+                            ]}
+                          />
+                        </div>
                       )}
                       <label className="flex items-center gap-2">
                         <input

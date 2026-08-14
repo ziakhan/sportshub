@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation"
 import { useState } from "react"
+import { BrandListbox } from "@/components/ui"
 
 interface Team {
   id: string
@@ -89,18 +90,14 @@ export function TryoutsFilter({
 
       {/* Team dropdown + search */}
       <div className="flex flex-col gap-2 sm:flex-row sm:gap-3">
-        <select
+        <BrandListbox
+          className="w-full sm:w-auto"
+          ariaLabel="Team"
+          placeholder="All Teams"
           value={activeTeamId || ""}
-          onChange={(e) => handleTeamChange(e.target.value)}
-          className="w-full rounded-xl border border-ink-200 px-3 py-1.5 text-sm focus:border-play-500 focus:outline-none sm:w-auto"
-        >
-          <option value="">All Teams</option>
-          {teams.map((team) => (
-            <option key={team.id} value={team.id}>
-              {team.name}
-            </option>
-          ))}
-        </select>
+          onChange={handleTeamChange}
+          options={teams.map((team) => ({ value: team.id, label: team.name }))}
+        />
 
         <form onSubmit={handleSearch} className="flex flex-1 gap-2">
           <input

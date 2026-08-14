@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react"
 import { createPortal } from "react-dom"
 import Link from "next/link"
-import { Button, PanelHeader } from "@/components/ui"
+import { Button, PanelHeader, ChoiceCardGroup, DateTimePicker } from "@/components/ui"
 
 /**
  * The Schedule tab's PLAN DOOR (owner-approved design 2026-08-10):
@@ -308,13 +308,16 @@ export function QuickSetupDialog({
           <div className="mt-1.5 space-y-1.5">
             {weekends.map((w, i) => (
               <div key={i} className="flex flex-wrap items-center gap-2">
-                <input
-                  type="date"
-                  aria-label={`Weekend ${i + 1} date`}
-                  className="border-ink-200 bg-ink-50 rounded-lg border px-2 py-1 text-sm"
+                <label className="sr-only" htmlFor={`quick-weekend-date-${i}`}>
+                  {`Weekend ${i + 1} date`}
+                </label>
+                <DateTimePicker
+                  mode="date"
+                  id={`quick-weekend-date-${i}`}
+                  className="w-36"
                   value={w.date}
-                  onChange={(e) =>
-                    setWeekends((ws) => ws.map((x, j) => (j === i ? { ...x, date: e.target.value } : x)))
+                  onChange={(v) =>
+                    setWeekends((ws) => ws.map((x, j) => (j === i ? { ...x, date: v } : x)))
                   }
                 />
                 <div className="border-ink-200 inline-flex overflow-hidden rounded-lg border text-xs">
@@ -359,24 +362,26 @@ export function QuickSetupDialog({
           </div>
 
           <div className="mt-4 flex flex-wrap items-center gap-4">
-            <label className="text-sm">
+            <span className="flex items-center text-sm">
               <span className="text-ink-800 mr-2 font-semibold">Hours</span>
-              <input
-                type="time"
-                aria-label="Start time"
-                className="border-ink-200 bg-ink-50 rounded-lg border px-2 py-1 text-sm"
+              <label className="sr-only" htmlFor="quick-setup-start-time">Start time</label>
+              <DateTimePicker
+                mode="time"
+                id="quick-setup-start-time"
+                className="w-24"
                 value={start}
-                onChange={(e) => setStart(e.target.value)}
+                onChange={setStart}
               />
               <span className="text-ink-500 mx-1">to</span>
-              <input
-                type="time"
-                aria-label="End time"
-                className="border-ink-200 bg-ink-50 rounded-lg border px-2 py-1 text-sm"
+              <label className="sr-only" htmlFor="quick-setup-end-time">End time</label>
+              <DateTimePicker
+                mode="time"
+                id="quick-setup-end-time"
+                className="w-24"
                 value={end}
-                onChange={(e) => setEnd(e.target.value)}
+                onChange={setEnd}
               />
-            </label>
+            </span>
             <label className="text-sm">
               <span className="text-ink-800 mr-2 font-semibold">Games per team</span>
               <input
@@ -420,39 +425,25 @@ export function QuickSetupDialog({
               </div>
             </div>
             {fridayPolicy !== null && (
-              <div className="mt-2 space-y-1.5">
-                {[
+              <ChoiceCardGroup
+                className="mt-2 space-y-1.5"
+                ariaLabel="Friday scheduling mode"
+                value={fridayPolicy}
+                onChange={(v) => setFridayPolicy(v as "IF_NEEDED" | "REGULAR")}
+                options={[
                   {
-                    v: "IF_NEEDED" as const,
-                    label: "Only when a weekend can't fit otherwise",
-                    detail: "Saturday and Sunday fill first. A Friday evening is used only where a weekend would run out of room.",
+                    value: "IF_NEEDED",
+                    title: "Only when a weekend can't fit otherwise",
+                    description:
+                      "Saturday and Sunday fill first. A Friday evening is used only where a weekend would run out of room.",
                   },
                   {
-                    v: "REGULAR" as const,
-                    label: "Fridays are regular game days",
-                    detail: "Friday evenings count as normal capacity in the draw.",
+                    value: "REGULAR",
+                    title: "Fridays are regular game days",
+                    description: "Friday evenings count as normal capacity in the draw.",
                   },
-                ].map((o) => (
-                  <label
-                    key={o.v}
-                    className={`flex cursor-pointer items-start gap-2 rounded-xl border px-3 py-2 text-sm ${
-                      fridayPolicy === o.v ? "border-play-300 bg-play-50/60" : "border-ink-200 bg-white"
-                    }`}
-                  >
-                    <input
-                      type="radio"
-                      name="quick-friday-mode"
-                      checked={fridayPolicy === o.v}
-                      onChange={() => setFridayPolicy(o.v)}
-                      className="mt-0.5 accent-play-600"
-                    />
-                    <span className="min-w-0">
-                      <span className="text-ink-900 block text-xs font-semibold">{o.label}</span>
-                      <span className="text-ink-500 block text-[11px]">{o.detail}</span>
-                    </span>
-                  </label>
-                ))}
-              </div>
+                ]}
+              />
             )}
           </div>
 

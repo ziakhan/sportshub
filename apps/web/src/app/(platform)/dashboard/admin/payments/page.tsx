@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
-import { Button, PanelHeader } from "@/components/ui"
+import { BrandListbox, Button, PanelHeader } from "@/components/ui"
 import { POSTURES, postureByKey, postureFromFlags } from "@/lib/payments/postures"
 
 /**
@@ -61,19 +61,18 @@ function PostureSelect({
   includeInherit?: boolean
   inheritLabel?: string
 }) {
+  const options = [
+    ...(includeInherit ? [{ value: INHERIT, label: inheritLabel ?? "Platform default" }] : []),
+    ...POSTURES.map((p) => ({ value: p.key, label: p.label })),
+  ]
   return (
-    <select
+    <BrandListbox
+      ariaLabel="Collection posture"
       value={value}
-      onChange={(e) => onChange(e.target.value)}
-      className="border-ink-200 w-full rounded-md border px-3 py-2 text-sm"
-    >
-      {includeInherit && <option value={INHERIT}>{inheritLabel ?? "Platform default"}</option>}
-      {POSTURES.map((p) => (
-        <option key={p.key} value={p.key}>
-          {p.label}
-        </option>
-      ))}
-    </select>
+      onChange={onChange}
+      className="w-full"
+      options={options}
+    />
   )
 }
 

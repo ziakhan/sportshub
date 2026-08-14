@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { useParams, useRouter } from "next/navigation"
 import Link from "next/link"
-import { DateTimePicker, SmartBack } from "@/components/ui"
+import { ChipGroup, DateTimePicker, SmartBack } from "@/components/ui"
 import { VenueSelector } from "@/components/venue-selector"
 import { AgePolicySelect } from "@/components/registration/age-policy-select"
 
@@ -153,13 +153,18 @@ export default function CreateCampPage() {
               </div>
               <div>
                 <label className="block text-sm font-medium text-ink-700">Camp Type *</label>
-                <select value={campType} onChange={(e) => setCampType(e.target.value)}
-                  className="mt-1 block w-full rounded-md border border-ink-200 px-3 py-2 text-sm">
-                  <option value="SUMMER">Summer Camp</option>
-                  <option value="MARCH_BREAK">March Break</option>
-                  <option value="HOLIDAY">Holiday Camp</option>
-                  <option value="WEEKLY">Weekly Camp</option>
-                </select>
+                <ChipGroup
+                  className="mt-1"
+                  ariaLabel="Camp Type"
+                  value={campType}
+                  onChange={setCampType}
+                  options={[
+                    { value: "SUMMER", label: "Summer Camp" },
+                    { value: "MARCH_BREAK", label: "March Break" },
+                    { value: "HOLIDAY", label: "Holiday Camp" },
+                    { value: "WEEKLY", label: "Weekly Camp" },
+                  ]}
+                />
               </div>
             </div>
 
@@ -187,12 +192,17 @@ export default function CreateCampPage() {
               <AgePolicySelect value={agePolicy} onChange={setAgePolicy} />
               <div>
                 <label className="block text-sm font-medium text-ink-700">Gender</label>
-                <select value={gender} onChange={(e) => setGender(e.target.value)}
-                  className="mt-1 block w-full rounded-md border border-ink-200 px-3 py-2 text-sm">
-                  <option value="">Co-ed</option>
-                  <option value="MALE">Boys</option>
-                  <option value="FEMALE">Girls</option>
-                </select>
+                <ChipGroup
+                  className="mt-1"
+                  ariaLabel="Gender"
+                  value={gender}
+                  onChange={setGender}
+                  options={[
+                    { value: "", label: "Co-ed" },
+                    { value: "MALE", label: "Boys" },
+                    { value: "FEMALE", label: "Girls" },
+                  ]}
+                />
               </div>
             </div>
 
@@ -236,15 +246,17 @@ export default function CreateCampPage() {
               </div>
               <div>
                 <label className="block text-sm font-medium text-ink-700">Schedule *</label>
-                <select
+                <ChipGroup
+                  className="mt-1"
+                  ariaLabel="Schedule"
                   value={scheduleKind}
-                  onChange={(e) => setScheduleKind(e.target.value as typeof scheduleKind)}
-                  className="mt-1 block w-full rounded-md border border-ink-200 px-3 py-2 text-sm"
-                >
-                  <option value="CONSECUTIVE">Consecutive weeks</option>
-                  <option value="DAILY">Daily block</option>
-                  <option value="WEEKDAY_PATTERN">Weekly pattern</option>
-                </select>
+                  onChange={(v) => setScheduleKind(v as typeof scheduleKind)}
+                  options={[
+                    { value: "CONSECUTIVE", label: "Consecutive weeks" },
+                    { value: "DAILY", label: "Daily block" },
+                    { value: "WEEKDAY_PATTERN", label: "Weekly pattern" },
+                  ]}
+                />
               </div>
             </div>
 

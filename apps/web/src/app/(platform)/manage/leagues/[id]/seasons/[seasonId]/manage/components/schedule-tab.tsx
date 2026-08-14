@@ -2,8 +2,8 @@
 
 import { useEffect, useMemo, useState } from "react"
 import { format } from "date-fns"
-import { Badge, Button, PanelHeader, toneForStatus, DateTimePicker } from "@/components/ui"
-import { inputClass, panelClass } from "./types"
+import { Badge, Button, PanelHeader, toneForStatus, DateTimePicker, BrandListbox } from "@/components/ui"
+import { panelClass } from "./types"
 import { DivisionSetup } from "./division-setup"
 import { JourneyStrip, PlanDoor, usePlanDoor } from "./plan-door"
 import { TeamCheck } from "./team-check"
@@ -1246,32 +1246,24 @@ function ManualGameAdd({
       {note && <p className="text-ink-600 mt-1 text-xs">{note}</p>}
       {open && (
         <div className="mt-2 flex flex-wrap items-end gap-2">
-          <select
+          <BrandListbox
+            className="w-40"
+            ariaLabel="Home team"
+            placeholder="Home team…"
             value={homeTeamId}
-            onChange={(e) => setHomeTeamId(e.target.value)}
-            className={inputClass}
-          >
-            <option value="">Home team…</option>
-            {approvedTeams.map((t: any) => (
-              <option key={t.team.id} value={t.team.id}>
-                {t.team.name}
-              </option>
-            ))}
-          </select>
-          <select
+            onChange={setHomeTeamId}
+            options={approvedTeams.map((t: any) => ({ value: t.team.id, label: t.team.name }))}
+          />
+          <BrandListbox
+            className="w-40"
+            ariaLabel="Away team"
+            placeholder="Away team…"
             value={awayTeamId}
-            onChange={(e) => setAwayTeamId(e.target.value)}
-            className={inputClass}
-          >
-            <option value="">Away team…</option>
-            {approvedTeams
+            onChange={setAwayTeamId}
+            options={approvedTeams
               .filter((t: any) => t.team.id !== homeTeamId)
-              .map((t: any) => (
-                <option key={t.team.id} value={t.team.id}>
-                  {t.team.name}
-                </option>
-              ))}
-          </select>
+              .map((t: any) => ({ value: t.team.id, label: t.team.name }))}
+          />
           <DateTimePicker mode="datetime" value={when} onChange={setWhen} className="w-40" />
           <Button size="sm" onClick={create} disabled={busy || !homeTeamId || !awayTeamId || !when}>
             {busy ? "Adding…" : "Add game"}

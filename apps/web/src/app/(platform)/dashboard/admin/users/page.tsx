@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
-import { Badge, Button, SmartBack, toneForStatus } from "@/components/ui"
+import { Badge, BrandListbox, Button, SmartBack, toneForStatus } from "@/components/ui"
 
 interface UserRole {
   id: string
@@ -150,19 +150,21 @@ export default function AdminUsersPage() {
           }}
           className="border-ink-200 text-ink-900 ring-play-200 flex-1 rounded-xl border bg-white px-3 py-2 text-sm outline-none transition focus:ring"
         />
-        <select
+        <BrandListbox
+          ariaLabel="Status"
           value={statusFilter}
-          onChange={(e) => {
-            setStatusFilter(e.target.value)
+          onChange={(v) => {
+            setStatusFilter(v)
             setPage(1)
           }}
-          className="border-ink-200 text-ink-900 ring-play-200 rounded-xl border bg-white px-3 py-2 text-sm outline-none transition focus:ring"
-        >
-          <option value="">All Status</option>
-          <option value="ACTIVE">Active</option>
-          <option value="SUSPENDED">Suspended</option>
-          <option value="INACTIVE">Inactive</option>
-        </select>
+          placeholder="All Status"
+          className="w-44"
+          options={[
+            { value: "ACTIVE", label: "Active" },
+            { value: "SUSPENDED", label: "Suspended" },
+            { value: "INACTIVE", label: "Inactive" },
+          ]}
+        />
       </div>
 
       {/* Users table — narrow windows scroll INSIDE the card (sticky User

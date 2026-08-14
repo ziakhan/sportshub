@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { Button, PanelHeader, DateTimePicker } from "@/components/ui"
+import { Button, PanelHeader, DateTimePicker, ChipGroup, ChoiceCardGroup } from "@/components/ui"
 import { inputClass, panelClass, type SchedSettings } from "./types"
 
 // Mutations previously ignored res.ok — a 403/500 looked like success and
@@ -126,47 +126,27 @@ export function SchedulingTab({
             <label className="text-ink-700 mb-2 block text-xs font-medium">
               Weekend style (league default)
             </label>
-            <div className="space-y-2">
-              {[
+            <ChoiceCardGroup
+              ariaLabel="Weekend style (league default)"
+              value={
+                league.defaultWeekendStyle ??
+                (league.schedulingPhilosophy === "SPREAD_DAYS" ? "SPLIT_DAYS" : "SAME_DAY")
+              }
+              onChange={(v) => patchSeason({ defaultWeekendStyle: v })}
+              options={[
                 {
-                  key: "SAME_DAY",
-                  label: "One trip",
-                  hint: "Both weekend games on the same day, with a break in between — families drive once.",
+                  value: "SAME_DAY",
+                  title: "One trip",
+                  description:
+                    "Both weekend games on the same day, with a break in between. Families drive once.",
                 },
                 {
-                  key: "SPLIT_DAYS",
-                  label: "Split days",
-                  hint: "One game Saturday, one game Sunday — more rest between games.",
+                  value: "SPLIT_DAYS",
+                  title: "Split days",
+                  description: "One game Saturday, one game Sunday. More rest between games.",
                 },
-              ].map((opt) => {
-                const current =
-                  league.defaultWeekendStyle ??
-                  (league.schedulingPhilosophy === "SPREAD_DAYS" ? "SPLIT_DAYS" : "SAME_DAY")
-                return (
-                <label
-                  key={opt.key}
-                  className={`flex cursor-pointer items-start gap-3 rounded-xl border p-3 text-sm transition ${
-                    current === opt.key
-                      ? "border-play-400 bg-play-50"
-                      : "border-ink-200 hover:border-ink-300"
-                  }`}
-                >
-                  <input
-                    type="radio"
-                    name="defaultWeekendStyle"
-                    value={opt.key}
-                    checked={current === opt.key}
-                    onChange={() => patchSeason({ defaultWeekendStyle: opt.key })}
-                    className="mt-0.5"
-                  />
-                  <span>
-                    <span className="text-ink-900 block font-medium">{opt.label}</span>
-                    <span className="text-ink-500 block text-xs">{opt.hint}</span>
-                  </span>
-                </label>
-                )
-              })}
-            </div>
+              ]}
+            />
             <p className="text-ink-400 mt-1.5 text-[11px]">
               Individual teams can override this on their team page — the team&apos;s choice wins.
             </p>
@@ -412,14 +392,15 @@ export function SchedulingTab({
           {/* Game format — periods */}
           <div>
             <label className="text-ink-700 mb-1 block text-xs font-medium">Game format</label>
-            <select
+            <ChipGroup
+              ariaLabel="Game format"
               value={schedSettings.gamePeriods}
-              onChange={(e) => setSchedSettings((s) => ({ ...s, gamePeriods: e.target.value }))}
-              className={inputClass + " w-full"}
-            >
-              <option value="HALVES">2 Halves</option>
-              <option value="QUARTERS">4 Quarters</option>
-            </select>
+              onChange={(v) => setSchedSettings((s) => ({ ...s, gamePeriods: v }))}
+              options={[
+                { value: "HALVES", label: "2 Halves" },
+                { value: "QUARTERS", label: "4 Quarters" },
+              ]}
+            />
           </div>
           {/* Period / half length */}
           <div>

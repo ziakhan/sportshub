@@ -6,7 +6,16 @@ import Link from "next/link"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
-import { Badge, Button, Card, PanelHeader, DateTimePicker, SmartBack } from "@/components/ui"
+import {
+  Badge,
+  Button,
+  BrandListbox,
+  Card,
+  ChipGroup,
+  PanelHeader,
+  DateTimePicker,
+  SmartBack,
+} from "@/components/ui"
 import { ProgramStaffPanel } from "@/components/programs/program-staff-panel"
 import { programLifecycle } from "@/lib/lifecycle"
 import { VenueSelector } from "@/components/venue-selector"
@@ -330,12 +339,18 @@ export default function EditCampPage() {
                     <label htmlFor="campType" className="block text-sm font-medium text-ink-700">
                       Camp Type <span className="text-red-500">*</span>
                     </label>
-                    <select {...register("campType")} id="campType" className={inputCls}>
-                      <option value="SUMMER">Summer Camp</option>
-                      <option value="MARCH_BREAK">March Break</option>
-                      <option value="HOLIDAY">Holiday Camp</option>
-                      <option value="WEEKLY">Weekly Camp</option>
-                    </select>
+                    <ChipGroup
+                      className="mt-1"
+                      ariaLabel="Camp Type"
+                      value={watch("campType") || ""}
+                      onChange={(v) => setValue("campType", v, { shouldValidate: true })}
+                      options={[
+                        { value: "SUMMER", label: "Summer Camp" },
+                        { value: "MARCH_BREAK", label: "March Break" },
+                        { value: "HOLIDAY", label: "Holiday Camp" },
+                        { value: "WEEKLY", label: "Weekly Camp" },
+                      ]}
+                    />
                   </div>
                 </div>
 
@@ -372,11 +387,17 @@ export default function EditCampPage() {
                     <label htmlFor="gender" className="block text-sm font-medium text-ink-700">
                       Gender
                     </label>
-                    <select {...register("gender")} id="gender" className={inputCls}>
-                      <option value="">Co-ed</option>
-                      <option value="MALE">Boys</option>
-                      <option value="FEMALE">Girls</option>
-                    </select>
+                    <ChipGroup
+                      className="mt-1"
+                      ariaLabel="Gender"
+                      value={watch("gender") || ""}
+                      onChange={(v) => setValue("gender", v, { shouldValidate: true })}
+                      options={[
+                        { value: "", label: "Co-ed" },
+                        { value: "MALE", label: "Boys" },
+                        { value: "FEMALE", label: "Girls" },
+                      ]}
+                    />
                   </div>
                 </div>
 
@@ -477,16 +498,22 @@ export default function EditCampPage() {
                     <label htmlFor="scheduleKind" className="block text-sm font-medium text-ink-700">
                       Schedule <span className="text-red-500">*</span>
                     </label>
-                    <select
-                      {...register("scheduleKind")}
+                    <BrandListbox
                       id="scheduleKind"
+                      ariaLabel="Schedule"
                       disabled={feesLocked}
-                      className={inputCls}
-                    >
-                      <option value="CONSECUTIVE">Consecutive weeks</option>
-                      <option value="DAILY">Daily block</option>
-                      <option value="WEEKDAY_PATTERN">Weekly pattern</option>
-                    </select>
+                      value={watch("scheduleKind") || "CONSECUTIVE"}
+                      onChange={(v) =>
+                        setValue("scheduleKind", v as EditCampFormData["scheduleKind"], {
+                          shouldValidate: true,
+                        })
+                      }
+                      options={[
+                        { value: "CONSECUTIVE", label: "Consecutive weeks" },
+                        { value: "DAILY", label: "Daily block" },
+                        { value: "WEEKDAY_PATTERN", label: "Weekly pattern" },
+                      ]}
+                    />
                   </div>
                 </div>
 

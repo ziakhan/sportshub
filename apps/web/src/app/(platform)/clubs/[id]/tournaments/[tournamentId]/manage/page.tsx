@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { useParams } from "next/navigation"
 import { format } from "date-fns"
 import { formatCurrency } from "@/lib/countries"
-import { Button, SmartBack } from "@/components/ui"
+import { BrandListbox, Button, ChipGroup, SmartBack } from "@/components/ui"
 
 const PencilIcon = (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -279,29 +279,25 @@ export default function TournamentManagePage() {
                 placeholder="Division name"
                 className="rounded-md border border-ink-200 px-2 py-1.5 text-sm focus:border-play-500 focus:ring-play-500/20"
               />
-              <select
+              <BrandListbox
+                ariaLabel="Age group"
+                placeholder="Age group..."
                 value={divAgeGroup}
-                onChange={(e) => setDivAgeGroup(e.target.value)}
-                className="rounded-md border border-ink-200 px-2 py-1.5 text-sm focus:border-play-500 focus:ring-play-500/20"
-              >
-                <option value="">Age group...</option>
-                {AGE_GROUPS.map((a) => (
-                  <option key={a} value={a}>
-                    {a}
-                  </option>
-                ))}
-              </select>
+                onChange={setDivAgeGroup}
+                options={AGE_GROUPS.map((a) => ({ value: a, label: a }))}
+              />
             </div>
             <div className="grid grid-cols-2 gap-2">
-              <select
+              <ChipGroup
+                ariaLabel="Division gender"
                 value={divGender}
-                onChange={(e) => setDivGender(e.target.value)}
-                className="rounded-md border border-ink-200 px-2 py-1.5 text-sm focus:border-play-500 focus:ring-play-500/20"
-              >
-                <option value="MALE">Boys</option>
-                <option value="FEMALE">Girls</option>
-                <option value="">Co-ed</option>
-              </select>
+                onChange={setDivGender}
+                options={[
+                  { value: "MALE", label: "Boys" },
+                  { value: "FEMALE", label: "Girls" },
+                  { value: "", label: "Co-ed" },
+                ]}
+              />
               <input
                 type="number"
                 min="2"

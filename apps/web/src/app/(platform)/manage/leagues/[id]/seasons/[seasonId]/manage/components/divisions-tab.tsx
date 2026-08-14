@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { Button } from "@/components/ui"
+import { Button, BrandListbox, ChipGroup } from "@/components/ui"
 import { inputClass, panelClass } from "./types"
 import { AGE_GROUPS, composeDivisionName } from "@/lib/teams/naming"
 
@@ -105,29 +105,38 @@ export function DivisionsTab({
     : null
 
   const genderPicker = (value: string, onChange: (v: string) => void) => (
-    <select value={value} onChange={(e) => onChange(e.target.value)} className={inputClass}>
-      <option value="MALE">Boys</option>
-      <option value="FEMALE">Girls</option>
-      <option value="">Co-ed</option>
-    </select>
+    <ChipGroup
+      ariaLabel="Gender"
+      value={value}
+      onChange={onChange}
+      options={[
+        { value: "MALE", label: "Boys" },
+        { value: "FEMALE", label: "Girls" },
+        { value: "", label: "Co-ed" },
+      ]}
+    />
   )
   const tierPicker = (value: string, onChange: (v: string) => void) => (
-    <select value={value} onChange={(e) => onChange(e.target.value)} className={inputClass}>
-      <option value="1">Tier 1 (Top)</option>
-      <option value="2">Tier 2</option>
-      <option value="3">Tier 3</option>
-      <option value="4">Tier 4</option>
-    </select>
+    <ChipGroup
+      ariaLabel="Tier"
+      value={value}
+      onChange={onChange}
+      options={[
+        { value: "1", label: "Tier 1 (Top)" },
+        { value: "2", label: "Tier 2" },
+        { value: "3", label: "Tier 3" },
+        { value: "4", label: "Tier 4" },
+      ]}
+    />
   )
   const agePicker = (value: string, onChange: (v: string) => void) => (
-    <select value={value} onChange={(e) => onChange(e.target.value)} className={inputClass}>
-      <option value="">Age group...</option>
-      {AGE_GROUPS.map((a) => (
-        <option key={a} value={a}>
-          {a}
-        </option>
-      ))}
-    </select>
+    <BrandListbox
+      ariaLabel="Age group"
+      placeholder="Age group..."
+      value={value}
+      onChange={onChange}
+      options={AGE_GROUPS.map((a) => ({ value: a, label: a }))}
+    />
   )
 
   return (

@@ -1,7 +1,7 @@
 "use client"
 
 import { useCallback, useEffect, useMemo, useState } from "react"
-import { Button, DateTimePicker } from "@/components/ui"
+import { Button, DateTimePicker, ChoiceCardGroup } from "@/components/ui"
 import { VenueEditor } from "@/components/venue-editor"
 import { VenueSelector } from "@/components/venue-selector"
 import type {
@@ -831,46 +831,29 @@ export function GymsWeekendsStep({
               </div>
             </div>
             {fridayPolicy !== null && (
-              <div className="mt-2.5 space-y-1.5" data-testid="friday-mode">
-                {[
-                  {
-                    value: "IF_NEEDED" as const,
-                    label: "Only when a weekend can't fit otherwise",
-                    detail:
-                      "The draw plans Saturday and Sunday first. A Friday evening enters only where a weekend would be over its room, or too tight to absorb one more game.",
-                  },
-                  {
-                    value: "REGULAR" as const,
-                    label: "Fridays are regular game days",
-                    detail:
-                      "Friday evenings count as normal capacity in every draw, at the gyms each weekend already uses.",
-                  },
-                ].map((o) => (
-                  <label
-                    key={o.value}
-                    className={`flex cursor-pointer items-start gap-2.5 rounded-xl border px-3 py-2 ${
-                      fridayPolicy === o.value
-                        ? "border-play-300 bg-play-50/60"
-                        : "border-ink-200 bg-white"
-                    }`}
-                  >
-                    <input
-                      type="radio"
-                      name="friday-mode"
-                      data-testid={o.value === "IF_NEEDED" ? "friday-if-needed" : "friday-regular"}
-                      checked={fridayPolicy === o.value}
-                      disabled={locked || isReferencePlan(session.chosen) || busy !== null}
-                      onChange={() => declareFridays(o.value)}
-                      className="mt-0.5 accent-play-600"
-                    />
-                    <span className="min-w-0">
-                      <span className="text-ink-900 block text-[12.5px] font-semibold">
-                        {o.label}
-                      </span>
-                      <span className="text-ink-500 block text-[11.5px]">{o.detail}</span>
-                    </span>
-                  </label>
-                ))}
+              <div data-testid="friday-mode">
+                <ChoiceCardGroup
+                  className="mt-2.5 space-y-1.5"
+                  ariaLabel="Friday scheduling mode"
+                  value={fridayPolicy}
+                  onChange={(v) => declareFridays(v as "IF_NEEDED" | "REGULAR")}
+                  options={[
+                    {
+                      value: "IF_NEEDED",
+                      title: "Only when a weekend can't fit otherwise",
+                      description:
+                        "The draw plans Saturday and Sunday first. A Friday evening enters only where a weekend would be over its room, or too tight to absorb one more game.",
+                      disabled: locked || isReferencePlan(session.chosen) || busy !== null,
+                    },
+                    {
+                      value: "REGULAR",
+                      title: "Fridays are regular game days",
+                      description:
+                        "Friday evenings count as normal capacity in every draw, at the gyms each weekend already uses.",
+                      disabled: locked || isReferencePlan(session.chosen) || busy !== null,
+                    },
+                  ]}
+                />
               </div>
             )}
           </div>

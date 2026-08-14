@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useId, useRef, useState } from "react"
 import { createPortal } from "react-dom"
+import { DateTimePicker } from "@/components/ui"
 import type { PlacementReason, RentalAsk } from "@/lib/scheduler/planner-core"
 import {
   BTN_MD,
@@ -1547,23 +1548,23 @@ function GymMenuBody({
         Hours this date
       </p>
       <div className="mt-1 flex flex-wrap items-center gap-1.5">
-        <input
-          type="time"
-          data-testid="gym-hours-start"
-          aria-label={`When ${gymName} opens on ${weekendLabel}`}
-          value={start}
-          onChange={(e) => setStart(e.target.value)}
-          className="border-ink-200 text-ink-900 min-h-[36px] rounded-lg border px-2 text-[12px] font-semibold tabular-nums"
-        />
+        <div data-testid="gym-hours-start">
+          <DateTimePicker
+            mode="time"
+            className="w-24"
+            value={start}
+            onChange={setStart}
+          />
+        </div>
         <span className="text-ink-400 text-[11.5px] font-semibold">to</span>
-        <input
-          type="time"
-          data-testid="gym-hours-end"
-          aria-label={`When ${gymName} closes on ${weekendLabel}`}
-          value={end}
-          onChange={(e) => setEnd(e.target.value)}
-          className="border-ink-200 text-ink-900 min-h-[36px] rounded-lg border px-2 text-[12px] font-semibold tabular-nums"
-        />
+        <div data-testid="gym-hours-end">
+          <DateTimePicker
+            mode="time"
+            className="w-24"
+            value={end}
+            onChange={setEnd}
+          />
+        </div>
       </div>
       {badWindow && (
         <p className="text-hoop-700 mt-1 text-[11px] font-semibold">

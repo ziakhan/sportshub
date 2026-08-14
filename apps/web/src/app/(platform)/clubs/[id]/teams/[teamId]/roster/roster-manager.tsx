@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
-import { Badge, Button } from "@/components/ui"
+import { Badge, BrandListbox, Button } from "@/components/ui"
 
 interface Candidate {
   id: string
@@ -178,22 +178,19 @@ export function RosterManager({
                 <label className="text-ink-600 mb-1 block text-xs font-medium">
                   Player (anyone already connected to your club)
                 </label>
-                <select
+                <BrandListbox
                   value={playerId}
-                  onChange={(e) => setPlayerId(e.target.value)}
-                  className="brand-focus border-ink-200 text-ink-900 hover:border-ink-300 w-full rounded-xl border bg-white px-3 py-2 text-sm transition-colors"
-                >
-                  <option value="">
-                    {candidates === null ? "Loading…" : "Choose player…"}
-                  </option>
-                  {(candidates ?? []).map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.name}
-                      {c.birthYear ? ` (${c.birthYear})` : ""}
-                      {c.currentTeams.length ? ` — on ${c.currentTeams.join(", ")}` : ""}
-                    </option>
-                  ))}
-                </select>
+                  onChange={setPlayerId}
+                  ariaLabel="Player"
+                  placeholder={candidates === null ? "Loading…" : "Choose player…"}
+                  disabled={candidates === null}
+                  options={(candidates ?? []).map((c) => ({
+                    value: c.id,
+                    label: `${c.name}${c.birthYear ? ` (${c.birthYear})` : ""}${
+                      c.currentTeams.length ? ` · on ${c.currentTeams.join(", ")}` : ""
+                    }`,
+                  }))}
+                />
               </div>
               <div>
                 <label className="text-ink-600 mb-1 block text-xs font-medium">Jersey #</label>
@@ -242,18 +239,13 @@ export function RosterManager({
                   <label className="text-ink-600 mb-1 block text-xs font-medium">
                     Offer package on acceptance (optional)
                   </label>
-                  <select
+                  <BrandListbox
                     value={templateId}
-                    onChange={(e) => setTemplateId(e.target.value)}
-                    className="brand-focus border-ink-200 text-ink-900 hover:border-ink-300 w-full rounded-xl border bg-white px-3 py-2 text-sm transition-colors"
-                  >
-                    <option value="">No package — roster spot only</option>
-                    {templates.map((t) => (
-                      <option key={t.id} value={t.id}>
-                        {t.name}
-                      </option>
-                    ))}
-                  </select>
+                    onChange={setTemplateId}
+                    ariaLabel="Offer package"
+                    placeholder="No package · roster spot only"
+                    options={templates.map((t) => ({ value: t.id, label: t.name }))}
+                  />
                 </div>
               )}
               <textarea

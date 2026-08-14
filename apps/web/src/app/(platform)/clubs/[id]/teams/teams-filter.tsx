@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation"
 import { useState } from "react"
+import { BrandListbox } from "@/components/ui"
 
 export function TeamsFilter({
   clubId,
@@ -40,18 +41,14 @@ export function TeamsFilter({
 
   return (
     <div className="mb-4 flex gap-3">
-      <select
+      <BrandListbox
         value={activeAge || ""}
-        onChange={(e) => handleAgeChange(e.target.value)}
-        className="border-ink-200 focus:border-play-500 rounded-xl border px-3 py-1.5 text-sm focus:outline-none"
-      >
-        <option value="">All Age Groups</option>
-        {ageGroups.map((ag) => (
-          <option key={ag} value={ag}>
-            {ag}
-          </option>
-        ))}
-      </select>
+        onChange={handleAgeChange}
+        ariaLabel="Age group"
+        placeholder="All Age Groups"
+        className="w-44"
+        options={ageGroups.map((ag) => ({ value: ag, label: ag }))}
+      />
 
       <form onSubmit={handleSearch} className="flex gap-2">
         <input

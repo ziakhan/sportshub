@@ -8,8 +8,10 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
 import {
   Badge,
+  BrandListbox,
   Button,
   Card,
+  ChipGroup,
   PanelHeader,
   SmartBack,
   toneForStatus,
@@ -197,6 +199,7 @@ export default function EditTeamPage() {
     handleSubmit,
     reset,
     watch,
+    setValue,
     formState: { errors },
   } = useForm<EditTeamFormData>({
     resolver: zodResolver(editTeamSchema),
@@ -264,6 +267,7 @@ export default function EditTeamPage() {
   }, [clubId])
 
   const watchedAgeGroup = watch("ageGroup")
+  const watchedGender = watch("gender")
   const namePreview =
     watchedAgeGroup && (clubName || clubShortName)
       ? composeTeamName({
@@ -485,14 +489,15 @@ export default function EditTeamPage() {
               <label htmlFor="ageGroup" className="text-ink-700 block text-sm font-medium">
                 Age Group <span className="text-red-500">*</span>
               </label>
-              <select {...register("ageGroup")} id="ageGroup" className={inputCls}>
-                <option value="">Select age group</option>
-                {ageGroups.map((age) => (
-                  <option key={age} value={age}>
-                    {age}
-                  </option>
-                ))}
-              </select>
+              <BrandListbox
+                id="ageGroup"
+                value={watchedAgeGroup || ""}
+                onChange={(v) => setValue("ageGroup", v, { shouldValidate: true })}
+                placeholder="Select age group"
+                className="mt-1"
+                error={!!errors.ageGroup}
+                options={ageGroups.map((age) => ({ value: age, label: age }))}
+              />
               {errors.ageGroup && (
                 <p className="mt-1 text-sm text-red-600">{errors.ageGroup.message}</p>
               )}
@@ -563,15 +568,21 @@ export default function EditTeamPage() {
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label htmlFor="gender" className="text-ink-700 block text-sm font-medium">
-                  Gender
-                </label>
-                <select {...register("gender")} id="gender" className={inputCls}>
-                  <option value="">Select gender</option>
-                  <option value="MALE">Male</option>
-                  <option value="FEMALE">Female</option>
-                  <option value="COED">Co-ed</option>
-                </select>
+                <span className="text-ink-700 block text-sm font-medium">Gender</span>
+                <ChipGroup
+                  ariaLabel="Gender"
+                  className="mt-1"
+                  allowClear
+                  value={watchedGender || ""}
+                  onChange={(v) =>
+                    setValue("gender", v as EditTeamFormData["gender"], { shouldValidate: true })
+                  }
+                  options={[
+                    { value: "MALE", label: "Male" },
+                    { value: "FEMALE", label: "Female" },
+                    { value: "COED", label: "Co-ed" },
+                  ]}
+                />
               </div>
 
               <div>
@@ -622,19 +633,20 @@ export default function EditTeamPage() {
             </div>
 
             <div>
-              <label htmlFor="showRosterFill" className="text-ink-700 block text-sm font-medium">
+              <span className="text-ink-700 block text-sm font-medium">
                 Show roster fill publicly
-              </label>
-              <select
-                id="showRosterFill"
+              </span>
+              <ChipGroup
+                ariaLabel="Show roster fill publicly"
+                className="mt-1"
                 value={showRosterFill}
-                onChange={(e) => setShowRosterFill(e.target.value as typeof showRosterFill)}
-                className={inputCls}
-              >
-                <option value="inherit">Inherit club default</option>
-                <option value="show">Show</option>
-                <option value="hide">Hide</option>
-              </select>
+                onChange={(v) => setShowRosterFill(v as typeof showRosterFill)}
+                options={[
+                  { value: "inherit", label: "Inherit club default" },
+                  { value: "show", label: "Show" },
+                  { value: "hide", label: "Hide" },
+                ]}
+              />
               <p className="text-ink-500 mt-1 text-xs">
                 Shows &quot;X of Y spots filled&quot; on the public team page.
               </p>
@@ -819,36 +831,32 @@ export default function EditTeamPage() {
               </p>
             ) : (
               <div className="flex gap-2">
-                <select
+                <BrandListbox
+                  ariaLabel="Staff member"
+                  className="min-w-0 flex-1"
                   value={selectedStaffId}
-                  onChange={(e) => setSelectedStaffId(e.target.value)}
-                  className={`${inlineSelectCls} min-w-0 flex-1`}
-                >
-                  <option value="">Select a staff member</option>
-                  {unassignedStaff.map((s) => {
+                  onChange={setSelectedStaffId}
+                  placeholder="Select a staff member"
+                  options={unassignedStaff.map((s) => {
                     const name = [s.firstName, s.lastName].filter(Boolean).join(" ") || s.email
                     const currentRoles = s.roles
                       .filter((r) => !r.teamId)
                       .map((r) => r.role)
                       .join(", ")
-                    return (
-                      <option key={s.userId} value={s.userId}>
-                        {name} ({currentRoles})
-                      </option>
-                    )
+                    return { value: s.userId, label: `${name} (${currentRoles})` }
                   })}
-                </select>
-                <select
+                />
+                <BrandListbox
+                  ariaLabel="Staff role"
+                  className="w-40"
                   value={selectedStaffRole}
-                  onChange={(e) => setSelectedStaffRole(e.target.value as StaffRoleType)}
-                  className={`${inlineSelectCls} w-40`}
-                >
-                  <option value="HeadCoach" disabled={hasHeadCoach}>
-                    Head Coach
-                  </option>
-                  <option value="AssistantCoach">Assistant Coach</option>
-                  <option value="TeamManager">Team Manager</option>
-                </select>
+                  onChange={(v) => setSelectedStaffRole(v as StaffRoleType)}
+                  options={[
+                    { value: "HeadCoach", label: "Head Coach", disabled: hasHeadCoach },
+                    { value: "AssistantCoach", label: "Assistant Coach" },
+                    { value: "TeamManager", label: "Team Manager" },
+                  ]}
+                />
                 <Button type="button" size="sm" onClick={handleAddStaff} disabled={!selectedStaffId}>
                   Add
                 </Button>
@@ -875,17 +883,17 @@ export default function EditTeamPage() {
                   }
                 }}
               />
-              <select
+              <BrandListbox
+                ariaLabel="Invite role"
+                className="w-40"
                 value={inviteRole}
-                onChange={(e) => setInviteRole(e.target.value as StaffRoleType)}
-                className={`${inlineSelectCls} w-40`}
-              >
-                <option value="HeadCoach" disabled={hasHeadCoach}>
-                  Head Coach
-                </option>
-                <option value="AssistantCoach">Assistant Coach</option>
-                <option value="TeamManager">Team Manager</option>
-              </select>
+                onChange={(v) => setInviteRole(v as StaffRoleType)}
+                options={[
+                  { value: "HeadCoach", label: "Head Coach", disabled: hasHeadCoach },
+                  { value: "AssistantCoach", label: "Assistant Coach" },
+                  { value: "TeamManager", label: "Team Manager" },
+                ]}
+              />
               <Button
                 type="button"
                 size="sm"

@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react"
 import { format } from "date-fns"
-import { Badge, Button, PanelHeader, toneForStatus, DateTimePicker, type BadgeTone } from "@/components/ui"
+import { Badge, Button, PanelHeader, toneForStatus, DateTimePicker, BrandListbox, type BadgeTone } from "@/components/ui"
 import { inputClass, panelClass } from "./types"
 
 interface PoolReferee {
@@ -228,18 +228,13 @@ export function RefereesTab({
         <div className="flex flex-wrap items-end gap-3">
           <div>
             <label className="text-ink-600 mb-1 block text-xs font-medium">Session day</label>
-            <select
+            <BrandListbox
+              ariaLabel="Session day"
+              placeholder="Choose day…"
               value={dayId}
-              onChange={(e) => setDayId(e.target.value)}
-              className={inputClass}
-            >
-              <option value="">Choose day…</option>
-              {days.map((d) => (
-                <option key={d.id} value={d.id}>
-                  {d.label}
-                </option>
-              ))}
-            </select>
+              onChange={setDayId}
+              options={days.map((d) => ({ value: d.id, label: d.label }))}
+            />
           </div>
           <div>
             <label className="text-ink-600 mb-1 block text-xs font-medium">Shift</label>
@@ -267,13 +262,14 @@ export function RefereesTab({
         <div className="mt-3 flex flex-wrap items-end gap-3">
           <div className="min-w-0 flex-1">
             <label className="text-ink-600 mb-1 block text-xs font-medium">Send to</label>
-            <select
+            <BrandListbox
+              className="w-full"
+              ariaLabel="Send to"
               value={target}
-              onChange={(e) => {
+              onChange={(next) => {
                 // K-001: choosing a ref prefills the rate with THEIR standard
                 // fee — but never clobbers a number the operator typed (we only
                 // replace an empty field or the previous ref's untouched fee).
-                const next = e.target.value
                 const prevFee = (pool ?? []).find((r) => r.userId === target)?.fee
                 const nextFee = (pool ?? []).find((r) => r.userId === next)?.fee
                 if (
@@ -292,22 +288,19 @@ export function RefereesTab({
                 }
                 setTarget(next)
               }}
-              className={`${inputClass} w-full`}
-            >
-              <option value="">📢 All league referees (first accept wins)</option>
-              {(pool ?? [])
-                .filter((r) => r.inPool)
-                .map((r) => {
-                  const [label] = AVAILABILITY_BADGE[r.availability]
-                  return (
-                    <option key={r.userId} value={r.userId}>
-                      {r.name}
-                      {r.fee != null ? ` · $${r.fee}/game` : ""}
-                      {dayId ? ` — ${label}` : ""}
-                    </option>
-                  )
-                })}
-            </select>
+              options={[
+                { value: "", label: "📢 All league referees (first accept wins)" },
+                ...(pool ?? [])
+                  .filter((r) => r.inPool)
+                  .map((r) => {
+                    const [label] = AVAILABILITY_BADGE[r.availability]
+                    return {
+                      value: r.userId,
+                      label: `${r.name}${r.fee != null ? ` · $${r.fee}/game` : ""}${dayId ? ` · ${label}` : ""}`,
+                    }
+                  }),
+              ]}
+            />
           </div>
           <input
             type="number"

@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react"
 import { format } from "date-fns"
-import { Button, PanelHeader, DateTimePicker, Badge } from "@/components/ui"
+import { Button, PanelHeader, DateTimePicker, Badge, BrandListbox } from "@/components/ui"
 import { inputClass, panelClass, LOCKED_STATUSES, monthAnchorLabel } from "./types"
 
 interface DayDraft {
@@ -140,22 +140,23 @@ export function SessionsTab({
                       Stage 1) — optional, so it only shows once the league has
                       defined at least one round. */}
                   {rounds && rounds.length > 0 && (
-                    <select
+                    <BrandListbox
+                      className="w-36"
                       value={s.roundId ?? ""}
                       disabled={locked}
-                      onChange={(e) => void save(s.id, { roundId: e.target.value || null })}
-                      aria-label="Round"
-                      title="Which round this weekend belongs to"
-                      className={inputClass + " py-1 text-xs"}
-                    >
-                      <option value="">No round</option>
-                      {rounds.map((r: any) => (
-                        <option key={r.id} value={r.id}>
-                          Session {r.ordinal}
-                          {monthAnchorLabel(r.monthAnchor, true) ? ` · ${monthAnchorLabel(r.monthAnchor, true)}` : ""}
-                        </option>
-                      ))}
-                    </select>
+                      onChange={(v) => void save(s.id, { roundId: v || null })}
+                      ariaLabel="Round"
+                      placeholder="No round"
+                      options={[
+                        { value: "", label: "No round" },
+                        ...rounds.map((r: any) => ({
+                          value: r.id,
+                          label: `Session ${r.ordinal}${
+                            monthAnchorLabel(r.monthAnchor, true) ? ` · ${monthAnchorLabel(r.monthAnchor, true)}` : ""
+                          }`,
+                        })),
+                      ]}
+                    />
                   )}
                   {/* WHAT THIS WEEKEND IS FOR (owner's 2026-08-06 analysis,
                       C1). Playoff weekends are a SEASON setting, set here and

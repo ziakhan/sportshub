@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react"
 import { useParams, useRouter } from "next/navigation"
 import Link from "next/link"
-import { Badge, Button, Card, PanelHeader, toneForStatus } from "@/components/ui"
+import { Badge, Button, Card, ChipGroup, PanelHeader, toneForStatus } from "@/components/ui"
 
 interface StaffRole {
   id: string
@@ -306,14 +306,16 @@ export default function StaffPage() {
             </div>
             <div>
               <label className="text-ink-700 block text-sm font-medium">Role</label>
-              <select
+              <ChipGroup
+                className="mt-1"
+                ariaLabel="Role"
                 value={inviteRole}
-                onChange={(e) => setInviteRole(e.target.value as "ClubManager" | "Staff")}
-                className={inputCls}
-              >
-                <option value="Staff">Staff — a coach or team member</option>
-                <option value="ClubManager">Manager — helps run the whole club</option>
-              </select>
+                onChange={(v) => setInviteRole(v as "ClubManager" | "Staff")}
+                options={[
+                  { value: "Staff", label: "Staff" },
+                  { value: "ClubManager", label: "Manager" },
+                ]}
+              />
             </div>
             <div className="flex items-end">
               <Button type="submit" disabled={inviting} block icon={ICONS.send}>

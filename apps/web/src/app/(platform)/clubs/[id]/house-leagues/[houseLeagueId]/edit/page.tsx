@@ -5,7 +5,7 @@ import { useParams, useRouter } from "next/navigation"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
-import { Badge, Button, Card, PanelHeader, DateTimePicker, SmartBack } from "@/components/ui"
+import { Badge, Button, Card, ChipGroup, PanelHeader, DateTimePicker, SmartBack } from "@/components/ui"
 import { ProgramStaffPanel } from "@/components/programs/program-staff-panel"
 import { programLifecycle } from "@/lib/lifecycle"
 import { VenueSelector } from "@/components/venue-selector"
@@ -347,14 +347,18 @@ export default function EditHouseLeaguePage() {
 
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <div>
-                    <label htmlFor="gender" className="block text-sm font-medium text-ink-700">
-                      Gender
-                    </label>
-                    <select {...register("gender")} id="gender" className={inputCls}>
-                      <option value="">Co-ed</option>
-                      <option value="MALE">Boys</option>
-                      <option value="FEMALE">Girls</option>
-                    </select>
+                    <span className="block text-sm font-medium text-ink-700">Gender</span>
+                    <ChipGroup
+                      className="mt-1"
+                      ariaLabel="Gender"
+                      value={watch("gender") || ""}
+                      onChange={(v) => setValue("gender", v, { shouldValidate: true })}
+                      options={[
+                        { value: "", label: "Co-ed" },
+                        { value: "MALE", label: "Boys" },
+                        { value: "FEMALE", label: "Girls" },
+                      ]}
+                    />
                   </div>
                   <div>
                     <label htmlFor="season" className="block text-sm font-medium text-ink-700">

@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { formatCurrency } from "@/lib/countries"
-import { Badge, Button, Card, PanelHeader } from "@/components/ui"
+import { Badge, BrandListbox, Button, Card, PanelHeader } from "@/components/ui"
 
 interface Template {
   id: string
@@ -219,17 +219,16 @@ export function TemplateCard({
             </div>
             <div>
               <label className="block text-xs font-medium text-ink-600">Installments</label>
-              <select
+              <BrandListbox
+                className="mt-1"
+                ariaLabel="Installments"
                 value={installments}
-                onChange={(e) => setInstallments(e.target.value)}
-                className="mt-1 block w-full rounded-md border border-ink-200 px-2.5 py-1.5 text-sm focus:border-play-500 focus:outline-none focus:ring-1 focus:ring-play-500/20"
-              >
-                {[1, 2, 3, 4, 6, 12].map((n) => (
-                  <option key={n} value={n}>
-                    {n === 1 ? "Full" : `${n}x`}
-                  </option>
-                ))}
-              </select>
+                onChange={setInstallments}
+                options={[1, 2, 3, 4, 6, 12].map((n) => ({
+                  value: String(n),
+                  label: n === 1 ? "Full" : `${n}x`,
+                }))}
+              />
             </div>
           </div>
 

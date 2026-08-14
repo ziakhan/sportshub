@@ -1,6 +1,7 @@
 "use client"
 
 import { useRouter } from "next/navigation"
+import { BrandListbox } from "@/components/ui"
 
 interface Team {
   id: string
@@ -30,18 +31,14 @@ export function OffersFilter({
 
   return (
     <div className="mb-4">
-      <select
+      <BrandListbox
+        className="w-full sm:w-auto"
+        ariaLabel="Team"
+        placeholder="All Teams"
         value={activeTeamId || ""}
-        onChange={(e) => handleTeamChange(e.target.value)}
-        className="rounded-xl border border-ink-200 px-3 py-1.5 text-sm focus:border-play-500 focus:outline-none"
-      >
-        <option value="">All Teams</option>
-        {teams.map((team) => (
-          <option key={team.id} value={team.id}>
-            {team.name}
-          </option>
-        ))}
-      </select>
+        onChange={handleTeamChange}
+        options={teams.map((team) => ({ value: team.id, label: team.name }))}
+      />
     </div>
   )
 }

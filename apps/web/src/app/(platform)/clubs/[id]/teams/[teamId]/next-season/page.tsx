@@ -2,7 +2,15 @@
 
 import { useEffect, useMemo, useState } from "react"
 import { useParams } from "next/navigation"
-import { Badge, Button, PanelHeader, SmartBack } from "@/components/ui"
+import {
+  Badge,
+  BrandListbox,
+  Button,
+  ChipGroup,
+  ChoiceCardGroup,
+  PanelHeader,
+  SmartBack,
+} from "@/components/ui"
 
 /**
  * "Start next season" wizard (docs/season-continuity-plan.md §2).
@@ -540,38 +548,32 @@ export default function NextSeasonWizardPage() {
                 <label htmlFor="ns-age" className="text-ink-700 block text-sm font-medium">
                   Age group
                 </label>
-                <select
+                <BrandListbox
                   id="ns-age"
                   value={ageGroup}
-                  onChange={(e) => setAgeGroup(e.target.value)}
-                  className={INPUT_CLS}
-                >
-                  <option value="">Select age group</option>
-                  {ageGroup && !AGE_GROUPS.includes(ageGroup) && (
-                    <option value={ageGroup}>{ageGroup}</option>
-                  )}
-                  {AGE_GROUPS.map((age) => (
-                    <option key={age} value={age}>
-                      {age}
-                    </option>
-                  ))}
-                </select>
+                  onChange={setAgeGroup}
+                  placeholder="Select age group"
+                  className="mt-1"
+                  options={[
+                    ...(ageGroup && !AGE_GROUPS.includes(ageGroup) ? [{ value: ageGroup, label: ageGroup }] : []),
+                    ...AGE_GROUPS.map((age) => ({ value: age, label: age })),
+                  ]}
+                />
               </div>
               <div>
-                <label htmlFor="ns-gender" className="text-ink-700 block text-sm font-medium">
-                  Gender
-                </label>
-                <select
-                  id="ns-gender"
+                <span className="text-ink-700 block text-sm font-medium">Gender</span>
+                <ChipGroup
+                  ariaLabel="Gender"
+                  className="mt-1"
+                  allowClear
                   value={gender}
-                  onChange={(e) => setGender(e.target.value)}
-                  className={INPUT_CLS}
-                >
-                  <option value="">Select gender</option>
-                  <option value="MALE">Male</option>
-                  <option value="FEMALE">Female</option>
-                  <option value="COED">Co-ed</option>
-                </select>
+                  onChange={setGender}
+                  options={[
+                    { value: "MALE", label: "Male" },
+                    { value: "FEMALE", label: "Female" },
+                    { value: "COED", label: "Co-ed" },
+                  ]}
+                />
               </div>
             </div>
             <div>
@@ -746,29 +748,25 @@ export default function NextSeasonWizardPage() {
               <p className="text-ink-700 mb-3 text-xs font-bold uppercase tracking-wide">
                 Offer terms — {playerSel.size} player{playerSel.size !== 1 ? "s" : ""}
               </p>
-              <div className="mb-3 flex gap-4 text-sm">
-                <label className="flex cursor-pointer items-center gap-2">
-                  <input
-                    type="radio"
-                    name="offer-mode"
-                    checked={offerMode === "template"}
-                    onChange={() => setOfferMode("template")}
-                    disabled={templates.length === 0}
-                  />
-                  <span className={templates.length === 0 ? "text-ink-400" : "text-ink-700"}>
-                    Club template
-                  </span>
-                </label>
-                <label className="flex cursor-pointer items-center gap-2">
-                  <input
-                    type="radio"
-                    name="offer-mode"
-                    checked={offerMode === "manual"}
-                    onChange={() => setOfferMode("manual")}
-                  />
-                  <span className="text-ink-700">Set fee manually</span>
-                </label>
-              </div>
+              <ChoiceCardGroup
+                ariaLabel="Offer terms"
+                className="mb-3"
+                value={offerMode}
+                onChange={(v) => setOfferMode(v as typeof offerMode)}
+                options={[
+                  {
+                    value: "template",
+                    title: "Club template",
+                    description: "Use the fee and installments from a saved offer template",
+                    disabled: templates.length === 0,
+                  },
+                  {
+                    value: "manual",
+                    title: "Set fee manually",
+                    description: "Enter a season fee and installment count yourself",
+                  },
+                ]}
+              />
 
               {offerMode === "template" ? (
                 templates.length === 0 ? (
@@ -776,18 +774,17 @@ export default function NextSeasonWizardPage() {
                     No active offer templates — set the fee manually or create a template first.
                   </p>
                 ) : (
-                  <select
+                  <BrandListbox
+                    ariaLabel="Offer template"
                     value={templateId}
-                    onChange={(e) => setTemplateId(e.target.value)}
-                    className="border-ink-200 focus:border-play-500 block w-full rounded-xl border bg-white px-3 py-2 text-sm focus:outline-none"
-                  >
-                    {templates.map((t) => (
-                      <option key={t.id} value={t.id}>
-                        {t.name} — ${t.seasonFee.toLocaleString()}
-                        {t.installments > 1 ? ` (${t.installments} installments)` : ""}
-                      </option>
-                    ))}
-                  </select>
+                    onChange={setTemplateId}
+                    options={templates.map((t) => ({
+                      value: t.id,
+                      label: `${t.name} · $${t.seasonFee.toLocaleString()}${
+                        t.installments > 1 ? ` (${t.installments} installments)` : ""
+                      }`,
+                    }))}
+                  />
                 )
               ) : (
                 <div className="grid grid-cols-2 gap-3">
@@ -810,38 +807,29 @@ export default function NextSeasonWizardPage() {
                     <label htmlFor="ns-inst" className="text-ink-700 block text-xs font-medium">
                       Installments
                     </label>
-                    <select
+                    <BrandListbox
                       id="ns-inst"
-                      value={installments}
-                      onChange={(e) => setInstallments(Number(e.target.value))}
-                      className="border-ink-200 focus:border-play-500 mt-1 block w-full rounded-xl border bg-white px-3 py-2 text-sm focus:outline-none"
-                    >
-                      {[1, 2, 3, 4, 6, 12].map((n) => (
-                        <option key={n} value={n}>
-                          {n === 1 ? "Pay in full" : `${n} installments`}
-                        </option>
-                      ))}
-                    </select>
+                      className="mt-1"
+                      value={String(installments)}
+                      onChange={(v) => setInstallments(Number(v))}
+                      options={[1, 2, 3, 4, 6, 12].map((n) => ({
+                        value: String(n),
+                        label: n === 1 ? "Pay in full" : `${n} installments`,
+                      }))}
+                    />
                   </div>
                 </div>
               )}
 
               <div className="mt-3">
-                <label htmlFor="ns-exp" className="text-ink-700 block text-xs font-medium">
-                  Offers expire in
-                </label>
-                <select
-                  id="ns-exp"
-                  value={expiresInDays}
-                  onChange={(e) => setExpiresInDays(Number(e.target.value))}
-                  className="border-ink-200 focus:border-play-500 mt-1 block w-full rounded-xl border bg-white px-3 py-2 text-sm focus:outline-none"
-                >
-                  {[7, 14, 21, 30].map((d) => (
-                    <option key={d} value={d}>
-                      {d} days
-                    </option>
-                  ))}
-                </select>
+                <span className="text-ink-700 block text-xs font-medium">Offers expire in</span>
+                <ChipGroup
+                  ariaLabel="Offers expire in"
+                  className="mt-1"
+                  value={String(expiresInDays)}
+                  onChange={(v) => setExpiresInDays(Number(v))}
+                  options={[7, 14, 21, 30].map((d) => ({ value: String(d), label: `${d} days` }))}
+                />
               </div>
             </div>
           )}

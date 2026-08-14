@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { Button } from "@/components/ui"
+import { Button, DateTimePicker } from "@/components/ui"
 
 interface SeasonOpt {
   id: string
@@ -117,20 +117,22 @@ export function PlannerWorkspace({
         <div className="mt-3 flex flex-wrap items-center gap-3">
           <label className="text-ink-600 flex items-center gap-1.5 text-xs">
             Day starts
-            <input
-              type="time"
+            <DateTimePicker
+              mode="time"
+              id="dayStartsTime"
               value={startTime}
-              onChange={(e) => setStartTime(e.target.value)}
-              className="border-ink-200 rounded-lg border px-2 py-1 text-xs"
+              onChange={setStartTime}
+              className="w-28"
             />
           </label>
           <label className="text-ink-600 flex items-center gap-1.5 text-xs">
             Day ends
-            <input
-              type="time"
+            <DateTimePicker
+              mode="time"
+              id="dayEndsTime"
               value={endTime}
-              onChange={(e) => setEndTime(e.target.value)}
-              className="border-ink-200 rounded-lg border px-2 py-1 text-xs"
+              onChange={setEndTime}
+              className="w-28"
             />
           </label>
           <label className="text-ink-600 flex items-center gap-1.5 text-xs">

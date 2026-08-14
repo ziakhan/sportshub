@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { Button, PanelHeader } from "@/components/ui"
+import { BrandListbox, Button, PanelHeader } from "@/components/ui"
 
 export function TemplateForm({ clubId }: { clubId: string }) {
   const [isOpen, setIsOpen] = useState(false)
@@ -176,17 +176,16 @@ export function TemplateForm({ clubId }: { clubId: string }) {
           </div>
           <div>
             <label className="block text-sm font-medium text-ink-700">Installments</label>
-            <select
+            <BrandListbox
+              className="mt-1"
+              ariaLabel="Installments"
               value={installments}
-              onChange={(e) => setInstallments(e.target.value)}
-              className="mt-1 block w-full rounded-md border border-ink-200 px-3 py-2 text-sm shadow-sm focus:border-play-500 focus:outline-none focus:ring-1 focus:ring-play-500/20"
-            >
-              {[1, 2, 3, 4, 6, 12].map((n) => (
-                <option key={n} value={n}>
-                  {n === 1 ? "Full payment" : `${n} installments`}
-                </option>
-              ))}
-            </select>
+              onChange={setInstallments}
+              options={[1, 2, 3, 4, 6, 12].map((n) => ({
+                value: String(n),
+                label: n === 1 ? "Full payment" : `${n} installments`,
+              }))}
+            />
           </div>
           <div>
             <label className="block text-sm font-medium text-ink-700">

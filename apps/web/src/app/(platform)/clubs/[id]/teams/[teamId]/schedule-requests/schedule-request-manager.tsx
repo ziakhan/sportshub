@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { Badge, Button } from "@/components/ui"
+import { Badge, Button, ChipGroup, DateTimePicker } from "@/components/ui"
 
 const DAY_NAMES = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
 
@@ -205,30 +205,23 @@ export function ScheduleRequestManager({
               <p className="text-ink-400 mt-2 text-xs">{activePreset.hint}</p>
               <div className="mt-3 flex flex-wrap items-center gap-2">
                 {activePreset.times.length > 0 ? (
-                  <label className="text-ink-600 flex items-center gap-1.5 text-xs">
+                  <span className="text-ink-600 flex items-center gap-1.5 text-xs">
                     Time{/* preset times only — owner: clubs can't free-type */}
-                    <select
+                    <ChipGroup
+                      ariaLabel="Time"
                       value={time}
-                      onChange={(e) => setTime(e.target.value)}
-                      className="border-ink-200 rounded-lg border px-2 py-1 text-xs"
-                    >
-                      {activePreset.times.map((t) => (
-                        <option key={t} value={t}>
-                          {activePreset.timeLabel(t)}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                ) : (
-                  <label className="text-ink-600 flex items-center gap-1.5 text-xs">
-                    Date
-                    <input
-                      type="date"
-                      value={date}
-                      onChange={(e) => setDate(e.target.value)}
-                      className="border-ink-200 rounded-lg border px-2 py-1 text-xs"
+                      onChange={setTime}
+                      options={activePreset.times.map((t) => ({
+                        value: t,
+                        label: activePreset.timeLabel(t),
+                      }))}
                     />
-                  </label>
+                  </span>
+                ) : (
+                  <span className="text-ink-600 flex items-center gap-1.5 text-xs">
+                    Date
+                    <DateTimePicker mode="date" value={date} onChange={setDate} className="w-40" />
+                  </span>
                 )}
                 <input
                   type="text"

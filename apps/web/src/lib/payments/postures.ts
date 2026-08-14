@@ -61,7 +61,7 @@ export const POSTURES: Posture[] = [
   },
   {
     key: "ONLINE_CONNECT",
-    label: "Online required — own Stripe",
+    label: "Online required: own Stripe",
     hint: "No cash/pay-later. Every payment is a card charge on the club's Stripe account.",
     offlineAllowed: false,
     connectAllowed: true,
@@ -70,7 +70,7 @@ export const POSTURES: Posture[] = [
   },
   {
     key: "ONLINE_PLATFORM",
-    label: "Online required — through us",
+    label: "Online required: through us",
     hint: "No cash/pay-later. Every payment runs through the platform.",
     offlineAllowed: false,
     connectAllowed: false,
@@ -79,7 +79,7 @@ export const POSTURES: Posture[] = [
   },
   {
     key: "ONLINE_CHOICE",
-    label: "Online required — club's choice of rail",
+    label: "Online required: club's choice of rail",
     hint: "No cash/pay-later. Clubs pick their own Stripe account or the platform.",
     offlineAllowed: false,
     connectAllowed: true,

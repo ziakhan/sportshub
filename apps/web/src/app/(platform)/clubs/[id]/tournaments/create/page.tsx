@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { useParams, useRouter } from "next/navigation"
 import Link from "next/link"
-import { DateTimePicker, SmartBack } from "@/components/ui"
+import { ChipGroup, DateTimePicker, SmartBack } from "@/components/ui"
 
 export default function CreateTournamentPage() {
   const params = useParams()
@@ -221,14 +221,16 @@ export default function CreateTournamentPage() {
               </div>
               <div>
                 <label className="block text-sm font-medium text-ink-700">Periods</label>
-                <select
+                <ChipGroup
+                  className="mt-1"
+                  ariaLabel="Periods"
                   value={gamePeriods}
-                  onChange={(e) => setGamePeriods(e.target.value)}
-                  className="mt-1 block w-full rounded-md border border-ink-200 px-3 py-2 text-sm focus:border-play-500 focus:ring-play-500/20"
-                >
-                  <option value="HALVES">2 Halves</option>
-                  <option value="QUARTERS">4 Quarters</option>
-                </select>
+                  onChange={setGamePeriods}
+                  options={[
+                    { value: "HALVES", label: "2 Halves" },
+                    { value: "QUARTERS", label: "4 Quarters" },
+                  ]}
+                />
               </div>
             </div>
           </div>
@@ -241,16 +243,18 @@ export default function CreateTournamentPage() {
             </p>
             <div>
               <label className="block text-sm font-medium text-ink-700">Playoff Format</label>
-              <select
+              <ChipGroup
+                className="mt-1"
+                ariaLabel="Playoff Format"
                 value={playoffFormat}
-                onChange={(e) => setPlayoffFormat(e.target.value)}
-                className="mt-1 block w-full rounded-md border border-ink-200 px-3 py-2 text-sm focus:border-play-500 focus:ring-play-500/20"
-              >
-                <option value="">To be determined</option>
-                <option value="SINGLE_ELIMINATION">Single Elimination</option>
-                <option value="DOUBLE_ELIMINATION">Double Elimination</option>
-                <option value="ROUND_ROBIN">Round Robin</option>
-              </select>
+                onChange={setPlayoffFormat}
+                options={[
+                  { value: "", label: "To be determined" },
+                  { value: "SINGLE_ELIMINATION", label: "Single Elimination" },
+                  { value: "DOUBLE_ELIMINATION", label: "Double Elimination" },
+                  { value: "ROUND_ROBIN", label: "Round Robin" },
+                ]}
+              />
             </div>
           </div>
 

@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { Button, PanelHeader, DateTimePicker } from "@/components/ui"
+import { Button, PanelHeader, DateTimePicker, BrandListbox } from "@/components/ui"
 import { QuestionBuilder } from "@/components/question-builder"
 import { normalizeQuestions, type ApplicationQuestion } from "@/lib/registration/questions"
 
@@ -162,12 +162,18 @@ export function SeasonDefaultsEditor({
             <input value={gamesGuaranteed} onChange={(e) => setGamesGuaranteed(e.target.value.replace(/\D/g, ""))} inputMode="numeric" className={inputCls + " w-20"} />
           </div>
           <div>
-            <label className="text-ink-600 mb-0.5 block text-xs">Format</label>
-            <select value={gamePeriods} onChange={(e) => setGamePeriods(e.target.value)} className={inputCls}>
-              <option value="">—</option>
-              <option value="HALVES">2 Halves</option>
-              <option value="QUARTERS">4 Quarters</option>
-            </select>
+            <label htmlFor="gamePeriods" className="text-ink-600 mb-0.5 block text-xs">Format</label>
+            <BrandListbox
+              id="gamePeriods"
+              value={gamePeriods}
+              onChange={setGamePeriods}
+              placeholder="Not set"
+              className="w-36"
+              options={[
+                { value: "HALVES", label: "2 Halves" },
+                { value: "QUARTERS", label: "4 Quarters" },
+              ]}
+            />
           </div>
           <div>
             <label className="text-ink-600 mb-0.5 block text-xs">Half/quarter (min)</label>
@@ -238,24 +244,32 @@ export function SeasonDefaultsEditor({
           </div>
           <div className="flex flex-wrap items-end gap-4">
             <div>
-              <label className="text-ink-600 mb-0.5 block text-xs">Weekend style</label>
-              <select
+              <label htmlFor="weekendStyle" className="text-ink-600 mb-0.5 block text-xs">Weekend style</label>
+              <BrandListbox
+                id="weekendStyle"
                 value={weekendStyle}
-                onChange={(e) => setWeekendStyle(e.target.value)}
-                className={inputCls}
-              >
-                <option value="">—</option>
-                <option value="SAME_DAY">One trip (same day)</option>
-                <option value="SPLIT_DAYS">Split days (Sat + Sun)</option>
-              </select>
+                onChange={setWeekendStyle}
+                placeholder="Not set"
+                className="w-56"
+                options={[
+                  { value: "SAME_DAY", label: "One trip (same day)" },
+                  { value: "SPLIT_DAYS", label: "Split days (Sat + Sun)" },
+                ]}
+              />
             </div>
             <div>
-              <label className="text-ink-600 mb-0.5 block text-xs">Guest players</label>
-              <select value={guests} onChange={(e) => setGuests(e.target.value as any)} className={inputCls}>
-                <option value="">—</option>
-                <option value="yes">Allowed</option>
-                <option value="no">Not allowed</option>
-              </select>
+              <label htmlFor="guestPlayers" className="text-ink-600 mb-0.5 block text-xs">Guest players</label>
+              <BrandListbox
+                id="guestPlayers"
+                value={guests}
+                onChange={(v) => setGuests(v as "" | "yes" | "no")}
+                placeholder="Not set"
+                className="w-40"
+                options={[
+                  { value: "yes", label: "Allowed" },
+                  { value: "no", label: "Not allowed" },
+                ]}
+              />
             </div>
             <div>
               <label className="text-ink-600 mb-0.5 block text-xs">Playoff min games</label>

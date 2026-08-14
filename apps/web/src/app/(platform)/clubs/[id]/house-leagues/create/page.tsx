@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { useParams, useRouter } from "next/navigation"
 import Link from "next/link"
-import { DateTimePicker, SmartBack } from "@/components/ui"
+import { ChipGroup, DateTimePicker, SmartBack } from "@/components/ui"
 import { VenueSelector } from "@/components/venue-selector"
 import { AgePolicySelect } from "@/components/registration/age-policy-select"
 
@@ -168,12 +168,17 @@ export default function CreateHouseLeaguePage() {
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div>
                 <label className="block text-sm font-medium text-ink-700">Gender</label>
-                <select value={gender} onChange={(e) => setGender(e.target.value)}
-                  className="mt-1 block w-full rounded-md border border-ink-200 px-3 py-2 text-sm">
-                  <option value="">Co-ed</option>
-                  <option value="MALE">Boys</option>
-                  <option value="FEMALE">Girls</option>
-                </select>
+                <ChipGroup
+                  className="mt-1"
+                  ariaLabel="Gender"
+                  value={gender}
+                  onChange={setGender}
+                  options={[
+                    { value: "", label: "Co-ed" },
+                    { value: "MALE", label: "Boys" },
+                    { value: "FEMALE", label: "Girls" },
+                  ]}
+                />
               </div>
               <div>
                 <label className="block text-sm font-medium text-ink-700">Season</label>

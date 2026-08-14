@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { Button } from "@/components/ui"
+import { Button, DateTimePicker } from "@/components/ui"
 
 /**
  * League-direct blackout dates (owner 2026-08-01): mark days a team can't
@@ -98,11 +98,11 @@ export function BlackoutManager({
         </ul>
       )}
       <div className="mt-2 flex flex-wrap items-center gap-2">
-        <input
-          type="date"
+        <DateTimePicker
+          mode="date"
           value={date}
-          onChange={(e) => setDate(e.target.value)}
-          className="border-ink-200 rounded-lg border px-2 py-1 text-xs"
+          onChange={setDate}
+          className="w-36"
         />
         <input
           type="text"

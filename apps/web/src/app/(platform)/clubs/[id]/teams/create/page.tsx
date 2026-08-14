@@ -6,7 +6,7 @@ import Link from "next/link"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
-import { DateTimePicker, SmartBack } from "@/components/ui"
+import { BrandListbox, ChipGroup, DateTimePicker, SmartBack } from "@/components/ui"
 import { composeTeamName, TEAM_NAME_SUFFIXES } from "@/lib/teams/naming"
 
 // Derived naming (league-ia-redesign §4): the club picks age group (+ an
@@ -136,11 +136,13 @@ export default function CreateTeamPage() {
     register,
     handleSubmit,
     watch,
+    setValue,
     formState: { errors },
   } = useForm<CreateTeamFormData>({
     resolver: zodResolver(createTeamSchema),
   })
   const watchedAgeGroup = watch("ageGroup")
+  const watchedGender = watch("gender")
   const namePreview =
     watchedAgeGroup && (clubName || clubShortName)
       ? composeTeamName({
@@ -426,18 +428,15 @@ export default function CreateTeamPage() {
               <label htmlFor="ageGroup" className="text-ink-700 block text-sm font-medium">
                 Age Group <span className="text-red-500">*</span>
               </label>
-              <select
-                {...register("ageGroup")}
+              <BrandListbox
                 id="ageGroup"
-                className="border-ink-200 focus:border-play-500 mt-1 block w-full rounded-xl border px-3 py-2 focus:outline-none"
-              >
-                <option value="">Select age group</option>
-                {ageGroups.map((age) => (
-                  <option key={age} value={age}>
-                    {age}
-                  </option>
-                ))}
-              </select>
+                value={watchedAgeGroup || ""}
+                onChange={(v) => setValue("ageGroup", v, { shouldValidate: true })}
+                placeholder="Select age group"
+                className="mt-1"
+                error={!!errors.ageGroup}
+                options={ageGroups.map((age) => ({ value: age, label: age }))}
+              />
               {errors.ageGroup && (
                 <p className="mt-1 text-sm text-red-600">{errors.ageGroup.message}</p>
               )}
@@ -505,19 +504,23 @@ export default function CreateTeamPage() {
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label htmlFor="gender" className="text-ink-700 block text-sm font-medium">
-                  Gender
-                </label>
-                <select
-                  {...register("gender")}
-                  id="gender"
-                  className="border-ink-200 focus:border-play-500 mt-1 block w-full rounded-xl border px-3 py-2 focus:outline-none"
-                >
-                  <option value="">Select gender</option>
-                  <option value="MALE">Male</option>
-                  <option value="FEMALE">Female</option>
-                  <option value="COED">Co-ed</option>
-                </select>
+                <span className="text-ink-700 block text-sm font-medium">Gender</span>
+                <ChipGroup
+                  ariaLabel="Gender"
+                  className="mt-1"
+                  allowClear
+                  value={watchedGender || ""}
+                  onChange={(v) =>
+                    setValue("gender", v as CreateTeamFormData["gender"], {
+                      shouldValidate: true,
+                    })
+                  }
+                  options={[
+                    { value: "MALE", label: "Male" },
+                    { value: "FEMALE", label: "Female" },
+                    { value: "COED", label: "Co-ed" },
+                  ]}
+                />
               </div>
 
               <div>
@@ -564,25 +567,19 @@ export default function CreateTeamPage() {
                   key={i}
                   className="border-ink-200 flex flex-wrap items-center gap-2 rounded-xl border px-3 py-2"
                 >
-                  <select
-                    value={slot.dayOfWeek}
-                    onChange={(e) =>
+                  <BrandListbox
+                    ariaLabel="Day of week"
+                    value={String(slot.dayOfWeek)}
+                    onChange={(v) =>
                       setPracticeSlots((cur) =>
-                        cur.map((s, j) =>
-                          j === i ? { ...s, dayOfWeek: Number(e.target.value) } : s
-                        )
+                        cur.map((s, j) => (j === i ? { ...s, dayOfWeek: Number(v) } : s))
                       )
                     }
-                    className="border-ink-200 rounded-lg border px-2 py-1.5 text-sm"
-                  >
-                    {["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"].map(
-                      (d, di) => (
-                        <option key={d} value={di}>
-                          {d}
-                        </option>
-                      )
+                    className="w-36"
+                    options={["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"].map(
+                      (d, di) => ({ value: String(di), label: d })
                     )}
-                  </select>
+                  />
                   <DateTimePicker
                     mode="time"
                     value={slot.startTime}
@@ -593,23 +590,20 @@ export default function CreateTeamPage() {
                     }
                     className="w-28"
                   />
-                  <select
-                    value={slot.durationMinutes}
-                    onChange={(e) =>
+                  <BrandListbox
+                    ariaLabel="Practice duration"
+                    value={String(slot.durationMinutes)}
+                    onChange={(v) =>
                       setPracticeSlots((cur) =>
-                        cur.map((s, j) =>
-                          j === i ? { ...s, durationMinutes: Number(e.target.value) } : s
-                        )
+                        cur.map((s, j) => (j === i ? { ...s, durationMinutes: Number(v) } : s))
                       )
                     }
-                    className="border-ink-200 rounded-lg border px-2 py-1.5 text-sm"
-                  >
-                    {[60, 75, 90, 105, 120, 150, 180].map((m) => (
-                      <option key={m} value={m}>
-                        {m} min
-                      </option>
-                    ))}
-                  </select>
+                    className="w-28"
+                    options={[60, 75, 90, 105, 120, 150, 180].map((m) => ({
+                      value: String(m),
+                      label: `${m} min`,
+                    }))}
+                  />
                   <input
                     value={slot.location}
                     onChange={(e) =>
@@ -740,36 +734,32 @@ export default function CreateTeamPage() {
               </p>
             ) : (
               <div className="flex gap-2">
-                <select
+                <BrandListbox
+                  ariaLabel="Staff member"
+                  className="flex-1"
                   value={selectedStaffId}
-                  onChange={(e) => setSelectedStaffId(e.target.value)}
-                  className="border-ink-200 focus:border-play-500 flex-1 rounded-xl border px-3 py-2 text-sm focus:outline-none"
-                >
-                  <option value="">Select a staff member</option>
-                  {unassignedStaff.map((s) => {
+                  onChange={setSelectedStaffId}
+                  placeholder="Select a staff member"
+                  options={unassignedStaff.map((s) => {
                     const name = [s.firstName, s.lastName].filter(Boolean).join(" ") || s.email
                     const currentRoles = s.roles
                       .filter((r) => !r.teamId)
                       .map((r) => r.role)
                       .join(", ")
-                    return (
-                      <option key={s.userId} value={s.userId}>
-                        {name} ({currentRoles})
-                      </option>
-                    )
+                    return { value: s.userId, label: `${name} (${currentRoles})` }
                   })}
-                </select>
-                <select
+                />
+                <BrandListbox
+                  ariaLabel="Staff role"
+                  className="w-40"
                   value={selectedStaffRole}
-                  onChange={(e) => setSelectedStaffRole(e.target.value as StaffRoleType)}
-                  className="border-ink-200 focus:border-play-500 w-40 rounded-xl border px-3 py-2 text-sm focus:outline-none"
-                >
-                  <option value="HeadCoach" disabled={hasHeadCoach}>
-                    Head Coach
-                  </option>
-                  <option value="AssistantCoach">Assistant Coach</option>
-                  <option value="TeamManager">Team Manager</option>
-                </select>
+                  onChange={(v) => setSelectedStaffRole(v as StaffRoleType)}
+                  options={[
+                    { value: "HeadCoach", label: "Head Coach", disabled: hasHeadCoach },
+                    { value: "AssistantCoach", label: "Assistant Coach" },
+                    { value: "TeamManager", label: "Team Manager" },
+                  ]}
+                />
                 <button
                   type="button"
                   onClick={handleAddStaff}
@@ -799,17 +789,17 @@ export default function CreateTeamPage() {
                   }
                 }}
               />
-              <select
+              <BrandListbox
+                ariaLabel="Invite role"
+                className="w-40"
                 value={inviteRole}
-                onChange={(e) => setInviteRole(e.target.value as StaffRoleType)}
-                className="border-ink-200 focus:border-play-500 w-40 rounded-xl border px-3 py-2 text-sm focus:outline-none"
-              >
-                <option value="HeadCoach" disabled={hasHeadCoach}>
-                  Head Coach
-                </option>
-                <option value="AssistantCoach">Assistant Coach</option>
-                <option value="TeamManager">Team Manager</option>
-              </select>
+                onChange={(v) => setInviteRole(v as StaffRoleType)}
+                options={[
+                  { value: "HeadCoach", label: "Head Coach", disabled: hasHeadCoach },
+                  { value: "AssistantCoach", label: "Assistant Coach" },
+                  { value: "TeamManager", label: "Team Manager" },
+                ]}
+              />
               <button
                 type="button"
                 onClick={handleAddInvite}

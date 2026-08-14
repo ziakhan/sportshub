@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useParams } from "next/navigation"
-import { Button, Card } from "@/components/ui"
+import { BrandListbox, Button, Card } from "@/components/ui"
 import { PRIMARY_DOMAIN } from "@/lib/domains"
 
 const inputCls =
@@ -192,17 +192,13 @@ export default function SettingsPage() {
             <label className="block text-sm font-medium text-ink-700">
               Timezone
             </label>
-            <select
+            <BrandListbox
+              className="mt-1"
+              ariaLabel="Timezone"
               value={timezone}
-              onChange={(e) => setTimezone(e.target.value)}
-              className={inputCls}
-            >
-              {timezones.map((tz) => (
-                <option key={tz} value={tz}>
-                  {tz.replace("_", " ")}
-                </option>
-              ))}
-            </select>
+              onChange={setTimezone}
+              options={timezones.map((tz) => ({ value: tz, label: tz.replace("_", " ") }))}
+            />
           </div>
 
           <div>

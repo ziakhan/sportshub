@@ -1,6 +1,7 @@
 "use client"
 
 import { useRouter } from "next/navigation"
+import { BrandListbox } from "@/components/ui"
 
 export function SummaryTeamFilter({
   teams,
@@ -14,20 +15,15 @@ export function SummaryTeamFilter({
   const router = useRouter()
 
   return (
-    <select
+    <BrandListbox
+      className="w-full sm:w-auto"
+      ariaLabel="Team"
+      placeholder="All Teams"
       value={activeTeamId || ""}
-      onChange={(e) => {
-        const teamId = e.target.value
+      onChange={(teamId) =>
         router.push(`/clubs/${clubId}/offers/summary${teamId ? `?team=${teamId}` : ""}`)
-      }}
-      className="border-ink-200 focus:border-play-500 rounded-xl border px-3 py-1.5 text-sm focus:outline-none"
-    >
-      <option value="">All Teams</option>
-      {teams.map((team) => (
-        <option key={team.id} value={team.id}>
-          {team.name}
-        </option>
-      ))}
-    </select>
+      }
+      options={teams.map((team) => ({ value: team.id, label: team.name }))}
+    />
   )
 }

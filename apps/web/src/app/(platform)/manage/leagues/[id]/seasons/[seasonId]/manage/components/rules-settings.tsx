@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { PanelHeader } from "@/components/ui"
+import { PanelHeader, ChipGroup } from "@/components/ui"
 import { inputClass, panelClass } from "./types"
 import { GameDayPolicies } from "./game-day-policies"
 import { TiebreakersTab } from "./tiebreakers-tab"
@@ -40,16 +40,17 @@ export function RulesSettings({
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           <div>
             <label className="text-ink-700 mb-1 block text-xs font-medium">Playoff format</label>
-            <select
+            <ChipGroup
+              ariaLabel="Playoff format"
               value={league.playoffFormat || ""}
-              onChange={(e) => patchSeason({ playoffFormat: e.target.value || null })}
-              className={inputClass + " w-full"}
-            >
-              <option value="">None / TBD</option>
-              <option value="SINGLE_ELIMINATION">Single Elimination</option>
-              <option value="DOUBLE_ELIMINATION">Double Elimination</option>
-              <option value="ROUND_ROBIN">Round Robin</option>
-            </select>
+              onChange={(v) => patchSeason({ playoffFormat: v || null })}
+              options={[
+                { value: "", label: "None / TBD" },
+                { value: "SINGLE_ELIMINATION", label: "Single Elimination" },
+                { value: "DOUBLE_ELIMINATION", label: "Double Elimination" },
+                { value: "ROUND_ROBIN", label: "Round Robin" },
+              ]}
+            />
           </div>
           <div>
             <label className="text-ink-700 mb-1 block text-xs font-medium">

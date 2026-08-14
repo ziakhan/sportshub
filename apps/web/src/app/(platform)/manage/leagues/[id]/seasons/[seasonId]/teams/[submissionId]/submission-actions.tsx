@@ -1,7 +1,7 @@
 "use client"
 
 import { useRouter } from "next/navigation"
-import { Button } from "@/components/ui"
+import { Button, ChipGroup } from "@/components/ui"
 
 /** Approve/reject/withdraw + payment actions — same PATCH the Teams tab uses. */
 export function SubmissionActions({
@@ -64,18 +64,19 @@ export function SubmissionActions({
       )}
       {/* Weekend preference (owner 2026-08-01): the team's choice overrides
           the league default when the schedule is generated. */}
-      <label className="text-ink-600 flex items-center gap-1.5 text-xs">
+      <span className="text-ink-600 flex items-center gap-1.5 text-xs">
         Weekend preference
-        <select
+        <ChipGroup
+          ariaLabel="Weekend preference"
           value={weekendStyle ?? "NO_PREFERENCE"}
-          onChange={(e) => patch({ weekendStyle: e.target.value })}
-          className="border-ink-200 focus:border-play-500 rounded-lg border px-2 py-1 text-xs focus:outline-none"
-        >
-          <option value="NO_PREFERENCE">League default</option>
-          <option value="SAME_DAY">One trip (both games same day)</option>
-          <option value="SPLIT_DAYS">Split days (Sat + Sun)</option>
-        </select>
-      </label>
+          onChange={(v) => patch({ weekendStyle: v })}
+          options={[
+            { value: "NO_PREFERENCE", label: "League default" },
+            { value: "SAME_DAY", label: "One trip (both games same day)" },
+            { value: "SPLIT_DAYS", label: "Split days (Sat + Sun)" },
+          ]}
+        />
+      </span>
       {/* Schedule requests gate (owner 2026-08-01): OFF for everyone; the
           league flips it per team "upon request". */}
       <label className="text-ink-600 flex items-center gap-1.5 text-xs">

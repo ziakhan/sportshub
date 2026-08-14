@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react"
 import { useParams } from "next/navigation"
 import { format } from "date-fns"
-import { Button, DateTimePicker, PanelHeader } from "@/components/ui"
+import { Button, ChipGroup, DateTimePicker, PanelHeader } from "@/components/ui"
 import { formatCurrency } from "@/lib/countries"
 
 interface Window {
@@ -185,17 +185,12 @@ export default function OneOnOnePage() {
         <div className="flex flex-wrap items-end gap-4">
           <div>
             <label className="text-ink-700 mb-1 block text-xs font-semibold">Session length</label>
-            <select
-              value={slotMinutes}
-              onChange={(e) => setSlotMinutes(Number(e.target.value))}
-              className={inputClass}
-            >
-              {[30, 45, 60, 90, 120].map((m) => (
-                <option key={m} value={m}>
-                  {m} minutes
-                </option>
-              ))}
-            </select>
+            <ChipGroup
+              ariaLabel="Session length"
+              value={String(slotMinutes)}
+              onChange={(v) => setSlotMinutes(Number(v))}
+              options={[30, 45, 60, 90, 120].map((m) => ({ value: String(m), label: `${m} minutes` }))}
+            />
           </div>
           <div>
             <label className="text-ink-700 mb-1 block text-xs font-semibold">

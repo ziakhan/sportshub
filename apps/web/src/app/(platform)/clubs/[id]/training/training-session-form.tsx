@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { DateTimePicker, TimeRangePicker } from "@/components/ui"
+import { DateTimePicker, TimeRangePicker, BrandListbox, ChipGroup } from "@/components/ui"
 import { VenueSelector } from "@/components/venue-selector"
 import { AgePolicySelect } from "@/components/registration/age-policy-select"
 import { TRAINING_SESSION_TYPES } from "@/lib/training"
@@ -185,17 +185,13 @@ export function TrainingSessionForm({
       <div className="grid gap-4 sm:grid-cols-2">
         <div>
           <label className={labelClass}>Program type</label>
-          <select
+          <BrandListbox
+            className="mt-1"
+            ariaLabel="Program type"
             value={values.sessionType}
-            onChange={(e) => set("sessionType", e.target.value)}
-            className={inputClass}
-          >
-            {TRAINING_SESSION_TYPES.map((t) => (
-              <option key={t.value} value={t.value}>
-                {t.label}
-              </option>
-            ))}
-          </select>
+            onChange={(v) => set("sessionType", v)}
+            options={TRAINING_SESSION_TYPES.map((t) => ({ value: t.value, label: t.label }))}
+          />
         </div>
         <div>
           <label className={labelClass}>Program name</label>
@@ -244,25 +240,28 @@ export function TrainingSessionForm({
           <label className={labelClass}>
             Who can join <span className="text-ink-400 font-normal">(optional)</span>
           </label>
-          <select
+          <ChipGroup
+            className="mt-1"
+            ariaLabel="Who can join"
             value={values.gender}
-            onChange={(e) => set("gender", e.target.value)}
-            className={inputClass}
-          >
-            <option value="">Everyone</option>
-            <option value="COED">Coed</option>
-            <option value="MALE">Boys</option>
-            <option value="FEMALE">Girls</option>
-          </select>
+            onChange={(v) => set("gender", v)}
+            options={[
+              { value: "", label: "Everyone" },
+              { value: "COED", label: "Coed" },
+              { value: "MALE", label: "Boys" },
+              { value: "FEMALE", label: "Girls" },
+            ]}
+          />
         </div>
         <div>
           <label className={labelClass}>
             Group size <span className="text-ink-400 font-normal">(optional)</span>
           </label>
-          <select
+          <BrandListbox
+            className="mt-1"
+            ariaLabel="Group size"
             value={values.groupTier}
-            onChange={(e) => {
-              const tier = e.target.value
+            onChange={(tier) => {
               setValues((v) => ({
                 ...v,
                 groupTier: tier,
@@ -275,14 +274,8 @@ export function TrainingSessionForm({
                     : v.capacity,
               }))
             }}
-            className={inputClass}
-          >
-            {GROUP_TIERS.map((t) => (
-              <option key={t.value} value={t.value}>
-                {t.label}
-              </option>
-            ))}
-          </select>
+            options={GROUP_TIERS}
+          />
         </div>
         <div>
           <label className={labelClass}>

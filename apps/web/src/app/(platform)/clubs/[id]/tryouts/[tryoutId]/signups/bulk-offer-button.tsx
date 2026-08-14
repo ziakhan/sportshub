@@ -7,6 +7,7 @@ import {
   packagePayload,
   type OfferPackageDraft,
 } from "@/components/offers/offer-composer"
+import { ChipGroup } from "@/components/ui"
 
 /**
  * Bulk offers: compose the packages ONCE, tick the players, send — each
@@ -187,17 +188,15 @@ export function BulkOfferButton({
                     <label className="text-ink-700 mb-1 block text-xs font-semibold">
                       Expires in
                     </label>
-                    <select
+                    <ChipGroup
+                      ariaLabel="Expires in"
                       value={expiresInDays}
-                      onChange={(e) => setExpiresInDays(e.target.value)}
-                      className="border-ink-200 rounded-xl border px-3 py-2 text-sm"
-                    >
-                      {[3, 5, 7, 10, 14].map((d) => (
-                        <option key={d} value={d}>
-                          {d} days
-                        </option>
-                      ))}
-                    </select>
+                      onChange={setExpiresInDays}
+                      options={[3, 5, 7, 10, 14].map((d) => ({
+                        value: String(d),
+                        label: `${d} days`,
+                      }))}
+                    />
                   </div>
                 </div>
 

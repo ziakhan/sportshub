@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react"
 import { format } from "date-fns"
-import { Badge, Button, PanelHeader, toneForStatus, DateTimePicker } from "@/components/ui"
+import { Badge, Button, PanelHeader, toneForStatus, DateTimePicker, ChipGroup } from "@/components/ui"
 import {
   RosterChangeReviewDialog,
   type RosterChangePreview,
@@ -176,15 +176,16 @@ export function RosterRequestsPanel({
       <div className="border-court-100 bg-court-50 mb-4 flex flex-wrap items-end gap-3 rounded-xl border p-3">
         <div>
           <label className="text-ink-600 mb-1 block text-xs font-medium">After rosters lock</label>
-          <select
+          <ChipGroup
+            ariaLabel="After rosters lock"
             value={policyDraft}
-            onChange={(e) => setPolicyDraft(e.target.value)}
-            className={inputClass}
-          >
-            <option value="REQUEST_ONLY">Changes need my approval</option>
-            <option value="OPEN_UNTIL_DEADLINE">Clubs edit freely until a deadline</option>
-            <option value="CLOSED">No changes at all</option>
-          </select>
+            onChange={setPolicyDraft}
+            options={[
+              { value: "REQUEST_ONLY", label: "Changes need my approval" },
+              { value: "OPEN_UNTIL_DEADLINE", label: "Clubs edit freely until a deadline" },
+              { value: "CLOSED", label: "No changes at all" },
+            ]}
+          />
         </div>
         {policyDraft === "OPEN_UNTIL_DEADLINE" && (
           <div>

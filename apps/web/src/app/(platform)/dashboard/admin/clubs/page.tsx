@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react"
 import Link from "next/link"
 import { PRIMARY_DOMAIN } from "@/lib/domains"
-import { SmartBack } from "@/components/ui"
+import { BrandListbox, SmartBack } from "@/components/ui"
 
 interface Club {
   id: string
@@ -255,17 +255,19 @@ export default function AdminClubsPage() {
                   )}
 
                   {/* Plan change dropdown */}
-                  <select
+                  <BrandListbox
+                    ariaLabel="Change plan"
                     value={club.plan}
-                    onChange={(e) => handleAction(club.id, "changePlan", { plan: e.target.value })}
+                    onChange={(v) => handleAction(club.id, "changePlan", { plan: v })}
                     disabled={actionLoading === club.id}
-                    className="border-ink-200 text-ink-700 rounded-md border px-1.5 py-1 text-xs disabled:opacity-50"
-                  >
-                    <option value="FREE">Free</option>
-                    <option value="BASIC">Basic</option>
-                    <option value="PRO">Pro</option>
-                    <option value="ENTERPRISE">Enterprise</option>
-                  </select>
+                    className="w-36"
+                    options={[
+                      { value: "FREE", label: "Free" },
+                      { value: "BASIC", label: "Basic" },
+                      { value: "PRO", label: "Pro" },
+                      { value: "ENTERPRISE", label: "Enterprise" },
+                    ]}
+                  />
 
                   <button
                     onClick={() =>

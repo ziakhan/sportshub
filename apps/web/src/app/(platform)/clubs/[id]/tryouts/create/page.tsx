@@ -6,7 +6,16 @@ import Link from "next/link"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
-import { Badge, Button, Card, PanelHeader, DateTimePicker, TimeRangePicker, SmartBack } from "@/components/ui"
+import {
+  Badge,
+  BrandListbox,
+  Button,
+  Card,
+  PanelHeader,
+  DateTimePicker,
+  TimeRangePicker,
+  SmartBack,
+} from "@/components/ui"
 import { VenueSelector } from "@/components/venue-selector"
 import { VenueConflictNotice } from "@/components/venues/venue-conflict-notice"
 import { AgePolicySelect } from "@/components/registration/age-policy-select"
@@ -238,19 +247,17 @@ function CreateTryoutForm() {
                     No teams found. <Link href={`/clubs/${clubId}/teams/create`} className="font-medium underline">Create a team</Link> first.
                   </div>
                 ) : (
-                  <select
+                  <BrandListbox
                     id="teamId"
+                    ariaLabel="Team"
+                    placeholder="Select a team"
                     value={selectedTeamId}
-                    onChange={(e) => setSelectedTeamId(e.target.value)}
-                    className={inputCls}
-                  >
-                    <option value="">Select a team</option>
-                    {teams.map((team) => (
-                      <option key={team.id} value={team.id}>
-                        {team.name} ({team.ageGroup}{team.gender ? ` / ${genderLabel(team.gender)}` : ""})
-                      </option>
-                    ))}
-                  </select>
+                    onChange={setSelectedTeamId}
+                    options={teams.map((team) => ({
+                      value: team.id,
+                      label: `${team.name} (${team.ageGroup}${team.gender ? ` / ${genderLabel(team.gender)}` : ""})`,
+                    }))}
+                  />
                 )}
               </div>
 
