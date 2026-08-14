@@ -4,7 +4,7 @@ import { prisma } from "@youthbasketballhub/db"
 import { authOptions } from "@/lib/auth"
 import type { ClubRating } from "@/lib/queries/club-ratings"
 import { getClubsDirectory, type DirectoryClub } from "@/lib/queries/directory-clubs"
-import { StarRating } from "@/components/ui"
+import { PageBand, StarRating } from "@/components/ui"
 import { FollowButton } from "@/components/follow-button"
 import { ClubSearch } from "../club-search"
 
@@ -114,46 +114,45 @@ export default async function ClubDirectoryPage({
   })
 
   return (
-    <div className="container mx-auto px-4 py-12">
-      <div className="text-center mb-8">
-        <h1 className="text-3xl font-bold text-ink-950 mb-2">
-          Find a Basketball Club
-        </h1>
-        <p className="text-ink-600 max-w-xl mx-auto">
-          Clubs near you, rated by real families. Search by name or city — or
-          browse below.
-        </p>
-      </div>
-      <ClubSearch />
+    <>
+      <PageBand
+        align="center"
+        eyebrow="Clubs"
+        title="Find a Basketball Club"
+        description="Clubs near you, rated by real families. Search by name or city, or browse below."
+      >
+        <ClubSearch />
 
-      {/* Near me: city pills */}
-      {cities.length > 1 && (
-        <div className="mt-8 flex flex-wrap items-center justify-center gap-2">
-          <Link
-            href="/club"
-            className={`rounded-full px-3 py-1.5 text-xs font-semibold transition ${
-              !city ? "bg-play-600 text-white" : "bg-ink-100 text-ink-700 hover:bg-ink-200"
-            }`}
-          >
-            All cities
-          </Link>
-          {cities.map((c) => {
-            const active = city?.toLowerCase() === c.city.toLowerCase()
-            return (
-              <Link
-                key={c.city}
-                href={active ? "/club" : `/club?city=${encodeURIComponent(c.city)}`}
-                className={`rounded-full px-3 py-1.5 text-xs font-semibold transition ${
-                  active ? "bg-play-600 text-white" : "bg-ink-100 text-ink-700 hover:bg-ink-200"
-                }`}
-              >
-                {c.city}
-              </Link>
-            )
-          })}
-        </div>
-      )}
+        {/* Near me: city pills */}
+        {cities.length > 1 && (
+          <div className="mt-6 flex flex-wrap items-center justify-center gap-2">
+            <Link
+              href="/club"
+              className={`rounded-full px-3 py-1.5 text-xs font-semibold transition ${
+                !city ? "bg-play-600 text-white" : "bg-white text-ink-700 ring-1 ring-ink-200 hover:bg-ink-50"
+              }`}
+            >
+              All cities
+            </Link>
+            {cities.map((c) => {
+              const active = city?.toLowerCase() === c.city.toLowerCase()
+              return (
+                <Link
+                  key={c.city}
+                  href={active ? "/club" : `/club?city=${encodeURIComponent(c.city)}`}
+                  className={`rounded-full px-3 py-1.5 text-xs font-semibold transition ${
+                    active ? "bg-play-600 text-white" : "bg-white text-ink-700 ring-1 ring-ink-200 hover:bg-ink-50"
+                  }`}
+                >
+                  {c.city}
+                </Link>
+              )
+            })}
+          </div>
+        )}
+      </PageBand>
 
+      <div className="container mx-auto px-4 pb-12 pt-2">
       {featuredClubs.length > 0 && (
         <div className="mt-10">
           <h2 className="text-gold-600 mb-4 text-xs font-bold uppercase tracking-[0.16em]">
@@ -195,6 +194,7 @@ export default async function ClubDirectoryPage({
           </div>
         )
       )}
-    </div>
+      </div>
+    </>
   )
 }

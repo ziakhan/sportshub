@@ -113,7 +113,14 @@ export default async function PublicTeamPage({ params }: { params: { id: string 
         logoUrl={team.tenant?.branding?.logoUrl}
         crestText={team.name.slice(0, 1)}
         action={
-          <FollowButton teamId={team.id} initialFollowing={following} isAuthenticated={!!viewerId} />
+          <FollowButton
+            teamId={team.id}
+            initialFollowing={following}
+            isAuthenticated={!!viewerId}
+            /* The header band is daylight now (court system v2): the dark
+               banner styling would vanish on it. */
+            variant="light"
+          />
         }
         className="mb-4"
       />

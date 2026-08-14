@@ -2,7 +2,7 @@ import Link from "next/link"
 import { getServerSession } from "next-auth"
 import { prisma } from "@youthbasketballhub/db"
 import { authOptions } from "@/lib/auth"
-import { Badge, SectionHeader } from "@/components/ui"
+import { Badge, PageBand, SectionHeader } from "@/components/ui"
 import { FollowButton } from "@/components/follow-button"
 import { perkLabel } from "@/lib/leagues/perks"
 import { getLeaguesDirectory, getDemoLeaguesDirectory } from "@/lib/queries/directory-leagues"
@@ -52,15 +52,15 @@ export default async function PublicLeaguesPage() {
   )
 
   return (
-    <div className="container mx-auto px-4 py-10 sm:px-6">
-      <SectionHeader
+    <>
+      <PageBand
+        as="h2"
         eyebrow="Competitive play"
         title="Browse leagues"
         description="Live scores, standings, stat leaders and recaps from every league on the platform."
-        accent="court"
-        className="mb-10"
       />
 
+      <div className="container mx-auto px-4 py-10 sm:px-6">
       {leagues.length === 0 ? (
         <div className="border-ink-100 rounded-[28px] border bg-white p-12 text-center">
           <p className="text-ink-500 mb-3">No leagues are public yet.</p>
@@ -204,6 +204,7 @@ export default async function PublicLeaguesPage() {
           Run your league here
         </Link>
       </div>
-    </div>
+      </div>
+    </>
   )
 }

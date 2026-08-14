@@ -12,6 +12,7 @@ import { getYourTeams } from "@/lib/queries/home"
 import { getNavShape } from "@/lib/queries/nav-shape"
 import { getViewerScope } from "@/lib/privacy/participants"
 import { isTestWorldSlug } from "@/lib/demo-data"
+import { CourtBackdropLayer } from "@/components/ui"
 import { ClubSearch } from "./club-search"
 import { HighlightsRow, NewsAndLeaders, ScoreboardStrip, YourTeamsRail } from "./home-sections"
 import { StoriesRail } from "@/components/social/stories-rail"
@@ -170,11 +171,12 @@ export default async function HomePage() {
           )}
         </>
       )}
+      {/* Arena night: the signed-out hero stands on the court (system v2,
+          screen 01 of the approved mock). Everything below it returns to
+          white: one court per screen (spec R1). */}
       {marketing && (
-      <section className="mesh-surface border-ink-100 relative overflow-hidden border-b bg-[#fafafa] pb-10 pt-8 sm:pb-16 sm:pt-16">
-        <div className="bg-play-200/60 absolute left-[-6%] top-[10%] h-72 w-72 rounded-full blur-3xl" />
-        <div className="bg-hoop-200/60 absolute right-[-8%] top-[16%] h-72 w-72 rounded-full blur-3xl" />
-        <div className="bg-hoop-200/40 absolute bottom-[8%] left-[28%] h-60 w-60 rounded-full blur-3xl" />
+      <section className="relative isolate overflow-hidden border-b border-white/10 pb-10 pt-8 sm:pb-16 sm:pt-16">
+        <CourtBackdropLayer variant="navy" />
 
         <div className="container relative z-10 mx-auto px-4 sm:px-6">
           <div className="mx-auto max-w-4xl text-center">
@@ -196,15 +198,15 @@ export default async function HomePage() {
             </div>
 
             <div className="mb-3">
-              <span className="text-hoop-500 text-xs font-semibold uppercase tracking-[0.2em]">
+              <span className="text-gold-400 text-xs font-semibold uppercase tracking-[0.2em]">
                 The first complete platform for youth basketball
               </span>
             </div>
 
-            <h1 className="font-display text-ink-950 mb-4 text-balance text-[clamp(2.8rem,6vw,4.8rem)] font-extrabold leading-[1.02]">
+            <h1 className="font-display mb-4 text-balance text-[clamp(2.8rem,6vw,4.8rem)] font-extrabold leading-[1.02] text-white">
               Youth basketball.
               <br />
-              <span className="text-play-600">All of it.</span>{" "}
+              <span className="text-gold-400">All of it.</span>{" "}
               <span
                 aria-label="One"
                 className="bg-hoop-500 relative -top-[0.08em] inline-block rounded-[0.16em] px-[0.24em] py-[0.02em] align-middle text-[0.62em] uppercase leading-[1.15] tracking-[0.08em] text-white"
@@ -214,26 +216,26 @@ export default async function HomePage() {
               app.
             </h1>
 
-            <p className="text-ink-500 mx-auto mb-6 max-w-2xl text-base leading-7 sm:mb-8 sm:text-xl sm:leading-8">
+            <p className="text-ink-200 mx-auto mb-6 max-w-2xl text-base leading-7 sm:mb-8 sm:text-xl sm:leading-8">
               Run tryouts, send offers, and turn them into signed-up, paid rosters. Then
               schedules, live scores and standings all season long. Everything your club or league
               runs on spreadsheets today, in one app.{" "}
-              <span className="text-ink-950 font-semibold">Your season runs itself.</span>
+              <span className="font-semibold text-white">Your season runs itself.</span>
             </p>
 
             <div className="mb-4 flex flex-col items-center gap-2.5">
               <Link
                 href="/demo"
-                className="from-play-600 to-hoop-500 shadow-play-600/25 inline-flex w-full items-center justify-center gap-2.5 rounded-2xl bg-gradient-to-r px-8 py-4 text-base font-semibold text-white shadow-lg transition hover:brightness-105 sm:w-auto"
+                className="bg-gold-500 text-ink-950 shadow-gold-500/25 hover:bg-gold-400 inline-flex w-full items-center justify-center gap-2.5 rounded-2xl px-8 py-4 text-base font-semibold shadow-lg transition sm:w-auto"
               >
                 <svg viewBox="0 0 24 24" className="h-4 w-4 fill-current">
                   <path d="M8 5v14l11-7z" />
                 </svg>
                 Watch the demo
               </Link>
-              <p className="text-ink-400 text-[13px] font-medium">
+              <p className="text-ink-300 text-[13px] font-medium">
                 A whole season, played out click by click on the real product. Parents:{" "}
-                <Link href="/demo/parents" className="text-play-700 font-semibold hover:underline">
+                <Link href="/demo/parents" className="text-gold-400 font-semibold hover:underline">
                   watch your side
                 </Link>
                 .
@@ -245,7 +247,7 @@ export default async function HomePage() {
                 the header dropdown; the home page belongs to the product. */}
 
 
-            <p className="text-ink-400 mb-6 text-[13px] font-medium sm:mb-8">
+            <p className="text-ink-300 mb-6 text-[13px] font-medium sm:mb-8">
               One account works for parents, coaches, scorekeepers, club owners and league
               commissioners. Same app, every seat in the gym.
             </p>

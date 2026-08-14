@@ -4,7 +4,7 @@ import { getServerSession } from "next-auth"
 import { prisma } from "@youthbasketballhub/db"
 import { authOptions } from "@/lib/auth"
 import { getYourGameTeamIds, pickYourGames } from "@/lib/queries/scores"
-import { Badge, ScoreCard, SectionHeader } from "@/components/ui"
+import { Badge, PageBand, ScoreCard } from "@/components/ui"
 import { RealtimeRefresh } from "@/components/realtime-refresh"
 import { PUBLISHED_GAME } from "@/lib/games/visibility"
 
@@ -138,54 +138,54 @@ export default async function ScoresPage({
   const notMine = (list: any[]) => list.filter((g) => !myGameIds.has(g.id))
 
   return (
-    <div className="container mx-auto px-4 py-10 sm:px-6">
+    <>
       {/* Live scoring pings re-render this server page (debounced) */}
       <RealtimeRefresh rooms={["scores"]} events={["game.update"]} />
-      <SectionHeader
+      <PageBand
+        as="h2"
         eyebrow="Around the hub"
         title="Scores"
-        description="Live games, this week's finals and what's coming up — across every league."
-        accent="play"
-        className="mb-6"
-      />
-
-      <div className="mb-8 flex flex-wrap gap-2">
-        <Link
-          href="/scores"
-          className={`rounded-full px-4 py-2 text-[13px] font-semibold ring-1 transition ${
-            !seasonFilter
-              ? "bg-ink-950 text-white ring-ink-950"
-              : "text-ink-600 ring-ink-200 hover:bg-ink-50 bg-white"
-          }`}
-        >
-          All leagues
-        </Link>
-        {leagues
-          .filter((l: any) => l.seasons.length > 0)
-          .map((l: any) => (
-            <Link
-              key={l.seasons[0].id}
-              href={`/scores?season=${l.seasons[0].id}`}
-              title={`${l.name} scores`}
-              className={`rounded-full px-4 py-2 text-[13px] font-semibold ring-1 transition ${
-                seasonFilter === l.seasons[0].id
-                  ? "bg-ink-950 text-white ring-ink-950"
-                  : "text-ink-600 ring-ink-200 hover:bg-ink-50 bg-white"
-              }`}
-            >
-              {l.name}
-            </Link>
-          ))}
-        {seasonFilter && (
+        description="Live games, this week's finals and what's coming up, across every league."
+      >
+        <div className="flex flex-wrap gap-2">
           <Link
-            href={`/league/${seasonFilter}`}
-            className="text-play-600 ring-play-200 hover:bg-play-50 rounded-full bg-white px-4 py-1.5 text-xs font-semibold ring-1 transition"
+            href="/scores"
+            className={`rounded-full px-4 py-2 text-[13px] font-semibold ring-1 transition ${
+              !seasonFilter
+                ? "bg-ink-950 text-white ring-ink-950"
+                : "text-ink-600 ring-ink-200 hover:bg-ink-50 bg-white"
+            }`}
           >
-            Standings &amp; league hub &rarr;
+            All leagues
           </Link>
-        )}
-      </div>
+          {leagues
+            .filter((l: any) => l.seasons.length > 0)
+            .map((l: any) => (
+              <Link
+                key={l.seasons[0].id}
+                href={`/scores?season=${l.seasons[0].id}`}
+                title={`${l.name} scores`}
+                className={`rounded-full px-4 py-2 text-[13px] font-semibold ring-1 transition ${
+                  seasonFilter === l.seasons[0].id
+                    ? "bg-ink-950 text-white ring-ink-950"
+                    : "text-ink-600 ring-ink-200 hover:bg-ink-50 bg-white"
+                }`}
+              >
+                {l.name}
+              </Link>
+            ))}
+          {seasonFilter && (
+            <Link
+              href={`/league/${seasonFilter}`}
+              className="text-play-600 ring-play-200 hover:bg-play-50 rounded-full bg-white px-4 py-1.5 text-xs font-semibold ring-1 transition"
+            >
+              Standings &amp; league hub &rarr;
+            </Link>
+          )}
+        </div>
+      </PageBand>
 
+      <div className="container mx-auto px-4 py-10 sm:px-6">
       {all.length === 0 ? (
         <div className="border-ink-100 rounded-[28px] border bg-white p-12 text-center">
           <p className="text-ink-500">No games in this window — check back soon.</p>
@@ -240,6 +240,7 @@ export default async function ScoresPage({
           )}
         </div>
       )}
-    </div>
+      </div>
+    </>
   )
 }

@@ -1,4 +1,5 @@
 import { getAllPrograms } from "@/lib/queries/programs"
+import { PageBand } from "@/components/ui"
 import { EventsBrowser } from "./events-browser"
 
 // Server-rendered (was a client-fetch shell until 2026-07-12 — crawlers saw
@@ -25,14 +26,15 @@ export default async function EventsPage({
   const events = await getAllPrograms()
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-ink-950">Find Programs &amp; Tryouts</h1>
-        <p className="mt-2 text-ink-600">
-          Browse tryouts, house leagues, camps, and tournaments to find the right fit for your player.
-        </p>
+    <>
+      <PageBand
+        eyebrow="Around the hub"
+        title="Find Programs & Tryouts"
+        description="Browse tryouts, house leagues, camps, and tournaments to find the right fit for your player."
+      />
+      <div className="container mx-auto px-4 py-8">
+        <EventsBrowser events={events} initialFilter={searchParams?.type} />
       </div>
-      <EventsBrowser events={events} initialFilter={searchParams?.type} />
-    </div>
+    </>
   )
 }

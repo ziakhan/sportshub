@@ -79,7 +79,7 @@ export default function StyleGuidePage() {
             primaryColor="#e33612"
             crestText="R"
             action={
-              <button className="rounded-2xl bg-white/95 px-4 py-2 text-sm font-semibold text-ink-950">
+              <button className="bg-ink-950 rounded-2xl px-4 py-2 text-sm font-semibold text-white">
                 Follow
               </button>
             }

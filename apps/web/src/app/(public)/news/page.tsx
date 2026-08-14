@@ -1,7 +1,7 @@
 import Link from "next/link"
 import { format } from "date-fns"
 import { getPublicFeed } from "@/lib/queries/content"
-import { NewsCard, SectionHeader } from "@/components/ui"
+import { NewsCard, PageBand } from "@/components/ui"
 import { NewsCardTelemetry } from "./news-card-telemetry"
 
 export const dynamic = "force-dynamic"
@@ -17,15 +17,15 @@ export default async function NewsIndexPage() {
   const items = await getPublicFeed(30)
 
   return (
-    <div className="container mx-auto px-4 py-10 sm:px-6">
-      <SectionHeader
+    <>
+      <PageBand
+        as="h2"
         eyebrow="Around the hub"
         title="News & Game Recaps"
-        description="Every scored game gets a story — plus announcements from clubs and leagues."
-        accent="play"
-        className="mb-10"
+        description="Every scored game gets a story, plus announcements from clubs and leagues."
       />
 
+      <div className="container mx-auto px-4 py-10 sm:px-6">
       {items.length === 0 ? (
         <div className="border-ink-100 rounded-[28px] border bg-white p-12 text-center">
           <p className="text-ink-500">
@@ -55,6 +55,7 @@ export default async function NewsIndexPage() {
           ))}
         </div>
       )}
-    </div>
+      </div>
+    </>
   )
 }
