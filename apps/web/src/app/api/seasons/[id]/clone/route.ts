@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@youthbasketballhub/db"
 import { auditSafe } from "@/lib/audit"
 import { getSessionUserId } from "@/lib/auth-helpers"
+import { OPEN_SEASON_STATUSES } from "@/lib/leagues/renewal"
 
 export const dynamic = "force-dynamic"
 
@@ -55,6 +56,23 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
         select: { id: true },
       }))
     if (!allowed) return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+
+    // Renewal is a between-seasons action (owner 2026-08-14). If ANY season of
+    // the league is still being planned, sold, or played, cloning would hand
+    // the operator a duplicate next season. The dashboard hides the button on
+    // the same rule; this guard catches a stale tab.
+    const openSeasons = await (prisma as any).season.count({
+      where: { leagueId: season.league.id, status: { in: OPEN_SEASON_STATUSES as any } },
+    })
+    if (openSeasons > 0) {
+      return NextResponse.json(
+        {
+          error:
+            "This league still has a season on the calendar. Renew once every season is completed.",
+        },
+        { status: 409 }
+      )
+    }
 
     let label = advanceLabel(season.label)
     const clash = await (prisma as any).season.findFirst({

@@ -104,6 +104,12 @@ export async function GET(request: NextRequest) {
               _count: { select: { teamSubmissions: true, games: true, divisions: true } },
             },
           },
+          // Additive (2026-08-14): "My leagues" groups the operator's leagues
+          // under the organizations that run them, so each league carries its
+          // org identity. Same league set, same order.
+          organization: {
+            select: { id: true, name: true, slug: true, logoUrl: true, primaryColor: true },
+          },
           _count: { select: { seasons: true } },
         },
         orderBy: { createdAt: "desc" },

@@ -6,6 +6,7 @@ import Link from "next/link"
 import { format } from "date-fns"
 import { LeagueScoringSettings } from "@/components/scoring/league-scoring-settings"
 import { brandStyle } from "@/lib/club-page/brand"
+import { renewableSeason } from "@/lib/leagues/renewal"
 import {
   StatTile,
   AnimatedNumber,
@@ -188,10 +189,17 @@ function LeagueDashboard() {
   }
 
   // One-click renewal (owner 2026-07-29: league names persist, seasons
-  // renew): deep server-side clone — setup only, never teams/games.
+  // renew): deep server-side clone, setup only, never teams/games. Offered
+  // ONLY once every season of the league is COMPLETED (see lib/leagues/renewal
+  // and the matching guard in the clone route) — owner 2026-08-14.
   const [renewing, setRenewing] = useState<string | null>(null)
   const renewSeason = async (seasonId: string, label: string) => {
-    if (!window.confirm(`Renew "${label}" for next year? Divisions, venues, session pattern and rules are copied into a new DRAFT season — no teams or games.`)) return
+    if (
+      !window.confirm(
+        `Renew "${label}" for next year? Divisions, venues, session pattern and rules are copied into a new DRAFT season, with no teams or games.`
+      )
+    )
+      return
     setRenewing(seasonId)
     try {
       const res = await fetch(`/api/seasons/${seasonId}/clone`, { method: "POST" })
@@ -249,6 +257,9 @@ function LeagueDashboard() {
   // Completed seasons are archives — browsable, but out of the day-to-day list.
   const activeSeasons = league.seasons.filter((s) => s.status !== "COMPLETED")
   const pastSeasons = league.seasons.filter((s) => s.status === "COMPLETED")
+  // Renewal is a between-seasons action: it only exists when nothing is being
+  // planned, sold, or played (owner 2026-08-14). Null hides it everywhere.
+  const renewable = renewableSeason(league.seasons)
 
   return (
     <div
@@ -346,8 +357,8 @@ function LeagueDashboard() {
                   className="text-[color:var(--brand-ink)] font-semibold hover:underline"
                 >
                   {prefilledFrom.label}
-                </Link>{" "}
-                &mdash; fee and game format copied. Teams and divisions start fresh.
+                </Link>
+                . Fee and game format copied. Teams and divisions start fresh.
               </span>
               <button
                 type="button"
@@ -458,13 +469,31 @@ function LeagueDashboard() {
             </div>
           </div>
         ) : activeSeasons.length === 0 ? (
-          <div className="border-ink-300 shadow-soft rounded-2xl border border-dashed bg-white p-8 text-center">
-            <p className="text-ink-600 mb-4 text-sm">
-              No active seasons &mdash; the last one is completed and archived below.
+          // Between seasons: the ONE moment renewal makes sense, so the deep
+          // clone lives here beside "start fresh" instead of on a season that
+          // is still being played (owner 2026-08-14).
+          <div className="border-[color:var(--brand-line)] shadow-soft rounded-2xl border bg-[var(--brand-softer)] p-8 text-center">
+            <p className="text-ink-700 text-sm font-semibold">
+              No active seasons. The last one is completed and archived below.
             </p>
-            <div className="inline-flex">
+            <p className="text-ink-500 mx-auto mt-1 max-w-lg text-sm">
+              Renew to copy {renewable ? renewable.label : "the last season"} in full (divisions,
+              venues, session pattern, rules), or start the next one from a blank sheet.
+            </p>
+            <div className="mt-5 flex flex-wrap items-center justify-center gap-3">
+              {renewable && (
+                <Button
+                  onClick={() => renewSeason(renewable.id, renewable.label)}
+                  disabled={renewing === renewable.id}
+                  icon={BTN_ICONS.renew}
+                  title="Copy this season's full setup (divisions, venues, session pattern, rules) into a new DRAFT season one year later"
+                >
+                  {renewing === renewable.id ? "Renewing..." : `Renew ${renewable.label}`}
+                </Button>
+              )}
               <Button
                 href={`/manage/leagues/${leagueId}?from=${pastSeasons[0].id}`}
+                variant="subtle"
                 icon={BTN_ICONS.plus}
               >
                 Create Next Season
@@ -496,18 +525,6 @@ function LeagueDashboard() {
                         </p>
                       )}
                     </div>
-                    <button
-                      onClick={(e) => {
-                        e.preventDefault()
-                        e.stopPropagation()
-                        renewSeason(season.id, season.label)
-                      }}
-                      disabled={renewing === season.id}
-                      className="text-play-600 hover:bg-play-50 shrink-0 rounded-lg px-2 py-1 text-xs font-semibold disabled:opacity-50"
-                      title="Copy this season's full setup (divisions, venues, session pattern, rules) into a new DRAFT season one year later"
-                    >
-                      {renewing === season.id ? "Renewing…" : "Renew ↻"}
-                    </button>
                   </div>
                   <div className="mt-4 grid grid-cols-3 gap-3">
                     <div className="bg-ink-50 rounded-xl p-3">
@@ -636,6 +653,15 @@ const BTN_ICONS: Record<string, React.ReactNode> = {
   poll: (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
       <path d="M4 20V10M12 20V4M20 20v-7" strokeLinecap="round" />
+    </svg>
+  ),
+  renew: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <path
+        d="M21 12a9 9 0 11-3.5-7.1M21 3v5h-5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
     </svg>
   ),
 }
