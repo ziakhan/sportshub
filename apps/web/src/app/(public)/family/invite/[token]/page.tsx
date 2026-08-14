@@ -3,6 +3,7 @@ import { authOptions } from "@/lib/auth"
 import { redirect } from "next/navigation"
 import Link from "next/link"
 import { prisma } from "@youthbasketballhub/db"
+import { CourtBackdrop } from "@/components/ui"
 
 export const dynamic = "force-dynamic"
 
@@ -47,8 +48,12 @@ export default async function FamilyInviteLandingPage({
 
   if (dead) {
     return (
-      <div className="mx-auto max-w-lg px-4 py-16">
-        <div className="border-ink-100 rounded-2xl border bg-white p-8 text-center">
+      <CourtBackdrop
+        variant="daylight"
+        className="flex min-h-[calc(100vh-4rem)] items-center"
+        contentClassName="mx-auto max-w-lg px-4 py-16"
+      >
+        <div className="border-ink-100 shadow-panel rounded-[30px] border bg-white p-8 text-center">
           <h1 className="text-ink-900 text-xl font-bold">
             {invite?.status === "ACCEPTED" ? "Already accepted" : "This invitation is closed"}
           </h1>
@@ -64,7 +69,7 @@ export default async function FamilyInviteLandingPage({
             Sign in
           </Link>
         </div>
-      </div>
+      </CourtBackdrop>
     )
   }
 
@@ -78,7 +83,11 @@ export default async function FamilyInviteLandingPage({
   const signInHref = `/sign-in?callbackUrl=${encodeURIComponent(acceptPath)}`
 
   return (
-    <div className="mx-auto max-w-lg px-4 py-16">
+    <CourtBackdrop
+      variant="daylight"
+      className="flex min-h-[calc(100vh-4rem)] items-center"
+      contentClassName="mx-auto max-w-lg px-4 py-16"
+    >
       <div className="border-ink-100 shadow-panel rounded-[30px] border bg-white p-8">
         <div className="border-play-100 bg-play-50 text-play-600 mb-4 inline-flex rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em]">
           Family invitation
@@ -136,6 +145,6 @@ export default async function FamilyInviteLandingPage({
           Use {invite.invitedEmail} so we can match the invitation to your account.
         </p>
       </div>
-    </div>
+    </CourtBackdrop>
   )
 }

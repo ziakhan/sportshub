@@ -38,7 +38,7 @@ export function CompleteClaim({ token }: { token: string }) {
   if (!token) {
     return (
       <div className="border-ink-100 shadow-soft rounded-[28px] border bg-white p-8 text-center">
-        <p className="text-ink-600 text-sm">This link is missing its token — check the email.</p>
+        <p className="text-ink-600 text-sm">This link is missing its token. Open it again from the email.</p>
       </div>
     )
   }
@@ -56,8 +56,8 @@ export function CompleteClaim({ token }: { token: string }) {
       ) : status === "unauthenticated" ? (
         <div className="mt-4 space-y-3">
           <p className="text-ink-600 text-sm">
-            Your club is verified and reserved. Sign in or create an account — any email works —
-            and the club binds to your account.
+            Your club is verified and reserved. Sign in or create an account with any email and the club binds to your
+            account.
           </p>
           <Link
             href={`/sign-up?callbackUrl=${callbackUrl}`}
@@ -79,7 +79,7 @@ export function CompleteClaim({ token }: { token: string }) {
             {club.name}
           </h1>
           <p className="text-ink-600 text-sm">
-            You&apos;re the owner — everything about the club is now yours to edit.
+            You&apos;re the owner. Everything about the club is now yours to edit.
           </p>
           <Link
             href={`/clubs/${club.id}`}

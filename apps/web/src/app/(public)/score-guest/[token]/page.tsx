@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { useParams, useRouter } from "next/navigation"
+import { CourtBackdrop } from "@/components/ui"
 
 /**
  * Guest scorekeeper landing (owner 2026-07-15): a volunteer opens the
@@ -63,8 +64,12 @@ export default function GuestScorePage() {
   }
 
   return (
-    <div className="mx-auto flex min-h-[70vh] max-w-md flex-col justify-center px-6 py-10">
-      <div className="border-ink-100 rounded-3xl border bg-white p-6 shadow-sm">
+    <CourtBackdrop
+      variant="daylight"
+      className="flex min-h-[calc(100vh-4rem)] items-center"
+      contentClassName="mx-auto max-w-md px-6 py-10"
+    >
+      <div className="border-ink-100 shadow-panel rounded-3xl border bg-white p-6">
         <p className="text-play-600 text-xs font-bold uppercase tracking-[0.18em]">
           Scorekeeper invite
         </p>
@@ -89,7 +94,7 @@ export default function GuestScorePage() {
             </p>
             <p className="text-ink-600 mt-4 text-sm">
               You&apos;ve been asked to keep score for this game. Type your name and you&apos;re
-              in — no account needed.
+              in, no account needed.
             </p>
             <input
               value={name}
@@ -108,6 +113,6 @@ export default function GuestScorePage() {
           </>
         )}
       </div>
-    </div>
+    </CourtBackdrop>
   )
 }

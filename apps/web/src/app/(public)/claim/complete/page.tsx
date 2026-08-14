@@ -1,10 +1,11 @@
 import { Metadata } from "next"
+import { CourtBackdrop } from "@/components/ui"
 import { CompleteClaim } from "./complete-claim"
 
 export const dynamic = "force-dynamic"
 
 export const metadata: Metadata = {
-  title: "Take ownership of your club — SportsHub",
+  title: "Take ownership of your club | SportsHub",
   robots: { index: false },
 }
 
@@ -19,8 +20,12 @@ export default function ClaimCompletePage({
   searchParams: { token?: string }
 }) {
   return (
-    <div className="mx-auto max-w-xl px-4 py-10">
+    <CourtBackdrop
+      variant="daylight"
+      className="flex min-h-[calc(100vh-4rem)] items-center"
+      contentClassName="mx-auto max-w-xl px-4 py-10"
+    >
       <CompleteClaim token={searchParams.token ?? ""} />
-    </div>
+    </CourtBackdrop>
   )
 }

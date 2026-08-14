@@ -3,9 +3,23 @@ import { notFound } from "next/navigation"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@youthbasketballhub/db"
+import { CourtBackdrop } from "@/components/ui"
 import { AcceptInviteActions } from "./accept-invite-actions"
 
 export const dynamic = "force-dynamic"
+
+/** Every branch of this page is one card centred on the brand backdrop. */
+function InviteShell({ children }: { children: React.ReactNode }) {
+  return (
+    <CourtBackdrop
+      variant="daylight"
+      className="flex min-h-[calc(100vh-4rem)] items-center"
+      contentClassName="container mx-auto max-w-xl px-4 py-12"
+    >
+      {children}
+    </CourtBackdrop>
+  )
+}
 
 export default async function AcceptInvitationPage({
   params,
@@ -41,7 +55,7 @@ export default async function AcceptInvitationPage({
   // Already responded — show summary, no actions
   if (invitation.status !== "PENDING") {
     return (
-      <div className="container mx-auto max-w-xl px-4 py-12">
+      <InviteShell>
         <div className={cardClass}>
           <h1 className="text-ink-900 mb-2 text-2xl font-semibold">
             Invitation {invitation.status.toLowerCase()}
@@ -51,14 +65,14 @@ export default async function AcceptInvitationPage({
             think this is a mistake, contact {invitation.tenant.name}.
           </p>
         </div>
-      </div>
+      </InviteShell>
     )
   }
 
   // Not signed in — prompt sign-in or sign-up, both redirect back here
   if (!session?.user?.id) {
     return (
-      <div className="container mx-auto max-w-xl px-4 py-12">
+      <InviteShell>
         <div className={cardClass}>
           <h1 className="text-ink-900 mb-1 text-2xl font-semibold">
             You&apos;re invited to join {invitation.tenant.name}
@@ -86,14 +100,14 @@ export default async function AcceptInvitationPage({
             </Link>
           </div>
         </div>
-      </div>
+      </InviteShell>
     )
   }
 
   // Signed-in but as a different user than the invitee
   if (invitation.invitedUserId && invitation.invitedUserId !== session.user.id) {
     return (
-      <div className="container mx-auto max-w-xl px-4 py-12">
+      <InviteShell>
         <div className={cardClass}>
           <h1 className="text-ink-900 mb-2 text-2xl font-semibold">Wrong account</h1>
           <p className="text-ink-600 mb-4 text-sm">
@@ -108,14 +122,14 @@ export default async function AcceptInvitationPage({
             Sign out
           </Link>
         </div>
-      </div>
+      </InviteShell>
     )
   }
 
   // Signed in as the right user (or as a fresh user post-signup with invitedUserId still null —
   // signup should have attached it via Gap 0.1.1 fix). Render action form.
   return (
-    <div className="container mx-auto max-w-xl px-4 py-12">
+    <InviteShell>
       <div className={cardClass}>
         <h1 className="text-ink-900 mb-1 text-2xl font-semibold">
           Join {invitation.tenant.name}
@@ -126,6 +140,6 @@ export default async function AcceptInvitationPage({
         </p>
         <AcceptInviteActions invitationId={invitation.id} />
       </div>
-    </div>
+    </InviteShell>
   )
 }

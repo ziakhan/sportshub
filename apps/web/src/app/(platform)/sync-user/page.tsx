@@ -2,7 +2,10 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
+import { CourtBackdrop } from "@/components/ui"
 
+// LEGACY: a Clerk-era repair tool that survived the NextAuth migration. Nothing
+// links to it and /api/sync-current-user is the only caller. Worth deleting.
 export default function SyncUserPage() {
   const [loading, setLoading] = useState(false)
   const [result, setResult] = useState<any>(null)
@@ -34,12 +37,16 @@ export default function SyncUserPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-      <div className="max-w-md w-full bg-white rounded-lg shadow-lg p-8">
-        <h1 className="text-2xl font-bold text-gray-900 mb-4">
+    <CourtBackdrop
+      variant="navy"
+      className="flex min-h-[calc(100vh-4rem)] items-center"
+      contentClassName="flex justify-center p-4"
+    >
+      <div className="border-ink-100 shadow-panel w-full max-w-md rounded-[28px] border bg-white p-8">
+        <h1 className="text-ink-950 mb-4 text-2xl font-bold">
           Sync User to Database
         </h1>
-        <p className="text-gray-600 mb-6">
+        <p className="text-ink-600 mb-6">
           Click the button below to sync your Clerk account to the database.
           This will create your user record and assign you a Parent role.
         </p>
@@ -47,14 +54,14 @@ export default function SyncUserPage() {
         <button
           onClick={syncUser}
           disabled={loading}
-          className="w-full rounded-lg bg-orange-500 px-6 py-3 text-white font-semibold hover:bg-orange-600 disabled:bg-gray-400 disabled:cursor-not-allowed"
+          className="bg-play-600 hover:bg-play-700 disabled:bg-ink-300 w-full rounded-xl px-6 py-3 font-semibold text-white disabled:cursor-not-allowed"
         >
           {loading ? "Syncing..." : "Sync My Account"}
         </button>
 
         {result && (
-          <div className="mt-6 rounded-lg bg-green-50 border border-green-200 p-4">
-            <h3 className="text-green-800 font-semibold mb-2">
+          <div className="bg-court-50 border-court-200 mt-6 rounded-xl border p-4">
+            <h3 className="text-court-800 mb-2 font-semibold">
               {result.message}
             </h3>
             {result.user && (
@@ -76,20 +83,20 @@ export default function SyncUserPage() {
             )}
             <button
               onClick={() => router.push("/dashboard")}
-              className="mt-4 text-orange-600 hover:text-orange-700 font-medium"
+              className="text-play-600 hover:text-play-700 mt-4 font-medium"
             >
-              Go to Dashboard →
+              Go to Dashboard
             </button>
           </div>
         )}
 
         {error && (
-          <div className="mt-6 rounded-lg bg-red-50 border border-hoop-200 p-4">
-            <h3 className="text-red-800 font-semibold mb-2">Error</h3>
+          <div className="bg-hoop-50 border-hoop-200 mt-6 rounded-xl border p-4">
+            <h3 className="text-hoop-800 mb-2 font-semibold">Error</h3>
             <p className="text-sm text-hoop-700">{error}</p>
           </div>
         )}
       </div>
-    </div>
+    </CourtBackdrop>
   )
 }

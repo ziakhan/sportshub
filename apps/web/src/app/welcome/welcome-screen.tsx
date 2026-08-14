@@ -4,6 +4,7 @@ import { useEffect } from "react"
 import Link from "next/link"
 import type { ChecklistStep } from "@/lib/onboarding/checklist"
 import { ONBOARDING_DISMISS_COOKIE, ONBOARDING_DISMISS_MAX_AGE } from "@/lib/onboarding/constants"
+import { CourtBackdrop } from "@/components/ui"
 
 interface WelcomeScreenProps {
   firstName: string | null
@@ -39,7 +40,11 @@ export function WelcomeScreen({ firstName, percent, steps, landingHref }: Welcom
   }
 
   return (
-    <div className="bg-ink-50 flex min-h-screen items-center justify-center p-4 sm:p-6">
+    <CourtBackdrop
+      variant="navy"
+      fullPage
+      contentClassName="flex justify-center p-4 sm:p-6"
+    >
       <div className="border-ink-100 shadow-panel w-full max-w-2xl overflow-hidden rounded-[32px] border bg-white">
         <div className="from-hoop-500 to-hoop-600 bg-gradient-to-br px-8 py-8 text-white">
           <div className="mb-3 inline-flex rounded-full border border-white/30 bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em]">
@@ -102,7 +107,7 @@ export function WelcomeScreen({ firstName, percent, steps, landingHref }: Welcom
           )}
         </div>
       </div>
-    </div>
+    </CourtBackdrop>
   )
 }
 

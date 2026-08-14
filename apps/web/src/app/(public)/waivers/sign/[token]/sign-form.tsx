@@ -53,11 +53,22 @@ export function SignForm({
   if (done) {
     return (
       <div className="p-6 text-center sm:p-8">
-        <p className="text-4xl">✅</p>
-        <h2 className="mt-3 text-lg font-bold text-gray-900">
+        <div className="bg-court-50 text-court-600 mx-auto grid h-14 w-14 place-items-center rounded-2xl">
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.5"
+            className="h-7 w-7"
+            aria-hidden="true"
+          >
+            <path d="M20 6 9 17l-5-5" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </div>
+        <h2 className="text-ink-950 mt-3 text-lg font-bold">
           {done.alreadySigned ? "Already signed" : "Signed and recorded"}
         </h2>
-        <p className="mt-2 text-sm leading-relaxed text-gray-600">
+        <p className="text-ink-600 mt-2 text-sm leading-relaxed">
           {done.alreadySigned
             ? `Someone in your family already signed this for ${playerName}. Nothing more is needed.`
             : `Thank you. ${orgName} now has your signed copy on file for ${playerName}. You can close this page.`}
@@ -70,7 +81,7 @@ export function SignForm({
     <div className="space-y-5 p-6 sm:p-8">
       <div className="grid gap-4 sm:grid-cols-2">
         <div>
-          <label htmlFor="signer-name" className="block text-sm font-semibold text-gray-700">
+          <label htmlFor="signer-name" className="text-ink-700 block text-sm font-semibold">
             Your full name
           </label>
           <input
@@ -79,18 +90,18 @@ export function SignForm({
             value={signerName}
             onChange={(e) => setSignerName(e.target.value)}
             placeholder="First and last name"
-            className="mt-1.5 w-full rounded-xl border border-gray-300 px-3.5 py-2.5 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+            className="border-ink-200 focus:border-play-500 focus:ring-play-200 mt-1.5 w-full rounded-xl border px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2"
           />
         </div>
         <div>
-          <label htmlFor="relationship" className="block text-sm font-semibold text-gray-700">
+          <label htmlFor="relationship" className="text-ink-700 block text-sm font-semibold">
             Relationship to player
           </label>
           <select
             id="relationship"
             value={relationship}
             onChange={(e) => setRelationship(e.target.value)}
-            className="mt-1.5 w-full rounded-xl border border-gray-300 bg-white px-3.5 py-2.5 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+            className="border-ink-200 focus:border-play-500 focus:ring-play-200 mt-1.5 w-full rounded-xl border bg-white px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2"
           >
             <option value="Parent/Guardian">Parent or guardian</option>
             <option value="Player (18+)">Player (18 or older)</option>
@@ -100,20 +111,20 @@ export function SignForm({
 
       <div>
         <div className="flex items-center justify-between">
-          <span className="block text-sm font-semibold text-gray-700">Signature</span>
-          <span className="text-xs text-gray-400">Draw with your finger or mouse</span>
+          <span className="text-ink-700 block text-sm font-semibold">Signature</span>
+          <span className="text-ink-400 text-xs">Draw with your finger or mouse</span>
         </div>
-        <div className="mt-1.5 overflow-hidden rounded-xl border border-gray-300">
+        <div className="border-ink-200 mt-1.5 overflow-hidden rounded-xl border">
           <SignaturePad onChange={setSignature} height={150} />
         </div>
       </div>
 
-      <label className="flex items-start gap-3 text-sm text-gray-700">
+      <label className="text-ink-700 flex items-start gap-3 text-sm">
         <input
           type="checkbox"
           checked={agreed}
           onChange={(e) => setAgreed(e.target.checked)}
-          className="mt-0.5 h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+          className="border-ink-300 text-play-600 focus:ring-play-500 mt-0.5 h-4 w-4 rounded"
         />
         <span>
           I have read and understood this document, and I confirm that I am authorized to
@@ -122,19 +133,19 @@ export function SignForm({
       </label>
 
       {error ? (
-        <p className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700">{error}</p>
+        <p className="bg-hoop-50 text-hoop-700 rounded-xl px-4 py-3 text-sm">{error}</p>
       ) : null}
 
       <button
         type="button"
         onClick={submit}
         disabled={!canSubmit}
-        className="w-full rounded-xl bg-indigo-600 px-6 py-3.5 text-sm font-bold text-white transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-40"
+        className="bg-play-600 hover:bg-play-700 w-full rounded-xl px-6 py-3.5 text-sm font-bold text-white transition disabled:cursor-not-allowed disabled:opacity-40"
       >
         {submitting ? "Recording signature..." : "Sign and submit"}
       </button>
 
-      <p className="text-center text-xs leading-relaxed text-gray-400">
+      <p className="text-ink-400 text-center text-xs leading-relaxed">
         Your signature, name, the exact document text, and the date and time are stored
         securely as your signed record.
       </p>

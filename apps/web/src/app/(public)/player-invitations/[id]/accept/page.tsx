@@ -4,9 +4,23 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@youthbasketballhub/db"
 import { formatCurrency } from "@/lib/countries"
+import { CourtBackdrop } from "@/components/ui"
 import { PlayerInviteActions } from "./player-invite-actions"
 
 export const dynamic = "force-dynamic"
+
+/** Every branch of this page is one card centred on the brand backdrop. */
+function InviteShell({ children }: { children: React.ReactNode }) {
+  return (
+    <CourtBackdrop
+      variant="daylight"
+      className="flex min-h-[calc(100vh-4rem)] items-center"
+      contentClassName="container mx-auto max-w-xl px-4 py-12"
+    >
+      {children}
+    </CourtBackdrop>
+  )
+}
 
 export default async function AcceptPlayerInvitationPage({ params }: { params: { id: string } }) {
   const invitation = await (prisma as any).playerInvitation.findUnique({
@@ -39,7 +53,7 @@ export default async function AcceptPlayerInvitationPage({ params }: { params: {
   if (invitation.status !== "PENDING" || expired) {
     const label = expired ? "expired" : invitation.status.toLowerCase()
     return (
-      <div className="container mx-auto max-w-xl px-4 py-12">
+      <InviteShell>
         <div className={cardClass}>
           <h1 className="text-ink-900 mb-2 text-2xl font-semibold">Invitation {label}</h1>
           <p className="text-ink-600 text-sm">
@@ -47,14 +61,14 @@ export default async function AcceptPlayerInvitationPage({ params }: { params: {
             mistake, contact {invitation.tenant.name}.
           </p>
         </div>
-      </div>
+      </InviteShell>
     )
   }
 
   // Not signed in — prompt sign-in or sign-up, both redirect back here
   if (!session?.user?.id) {
     return (
-      <div className="container mx-auto max-w-xl px-4 py-12">
+      <InviteShell>
         <div className={cardClass}>
           <h1 className="text-ink-900 mb-1 text-2xl font-semibold">
             {invitation.playerName ? `${invitation.playerName} is invited` : "You're invited"} to{" "}
@@ -63,7 +77,7 @@ export default async function AcceptPlayerInvitationPage({ params }: { params: {
           <p className="text-ink-600 mb-2 text-sm">
             {inviterName} at {invitation.tenant.name} invited{" "}
             <strong>{invitation.invitedEmail}</strong> to join <strong>{invitation.team.name}</strong>
-            {feeLabel ? <> — season fee {feeLabel}</> : null}.
+            {feeLabel ? <>, season fee {feeLabel}</> : null}.
           </p>
           <p className="text-ink-700 mb-6 mt-4 text-sm">
             Sign in or create an account using <strong>{invitation.invitedEmail}</strong> to accept.
@@ -83,14 +97,14 @@ export default async function AcceptPlayerInvitationPage({ params }: { params: {
             </Link>
           </div>
         </div>
-      </div>
+      </InviteShell>
     )
   }
 
   // Signed-in but as a different user than the invitee
   if (invitation.invitedUserId && invitation.invitedUserId !== session.user.id) {
     return (
-      <div className="container mx-auto max-w-xl px-4 py-12">
+      <InviteShell>
         <div className={cardClass}>
           <h1 className="text-ink-900 mb-2 text-2xl font-semibold">Wrong account</h1>
           <p className="text-ink-600 mb-4 text-sm">
@@ -104,7 +118,7 @@ export default async function AcceptPlayerInvitationPage({ params }: { params: {
             Sign out
           </Link>
         </div>
-      </div>
+      </InviteShell>
     )
   }
 
@@ -117,13 +131,13 @@ export default async function AcceptPlayerInvitationPage({ params }: { params: {
   })
 
   return (
-    <div className="container mx-auto max-w-xl px-4 py-12">
+    <InviteShell>
       <div className={cardClass}>
         <h1 className="text-ink-900 mb-1 text-2xl font-semibold">Join {invitation.team.name}</h1>
         <p className="text-ink-600 mb-6 text-sm">
           {inviterName} at {invitation.tenant.name} invited you to join{" "}
           <strong>{invitation.team.name}</strong>
-          {feeLabel ? <> — season fee {feeLabel}</> : null}. Choose which player this is for; accepting
+          {feeLabel ? <>, season fee {feeLabel}</> : null}. Choose which player this is for; accepting
           creates a roster offer you can review and confirm.
         </p>
         <PlayerInviteActions
@@ -132,6 +146,6 @@ export default async function AcceptPlayerInvitationPage({ params }: { params: {
           suggestedName={invitation.playerName ?? null}
         />
       </div>
-    </div>
+    </InviteShell>
   )
 }

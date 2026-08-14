@@ -1,6 +1,7 @@
 import { Suspense } from "react"
 import Link from "next/link"
 import { BrandWordmark } from "@/components/brand/wordmark"
+import { CourtBackdropLayer } from "@/components/ui"
 import { AuthBrandPanel } from "./auth-brand-panel"
 
 /**
@@ -33,22 +34,23 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
       </Suspense>
 
       {/* ── Form side ──────────────────────────────────────────────────── */}
-      {/* `overflow-hidden` is LOad-BEARING, not cosmetic: the two decorative
-          blobs below sit at -right-24/-left-24 (288px wide, 96px outside the
-          box). Unclipped they widen the document past the viewport, the page
-          gains a horizontal scrollbar, and scrolling into that gutter shows a
-          bare white strip with no content — which is exactly what the layout
-          "disappearing" at non-desktop widths was (owner, 2026-08-13). */}
+      {/* `overflow-hidden` is LOad-BEARING, not cosmetic: the decorative layer
+          below paints glows that reach past the box. Unclipped they widen the
+          document past the viewport, the page gains a horizontal scrollbar, and
+          scrolling into that gutter shows a bare strip with no content — which
+          is exactly what the layout "disappearing" at non-desktop widths was
+          (owner, 2026-08-13). */}
       <main className="bg-ink-50/70 relative flex min-h-screen w-full min-w-0 flex-1 flex-col items-center justify-center overflow-hidden px-4 py-10 sm:px-8 lg:px-12">
-        <div className="bg-play-200/40 pointer-events-none absolute -right-24 top-10 h-72 w-72 rounded-full blur-3xl lg:hidden" />
-        <div className="bg-hoop-200/40 pointer-events-none absolute -left-24 bottom-10 h-72 w-72 rounded-full blur-3xl lg:hidden" />
+        {/* Phones and tablets get the navy court instead of a pale void; the
+            desktop brand panel already carries the brand on wide screens. */}
+        <CourtBackdropLayer variant="navy" className="lg:hidden" />
 
         {/* Mobile keeps the wordmark — the brand panel is desktop-only */}
         <div className="relative z-10 mb-8 flex flex-col items-center text-center lg:hidden">
-          <Link href="/" aria-label="SportsHub ONE — back to home" className="inline-block">
-            <BrandWordmark size="lg" />
+          <Link href="/" aria-label="SportsHub ONE, back to home" className="inline-block">
+            <BrandWordmark size="lg" variant="reverse" />
           </Link>
-          <p className="text-ink-500 mx-auto mt-3 max-w-sm text-sm">
+          <p className="mx-auto mt-3 max-w-sm text-sm text-white/70">
             The complete platform for youth basketball clubs, leagues, and families.
           </p>
         </div>
