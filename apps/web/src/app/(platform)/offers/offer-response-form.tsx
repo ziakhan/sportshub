@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react"
 import { loadStripe } from "@stripe/stripe-js"
 import { Elements, PaymentElement, useElements, useStripe } from "@stripe/react-stripe-js"
 import { formatCurrency } from "@/lib/countries"
+import { BrandListbox, ChoiceCardGroup } from "@/components/ui"
 import { WaiverSignGate, type GateWaiver } from "@/components/waivers/waiver-sign-gate"
 import { readMinorGate, MinorGateNotice, type MinorGateOutcome } from "@/components/family/minor-gate"
 
@@ -116,8 +117,6 @@ export function OfferResponseForm({
   >(null)
 
   const labelClass = "block text-sm font-medium text-ink-800"
-  const inputClass =
-    "mt-1 block w-full rounded-xl border border-ink-200 bg-white px-3 py-2 text-sm text-ink-900 shadow-sm focus:border-play-500 focus:outline-none focus:ring-2 focus:ring-play-500/20"
 
   useEffect(() => {
     fetch(`/api/offers/${offerId}/payment-info`)
@@ -310,11 +309,14 @@ export function OfferResponseForm({
       <form onSubmit={handleSubmit} className="space-y-4">
         {options.length > 1 && (
           <div>
-            <label className="text-ink-800 mb-2 block text-sm font-medium">
+            <span className="text-ink-800 mb-2 block text-sm font-medium">
               Choose your package <span className="text-red-500">*</span>
-            </label>
-            <div className="space-y-2">
-              {options.map((option) => {
+            </span>
+            <ChoiceCardGroup
+              ariaLabel="Choose your package"
+              value={optionId}
+              onChange={setOptionId}
+              options={options.map((option) => {
                 const items = [
                   option.includesUniform && "Uniform",
                   option.includesTracksuit && "Tracksuit",
@@ -322,27 +324,19 @@ export function OfferResponseForm({
                   option.includesBall && "Basketball",
                   option.includesBag && "Bag",
                 ].filter(Boolean)
-                return (
-                  <label
-                    key={option.id}
-                    className={`block cursor-pointer rounded-xl border p-3 transition ${
-                      optionId === option.id ? "border-play-400 ring-play-200 bg-white ring-1" : "border-ink-200 bg-white hover:border-ink-300"
-                    }`}
-                  >
-                    <span className="flex items-center justify-between gap-2">
-                      <span className="flex items-center gap-2">
-                        <input type="radio" name={`package-${offerId}`} checked={optionId === option.id} onChange={() => setOptionId(option.id)} />
-                        <span className="text-ink-900 text-sm font-semibold">{option.label}</span>
-                      </span>
-                      <span className="text-ink-900 text-sm font-bold">{money(option.seasonFee, currency)}</span>
-                    </span>
-                    <span className="text-ink-500 mt-1 block pl-6 text-xs">
+                return {
+                  value: option.id,
+                  title: option.label,
+                  description: (
+                    <>
+                      <strong className="text-ink-900">{money(option.seasonFee, currency)}</strong>
+                      {" · "}
                       {items.length > 0 ? `Includes ${items.join(", ")}` : "No gear included"}
-                    </span>
-                  </label>
-                )
+                    </>
+                  ),
+                }
               })}
-            </div>
+            />
           </div>
         )}
 
@@ -350,29 +344,47 @@ export function OfferResponseForm({
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
             {includesUniform && (
               <div>
-                <label className={labelClass}>Uniform Size <span className="text-red-500">*</span></label>
-                <select value={uniformSize} onChange={(e) => setUniformSize(e.target.value)} className={inputClass}>
-                  <option value="">Select...</option>
-                  {CLOTHING_SIZES.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
-                </select>
+                <label htmlFor="offer-uniform-size" className={labelClass}>Uniform Size <span className="text-red-500">*</span></label>
+                <div className="mt-1">
+                  <BrandListbox
+                    id="offer-uniform-size"
+                    ariaLabel="Uniform size"
+                    value={uniformSize}
+                    onChange={setUniformSize}
+                    placeholder="Select..."
+                    options={CLOTHING_SIZES}
+                  />
+                </div>
               </div>
             )}
             {includesTracksuit && (
               <div>
-                <label className={labelClass}>Tracksuit Size <span className="text-red-500">*</span></label>
-                <select value={tracksuitSize} onChange={(e) => setTracksuitSize(e.target.value)} className={inputClass}>
-                  <option value="">Select...</option>
-                  {CLOTHING_SIZES.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
-                </select>
+                <label htmlFor="offer-tracksuit-size" className={labelClass}>Tracksuit Size <span className="text-red-500">*</span></label>
+                <div className="mt-1">
+                  <BrandListbox
+                    id="offer-tracksuit-size"
+                    ariaLabel="Tracksuit size"
+                    value={tracksuitSize}
+                    onChange={setTracksuitSize}
+                    placeholder="Select..."
+                    options={CLOTHING_SIZES}
+                  />
+                </div>
               </div>
             )}
             {includesShoes && (
               <div>
-                <label className={labelClass}>Shoe Size <span className="text-red-500">*</span></label>
-                <select value={shoeSize} onChange={(e) => setShoeSize(e.target.value)} className={inputClass}>
-                  <option value="">Select...</option>
-                  {SHOE_SIZES.map((s) => <option key={s} value={s}>{s}</option>)}
-                </select>
+                <label htmlFor="offer-shoe-size" className={labelClass}>Shoe Size <span className="text-red-500">*</span></label>
+                <div className="mt-1">
+                  <BrandListbox
+                    id="offer-shoe-size"
+                    ariaLabel="Shoe size"
+                    value={shoeSize}
+                    onChange={setShoeSize}
+                    placeholder="Select..."
+                    options={SHOE_SIZES.map((s) => ({ value: s, label: s }))}
+                  />
+                </div>
               </div>
             )}
           </div>
@@ -400,35 +412,53 @@ export function OfferResponseForm({
           <div className="border-ink-100 rounded-xl border bg-white p-3">
             <p className="text-ink-800 text-sm font-semibold">Payment</p>
             {canPlan && (
-              <div className="mt-2 space-y-1.5">
-                <label className="flex cursor-pointer items-center gap-2 text-sm">
-                  <input type="radio" checked={plan === "FULL"} onChange={() => setPlan("FULL")} />
-                  <span>Pay in full — <strong>{money(fee, currency)}</strong> now</span>
-                </label>
-                <label className="flex cursor-pointer items-start gap-2 text-sm">
-                  <input type="radio" className="mt-1" checked={plan === "INSTALLMENTS"} onChange={() => setPlan("INSTALLMENTS")} />
-                  <span>
-                    Payment plan — <strong>{money(terms!.depositAmount ?? 0, currency)}</strong> deposit now, then{" "}
-                    {terms!.installmentTerms.map((t, i) => (
-                      <span key={t.sequence}>
-                        {i > 0 ? ", " : ""}{money(t.amount)} on {new Date(t.dueDate).toLocaleDateString("en-CA", { month: "short", day: "numeric" })}
-                      </span>
-                    ))}
-                    <span className="text-ink-400 block text-xs">Auto-charged to your card on file.</span>
-                  </span>
-                </label>
-              </div>
+              <ChoiceCardGroup
+                ariaLabel="Payment plan"
+                className="mt-2"
+                value={plan}
+                onChange={(v) => setPlan(v as "FULL" | "INSTALLMENTS")}
+                options={[
+                  {
+                    value: "FULL",
+                    title: "Pay in full",
+                    description: (
+                      <>
+                        <strong className="text-ink-900">{money(fee, currency)}</strong> now
+                      </>
+                    ),
+                  },
+                  {
+                    value: "INSTALLMENTS",
+                    title: "Payment plan",
+                    description: (
+                      <>
+                        <strong className="text-ink-900">{money(terms!.depositAmount ?? 0, currency)}</strong> deposit now, then{" "}
+                        {terms!.installmentTerms.map((t, i) => (
+                          <span key={t.sequence}>
+                            {i > 0 ? ", " : ""}{money(t.amount)} on {new Date(t.dueDate).toLocaleDateString("en-CA", { month: "short", day: "numeric" })}
+                          </span>
+                        ))}
+                        <span className="text-ink-400 mt-0.5 block text-xs">Auto-charged to your card on file.</span>
+                      </>
+                    ),
+                  },
+                ]}
+              />
             )}
 
             <div className="mt-3">
               {hasSavedCards && !useNewCard ? (
-                <div className="space-y-1.5">
-                  {payInfo!.savedCards.map((c) => (
-                    <label key={c.id} className="flex cursor-pointer items-center gap-2 text-sm">
-                      <input type="radio" checked={selectedCardId === c.id} onChange={() => setSelectedCardId(c.id)} />
-                      <span>{c.brand} •••• {c.last4}{c.isDefault ? " (default)" : ""}</span>
-                    </label>
-                  ))}
+                <div className="space-y-2">
+                  <ChoiceCardGroup
+                    ariaLabel="Card to charge"
+                    value={selectedCardId}
+                    onChange={setSelectedCardId}
+                    options={payInfo!.savedCards.map((c) => ({
+                      value: c.id,
+                      title: `${c.brand} •••• ${c.last4}`,
+                      badge: c.isDefault ? "Default" : undefined,
+                    }))}
+                  />
                   <button type="button" onClick={() => setUseNewCard(true)} className="text-play-600 text-xs font-semibold hover:underline">
                     Use a different card
                   </button>

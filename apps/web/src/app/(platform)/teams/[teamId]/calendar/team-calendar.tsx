@@ -7,7 +7,7 @@ import { AddToPhone } from "@/components/calendar/add-to-phone"
 import { AgendaList } from "@/components/calendar/agenda-list"
 import { ItemPopover } from "@/components/calendar/item-popover"
 import { RsvpControl, RsvpRollup } from "@/components/calendar/rsvp-control"
-import { DateTimePicker, TimeRangePicker } from "@/components/ui"
+import { BrandListbox, ChipGroup, DateTimePicker, TimeRangePicker } from "@/components/ui"
 import { VenueSelector } from "@/components/venue-selector"
 
 /**
@@ -406,24 +406,18 @@ export function TeamCalendar({
           <div className="border-ink-100 mt-3 space-y-2 border-t pt-3">
             {slots.map((slot, i) => (
               <div key={i} className="flex flex-wrap items-center gap-2">
-                <select
-                  value={slot.dayOfWeek}
+                <BrandListbox
+                  ariaLabel="Practice day"
+                  className="w-32"
+                  value={String(slot.dayOfWeek)}
                   disabled={busy}
-                  onChange={(e) =>
+                  onChange={(v) =>
                     saveSlots(
-                      slots.map((s, j) =>
-                        j === i ? { ...s, dayOfWeek: Number(e.target.value) } : s
-                      )
+                      slots.map((s, j) => (j === i ? { ...s, dayOfWeek: Number(v) } : s))
                     )
                   }
-                  className="border-ink-200 rounded-lg border px-2 py-1.5 text-sm"
-                >
-                  {DAYS.map((d, di) => (
-                    <option key={d} value={di}>
-                      {d}
-                    </option>
-                  ))}
-                </select>
+                  options={DAYS.map((d, di) => ({ value: String(di), label: d }))}
+                />
                 <DateTimePicker
                   mode="time"
                   value={slot.startTime}
@@ -437,24 +431,21 @@ export function TeamCalendar({
                   }}
                   className="w-28"
                 />
-                <select
-                  value={slot.durationMinutes}
+                <BrandListbox
+                  ariaLabel="Practice length"
+                  className="w-28"
+                  value={String(slot.durationMinutes)}
                   disabled={busy}
-                  onChange={(e) =>
+                  onChange={(v) =>
                     saveSlots(
-                      slots.map((s, j) =>
-                        j === i ? { ...s, durationMinutes: Number(e.target.value) } : s
-                      )
+                      slots.map((s, j) => (j === i ? { ...s, durationMinutes: Number(v) } : s))
                     )
                   }
-                  className="border-ink-200 rounded-lg border px-2 py-1.5 text-sm"
-                >
-                  {[60, 75, 90, 105, 120, 150, 180].map((m) => (
-                    <option key={m} value={m}>
-                      {m} min
-                    </option>
-                  ))}
-                </select>
+                  options={[60, 75, 90, 105, 120, 150, 180].map((m) => ({
+                    value: String(m),
+                    label: `${m} min`,
+                  }))}
+                />
                 <div className="min-w-[160px] flex-1">
                   <VenueSelector
                     value={slot.venueId ?? ""}
@@ -1025,17 +1016,19 @@ function AddEventForm({
             placeholder="Team photo day"
             className={inputClass}
           />
-          <select
+          <span className="text-ink-700 mb-1 mt-3 block text-xs font-semibold">Event type</span>
+          <ChipGroup
+            ariaLabel="Event type"
             value={eventType}
-            onChange={(e) => setEventType(e.target.value)}
-            className="border-ink-200 w-full rounded-xl border px-3 py-2 text-sm focus:outline-none"
-          >
-            <option value="OTHER">Event type: Other</option>
-            <option value="WORKOUT">Workout / Lift</option>
-            <option value="TRAINING">Training</option>
-            <option value="SCRIMMAGE">Scrimmage</option>
-            <option value="MEETING">Meeting</option>
-          </select>
+            onChange={setEventType}
+            options={[
+              { value: "OTHER", label: "Other" },
+              { value: "WORKOUT", label: "Workout / Lift" },
+              { value: "TRAINING", label: "Training" },
+              { value: "SCRIMMAGE", label: "Scrimmage" },
+              { value: "MEETING", label: "Meeting" },
+            ]}
+          />
         </div>
         <div>
           <label className="text-ink-700 mb-1 block text-xs font-semibold">Date</label>

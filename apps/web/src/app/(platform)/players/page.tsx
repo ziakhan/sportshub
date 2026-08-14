@@ -69,7 +69,7 @@ export default function PlayersPage() {
               My players
             </h1>
             <p className="text-ink-500 mt-1 text-sm">
-              Player profiles on this account — teams, stats and registrations.
+              Player profiles on this account, with teams, stats and registrations.
             </p>
           </div>
           <Button href="/players/add" tone="play" icon={<IconPlus />}>
@@ -173,7 +173,7 @@ export default function PlayersPage() {
                     </ul>
                   ) : (
                     <p className="text-ink-400 text-xs">
-                      Not on a team yet — accepted offers place players on their team automatically.
+                      Not on a team yet. Accepted offers place players on their team automatically.
                     </p>
                   )}
                 </div>

@@ -104,9 +104,16 @@ export function CourtBackdropLayer({
       aria-hidden="true"
       className={`pointer-events-none absolute inset-0 overflow-hidden ${v.base} ${className ?? ""}`}
     >
-      {/* Half court, cropped by the corner. One shape, no repeats. */}
+      {/* Half court, cropped by the corner. One shape, no repeats.
+          Phones (2026-08-13): bottom-anchoring only works while the shell is
+          about one screen tall. On a 390px phone the card stack runs long, so
+          the anchor fell hundreds of pixels below the fold and the page read
+          as a plain gradient. Under the sm breakpoint the court flips to a
+          top anchor, pulled up and right so the arc, key and rim crop into
+          the header band of the first viewport and everything below it stays
+          empty for the content. */}
       <div
-        className={`absolute -bottom-[26%] -right-[14%] w-[150%] min-w-[820px] ${v.lineOpacity}`}
+        className={`absolute -bottom-[26%] -right-[14%] w-[150%] min-w-[820px] max-sm:bottom-auto max-sm:-top-[21rem] max-sm:-right-[45%] max-sm:w-[160%] max-sm:min-w-0 ${v.lineOpacity}`}
         style={maskStyle}
       >
         <svg

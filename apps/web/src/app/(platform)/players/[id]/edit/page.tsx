@@ -5,13 +5,28 @@ import { useRouter, useParams } from "next/navigation"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { addPlayerSchema, type AddPlayerFormData } from "@/lib/validations/tryout-signup"
-import { DateTimePicker, SmartBack } from "@/components/ui"
+import { ChipGroup, ChoiceCardGroup, DateTimePicker, SmartBack } from "@/components/ui"
 import RemovePlayerButton from "../../remove-player-button"
 import { ClaimHandleCard } from "@/components/players/claim-handle-card"
 import { FamilyCard } from "@/components/players/family-card"
 import { SocialControlsCard } from "@/components/players/social-controls-card"
 
 type MediaConsent = "UNSET" | "GRANTED" | "DENIED"
+
+/** Same values the API has always stored, chips instead of a dropdown. */
+const GENDERS = [
+  { value: "MALE", label: "Male" },
+  { value: "FEMALE", label: "Female" },
+  { value: "COED", label: "Other" },
+]
+
+const POSITIONS = [
+  { value: "Point Guard", label: "Point Guard" },
+  { value: "Shooting Guard", label: "Shooting Guard" },
+  { value: "Small Forward", label: "Small Forward" },
+  { value: "Power Forward", label: "Power Forward" },
+  { value: "Center", label: "Center" },
+]
 
 export default function EditPlayerPage() {
   const router = useRouter()
@@ -174,15 +189,18 @@ export default function EditPlayerPage() {
             </div>
 
             <div>
-              <label htmlFor="gender" className={labelClass}>
+              <span className={labelClass}>
                 Gender <span className="text-red-500">*</span>
-              </label>
-              <select {...register("gender")} id="gender" className={inputClass}>
-                <option value="">Select gender</option>
-                <option value="MALE">Male</option>
-                <option value="FEMALE">Female</option>
-                <option value="COED">Other</option>
-              </select>
+              </span>
+              <ChipGroup
+                ariaLabel="Gender"
+                className="mt-1"
+                value={watch("gender") || ""}
+                onChange={(v) =>
+                  setValue("gender", v as AddPlayerFormData["gender"], { shouldValidate: true })
+                }
+                options={GENDERS}
+              />
               {errors.gender && (
                 <p className="mt-1 text-sm text-red-600">{errors.gender.message}</p>
               )}
@@ -230,18 +248,18 @@ export default function EditPlayerPage() {
                 />
               </div>
 
-              <div>
-                <label htmlFor="position" className={labelClass}>
+              <div className="sm:col-span-2">
+                <span className={labelClass}>
                   Position <span className="text-ink-400">(optional)</span>
-                </label>
-                <select {...register("position")} id="position" className={inputClass}>
-                  <option value="">Select position</option>
-                  <option value="Point Guard">Point Guard</option>
-                  <option value="Shooting Guard">Shooting Guard</option>
-                  <option value="Small Forward">Small Forward</option>
-                  <option value="Power Forward">Power Forward</option>
-                  <option value="Center">Center</option>
-                </select>
+                </span>
+                <ChipGroup
+                  ariaLabel="Position"
+                  className="mt-1"
+                  allowClear
+                  value={watch("position") || ""}
+                  onChange={(v) => setValue("position", v)}
+                  options={POSITIONS}
+                />
               </div>
             </div>
 
@@ -255,48 +273,34 @@ export default function EditPlayerPage() {
                 </span>
               </div>
               <p className="text-ink-500 mb-3 text-xs">
-                Controls how your player appears in public game coverage — box scores, recaps and
+                Controls how your player appears in public game coverage: box scores, recaps and
                 media tagging.
                 {mediaConsent === "UNSET" && (
-                  <span className="text-hoop-700 font-medium"> Not set yet — first name + initial is used by default.</span>
+                  <span className="text-hoop-700 font-medium">
+                    {" "}
+                    Not set yet, so first name and initial is used by default.
+                  </span>
                 )}
               </p>
-              <div className="space-y-2">
-                <label className="border-ink-200 hover:bg-ink-50 flex cursor-pointer items-start gap-3 rounded-xl border p-3 text-sm">
-                  <input
-                    type="radio"
-                    name="mediaConsent"
-                    checked={mediaConsent === "GRANTED"}
-                    onChange={() => setMediaConsent("GRANTED")}
-                    className="mt-0.5"
-                  />
-                  <span>
-                    <span className="text-ink-900 block font-semibold">
-                      Show full name &amp; photos in public game coverage
-                    </span>
-                    <span className="text-ink-500 block text-xs">
-                      Full name in box scores and recaps; photos and highlights may be tagged.
-                    </span>
-                  </span>
-                </label>
-                <label className="border-ink-200 hover:bg-ink-50 flex cursor-pointer items-start gap-3 rounded-xl border p-3 text-sm">
-                  <input
-                    type="radio"
-                    name="mediaConsent"
-                    checked={mediaConsent === "DENIED"}
-                    onChange={() => setMediaConsent("DENIED")}
-                    className="mt-0.5"
-                  />
-                  <span>
-                    <span className="text-ink-900 block font-semibold">
-                      No — first name + initial only
-                    </span>
-                    <span className="text-ink-500 block text-xs">
-                      Public pages show &quot;Miles R.&quot; style naming and no tagged media.
-                    </span>
-                  </span>
-                </label>
-              </div>
+              <ChoiceCardGroup
+                ariaLabel="Media consent"
+                value={mediaConsent === "UNSET" ? "" : mediaConsent}
+                onChange={(v) => setMediaConsent(v as MediaConsent)}
+                options={[
+                  {
+                    value: "GRANTED",
+                    title: "Show full name and photos in public game coverage",
+                    description:
+                      "Full name in box scores and recaps; photos and highlights may be tagged.",
+                  },
+                  {
+                    value: "DENIED",
+                    title: "First name and initial only",
+                    description:
+                      'Public pages show "Miles R." style naming and no tagged media.',
+                  },
+                ]}
+              />
             </div>
 
             <div className="flex gap-4 pt-2">

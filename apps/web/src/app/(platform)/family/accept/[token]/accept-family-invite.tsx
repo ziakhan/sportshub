@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
+import { ChoiceCardGroup } from "@/components/ui"
 
 type InviteType = "CHILD_LOGIN" | "GUARDIAN" | "CHILD_CLAIM"
 
@@ -41,8 +42,9 @@ export function AcceptFamilyInvite({
   const [busy, setBusy] = useState<"accept" | "decline" | null>(null)
   const [error, setError] = useState<string | null>(null)
   // Default to merging when we found a match — one child, one profile is
-  // what the family wants; keeping both is the deliberate choice.
-  const [mergeId, setMergeId] = useState<string | null>(mergeCandidates[0]?.id ?? null)
+  // what the family wants; keeping both is the deliberate choice. The empty
+  // string is "keep them separate", the same no-merge case the null was.
+  const [mergeId, setMergeId] = useState<string>(mergeCandidates[0]?.id ?? "")
 
   async function respond(action: "accept" | "decline") {
     setBusy(action)
@@ -114,32 +116,25 @@ export function AcceptFamilyInvite({
           <p className="text-ink-600 mt-1 text-sm">
             Join them into one so {playerFirstName} has a single profile with everything on it.
           </p>
-          <div className="mt-3 space-y-2">
-            {mergeCandidates.map((c) => (
-              <label key={c.id} className="text-ink-700 flex items-center gap-2.5 text-sm">
-                <input
-                  type="radio"
-                  name="merge-target"
-                  checked={mergeId === c.id}
-                  onChange={() => setMergeId(c.id)}
-                  className="border-ink-300 h-4 w-4"
-                />
-                <span>
-                  Join into <strong>{c.name}</strong>
-                </span>
-              </label>
-            ))}
-            <label className="text-ink-700 flex items-center gap-2.5 text-sm">
-              <input
-                type="radio"
-                name="merge-target"
-                checked={mergeId === null}
-                onChange={() => setMergeId(null)}
-                className="border-ink-300 h-4 w-4"
-              />
-              <span>Keep them as separate profiles</span>
-            </label>
-          </div>
+          <ChoiceCardGroup
+            ariaLabel="What to do with the profile you already have"
+            className="mt-3"
+            value={mergeId}
+            onChange={setMergeId}
+            options={[
+              ...mergeCandidates.map((c, i) => ({
+                value: c.id,
+                title: `Join into ${c.name}`,
+                badge: i === 0 ? "Recommended" : undefined,
+                description: `Teams, games, and history end up on one profile that ${playerFirstName} signs in to.`,
+              })),
+              {
+                value: "",
+                title: "Keep them as separate profiles",
+                description: "You stay linked to both, and nothing is joined together.",
+              },
+            ]}
+          />
         </div>
       ) : null}
 

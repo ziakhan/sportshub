@@ -5,7 +5,7 @@ import { useParams, useSearchParams } from "next/navigation"
 import { format } from "date-fns"
 import { formatCurrency } from "@/lib/countries"
 import { perkLabel } from "@/lib/leagues/perks"
-import { SmartBack } from "@/components/ui"
+import { BrandListbox, SmartBack } from "@/components/ui"
 
 interface RosterPreviewPlayer {
   playerId: string
@@ -315,40 +315,43 @@ function SeasonDetailSubmitInner() {
                 ) : (
                   <>
                     <div>
-                      <label className="text-ink-600 mb-1 block text-xs font-medium">
+                      <label
+                        htmlFor="season-entry-team"
+                        className="text-ink-600 mb-1 block text-xs font-medium"
+                      >
                         Select Team
                       </label>
-                      <select
+                      <BrandListbox
+                        id="season-entry-team"
+                        ariaLabel="Select team"
                         value={selectedTeam}
-                        onChange={(e) => setSelectedTeam(e.target.value)}
-                        className="border-ink-200 text-ink-900 focus:border-play-500 focus:ring-play-500/20 w-full rounded-xl border px-3 py-2 text-sm focus:outline-none focus:ring-2"
-                      >
-                        <option value="">Choose team...</option>
-                        {availableTeams.map((t: any) => (
-                          <option key={t.id} value={t.id}>
-                            {t.name} ({t.ageGroup}
-                            {t.gender ? ` ${t.gender}` : ""})
-                          </option>
-                        ))}
-                      </select>
+                        onChange={setSelectedTeam}
+                        placeholder="Choose team..."
+                        options={availableTeams.map((t: any) => ({
+                          value: t.id,
+                          label: `${t.name} (${t.ageGroup}${t.gender ? ` ${t.gender}` : ""})`,
+                        }))}
+                      />
                     </div>
 
                     <div>
-                      <label className="text-ink-600 mb-1 block text-xs font-medium">
+                      <label
+                        htmlFor="season-entry-division"
+                        className="text-ink-600 mb-1 block text-xs font-medium"
+                      >
                         Select Division
                       </label>
-                      <select
+                      <BrandListbox
+                        id="season-entry-division"
+                        ariaLabel="Select division"
                         value={selectedDivision}
-                        onChange={(e) => setSelectedDivision(e.target.value)}
-                        className="border-ink-200 text-ink-900 focus:border-play-500 focus:ring-play-500/20 w-full rounded-xl border px-3 py-2 text-sm focus:outline-none focus:ring-2"
-                      >
-                        <option value="">Choose division...</option>
-                        {season.divisions?.map((d: any) => (
-                          <option key={d.id} value={d.id}>
-                            {d.name} ({d.ageGroup})
-                          </option>
-                        ))}
-                      </select>
+                        onChange={setSelectedDivision}
+                        placeholder="Choose division..."
+                        options={(season.divisions ?? []).map((d: any) => ({
+                          value: d.id,
+                          label: `${d.name} (${d.ageGroup})`,
+                        }))}
+                      />
                     </div>
 
                     {roster && roster.length > 0 && (

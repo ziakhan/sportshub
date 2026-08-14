@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { Button } from "@/components/ui"
+import { BrandListbox, Button } from "@/components/ui"
 import {
   answerMissing,
   normalizeQuestions,
@@ -93,18 +93,16 @@ export function EntryForm({
         <>
           {available.length > 1 && (
             <div>
-              <label className="text-ink-600 mb-1 block text-xs font-medium">Club</label>
-              <select
+              <label htmlFor="entry-club" className="text-ink-600 mb-1 block text-xs font-medium">
+                Club
+              </label>
+              <BrandListbox
+                id="entry-club"
+                ariaLabel="Club"
                 value={tenantId}
-                onChange={(e) => setTenantId(e.target.value)}
-                className="border-ink-200 w-full rounded-lg border px-3 py-2 text-sm"
-              >
-                {available.map((t) => (
-                  <option key={t.id} value={t.id}>
-                    {t.name}
-                  </option>
-                ))}
-              </select>
+                onChange={setTenantId}
+                options={available.map((t) => ({ value: t.id, label: t.name }))}
+              />
             </div>
           )}
           <div>

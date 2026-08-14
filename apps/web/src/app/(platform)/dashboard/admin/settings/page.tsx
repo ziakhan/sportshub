@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { ChipGroup } from "@/components/ui"
 
 interface Country {
   code: string
@@ -184,22 +185,15 @@ export default function AdminSettingsPage() {
           Platform default below; individual clubs can hold admin-granted overrides.
         </p>
         <div className="flex flex-wrap items-center gap-4">
-          <label className="flex items-center gap-2 text-sm font-medium">
-            <input
-              type="radio"
-              checked={reviewPolicy === "AUTO"}
-              onChange={() => setReviewPolicy("AUTO")}
-            />
-            Automatic on season conclude
-          </label>
-          <label className="flex items-center gap-2 text-sm font-medium">
-            <input
-              type="radio"
-              checked={reviewPolicy === "OFF"}
-              onChange={() => setReviewPolicy("OFF")}
-            />
-            Off
-          </label>
+          <ChipGroup
+            ariaLabel="Review invitation policy"
+            value={reviewPolicy}
+            onChange={(v) => setReviewPolicy(v as "AUTO" | "OFF")}
+            options={[
+              { value: "AUTO", label: "Automatic on season conclude" },
+              { value: "OFF", label: "Off" },
+            ]}
+          />
           <label className="flex items-center gap-2 text-sm">
             Window
             <input

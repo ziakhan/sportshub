@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { useParams } from "next/navigation"
 import { format } from "date-fns"
 import { formatCurrency } from "@/lib/countries"
-import { SmartBack } from "@/components/ui"
+import { BrandListbox, SmartBack } from "@/components/ui"
 
 export default function TournamentDetailSubmitPage() {
   const params = useParams()
@@ -225,40 +225,43 @@ export default function TournamentDetailSubmitPage() {
                 ) : (
                   <>
                     <div>
-                      <label className="text-ink-600 mb-1 block text-xs font-medium">
+                      <label
+                        htmlFor="tournament-entry-team"
+                        className="text-ink-600 mb-1 block text-xs font-medium"
+                      >
                         Select Team
                       </label>
-                      <select
+                      <BrandListbox
+                        id="tournament-entry-team"
+                        ariaLabel="Select team"
                         value={selectedTeam}
-                        onChange={(e) => setSelectedTeam(e.target.value)}
-                        className="border-ink-200 text-ink-900 focus:border-play-500 focus:ring-play-500/20 w-full rounded-xl border px-3 py-2 text-sm focus:outline-none focus:ring-2"
-                      >
-                        <option value="">Choose team...</option>
-                        {availableTeams.map((t: any) => (
-                          <option key={t.id} value={t.id}>
-                            {t.name} ({t.ageGroup}
-                            {t.gender ? ` ${t.gender}` : ""})
-                          </option>
-                        ))}
-                      </select>
+                        onChange={setSelectedTeam}
+                        placeholder="Choose team..."
+                        options={availableTeams.map((t: any) => ({
+                          value: t.id,
+                          label: `${t.name} (${t.ageGroup}${t.gender ? ` ${t.gender}` : ""})`,
+                        }))}
+                      />
                     </div>
 
                     <div>
-                      <label className="text-ink-600 mb-1 block text-xs font-medium">
+                      <label
+                        htmlFor="tournament-entry-division"
+                        className="text-ink-600 mb-1 block text-xs font-medium"
+                      >
                         Select Division
                       </label>
-                      <select
+                      <BrandListbox
+                        id="tournament-entry-division"
+                        ariaLabel="Select division"
                         value={selectedDivision}
-                        onChange={(e) => setSelectedDivision(e.target.value)}
-                        className="border-ink-200 text-ink-900 focus:border-play-500 focus:ring-play-500/20 w-full rounded-xl border px-3 py-2 text-sm focus:outline-none focus:ring-2"
-                      >
-                        <option value="">Choose division...</option>
-                        {tournament.divisions?.map((d: any) => (
-                          <option key={d.id} value={d.id}>
-                            {d.name} ({d.ageGroup})
-                          </option>
-                        ))}
-                      </select>
+                        onChange={setSelectedDivision}
+                        placeholder="Choose division..."
+                        options={(tournament.divisions ?? []).map((d: any) => ({
+                          value: d.id,
+                          label: `${d.name} (${d.ageGroup})`,
+                        }))}
+                      />
                     </div>
 
                     <button

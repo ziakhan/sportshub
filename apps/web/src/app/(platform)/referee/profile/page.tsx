@@ -8,7 +8,14 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
 import { SignoffPinCard } from "@/components/scoring/signoff-pin-card"
 import { CertificationUploadField } from "@/components/referee/certification-upload-field"
-import { SmartBack } from "@/components/ui"
+import { ChipGroup, SmartBack } from "@/components/ui"
+
+/** Same three values onboarding offers, worded the same way. */
+const LEVELS = [
+  { value: "Level 1", label: "Level 1 entry" },
+  { value: "Level 2", label: "Level 2 intermediate" },
+  { value: "Level 3", label: "Level 3 advanced" },
+]
 
 const refereeProfileSchema = z.object({
   certificationLevel: z.enum(["Level 1", "Level 2", "Level 3"]),
@@ -38,6 +45,8 @@ export default function RefereeProfilePage() {
     register,
     handleSubmit,
     reset,
+    watch,
+    setValue,
     formState: { errors },
   } = useForm<RefereeProfileFormData>({
     resolver: zodResolver(refereeProfileSchema),
@@ -150,9 +159,9 @@ export default function RefereeProfilePage() {
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
           <div>
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <label htmlFor="certificationLevel" className={labelClass}>
+              <span className={labelClass}>
                 Certification Level <span className="text-red-500">*</span>
-              </label>
+              </span>
               {certVerifiedAt ? (
                 <span className="bg-court-50 text-court-700 rounded-full px-2 py-0.5 text-xs font-semibold">
                   Verified
@@ -165,16 +174,17 @@ export default function RefereeProfilePage() {
                 <span className="text-ink-400 text-xs">Self-declared</span>
               )}
             </div>
-            <select
-              {...register("certificationLevel")}
-              id="certificationLevel"
-              className={inputClass}
-            >
-              <option value="">Select level</option>
-              <option value="Level 1">Level 1 — Entry</option>
-              <option value="Level 2">Level 2 — Intermediate</option>
-              <option value="Level 3">Level 3 — Advanced</option>
-            </select>
+            <ChipGroup
+              ariaLabel="Certification level"
+              className="mt-1"
+              value={watch("certificationLevel") || ""}
+              onChange={(v) =>
+                setValue("certificationLevel", v as RefereeProfileFormData["certificationLevel"], {
+                  shouldValidate: true,
+                })
+              }
+              options={LEVELS}
+            />
             {errors.certificationLevel && (
               <p className="mt-1 text-sm text-red-600">{errors.certificationLevel.message}</p>
             )}

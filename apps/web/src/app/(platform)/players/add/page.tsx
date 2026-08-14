@@ -1,12 +1,28 @@
 "use client"
 
-import { Suspense, useState } from "react"
+import { Suspense, useEffect, useRef, useState } from "react"
+import Link from "next/link"
 import { useSearchParams } from "next/navigation"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { Button, DateTimePicker, SmartBack } from "@/components/ui"
+import { Button, ChipGroup, DateTimePicker, SmartBack } from "@/components/ui"
 import { addPlayerSchema, type AddPlayerFormData } from "@/lib/validations/tryout-signup"
 import { calculateAge } from "@/lib/coppa"
+
+/** Same values the API has always stored, chips instead of a dropdown. */
+const GENDERS = [
+  { value: "MALE", label: "Male" },
+  { value: "FEMALE", label: "Female" },
+  { value: "COED", label: "Other" },
+]
+
+const POSITIONS = [
+  { value: "Point Guard", label: "Point Guard" },
+  { value: "Shooting Guard", label: "Shooting Guard" },
+  { value: "Small Forward", label: "Small Forward" },
+  { value: "Power Forward", label: "Power Forward" },
+  { value: "Center", label: "Center" },
+]
 
 function calcAge(dobStr: string | undefined): number | null {
   if (!dobStr) return null
@@ -54,6 +70,64 @@ function AddPlayerForm() {
   const watchedConsent = watch("parentalConsentGiven")
   const age = calcAge(watchedDob)
   const isMinor = age !== null && age < 13
+
+  // "This kid may already be here" — /api/family/add-check answers one bit
+  // while the parent fills the form (parent-child linking arc 2026-08-13).
+  // Advisory only: it never blocks the submit. The endpoint allows a handful
+  // of checks an hour, so every name and birth year is asked about once and
+  // the answer is remembered for the rest of the visit.
+  const watchedFirst = watch("firstName")
+  const watchedLast = watch("lastName")
+  const [selfRegistered, setSelfRegistered] = useState(false)
+  const [dismissedKey, setDismissedKey] = useState<string | null>(null)
+  const checkedNames = useRef<Map<string, boolean>>(new Map())
+
+  const firstName = (watchedFirst ?? "").trim()
+  const lastName = (watchedLast ?? "").trim()
+  const birthYear = Number(watchedDob?.slice(0, 4))
+  const canCheck =
+    firstName.length > 1 &&
+    lastName.length > 1 &&
+    Number.isInteger(birthYear) &&
+    birthYear > 1900 &&
+    birthYear <= new Date().getFullYear()
+  const checkKey = canCheck ? `${firstName.toLowerCase()}|${lastName.toLowerCase()}|${birthYear}` : ""
+
+  useEffect(() => {
+    if (!checkKey) {
+      setSelfRegistered(false)
+      return
+    }
+    const known = checkedNames.current.get(checkKey)
+    if (known !== undefined) {
+      setSelfRegistered(known)
+      return
+    }
+    const timer = window.setTimeout(async () => {
+      if (checkedNames.current.has(checkKey)) return
+      checkedNames.current.set(checkKey, false)
+      try {
+        const query = new URLSearchParams({
+          firstName,
+          lastName,
+          birthYear: String(birthYear),
+        })
+        const res = await fetch(`/api/family/add-check?${query.toString()}`)
+        const data = await res.json().catch(() => ({}))
+        const match = res.ok && data?.selfRegisteredMatch === true
+        checkedNames.current.set(checkKey, match)
+        setSelfRegistered(match)
+      } catch {
+        // A check that never answered is the same as no match: adding the
+        // player was never gated on it.
+        setSelfRegistered(false)
+      }
+    }, 600)
+    return () => window.clearTimeout(timer)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [checkKey])
+
+  const showSelfRegisteredNotice = selfRegistered && dismissedKey !== checkKey
 
   const onSubmit = async (data: AddPlayerFormData) => {
     setIsSubmitting(true)
@@ -268,15 +342,18 @@ function AddPlayerForm() {
             </div>
 
             <div>
-              <label htmlFor="gender" className={labelClass}>
+              <span className={labelClass}>
                 Gender <span className="text-red-500">*</span>
-              </label>
-              <select {...register("gender")} id="gender" className={inputClass}>
-                <option value="">Select gender</option>
-                <option value="MALE">Male</option>
-                <option value="FEMALE">Female</option>
-                <option value="COED">Other</option>
-              </select>
+              </span>
+              <ChipGroup
+                ariaLabel="Gender"
+                className="mt-1"
+                value={watch("gender") || ""}
+                onChange={(v) =>
+                  setValue("gender", v as AddPlayerFormData["gender"], { shouldValidate: true })
+                }
+                options={GENDERS}
+              />
               {errors.gender && (
                 <p className="mt-1 text-sm text-red-600">{errors.gender.message}</p>
               )}
@@ -324,18 +401,18 @@ function AddPlayerForm() {
                 />
               </div>
 
-              <div>
-                <label htmlFor="position" className={labelClass}>
+              <div className="sm:col-span-2">
+                <span className={labelClass}>
                   Position <span className="text-ink-400">(optional)</span>
-                </label>
-                <select {...register("position")} id="position" className={inputClass}>
-                  <option value="">Select position</option>
-                  <option value="Point Guard">Point Guard</option>
-                  <option value="Shooting Guard">Shooting Guard</option>
-                  <option value="Small Forward">Small Forward</option>
-                  <option value="Power Forward">Power Forward</option>
-                  <option value="Center">Center</option>
-                </select>
+                </span>
+                <ChipGroup
+                  ariaLabel="Position"
+                  className="mt-1"
+                  allowClear
+                  value={watch("position") || ""}
+                  onChange={(v) => setValue("position", v)}
+                  options={POSITIONS}
+                />
               </div>
             </div>
 
@@ -354,6 +431,50 @@ function AddPlayerForm() {
                     I am the parent or legal guardian and I consent to registering this child.
                   </span>
                 </label>
+              </div>
+            )}
+
+            {showSelfRegisteredNotice && (
+              <div className="border-play-200 bg-play-50 rounded-2xl border p-4">
+                <div className="flex items-start gap-3">
+                  <span className="bg-play-100 text-play-700 mt-0.5 grid h-8 w-8 shrink-0 place-items-center rounded-full">
+                    <svg
+                      className="h-4 w-4"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      aria-hidden="true"
+                    >
+                      <path d="M12 16v-4M12 8h.01" />
+                      <circle cx="12" cy="12" r="9" />
+                    </svg>
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-ink-800 text-sm leading-relaxed">
+                      Someone with this name and birth year already has their own SportsHub
+                      login. If that is your kid, share your family code with them instead of
+                      making a second profile.
+                    </p>
+                    <div className="mt-2 flex flex-wrap items-center gap-3">
+                      <Link
+                        href="/players"
+                        className="text-play-700 hover:text-play-800 decoration-play-300 text-sm font-semibold underline underline-offset-2"
+                      >
+                        Get my family code
+                      </Link>
+                      <button
+                        type="button"
+                        onClick={() => setDismissedKey(checkKey)}
+                        className="text-ink-500 hover:text-ink-700 cursor-pointer text-sm font-semibold"
+                      >
+                        Dismiss
+                      </button>
+                    </div>
+                  </div>
+                </div>
               </div>
             )}
 

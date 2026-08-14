@@ -2,6 +2,13 @@
 
 import { useState } from "react"
 import { SignaturePad } from "@/components/scoring/signature-pad"
+import { ChipGroup } from "@/components/ui"
+
+/** Same two values the API has always stored; only the paint changed. */
+const RELATIONSHIPS = [
+  { value: "Parent/Guardian", label: "Parent or guardian" },
+  { value: "Player (18+)", label: "Player (18 or older)" },
+]
 
 export function SignForm({
   token,
@@ -94,18 +101,16 @@ export function SignForm({
           />
         </div>
         <div>
-          <label htmlFor="relationship" className="text-ink-700 block text-sm font-semibold">
+          <span className="text-ink-700 block text-sm font-semibold">
             Relationship to player
-          </label>
-          <select
-            id="relationship"
+          </span>
+          <ChipGroup
+            ariaLabel="Relationship to player"
+            className="mt-1.5"
             value={relationship}
-            onChange={(e) => setRelationship(e.target.value)}
-            className="border-ink-200 focus:border-play-500 focus:ring-play-200 mt-1.5 w-full rounded-xl border bg-white px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2"
-          >
-            <option value="Parent/Guardian">Parent or guardian</option>
-            <option value="Player (18+)">Player (18 or older)</option>
-          </select>
+            onChange={setRelationship}
+            options={RELATIONSHIPS}
+          />
         </div>
       </div>
 

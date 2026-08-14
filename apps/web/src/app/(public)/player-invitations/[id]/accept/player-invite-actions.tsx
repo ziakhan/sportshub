@@ -3,6 +3,7 @@
 import { useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
+import { BrandListbox } from "@/components/ui"
 
 interface Player {
   id: string
@@ -109,19 +110,19 @@ export function PlayerInviteActions({
         <label htmlFor="pi-player" className="text-ink-800 block text-sm font-medium">
           Player <span className="text-red-500">*</span>
         </label>
-        <select
-          id="pi-player"
-          value={playerId}
-          onChange={(e) => setPlayerId(e.target.value)}
-          className="border-ink-200 focus:ring-play-500/20 mt-1 block w-full rounded-xl border bg-white px-3 py-2.5 text-ink-900 shadow-sm focus:border-play-500 focus:outline-none focus:ring-2"
-        >
-          <option value="">Choose a player...</option>
-          {players.map((p) => (
-            <option key={p.id} value={p.id}>
-              {p.firstName} {p.lastName}
-            </option>
-          ))}
-        </select>
+        <div className="mt-1">
+          <BrandListbox
+            id="pi-player"
+            ariaLabel="Player"
+            value={playerId}
+            onChange={setPlayerId}
+            placeholder="Choose a player..."
+            options={players.map((p) => ({
+              value: p.id,
+              label: `${p.firstName} ${p.lastName}`,
+            }))}
+          />
+        </div>
         <Link
           href={`/players/add?redirect=/player-invitations/${invitationId}/accept`}
           className="text-play-600 hover:text-play-700 mt-1.5 inline-block text-xs font-semibold"

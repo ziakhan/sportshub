@@ -64,7 +64,7 @@ export function SignInForm({
 
   const requestMagicLink = async () => {
     if (!email) {
-      setError("Enter your email above first — we'll send the sign-in link there.")
+      setError("Enter your email above first. We'll send the sign-in link there.")
       emailRef.current?.focus()
       return
     }
@@ -134,7 +134,7 @@ export function SignInForm({
             <h1 className="text-ink-950 mb-2 text-center text-3xl font-bold">We sent you a link</h1>
             <p className="text-ink-500 mb-6 text-center text-sm">
               If an account exists for <span className="text-ink-700 font-semibold">{email}</span>,
-              a sign-in link is on its way. Tap it — or enter the 6-digit code from the email
+              a sign-in link is on its way. Tap it, or enter the 6-digit code from the email
               below. It expires in 15 minutes.
             </p>
 
@@ -180,7 +180,7 @@ export function SignInForm({
                 disabled={magicLoading || resendCooldown}
                 className="text-play-600 hover:text-play-700 disabled:text-ink-300 font-semibold"
               >
-                {resendCooldown ? "Sent — wait a moment" : "Resend email"}
+                {resendCooldown ? "Sent, wait a moment" : "Resend email"}
               </button>
             </div>
           </>
@@ -194,7 +194,7 @@ export function SignInForm({
 
             <h1 className="text-ink-950 mb-2 text-center text-3xl font-bold">Sign in</h1>
             <p className="text-ink-500 mb-6 text-center text-sm">
-              Games, schedules, and your teams — right where you left them.
+              Your games, schedules, and teams are right where you left them.
             </p>
 
             {error && (
