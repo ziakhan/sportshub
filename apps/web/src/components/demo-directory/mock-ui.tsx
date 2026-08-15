@@ -996,6 +996,650 @@ export function PhoneSuccess({
   )
 }
 
+/* ── Comms kit (story 2) ─────────────────────────────────────────────────── *
+ *
+ * Everything below mirrors a surface that ships today, named where it is not
+ * obvious:
+ *   · MockTextArea / MockEmailPreview / MockConfirm — components/comms/
+ *     message-composer.tsx (subject and body with their live counters, the
+ *     preview pane, and the "Send to ~N recipients?" confirm).
+ *   · MockReadMeter — the delivery view. The read cursor behind it is
+ *     TeamChatRead (userId, teamId, lastReadAt), which is what the unread
+ *     badge already counts; this is the same number read from the other end.
+ *   · MockPollResults — components/polls/poll-card.tsx (QuestionBlock): fill
+ *     bar sized against the leading option, "count · share%", the staff-only
+ *     voter names, "Pick one · N voted".
+ *   · PhoneChat* — app/(platform)/teams/[teamId]/chat/team-chat.tsx: play-600
+ *     bubbles for you, court-50 for everyone else, the STAFF badge, the
+ *     reaction row, "Message the team…" and the 📊 quick-poll button.
+ *   · PhonePollBubble — components/chat/poll-bubble.tsx, trophy on the
+ *     leading option and a check on yours.
+ */
+
+/** Multi-line field. The composer is the one place the product counts characters. */
+export function MockTextArea({
+  id,
+  label,
+  children,
+  counter,
+  rows = 4,
+}: {
+  id?: string
+  label: string
+  children: ReactNode
+  /** "42/150", exactly as the real composer shows it. */
+  counter?: string
+  rows?: number
+}) {
+  return (
+    <label className="block">
+      <span className="text-ink-600 mb-1 block text-[11px] font-semibold uppercase tracking-[0.1em]">
+        {label}
+      </span>
+      <span
+        data-demo-target={id}
+        className={cn(
+          "border-ink-200 block w-full rounded-xl border bg-white px-3 py-2 text-[13px] leading-relaxed transition-all duration-200 motion-reduce:transition-none",
+          "data-[demo-hover=true]:border-play-300 data-[demo-hover=true]:ring-play-100 data-[demo-hover=true]:ring-2"
+        )}
+        style={{ minHeight: rows * 19 + 16 }}
+      >
+        {children}
+      </span>
+      {counter && (
+        <span className="text-ink-400 mt-1 block text-right text-[11px] tabular-nums">
+          {counter}
+        </span>
+      )}
+    </label>
+  )
+}
+
+/** The live preview pane: what a family receives, written as it is typed. */
+export function MockEmailPreview({
+  id,
+  org,
+  subject,
+  body,
+}: {
+  id?: string
+  org: string
+  subject: ReactNode
+  body: ReactNode
+}) {
+  return (
+    <div>
+      <p className="text-ink-500 mb-2 text-[11px] font-semibold uppercase tracking-[0.12em]">
+        Preview
+      </p>
+      <div
+        data-demo-target={id}
+        className="border-ink-100 bg-ink-50 rounded-2xl border p-4 transition-all duration-200 motion-reduce:transition-none data-[demo-hover=true]:border-play-200 data-[demo-hover=true]:ring-play-100 data-[demo-hover=true]:ring-2"
+      >
+        <p className="text-ink-500 text-[11px]">From {org} via SportsHub</p>
+        <p className="text-ink-950 mt-2 text-[15px] font-bold leading-snug">{subject}</p>
+        <div className="text-ink-700 mt-2.5 text-[12.5px] leading-relaxed">{body}</div>
+        <div className="border-ink-200 mt-4 border-t pt-2.5">
+          <p className="text-ink-400 text-[10.5px] leading-relaxed">
+            Sent by {org} via SportsHub · Unsubscribe from {org} · Manage all email preferences
+          </p>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+/**
+ * The read meter. The bar and the counter both travel to their new value, so a
+ * beat that moves the number is something the viewer watches happen rather
+ * than a screen that quietly changed between cuts.
+ *
+ * Owner's painful-detail law for this story: the point is not that a message
+ * was sent, it is that the club can see WHO has it. So the outstanding family
+ * is named, with the nudge next to the name.
+ */
+export function MockReadMeter({
+  read,
+  total,
+  readers,
+  outstanding,
+  remindId,
+}: {
+  read: number
+  total: number
+  /** Names in the order they opened it. Mugs appear as the count climbs. */
+  readers: string[]
+  /** Everyone who still has not opened it. */
+  outstanding: string[]
+  remindId?: string
+}) {
+  const pct = total > 0 ? Math.round((read / total) * 100) : 0
+  const done = read >= total
+  return (
+    <div className="px-4 py-3.5">
+      <div className="flex items-end justify-between gap-3">
+        <p className="text-ink-900 text-[26px] font-bold leading-none tracking-tight">
+          <MockCounter value={read} /> <span className="text-ink-400 text-[16px]">of {total}</span>
+        </p>
+        <MockPill tone={done ? "court" : "gold"}>
+          {done ? "Everyone has it" : `${pct}% opened`}
+        </MockPill>
+      </div>
+      <p className="text-ink-500 mt-1 text-[11.5px] font-medium">
+        Families who have opened it
+      </p>
+
+      <div className="bg-ink-100 mt-2.5 h-2 overflow-hidden rounded-full">
+        <div
+          className={cn(
+            "h-full rounded-full transition-[width] duration-700 ease-out motion-reduce:transition-none",
+            done ? "bg-court-500" : "bg-court-400"
+          )}
+          style={{ width: `${pct}%` }}
+        />
+      </div>
+
+      <div className="mt-3 flex items-center gap-1.5">
+        {readers.slice(0, read).map((name, i) => (
+          <span key={name} className={cn("live-row-in", i > 0 && "-ml-2")}>
+            <PlayerMug
+              name={name}
+              accentKey={name}
+              sizeClassName="h-[26px] w-[26px] rounded-full ring-2 ring-white"
+            />
+          </span>
+        ))}
+        {read === 0 && (
+          <span className="text-ink-400 text-[11.5px]">Nobody has opened it yet.</span>
+        )}
+      </div>
+
+      {outstanding.length > 0 && (
+        <div className="border-ink-100 mt-3 border-t pt-2.5">
+          <p className="text-ink-500 text-[10px] font-bold uppercase tracking-[0.12em]">
+            Still to open
+          </p>
+          {outstanding.map((name) => (
+            <div key={name} className="mt-1.5 flex items-center gap-2">
+              <PlayerMug
+                name={name}
+                accentKey={name}
+                sizeClassName="h-[24px] w-[24px] rounded-full"
+              />
+              <span className="text-ink-800 min-w-0 flex-1 truncate text-[12px] font-semibold">
+                {name}
+              </span>
+              <MockButton id={remindId} size="sm" tone="quiet">
+                Remind
+              </MockButton>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+export interface MockPollOption {
+  id: string
+  label: string
+  count: number
+  /** Your own pick, marked the way the real card marks it. */
+  mine?: boolean
+  /** Staff see who chose what. Nobody else does. */
+  voters?: string[]
+}
+
+/** The poll result block, bars sized against the leading option. */
+export function MockPollResults({
+  prompt,
+  options,
+  voterCount,
+  staff,
+  closed,
+  idPrefix,
+}: {
+  prompt: string
+  options: MockPollOption[]
+  voterCount: number
+  /** Show the voter names line, which only staff get. */
+  staff?: boolean
+  closed?: boolean
+  /** Each option becomes `<idPrefix>-<id>` so a beat can vote by name. */
+  idPrefix?: string
+}) {
+  const max = Math.max(1, ...options.map((o) => o.count))
+  const lead = Math.max(...options.map((o) => o.count))
+  return (
+    <div>
+      {/* A single-question poll carries its ask in the card title, so repeating
+          it here would just print the same sentence twice. */}
+      <div className="flex items-baseline justify-between gap-2">
+        {prompt ? (
+          <p className="text-ink-800 text-[13px] font-semibold">{prompt}</p>
+        ) : (
+          <span />
+        )}
+        <p className="text-ink-400 shrink-0 text-[11px]">Pick one · {voterCount} voted</p>
+      </div>
+      <div className="mt-2 space-y-1.5">
+        {options.map((o) => {
+          const share = voterCount > 0 ? Math.round((o.count / voterCount) * 100) : 0
+          const winning = closed && o.count === lead && lead > 0
+          return (
+            <span
+              key={o.id}
+              data-demo-target={idPrefix ? `${idPrefix}-${o.id}` : undefined}
+              className={cn(
+                "relative block w-full overflow-hidden rounded-xl border px-3 py-2 text-left text-[12.5px] transition-all duration-200 motion-reduce:transition-none",
+                o.mine
+                  ? "border-play-400 ring-play-200 ring-1"
+                  : winning
+                    ? "border-gold-300"
+                    : "border-ink-100",
+                "data-[demo-hover=true]:border-ink-300",
+                "data-[demo-press=true]:scale-[0.99]"
+              )}
+            >
+              <span
+                aria-hidden="true"
+                className={cn(
+                  "absolute inset-y-0 left-0 transition-[width] duration-700 ease-out motion-reduce:transition-none",
+                  o.mine ? "bg-play-100" : winning ? "bg-gold-50" : "bg-ink-50"
+                )}
+                style={{ width: `${(o.count / max) * 100}%` }}
+              />
+              <span className="relative flex items-center justify-between gap-2">
+                <span className="text-ink-800 min-w-0 truncate">
+                  {winning && <span className="mr-1">🏆</span>}
+                  {o.label}
+                  {o.mine && (
+                    <span className="text-play-600 ml-1.5 text-[11px] font-semibold">
+                      ✓ your pick
+                    </span>
+                  )}
+                </span>
+                <span className="text-ink-500 shrink-0 text-[11px] font-semibold tabular-nums">
+                  {o.count} · {share}%
+                </span>
+              </span>
+              {staff && o.voters && o.voters.length > 0 && (
+                <span className="text-ink-400 relative mt-0.5 block truncate text-[10.5px]">
+                  {o.voters.join(", ")}
+                </span>
+              )}
+            </span>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
+/* ── Phone: the loop as a family sees it ─────────────────────────────────── */
+
+/**
+ * The push banner. It sits over whatever the phone is showing, the way a
+ * notification does, and it is a pointer target because tapping it is what
+ * takes her into the message.
+ */
+export function PhonePushBanner({
+  id,
+  app = "SportsHub",
+  when = "now",
+  title,
+  body,
+}: {
+  id?: string
+  app?: string
+  when?: string
+  title: string
+  body: string
+}) {
+  return (
+    <div className="pointer-events-none absolute inset-x-2 top-2 z-40">
+      <div
+        data-demo-target={id}
+        className={cn(
+          "demo-toast border-ink-900/5 flex gap-2.5 rounded-2xl border bg-white/95 px-3 py-2.5 shadow-[0_18px_40px_-14px_rgba(15,23,42,0.55)] backdrop-blur transition-all duration-200 motion-reduce:transition-none",
+          "data-[demo-hover=true]:shadow-[0_22px_50px_-14px_rgba(15,23,42,0.6)]",
+          "data-[demo-press=true]:scale-[0.98]"
+        )}
+      >
+        <span className="bg-court-900 flex h-7 w-7 shrink-0 items-center justify-center rounded-[8px] text-[10px] font-bold text-white">
+          SH
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="flex items-baseline gap-1.5">
+            <span className="text-ink-500 text-[10px] font-bold uppercase tracking-[0.1em]">
+              {app}
+            </span>
+            <span className="text-ink-400 ml-auto text-[10px]">{when}</span>
+          </span>
+          <span className="text-ink-900 mt-0.5 block truncate text-[12.5px] font-bold">
+            {title}
+          </span>
+          <span className="text-ink-600 mt-0.5 line-clamp-2 block text-[11.5px] leading-snug">
+            {body}
+          </span>
+        </span>
+      </div>
+    </div>
+  )
+}
+
+/** The message as a card on the team page: never a list row with an icon. */
+export function PhonePostCard({
+  club,
+  kind,
+  title,
+  body,
+  meta,
+  audience,
+}: {
+  club: string
+  kind: string
+  title: string
+  body: string
+  meta: string
+  /** Who else got it, which is the answer to "should I forward this?" */
+  audience?: string
+}) {
+  return (
+    <article className="border-ink-100 live-row-in overflow-hidden rounded-2xl border bg-white shadow-[0_10px_28px_-18px_rgba(15,23,42,0.6)]">
+      <div className="relative overflow-hidden bg-[#0b1628] px-3 py-2.5">
+        <CourtBackdropLayer variant="navy" intensity="band" />
+        <div className="relative z-10 flex items-center gap-2">
+          <Crest name={club} size="xs" surface="dark" />
+          <span className="min-w-0 flex-1 truncate text-[11px] font-bold text-white">{club}</span>
+          <span className="rounded-full bg-white/15 px-2 py-0.5 text-[9px] font-bold uppercase tracking-[0.12em] text-white ring-1 ring-inset ring-white/25">
+            {kind}
+          </span>
+        </div>
+      </div>
+      <div className="px-3 py-3">
+        <h3 className="text-ink-900 text-[14px] font-bold leading-snug">{title}</h3>
+        <p className="text-ink-600 mt-1.5 whitespace-pre-line text-[12px] leading-relaxed">
+          {body}
+        </p>
+        <p className="text-ink-400 mt-2 text-[10.5px]">{meta}</p>
+        {audience && (
+          <div className="border-ink-100 mt-2 border-t pt-2">
+            <MockPill tone="court">{audience}</MockPill>
+          </div>
+        )}
+      </div>
+    </article>
+  )
+}
+
+/** Day separator pill in the thread. */
+export function PhoneChatDay({ children }: { children: ReactNode }) {
+  return (
+    <div className="my-2 text-center">
+      <span className="bg-court-50 text-ink-400 rounded-full px-3 py-0.5 text-[10px] font-medium">
+        {children}
+      </span>
+    </div>
+  )
+}
+
+/** One chat bubble, with the sender header, reactions and the reaction row. */
+export function PhoneChatBubble({
+  mine,
+  author,
+  context,
+  staff,
+  time,
+  children,
+  reactions,
+  reactId,
+  showReactRow,
+}: {
+  mine?: boolean
+  author: string
+  context?: string
+  staff?: boolean
+  time: string
+  children: ReactNode
+  /** Applied reactions under the bubble. */
+  reactions?: { emoji: string; count: number; mine?: boolean }[]
+  /** Pointer handle on the thumbs up in the reaction row. */
+  reactId?: string
+  /** The picker the product reveals on hover. */
+  showReactRow?: boolean
+}) {
+  return (
+    <div className={cn("live-row-in mb-1.5 flex", mine ? "justify-end" : "justify-start")}>
+      <div className="max-w-[86%]">
+        <div
+          className={cn(
+            "rounded-2xl px-3 py-1.5",
+            mine ? "bg-play-600 text-white" : "bg-court-50 text-ink-900"
+          )}
+        >
+          {!mine && (
+            <div className="mb-0.5 flex items-center gap-1.5">
+              <span className="text-ink-800 text-[10.5px] font-semibold">
+                {author}
+                {context && <span className="text-ink-400 font-normal"> · {context}</span>}
+              </span>
+              {staff && (
+                <span className="bg-play-100 text-play-700 rounded-full px-1.5 py-px text-[9px] font-bold">
+                  STAFF
+                </span>
+              )}
+            </div>
+          )}
+          <p className="whitespace-pre-line break-words text-[12px] leading-snug">{children}</p>
+          <p
+            className={cn(
+              "mt-0.5 text-right text-[9.5px]",
+              mine ? "text-white/60" : "text-ink-400"
+            )}
+          >
+            {time}
+          </p>
+        </div>
+
+        {showReactRow && (
+          <div className="border-ink-100 live-pop mt-1 flex w-fit gap-0.5 rounded-full border bg-white px-1.5 py-0.5 shadow-sm">
+            {["👍", "❤️", "😂", "🎉", "🔥", "🏀"].map((e) => (
+              <span
+                key={e}
+                data-demo-target={e === "👍" ? reactId : undefined}
+                className={cn(
+                  "rounded-full px-0.5 text-[13px] transition-transform duration-200 motion-reduce:transition-none",
+                  "data-[demo-hover=true]:scale-125",
+                  "data-[demo-press=true]:scale-95"
+                )}
+              >
+                {e}
+              </span>
+            ))}
+          </div>
+        )}
+
+        {reactions && reactions.length > 0 && (
+          <div className="live-pop mt-1 flex flex-wrap gap-1">
+            {reactions.map((r) => (
+              <span
+                key={r.emoji}
+                className={cn(
+                  "rounded-full border px-1.5 py-0.5 text-[10.5px]",
+                  r.mine
+                    ? "border-play-300 bg-play-50 text-play-700"
+                    : "border-ink-200 text-ink-600 bg-white"
+                )}
+              >
+                {r.emoji} {r.count}
+              </span>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
+/** "Dana Michaels is typing…", with the dots the recording needs. */
+export function PhoneTypingLine({ name }: { name: string }) {
+  return (
+    <p className="text-ink-400 flex items-center gap-1.5 px-1 pb-1 text-[10.5px] italic">
+      {name} is typing
+      <span className="flex items-center gap-[3px] not-italic">
+        {[0, 1, 2].map((i) => (
+          <span
+            key={i}
+            className="demo-typing-dot bg-ink-400 h-[3px] w-[3px] rounded-full"
+            style={{ animationDelay: `${i * 160}ms` }}
+          />
+        ))}
+      </span>
+    </p>
+  )
+}
+
+/** The composer at the bottom of the thread: poll button, input, Send. */
+export function PhoneChatComposer({
+  inputId,
+  sendId,
+  children,
+}: {
+  inputId?: string
+  sendId?: string
+  /** Normally a TypeText, so the message fills as it is typed. */
+  children: ReactNode
+}) {
+  return (
+    <div className="border-ink-100 flex shrink-0 items-center gap-1.5 border-t bg-white px-2 py-2">
+      <span className="border-ink-200 text-ink-500 shrink-0 rounded-xl border px-2 py-1.5 text-[13px]">
+        📊
+      </span>
+      <span
+        data-demo-target={inputId}
+        className={cn(
+          "border-ink-200 flex min-h-[32px] min-w-0 flex-1 items-center rounded-xl border px-2.5 py-1.5 text-[12px] transition-all duration-200 motion-reduce:transition-none",
+          "data-[demo-hover=true]:border-play-400 data-[demo-hover=true]:ring-play-100 data-[demo-hover=true]:ring-2"
+        )}
+      >
+        {children}
+      </span>
+      <span
+        data-demo-target={sendId}
+        className={cn(
+          "bg-play-600 shrink-0 rounded-xl px-3 py-1.5 text-[12px] font-semibold text-white transition-all duration-200 motion-reduce:transition-none",
+          "data-[demo-hover=true]:brightness-110 data-[demo-hover=true]:shadow-md",
+          "data-[demo-press=true]:scale-[0.96] data-[demo-press=true]:brightness-95"
+        )}
+      >
+        Send
+      </span>
+    </div>
+  )
+}
+
+/** The poll as it lands in the thread: tappable bars, trophy on the leader. */
+export function PhonePollBubble({
+  question,
+  options,
+  voterCount,
+  voted,
+  closed,
+  idPrefix,
+}: {
+  question: string
+  options: MockPollOption[]
+  voterCount: number
+  /** Before the first vote the bars are hidden, the way the product hides them. */
+  voted?: boolean
+  closed?: boolean
+  idPrefix: string
+}) {
+  const max = Math.max(1, ...options.map((o) => o.count))
+  const lead = Math.max(...options.map((o) => o.count))
+  return (
+    <div className="live-row-in mb-1.5 flex justify-start">
+      <div className="border-ink-100 w-full rounded-2xl border bg-white px-3 py-2.5 shadow-sm">
+        <div className="mb-1.5 flex items-center gap-1.5">
+          <span className="bg-play-100 text-play-700 flex h-5 w-5 items-center justify-center rounded-md text-[10px]">
+            📊
+          </span>
+          <span className="text-ink-900 min-w-0 flex-1 text-[12.5px] font-extrabold leading-snug">
+            {question}
+          </span>
+          {closed && (
+            <span className="bg-ink-200 text-ink-600 shrink-0 rounded-full px-1.5 py-0.5 text-[8.5px] font-extrabold uppercase tracking-wide">
+              Closed
+            </span>
+          )}
+        </div>
+        <div className="space-y-1.5">
+          {options.map((o) => {
+            const share = voterCount > 0 ? Math.round((o.count / voterCount) * 100) : 0
+            const winning = closed && o.count === lead && lead > 0
+            return (
+              <span
+                key={o.id}
+                data-demo-target={`${idPrefix}-${o.id}`}
+                className={cn(
+                  "relative block overflow-hidden rounded-xl border-[1.5px] px-2.5 py-1.5 text-[12px] transition-all duration-200 motion-reduce:transition-none",
+                  o.mine ? "border-play-500" : winning ? "border-gold-400" : "border-ink-200",
+                  "data-[demo-hover=true]:border-play-300",
+                  "data-[demo-press=true]:scale-[0.98]"
+                )}
+              >
+                {voted && (
+                  <span
+                    aria-hidden="true"
+                    className={cn(
+                      "absolute inset-y-0 left-0 transition-[width] duration-700 ease-out motion-reduce:transition-none",
+                      o.mine ? "bg-play-50" : winning ? "bg-gold-50" : "bg-ink-100/70"
+                    )}
+                    style={{ width: `${(o.count / max) * 100}%` }}
+                  />
+                )}
+                <span className="relative flex items-center gap-1.5">
+                  {o.mine && (
+                    <span className="bg-play-600 flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-full text-[8px] font-black text-white">
+                      ✓
+                    </span>
+                  )}
+                  {winning && !o.mine && <span className="shrink-0">🏆</span>}
+                  <span className="text-ink-900 min-w-0 flex-1 truncate font-semibold">
+                    {o.label}
+                  </span>
+                  {voted && (
+                    <span className="text-ink-700 shrink-0 text-[11.5px] font-extrabold tabular-nums">
+                      {o.count} · {share}%
+                    </span>
+                  )}
+                </span>
+              </span>
+            )
+          })}
+        </div>
+        <p className="text-ink-500 mt-1.5 text-[10.5px]">
+          {voterCount} {voterCount === 1 ? "vote" : "votes"}
+          {closed ? " · closed" : " · tap to vote"}
+        </p>
+      </div>
+    </div>
+  )
+}
+
+/** The pinned strip the team chat keeps at the top of the thread. */
+export function PhonePinnedStrip({ author, children }: { author: string; children: ReactNode }) {
+  return (
+    <div className="border-gold-100 bg-gold-50 live-row-in flex items-start gap-1.5 rounded-xl border px-2.5 py-1.5">
+      <span className="text-gold-600 mt-px text-[10px]">📌</span>
+      <p className="text-ink-800 min-w-0 flex-1 text-[11px] leading-snug">
+        <span className="font-semibold">{author}:</span> {children}
+      </p>
+    </div>
+  )
+}
+
 /* ── End card ────────────────────────────────────────────────────────────── */
 
 /** The last frame: what was just watched, and the invitation to watch more. */

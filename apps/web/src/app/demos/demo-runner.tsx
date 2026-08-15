@@ -4,6 +4,7 @@ import Link from "next/link"
 import { useEffect, useState } from "react"
 import { cn } from "@/components/ui/cn"
 import { DemoPlayer } from "@/components/demo-directory/player"
+import { loopStory } from "@/components/demo-directory/stories/loop-story"
 import { rosterStory } from "@/components/demo-directory/stories/roster-story"
 import type { DemoScript } from "@/components/demo-directory/types"
 import { AUDIENCE_LABELS, DEMOS, type DemoEntry } from "./registry"
@@ -28,6 +29,7 @@ const SCRIPTS: Record<
   { script: DemoScript; role: string; roleTone: "club" | "league" | "parent" | "referee" }
 > = {
   "roster-story": { script: rosterStory, role: "Club", roleTone: "club" },
+  "everyone-in-the-loop": { script: loopStory, role: "Club", roleTone: "club" },
 }
 
 export function DemoStage({ demo }: { demo: DemoEntry }) {

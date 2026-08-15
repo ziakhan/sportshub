@@ -68,15 +68,14 @@ export const DEMOS: DemoEntry[] = [
     slug: "everyone-in-the-loop",
     title: "Everyone in the loop",
     promise:
-      "One announcement reaches every phone on the team, and the replies, polls and chat stay in one place.",
+      "One gym change reaches twelve families at once, the club sees who has read it, and the question and the decision both land in the open.",
     description:
-      "A coach writes one message about a gym change and sends it to the whole team. It arrives as a notification on the parent side, where the thread, the yes or no poll and the replies all sit on one screen. You watch the read count climb and a parent question get answered without anyone opening a group chat.",
-    plannedChapters: ["Write the message", "It lands on every phone", "Replies and the poll"],
+      "A club writes one message about a Saturday gym change, and the first thing it picks is who gets it: the whole club is one option, this one goes to a single team. Then the part nobody else shows you, the read count climbing to eleven of twelve with the twelfth family named on screen and a nudge next to the name. A parent taps the notification, asks her question in the team thread instead of texting the coach privately, and gets the answer where all twelve families can read it. The last stretch is a poll for the team dinner: two options, a vote on the phone, the bars filling on the club side, and the result pinned to the thread so nobody has to scroll back through a week to find it.",
     audiences: ["clubs", "parents"],
     kind: "story",
     stage: "split",
-    durationLabel: "90 sec",
-    status: "coming-soon",
+    durationLabel: "1 min 25 sec",
+    status: "live",
     thumbEyebrow: "Story 2",
   },
   {

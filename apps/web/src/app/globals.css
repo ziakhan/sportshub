@@ -443,6 +443,31 @@
     opacity: 1;
   }
 }
+/* Chat typing indicator for the demo directory. The product's own indicator is
+   a line of italic text ("Dana is typing…"); the dots are the animated part
+   that makes it read as motion on a recording rather than a caption that
+   blinked into existence. */
+.demo-typing-dot {
+  animation: demo-typing-dot 1.1s ease-in-out infinite;
+}
+@keyframes demo-typing-dot {
+  0%,
+  60%,
+  100% {
+    opacity: 0.25;
+    transform: translateY(0);
+  }
+  30% {
+    opacity: 1;
+    transform: translateY(-2px);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .demo-typing-dot {
+    animation: none;
+    opacity: 0.6;
+  }
+}
 .live-caret::after {
   content: "";
   display: inline-block;

@@ -1,23 +1,23 @@
 // Computed re-engagement audiences (docs/season-continuity-plan.md §4).
 //
-// Audiences are DERIVED from engagement data — never manual lists. Resolution
+// Audiences are DERIVED from engagement data · never manual lists. Resolution
 // here only builds candidate userId lists; marketing consent is enforced
 // per-recipient at SEND time (lib/comms/consent.ts hasMarketingConsent), so
 // nothing in this file is a compliance gate.
 //
 // Kinds:
-//   TENANT   team:{teamId}          — roster families (ACTIVE + INACTIVE;
-//                                     archived teams valid — that IS the
+//   TENANT   team:{teamId}          · roster families (ACTIVE + INACTIVE;
+//                                     archived teams valid · that IS the
 //                                     re-engagement case)
-//            camp:{campId}          — past registrants (registering parent)
-//            houseleague:{hlId}     — past registrants
-//            tryout:{tryoutId}      — past registrants
-//            all-engaged            — union of all the above across the club
+//            camp:{campId}          · past registrants (registering parent)
+//            houseleague:{hlId}     · past registrants
+//            tryout:{tryoutId}      · past registrants
+//            all-engaged            · union of all the above across the club
 //                                     + parents with any offer at the club
-//   LEAGUE   past-clubs             — ClubOwners/Managers of every tenant with
+//   LEAGUE   past-clubs             · ClubOwners/Managers of every tenant with
 //                                     a TeamSubmission in ANY season of the
 //                                     league (owner decision: no team staff)
-//   PLATFORM all-users              — all non-deleted users
+//   PLATFORM all-users              · all non-deleted users
 
 import { prisma } from "@youthbasketballhub/db"
 import type { ConsentScope } from "./consent"
@@ -33,7 +33,7 @@ function unique(ids: string[]): string[] {
 }
 
 // ---------------------------------------------------------------------------
-// Authorization — who may compose/send for an org. Shared by both comms API
+// Authorization · who may compose/send for an org. Shared by both comms API
 // routes so the audiences endpoint and the send endpoint can never drift.
 // ---------------------------------------------------------------------------
 
@@ -55,7 +55,7 @@ export async function canSendOrgComms(
     return !!role
   }
 
-  // LEAGUE — the league owner, or a league-scoped LeagueOwner/LeagueManager.
+  // LEAGUE · the league owner, or a league-scoped LeagueOwner/LeagueManager.
   if (!orgId) return false
   const league = await prisma.league.findUnique({
     where: { id: orgId },
@@ -74,7 +74,7 @@ export async function canSendOrgComms(
 // Per-kind resolvers → distinct userId[]
 // ---------------------------------------------------------------------------
 
-/** Distinct parents of a team's roster (ACTIVE + INACTIVE — past-season
+/** Distinct parents of a team's roster (ACTIVE + INACTIVE · past-season
  *  families are exactly who re-engagement targets). */
 async function teamFamilies(teamId: string): Promise<string[]> {
   const rows = await prisma.teamPlayer.findMany({
@@ -84,7 +84,7 @@ async function teamFamilies(teamId: string): Promise<string[]> {
   return unique(rows.map((r: any) => r.player.parentId))
 }
 
-/** Distinct registering parents of a camp (any signup status — they engaged). */
+/** Distinct registering parents of a camp (any signup status · they engaged). */
 async function campRegistrants(campId: string): Promise<string[]> {
   const rows = await prisma.campSignup.findMany({
     where: { campId },
@@ -144,7 +144,7 @@ async function allEngagedAtTenant(tenantId: string): Promise<string[]> {
 }
 
 /** ClubOwners/Managers of every tenant that submitted a team to ANY season of
- *  the league. Org-to-org — owner decision 2026-07-09: no team staff. */
+ *  the league. Org-to-org · owner decision 2026-07-09: no team staff. */
 async function leaguePastClubs(leagueId: string): Promise<string[]> {
   const submissions = await prisma.teamSubmission.findMany({
     where: { season: { leagueId } },
@@ -253,7 +253,7 @@ export async function listAudiences(
     ]
   }
 
-  // TENANT — one option per team / camp / house league / tryout + the union.
+  // TENANT · one option per team / camp / house league / tryout + the union.
   if (!orgId) return []
   const [teams, camps, houseLeagues, tryouts] = await Promise.all([
     prisma.team.findMany({
@@ -290,17 +290,17 @@ export async function listAudiences(
 
   teams.forEach((t: any, i: number) => {
     const n = teamCounts[i].length
-    options.push({ kind: `team:${t.id}`, label: `Team — ${t.name} families (${n})`, recipientCount: n })
+    options.push({ kind: `team:${t.id}`, label: `Team · ${t.name} families (${n})`, recipientCount: n })
   })
   camps.forEach((c: any, i: number) => {
     const n = campCounts[i].length
-    options.push({ kind: `camp:${c.id}`, label: `Camp — ${c.name} registrants (${n})`, recipientCount: n })
+    options.push({ kind: `camp:${c.id}`, label: `Camp · ${c.name} registrants (${n})`, recipientCount: n })
   })
   houseLeagues.forEach((h: any, i: number) => {
     const n = hlCounts[i].length
     options.push({
       kind: `houseleague:${h.id}`,
-      label: `House league — ${h.name} registrants (${n})`,
+      label: `House league · ${h.name} registrants (${n})`,
       recipientCount: n,
     })
   })
@@ -308,7 +308,7 @@ export async function listAudiences(
     const n = tryoutCounts[i].length
     options.push({
       kind: `tryout:${t.id}`,
-      label: `Tryout — ${t.title} registrants (${n})`,
+      label: `Tryout · ${t.title} registrants (${n})`,
       recipientCount: n,
     })
   })
