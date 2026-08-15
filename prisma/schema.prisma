@@ -850,6 +850,13 @@ model Player {
   weight       Int? // in pounds
   position     String? // e.g. "Point Guard", "Center"
 
+  // Head shot, uploaded by the account holder (the guardian, or the 13+ player
+  // themselves). Same no-blob-infra pattern as club logos: the browser
+  // downscales and encodes a WebP data URL, so this is text, not a link.
+  // Empty is the normal state — every surface falls back to the sketched
+  // PlayerMug placeholder (owner ruling 2026-08-14).
+  photoUrl String? @db.Text
+
   // COPPA Compliance (Recommended Addition)
   isMinor              Boolean   @default(false) // Age < 13
   parentalConsentGiven Boolean? // Required if isMinor = true

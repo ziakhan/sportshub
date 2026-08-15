@@ -209,6 +209,8 @@ export const getPlayerSeasonData = cache(async (playerId: string) => {
       mediaConsent: true,
       deletedAt: true,
       position: true,
+      // Consent-gated at render by playerDisplayPhoto (lib/privacy/names).
+      photoUrl: true,
       teams: {
         where: { status: "ACTIVE" },
         select: {
@@ -349,6 +351,8 @@ export const getTeamPublicData = cache(async (teamId: string) => {
               lastName: true,
               mediaConsent: true,
               position: true,
+              // Consent-gated at render by playerDisplayPhoto (lib/privacy).
+              photoUrl: true,
             },
           },
         },

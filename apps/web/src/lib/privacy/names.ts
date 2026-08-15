@@ -52,3 +52,18 @@ export function playerDisplayName(
 ): string {
   return viewerIsParticipant ? fullName(p) : publicPlayerName(p)
 }
+
+/**
+ * Head shot for a viewer, same gate as the name (player photos 2026-08-14).
+ * The anonymous public only sees a face when the guardian opted in with media
+ * consent; participants see it. Null means the surface draws the sketched
+ * PlayerMug instead, which is never consent-gated because it shows nothing
+ * but a jersey number.
+ */
+export function playerDisplayPhoto(
+  p: { photoUrl?: string | null; mediaConsent?: MediaConsentValue | null },
+  viewerIsParticipant: boolean
+): string | null {
+  if (!p.photoUrl) return null
+  return viewerIsParticipant || p.mediaConsent === "GRANTED" ? p.photoUrl : null
+}

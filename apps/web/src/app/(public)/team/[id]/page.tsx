@@ -10,8 +10,16 @@ import { getChatMembership, getUnreadChatCounts } from "@/lib/teams/chat-access"
 import { isTeamMember } from "@/lib/authz/team-scope"
 import { formatSlotSummary } from "@/lib/teams/practices"
 import { rosterState } from "@/lib/teams/roster-commitment"
-import { playerDisplayName } from "@/lib/privacy/names"
-import { Card, EntityHeader, NewsCard, ScoreCard, SectionHeader, SmartBack } from "@/components/ui"
+import { playerDisplayName, playerDisplayPhoto } from "@/lib/privacy/names"
+import {
+  Card,
+  EntityHeader,
+  NewsCard,
+  PlayerMug,
+  ScoreCard,
+  SectionHeader,
+  SmartBack,
+} from "@/components/ui"
 import { FollowButton } from "@/components/follow-button"
 
 export const dynamic = "force-dynamic"
@@ -349,9 +357,13 @@ export default async function PublicTeamPage({ params }: { params: { id: string 
                         href={`/player/${tp.player.id}`}
                         className="hover:bg-ink-50 flex items-center gap-3 rounded-xl px-3 py-2 transition-colors"
                       >
-                        <span className="bg-ink-100 text-ink-700 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-xs font-bold">
-                          {tp.jerseyNumber ?? "–"}
-                        </span>
+                        <PlayerMug
+                          name={rosterNames.get(tp.player.id) ?? "Player"}
+                          jerseyNumber={tp.jerseyNumber}
+                          photoUrl={playerDisplayPhoto(tp.player, participant)}
+                          sizeClassName="h-8 w-8 rounded-lg"
+                          frameClassName="bg-ink-100 ring-1 ring-inset ring-ink-200/70"
+                        />
                         <span className="text-ink-950 min-w-0 flex-1 truncate text-sm font-medium">
                           {rosterNames.get(tp.player.id)}
                         </span>

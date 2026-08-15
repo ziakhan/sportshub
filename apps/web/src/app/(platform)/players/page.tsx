@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import Link from "next/link"
-import { Button, Card } from "@/components/ui"
+import { Button, Card, PlayerMug } from "@/components/ui"
 import RemovePlayerButton from "./remove-player-button"
 import { FamilyCodeCard } from "@/components/family/family-code-card"
 import { calculateAge } from "@/lib/coppa"
@@ -25,6 +25,7 @@ interface Player {
   dateOfBirth: string
   gender: string
   jerseyNumber: string | null
+  photoUrl: string | null
   teams: PlayerTeam[]
 }
 
@@ -116,13 +117,23 @@ export default function PlayersPage() {
                 className="reveal border-ink-100 shadow-soft rounded-2xl border bg-white p-5"
               >
                 <div className="flex items-center justify-between gap-4">
-                  <div>
+                  <div className="flex min-w-0 items-center gap-3">
+                    <PlayerMug
+                      name={`${player.firstName} ${player.lastName}`}
+                      /* The card shows the club jersey when they have one,
+                         otherwise the number on their own profile. */
+                      jerseyNumber={player.teams[0]?.jerseyNumber ?? player.jerseyNumber}
+                      photoUrl={player.photoUrl}
+                      size="lg"
+                    />
+                    <div className="min-w-0">
                     <h3 className="font-display text-ink-950 text-xl font-semibold">
                       {player.firstName} {player.lastName}
                     </h3>
                     <div className="text-ink-600 mt-2 flex flex-wrap gap-2 text-xs font-medium">
                       <span className="bg-ink-100 rounded-full px-2 py-1">Age {age}</span>
                       <span className="bg-ink-100 rounded-full px-2 py-1">{player.gender}</span>
+                    </div>
                     </div>
                   </div>
                   <div className="flex shrink-0 items-center gap-3 text-sm font-semibold">

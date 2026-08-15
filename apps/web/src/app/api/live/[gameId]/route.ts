@@ -3,7 +3,7 @@ import { effectiveClockMode } from "@/lib/scoring/clock-mode"
 import { getServerSession } from "next-auth"
 import { prisma } from "@youthbasketballhub/db"
 import { authOptions } from "@/lib/auth"
-import { playerDisplayName } from "@/lib/privacy/names"
+import { playerDisplayName, playerDisplayPhoto } from "@/lib/privacy/names"
 import { getViewerScope, isParticipant } from "@/lib/privacy/participants"
 import { getSeasonStandings } from "@/lib/queries/standings"
 import { aggregateSeasonStats, type SeasonStatLine } from "@/lib/stats/season"
@@ -96,6 +96,7 @@ export async function GET(request: NextRequest, { params }: { params: { gameId: 
       teamId: string
       name: string
       jerseyNumber: string | null
+      photoUrl?: string | null
     }> = []
     let records: Record<string, { record: string; rank: number; divisionName: string }> = {}
     let seasonAverages: Record<string, { gp: number; ppg: number; rpg: number; apg: number }> = {}
@@ -117,7 +118,14 @@ export async function GET(request: NextRequest, { params }: { params: { gameId: 
                 select: {
                   playerId: true,
                   jerseyNumber: true,
-                  player: { select: { firstName: true, lastName: true, mediaConsent: true } },
+                  player: {
+                    select: {
+                      firstName: true,
+                      lastName: true,
+                      mediaConsent: true,
+                      photoUrl: true,
+                    },
+                  },
                 },
               },
             },
@@ -141,6 +149,9 @@ export async function GET(request: NextRequest, { params }: { params: { gameId: 
           teamId: s.teamId,
           name: playerDisplayName(p.player, participant),
           jerseyNumber: p.jerseyNumber != null ? String(p.jerseyNumber) : null,
+          // Same gate as the name: the anonymous public sees a face only when
+          // the guardian opted in. Without one the page draws the mug sketch.
+          photoUrl: playerDisplayPhoto(p.player, participant),
         }))
       )
       // Game-day guests: flagged by name, box-score only — their lines fold

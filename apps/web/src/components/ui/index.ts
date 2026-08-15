@@ -16,6 +16,12 @@ export {
 } from "./button"
 export { PanelHeader } from "./panel-header"
 export { Crest, type CrestProps, type CrestSize, type CrestSurface } from "./crest"
+export {
+  PlayerMug,
+  type PlayerMugProps,
+  type PlayerMugSize,
+  type PlayerMugSurface,
+} from "./player-mug"
 export { EntityHeader } from "./entity-header"
 export { Tabs, type TabItem } from "./tabs"
 export { ScoreCard, type GameStatus } from "./score-card"

@@ -126,6 +126,9 @@ export async function POST(req: Request) {
               jerseyNumber: profileData.jerseyNumber || null,
               height: profileData.height || null,
               position: profileData.position || null,
+              // Optional head shot from the onboarding form; empty leaves the
+              // sketched mug placeholder in place.
+              photoUrl: profileData.photoUrl || null,
               parentId: user.id,
               // Family-accounts plan 2026-07-23: userId = the player's OWN
               // login; parentId stays guardian/payer (their own id until a

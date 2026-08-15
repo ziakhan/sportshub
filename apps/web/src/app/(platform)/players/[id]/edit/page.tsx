@@ -10,6 +10,7 @@ import RemovePlayerButton from "../../remove-player-button"
 import { ClaimHandleCard } from "@/components/players/claim-handle-card"
 import { FamilyCard } from "@/components/players/family-card"
 import { SocialControlsCard } from "@/components/players/social-controls-card"
+import { PlayerPhotoField } from "@/components/players/player-photo-field"
 
 type MediaConsent = "UNSET" | "GRANTED" | "DENIED"
 
@@ -41,6 +42,9 @@ export default function EditPlayerPage() {
   // Kept outside react-hook-form: the shared addPlayerSchema doesn't know this
   // field; the PATCH API accepts it alongside the form data.
   const [mediaConsent, setMediaConsent] = useState<MediaConsent>("UNSET")
+  // Head shot, also outside react-hook-form: it is a data URL the picker
+  // produces, not a typed field. Saved with the rest of the form.
+  const [photoUrl, setPhotoUrl] = useState<string | null>(null)
   const labelClass = "block text-sm font-medium text-ink-700"
   const inputClass =
     "mt-1 block w-full rounded-xl border border-ink-200 px-3 py-2 text-ink-900 shadow-sm focus:border-play-500 focus:outline-none focus:ring-2 focus:ring-play-500/20"
@@ -64,6 +68,7 @@ export default function EditPlayerPage() {
         const data = await res.json()
         setPlayerName(`${data.firstName} ${data.lastName}`)
         setMediaConsent((data.mediaConsent as MediaConsent) || "UNSET")
+        setPhotoUrl(data.photoUrl ?? null)
         reset({
           firstName: data.firstName,
           lastName: data.lastName,
@@ -96,6 +101,8 @@ export default function EditPlayerPage() {
           ...data,
           // Only sent once a choice exists — UNSET stays untouched server-side.
           ...(mediaConsent !== "UNSET" ? { mediaConsent } : {}),
+          // Always sent: null is how the account holder clears a photo.
+          photoUrl,
         }),
       })
 
@@ -144,6 +151,18 @@ export default function EditPlayerPage() {
           )}
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+            {/* Photo first: it is the thing every roster, box score and game
+                page shows, and until one exists they see the sketched mug. */}
+            <div className="border-ink-100 rounded-2xl border p-4">
+              <span className={`${labelClass} mb-2`}>Player photo</span>
+              <PlayerPhotoField
+                name={playerName}
+                jerseyNumber={watch("jerseyNumber") || null}
+                value={photoUrl}
+                onChange={setPhotoUrl}
+              />
+            </div>
+
             <div className="grid gap-4 sm:grid-cols-2">
               <div>
                 <label htmlFor="firstName" className={labelClass}>

@@ -5,10 +5,10 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { getPlayerSeasonData } from "@/lib/queries/season-stats"
 import { getViewerScope, isParticipant } from "@/lib/privacy/participants"
-import { playerDisplayName, publicPlayerName } from "@/lib/privacy/names"
+import { playerDisplayName, playerDisplayPhoto, publicPlayerName } from "@/lib/privacy/names"
 import { hasFamilyPass } from "@/lib/entitlements"
 import { prisma } from "@youthbasketballhub/db"
-import { Card, EntityHeader, SmartBack, StatBlock } from "@/components/ui"
+import { Card, EntityHeader, PlayerMug, SmartBack, StatBlock } from "@/components/ui"
 import { FollowButton } from "@/components/follow-button"
 
 export const dynamic = "force-dynamic"
@@ -95,7 +95,18 @@ export default async function PublicPlayerPage({ params }: { params: { id: strin
           ...(data.player.position ? [data.player.position] : []),
           ...(a ? [`${a.gamesPlayed} games`] : []),
         ]}
-        crestText={name.slice(0, 1)}
+        /* A person gets a face, not a monogram tile: the head shot when one
+           is uploaded (and the viewer is allowed it), else the sketched mug
+           with their jersey number. */
+        mark={
+          <PlayerMug
+            name={name}
+            jerseyNumber={jersey ?? null}
+            photoUrl={playerDisplayPhoto(data.player, participant)}
+            sizeClassName="h-16 w-16 rounded-2xl sm:h-20 sm:w-20"
+            className="shadow-lg"
+          />
+        }
         className="mb-4"
       />
 

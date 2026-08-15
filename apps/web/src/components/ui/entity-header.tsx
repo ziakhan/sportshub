@@ -20,6 +20,11 @@ interface EntityHeaderProps {
   logoUrl?: string | null
   /** Fallback crest text when no logo (usually first initial). */
   crestText?: string
+  /**
+   * Replaces the crest with a mark of the caller's own — the player hub hands
+   * over a `PlayerMug`, because a person is a face, not a monogram tile.
+   */
+  mark?: ReactNode
   /** Right-aligned action(s), e.g. a Follow button. */
   action?: ReactNode
   className?: string
@@ -46,6 +51,7 @@ export function EntityHeader({
   brandColor,
   logoUrl,
   crestText,
+  mark,
   action,
   className,
 }: EntityHeaderProps) {
@@ -59,14 +65,16 @@ export function EntityHeader({
     >
       <CourtBackdropLayer variant="daylight" intensity="band" />
       <div className="relative z-10 flex flex-wrap items-center gap-5 p-6 pb-7 sm:p-8 sm:pb-9">
-        <Crest
-          name={name}
-          text={(crestText || name.slice(0, 1)).toUpperCase()}
-          logoUrl={logoUrl}
-          brandColor={brandColor}
-          size="xl"
-          className="shadow-lg"
-        />
+        {mark ?? (
+          <Crest
+            name={name}
+            text={(crestText || name.slice(0, 1)).toUpperCase()}
+            logoUrl={logoUrl}
+            brandColor={brandColor}
+            size="xl"
+            className="shadow-lg"
+          />
+        )}
         {/* min-w keeps the name column readable: on a phone the action wraps to
             its own line instead of squeezing the title into three words. */}
         <div className="min-w-[15rem] flex-1">

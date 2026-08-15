@@ -21,6 +21,8 @@ export interface GameModel {
   fold: FoldResult
   nameOf: (playerId?: string | null) => string
   jerseyOf: (playerId: string) => string
+  /** Head shot if the payload carried one, else null and the mug is drawn. */
+  photoOf: (playerId?: string | null) => string | null
   shortName: (playerId: string) => string
   shortTeam: (name: string) => string
   live: boolean
@@ -65,6 +67,7 @@ export function buildModel(data: LivePayload, fold: FoldResult): GameModel {
   const byId = new Map(data.players.map((p) => [p.playerId, p]))
   const nameOf = (pid?: string | null) => (pid ? byId.get(pid)?.name ?? "" : "")
   const jerseyOf = (pid: string) => byId.get(pid)?.jerseyNumber ?? "?"
+  const photoOf = (pid?: string | null) => (pid ? (byId.get(pid)?.photoUrl ?? null) : null)
   const shortName = (pid: string) => {
     const name = nameOf(pid) || ""
     // Game-day guests carry a flag, not a name suffix — label AFTER the
@@ -290,6 +293,7 @@ export function buildModel(data: LivePayload, fold: FoldResult): GameModel {
     fold,
     nameOf,
     jerseyOf,
+    photoOf,
     shortName,
     shortTeam,
     live,

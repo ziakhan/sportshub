@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { monogram } from "@/lib/content/matchup-cover"
+import { PlayerMug } from "@/components/ui"
 import { FlashNum } from "@/components/scoring/flash-num"
 import type { PlayerLine } from "@/lib/scoring/fold"
 import { SECTION_HEADING } from "./ui-bits"
@@ -36,7 +36,7 @@ function LeaderCell({
   won: boolean
   mirror?: boolean
 }) {
-  const { jerseyOf, shortName } = model
+  const { jerseyOf, shortName, photoOf } = model
   if (!entry) {
     return (
       <div className="border-ink-100 text-ink-300 flex min-w-0 flex-1 items-center justify-center rounded-2xl border border-dashed py-6 text-xs">
@@ -53,15 +53,18 @@ function LeaderCell({
         mirror ? "md:flex-row-reverse md:text-right" : ""
       } ${won ? "bg-ink-100" : "bg-ink-50"}`}
     >
-      {/* The badge stands in for a headshot: players have no photo field, and
-          the platform's own rule is "real mark, else branded monogram". The
-          jersey number is how you identify a kid from the stands anyway — and
-          if photos ever ship, this circle becomes the photo slot unchanged. */}
-      <span className="bg-ink-800 flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[13px] font-bold text-white shadow-md ring-2 ring-white/60 md:h-12 md:w-12 md:text-[15px]">
-        {jerseyOf(entry.l.playerId)
-          ? `${jerseyOf(entry.l.playerId)}`
-          : monogram(shortName(entry.l.playerId))}
-      </span>
+      {/* Photos shipped 2026-08-14, and this circle became the photo slot
+          exactly as the old comment predicted. No photo yet = the sketched
+          mug with the kid's number on the chest, which is how you identify
+          them from the stands anyway. White frame because the card underneath
+          is already tinted. */}
+      <PlayerMug
+        name={shortName(entry.l.playerId)}
+        jerseyNumber={jerseyOf(entry.l.playerId) === "?" ? null : jerseyOf(entry.l.playerId)}
+        photoUrl={photoOf(entry.l.playerId)}
+        sizeClassName="h-9 w-9 rounded-full md:h-12 md:w-12"
+        frameClassName="bg-white shadow-md ring-2 ring-inset ring-ink-100"
+      />
       <div className="min-w-0 flex-1">
         {/* Platform law: every rendered entity is clickable. */}
         <Link

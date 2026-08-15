@@ -107,8 +107,12 @@ export function ImageUploadField({
   )
 }
 
-/** Downscale to `maxSize` longest edge and encode as WebP data URL. */
-function compressImage(file: File, maxSize: number): Promise<string> {
+/**
+ * Downscale to `maxSize` longest edge and encode as WebP data URL. Exported so
+ * the player head-shot field (components/players/player-photo-field.tsx) runs
+ * the same compression instead of growing a second one.
+ */
+export function compressImage(file: File, maxSize: number): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader()
     reader.onerror = () => reject(new Error("read"))

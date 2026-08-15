@@ -1,5 +1,6 @@
 import { z } from "zod"
 import { calculateAge, COPPA_MIN_AGE } from "@/lib/coppa"
+import { playerPhotoUrlSchema } from "@/lib/validations/player-photo"
 
 export const parentOnboardingSchema = z.object({
   type: z.literal("Parent"),
@@ -23,6 +24,9 @@ export const playerOnboardingSchema = z.object({
   state: z.string().min(1, "State is required").max(100),
   height: z.string().max(10).optional(),
   position: z.string().max(50).optional(),
+  // Optional head shot picked during onboarding. Never blocks the step: an
+  // empty one just leaves the sketched mug in place until they add one.
+  photoUrl: playerPhotoUrlSchema,
 })
 
 export const staffOnboardingSchema = z.object({

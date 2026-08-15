@@ -1,6 +1,6 @@
 import { prisma } from "@youthbasketballhub/db"
 import Link from "next/link"
-import { Badge, PanelHeader, SmartBack } from "@/components/ui"
+import { Badge, PanelHeader, PlayerMug, SmartBack } from "@/components/ui"
 import { RosterManager } from "./roster-manager"
 import { RosterRowActions } from "./roster-row-actions"
 import { WithdrawalRequestsPanel } from "@/components/withdrawal-requests-panel"
@@ -23,6 +23,7 @@ interface RosterPlayer {
     position: string | null
     height: string | null
     weight: number | null
+    photoUrl: string | null
   }
 }
 
@@ -70,6 +71,7 @@ async function getTeamRoster(teamId: string, tenantId: string): Promise<RosterTe
               position: true,
               height: true,
               weight: true,
+              photoUrl: true,
             },
           },
         },
@@ -263,15 +265,15 @@ export default async function TeamRosterPage({
                 return (
                   <tr key={tp.id} className="transition-colors hover:bg-ink-50/60">
                     <td className="whitespace-nowrap px-6 py-4">
-                      {tp.jerseyNumber !== null ? (
-                        <span className="font-condensed inline-flex h-8 w-8 items-center justify-center rounded-full bg-[var(--brand-soft)] text-base font-bold text-[color:var(--brand-ink)]">
-                          {tp.jerseyNumber}
-                        </span>
-                      ) : (
-                        <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-ink-100 text-sm text-ink-400">
-                          -
-                        </span>
-                      )}
+                      {/* Ink mug, not a brand-tinted number chip: the club
+                          colour said nothing about the kid (neutral-mark
+                          ruling 2026-08-14). */}
+                      <PlayerMug
+                        name={`${tp.player.firstName} ${tp.player.lastName}`}
+                        jerseyNumber={tp.jerseyNumber}
+                        photoUrl={tp.player.photoUrl}
+                        sizeClassName="h-8 w-8 rounded-full"
+                      />
                     </td>
                     <td className="whitespace-nowrap px-6 py-4">
                       <div className="font-medium text-ink-900">

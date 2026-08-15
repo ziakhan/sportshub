@@ -4,7 +4,7 @@ import { prisma } from "@youthbasketballhub/db"
 import { getSessionUserId } from "@/lib/auth-helpers"
 import { getChatMembership } from "@/lib/teams/chat-access"
 import { getTeamRoster } from "@/lib/teams/roster"
-import { SmartBack } from "@/components/ui"
+import { PlayerMug, SmartBack } from "@/components/ui"
 import { PUBLISHED_GAME } from "@/lib/games/visibility"
 
 export const dynamic = "force-dynamic"
@@ -221,9 +221,12 @@ export default async function TeamHomePage({ params }: { params: { teamId: strin
           <ul className="divide-ink-100 divide-y">
             {roster.map((r: any) => (
               <li key={r.player.id} className="flex items-center gap-3 py-2">
-                <span className="bg-ink-50 text-ink-600 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-xs font-bold">
-                  {r.jerseyNumber ?? "–"}
-                </span>
+                <PlayerMug
+                  name={`${r.player.firstName} ${r.player.lastName}`}
+                  jerseyNumber={r.jerseyNumber}
+                  photoUrl={r.player.photoUrl}
+                  sizeClassName="h-8 w-8 rounded-lg"
+                />
                 <span className="text-ink-950 min-w-0 flex-1 truncate text-sm font-medium">
                   {r.player.firstName} {r.player.lastName}
                 </span>

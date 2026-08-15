@@ -1,6 +1,7 @@
 "use client"
 
 import Link from "next/link"
+import { PlayerMug } from "@/components/ui"
 import type { GameModel } from "./model"
 
 /**
@@ -9,23 +10,20 @@ import type { GameModel } from "./model"
  */
 
 export function PotgCard({ model }: { model: GameModel }) {
-  const { game, fold, nameOf, jerseyOf } = model
+  const { game, fold, nameOf, jerseyOf, photoOf } = model
   if (!game.potgPlayerId || !nameOf(game.potgPlayerId)) return null
   const line = fold.players[game.potgPlayerId]
   return (
     <div className="border-gold-300 from-gold-50 flex items-center gap-4 rounded-2xl border bg-gradient-to-r to-white p-4">
-      {game.potgPhotoUrl ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
-          src={game.potgPhotoUrl}
-          alt={nameOf(game.potgPlayerId)}
-          className="border-gold-400 h-16 w-16 rounded-full border-2 object-cover"
-        />
-      ) : (
-        <div className="bg-gold-100 text-gold-700 flex h-16 w-16 items-center justify-center rounded-full text-xl font-bold">
-          #{jerseyOf(game.potgPlayerId)}
-        </div>
-      )}
+      {/* The game's own POTG photo wins (a moment somebody chose), then the
+          player's head shot, then the sketched mug with their number. */}
+      <PlayerMug
+        name={nameOf(game.potgPlayerId)}
+        jerseyNumber={jerseyOf(game.potgPlayerId) === "?" ? null : jerseyOf(game.potgPlayerId)}
+        photoUrl={game.potgPhotoUrl ?? photoOf(game.potgPlayerId)}
+        sizeClassName="h-16 w-16 rounded-full"
+        frameClassName="border-gold-400 bg-gold-50 border-2"
+      />
       <div className="min-w-0">
         <p className="text-gold-700 text-[10.5px] font-bold uppercase tracking-[0.2em]">
           🏀 Player of the Game

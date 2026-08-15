@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation"
 import type { ProfileData } from "@/lib/validations/onboarding"
 import { BrandCheckbox } from "@/components/ui"
 import { MergeOffer, type MergeCandidate } from "@/components/family/link-code"
+import { PlayerPhotoChip } from "@/components/players/player-photo-field"
 import { ParentForm } from "./forms/parent-form"
 import { PlayerForm } from "./forms/player-form"
 import { StaffForm } from "./forms/staff-form"
@@ -347,6 +348,9 @@ export function OnboardingFlow({ userName, initialRole = null }: OnboardingFlowP
   // An unavailable handle is told once, then stops mattering — the next
   // Continue keeps the reserved default and moves on (QA-209 never-blocks).
   const [handleWarned, setHandleWarned] = useState(false)
+  // Optional head shot, picked on the hero beside the handle chip. It rides
+  // along with the profile POST; skipping it just leaves the sketched mug.
+  const [photoUrl, setPhotoUrl] = useState<string | null>(null)
 
   useEffect(() => {
     fetch("/api/account/handle")
@@ -397,7 +401,9 @@ export function OnboardingFlow({ userName, initialRole = null }: OnboardingFlowP
       setError("Confirm you are 18 or older to continue.")
       return
     }
-    await submitOnboarding(selectedRole!, profileData)
+    const withPhoto =
+      profileData.type === "Player" && photoUrl ? { ...profileData, photoUrl } : profileData
+    await submitOnboarding(selectedRole!, withPhoto)
   }
 
   const handleOperatorContinue = async () => {
@@ -729,14 +735,25 @@ export function OnboardingFlow({ userName, initialRole = null }: OnboardingFlowP
                 : "A few details and you are set up."
             }
           >
-            <HandleChip
-              reserved={reservedHandle}
-              draft={handleDraft}
-              loaded={handleLoaded}
-              editing={handleEditing}
-              onDraftChange={setHandleDraft}
-              onEditingChange={setHandleEditing}
-            />
+            <div className="flex flex-wrap items-center gap-2">
+              <HandleChip
+                reserved={reservedHandle}
+                draft={handleDraft}
+                loaded={handleLoaded}
+                editing={handleEditing}
+                onDraftChange={setHandleDraft}
+                onEditingChange={setHandleEditing}
+              />
+              {/* Optional, one line, in the hero rather than the form: the
+                  player step is a one-viewport layout and may not grow. */}
+              {selectedRole === "Player" && (
+                <PlayerPhotoChip
+                  name={firstName}
+                  value={photoUrl}
+                  onChange={setPhotoUrl}
+                />
+              )}
+            </div>
           </Hero>
         }
       >

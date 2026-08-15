@@ -4,6 +4,7 @@ import { getSessionUserId } from "@/lib/auth-helpers"
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@youthbasketballhub/db"
 import { addPlayerSchema } from "@/lib/validations/tryout-signup"
+import { playerPhotoUrlSchema } from "@/lib/validations/player-photo"
 import { z } from "zod"
 import { calculateAge } from "@/lib/coppa"
 
@@ -16,6 +17,9 @@ const updatePlayerSchema = addPlayerSchema.extend({
   // Social distribution gate (social-feed-plan P3) — separate from
   // mediaConsent, which gates rendering
   socialVisibility: z.enum(["PUBLIC", "PRIVATE"]).optional(),
+  // Head shot as a compressed data URL. Absent leaves the current photo
+  // alone; explicit null removes it and the sketched mug comes back.
+  photoUrl: playerPhotoUrlSchema,
 })
 
 /**
@@ -51,6 +55,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
       height: true,
       weight: true,
       position: true,
+      photoUrl: true,
       mediaConsent: true,
       socialVisibility: true,
       handle: true,
@@ -115,6 +120,8 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
         position: data.position || null,
         isMinor: ageInYears < 13,
         canLogin: ageInYears >= 13,
+        // undefined = field untouched; null = the account holder removed it.
+        ...(data.photoUrl !== undefined ? { photoUrl: data.photoUrl } : {}),
         // Media consent is written only when explicitly sent; revoking
         // parentalConsentGiven/consentGivenAt is a separate policy decision.
         ...(data.mediaConsent ? { mediaConsent: data.mediaConsent } : {}),
@@ -130,6 +137,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
         height: true,
         weight: true,
         position: true,
+        photoUrl: true,
         mediaConsent: true,
       },
     })

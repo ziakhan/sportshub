@@ -42,6 +42,7 @@ export async function GET() {
       height: true,
       weight: true,
       position: true,
+      photoUrl: true,
       teams: {
         where: { status: "ACTIVE" },
         select: {

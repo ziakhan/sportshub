@@ -22,7 +22,14 @@ export const addPlayerSchema = z.object({
   }),
   jerseyNumber: z.string().max(10).optional(),
   height: z.string().max(10).optional(),
-  weight: z.coerce.number().min(1).max(500).optional(),
+  // An untouched number input hands react-hook-form "", and z.coerce turned
+  // that into 0, which failed min(1) with no error paragraph anywhere near the
+  // field — the Save button simply did nothing (found 2026-08-14 while wiring
+  // player photos). Empty means "not given", not zero.
+  weight: z.preprocess(
+    (v) => (v === "" || v === null || v === undefined ? undefined : v),
+    z.coerce.number().min(1).max(500).optional()
+  ),
   position: z.string().max(50).optional(),
   // COPPA: required (and must be true) when adding a child under 13.
   // The route enforces this conditionally based on dateOfBirth.

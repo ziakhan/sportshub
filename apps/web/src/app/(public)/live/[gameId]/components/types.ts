@@ -11,6 +11,8 @@ export interface LivePlayer {
   teamId: string
   name: string
   jerseyNumber: string | null
+  /** Head shot, already consent-gated by the API. Null = draw the mug. */
+  photoUrl?: string | null
 }
 
 export interface TeamRecord {

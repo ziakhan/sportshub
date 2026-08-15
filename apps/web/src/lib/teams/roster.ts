@@ -11,7 +11,14 @@ export interface RosterEntry {
   jerseyNumber: number | null
   status: string
   joinedAt: Date
-  player: { id: string; firstName: string; lastName: string; position: string | null }
+  player: {
+    id: string
+    firstName: string
+    lastName: string
+    position: string | null
+    /** Head shot; null means the surface draws the sketched PlayerMug. */
+    photoUrl: string | null
+  }
 }
 
 export async function getTeamRoster(
@@ -27,7 +34,9 @@ export async function getTeamRoster(
       jerseyNumber: true,
       status: true,
       joinedAt: true,
-      player: { select: { id: true, firstName: true, lastName: true, position: true } },
+      player: {
+        select: { id: true, firstName: true, lastName: true, position: true, photoUrl: true },
+      },
     },
     orderBy: orderBy === "jersey" ? { jerseyNumber: "asc" } : { joinedAt: "asc" },
   })) as RosterEntry[]
