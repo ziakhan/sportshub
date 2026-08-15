@@ -31,6 +31,14 @@
 - **Marketing/illustrative/photographic assets use image-generation tools** (Canva / Higgsfield connectors when authorized, or external models), never hand-drawn SVG.
 - Design iterations follow estimate-first: draft on a preview page (~10 min), owner approves the look, THEN wire and validate.
 
+**Asset-generation decision tree (owner + ui-ux-pro-max consult, 2026-08-15):**
+1. UI system graphic (icon, placeholder, motif, dynamic art) → hand-authored SVG in code. Always.
+2. Marketing creative CARRYING TEXT (ads, banners, reels with copy) → the authored HTML/CSS pipeline (`scripts/marketing/render-creatives.mjs`, Playwright render) or Canva brand templates. Never raw image models for text; they mangle type.
+3. One-off photographic/illustrative art (textures, arena backgrounds, hero art, mascots) → **Higgsfield MCP is the default generator** (`generate_image`, `models_explore(action:'recommend')` to pick the model, `upscale_image` for finals, batch tools for sets). Connected at the account level; attaches per session.
+4. Branded layout documents (social templates, one-pagers, deck exports) → Canva MCP with the brand kit.
+5. **Gemini image gen (nano banana): deliberately NOT integrated.** Higgsfield covers generation. Revisit only if surgical photo-editing/character-consistency needs appear; wiring is a GEMINI_API_KEY + small script, no connector required.
+6. Discipline on all generated art: one illustration style per surface family (never mixed), compress finals (WebP), no emoji-as-icons, product screenshots stay real screenshots.
+
 ## Tech Stack
 - **Monorepo**: Turborepo with `apps/web` (Next.js 14 App Router) and `packages/` (db, ui, auth, payments, config)
 - **Auth**: NextAuth.js v4 with Credentials provider (email/password, bcrypt, JWT sessions)
