@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
+import { BOTTOM_TABS_FLOAT_OFFSET } from "@/components/nav/bottom-tabs-space"
 
 /**
  * Public-site demo chrome (limited-launch-demo-build-2026-08.md §4):
@@ -72,11 +73,31 @@ export function DemoChrome({ signedIn, inDemoSession = false }: { signedIn: bool
 
   return (
     <>
+      {/* Phones (<sm): the vertical ribbon hung over the middle of the right
+          edge, where it clipped the section pill row and the live game page's
+          tab labels (audit 2026-08-14). Below sm it becomes a compact chip in
+          the bottom-left corner, clear of the bottom tab bar and of the
+          bottom-right Score button. Kept small on purpose — it floats over
+          real content, so it covers one line, not a card. */}
+      <button
+        onClick={() => setDrawerOpen(true)}
+        className={`${BOTTOM_TABS_FLOAT_OFFSET} fixed left-3 z-40 flex cursor-pointer items-center gap-1 rounded-full bg-amber-500 px-2.5 py-1.5 text-[10.5px] font-bold uppercase tracking-[0.12em] text-amber-950 shadow-lg transition hover:bg-amber-400 sm:hidden ${
+          bloom ? "ring-4 ring-amber-300/70" : ""
+        }`}
+        aria-label="Open the demo"
+      >
+        <svg viewBox="0 0 24 24" className="h-3 w-3" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden>
+          <circle cx="12" cy="12" r="9" />
+          <path d="M12 3v18M3 12h18M6 5.5c3.5 3.6 3.5 9.4 0 13M18 5.5c-3.5 3.6-3.5 9.4 0 13" />
+        </svg>
+        Try the demo
+      </button>
+
       {/* Right-edge drawer tab — unmissable by design (owner ruling). The
           welcome modal flies into this on dismiss and then fires
           `sh-demo-hint`, so the tab blooms and the eye lands on where the
           demo went. */}
-      <div className="fixed right-0 top-1/2 z-40 -translate-y-1/2">
+      <div className="fixed right-0 top-1/2 z-40 hidden -translate-y-1/2 sm:block">
         {bloom && (
           <span
             className="demo-bloom pointer-events-none absolute inset-0 origin-center rounded-l-2xl bg-amber-400/70 blur-md"

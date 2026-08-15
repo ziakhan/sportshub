@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react"
 import { format, isSameDay } from "date-fns"
+import { BOTTOM_TABS_FLOAT_OFFSET } from "@/components/nav/bottom-tabs-space"
 
 /**
  * TeamSnap-style agenda (owner direction 2026-07-11): sticky month headers
@@ -124,7 +125,7 @@ export function AgendaList<T>({
       {todayOff && (
         <button
           onClick={() => todayRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })}
-          className="bg-play-600 hover:bg-play-700 fixed bottom-20 left-1/2 z-20 -translate-x-1/2 rounded-full px-4 py-2 text-sm font-bold text-white shadow-lg sm:bottom-8"
+          className={`bg-play-600 hover:bg-play-700 fixed left-1/2 z-20 -translate-x-1/2 cursor-pointer rounded-full px-4 py-2 text-sm font-bold text-white shadow-lg lg:bottom-8 ${BOTTOM_TABS_FLOAT_OFFSET}`}
         >
           Today {todayOff === "up" ? "↑" : "↓"}
         </button>

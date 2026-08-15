@@ -10,6 +10,7 @@ import { MobileNav } from "./dashboard/mobile-nav"
 import { ChatDock } from "@/components/chat-dock"
 import { AccountMenu } from "@/components/nav/account-menu"
 import { BottomTabs } from "@/components/nav/bottom-tabs"
+import { BOTTOM_TABS_PAD } from "@/components/nav/bottom-tabs-space"
 import { QuickIcons } from "@/components/nav/quick-icons"
 import { getNavShape } from "@/lib/queries/nav-shape"
 import { CompletionPill } from "./dashboard/completion-pill"
@@ -256,7 +257,11 @@ export default async function PlatformLayout({ children }: { children: React.Rea
             primaryRole={primaryRole}
           />
         )}
-        <main className="bg-ink-50 min-w-0 flex-1 overflow-x-hidden pb-16 lg:pb-0">{children}</main>
+        {/* Same reservation as the public layout: the fixed bar owns the
+            bottom 4rem + safe-area of every phone screen. */}
+        <main className={`bg-ink-50 min-w-0 flex-1 overflow-x-hidden ${BOTTOM_TABS_PAD}`}>
+          {children}
+        </main>
       </div>
       {/* Floating team-chat bubble in the workspace too (owner 2026-07-21 —
           it lived only on public pages, so it vanished in the manage area).

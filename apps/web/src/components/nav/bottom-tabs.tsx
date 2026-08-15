@@ -15,6 +15,16 @@ import { coachTeamHref, operatorTabLabel, type NavShape } from "@/lib/queries/na
  * the always-home escape hatch.
  */
 
+/**
+ * The bar's space reservation and the FAB offset live in
+ * `./bottom-tabs-space` — a plain module, because a "use client" file cannot
+ * hand a string to a server component (it hands over a proxy instead).
+ */
+
+/** Shared bar chrome — fixed, translucent, safe-area padded, phones/tablets. */
+const BAR_CLASS =
+  "border-ink-100 fixed inset-x-0 bottom-0 z-40 border-t bg-white/95 backdrop-blur-lg lg:hidden"
+
 const icon = {
   home: (
     <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2">
@@ -116,7 +126,7 @@ export function BottomTabs({ shape }: { shape: NavShape }) {
   return (
     <nav
       aria-label="Primary"
-      className="border-ink-100 fixed inset-x-0 bottom-0 z-40 border-t bg-white/95 backdrop-blur-lg lg:hidden"
+      className={BAR_CLASS}
       style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
     >
       <div className="mx-auto flex h-16 max-w-lg items-stretch justify-around">
@@ -169,7 +179,7 @@ export function AnonymousBottomTabs() {
   return (
     <nav
       aria-label="Primary"
-      className="border-ink-100 fixed inset-x-0 bottom-0 z-40 border-t bg-white/95 backdrop-blur-lg lg:hidden"
+      className={BAR_CLASS}
       style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
     >
       <div className="mx-auto flex h-16 max-w-lg items-stretch justify-around">

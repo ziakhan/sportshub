@@ -6,6 +6,7 @@ import { getPublicNav } from "@/lib/queries/nav"
 import { NavDropdown } from "@/components/nav-dropdown"
 import { AccountMenu } from "@/components/nav/account-menu"
 import { AnonymousBottomTabs, BottomTabs } from "@/components/nav/bottom-tabs"
+import { BOTTOM_TABS_PAD } from "@/components/nav/bottom-tabs-space"
 import { QuickIcons } from "@/components/nav/quick-icons"
 import { getNavShape, operatorTabLabel, EMPTY_NAV_SHAPE } from "@/lib/queries/nav-shape"
 import { AuthLink } from "@/components/auth-link"
@@ -51,7 +52,9 @@ export default async function PublicLayout({ children }: { children: React.React
 
   return (
     <main
-      className="text-ink-950 flex min-h-screen flex-col bg-[#fafafa] pb-16 lg:pb-0"
+      // The bottom tab bar is fixed, so the page reserves its height (plus
+      // the iOS safe-area inset) or the bar sits on top of real content.
+      className={`text-ink-950 flex min-h-screen flex-col bg-[#fafafa] ${BOTTOM_TABS_PAD}`}
     >
       <header className="border-ink-100 sticky top-0 z-50 border-b bg-white/80 backdrop-blur-xl">
         <div className="container mx-auto flex h-16 items-center justify-between px-4 sm:px-6 lg:h-[72px]">

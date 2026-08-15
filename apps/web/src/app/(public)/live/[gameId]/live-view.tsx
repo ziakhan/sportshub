@@ -1,100 +1,37 @@
 "use client"
 
-import Link from "next/link"
 import { useEffect, useMemo, useRef, useState } from "react"
-import { foldEvents, totalRebounds, type FoldEvent, type PlayerLine } from "@/lib/scoring/fold"
+import { foldEvents } from "@/lib/scoring/fold"
 import { monogram } from "@/lib/content/matchup-cover"
 import { useRealtime } from "@/lib/realtime/use-realtime"
 import { FlashNum } from "@/components/scoring/flash-num"
-import { VenueLink } from "@/components/venues/venue-link"
 import { ShareCardDialog } from "@/components/social/share-card-dialog"
+import { BOTTOM_TABS_FLOAT_OFFSET } from "@/components/nav/bottom-tabs-space"
+import { buildModel } from "./components/model"
+import { ScoreHero } from "./components/score-hero"
+import { GameTab } from "./components/game-tab"
+import { TeamStatsTab } from "./components/team-stats-tab"
+import { PlayByPlayTab, type PlayFilter } from "./components/play-by-play-tab"
+import { PregameRosters } from "./components/pregame-rosters"
+import { PotgCard, ShareRow } from "./components/potg-card"
+import { Crest, SHELL } from "./components/ui-bits"
+import type { LivePayload, Tab } from "./components/types"
 
 /**
  * Public game page — owner-approved redesign 2026-07-06 (ESPN/theScore
- * patterns, see docs/ux-audit + design artifact):
- * - Full-bleed score hero washed with both clubs' colors; records + rank.
- * - Desktop (lg+): BOTH box scores in full — side by side on very wide
- *   screens — with an always-visible play-by-play rail. Nothing hidden.
- * - Phones: Box/Plays tabs (filled active state) + one-team-at-a-time
- *   switcher filled in that team's color, so the full roster fits without
- *   endless scrolling (owner call: keep the swap on mobile).
- * - Starters above a divider, bench below (from the first LINEUP event).
- * - SCHEDULED games show each roster with season averages instead of an
- *   empty box score.
- * Polls every 10s and folds the event stream client-side with the same
- * engine the console uses.
+ * patterns), rebuilt 2026-08-14 (owner: "too clunky", and it stars in the
+ * scoring demo):
+ * - The linescore moved INTO the navy hero as a compact periods strip.
+ * - Desktop lands the Game view in two columns: box score left, leaders and
+ *   the latest plays in a right rail — about a screen and a half, not 2.6.
+ * - Phones read top to bottom: hero, leaders, box score (sticky switcher),
+ *   latest plays.
+ * - Nothing was dropped: every number the old page showed is still here.
+ *
+ * This file owns state, polling and layout only. Every panel lives in
+ * ./components (refactor R2), and the derived maths lives in model.ts.
+ * Polling and the realtime hookup are untouched: full load, then ?sinceSeq.
  */
-
-interface LivePlayer {
-  playerId: string
-  teamId: string
-  name: string
-  jerseyNumber: string | null
-}
-
-interface TeamRecord {
-  record: string
-  rank: number
-  divisionName: string
-}
-
-interface LivePayload {
-  game: {
-    id: string
-    status: string
-    scheduledAt: string
-    homeScore: number | null
-    awayScore: number | null
-    homeTeamId: string
-    awayTeamId: string
-    seasonId?: string | null
-    homeTeamName: string
-    awayTeamName: string
-    homeColor: string | null
-    awayColor: string | null
-    homeRecord: TeamRecord | null
-    awayRecord: TeamRecord | null
-    venueName: string | null
-    venueId: string | null
-    leagueName: string | null
-    clockMode?: "SIMPLE" | "OFF"
-    seasonName: string | null
-    potgPlayerId?: string | null
-    /** Only present when the player's media consent allows it */
-    potgPhotoUrl?: string | null
-  }
-  events: FoldEvent[]
-  /** Incremental polls only: sequences ≤ sinceSeq that are currently voided. */
-  voidedSequences?: number[]
-  players: LivePlayer[]
-  seasonAverages: Record<string, { gp: number; ppg: number; rpg: number; apg: number }>
-  /** Initial load only: the viewer's own players (kids / 13+ self) */
-  viewerPlayerIds?: string[]
-}
-
-
-/**
- * Tabs are REAL at every width as of 2026-08-13. They used to be phone-only
- * (`lg:hidden`), so desktop rendered every panel at once and the layout had
- * to cram them into escalating grids — leaders beside team stats, both box
- * scores beside each other, and a play-by-play rail that outran the page.
- * ESPN's box score doesn't do that: one focused view at a time, each owning
- * the full width. Team stats also splits out of Game so its bars can breathe.
- */
-type Tab = "game" | "team" | "plays"
-
-/** One heading treatment for every panel, so the tabs feel like one system. */
-const sectionHeading =
-  "text-ink-950 mb-2 mt-6 px-1 text-[17px] font-extrabold uppercase tracking-[0.04em]"
-
-const HOME_FALLBACK = "#4f46e5" // play-600
-const AWAY_FALLBACK = "#16a34a" // court-600
-
-const ordinal = (n: number) => {
-  const s = ["th", "st", "nd", "rd"]
-  const v = n % 100
-  return `${n}${s[(v - 20) % 10] ?? s[v] ?? s[0]}`
-}
 
 export function LiveView({ gameId }: { gameId: string }) {
   const [data, setData] = useState<LivePayload | null>(null)
@@ -103,7 +40,7 @@ export function LiveView({ gameId }: { gameId: string }) {
   // Which of the viewer's players the share dialog is open for (P4)
   const [shareFor, setShareFor] = useState<string | null>(null)
   const [tab, setTab] = useState<Tab>("game")
-  const [playFilter, setPlayFilter] = useState<"all" | "scoring" | number>("all")
+  const [playFilter, setPlayFilter] = useState<PlayFilter>("all")
   /** Box score shows ONE team at a time behind a switcher, every viewport. */
   const [boxSide, setBoxSide] = useState<"home" | "away">("home")
 
@@ -199,7 +136,6 @@ export function LiveView({ gameId }: { gameId: string }) {
     return () => obs.disconnect()
   }, [loaded])
 
-
   const fold = useMemo(
     () =>
       data
@@ -210,6 +146,8 @@ export function LiveView({ gameId }: { gameId: string }) {
         : null,
     [data]
   )
+  const model = useMemo(() => (data && fold ? buildModel(data, fold) : null), [data, fold])
+
   const clockOn = data?.game.clockMode === "SIMPLE" && data.game.status === "LIVE"
   const foldClockRunning = fold?.clockRunning ?? false
   const foldClockBase = fold?.clockSecondsAtLastEvent ?? null
@@ -231,7 +169,7 @@ export function LiveView({ gameId }: { gameId: string }) {
     return () => clearInterval(t)
   }, [clockOn, foldClockRunning, foldClockBase])
 
-  if (!data || !fold) {
+  if (!data || !fold || !model) {
     return (
       <p className="text-ink-500 p-10 text-center text-sm">
         {error ? "Couldn't load this game." : "Loading…"}
@@ -239,748 +177,7 @@ export function LiveView({ gameId }: { gameId: string }) {
     )
   }
 
-  const { game } = data
-  const homeColor = game.homeColor || HOME_FALLBACK
-  const awayColor = game.awayColor || AWAY_FALLBACK
-  const colorOf = (teamId?: string | null) =>
-    teamId === game.homeTeamId ? homeColor : teamId === game.awayTeamId ? awayColor : "#9191a1"
-
-  const byId = new Map(data.players.map((p) => [p.playerId, p]))
-  const nameOf = (pid?: string | null) => (pid ? byId.get(pid)?.name ?? "" : "")
-  const jerseyOf = (pid: string) => byId.get(pid)?.jerseyNumber ?? "?"
-  const shortName = (pid: string) => {
-    const name = nameOf(pid) || ""
-    // Game-day guests carry a flag, not a name suffix — label AFTER the
-    // abbreviation so "Marcus Lee" never mangles into "Marcus (."
-    const guestTag = (byId.get(pid) as any)?.guest ? " (Guest)" : ""
-    const parts = name.split(" ")
-    if (parts.length < 2) return (parts[0] || "—") + guestTag
-    // Privacy-abbreviated names ("Cameron K.") arrive pre-shortened — never
-    // initial them again. Compression matches the privacy form (owner
-    // 2026-07-16): FIRST name + last initial, "Aiden M.", never "A. Mensah".
-    const last = parts[parts.length - 1]
-    if (/^[A-Z]\.?$/.test(last)) return name + guestTag
-    return `${parts[0]} ${last[0]}.${guestTag}`
-  }
-
-  // Youth team names run long ("Burlington Force Grade 10") — the score
-  // surfaces show initials + a grade/age qualifier ("BF · G10") until teams
-  // get an owner-set short name (backlog).
-  const shortTeam = (name: string) => {
-    const m = name.match(/\b(?:grade\s*(\d{1,2})|gr\s*(\d{1,2})|u(\d{1,2})|(\d{1,2})u)\b/i)
-    const qual = m ? (m[1] || m[2] ? `G${m[1] ?? m[2]}` : `U${m[3] ?? m[4]}`) : null
-    const base = m ? name.replace(m[0], "").trim() : name
-    return qual ? `${monogram(base)} · ${qual}` : monogram(base)
-  }
-
-  const live = game.status === "LIVE"
-  const final = game.status === "COMPLETED"
-  const homeScore = final && game.homeScore != null ? game.homeScore : fold.homeScore
-  const awayScore = final && game.awayScore != null ? game.awayScore : fold.awayScore
-
-  const periods = Array.from(
-    new Set(fold.playByPlay.filter((e) => e.period).map((e) => e.period as number))
-  ).sort((a, b) => a - b)
-  const periodLabel = (p: number) => (p <= 4 ? `Q${p}` : `OT${p - 4}`)
-  const periodPoints = (teamId: string, p: number) =>
-    fold.playByPlay
-      .filter(
-        (e) =>
-          e.teamId === teamId &&
-          e.period === p &&
-          e.made !== false &&
-          ["SCORE_2PT", "SCORE_3PT", "SCORE_FT"].includes(e.eventType)
-      )
-      .reduce(
-        (s, e) => s + (e.eventType === "SCORE_2PT" ? 2 : e.eventType === "SCORE_3PT" ? 3 : 1),
-        0
-      )
-
-  const teamLines = (teamId: string) =>
-    Object.values(fold.players)
-      .filter((l) => l.teamId === teamId)
-      .sort((a, b) => b.points - a.points)
-
-  // Starting five = the first LINEUP event each team recorded
-  const starterIds = new Map<string, Set<string>>()
-  for (const e of data.events) {
-    if (e.eventType === "LINEUP" && e.teamId && !e.voided && !starterIds.has(e.teamId)) {
-      starterIds.set(e.teamId, new Set((e.metadata as any)?.playerIds ?? []))
-    }
-  }
-
-  const leaderOf = (teamId: string, stat: (l: PlayerLine) => number): PlayerLine | null => {
-    const lines = teamLines(teamId).filter((l) => stat(l) > 0)
-    if (lines.length === 0) return null
-    return lines.reduce((best, l) => (stat(l) > stat(best) ? l : best))
-  }
-
-  // ---------- Game tab (Yahoo pattern): leaders + team stat comparison ----------
-  const teamAgg = (teamId: string) => {
-    const lines = teamLines(teamId)
-    const sum = (get: (l: PlayerLine) => number) => lines.reduce((t, l) => t + get(l), 0)
-    return {
-      fgm: sum((l) => l.fgMade2 + l.fgMade3),
-      fga: sum((l) => l.fgMade2 + l.fgMiss2 + l.fgMade3 + l.fgMiss3),
-      tpm: sum((l) => l.fgMade3),
-      tpa: sum((l) => l.fgMade3 + l.fgMiss3),
-      ftm: sum((l) => l.ftMade),
-      fta: sum((l) => l.ftMade + l.ftMiss),
-      reb: sum(totalRebounds),
-      ast: sum((l) => l.assists),
-      stl: sum((l) => l.steals),
-      blk: sum((l) => l.blocks),
-      to: sum((l) => l.turnovers),
-      pf: sum((l) => l.fouls),
-    }
-  }
-
-  const defLeader = (teamId: string): { l: PlayerLine; value: number; unit: string } | null => {
-    const st = leaderOf(teamId, (l) => l.steals)
-    const bl = leaderOf(teamId, (l) => l.blocks)
-    const sv = st?.steals ?? 0
-    const bv = bl?.blocks ?? 0
-    if (sv === 0 && bv === 0) return null
-    return bv > sv ? { l: bl!, value: bv, unit: "BLK" } : { l: st!, value: sv, unit: "STL" }
-  }
-
-  const LEADER_SECTIONS: Array<{
-    label: string
-    unit: string
-    pick: (teamId: string) => { l: PlayerLine; value: number; unit: string } | null
-    sub: (l: PlayerLine) => string
-  }> = [
-    {
-      label: "Points",
-      unit: "PTS",
-      pick: (tid) => {
-        const l = leaderOf(tid, (x) => x.points)
-        return l ? { l, value: l.points, unit: "PTS" } : null
-      },
-      sub: (l) => `${totalRebounds(l)} REB · ${l.assists} AST`,
-    },
-    {
-      label: "Rebounds",
-      unit: "REB",
-      pick: (tid) => {
-        const l = leaderOf(tid, totalRebounds)
-        return l ? { l, value: totalRebounds(l), unit: "REB" } : null
-      },
-      sub: (l) => `${l.defRebounds} DREB · ${l.offRebounds} OREB`, // W-001: stat abbreviations are all-caps
-    },
-    {
-      label: "Assists",
-      unit: "AST",
-      pick: (tid) => {
-        const l = leaderOf(tid, (x) => x.assists)
-        return l ? { l, value: l.assists, unit: "AST" } : null
-      },
-      sub: (l) => `${l.points} PTS · ${l.turnovers} TO`,
-    },
-    {
-      label: "Defense",
-      unit: "",
-      pick: defLeader,
-      sub: (l) => `${l.steals} STL · ${l.blocks} BLK`,
-    },
-  ]
-
-  /**
-   * Leaders as cards, not list rows (2026-08-13). A youth game page is the
-   * keepsake a parent opens after the final buzzer — the kid's line deserves
-   * a scoreboard-sized number and their team's colour, not 13px body text.
-   * `won` gets a stronger tint so the better line reads first.
-   */
-  /** Defined up here on purpose: the linescore and leaders both build their
-   *  JSX during render further down the file, so a later `const crest` put
-   *  it in the temporal dead zone and crashed the client. */
-  const crest = (teamId: string, size: string, text: string) => (
-    <span
-      className={`${size} flex shrink-0 items-center justify-center rounded-xl font-extrabold text-white shadow-sm`}
-      style={{ backgroundColor: colorOf(teamId) }}
-      aria-hidden="true"
-    >
-      {text}
-    </span>
-  )
-
-  const leaderCell = (
-    entry: { l: PlayerLine; value: number; unit: string } | null,
-    teamId: string,
-    sub: (l: PlayerLine) => string,
-    won: boolean,
-    /** Away side mirrors so the two cards face each other — restores the
-     *  original `right` behaviour, matches the team-stats comparison on the
-     *  same page, and closes the gutter on the right card. */
-    mirror = false
-  ) => {
-    const color = colorOf(teamId)
-    if (!entry) {
-      return (
-        <div className="border-ink-100 text-ink-300 flex min-w-0 flex-1 items-center justify-center rounded-2xl border border-dashed py-6 text-xs">
-          —
-        </div>
-      )
-    }
-    return (
-      <div
-        // Tint history: 8%/3% read as almost nothing, 17%/9% was a touch hot.
-        // Settled at 14%/8% (tester 2026-08-13, "ever so slightly" dimmer).
-        // Mirroring is a DESKTOP idea: on a phone the two cards stack full
-        // width, so a right-aligned one just looks broken. Sizes step down on
-        // phones too — at 390px a 56px badge plus a 2.6rem number could not
-        // fit beside a centre label and the row wrapped (tester 2026-08-13).
-        className={`flex min-w-0 flex-1 items-center gap-3 rounded-2xl p-3 md:gap-3.5 md:p-4 ${
-          mirror ? "md:flex-row-reverse md:text-right" : ""
-        }`}
-        style={{ backgroundColor: `${color}${won ? "24" : "14"}` }}
-      >
-        {/* The badge stands in for a headshot: players have no photo field, and
-            the platform's own rule is "real mark, else branded monogram". The
-            jersey number is how you identify a kid from the stands anyway — and
-            if photos ever ship, this circle becomes the photo slot unchanged. */}
-        <span
-          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-[15px] font-black text-white shadow-md ring-2 ring-white/60 md:h-14 md:w-14 md:text-[17px]"
-          style={{ backgroundColor: color }}
-        >
-          {jerseyOf(entry.l.playerId) ? `${jerseyOf(entry.l.playerId)}` : monogram(shortName(entry.l.playerId))}
-        </span>
-        <div className="min-w-0 flex-1">
-          {/* Platform law: every rendered entity is clickable. */}
-          <Link
-            href={`/player/${entry.l.playerId}`}
-            className="text-ink-950 hover:text-play-600 block truncate text-[15px] font-bold leading-tight transition-colors"
-          >
-            {shortName(entry.l.playerId)}
-          </Link>
-          <div className={`mt-1 flex items-end gap-1.5 ${mirror ? "md:justify-end" : ""}`}>
-            <span className="font-condensed text-ink-950 text-[2rem] font-black leading-[0.85] tabular-nums md:text-[2.6rem]">
-              <FlashNum value={entry.value} />
-            </span>
-            <span className="text-ink-600 pb-1 text-[12.5px] font-extrabold tracking-wide">
-              {entry.unit}
-            </span>
-          </div>
-          <p className="text-ink-600 mt-1 truncate text-[12.5px] font-semibold">{sub(entry.l)}</p>
-        </div>
-      </div>
-    )
-  }
-
-  // Always show all four quarters — a dash marks the unplayed ones (owner:
-  // fixed columns read better); overtime columns append only when reached.
-  const displayPeriods = [1, 2, 3, 4, ...periods.filter((p) => p > 4)]
-  const playedPeriods = new Set(periods)
-  const linescoreCard =
-    periods.length > 0 ? (
-      <div className="border-ink-100 overflow-x-auto rounded-2xl border bg-white">
-        <table className="w-full text-center text-[15px] font-bold tabular-nums">
-          <thead>
-            <tr className="text-ink-600 border-ink-100 border-b text-[12.5px] uppercase tracking-[0.1em]">
-              <th className="py-2 pl-4 text-left font-extrabold" />
-              {displayPeriods.map((p) => (
-                <th key={p} className="px-2.5 py-2 font-extrabold sm:px-4">
-                  {p <= 4 ? p : periodLabel(p)}
-                </th>
-              ))}
-              <th className="text-ink-950 px-3 py-2 pr-4 font-extrabold">Tot</th>
-            </tr>
-          </thead>
-          <tbody>
-            {(
-              [
-                [game.homeTeamId, game.homeTeamName, homeScore],
-                [game.awayTeamId, game.awayTeamName, awayScore],
-              ] as Array<[string, string, number]>
-            ).map(([tid, tname, total]) => (
-              <tr
-                key={tid}
-                className="border-ink-50 border-b last:border-0"
-                style={
-                  final && total === Math.max(homeScore, awayScore) && homeScore !== awayScore
-                    ? { backgroundColor: `${colorOf(tid)}0a` }
-                    : undefined
-                }
-              >
-                <td className="relative py-3 pl-4 text-left">
-                  <span
-                    className="absolute inset-y-0 left-0 w-1"
-                    style={{ backgroundColor: colorOf(tid) }}
-                  />
-                  <span className="flex items-center gap-2 pl-1">
-                    {crest(tid, "h-6 w-6 text-[10px]", monogram(tname))}
-                    <span className="text-ink-900 whitespace-nowrap font-extrabold">
-                      {shortTeam(tname)}
-                    </span>
-                  </span>
-                </td>
-                {displayPeriods.map((p) => (
-                  <td
-                    key={p}
-                    className="font-condensed text-ink-900 px-2.5 py-2.5 text-[20px] font-black leading-none sm:px-4"
-                  >
-                    {playedPeriods.has(p) ? (
-                      <FlashNum value={periodPoints(tid, p)} />
-                    ) : (
-                      <span className="text-ink-300">–</span>
-                    )}
-                  </td>
-                ))}
-                <td className="bg-ink-50/70 text-ink-950 font-condensed px-3 py-2.5 pr-4 text-[22px] font-black leading-none">
-                  <FlashNum value={total} />
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    ) : null
-
-  const leadersCard = (
-    <div className="space-y-3">
-      {LEADER_SECTIONS.map((sec) => {
-        const h = sec.pick(game.homeTeamId)
-        const a = sec.pick(game.awayTeamId)
-        if (!h && !a) return null
-        const hWins = (h?.value ?? -1) >= (a?.value ?? -1)
-        return (
-          // The category label lives BETWEEN the two players (2026-08-13) —
-          // mirroring alone just moved the gap from the outer edges into the
-          // middle. A shared centre axis is the head-to-head pattern, and it
-          // buys back the vertical space the old label row used.
-          // Phones stack (label on top, then both players full width); the
-          // centre-axis layout only makes sense once there's room for it.
-          <div
-            key={sec.label}
-            className="border-ink-100 flex flex-col gap-1.5 rounded-2xl border bg-white p-1.5 md:flex-row md:items-center md:gap-2"
-          >
-            <span className="text-ink-800 order-1 w-full shrink-0 pt-1.5 text-center text-[11.5px] font-black uppercase leading-tight tracking-[0.12em] md:order-2 md:w-24 md:pt-0 md:text-[13.5px]">
-              {sec.label}
-            </span>
-            <div className="order-2 flex min-w-0 flex-1 md:order-1">
-              {leaderCell(h, game.homeTeamId, sec.sub, hWins)}
-            </div>
-            <div className="order-3 flex min-w-0 flex-1">
-              {leaderCell(a, game.awayTeamId, sec.sub, !hWins, true)}
-            </div>
-          </div>
-        )
-      })}
-    </div>
-  )
-
-  const compareRow = (
-    label: string,
-    h: number,
-    a: number,
-    displayH?: string,
-    displayA?: string
-  ) => {
-    const total = h + a
-    const hShare = total === 0 ? 50 : (h / total) * 100
-    const hWins = h > a
-    const aWins = a > h
-    // Two-sided bars growing from the centre (2026-08-13): a 1.5px split rail
-    // made every stat look the same. Now the mismatch is legible at a glance
-    // and the winning side carries full team colour.
-    // Shooting rows pass a STRING ("12-25 · 48%"), which at 26px condensed
-    // was far too wide for the slot and read as a font glitch. Strings get a
-    // smaller, plainer treatment; raw counts keep the big score face.
-    const num = (wins: boolean, value: number, display?: string) =>
-      display ? (
-        <span
-          className={`text-[15px] tabular-nums ${
-            wins ? "text-ink-950 font-extrabold" : "text-ink-400 font-semibold"
-          }`}
-        >
-          {display}
-        </span>
-      ) : (
-        <span
-          className={`font-condensed text-[28px] leading-none tabular-nums ${
-            wins ? "text-ink-950 font-black" : "text-ink-400 font-bold"
-          }`}
-        >
-          <FlashNum value={value} />
-        </span>
-      )
-    return (
-      <div key={label} className="px-4 py-3">
-        <div className="flex items-center justify-between gap-3">
-          {num(hWins, h, displayH)}
-          <span className="text-ink-700 text-[13px] font-extrabold uppercase tracking-[0.12em]">
-            {label}
-          </span>
-          {num(aWins, a, displayA)}
-        </div>
-        {/* Each side sits on its own grey track, so a lopsided stat reads as
-            "measured against a scale" instead of leaving an empty gutter
-            (tester 2026-08-13). */}
-        <div className="mt-2 flex h-3 items-center gap-1">
-          <div className="bg-ink-100 flex flex-1 justify-end overflow-hidden rounded-l-full">
-            <span
-              className="h-3 rounded-l-full transition-all duration-500"
-              style={{
-                width: `${hShare}%`,
-                backgroundColor: homeColor,
-                opacity: hWins ? 1 : 0.4,
-              }}
-            />
-          </div>
-          <span className="bg-ink-300 h-3 w-px shrink-0" />
-          <div className="bg-ink-100 flex flex-1 overflow-hidden rounded-r-full">
-            <span
-              className="h-3 rounded-r-full transition-all duration-500"
-              style={{
-                width: `${100 - hShare}%`,
-                backgroundColor: awayColor,
-                opacity: aWins ? 1 : 0.4,
-              }}
-            />
-          </div>
-        </div>
-      </div>
-    )
-  }
-
-  const shooting = (m: number, at: number) =>
-    at === 0 ? "0-0" : `${m}-${at} · ${Math.round((m / at) * 100)}%`
-
-  const teamStatsCard = (() => {
-    const H = teamAgg(game.homeTeamId)
-    const A = teamAgg(game.awayTeamId)
-    const pct = (m: number, at: number) => (at === 0 ? 0 : m / at)
-    return (
-      <div className="border-ink-100 rounded-2xl border bg-white">
-        {/* Crest + name + score anchors each column, so you never have to
-            scroll back to the hero to remember which side is which. */}
-        {/* Full team name, not the abbreviation, and given real height — this
-            header anchors both columns so it should read like a matchup bar
-            rather than a caption (tester 2026-08-13). */}
-        <div className="border-ink-100 flex items-center justify-between gap-3 border-b px-4 py-4">
-          <div className="flex min-w-0 flex-1 items-center gap-2.5">
-            {crest(game.homeTeamId, "h-10 w-10 text-[13px]", monogram(game.homeTeamName))}
-            <div className="min-w-0">
-              <p className="text-ink-950 truncate text-[15px] font-extrabold leading-tight">
-                {game.homeTeamName}
-              </p>
-              <p
-                className="font-condensed text-[24px] font-black leading-none tabular-nums"
-                style={{ color: homeColor }}
-              >
-                {homeScore}
-              </p>
-            </div>
-          </div>
-          <div className="flex min-w-0 flex-1 flex-row-reverse items-center gap-2.5 text-right">
-            {crest(game.awayTeamId, "h-10 w-10 text-[13px]", monogram(game.awayTeamName))}
-            <div className="min-w-0">
-              <p className="text-ink-950 truncate text-[15px] font-extrabold leading-tight">
-                {game.awayTeamName}
-              </p>
-              <p
-                className="font-condensed text-[24px] font-black leading-none tabular-nums"
-                style={{ color: awayColor }}
-              >
-                {awayScore}
-              </p>
-            </div>
-          </div>
-        </div>
-        <div className="divide-ink-50 divide-y">
-          {compareRow("Field goals", pct(H.fgm, H.fga), pct(A.fgm, A.fga), shooting(H.fgm, H.fga), shooting(A.fgm, A.fga))}
-          {compareRow("3-pointers", pct(H.tpm, H.tpa), pct(A.tpm, A.tpa), shooting(H.tpm, H.tpa), shooting(A.tpm, A.tpa))}
-          {compareRow("Free throws", pct(H.ftm, H.fta), pct(A.ftm, A.fta), shooting(H.ftm, H.fta), shooting(A.ftm, A.fta))}
-          {compareRow("Rebounds", H.reb, A.reb)}
-          {compareRow("Assists", H.ast, A.ast)}
-          {compareRow("Steals", H.stl, A.stl)}
-          {compareRow("Blocks", H.blk, A.blk)}
-          {compareRow("Turnovers", H.to, A.to)}
-          {compareRow("Fouls", H.pf, A.pf)}
-        </div>
-      </div>
-    )
-  })()
-
-  const hasAnyStats = Object.keys(fold.players).length > 0
-
-  // Play-by-play with a running score attached to scoring plays
-  const SCORE_PTS: Record<string, number> = { SCORE_2PT: 2, SCORE_3PT: 3, SCORE_FT: 1 }
-  const PBP_TYPES = new Set([
-    "SCORE_2PT",
-    "SCORE_3PT",
-    "SCORE_FT",
-    "FOUL",
-    "SUBSTITUTION",
-    "PERIOD_START",
-    "PERIOD_END",
-  ])
-  // Narrative merge (owner 2026-07-16): the console writes ASSIST right
-  // after a made shot and REBOUND right after a miss (single-scorer lock →
-  // always adjacent), so shots absorb their follow-up into one line:
-  // "Basket by X, assisted by Y" / "X misses — defensive rebound Z".
-  let runHome = 0
-  let runAway = 0
-  const ordered = fold.playByPlay
-  const consumed = new Set<number>()
-  const playByPlay: Array<{ e: FoldEvent; score: string | null; tail: string | null }> = []
-  for (let i = 0; i < ordered.length; i++) {
-    if (consumed.has(i)) continue
-    const e = ordered[i]
-    const pts = SCORE_PTS[e.eventType]
-    const scored = pts != null && e.made !== false && !!e.teamId
-    if (scored) {
-      if (e.teamId === game.homeTeamId) runHome += pts
-      else if (e.teamId === game.awayTeamId) runAway += pts
-    }
-    let tail: string | null = null
-    if (pts != null && e.eventType !== "SCORE_FT") {
-      // look at the next two entries for the chained follow-up
-      for (let j = i + 1; j <= i + 2 && j < ordered.length; j++) {
-        if (consumed.has(j)) continue
-        const n = ordered[j]
-        if (e.made !== false && n.eventType === "ASSIST" && n.teamId === e.teamId) {
-          tail = n.playerId ? `, assisted by #${jerseyOf(n.playerId)} ${shortName(n.playerId)}` : null
-          consumed.add(j)
-          break
-        }
-        if (e.made === false && n.eventType === "REBOUND") {
-          const off = (n.metadata as { offensive?: boolean } | null)?.offensive
-          tail = n.playerId
-            ? ` — ${off ? "offensive" : "defensive"} rebound #${jerseyOf(n.playerId)} ${shortName(n.playerId)}`
-            : null
-          consumed.add(j)
-          break
-        }
-        if (["SCORE_2PT", "SCORE_3PT", "SCORE_FT", "PERIOD_START", "PERIOD_END"].includes(n.eventType)) break
-      }
-    }
-    if (!PBP_TYPES.has(e.eventType)) continue
-    playByPlay.push({ e, score: scored ? `${runHome}–${runAway}` : null, tail })
-  }
-  playByPlay.reverse()
-  const visiblePlays = playByPlay.filter(({ e, score }) => {
-    if (playFilter === "all") return true
-    if (playFilter === "scoring") return score !== null || e.eventType.startsWith("PERIOD")
-    return e.period === playFilter
-  })
-
-  const describe = (e: FoldEvent): string => {
-    switch (e.eventType) {
-      case "SCORE_2PT":
-      case "SCORE_3PT":
-      case "SCORE_FT": {
-        const pts = e.eventType === "SCORE_2PT" ? 2 : e.eventType === "SCORE_3PT" ? 3 : 1
-        const who = e.playerId ? `#${jerseyOf(e.playerId)} ${shortName(e.playerId)}` : "—"
-        return e.made === false
-          ? `${who} misses ${e.eventType === "SCORE_FT" ? "a free throw" : `a ${pts}-pointer`}`
-          : `${who} ${e.eventType === "SCORE_FT" ? "makes a free throw" : `scores ${pts}`}`
-      }
-      case "FOUL":
-        return `Foul on ${e.playerId ? `#${jerseyOf(e.playerId)} ${shortName(e.playerId)}` : "team"}${
-          (e.metadata as any)?.technical ? " (technical)" : ""
-        }`
-      case "SUBSTITUTION":
-        return `Sub: ${(e.metadata as any)?.inPlayerId ? `#${jerseyOf((e.metadata as any).inPlayerId)}` : "?"} in, ${
-          (e.metadata as any)?.outPlayerId ? `#${jerseyOf((e.metadata as any).outPlayerId)}` : "?"
-        } out`
-      case "PERIOD_START":
-        return `${periodLabel(e.period ?? 1)}`
-      case "PERIOD_END":
-        return "End of period"
-      default:
-        return e.eventType
-    }
-  }
-
-  // ---------- shared building blocks ----------
-
-  const statRow = (l: PlayerLine, teamColor: string, isTop: boolean, showMin: boolean) => (
-    <tr
-      key={l.playerId}
-      className="border-ink-50 hover:bg-ink-50 md:even:bg-ink-50/60 md:hover:bg-ink-100/70 border-t transition-colors"
-      style={isTop ? { backgroundColor: `${teamColor}14` } : undefined}
-    >
-      <td className="text-ink-900 whitespace-nowrap py-2 pl-4 pr-2 font-semibold">
-        <span className="text-ink-500 mr-1.5 font-normal">#{jerseyOf(l.playerId)}</span>
-        <Link href={`/player/${l.playerId}`} className="hover:text-play-600 transition-colors">
-          {shortName(l.playerId)}
-        </Link>
-        {l.onFloor && live ? <span className="text-court-600"> ●</span> : null}
-        {isTop && (
-          <span
-            className="bg-highlight text-highlight-on ml-2 rounded px-1.5 py-0.5 align-[2px] text-[9.5px] font-extrabold tracking-widest"
-            style={{ color: teamColor }}
-          >
-            TOP
-          </span>
-        )}
-      </td>
-      {showMin && <td className="px-1.5 text-right">{Math.round(l.secondsPlayed / 60)}</td>}
-      <td className="text-energy-ink px-1.5 text-right text-base font-extrabold"><FlashNum value={l.points} /></td>
-      <td className="px-1.5 text-right"><FlashNum value={totalRebounds(l)} /></td>
-      <td className="px-1.5 text-right"><FlashNum value={l.assists} /></td>
-      <td className="px-1.5 text-right"><FlashNum value={l.steals} /></td>
-      <td className="hidden px-1.5 text-right sm:table-cell">{l.blocks}</td>
-      <td className="px-1.5 pr-4 text-right sm:pr-1.5"><FlashNum value={l.turnovers} /></td>
-      <td className="hidden px-1.5 pr-4 text-right sm:table-cell">
-        {l.fouls}
-        {l.technicalFouls > 0 ? "T" : ""}
-      </td>
-    </tr>
-  )
-
-  const statsTable = (teamId: string) => {
-    const lines = teamLines(teamId)
-    const teamColor = colorOf(teamId)
-    const showMinutes = lines.some((l) => l.secondsPlayed > 0)
-    // Starters stay starters forever (owner 2026-07-16 v2) — the green
-    // on-court dot carries "who's on the floor right now" during live games.
-    const starters = starterIds.get(teamId)
-    const groupSet = starters
-    const starterLines = groupSet ? lines.filter((l) => groupSet.has(l.playerId)) : []
-    const benchLines = groupSet ? lines.filter((l) => !groupSet.has(l.playerId)) : lines
-    const groupLabel = "Starters"
-    const topId = lines.length > 0 && lines[0].points > 0 ? lines[0].playerId : null
-    const totals = lines.reduce(
-      (t, l) => ({
-        pts: t.pts + l.points,
-        reb: t.reb + totalRebounds(l),
-        ast: t.ast + l.assists,
-        stl: t.stl + l.steals,
-        blk: t.blk + l.blocks,
-        to: t.to + l.turnovers,
-        pf: t.pf + l.fouls,
-      }),
-      { pts: 0, reb: 0, ast: 0, stl: 0, blk: 0, to: 0, pf: 0 }
-    )
-    const header = (
-      // Mobile keeps the original light head (tester 2026-08-13: phone view
-      // was already right); the bold 13px band is a DESKTOP-only treatment,
-      // applied at lg — the same breakpoint where the layout stops using the
-      // one-team switcher and stacks both boxes.
-      // PHONES ONLY keep the original light head (tester 2026-08-13). The
-      // boundary is `md` (768px), not `lg` — an iPad is not a phone, and at
-      // lg every tablet was still getting the phone treatment.
-      <thead className="text-ink-500 md:bg-ink-50 md:text-ink-800 md:border-ink-200 text-left text-[11.5px] uppercase tracking-wide md:border-b md:text-[13px] md:tracking-[0.08em]">
-        <tr>
-          <th className="py-2 pl-4 pr-2 font-bold md:py-2.5 md:font-black">Player</th>
-          {showMinutes && <th className="px-1.5 text-right font-bold md:font-black">Min</th>}
-          <th className="px-1.5 text-right font-bold md:font-black">Pts</th>
-          <th className="px-1.5 text-right font-bold md:font-black">Reb</th>
-          <th className="px-1.5 text-right font-bold md:font-black">Ast</th>
-          <th className="px-1.5 text-right font-bold md:font-black">Stl</th>
-          <th className="hidden px-1.5 text-right font-bold sm:table-cell md:font-black">Blk</th>
-          <th className="px-1.5 pr-4 text-right font-bold sm:pr-1.5 md:font-black">TO</th>
-          <th className="hidden px-1.5 pr-4 text-right font-bold sm:table-cell md:font-black">PF</th>
-        </tr>
-      </thead>
-    )
-    const cols = showMinutes ? 9 : 8
-    return (
-      <div className="overflow-x-auto">
-        <table className="w-full text-[15px] tabular-nums">
-          {header}
-          <tbody>
-            {groupSet && starterLines.length > 0 && (
-              <tr>
-                <td
-                  colSpan={cols}
-                  className="bg-ink-50 text-ink-500 border-ink-100 md:bg-ink-100 md:text-ink-800 md:border-ink-200 border-y px-4 py-1 text-[10.5px] font-extrabold uppercase tracking-widest md:py-2 md:text-[13px] md:font-black md:tracking-[0.16em]"
-                >
-                  {groupLabel}
-                </td>
-              </tr>
-            )}
-            {starterLines.map((l) => statRow(l, teamColor, l.playerId === topId, showMinutes))}
-            {groupSet && benchLines.length > 0 && (
-              <tr>
-                <td
-                  colSpan={cols}
-                  className="bg-ink-50 text-ink-500 border-ink-100 md:bg-ink-100 md:text-ink-800 md:border-ink-200 border-y px-4 py-1 text-[10.5px] font-extrabold uppercase tracking-widest md:py-2 md:text-[13px] md:font-black md:tracking-[0.16em]"
-                >
-                  Bench
-                </td>
-              </tr>
-            )}
-            {benchLines.map((l) => statRow(l, teamColor, l.playerId === topId, showMinutes))}
-            <tr className="border-ink-200 text-ink-900 border-t-2 font-bold">
-              <td className="py-2 pl-4 pr-2">Team</td>
-              {showMinutes && <td />}
-              <td className="px-1.5 text-right">{totals.pts}</td>
-              <td className="px-1.5 text-right">{totals.reb}</td>
-              <td className="px-1.5 text-right">{totals.ast}</td>
-              <td className="px-1.5 text-right">{totals.stl}</td>
-              <td className="hidden px-1.5 text-right sm:table-cell">{totals.blk}</td>
-              <td className="px-1.5 pr-4 text-right sm:pr-1.5">{totals.to}</td>
-              <td className="hidden px-1.5 pr-4 text-right sm:table-cell">{totals.pf}</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    )
-  }
-
-  const boxHeader = (teamId: string, name: string, total: number | null) => (
-    <div
-      className="flex items-center gap-2.5 px-4 py-2.5 text-sm font-extrabold text-white"
-      style={{ backgroundColor: colorOf(teamId) }}
-    >
-      <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-white/25 text-[11px]">
-        {monogram(name)}
-      </span>
-      <Link href={`/team/${teamId}`} className="truncate hover:underline">
-        {name}
-      </Link>
-      {total != null && (
-        <span className="font-condensed ml-auto text-2xl font-bold tabular-nums"><FlashNum value={total} /></span>
-      )}
-    </div>
-  )
-
-  // Pre-game roster with season averages (SCHEDULED games)
-  const rosterTable = (teamId: string) => {
-    const roster = data.players
-      .filter((p) => p.teamId === teamId)
-      .map((p) => ({ ...p, avg: data.seasonAverages[p.playerId] }))
-      .sort((a, b) => (b.avg?.ppg ?? 0) - (a.avg?.ppg ?? 0))
-    if (roster.length === 0) {
-      return <p className="text-ink-500 px-4 py-6 text-center text-[13px]">Roster not submitted yet.</p>
-    }
-    return (
-      <div className="overflow-x-auto">
-        <table className="w-full text-[15px] tabular-nums">
-          <thead className="text-ink-500 text-left text-[11.5px] uppercase tracking-wide">
-            <tr>
-              <th className="py-2 pl-4 pr-2 font-bold">Player</th>
-              <th className="px-1.5 text-right font-bold">GP</th>
-              <th className="px-1.5 text-right font-bold">PPG</th>
-              <th className="px-1.5 text-right font-bold">RPG</th>
-              <th className="px-1.5 pr-4 text-right font-bold">APG</th>
-            </tr>
-          </thead>
-          <tbody>
-            {roster.map((p) => (
-              <tr key={p.playerId} className="border-ink-50 hover:bg-ink-50 border-t transition-colors">
-                <td className="text-ink-900 whitespace-nowrap py-2 pl-4 pr-2 font-semibold">
-                  <span className="text-ink-500 mr-1.5 font-normal">
-                    {p.jerseyNumber ? `#${p.jerseyNumber}` : ""}
-                  </span>
-                  <Link href={`/player/${p.playerId}`} className="hover:text-play-600 transition-colors">
-                    {p.name}
-                  </Link>
-                </td>
-                <td className="px-1.5 text-right">{p.avg?.gp ?? 0}</td>
-                <td className="text-ink-950 px-1.5 text-right font-bold">{p.avg?.ppg ?? "—"}</td>
-                <td className="px-1.5 text-right">{p.avg?.rpg ?? "—"}</td>
-                <td className="px-1.5 pr-4 text-right">{p.avg?.apg ?? "—"}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    )
-  }
+  const { game, live, final, homeScore, awayScore, periodLabel, hasAnyStats, colorOf } = model
 
   return (
     <div className="pb-10">
@@ -990,214 +187,60 @@ export function LiveView({ gameId }: { gameId: string }) {
         <button
           onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
           aria-label="Back to the scoreboard"
-          className="fixed inset-x-0 top-0 z-50 flex items-center justify-center gap-3 px-4 py-2 text-white shadow-lg"
+          className="fixed inset-x-0 top-0 z-50 flex cursor-pointer items-center justify-center gap-3 px-4 py-2 text-white shadow-lg"
           style={{ background: "linear-gradient(120deg, var(--stage), var(--stage-2))" }}
         >
-          {crest(game.homeTeamId, "h-6 w-6 text-[10px]", monogram(game.homeTeamName))}
-          <span className="text-lg font-extrabold tabular-nums">
+          <Crest
+            color={colorOf(game.homeTeamId)}
+            size="h-6 w-6 text-[10px]"
+            text={monogram(game.homeTeamName)}
+          />
+          <span className="font-condensed text-xl font-semibold tabular-nums">
             <FlashNum value={homeScore} />
           </span>
-          <span className="min-w-14 text-center text-[11.5px] font-extrabold uppercase tracking-widest text-white/80">
+          <span className="min-w-14 text-center text-[10.5px] font-semibold uppercase tracking-[0.16em] text-white/75">
             {live ? `Live · ${periodLabel(fold.period)}` : final ? "Final" : "vs"}
           </span>
-          <span className="text-lg font-extrabold tabular-nums">
+          <span className="font-condensed text-xl font-semibold tabular-nums">
             <FlashNum value={awayScore} />
           </span>
-          {crest(game.awayTeamId, "h-6 w-6 text-[10px]", monogram(game.awayTeamName))}
+          <Crest
+            color={colorOf(game.awayTeamId)}
+            size="h-6 w-6 text-[10px]"
+            text={monogram(game.awayTeamName)}
+          />
         </button>
       )}
 
-      {/* ---------- score hero: broadcast-dark stage (Energy Pass) ----------
-          Owner spec 2026-07-15: each team stacks vertically (crest → name →
-          record → score) so BOTH teams always fit at 390px (the old side-by-
-          side layout clipped the away team), and the freed center column
-          gives the quarter-by-quarter table real size. Winner reads in the
-          highlight color; team colors stay content, never theme. */}
-      <div
-        ref={heroRef}
-        className="from-stage to-stage-2 bg-gradient-to-br text-white"
-        style={{
-          backgroundImage: `radial-gradient(90% 140% at 0% 0%, ${homeColor}38 0%, transparent 50%), radial-gradient(90% 140% at 100% 0%, ${awayColor}38 0%, transparent 50%), linear-gradient(135deg, var(--stage), var(--stage-2))`,
-        }}
-      >
-        {/* Hero content shares the tabs' 5xl column (2026-08-13) — it used to
-            run to 1760px while everything below sat at 1024px, so nothing
-            lined up and the scoreboard read off-centre. */}
-        <div className="mx-auto w-full max-w-5xl px-4 pb-6 pt-5 sm:px-6">
-          <p className="text-center text-xs font-semibold text-white/60">
-            {game.seasonId && game.leagueName ? (
-              <Link href={`/league/${game.seasonId}`} className="text-highlight hover:underline">
-                {game.leagueName}
-              </Link>
-            ) : (
-              game.leagueName
-            )}
-            {game.seasonName ? ` · ${game.seasonName}` : ""}
-          </p>
+      <ScoreHero model={model} heroRef={heroRef} clockDisplay={clockDisplay} />
 
-          <div className="mt-3 grid grid-cols-[minmax(84px,1fr)_auto_minmax(84px,1fr)] items-center gap-2 sm:gap-6 lg:mx-auto lg:max-w-3xl">
-            {(
-              [
-                [game.homeTeamId, game.homeTeamName, game.homeRecord, homeScore, awayScore],
-                [game.awayTeamId, game.awayTeamName, game.awayRecord, awayScore, homeScore],
-              ] as Array<[string, string, TeamRecord | null, number, number]>
-            ).map(([tid, tname, rec, score, other], i) => (
-              <div key={tid} className={`text-center ${i === 1 ? "order-3" : "order-1"}`}>
-                {crest(
-                  tid,
-                  // Phones keep the smaller 56px crest — 64px crowded the
-                  // 84px min column next to a 60px score at 390px.
-                  "mx-auto h-14 w-14 text-lg shadow-lg ring-2 ring-white/15 sm:h-16 sm:w-16 sm:text-xl lg:h-[88px] lg:w-[88px] lg:text-3xl",
-                  monogram(tname)
-                )}
-                <Link
-                  href={`/team/${tid}`}
-                  className="mt-1.5 block text-[13px] font-extrabold leading-tight text-white hover:underline lg:text-base"
-                  title={tname}
-                >
-                  {shortTeam(tname)}
-                </Link>
-                {rec && <p className="text-[12.5px] font-semibold text-white/75">{rec.record}</p>}
-                <p
-                  className={`font-condensed mt-0.5 text-6xl font-bold tabular-nums leading-none lg:text-7xl ${
-                    final && score > other ? "text-highlight" : "text-white"
-                  } ${final && score < other ? "text-white/60" : ""}`}
-                >
-                  <FlashNum value={score} />
-                </p>
-              </div>
-            ))}
-
-            {/* center: game state — the quarter table lives in the Game tab
-                (owner 2026-07-15: not everyone needs it, and it crowded the
-                hero). Ticking clock only when the league runs one. */}
-            <div className="order-2 min-w-0 self-center text-center">
-              {live && (
-                <>
-                  {/* Clock sits ABOVE the LIVE pill (tester 2026-08-13) — time
-                      remaining is the thing you look for first on a live game,
-                      so it leads the column instead of trailing it. */}
-                  {clockOn && clockDisplay != null && (
-                    <p className="font-condensed text-highlight mb-1.5 text-3xl font-black leading-none tabular-nums sm:text-4xl lg:text-5xl">
-                      {Math.floor(clockDisplay / 60)}:
-                      {String(clockDisplay % 60).padStart(2, "0")}
-                    </p>
-                  )}
-                  <span className="bg-live-600 inline-flex items-center gap-1.5 rounded-full px-3.5 py-1 text-xs font-extrabold uppercase tracking-[0.14em] text-white">
-                    <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-white" />
-                    Live
-                  </span>
-                  <p className="font-condensed mt-1.5 text-2xl font-bold text-white">
-                    {periodLabel(fold.period)}
-                  </p>
-                </>
-              )}
-              {final && (
-                <span className="bg-energy text-energy-on rounded-full px-4 py-1.5 text-sm font-extrabold uppercase tracking-[0.18em]">
-                  Final
-                </span>
-              )}
-              {!live && !final && (
-                <p className="text-sm font-bold text-white/80">
-                  {new Date(game.scheduledAt).toLocaleString(undefined, {
-                    weekday: "short",
-                    month: "short",
-                    day: "numeric",
-                    hour: "numeric",
-                    minute: "2-digit",
-                  })}
-                </p>
-              )}
-            </div>
-          </div>
-
-          {game.venueName && (
-            <p className="mt-2.5 text-center text-xs font-medium text-white/50">
-              <VenueLink venueId={game.venueId} name={game.venueName} className="hover:text-white/80 hover:underline" />
-            </p>
-          )}
-        </div>
-      </div>
-
-      <div className="mx-auto w-full max-w-[1760px] px-4 sm:px-6">
-        {/* Scorekeeper entry: floating pill instead of a block banner (owner:
-            the banner ate the top of the page while testing). Sits above the
-            mobile bottom tabs; bottom corner on desktop. */}
+      <div className={`${SHELL} mt-4`}>
+        {/* Scorekeeper entry: a floating pill instead of a block banner (owner:
+            the banner ate the top of the page while testing). It clears the
+            mobile tab bar by the bar's own height (2026-08-14) and stays
+            compact so it never lands on the team switcher. */}
         {canScore && !final && (
           <a
             href={`/games/${gameId}/score`}
-            className="bg-energy text-energy-on fixed bottom-20 right-4 z-40 flex items-center gap-2 rounded-full px-4 py-3 text-sm font-extrabold shadow-xl transition hover:brightness-110 lg:bottom-6"
+            className={`bg-energy text-energy-on fixed right-3 z-30 flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[12.5px] font-bold shadow-xl transition hover:brightness-110 lg:bottom-6 lg:right-4 lg:px-4 lg:py-3 lg:text-sm ${BOTTOM_TABS_FLOAT_OFFSET}`}
           >
-            <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2.5">
+            <svg
+              viewBox="0 0 24 24"
+              className="h-4 w-4"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+            >
               <path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" />
             </svg>
             Score
           </a>
         )}
 
-        {/* ---------- Player of the Game (social-feed-plan P1) ---------- */}
-        {final &&
-          game.potgPlayerId &&
-          nameOf(game.potgPlayerId) &&
-          (() => {
-            const line = fold.players[game.potgPlayerId!]
-            return (
-              <div className="border-gold-300 from-gold-50 mt-4 flex items-center gap-4 rounded-2xl border bg-gradient-to-r to-white p-4">
-                {game.potgPhotoUrl ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={game.potgPhotoUrl}
-                    alt={nameOf(game.potgPlayerId)}
-                    className="border-gold-400 h-16 w-16 rounded-full border-2 object-cover"
-                  />
-                ) : (
-                  <div className="bg-gold-100 text-gold-700 flex h-16 w-16 items-center justify-center rounded-full text-xl font-extrabold">
-                    #{jerseyOf(game.potgPlayerId)}
-                  </div>
-                )}
-                <div className="min-w-0">
-                  <p className="text-gold-700 text-[11px] font-extrabold uppercase tracking-[0.18em]">
-                    🏀 Player of the Game
-                  </p>
-                  <Link
-                    href={`/player/${game.potgPlayerId}`}
-                    className="text-ink-950 block truncate text-lg font-bold hover:underline"
-                  >
-                    #{jerseyOf(game.potgPlayerId)} {nameOf(game.potgPlayerId)}
-                  </Link>
-                  {line && (
-                    <p className="text-ink-600 text-sm font-semibold">
-                      {line.points} PTS · {line.offRebounds + line.defRebounds} REB ·{" "}
-                      {line.assists} AST
-                    </p>
-                  )}
-                </div>
-              </div>
-            )
-          })()}
-
-        {/* Share-your-card row: shown to the family of players who played in
-            this final (social-feed-plan P2). POTG's family gets the POTG card. */}
-        {final && (data?.viewerPlayerIds ?? []).some((pid) => fold.players[pid]) && (
-          <div className="border-ink-100 mt-3 flex flex-wrap items-center gap-2 rounded-2xl border bg-white p-3">
-            <span className="text-ink-500 text-xs font-semibold uppercase tracking-[0.14em]">
-              Share
-            </span>
-            {(data?.viewerPlayerIds ?? [])
-              .filter((pid) => fold.players[pid])
-              .map((pid) => (
-                <button
-                  key={pid}
-                  onClick={() => setShareFor(pid)}
-                  className="border-play-200 bg-play-50 text-play-700 hover:bg-play-100 flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold"
-                >
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-3.5 w-3.5">
-                    <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8M16 6l-4-4-4 4M12 2v13" />
-                  </svg>
-                  {nameOf(pid)}&apos;s game card
-                  {pid === game.potgPlayerId ? " 🏀" : ""}
-                </button>
-              ))}
+        {final && (
+          <div className="mb-4 space-y-3">
+            <PotgCard model={model} />
+            <ShareRow model={model} onShare={setShareFor} />
           </div>
         )}
 
@@ -1205,191 +248,77 @@ export function LiveView({ gameId }: { gameId: string }) {
           <ShareCardDialog
             gameId={gameId}
             playerId={shareFor}
-            playerName={nameOf(shareFor)}
+            playerName={model.nameOf(shareFor)}
             isPotg={shareFor === game.potgPlayerId}
             onClose={() => setShareFor(null)}
           />
         )}
 
         {/* ---------- pre-game: rosters with season averages ---------- */}
-        {!hasAnyStats && !live && !final && (
-          <>
-            <div className="border-ink-100 mt-4 rounded-2xl border bg-white p-6 text-center">
-              <p className="text-ink-900 text-sm font-semibold">This game hasn&apos;t started yet</p>
-              <p className="text-ink-500 mt-1 text-xs">
-                Live score, leaders and the box score appear here automatically at tip-off — the
-                page refreshes on its own. Season numbers below.
-              </p>
-            </div>
-            <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
-              {(
-                [
-                  [game.homeTeamId, game.homeTeamName],
-                  [game.awayTeamId, game.awayTeamName],
-                ] as Array<[string, string]>
-              ).map(([tid, tname]) => (
-                <div key={tid} className="border-ink-100 overflow-hidden rounded-2xl border bg-white">
-                  {boxHeader(tid, tname, null)}
-                  {rosterTable(tid)}
-                </div>
-              ))}
-            </div>
-          </>
+        {!hasAnyStats && !live && !final && <PregameRosters model={model} />}
+
+        {/* A game with no recorded events used to leave a blank band between
+            the hero and the footer (audit 2026-08-14) — result-only finals are
+            common in imported seasons. Say what the page has instead. */}
+        {!hasAnyStats && (live || final) && (
+          <div className="border-ink-100 rounded-2xl border bg-white p-6 text-center">
+            <p className="text-ink-900 text-sm font-semibold">
+              {final ? "Final score only" : "Waiting for the first play"}
+            </p>
+            <p className="text-ink-500 mt-1 text-xs leading-5">
+              {final
+                ? "This game was recorded as a final score, so there is no box score or play-by-play for it."
+                : "The box score, leaders and play-by-play appear here the moment the scorer records a play. This page updates on its own."}
+            </p>
+          </div>
         )}
 
-        {/* ---------- Game | Stats | Plays (Yahoo pattern, phones) ---------- */}
+        {/* ---------- Game | Team stats | Play-by-play ---------- */}
         {hasAnyStats && (
           <>
-            <div className="mx-auto mt-4 w-full max-w-5xl">
-              <div
-                role="tablist"
-                aria-label="Game views"
-                className="border-ink-100 flex gap-1 overflow-x-auto rounded-2xl border bg-white p-1.5 shadow-sm"
-              >
-                {(
-                  [
-                    ["game", "Game"],
-                    ["team", "Team stats"],
-                    ["plays", "Play-by-play"],
-                  ] as Array<[Tab, string]>
-                ).map(([key, label]) => (
-                  <button
-                    key={key}
-                    role="tab"
-                    aria-selected={tab === key}
-                    onClick={() => setTab(key)}
-                    className={`flex-1 whitespace-nowrap rounded-xl px-3 py-2.5 text-[13.5px] font-bold transition-colors ${
-                      tab === key
-                        ? "bg-play-600 text-white shadow-sm"
-                        : "text-ink-500 hover:bg-ink-50 hover:text-ink-800"
-                    }`}
-                  >
-                    {label}
-                  </button>
-                ))}
-              </div>
+            <div
+              role="tablist"
+              aria-label="Game views"
+              className="border-ink-100 mb-3 flex gap-1 overflow-x-auto rounded-2xl border bg-white p-1.5 shadow-sm lg:max-w-lg"
+            >
+              {(
+                [
+                  ["game", "Game"],
+                  ["team", "Team stats"],
+                  ["plays", "Play-by-play"],
+                ] as Array<[Tab, string]>
+              ).map(([key, label]) => (
+                <button
+                  key={key}
+                  role="tab"
+                  aria-selected={tab === key}
+                  onClick={() => setTab(key)}
+                  className={`min-h-[44px] flex-1 cursor-pointer whitespace-nowrap rounded-xl px-2.5 py-2.5 text-[13px] font-semibold transition-colors sm:px-3 sm:text-[13.5px] ${
+                    tab === key
+                      ? "bg-play-600 text-white shadow-sm"
+                      : "text-ink-500 hover:bg-ink-50 hover:text-ink-800"
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
             </div>
 
-            {/* GAME — one scroll: quarters → leaders → both box scores.
-                Merged 2026-08-13 (tester + their devs: fewest clicks wins, and
-                Yahoo/ESPN put the whole game story on one scrolling page). Box
-                score is no longer its own tab, and the phone team-switcher is
-                gone with it — everything is simply below you now. */}
-            <div className={`mx-auto mt-4 w-full max-w-5xl ${tab === "game" ? "block" : "hidden"}`}>
-              {linescoreCard}
-
-              {/* Box score ABOVE leaders (2026-08-13): this is youth sport —
-                  the reader is overwhelmingly a parent whose first question
-                  after "did we win" is "how did MY kid do". Their child is
-                  often not a game leader, so the box score is the thing they
-                  came for; leaders read better as the finish than the gate. */}
-              <h3 className={sectionHeading}>Box score</h3>
-              <div className="bg-ink-100 mb-3 flex gap-1 rounded-xl p-1">
-                {(["home", "away"] as const).map((side) => {
-                  const tid = side === "home" ? game.homeTeamId : game.awayTeamId
-                  const tname = side === "home" ? game.homeTeamName : game.awayTeamName
-                  const on = boxSide === side
-                  const color = colorOf(tid)
-                  return (
-                    <button
-                      key={side}
-                      onClick={() => setBoxSide(side)}
-                      aria-pressed={on}
-                      className={`flex flex-1 items-center justify-center gap-2 truncate rounded-lg px-3 py-2.5 text-[13.5px] font-bold transition-colors ${
-                        on ? "text-white shadow-sm" : "hover:bg-white/70"
-                      }`}
-                      style={on ? { backgroundColor: color } : { color }}
-                    >
-                      {/* The score is dropped — it is already large in the hero
-                          right above. Colour does the identifying instead: the
-                          idle team wears its own colour as text with a dot, the
-                          active one fills with it (tester 2026-08-13). */}
-                      <span
-                        className="h-2.5 w-2.5 shrink-0 rounded-full"
-                        style={{ backgroundColor: on ? "#ffffff" : color }}
-                      />
-                      {/* Full name, not an abbreviation — this switcher decides
-                          which roster you are looking at, so it must be plain. */}
-                      <span className="truncate">{tname}</span>
-                    </button>
-                  )
-                })}
-              </div>
-              <div className="border-ink-100 overflow-hidden rounded-2xl border bg-white">
-                {statsTable(boxSide === "home" ? game.homeTeamId : game.awayTeamId)}
-              </div>
-
-              <h3 className={sectionHeading}>Game leaders</h3>
-              {leadersCard}
+            <div className={tab === "game" ? "block" : "hidden"}>
+              <GameTab
+                model={model}
+                boxSide={boxSide}
+                onBoxSide={setBoxSide}
+                onSeeAllPlays={() => setTab("plays")}
+              />
             </div>
 
-            {/* TEAM STATS — its own view, so the comparison bars get room */}
-            <div className={`mx-auto mt-4 w-full max-w-5xl ${tab === "team" ? "block" : "hidden"}`}>
-              <h3 className={`${sectionHeading} mt-0`}>Team stats</h3>
-              {teamStatsCard}
+            <div className={tab === "team" ? "block" : "hidden"}>
+              <TeamStatsTab model={model} />
             </div>
 
-            {/* PLAY-BY-PLAY — its own full-width view, free to run long */}
-            <div className={`mx-auto mt-4 w-full max-w-5xl ${tab === "plays" ? "block" : "hidden"}`}>
-              <div className="border-ink-100 overflow-hidden rounded-2xl border bg-white">
-                <div className="border-ink-100 flex items-center gap-1.5 overflow-x-auto border-b px-4 py-2.5">
-                  {(
-                    [
-                      ["all", "All"],
-                      ["scoring", "Scoring"],
-                      ...periods.map((p) => [p, periodLabel(p)] as [number, string]),
-                    ] as Array<["all" | "scoring" | number, string]>
-                  ).map(([key, label]) => (
-                    <button
-                      key={String(key)}
-                      onClick={() => setPlayFilter(key)}
-                      className={`whitespace-nowrap rounded-full px-3.5 py-1.5 text-[13px] font-extrabold transition-colors ${
-                        playFilter === key
-                          ? "bg-ink-950 text-white shadow-sm"
-                          : "text-ink-600 border-ink-200 hover:border-ink-400 border bg-white"
-                      }`}
-                    >
-                      {label}
-                    </button>
-                  ))}
-                </div>
-                <ul className="max-h-[70vh] overflow-y-auto">
-                  {visiblePlays.map(({ e, score, tail }, i) =>
-                    e.eventType.startsWith("PERIOD") ? (
-                      <li
-                        key={i}
-                        className="bg-ink-200/80 text-ink-800 border-ink-300 sticky top-0 z-10 border-y px-4 py-2.5 text-center text-[13.5px] font-black uppercase tracking-[0.18em] backdrop-blur-sm"
-                      >
-                        {e.eventType === "PERIOD_START" ? describe(e) : "End of period"}
-                      </li>
-                    ) : (
-                      <li
-                        key={i}
-                        className={`border-ink-50 flex items-center gap-2.5 border-b px-4 py-2 text-[13.5px] ${
-                          score ? "bg-ink-50/60 text-ink-950 font-semibold" : "text-ink-600"
-                        }`}
-                      >
-                        <span
-                          className="w-1 self-stretch rounded-full"
-                          style={{ backgroundColor: colorOf(e.teamId) }}
-                        />
-                        <span className="min-w-0 flex-1">
-                          {describe(e)}
-                          {tail}
-                        </span>
-                        {score && (
-                          <span className="font-condensed text-ink-950 shrink-0 text-[15px] font-black tabular-nums">
-                            {score}
-                          </span>
-                        )}
-                      </li>
-                    )
-                  )}
-                  {visiblePlays.length === 0 && (
-                    <li className="text-ink-500 px-4 py-6 text-center text-[13px]">No plays yet.</li>
-                  )}
-                </ul>
-              </div>
+            <div className={tab === "plays" ? "block" : "hidden"}>
+              <PlayByPlayTab model={model} filter={playFilter} onFilter={setPlayFilter} />
             </div>
           </>
         )}
