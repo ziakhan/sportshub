@@ -34,6 +34,12 @@ export interface DemoBeat {
   hold: number
   /** Switches the stage layout from this beat onward. */
   stage?: StageMode
+  /**
+   * Address shown in the browser chrome from this beat onward. A story that
+   * moves between workspace screens has to move the address bar with them, or
+   * the frame is telling the viewer something the product does not do.
+   */
+  url?: string
   /** `data-demo-target` of the element the cursor glides to. */
   cursor?: string
   /** Element that shows its hover state. Defaults to the cursor target. */
@@ -64,6 +70,6 @@ export interface DemoScript {
   initialStage: StageMode
   /** The desktop surface, and the phone surface when the story has one. */
   render: (ctx: DemoRenderContext) => { desktop: ReactNode; phone?: ReactNode }
-  /** Address shown in the browser chrome bar. */
+  /** Address shown in the browser chrome bar before any beat sets its own. */
   desktopUrl: string
 }

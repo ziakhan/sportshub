@@ -95,6 +95,16 @@ export function DemoPlayer({
     [beats]
   )
 
+  /* The address bar follows the workspace screen, same accumulate-and-jump
+     rule as the stage mode. */
+  const url = useMemo(() => {
+    let current = script.desktopUrl
+    for (let i = 0; i <= index && i < beats.length; i += 1) {
+      if (beats[i].url) current = beats[i].url as string
+    }
+    return current
+  }, [beats, index, script.desktopUrl])
+
   /* Autoplay: advance when the beat's hold runs out. */
   useEffect(() => {
     if (!playing || reduced || done) return
@@ -249,7 +259,7 @@ export function DemoPlayer({
         hasPhone={hasPhone}
         desktop={surfaces.desktop}
         phone={surfaces.phone}
-        url={script.desktopUrl}
+        url={url}
         stageRef={stageRef}
       >
         <AnimatedCursor

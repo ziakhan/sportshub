@@ -122,9 +122,11 @@ export function AnimatedCursor({
   if (reduced || !pos) return null
   return (
     <>
+      {/* A beat with no target has no hand in it. The pointer fades out where
+          it was rather than sitting on the screen pointing at nothing. */}
       <div
         className={cn("live-cursor", down && "down")}
-        style={{ left: pos.x, top: pos.y, opacity: 1 }}
+        style={{ left: pos.x, top: pos.y, opacity: target ? 1 : 0 }}
       />
       {ripple > 0 && (
         <div key={ripple} className="live-ripple" style={{ left: pos.x, top: pos.y }} />

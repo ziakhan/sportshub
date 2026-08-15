@@ -54,13 +54,13 @@ export const DEMOS: DemoEntry[] = [
     slug: "roster-story",
     title: "Build a team, fill the roster",
     promise:
-      "A club posts a tryout, families register and pay, offers go out, and the roster locks in.",
+      "A club creates a team, posts a tryout, a family registers and pays, the offer is accepted with sizes and number, and the roster fills.",
     description:
-      "You open on a club team page with no tryout posted yet, and watch the manager set the date, the gym and the fee. The listing goes live and the same moment lands on a parent phone, where she registers her daughter and pays in a few taps. The registration comes back to the club side, an offer goes out, and the empty roster spot fills in.",
+      "It starts on an empty club workspace: the U11 girls team gets made, a coach is assigned, and the roster behind it has nobody on it. The tryout goes up with its date, gym and fee, and a parent finds it on her phone, picks which of her two kids is trying out and pays the fee there. Then the part clubs chase families for all season: she accepts the offer and, on the same screen, picks the uniform size, the tracksuit size, the shoe size, her jersey number with a fallback, and the payment plan with its schedule written out. The last chapter is the club roster filling in, sizes and waivers already recorded, until it reads ten of ten.",
     audiences: ["clubs", "parents"],
     kind: "story",
     stage: "split",
-    durationLabel: "2 min",
+    durationLabel: "1 min 35 sec",
     status: "live",
     thumbEyebrow: "Story 1",
   },

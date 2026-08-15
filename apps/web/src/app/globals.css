@@ -429,6 +429,20 @@
     transform: translateY(0);
   }
 }
+/* Demo directory screen change. OPACITY ONLY, on purpose: the pointer
+   measures its target's box, so a screen that slid or scaled on the way in
+   would move the thing the cursor is already travelling towards. */
+.demo-fade-in {
+  animation: demo-fade-in 0.32s ease-out both;
+}
+@keyframes demo-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
 .live-caret::after {
   content: "";
   display: inline-block;
@@ -463,7 +477,8 @@
   }
   .live-pop,
   .live-row-in,
-  .live-ripple {
+  .live-ripple,
+  .demo-fade-in {
     animation: none;
   }
 }
