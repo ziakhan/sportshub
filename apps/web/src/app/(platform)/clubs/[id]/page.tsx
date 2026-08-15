@@ -1,7 +1,7 @@
 import { prisma } from "@youthbasketballhub/db"
 import Link from "next/link"
 import type { ReactNode } from "react"
-import { brandStyle } from "@/lib/club-page/brand"
+import { brandStyle, chosenBrandColor, NEUTRAL_BRAND } from "@/lib/club-page/brand"
 import { getSessionUserId } from "@/lib/auth-helpers"
 import { StatTile, AnimatedNumber, Button, PanelHeader } from "@/components/ui"
 import { SubmissionApprovals } from "./submission-approvals"
@@ -186,7 +186,7 @@ export default async function ClubOverviewPage({ params }: { params: { id: strin
   ]
 
   return (
-    <div className="font-barlow" style={brandStyle(data.primaryColor)}>
+    <div className="font-barlow" style={brandStyle(chosenBrandColor({ primaryColor: data.primaryColor }) ?? NEUTRAL_BRAND)}>
       {/* Top Stats */}
       <div className="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatTile

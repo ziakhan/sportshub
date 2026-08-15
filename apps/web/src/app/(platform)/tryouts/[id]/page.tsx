@@ -7,7 +7,7 @@ import type { ReactNode } from "react"
 import { formatCurrency } from "@/lib/countries"
 import { getRegistrationViewer } from "@/lib/registration/viewer"
 import { ProgramSignupForm } from "@/components/registration/program-signup-form"
-import { brandStyle } from "@/lib/club-page/brand"
+import { brandStyle, chosenBrandColor, NEUTRAL_BRAND } from "@/lib/club-page/brand"
 import { AnimatedNumber, Badge, Button, PanelHeader, SmartBack } from "@/components/ui"
 
 async function getTryout(id: string) {
@@ -57,7 +57,7 @@ export default async function TryoutDetailPage({ params }: { params: { id: strin
   const primaryColor = tryout.tenant.branding?.primaryColor || "#4f46e5"
 
   return (
-    <div className="font-barlow" style={brandStyle(primaryColor)}>
+    <div className="font-barlow" style={brandStyle(chosenBrandColor({ primaryColor }) ?? NEUTRAL_BRAND)}>
       {/* Club header */}
       <div className="border-b border-black/10" style={{ backgroundColor: "var(--brand)" }}>
         <div className="px-4 py-6 md:px-6">

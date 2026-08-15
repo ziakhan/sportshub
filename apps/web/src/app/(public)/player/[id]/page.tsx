@@ -95,7 +95,6 @@ export default async function PublicPlayerPage({ params }: { params: { id: strin
           ...(data.player.position ? [data.player.position] : []),
           ...(a ? [`${a.gamesPlayed} games`] : []),
         ]}
-        primaryColor={primaryTeam?.tenant?.branding?.primaryColor ?? "#4f46e5"}
         crestText={name.slice(0, 1)}
         className="mb-4"
       />

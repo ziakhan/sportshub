@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation"
 import { format } from "date-fns"
 import Link from "next/link"
+import { chosenBrandColor, NEUTRAL_BRAND } from "@/lib/club-page/brand"
 import { formatCurrency } from "@/lib/countries"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
@@ -71,7 +72,11 @@ export default async function PublicTryoutDetailPage({
       {/* Club header */}
       <div
         className="border-b"
-        style={{ backgroundColor: tryout.tenant.branding?.primaryColor || "#1a73e8" }}
+        style={{
+          backgroundColor:
+            chosenBrandColor({ primaryColor: tryout.tenant.branding?.primaryColor }) ??
+            NEUTRAL_BRAND,
+        }}
       >
         <div className="container mx-auto px-4 py-6">
           <SmartBack fallback="/events?type=tryouts" fallbackLabel="Events" tone="brand" className="mb-1" />

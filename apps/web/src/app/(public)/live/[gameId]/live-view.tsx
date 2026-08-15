@@ -177,7 +177,7 @@ export function LiveView({ gameId }: { gameId: string }) {
     )
   }
 
-  const { game, live, final, homeScore, awayScore, periodLabel, hasAnyStats, colorOf } = model
+  const { game, live, final, homeScore, awayScore, periodLabel, hasAnyStats } = model
 
   return (
     <div className="pb-10">
@@ -190,11 +190,7 @@ export function LiveView({ gameId }: { gameId: string }) {
           className="fixed inset-x-0 top-0 z-50 flex cursor-pointer items-center justify-center gap-3 px-4 py-2 text-white shadow-lg"
           style={{ background: "linear-gradient(120deg, var(--stage), var(--stage-2))" }}
         >
-          <Crest
-            color={colorOf(game.homeTeamId)}
-            size="h-6 w-6 text-[10px]"
-            text={monogram(game.homeTeamName)}
-          />
+          <Crest size="h-6 w-6 text-[10px]" text={monogram(game.homeTeamName)} />
           <span className="font-condensed text-xl font-semibold tabular-nums">
             <FlashNum value={homeScore} />
           </span>
@@ -204,11 +200,7 @@ export function LiveView({ gameId }: { gameId: string }) {
           <span className="font-condensed text-xl font-semibold tabular-nums">
             <FlashNum value={awayScore} />
           </span>
-          <Crest
-            color={colorOf(game.awayTeamId)}
-            size="h-6 w-6 text-[10px]"
-            text={monogram(game.awayTeamName)}
-          />
+          <Crest size="h-6 w-6 text-[10px]" text={monogram(game.awayTeamName)} />
         </button>
       )}
 

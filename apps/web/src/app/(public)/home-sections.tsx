@@ -1,6 +1,6 @@
 import Link from "next/link"
 import { format } from "date-fns"
-import { Badge, NewsCard, ScoreCard, SectionHeader } from "@/components/ui"
+import { Badge, Crest, NewsCard, ScoreCard, SectionHeader } from "@/components/ui"
 import { OverflowStrip } from "@/components/overflow-strip"
 import type { FeedItem, HighlightItem, ScoreboardGame } from "@/lib/queries/content"
 import type { SeasonLeaders } from "@/lib/queries/season-stats"
@@ -29,8 +29,8 @@ export function ScoreboardStrip({ games }: { games: ScoreboardGame[] }) {
             <Link key={g.id} href={`/live/${g.id}`} className="w-72 shrink-0">
               <ScoreCard
                 status={g.status}
-                home={{ name: g.home.name, color: g.home.color ?? undefined, score: g.home.score }}
-                away={{ name: g.away.name, color: g.away.color ?? undefined, score: g.away.score }}
+                home={{ name: g.home.name, score: g.home.score }}
+                away={{ name: g.away.name, score: g.away.score }}
                 dateLabel={format(new Date(g.dateISO), "EEE · h:mm a")}
                 venue={[g.leagueName, g.venue].filter(Boolean).join(" · ") || undefined}
                 className="hover:border-play-200 h-full transition-colors"
@@ -209,12 +209,7 @@ export function YourTeamsRail({ cards }: { cards: YourTeamCard[] }) {
           {cards.map((card) => (
             <div key={card.teamId} className="card-lift border-ink-100 shadow-soft rounded-[24px] border bg-white p-5">
               <Link href={`/team/${card.teamId}`} className="mb-4 flex items-center gap-3">
-                <span
-                  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-sm font-bold text-white"
-                  style={{ backgroundColor: card.color || "#4f46e5" }}
-                >
-                  {card.teamName.slice(0, 1)}
-                </span>
+                <Crest name={card.teamName} size="md" className="h-10 w-10 text-sm" />
                 <span className="min-w-0 flex-1">
                   <span className="text-ink-950 hover:text-play-600 block truncate font-bold transition-colors">
                     {card.teamName}

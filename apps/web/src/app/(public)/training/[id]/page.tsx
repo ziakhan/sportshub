@@ -6,7 +6,7 @@ import { formatCurrency } from "@/lib/countries"
 import { JsonLd, programEventJsonLd } from "@/lib/seo/jsonld"
 import { trackPublicView } from "@/lib/seo/track"
 import { Badge, Card, Button, AnimatedNumber, SmartBack } from "@/components/ui"
-import { brandStyle } from "@/lib/club-page/brand"
+import { brandStyle, chosenBrandColor, NEUTRAL_BRAND } from "@/lib/club-page/brand"
 import { VenueLink } from "@/components/venues/venue-link"
 import { formatTrainingSchedule, trainingTypeLabel, trainingSortDate } from "@/lib/training"
 import { getRegistrationViewer } from "@/lib/registration/viewer"
@@ -62,7 +62,11 @@ export default async function PublicTrainingDetailPage({ params }: { params: { i
   const isFull = !!session.capacity && session._count.signups >= session.capacity
   const spotsLeft = session.capacity ? session.capacity - session._count.signups : null
   const currency = session.tenant.currency || "CAD"
-  const primaryColor = session.tenant.branding?.primaryColor || "#1a73e8"
+  // Neutral by default, brand by choice (owner ruling 2026-08-14): a program
+  // page wears its club's colour only if the club picked one. Every imported
+  // club still carries the default hex, which reads as neutral navy here.
+  const primaryColor =
+    chosenBrandColor({ primaryColor: session.tenant.branding?.primaryColor }) ?? NEUTRAL_BRAND
   const scheduleText = formatTrainingSchedule(session)
 
   const infoTile = "rounded-2xl border border-[color:var(--brand-line)] bg-[var(--brand-softer)] p-4"

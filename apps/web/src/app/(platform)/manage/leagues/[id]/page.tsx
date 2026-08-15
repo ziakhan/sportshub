@@ -5,7 +5,7 @@ import { useParams, useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { format } from "date-fns"
 import { LeagueScoringSettings } from "@/components/scoring/league-scoring-settings"
-import { brandStyle } from "@/lib/club-page/brand"
+import { brandStyle, chosenBrandColor, NEUTRAL_BRAND } from "@/lib/club-page/brand"
 import { renewableSeason } from "@/lib/leagues/renewal"
 import {
   StatTile,
@@ -264,7 +264,7 @@ function LeagueDashboard() {
   return (
     <div
       className="font-barlow space-y-6 p-6 md:p-8"
-      style={brandStyle(league.primaryColor || "#4f46e5")}
+      style={brandStyle(chosenBrandColor({ primaryColor: league.primaryColor }) ?? NEUTRAL_BRAND)}
     >
       <div className="mb-2">
         <SmartBack fallback="/manage/leagues" fallbackLabel="Leagues" className="-ml-1" />

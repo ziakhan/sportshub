@@ -35,8 +35,8 @@ function GameCard({ g }: { g: any }) {
   const card = (
     <ScoreCard
       status={status as any}
-      home={{ name: g.homeTeam.name, color: g.homeTeam.tenant?.branding?.primaryColor, score: g.homeScore }}
-      away={{ name: g.awayTeam.name, color: g.awayTeam.tenant?.branding?.primaryColor, score: g.awayScore }}
+      home={{ name: g.homeTeam.name, score: g.homeScore }}
+      away={{ name: g.awayTeam.name, score: g.awayScore }}
       dateLabel={status === "SCHEDULED" ? format(new Date(g.scheduledAt), "h:mm a") : undefined}
       venue={[g.season?.league?.name, g.venue?.name].filter(Boolean).join(" · ") || undefined}
       className="hover:border-play-200 h-full transition-colors"

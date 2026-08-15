@@ -12,21 +12,18 @@ import type { GameModel } from "./model"
  */
 
 function CompareRow({
-  model,
   label,
   h,
   a,
   displayH,
   displayA,
 }: {
-  model: GameModel
   label: string
   h: number
   a: number
   displayH?: string
   displayA?: string
 }) {
-  const { homeColor, awayColor } = model
   const total = h + a
   const hShare = total === 0 ? 50 : (h / total) * 100
   const hWins = h > a
@@ -67,19 +64,15 @@ function CompareRow({
       <div className="mt-2 flex h-3 items-center gap-1">
         <div className="bg-ink-100 flex flex-1 justify-end overflow-hidden rounded-l-full">
           <span
-            className="h-3 rounded-l-full transition-all duration-500"
-            style={{ width: `${hShare}%`, backgroundColor: homeColor, opacity: hWins ? 1 : 0.4 }}
+            className="bg-ink-700 h-3 rounded-l-full transition-all duration-500"
+            style={{ width: `${hShare}%`, opacity: hWins ? 1 : 0.35 }}
           />
         </div>
         <span className="bg-ink-300 h-3 w-px shrink-0" />
         <div className="bg-ink-100 flex flex-1 overflow-hidden rounded-r-full">
           <span
-            className="h-3 rounded-r-full transition-all duration-500"
-            style={{
-              width: `${100 - hShare}%`,
-              backgroundColor: awayColor,
-              opacity: aWins ? 1 : 0.4,
-            }}
+            className="bg-ink-700 h-3 rounded-r-full transition-all duration-500"
+            style={{ width: `${100 - hShare}%`, opacity: aWins ? 1 : 0.35 }}
           />
         </div>
       </div>
@@ -91,12 +84,12 @@ const shooting = (m: number, at: number) =>
   at === 0 ? "0-0" : `${m}-${at} · ${Math.round((m / at) * 100)}%`
 
 export function TeamStatsTab({ model }: { model: GameModel }) {
-  const { game, teamAgg, colorOf, homeColor, awayColor, homeScore, awayScore } = model
+  const { game, teamAgg, homeScore, awayScore } = model
   const H = teamAgg(game.homeTeamId)
   const A = teamAgg(game.awayTeamId)
   const pct = (m: number, at: number) => (at === 0 ? 0 : m / at)
   const row = (label: string, h: number, a: number, dh?: string, da?: string) => (
-    <CompareRow key={label} model={model} label={label} h={h} a={a} displayH={dh} displayA={da} />
+    <CompareRow key={label} label={label} h={h} a={a} displayH={dh} displayA={da} />
   )
 
   return (
@@ -107,8 +100,8 @@ export function TeamStatsTab({ model }: { model: GameModel }) {
       <div className="border-ink-100 flex items-center justify-between gap-3 border-b px-4 py-4">
         <div className="flex min-w-0 flex-1 items-center gap-2.5">
           <Crest
-            color={colorOf(game.homeTeamId)}
             size="h-10 w-10 text-[13px]"
+            surface="light"
             text={monogram(game.homeTeamName)}
           />
           <div className="min-w-0">
@@ -116,8 +109,9 @@ export function TeamStatsTab({ model }: { model: GameModel }) {
               {game.homeTeamName}
             </p>
             <p
-              className="font-condensed text-[24px] font-bold leading-none tracking-[-0.01em] tabular-nums"
-              style={{ color: homeColor }}
+              className={`font-condensed text-[24px] font-bold leading-none tracking-[-0.01em] tabular-nums ${
+                homeScore >= awayScore ? "text-ink-950" : "text-ink-400"
+              }`}
             >
               {homeScore}
             </p>
@@ -125,8 +119,8 @@ export function TeamStatsTab({ model }: { model: GameModel }) {
         </div>
         <div className="flex min-w-0 flex-1 flex-row-reverse items-center gap-2.5 text-right">
           <Crest
-            color={colorOf(game.awayTeamId)}
             size="h-10 w-10 text-[13px]"
+            surface="light"
             text={monogram(game.awayTeamName)}
           />
           <div className="min-w-0">
@@ -134,8 +128,9 @@ export function TeamStatsTab({ model }: { model: GameModel }) {
               {game.awayTeamName}
             </p>
             <p
-              className="font-condensed text-[24px] font-bold leading-none tracking-[-0.01em] tabular-nums"
-              style={{ color: awayColor }}
+              className={`font-condensed text-[24px] font-bold leading-none tracking-[-0.01em] tabular-nums ${
+                awayScore >= homeScore ? "text-ink-950" : "text-ink-400"
+              }`}
             >
               {awayScore}
             </p>

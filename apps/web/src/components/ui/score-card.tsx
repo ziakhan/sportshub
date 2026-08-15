@@ -1,14 +1,12 @@
 import Link from "next/link"
 import { cn } from "./cn"
 import { Badge } from "./badge"
-import { monogram } from "@/lib/content/matchup-cover"
+import { Crest } from "./crest"
 
 export type GameStatus = "SCHEDULED" | "LIVE" | "FINAL" | "CANCELLED" | "DEFAULTED"
 
 interface Side {
   name: string
-  /** Brand color for the team chip. */
-  color?: string
   score?: number | null
 }
 
@@ -43,17 +41,10 @@ function TeamRow({ side, decided, won }: { side: Side; decided: boolean; won: bo
   return (
     <div className="flex items-center justify-between gap-3">
       <div className="flex min-w-0 items-center gap-2.5">
-        {/* Monogram crest until clubs upload real logos */}
-        <span
-          className={cn(
-            "flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-[10px] font-extrabold text-white shadow-sm",
-            decided && !won && "opacity-60"
-          )}
-          style={{ backgroundColor: side.color || "#4f46e5" }}
-          aria-hidden="true"
-        >
-          {monogram(side.name)}
-        </span>
+        {/* Neutral monogram crest (owner ruling 2026-08-14): a score card is a
+            summary, so identity is carried by the name and the winner's weight,
+            never by a colour a club was assigned rather than chose. */}
+        <Crest name={side.name} size="sm" className={cn(decided && !won && "opacity-60")} />
         <span
           className={cn(
             "truncate text-base",

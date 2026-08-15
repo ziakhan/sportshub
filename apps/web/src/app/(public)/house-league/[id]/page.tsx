@@ -9,7 +9,7 @@ import { getRegistrationViewer } from "@/lib/registration/viewer"
 import { JsonLd, programEventJsonLd } from "@/lib/seo/jsonld"
 import { trackPublicView } from "@/lib/seo/track"
 import { AnimatedNumber, Badge, Button, Card, PanelHeader, SmartBack } from "@/components/ui"
-import { brandStyle } from "@/lib/club-page/brand"
+import { brandStyle, chosenBrandColor, NEUTRAL_BRAND } from "@/lib/club-page/brand"
 import { VenueLink } from "@/components/venues/venue-link"
 import { ProgramSignupForm } from "@/components/registration/program-signup-form"
 
@@ -51,7 +51,11 @@ export default async function PublicHouseLeaguePage({ params }: { params: { id: 
   const isFull = league.maxParticipants !== null && league._count.signups >= league.maxParticipants
   const spotsLeft = league.maxParticipants ? league.maxParticipants - league._count.signups : null
   const currency = league.tenant.currency || "CAD"
-  const primaryColor = league.tenant.branding?.primaryColor || "#1a73e8"
+  // Neutral by default, brand by choice (owner ruling 2026-08-14): a program
+  // page wears its club's colour only if the club picked one. Every imported
+  // club still carries the default hex, which reads as neutral navy here.
+  const primaryColor =
+    chosenBrandColor({ primaryColor: league.tenant.branding?.primaryColor }) ?? NEUTRAL_BRAND
 
   const included = [
     league.includesUniform && "Uniform (Shirt + Shorts)",

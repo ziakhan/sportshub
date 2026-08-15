@@ -11,7 +11,7 @@ import type { LeaderEntry } from "./types"
 /**
  * Game leaders as face-off cards, not list rows. A youth game page is the
  * keepsake a parent opens after the final buzzer — the kid's line deserves a
- * scoreboard-sized number and their team's colour, not 13px body text.
+ * scoreboard-sized number, not 13px body text.
  * `won` gets a stronger tint so the better line reads first.
  *
  * The two players always sit SIDE BY SIDE (2026-08-14): stacked cards cost
@@ -36,8 +36,7 @@ function LeaderCell({
   won: boolean
   mirror?: boolean
 }) {
-  const { colorOf, jerseyOf, shortName } = model
-  const color = colorOf(teamId)
+  const { jerseyOf, shortName } = model
   if (!entry) {
     return (
       <div className="border-ink-100 text-ink-300 flex min-w-0 flex-1 items-center justify-center rounded-2xl border border-dashed py-6 text-xs">
@@ -48,20 +47,17 @@ function LeaderCell({
   return (
     <div
       // Tint history: 8%/3% read as almost nothing, 17%/9% was a touch hot.
-      // Settled at 14%/8% (tester 2026-08-13, "ever so slightly" dimmer).
+      // Settled at two ink steps (owner ruling 2026-08-14) — the better line
+      // still sits on the stronger wash, without a club colour deciding it.
       className={`flex min-w-0 flex-1 items-center gap-2 rounded-2xl p-2 md:gap-3 md:p-3 ${
         mirror ? "md:flex-row-reverse md:text-right" : ""
-      }`}
-      style={{ backgroundColor: `${color}${won ? "24" : "14"}` }}
+      } ${won ? "bg-ink-100" : "bg-ink-50"}`}
     >
       {/* The badge stands in for a headshot: players have no photo field, and
           the platform's own rule is "real mark, else branded monogram". The
           jersey number is how you identify a kid from the stands anyway — and
           if photos ever ship, this circle becomes the photo slot unchanged. */}
-      <span
-        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[13px] font-bold text-white shadow-md ring-2 ring-white/60 md:h-12 md:w-12 md:text-[15px]"
-        style={{ backgroundColor: color }}
-      >
+      <span className="bg-ink-800 flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[13px] font-bold text-white shadow-md ring-2 ring-white/60 md:h-12 md:w-12 md:text-[15px]">
         {jerseyOf(entry.l.playerId)
           ? `${jerseyOf(entry.l.playerId)}`
           : monogram(shortName(entry.l.playerId))}

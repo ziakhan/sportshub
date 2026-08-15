@@ -26,9 +26,9 @@ export default function StyleGuidePage() {
   )
 
   const standings = [
-    { rank: 1, name: "Riverside Raptors", color: "#e33612", wins: 8, losses: 2, pct: 0.8, gamesBack: "—", streak: "W3" },
-    { rank: 2, name: "Metro Hawks", color: "#4f46e5", wins: 7, losses: 3, pct: 0.7, gamesBack: 1, streak: "W1" },
-    { rank: 3, name: "Lakeside Kings", color: "#16a34a", wins: 5, losses: 5, pct: 0.5, gamesBack: 3, streak: "L2" },
+    { rank: 1, name: "Riverside Raptors", wins: 8, losses: 2, pct: 0.8, gamesBack: "—", streak: "W3" },
+    { rank: 2, name: "Metro Hawks", wins: 7, losses: 3, pct: 0.7, gamesBack: 1, streak: "W1" },
+    { rank: 3, name: "Lakeside Kings", wins: 5, losses: 5, pct: 0.5, gamesBack: 3, streak: "L2" },
   ]
 
   return (
@@ -76,7 +76,6 @@ export default function StyleGuidePage() {
             name="Riverside Raptors"
             subtitle="Metro League · U14 Boys"
             meta={["8–2", "2nd in East", "Riverside Basketball Club"]}
-            primaryColor="#e33612"
             crestText="R"
             action={
               <button className="bg-ink-950 rounded-2xl px-4 py-2 text-sm font-semibold text-white">
@@ -93,21 +92,21 @@ export default function StyleGuidePage() {
                   <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                     <ScoreCard
                       status="FINAL"
-                      away={{ name: "Wolves", color: "#4f46e5", score: 68 }}
-                      home={{ name: "Riverside Raptors", color: "#e33612", score: 72 }}
+                      away={{ name: "Wolves", score: 68 }}
+                      home={{ name: "Riverside Raptors", score: 72 }}
                       venue="Maple Gym · Court 2"
                       highlightsHref="#"
                     />
                     <ScoreCard
                       status="LIVE"
-                      away={{ name: "Kings", color: "#16a34a", score: 41 }}
-                      home={{ name: "Riverside Raptors", color: "#e33612", score: 39 }}
+                      away={{ name: "Kings", score: 41 }}
+                      home={{ name: "Riverside Raptors", score: 39 }}
                       venue="Central HS"
                     />
                     <ScoreCard
                       status="SCHEDULED"
-                      away={{ name: "Hawks", color: "#4f46e5" }}
-                      home={{ name: "Riverside Raptors", color: "#e33612" }}
+                      away={{ name: "Hawks"}}
+                      home={{ name: "Riverside Raptors"}}
                       dateLabel="Sat · 2:00 PM"
                       venue="Maple Gym · Court 1"
                     />

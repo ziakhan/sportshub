@@ -2,6 +2,7 @@ import Link from "next/link"
 import { redirect } from "next/navigation"
 import { prisma } from "@youthbasketballhub/db"
 import { getCurrentUser } from "@/lib/auth-helpers"
+import { Crest } from "@/components/ui"
 
 export const dynamic = "force-dynamic"
 
@@ -117,12 +118,12 @@ export default async function MyTeamsPage() {
                     href={`/team/${row.team.id}`}
                     className="border-ink-100 shadow-soft hover:border-play-200 group flex items-center gap-4 rounded-2xl border bg-white p-5 transition"
                   >
-                    <span
-                      className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-sm font-bold text-white"
-                      style={{ backgroundColor: row.team.tenant?.branding?.primaryColor || "#4f46e5" }}
-                    >
-                      {row.jersey ?? row.team.name.slice(0, 1)}
-                    </span>
+                    <Crest
+                      name={row.team.name}
+                      text={row.jersey ?? undefined}
+                      size="md"
+                      className="h-11 w-11 text-sm"
+                    />
                     <span className="min-w-0 flex-1">
                       <span className="text-ink-950 group-hover:text-play-600 block truncate font-semibold transition-colors">
                         {row.team.name}
@@ -149,12 +150,7 @@ export default async function MyTeamsPage() {
                     key={`${r.team.id}-${i}`}
                     className="border-ink-100 shadow-soft flex items-center gap-4 rounded-2xl border bg-white p-5"
                   >
-                    <span
-                      className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-sm font-bold text-white"
-                      style={{ backgroundColor: r.team.tenant?.branding?.primaryColor || "#4f46e5" }}
-                    >
-                      {r.team.name.slice(0, 1)}
-                    </span>
+                    <Crest name={r.team.name} size="md" className="h-11 w-11 text-sm" />
                     <span className="min-w-0 flex-1">
                       <span className="text-ink-950 block truncate font-semibold">{r.team.name}</span>
                       <span className="text-ink-500 block truncate text-sm">

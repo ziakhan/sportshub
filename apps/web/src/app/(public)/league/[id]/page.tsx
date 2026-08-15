@@ -22,7 +22,7 @@ import {
   StandingsTable,
 } from "@/components/ui"
 import { socialLinks } from "@/lib/club-page/blocks"
-import { brandStyle } from "@/lib/club-page/brand"
+import { brandStyle, chosenBrandColor, NEUTRAL_BRAND } from "@/lib/club-page/brand"
 import { FollowButton } from "@/components/follow-button"
 import { perkLabel } from "@/lib/leagues/perks"
 import { PUBLISHED_GAME } from "@/lib/games/visibility"
@@ -92,6 +92,12 @@ export default async function PublicLeagueHubPage({ params }: { params: { id: st
         socials: season.league?.socials ?? rawBrand.socials,
       }
     : null
+  // Neutral by default, brand by choice (owner ruling 2026-08-14). A league
+  // hub is the operator's own page, so a colour it deliberately set still runs
+  // here; a league still wearing the schema default goes navy like everyone
+  // else. Leagues have no claim status, so the default hex is the whole test.
+  const leagueBrand = chosenBrandColor({ primaryColor: brand?.primaryColor })
+  const accent = leagueBrand ?? NEUTRAL_BRAND
   const runBy = season.league?.organization ?? null
 
   const session = await getServerSession(authOptions).catch(() => null)
@@ -195,7 +201,7 @@ export default async function PublicLeagueHubPage({ params }: { params: { id: st
   return (
     <div
       className="container font-barlow mx-auto px-4 py-10 sm:px-6"
-      style={brandStyle(brand?.primaryColor)}
+      style={brandStyle(accent)}
     >
       {isDemo && (
         <>
@@ -249,9 +255,11 @@ export default async function PublicLeagueHubPage({ params }: { params: { id: st
               {/* Crest: the logo when there is one, otherwise the league colour
                   carrying its initial (same rule as EntityHeader). */}
               <span
-                className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-2xl text-2xl font-black text-white shadow-lg sm:h-24 sm:w-24 sm:text-3xl"
+                className={`flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-2xl text-2xl font-black shadow-lg sm:h-24 sm:w-24 sm:text-3xl ${
+                  brand?.logoUrl || leagueBrand ? "text-white" : "bg-ink-100 text-ink-700"
+                }`}
                 style={{
-                  backgroundColor: brand?.logoUrl ? "#ffffff" : brand?.primaryColor || "#1d4ed8",
+                  backgroundColor: brand?.logoUrl ? "#ffffff" : leagueBrand ?? undefined,
                 }}
               >
                 {brand?.logoUrl ? (
@@ -358,11 +366,12 @@ export default async function PublicLeagueHubPage({ params }: { params: { id: st
               ))}
             </div>
           </div>
-          {/* The baseline: the league's own colour, 4px along the bottom edge. */}
+          {/* The baseline, 4px along the bottom edge: the league's own colour
+              when it picked one, navy otherwise. */}
           <span
             aria-hidden="true"
-            className="absolute inset-x-0 bottom-0 z-10 h-1"
-            style={{ backgroundColor: brand?.primaryColor || "#1d4ed8" }}
+            className={`absolute inset-x-0 bottom-0 z-10 h-1 ${leagueBrand ? "" : "bg-navy-900"}`}
+            style={leagueBrand ? { backgroundColor: leagueBrand } : undefined}
           />
         </div>
       </header>
@@ -401,8 +410,8 @@ export default async function PublicLeagueHubPage({ params }: { params: { id: st
                   <Link key={g.id} href={`/live/${g.id}`} className="block">
                     <ScoreCard
                       status="LIVE"
-                      home={{ name: g.homeTeam.name, color: g.homeTeam.tenant?.branding?.primaryColor, score: g.homeScore }}
-                      away={{ name: g.awayTeam.name, color: g.awayTeam.tenant?.branding?.primaryColor, score: g.awayScore }}
+                      home={{ name: g.homeTeam.name, score: g.homeScore }}
+                      away={{ name: g.awayTeam.name, score: g.awayScore }}
                       venue={g.venue?.name}
                       className="hover:border-play-200 transition-colors"
                     />
@@ -412,8 +421,8 @@ export default async function PublicLeagueHubPage({ params }: { params: { id: st
                   <Link key={g.id} href={`/live/${g.id}`} className="block">
                     <ScoreCard
                       status="SCHEDULED"
-                      home={{ name: g.homeTeam.name, color: g.homeTeam.tenant?.branding?.primaryColor }}
-                      away={{ name: g.awayTeam.name, color: g.awayTeam.tenant?.branding?.primaryColor }}
+                      home={{ name: g.homeTeam.name}}
+                      away={{ name: g.awayTeam.name}}
                       dateLabel={format(new Date(g.scheduledAt), "EEE MMM d · h:mm a")}
                       venue={g.venue?.name}
                       className="hover:border-play-200 transition-colors"
@@ -424,8 +433,8 @@ export default async function PublicLeagueHubPage({ params }: { params: { id: st
                   <Link key={g.id} href={`/live/${g.id}`} className="block">
                     <ScoreCard
                       status="FINAL"
-                      home={{ name: g.homeTeam.name, color: g.homeTeam.tenant?.branding?.primaryColor, score: g.homeScore }}
-                      away={{ name: g.awayTeam.name, color: g.awayTeam.tenant?.branding?.primaryColor, score: g.awayScore }}
+                      home={{ name: g.homeTeam.name, score: g.homeScore }}
+                      away={{ name: g.awayTeam.name, score: g.awayScore }}
                       venue={g.venue?.name}
                       className="hover:border-play-200 transition-colors"
                     />

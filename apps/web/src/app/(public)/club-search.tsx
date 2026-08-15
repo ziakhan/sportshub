@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react"
 import Link from "next/link"
+import { Crest } from "@/components/ui"
 
 interface Club {
   id: string
@@ -132,12 +133,7 @@ export function ClubSearch() {
                 className="border-ink-100 hover:bg-ink-50 flex w-full items-center justify-between border-b px-4 py-3 text-left transition last:border-0"
               >
                 <div className="flex items-center gap-3">
-                  <div
-                    className="flex h-10 w-10 items-center justify-center rounded-2xl text-xs font-bold text-white shadow-sm"
-                    style={{ backgroundColor: club.primaryColor }}
-                  >
-                    {club.name[0]}
-                  </div>
+                  <Crest name={club.name} size="md" className="h-10 w-10 rounded-2xl text-xs shadow-sm" />
                   <div>
                     <div className="text-ink-950 font-semibold">{club.name}</div>
                     <div className="text-ink-500 text-xs">
@@ -175,7 +171,7 @@ export function ClubSearch() {
               href={`/club/${club.slug}`}
               className="card-lift border-ink-100 shadow-soft overflow-hidden rounded-3xl border bg-white"
             >
-              <div className="h-2" style={{ backgroundColor: club.primaryColor }} />
+              <div className="bg-navy-900 h-2" />
               <div className="p-5">
                 <div className="mb-1">
                   <h3 className="text-ink-950 font-semibold">{club.name}</h3>

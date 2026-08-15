@@ -1,12 +1,12 @@
 import Link from "next/link"
 import { cn } from "./cn"
+import { Crest } from "./crest"
 
 export interface StandingsRow {
   rank: number
   name: string
   /** Team hub link — names render as anchors when present. */
   href?: string
-  color?: string
   wins: number
   losses: number
   /** Win percentage 0–1; rendered as .XXX. Optional. */
@@ -71,11 +71,11 @@ export function StandingsTable({ rows, highlightLeaders = 1, className }: Standi
                       >
                         {row.rank}
                       </span>
-                      <span
-                        className="h-5 w-5 shrink-0 rounded-md"
-                        style={{ backgroundColor: row.color || "#4f46e5" }}
-                        aria-hidden="true"
-                      />
+                      {/* Neutral monogram, not a colour swatch (owner ruling
+                          2026-08-14): a column of assigned colours told a
+                          reader nothing, and initials at least identify a club
+                          the way a real standings sheet does. */}
+                      <Crest name={row.name} size="xs" />
                       {row.href ? (
                         <Link
                           href={row.href}

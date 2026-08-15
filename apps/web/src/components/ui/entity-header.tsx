@@ -1,5 +1,7 @@
 import type { ReactNode } from "react"
 import { cn } from "./cn"
+import { Crest } from "./crest"
+import { brandTokens } from "@/lib/club-page/brand"
 import { CourtBackdropLayer } from "./court-backdrop"
 
 interface EntityHeaderProps {
@@ -8,8 +10,13 @@ interface EntityHeaderProps {
   subtitle?: string
   /** Chips rendered under the title, e.g. ["8–2", "2nd in East"]. */
   meta?: string[]
-  /** Brand color for the crest and the baseline stripe (club/team primary). */
-  primaryColor?: string
+  /**
+   * Brand colour for the crest and the baseline stripe, and ONLY when this
+   * header sits on the entity's own hub page and the entity actually picked a
+   * colour. Pass `chosenBrandColor(...)` from lib/club-page/brand, never a raw
+   * `primaryColor`. Left unset the header is neutral, which is the default.
+   */
+  brandColor?: string | null
   logoUrl?: string | null
   /** Fallback crest text when no logo (usually first initial). */
   crestText?: string
@@ -19,25 +26,30 @@ interface EntityHeaderProps {
 }
 
 /**
- * The branded banner atop every "hub" page (club / league / team / player).
- * Provides a consistent identity block: crest, name, context, meta chips, and
- * an action.
+ * The banner atop every "hub" page (club / league / team / player). Provides a
+ * consistent identity block: crest, name, context, meta chips, and an action.
  *
- * Court system v2, screen 03 of the approved mock: the header now stands on
- * the daylight floor (maple planks, warm wash, the court cropping in from the
- * top-right at 15%) instead of a dark gradient, and the entity's own colour
- * carries the crest plus the 4px baseline stripe along the bottom edge.
+ * Court system v2, screen 03 of the approved mock: the header stands on the
+ * daylight floor (maple planks, warm wash, the court cropping in from the
+ * top-right at 15%), with a 4px baseline along the bottom edge.
+ *
+ * Neutral by default (owner ruling 2026-08-14): everyone gets the same
+ * treatment and the baseline is navy. A colour only appears when the caller
+ * hands over a `brandColor` it already vetted — the entity's own page, and the
+ * entity chose the colour. A team or player page shows its club's identity
+ * through the crest and the name, not through a fill.
  */
 export function EntityHeader({
   name,
   subtitle,
   meta,
-  primaryColor = "#4f46e5",
+  brandColor,
   logoUrl,
   crestText,
   action,
   className,
 }: EntityHeaderProps) {
+  const baseline = brandColor ? brandTokens(brandColor).brand : null
   return (
     <div
       className={cn(
@@ -47,17 +59,14 @@ export function EntityHeader({
     >
       <CourtBackdropLayer variant="daylight" intensity="band" />
       <div className="relative z-10 flex flex-wrap items-center gap-5 p-6 pb-7 sm:p-8 sm:pb-9">
-        <span
-          className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-2xl text-2xl font-black text-white shadow-lg"
-          style={logoUrl ? { backgroundColor: "#ffffff" } : { backgroundColor: primaryColor }}
-        >
-          {logoUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={logoUrl} alt={`${name} logo`} className="h-full w-full object-cover" />
-          ) : (
-            (crestText || name.slice(0, 1)).toUpperCase()
-          )}
-        </span>
+        <Crest
+          name={name}
+          text={(crestText || name.slice(0, 1)).toUpperCase()}
+          logoUrl={logoUrl}
+          brandColor={brandColor}
+          size="xl"
+          className="shadow-lg"
+        />
         {/* min-w keeps the name column readable: on a phone the action wraps to
             its own line instead of squeezing the title into three words. */}
         <div className="min-w-[15rem] flex-1">
@@ -80,11 +89,12 @@ export function EntityHeader({
         </div>
         {action && <div className="shrink-0">{action}</div>}
       </div>
-      {/* The baseline: the entity's own colour, 4px along the bottom edge. */}
+      {/* The baseline, 4px along the bottom edge: navy unless this entity
+          picked a colour for its own page. */}
       <span
         aria-hidden="true"
-        className="absolute inset-x-0 bottom-0 z-10 h-1"
-        style={{ backgroundColor: primaryColor }}
+        className={cn("absolute inset-x-0 bottom-0 z-10 h-1", !baseline && "bg-navy-900")}
+        style={baseline ? { backgroundColor: baseline } : undefined}
       />
     </div>
   )

@@ -5,7 +5,7 @@ import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { format } from "date-fns"
 import { formatCurrency } from "@/lib/countries"
-import { Badge, StarRating } from "@/components/ui"
+import { Badge, Crest, StarRating } from "@/components/ui"
 import type { EventItem } from "./page"
 
 type EventType = "all" | "tryouts" | "house-leagues" | "camps" | "training" | "tournaments"
@@ -163,13 +163,15 @@ export function EventsBrowser({
                 href={event.href}
                 className="card-lift group flex flex-col overflow-hidden rounded-[28px] border border-ink-100 bg-white shadow-soft"
               >
-                {/* Branded cover — no photos exist for programs, so the club's
-                    own colour and crest do the work (same idea as the recap
-                    matchup covers). Gives the grid the visual pull it lacked. */}
+                {/* Cover art — no photos exist for programs, so the crest does
+                    the work on the arena wash (same idea as the recap matchup
+                    covers). Neutral, not the club's colour: a browse grid is a
+                    list (owner ruling 2026-08-14). */}
                 <div
                   className="relative h-28 overflow-hidden"
                   style={{
-                    background: `linear-gradient(125deg, ${event.primaryColor}, ${event.primaryColor}b0 55%, rgba(15,23,42,0.88))`,
+                    background:
+                      "linear-gradient(125deg, var(--stage-2), var(--stage) 55%, rgba(15,23,42,0.88))",
                   }}
                 >
                   <span className="pointer-events-none absolute -right-6 -top-8 h-32 w-32 rounded-full bg-white/15 blur-2xl" />
@@ -214,16 +216,16 @@ export function EventsBrowser({
                     {event.name}
                   </h3>
 
-                  {/* Club carries its own crest and colour — families choosing
-                      between two camps are largely choosing between two clubs. */}
+                  {/* The club's crest rides along — families choosing between
+                      two camps are largely choosing between two clubs. */}
                   {event.clubName && (
                     <div className="mt-2 flex items-center gap-2">
-                      <span
-                        className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-[10px] font-black text-white"
-                        style={{ backgroundColor: event.primaryColor }}
-                      >
-                        {crestOf(event.clubName)}
-                      </span>
+                      <Crest
+                        name={event.clubName}
+                        text={crestOf(event.clubName)}
+                        size="sm"
+                        className="h-7 w-7 text-[10px]"
+                      />
                       <span className="min-w-0 flex-1">
                         <span className="text-ink-800 block truncate text-[13px] font-bold">
                           {event.clubName}

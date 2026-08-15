@@ -2,7 +2,7 @@ import { prisma } from "@youthbasketballhub/db"
 import { headers } from "next/headers"
 import { notFound, redirect } from "next/navigation"
 import { getCurrentUser } from "@/lib/auth-helpers"
-import { brandStyle } from "@/lib/club-page/brand"
+import { brandStyle, chosenBrandColor, NEUTRAL_BRAND } from "@/lib/club-page/brand"
 import { coachedTeams } from "@/lib/authz/team-scope"
 import { ClubTabs } from "./club-tabs"
 import { PRIMARY_DOMAIN } from "@/lib/domains"
@@ -147,7 +147,7 @@ export default async function ClubLayout({
       ]
 
   return (
-    <div className="font-barlow" style={brandStyle(primaryColor)}>
+    <div className="font-barlow" style={brandStyle(chosenBrandColor({ primaryColor }) ?? NEUTRAL_BRAND)}>
       <div className="border-ink-200 border-b bg-white">
         <div className="px-4 md:px-6">
           <div className="flex items-start gap-3 py-4">

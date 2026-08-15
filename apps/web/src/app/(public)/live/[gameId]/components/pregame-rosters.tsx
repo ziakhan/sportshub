@@ -54,7 +54,7 @@ function RosterTable({ model, teamId }: { model: GameModel; teamId: string }) {
 }
 
 export function PregameRosters({ model }: { model: GameModel }) {
-  const { game, colorOf } = model
+  const { game } = model
   return (
     <>
       <div className="border-ink-100 rounded-2xl border bg-white p-6 text-center">
@@ -72,11 +72,10 @@ export function PregameRosters({ model }: { model: GameModel }) {
           ] as Array<[string, string]>
         ).map(([tid, tname]) => (
           <div key={tid} className="border-ink-100 overflow-hidden rounded-2xl border bg-white">
-            <div
-              className="flex items-center gap-2.5 px-4 py-2.5 text-sm font-extrabold text-white"
-              style={{ backgroundColor: colorOf(tid) }}
-            >
-              <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-white/25 text-[11px]">
+            {/* Ink header, not the club's colour (owner ruling 2026-08-14) —
+                the two cards are told apart by their names. */}
+            <div className="bg-ink-800 flex items-center gap-2.5 px-4 py-2.5 text-sm font-bold text-white">
+              <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-white/15 text-[11px]">
                 {monogram(tname)}
               </span>
               <Link href={`/team/${tid}`} className="truncate hover:underline">

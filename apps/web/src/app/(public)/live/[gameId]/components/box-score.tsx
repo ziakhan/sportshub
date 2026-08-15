@@ -37,7 +37,7 @@ export function BoxScore({
   onSide: (side: "home" | "away") => void
   stickyTopClass?: string
 }) {
-  const { game, colorOf } = model
+  const { game } = model
   const teamId = side === "home" ? game.homeTeamId : game.awayTeamId
 
   return (
@@ -59,24 +59,22 @@ export function BoxScore({
             const tid = s === "home" ? game.homeTeamId : game.awayTeamId
             const tname = s === "home" ? game.homeTeamName : game.awayTeamName
             const on = side === s
-            const color = colorOf(tid)
             return (
               <button
                 key={s}
                 onClick={() => onSide(s)}
                 aria-pressed={on}
                 className={`flex min-h-[44px] flex-1 cursor-pointer items-center justify-center gap-2 truncate rounded-lg px-2.5 py-2 text-[13px] font-semibold transition-colors sm:px-3 sm:text-[13.5px] ${
-                  on ? "text-white shadow-sm" : "hover:bg-white/70"
+                  on ? "bg-ink-900 text-white shadow-sm" : "text-ink-600 hover:bg-white/70"
                 }`}
-                style={on ? { backgroundColor: color } : { color }}
               >
                 {/* The score is dropped — it is already large in the hero right
-                    above. Colour does the identifying instead: the idle team
-                    wears its own colour as text with a dot, the active one
-                    fills with it (tester 2026-08-13). */}
+                    above. The SELECTED state does the identifying: a solid ink
+                    fill, not a club colour (owner ruling 2026-08-14). */}
                 <span
-                  className="h-2.5 w-2.5 shrink-0 rounded-full"
-                  style={{ backgroundColor: on ? "#ffffff" : color }}
+                  className={`h-2.5 w-2.5 shrink-0 rounded-full ${
+                    on ? "bg-white" : "bg-ink-300"
+                  }`}
                 />
                 {/* Full name, not an abbreviation — this switcher decides which
                     roster you are looking at, so it must be plain. */}
@@ -100,13 +98,11 @@ const CELL = "px-1 text-right sm:px-1.5"
 function StatRow({
   model,
   l,
-  teamColor,
   isTop,
   showMin,
 }: {
   model: GameModel
   l: PlayerLine
-  teamColor: string
   isTop: boolean
   showMin: boolean
 }) {
@@ -116,10 +112,11 @@ function StatRow({
       className="border-ink-50 hover:bg-ink-50 md:even:bg-ink-50/60 md:hover:bg-ink-100/70 border-t transition-colors"
       // The leading scorer's row is the one a parent scans for. A wash alone
       // was losing to the even-row zebra on desktop (audit 2026-08-14), so it
-      // now also carries a colour rail and bolder type.
+      // also carries a rail and bolder type — ink, not the club's colour
+      // (owner ruling 2026-08-14).
       style={
         isTop
-          ? { backgroundColor: `${teamColor}1f`, boxShadow: `inset 3px 0 0 0 ${teamColor}` }
+          ? { backgroundColor: "rgba(24,24,27,0.06)", boxShadow: "inset 3px 0 0 0 #3f3f46" }
           : undefined
       }
     >
@@ -134,10 +131,7 @@ function StatRow({
         </Link>
         {l.onFloor && live ? <span className="text-court-600"> ●</span> : null}
         {isTop && (
-          <span
-            className="bg-highlight text-highlight-on ml-1.5 rounded px-1 py-0.5 align-[2px] text-[9px] font-bold tracking-[0.1em]"
-            style={{ color: teamColor }}
-          >
+          <span className="bg-highlight text-highlight-on ml-1.5 rounded px-1 py-0.5 align-[2px] text-[9px] font-bold tracking-[0.1em]">
             TOP
           </span>
         )}
@@ -168,9 +162,8 @@ function StatRow({
 }
 
 export function StatsTable({ model, teamId }: { model: GameModel; teamId: string }) {
-  const { teamLines, colorOf, starterIds } = model
+  const { teamLines, starterIds } = model
   const lines = teamLines(teamId)
-  const teamColor = colorOf(teamId)
   const showMinutes = lines.some((l) => l.secondsPlayed > 0)
   // Starters stay starters forever (owner 2026-07-16 v2) — the green on-court
   // dot carries "who's on the floor right now" during live games.
@@ -225,7 +218,6 @@ export function StatsTable({ model, teamId }: { model: GameModel; teamId: string
               key={l.playerId}
               model={model}
               l={l}
-              teamColor={teamColor}
               isTop={l.playerId === topId}
               showMin={showMinutes}
             />
@@ -242,7 +234,6 @@ export function StatsTable({ model, teamId }: { model: GameModel; teamId: string
               key={l.playerId}
               model={model}
               l={l}
-              teamColor={teamColor}
               isTop={l.playerId === topId}
               showMin={showMinutes}
             />

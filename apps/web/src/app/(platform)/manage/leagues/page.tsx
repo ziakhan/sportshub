@@ -13,7 +13,7 @@ import {
   railForStatus,
 } from "@/components/ui"
 import { seasonStatusLabel } from "@/lib/leagues/season-progress"
-import { brandStyle } from "@/lib/club-page/brand"
+import { brandStyle, chosenBrandColor, NEUTRAL_BRAND } from "@/lib/club-page/brand"
 
 interface Season {
   id: string
@@ -158,7 +158,15 @@ export default function LeaguesPage() {
               <Link
                 key={group.org.id}
                 href={`/manage/org/${group.org.id}`}
-                style={{ ...brandStyle(group.org.primaryColor), animationDelay: `${i * 60}ms` }}
+                // Operator orgs are hand-created, never bulk-imported, so a
+                // colour here really was chosen; one that is still the schema
+                // default falls back to navy (owner ruling 2026-08-14).
+                style={{
+                  ...brandStyle(
+                    chosenBrandColor({ primaryColor: group.org.primaryColor }) ?? NEUTRAL_BRAND
+                  ),
+                  animationDelay: `${i * 60}ms`,
+                }}
                 className="reveal shadow-soft relative overflow-hidden rounded-[24px] border border-[color:var(--brand-line)] bg-[var(--brand-softer)] p-5 transition-all duration-200 hover:-translate-y-0.5 hover:border-[color:var(--brand)]"
               >
                 <span aria-hidden className="absolute inset-x-0 top-0 h-1.5 bg-[var(--brand)]" />
@@ -269,7 +277,12 @@ export default function LeaguesPage() {
                           <span
                             aria-hidden
                             className="h-2 w-2 rounded-full"
-                            style={{ background: league.organization.primaryColor || "#4f46e5" }}
+                            style={{
+                              background:
+                                chosenBrandColor({
+                                  primaryColor: league.organization.primaryColor,
+                                }) ?? NEUTRAL_BRAND,
+                            }}
                           />
                           {league.organization.name}
                         </p>

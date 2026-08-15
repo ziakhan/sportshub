@@ -12,7 +12,8 @@ import type { GameModel } from "./model"
 const PREVIEW_COUNT = 5
 
 export function LatestPlays({ model, onSeeAll }: { model: GameModel; onSeeAll: () => void }) {
-  const { playByPlay, describe, colorOf } = model
+  const { playByPlay, describe, game } = model
+  const homeTeamId = game.homeTeamId
   const rows = playByPlay.slice(0, PREVIEW_COUNT)
 
   return (
@@ -43,9 +44,13 @@ export function LatestPlays({ model, onSeeAll }: { model: GameModel; onSeeAll: (
                 score ? "text-ink-950 font-medium" : "text-ink-600"
               }`}
             >
+              {/* Which side made the play is already in the sentence next to
+                  it, so the rail is a neutral tick, not a club colour (owner
+                  ruling 2026-08-14). */}
               <span
-                className="w-1 self-stretch rounded-full"
-                style={{ backgroundColor: colorOf(e.teamId) }}
+                className={`w-1 self-stretch rounded-full ${
+                  e.teamId === homeTeamId ? "bg-ink-400" : "bg-ink-200"
+                }`}
               />
               <span className="min-w-0 flex-1">
                 {describe(e)}

@@ -385,8 +385,8 @@ export function SceneScores() {
         <Advance block>
           <ScoreCard
             status="FINAL"
-            home={{ name: GAME.home, color: "#16a34a", score: GAME.finalHome }}
-            away={{ name: GAME.away, color: "#7c3aed", score: GAME.finalAway }}
+            home={{ name: GAME.home, score: GAME.finalHome }}
+            away={{ name: GAME.away, score: GAME.finalAway }}
             venue="Haber Recreation Centre · Court 1"
           />
         </Advance>
@@ -400,8 +400,8 @@ export function SceneScores() {
         </div>
         <ScoreCard
           status="LIVE"
-          home={{ name: "Royal Crown Grade 10", color: "#9333ea", score: 41 }}
-          away={{ name: "North York Lions Grade 10", color: "#b45309", score: 38 }}
+          home={{ name: "Royal Crown Grade 10", score: 41 }}
+          away={{ name: "North York Lions Grade 10", score: 38 }}
           venue="Pan Am Sports Centre · Court 2"
         />
       </div>
@@ -409,8 +409,8 @@ export function SceneScores() {
         <h2 className="text-ink-900 mb-2 text-sm font-bold">Upcoming</h2>
         <ScoreCard
           status="SCHEDULED"
-          home={{ name: "West United Prep Grade 10", color: "#0891b2" }}
-          away={{ name: "Oakville Panthers Grade 10", color: "#be123c" }}
+          home={{ name: "West United Prep Grade 10"}}
+          away={{ name: "Oakville Panthers Grade 10"}}
           dateLabel="Sat · 4:00 PM"
           venue="Humber Athletic Centre · Court 1"
         />
@@ -643,7 +643,6 @@ export function SceneStandings() {
         rows={STANDINGS.map((s, i) => ({
           rank: i + 1,
           name: s.team.replace(" Grade 10", ""),
-          color: ["#16a34a", "#9333ea", "#7c3aed", "#0891b2", "#b45309", "#0f766e", "#be123c", "#d97706"][i],
           wins: s.w,
           losses: s.l,
           pct: s.w / (s.w + s.l),

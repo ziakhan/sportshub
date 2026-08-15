@@ -16,6 +16,14 @@
  * All are self-contained and take plain props, so wiring them to real posts
  * later is a data exercise, not a redesign. Every one is built mobile-first
  * and tested down to 360px.
+ *
+ * NEUTRAL BY DEFAULT (owner ruling 2026-08-14). These cards used to fill their
+ * stages, crests, tint blocks and handle pills with each club's colour. Almost
+ * every club is wearing a colour the importer assigned, so the feed read as the
+ * same three hues shuffled, and the colour carried no information. Crests are
+ * ink, stages are the arena navy, and the amber highlight is reserved for the
+ * one thing worth marking. The `teamColor` / `color` fields stay in the prop
+ * types because stored post payloads still carry them; nothing renders them.
  */
 
 import Link from "next/link"
@@ -23,11 +31,23 @@ import Link from "next/link"
 const shell =
   "ring-ink-950/10 overflow-hidden rounded-3xl bg-white shadow-[0_24px_60px_-18px_rgba(30,41,59,0.45)] ring-1"
 
-function Crest({ color, label, size = "h-11 w-11 text-[13px]" }: { color: string; label: string; size?: string }) {
+/** Ink crest tile. `surface` picks the tone: dark stages versus white bodies. */
+function Crest({
+  label,
+  size = "h-11 w-11 text-[13px]",
+  surface = "light",
+}: {
+  label: string
+  size?: string
+  surface?: "light" | "dark"
+}) {
   return (
     <span
-      className={`${size} flex shrink-0 items-center justify-center rounded-xl font-extrabold text-white shadow-sm`}
-      style={{ backgroundColor: color }}
+      className={`${size} ${
+        surface === "dark"
+          ? "bg-white/12 text-white ring-1 ring-inset ring-white/20"
+          : "bg-ink-100 text-ink-700"
+      } flex shrink-0 items-center justify-center rounded-xl font-extrabold shadow-sm`}
     >
       {label}
     </span>
@@ -85,14 +105,11 @@ export function LeaderboardCard({
 
       {/* #1 gets a podium treatment, the rest are a tight list */}
       {first && (
-        <div
-          className="flex items-center gap-4 px-5 py-4 sm:px-6"
-          style={{ backgroundColor: `${first.teamColor}14` }}
-        >
+        <div className="bg-ink-50 flex items-center gap-4 px-5 py-4 sm:px-6">
           <span className="font-condensed text-highlight text-[2.6rem] font-black leading-none">
             1
           </span>
-          <Crest color={first.teamColor} label={first.jersey} size="h-12 w-12 text-[15px]" />
+          <Crest label={first.jersey} size="h-12 w-12 text-[15px]" />
           <div className="min-w-0 flex-1">
             {first.playerId ? (
               <Link
@@ -119,10 +136,7 @@ export function LeaderboardCard({
             <span className="text-ink-400 font-condensed w-5 shrink-0 text-[18px] font-black">
               {r.rank}
             </span>
-            <span
-              className="h-7 w-7 shrink-0 rounded-lg text-center text-[11px] font-extrabold leading-7 text-white"
-              style={{ backgroundColor: r.teamColor }}
-            >
+            <span className="bg-ink-100 text-ink-700 h-7 w-7 shrink-0 rounded-lg text-center text-[11px] font-extrabold leading-7">
               {r.jersey}
             </span>
             <span className="text-ink-900 min-w-0 flex-1 truncate text-[14px] font-bold">
@@ -159,14 +173,14 @@ export function LeaderboardCard({
         <span className="flex-1" />
         {rows.slice(0, 5).map((r) => {
           const handle = `@${r.handle ?? r.name.split(" ")[0].toLowerCase()}`
-          const pill = "rounded-full px-2 py-0.5 text-[11px] font-bold transition hover:brightness-95"
-          const style = { backgroundColor: `${r.teamColor}1a`, color: r.teamColor }
+          const pill =
+            "bg-ink-100 text-ink-700 rounded-full px-2 py-0.5 text-[11px] font-bold transition hover:brightness-95"
           return r.playerId ? (
-            <Link key={r.rank} href={`/player/${r.playerId}`} className={pill} style={style}>
+            <Link key={r.rank} href={`/player/${r.playerId}`} className={pill}>
               {handle}
             </Link>
           ) : (
-            <span key={r.rank} className={pill} style={style}>
+            <span key={r.rank} className={pill}>
               {handle}
             </span>
           )
@@ -208,20 +222,19 @@ export function MatchupCard({
 }) {
   return (
     <article className={shell}>
-      {/* Both teams' colours split the stage diagonally */}
+      {/* The arena stage, not a two-tone colour split (owner ruling
+          2026-08-14): the two sides are told apart by position and name. */}
       <div
         className="relative px-5 py-6 text-white sm:px-6"
-        style={{
-          background: `linear-gradient(110deg, ${home.color} 0%, ${home.color} 42%, ${away.color} 58%, ${away.color} 100%)`,
-        }}
+        style={{ background: "linear-gradient(110deg, var(--stage-2), var(--stage))" }}
       >
-        <div className="absolute inset-0 bg-black/45" />
+        <div className="absolute inset-0 bg-black/20" />
         <p className="relative text-center text-[11px] font-black uppercase tracking-[0.22em] text-white/80">
           {eyebrow}
         </p>
         <div className="relative mt-4 flex items-center justify-between gap-3">
           <div className="flex min-w-0 flex-1 flex-col items-center gap-2">
-            <Crest color={home.color} label={home.crest} size="h-14 w-14 text-base sm:h-16 sm:w-16 sm:text-lg" />
+            <Crest label={home.crest} size="h-14 w-14 text-base sm:h-16 sm:w-16 sm:text-lg" surface="dark" />
             <p className="w-full truncate text-center text-[13.5px] font-extrabold sm:text-[15px]">
               {home.short}
             </p>
@@ -231,7 +244,7 @@ export function MatchupCard({
             VS
           </span>
           <div className="flex min-w-0 flex-1 flex-col items-center gap-2">
-            <Crest color={away.color} label={away.crest} size="h-14 w-14 text-base sm:h-16 sm:w-16 sm:text-lg" />
+            <Crest label={away.crest} size="h-14 w-14 text-base sm:h-16 sm:w-16 sm:text-lg" surface="dark" />
             <p className="w-full truncate text-center text-[13.5px] font-extrabold sm:text-[15px]">
               {away.short}
             </p>
@@ -257,12 +270,8 @@ export function MatchupCard({
             </p>
             <div className="grid gap-2 sm:grid-cols-2">
               {watch.map((p) => (
-                <div
-                  key={p.name}
-                  className="flex items-center gap-2.5 rounded-xl p-2.5"
-                  style={{ backgroundColor: `${p.color}12` }}
-                >
-                  <Crest color={p.color} label={p.jersey} size="h-9 w-9 text-[11.5px]" />
+                <div key={p.name} className="bg-ink-50 flex items-center gap-2.5 rounded-xl p-2.5">
+                  <Crest label={p.jersey} size="h-9 w-9 text-[11.5px]" />
                   <div className="min-w-0 flex-1">
                     <p className="text-ink-950 truncate text-[13.5px] font-bold leading-tight">
                       {p.name}
@@ -328,12 +337,8 @@ export function RivalryCard({
     <article className={shell}>
       <div className="bg-ink-950 relative overflow-hidden px-5 py-6 text-white sm:px-6">
         <div
-          className="pointer-events-none absolute inset-y-0 left-0 w-1/2 opacity-40"
-          style={{ background: `linear-gradient(90deg, ${home.color}, transparent)` }}
-        />
-        <div
-          className="pointer-events-none absolute inset-y-0 right-0 w-1/2 opacity-40"
-          style={{ background: `linear-gradient(270deg, ${away.color}, transparent)` }}
+          className="pointer-events-none absolute inset-0 opacity-70"
+          style={{ background: "linear-gradient(100deg, var(--stage-2), transparent 55%, var(--stage-2))" }}
         />
         <div className="relative flex items-center justify-between gap-3">
           <p className="text-hoop-400 text-[11px] font-black uppercase tracking-[0.22em]">Rivalry</p>
@@ -346,10 +351,10 @@ export function RivalryCard({
           {headline}
         </h3>
         <div className="relative mt-3 flex items-center gap-2 text-[12.5px] font-bold text-white/70">
-          <Crest color={home.color} label={home.crest} size="h-7 w-7 text-[10px]" />
+          <Crest label={home.crest} size="h-7 w-7 text-[10px]" surface="dark" />
           <span className="truncate">{home.short}</span>
           <span className="text-white/40">vs</span>
-          <Crest color={away.color} label={away.crest} size="h-7 w-7 text-[10px]" />
+          <Crest label={away.crest} size="h-7 w-7 text-[10px]" surface="dark" />
           <span className="truncate">{away.short}</span>
         </div>
       </div>
@@ -366,10 +371,9 @@ export function RivalryCard({
       <ul className="divide-ink-50 divide-y">
         {meetings.map((m, i) => (
           <li key={i} className="flex items-start gap-3 px-5 py-3 sm:px-6">
-            <span
-              className="mt-0.5 h-9 w-1 shrink-0 rounded-full"
-              style={{ backgroundColor: m.winnerColor }}
-            />
+            {/* Which club won the meeting is in the result text beside it, so
+                the rail is a neutral tick. */}
+            <span className="bg-ink-300 mt-0.5 h-9 w-1 shrink-0 rounded-full" />
             <span className="text-ink-500 w-20 shrink-0 text-[12.5px] font-bold">{m.date}</span>
             <span className="min-w-0 flex-1">
               <span className="text-ink-900 block text-[14px] font-bold tabular-nums">
@@ -388,12 +392,8 @@ export function RivalryCard({
           </p>
           <div className="grid gap-2 sm:grid-cols-2">
             {keyPlayers.map((p) => (
-              <div
-                key={p.name}
-                className="flex items-center gap-2.5 rounded-xl p-2.5"
-                style={{ backgroundColor: `${p.color}12` }}
-              >
-                <Crest color={p.color} label={p.jersey} size="h-9 w-9 text-[11.5px]" />
+              <div key={p.name} className="bg-ink-50 flex items-center gap-2.5 rounded-xl p-2.5">
+                <Crest label={p.jersey} size="h-9 w-9 text-[11.5px]" />
                 <div className="min-w-0 flex-1">
                   <p className="text-ink-950 truncate text-[13.5px] font-bold leading-tight">
                     {p.name}
@@ -461,7 +461,10 @@ export function GameWinnerCard({
 }) {
   return (
     <article className={shell}>
-      <div className="relative overflow-hidden px-5 py-6 sm:px-6" style={{ backgroundColor: teamColor }}>
+      <div
+        className="relative overflow-hidden px-5 py-6 sm:px-6"
+        style={{ background: "linear-gradient(135deg, var(--stage-2), var(--stage))" }}
+      >
         <div className="pointer-events-none absolute -right-10 -top-10 h-44 w-44 rounded-full bg-white/15 blur-2xl" />
         <p className="relative text-[11px] font-black uppercase tracking-[0.22em] text-white/80">
           {label}
@@ -471,7 +474,7 @@ export function GameWinnerCard({
         </p>
       </div>
       <div className="flex items-center gap-3 px-5 py-4 sm:px-6">
-        <Crest color={teamColor} label={jersey} />
+        <Crest label={jersey} />
         <div className="min-w-0 flex-1">
           <p className="text-ink-950 truncate text-[15px] font-extrabold leading-tight">
             {playerName}
@@ -536,7 +539,7 @@ export function PlayerOfGameCard({
         ) : (
           <div
             className="relative flex h-56 w-full items-center justify-center overflow-hidden sm:h-64"
-            style={{ background: `linear-gradient(140deg, ${teamColor}, rgba(10,16,30,0.92))` }}
+            style={{ background: "linear-gradient(140deg, var(--stage-2), rgba(10,16,30,0.92))" }}
           >
             <div className="pointer-events-none absolute -right-12 -top-12 h-52 w-52 rounded-full bg-white/10 blur-2xl" />
             <span className="font-condensed relative text-[7rem] font-black leading-none text-white/90">
@@ -546,10 +549,7 @@ export function PlayerOfGameCard({
         )}
         {/* Legible scrim so the name never fights the photo */}
         <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 via-black/45 to-transparent px-5 pb-4 pt-14 sm:px-6">
-          <span
-            className="inline-block rounded-full px-2.5 py-1 text-[10.5px] font-black uppercase tracking-[0.18em] text-white"
-            style={{ backgroundColor: teamColor }}
-          >
+          <span className="bg-highlight text-highlight-on inline-block rounded-full px-2.5 py-1 text-[10.5px] font-black uppercase tracking-[0.18em]">
             Player of the game
           </span>
           <h3 className="font-condensed mt-2 text-[2.5rem] font-black uppercase leading-[0.9] text-white sm:text-[3rem]">
@@ -604,7 +604,7 @@ export function PlayerOfGameCard({
           <span className="text-ink-400 text-[10.5px] font-black uppercase tracking-[0.16em]">
             Also honoured
           </span>
-          <Crest color={opponentAward.teamColor} label={opponentAward.jersey} size="h-8 w-8 text-[11px]" />
+          <Crest label={opponentAward.jersey} size="h-8 w-8 text-[11px]" />
           <div className="min-w-0 flex-1">
             <p className="text-ink-900 truncate text-[13.5px] font-bold">{opponentAward.playerName}</p>
             <p className="text-ink-500 truncate text-[11.5px] font-semibold">{opponentAward.team}</p>
@@ -647,16 +647,13 @@ export function DualPlayerOfGameCard({
   note?: string
 }) {
   const side = (p: DualPotgSide) => (
-    <div className="relative flex-1 overflow-hidden p-5" style={{ backgroundColor: `${p.teamColor}12` }}>
-      <span className="absolute inset-x-0 top-0 h-1" style={{ backgroundColor: p.teamColor }} />
-      <span
-        className="inline-block rounded-full px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-white"
-        style={{ backgroundColor: p.teamColor }}
-      >
+    <div className="bg-ink-50 relative flex-1 overflow-hidden p-5">
+      <span className="bg-navy-900 absolute inset-x-0 top-0 h-1" />
+      <span className="bg-ink-800 inline-block rounded-full px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-white">
         {p.tag}
       </span>
       <div className="mt-3 flex items-center gap-3">
-        <Crest color={p.teamColor} label={p.jersey} size="h-12 w-12 text-[15px]" />
+        <Crest label={p.jersey} size="h-12 w-12 text-[15px]" />
         <div className="min-w-0">
           <p className="text-ink-950 truncate text-[16px] font-extrabold leading-tight">
             {p.playerName}
@@ -730,20 +727,17 @@ export function ClutchPlayCard({
     <article className={shell}>
       <div className="bg-ink-950 relative overflow-hidden px-5 py-6 sm:px-6">
         <div
-          className="pointer-events-none absolute inset-0 opacity-40"
-          style={{ background: `radial-gradient(120% 100% at 100% 0%, ${teamColor}, transparent 60%)` }}
+          className="pointer-events-none absolute inset-0 opacity-50"
+          style={{ background: "radial-gradient(120% 100% at 100% 0%, var(--stage-2), transparent 60%)" }}
         />
-        <span
-          className="relative inline-block rounded-full px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-white"
-          style={{ backgroundColor: teamColor }}
-        >
+        <span className="bg-highlight text-highlight-on relative inline-block rounded-full px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.18em]">
           {playType}
         </span>
         <h3 className="font-display relative mt-3 text-[1.45rem] font-black leading-tight text-white sm:text-[1.7rem]">
           {headline}
         </h3>
         <div className="relative mt-3.5 flex items-center gap-2.5">
-          <Crest color={teamColor} label={jersey} size="h-9 w-9 text-[12px]" />
+          <Crest label={jersey} size="h-9 w-9 text-[12px]" surface="dark" />
           <div className="min-w-0">
             <p className="truncate text-[14px] font-extrabold text-white">{playerName}</p>
             <p className="truncate text-[12px] font-semibold text-white/60">{team}</p>
@@ -760,10 +754,7 @@ export function ClutchPlayCard({
           <span className="bg-ink-100 absolute bottom-2 left-[5px] top-2 w-px" />
           {sequence.map((s, i) => (
             <li key={i} className="relative">
-              <span
-                className="absolute -left-5 top-1 h-2.5 w-2.5 rounded-full ring-2 ring-white"
-                style={{ backgroundColor: s.color ?? "#cbd5e1" }}
-              />
+              <span className="bg-ink-300 absolute -left-5 top-1 h-2.5 w-2.5 rounded-full ring-2 ring-white" />
               <p className="text-ink-400 text-[11px] font-black uppercase tracking-wider">
                 {s.clock}
               </p>
@@ -799,12 +790,7 @@ function Scoreline({ home, away }: { home: RecapSide; away: RecapSide }) {
         ] as Array<[RecapSide, boolean]>
       ).map(([s, won]) => (
         <div key={s.name} className="flex items-center gap-3 px-5 py-2.5 sm:px-6">
-          <span
-            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[11px] font-black text-white"
-            style={{ backgroundColor: s.color }}
-          >
-            {s.crest}
-          </span>
+          <Crest label={s.crest} size="h-8 w-8 text-[11px]" />
           <span
             className={`min-w-0 flex-1 truncate text-[14px] ${won ? "text-ink-950 font-extrabold" : "text-ink-500 font-semibold"}`}
           >
@@ -857,11 +843,8 @@ export function RecapScorelineCard({
         </h3>
         <p className="text-ink-600 mt-2 text-[14px] leading-6">{body}</p>
         {topPerformer && (
-          <div
-            className="mt-3.5 flex items-center gap-2.5 rounded-xl p-2.5"
-            style={{ backgroundColor: `${topPerformer.color}12` }}
-          >
-            <Crest color={topPerformer.color} label={topPerformer.jersey} size="h-9 w-9 text-[11.5px]" />
+          <div className="bg-ink-50 mt-3.5 flex items-center gap-2.5 rounded-xl p-2.5">
+            <Crest label={topPerformer.jersey} size="h-9 w-9 text-[11.5px]" />
             <div className="min-w-0 flex-1">
               <p className="text-ink-950 truncate text-[13.5px] font-bold leading-tight">
                 {topPerformer.name}
@@ -894,7 +877,7 @@ export function RecapBlowoutCard({
     <article className={shell}>
       <div
         className="relative overflow-hidden px-5 py-6 text-white sm:px-6"
-        style={{ background: `linear-gradient(130deg, ${winner.color}, rgba(10,16,30,0.9))` }}
+        style={{ background: "linear-gradient(130deg, var(--stage-2), rgba(10,16,30,0.9))" }}
       >
         <div className="pointer-events-none absolute -right-12 -top-12 h-48 w-48 rounded-full bg-white/10 blur-2xl" />
         <p className="relative text-[11px] font-black uppercase tracking-[0.22em] text-white/75">
@@ -942,7 +925,7 @@ export function RecapThrillerCard({
       <div className="bg-ink-950 relative overflow-hidden px-5 py-5 sm:px-6">
         <div
           className="pointer-events-none absolute inset-0 opacity-45"
-          style={{ background: `linear-gradient(100deg, ${home.color}, transparent 45%, ${away.color})` }}
+          style={{ background: "linear-gradient(100deg, var(--stage-2), transparent 45%, var(--stage-2))" }}
         />
         <div className="relative flex items-center justify-between">
           <span className="bg-live-600 rounded-full px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-white">
@@ -1084,10 +1067,9 @@ export function FinalCard({
       ).map(([side, score, won]) => (
         <div
           key={side.short}
-          className="flex items-center gap-3 px-5 py-3.5 sm:px-6"
-          style={won ? { backgroundColor: `${side.color}0f` } : undefined}
+          className={`flex items-center gap-3 px-5 py-3.5 sm:px-6 ${won ? "bg-ink-50" : ""}`}
         >
-          <Crest color={side.color} label={side.crest} />
+          <Crest label={side.crest} />
           <div className="min-w-0 flex-1">
             <p
               className={`truncate text-[15px] leading-tight ${won ? "text-ink-950 font-extrabold" : "text-ink-600 font-bold"}`}

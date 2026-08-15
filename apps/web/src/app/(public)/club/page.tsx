@@ -4,7 +4,7 @@ import { prisma } from "@youthbasketballhub/db"
 import { authOptions } from "@/lib/auth"
 import type { ClubRating } from "@/lib/queries/club-ratings"
 import { getClubsDirectory, type DirectoryClub } from "@/lib/queries/directory-clubs"
-import { PageBand, StarRating } from "@/components/ui"
+import { Crest, PageBand, StarRating } from "@/components/ui"
 import { FollowButton } from "@/components/follow-button"
 import { ClubSearch } from "../club-search"
 
@@ -40,12 +40,7 @@ function ClubCard({
         featured ? "border-gold-400 ring-gold-100 ring-2" : "border-ink-100"
       }`}
     >
-      <span
-        className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-sm font-bold text-white"
-        style={{ backgroundColor: club.branding?.primaryColor || "#4f46e5" }}
-      >
-        {club.name.slice(0, 1)}
-      </span>
+      <Crest name={club.name} size="md" className="h-11 w-11 text-sm" />
       <span className="min-w-0 flex-1">
         <span className="flex items-center gap-2">
           <span className="text-ink-950 group-hover:text-play-600 truncate font-semibold transition-colors">

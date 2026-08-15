@@ -1,4 +1,5 @@
 import React from "react"
+import { Crest as BaseCrest, type CrestSurface } from "@/components/ui/crest"
 
 /**
  * The few pieces every panel on the live game page shares (R2 split).
@@ -15,26 +16,25 @@ export const SHELL = "mx-auto w-full max-w-6xl px-4 sm:px-6 xl:max-w-7xl"
  */
 export const SECTION_HEADING = "text-ink-800 text-[11px] font-bold uppercase tracking-[0.18em]"
 
-/** Team mark: the club's colour with its monogram, used at five sizes. */
+/**
+ * Team mark, used at five sizes across the page.
+ *
+ * Ink-toned, never the club's colour (owner ruling 2026-08-14): a live game is
+ * a summary surface, and the colour most clubs carry was assigned at import
+ * rather than chosen. `surface` picks the tone — "dark" for the navy stage,
+ * "light" for the white panels below it.
+ */
 export function Crest({
-  color,
   size,
   text,
+  surface = "dark",
 }: {
-  color: string
   /** Tailwind size + type classes, e.g. "h-6 w-6 text-[10px]" */
   size: string
   text: string
+  surface?: CrestSurface
 }) {
-  return (
-    <span
-      className={`${size} flex shrink-0 items-center justify-center rounded-xl font-bold text-white shadow-sm`}
-      style={{ backgroundColor: color }}
-      aria-hidden="true"
-    >
-      {text}
-    </span>
-  )
+  return <BaseCrest name={text} text={text} surface={surface} sizeClassName={`rounded-xl ${size}`} />
 }
 
 /** Card shell + its title bar, so every panel opens the same way. */

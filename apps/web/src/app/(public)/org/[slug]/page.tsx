@@ -1,6 +1,7 @@
 import Link from "next/link"
 import { prisma } from "@youthbasketballhub/db"
 import { notFound } from "next/navigation"
+import { chosenBrandColor } from "@/lib/club-page/brand"
 import { EntityHeader, SmartBack, Badge } from "@/components/ui"
 
 export const dynamic = "force-dynamic"
@@ -53,7 +54,7 @@ export default async function OrganizationPage({ params }: { params: { slug: str
         name={org.name}
         subtitle={org.tagline ?? "League operator"}
         meta={[`${org.leagues.length} league${org.leagues.length === 1 ? "" : "s"}`]}
-        primaryColor={org.primaryColor ?? "#4f46e5"}
+        brandColor={chosenBrandColor({ primaryColor: org.primaryColor })}
         logoUrl={org.logoUrl}
         crestText={org.name.slice(0, 1)}
         className="mb-6"

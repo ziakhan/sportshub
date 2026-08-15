@@ -8,7 +8,7 @@ import type { Metadata } from "next"
 import { FollowButton } from "@/components/follow-button"
 import { CourtBackdropLayer, SmartBack } from "@/components/ui"
 import { resolveLayout, zoneBlocks } from "@/lib/club-page/blocks"
-import { brandStyle } from "@/lib/club-page/brand"
+import { brandStyle, chosenBrandColor, NEUTRAL_BRAND } from "@/lib/club-page/brand"
 import { ClubBlock, hasBlockContent, type ClubPageData } from "./club-blocks"
 import { ClubSubNav } from "./club-subnav"
 import { JsonLd, clubJsonLd } from "@/lib/seo/jsonld"
@@ -116,11 +116,17 @@ export default async function ClubProfilePage({ params }: { params: { slug: stri
     : false
 
   const branding = club.branding
-  const primary = branding?.primaryColor || "#1a73e8"
+  // Neutral by default, brand by choice (owner ruling 2026-08-14). A club's own
+  // page is the one place its colour is allowed to run, and only when the club
+  // claimed its page and picked something other than the imported default.
+  // Everyone else's page wears the same navy, which is what a thousand
+  // unclaimed listings should have looked like from the start.
+  const primary = chosenBrandColor({ status: club.status, primaryColor: branding?.primaryColor })
+  const accent = primary ?? NEUTRAL_BRAND
   const data: ClubPageData = {
     club,
     currency: club.currency,
-    accent: primary,
+    accent,
     teams,
     tryouts,
     houseLeagues,
@@ -176,7 +182,7 @@ export default async function ClubProfilePage({ params }: { params: { slug: stri
   }))?.isDemo
 
   return (
-    <div className="font-barlow [scroll-behavior:smooth]" style={brandStyle(primary)}>
+    <div className="font-barlow [scroll-behavior:smooth]" style={brandStyle(accent)}>
       {clubIsDemo && (
         <div className="flex flex-wrap items-center gap-3 border-b border-amber-200 bg-amber-50 px-4 py-2.5 sm:px-6">
           <DemoBadge long />
@@ -236,8 +242,12 @@ export default async function ClubProfilePage({ params }: { params: { slug: stri
               {/* Crest: the logo when there is one, otherwise the club colour
                   carrying its initial (same rule as EntityHeader). */}
               <span
-                className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-2xl text-3xl font-black text-white shadow-lg sm:h-28 sm:w-28 sm:text-4xl"
-                style={{ backgroundColor: branding?.logoUrl ? "#ffffff" : primary }}
+                className={`flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-2xl text-3xl font-black shadow-lg sm:h-28 sm:w-28 sm:text-4xl ${
+                  branding?.logoUrl || primary ? "text-white" : "bg-ink-100 text-ink-700"
+                }`}
+                style={{
+                  backgroundColor: branding?.logoUrl ? "#ffffff" : primary ?? undefined,
+                }}
               >
                 {branding?.logoUrl ? (
                   // eslint-disable-next-line @next/next/no-img-element
@@ -330,11 +340,12 @@ export default async function ClubProfilePage({ params }: { params: { slug: stri
               ))}
             </div>
           </div>
-          {/* The baseline: the club's own colour, 4px along the bottom edge. */}
+          {/* The baseline, 4px along the bottom edge: the club's own colour
+              when it picked one, navy otherwise. */}
           <span
             aria-hidden="true"
-            className="absolute inset-x-0 bottom-0 z-10 h-1"
-            style={{ backgroundColor: primary }}
+            className={`absolute inset-x-0 bottom-0 z-10 h-1 ${primary ? "" : "bg-navy-900"}`}
+            style={primary ? { backgroundColor: primary } : undefined}
           />
         </div>
       </header>

@@ -7,18 +7,18 @@ import type { LeaderEntry, LeaderSection, LivePayload, PlayRow } from "./types"
  * the payload + the folded event stream (R2 split, 2026-08-14). This is a
  * straight lift of the maths that used to sit inline in live-view.tsx: same
  * inputs, same outputs, no behaviour change. Views get `model` and render.
+ *
+ * No team colours live here any more (owner ruling 2026-08-14). The payload
+ * still carries `homeColor` / `awayColor` for other consumers, but this page
+ * is a summary surface end to end, so crests, chips and bars are ink-toned and
+ * home versus away is told by position and type. Deriving a colour here was
+ * what let it leak into eight components at once.
  */
-
-const HOME_FALLBACK = "#4f46e5" // play-600
-const AWAY_FALLBACK = "#16a34a" // court-600
 
 export interface GameModel {
   data: LivePayload
   game: LivePayload["game"]
   fold: FoldResult
-  homeColor: string
-  awayColor: string
-  colorOf: (teamId?: string | null) => string
   nameOf: (playerId?: string | null) => string
   jerseyOf: (playerId: string) => string
   shortName: (playerId: string) => string
@@ -61,10 +61,6 @@ export interface TeamAgg {
 
 export function buildModel(data: LivePayload, fold: FoldResult): GameModel {
   const { game } = data
-  const homeColor = game.homeColor || HOME_FALLBACK
-  const awayColor = game.awayColor || AWAY_FALLBACK
-  const colorOf = (teamId?: string | null) =>
-    teamId === game.homeTeamId ? homeColor : teamId === game.awayTeamId ? awayColor : "#9191a1"
 
   const byId = new Map(data.players.map((p) => [p.playerId, p]))
   const nameOf = (pid?: string | null) => (pid ? byId.get(pid)?.name ?? "" : "")
@@ -292,9 +288,6 @@ export function buildModel(data: LivePayload, fold: FoldResult): GameModel {
     data,
     game,
     fold,
-    homeColor,
-    awayColor,
-    colorOf,
     nameOf,
     jerseyOf,
     shortName,

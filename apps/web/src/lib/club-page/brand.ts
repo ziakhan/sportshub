@@ -130,3 +130,60 @@ export function brandStyle(hex?: string | null): CSSProperties {
     "--brand-line": t.line,
   } as CSSProperties
 }
+
+// ---------------------------------------------------------------------------
+// Neutral by default, brand by choice (owner ruling 2026-08-14)
+// ---------------------------------------------------------------------------
+//
+// About a thousand clubs were bulk-imported as UNCLAIMED tenants and every one
+// of them was stamped with the schema default colour. Rendering that on score
+// cards, standings and scoreboards made every game summary read as blue, red
+// and green with nothing behind it: the colour was never a decision a club
+// made. So a colour only counts once a human stood behind it, and it only ever
+// paints the entity's OWN page. Lists and summaries are neutral everywhere.
+
+/** The colour the importer and the schema default stamp on everyone. */
+export const DEFAULT_BRAND_HEX = "#1a73e8"
+
+/** What a crest, stripe or accent wears when nobody chose a colour. */
+export const NEUTRAL_BRAND = "#0f1b33" // navy-900
+
+export interface BrandChoiceInput {
+  /**
+   * TenantStatus for clubs (ACTIVE | SUSPENDED | UNCLAIMED). Leagues and
+   * operator orgs have no status column, so they leave this undefined.
+   */
+  status?: string | null
+  primaryColor?: string | null
+}
+
+function normalizeHex(input?: string | null): string | null {
+  if (!input) return null
+  let h = input.trim().replace(/^#/, "").toLowerCase()
+  if (h.length === 3)
+    h = h
+      .split("")
+      .map((c) => c + c)
+      .join("")
+  return /^[0-9a-f]{6}$/.test(h) ? `#${h}` : null
+}
+
+/**
+ * Did this entity actually pick its colour? Two gates, both required:
+ * an unclaimed club never picked anything, and a record still wearing the
+ * schema default never picked anything either.
+ */
+export function hasChosenBrand(input: BrandChoiceInput): boolean {
+  if (typeof input.status === "string" && input.status.toUpperCase() === "UNCLAIMED") return false
+  const hex = normalizeHex(input.primaryColor)
+  if (!hex) return false
+  return hex !== DEFAULT_BRAND_HEX
+}
+
+/**
+ * The colour an entity's OWN page may paint with, or null when it should stay
+ * neutral. List and summary surfaces never call this: they are neutral always.
+ */
+export function chosenBrandColor(input: BrandChoiceInput): string | null {
+  return hasChosenBrand(input) ? normalizeHex(input.primaryColor) : null
+}

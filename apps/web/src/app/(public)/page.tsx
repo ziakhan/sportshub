@@ -504,10 +504,7 @@ export default async function HomePage() {
                         })}
                       </div>
                     </div>
-                    <span
-                      className="inline-flex h-11 w-11 items-center justify-center rounded-2xl text-white"
-                      style={{ backgroundColor: tryout.tenant.branding?.primaryColor || "#4f46e5" }}
-                    >
+                    <span className="bg-navy-900 inline-flex h-11 w-11 items-center justify-center rounded-2xl text-white">
                       <svg
                         className="h-4 w-4"
                         viewBox="0 0 24 24"
@@ -552,11 +549,12 @@ export default async function HomePage() {
                   href={`/club/${club.slug}`}
                   className="card-lift border-ink-100 shadow-soft overflow-hidden rounded-[30px] border bg-white"
                 >
+                  {/* Neutral cover (owner ruling 2026-08-14): a directory grid
+                      is a list, and the colour every card used to wear came
+                      from the importer rather than the club. */}
                   <div
                     className="relative h-32 overflow-hidden"
-                    style={{
-                      background: `linear-gradient(135deg, ${club.branding?.primaryColor || "#4f46e5"}, #18181b)`,
-                    }}
+                    style={{ background: "linear-gradient(135deg, var(--stage-2), #18181b)" }}
                   >
                     <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.22),transparent_32%)]" />
                     <div className="text-ink-950 absolute bottom-4 left-6 flex h-14 w-14 items-center justify-center rounded-2xl bg-white/95 text-lg font-bold shadow-lg">

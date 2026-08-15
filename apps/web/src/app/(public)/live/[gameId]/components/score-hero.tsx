@@ -60,9 +60,6 @@ export function ScoreHero({
   const {
     game,
     fold,
-    homeColor,
-    awayColor,
-    colorOf,
     shortTeam,
     live,
     final,
@@ -101,9 +98,14 @@ export function ScoreHero({
     <div
       ref={heroRef}
       data-hero
+      // The stage used to be washed with each club's colour from its own
+      // corner. Those colours were assigned at import, not chosen, so the wash
+      // said nothing and fought the scoreboard (owner ruling 2026-08-14). The
+      // arena stays navy, lit from above.
       className="from-stage to-stage-2 bg-gradient-to-br text-white"
       style={{
-        backgroundImage: `radial-gradient(90% 140% at 0% 0%, ${homeColor}38 0%, transparent 50%), radial-gradient(90% 140% at 100% 0%, ${awayColor}38 0%, transparent 50%), linear-gradient(135deg, var(--stage), var(--stage-2))`,
+        backgroundImage:
+          "radial-gradient(120% 150% at 50% -20%, rgba(255,255,255,0.10) 0%, transparent 60%), linear-gradient(135deg, var(--stage), var(--stage-2))",
       }}
     >
       {/* Hero content shares the tabs' column (2026-08-13) — it used to run to
@@ -158,8 +160,7 @@ export function ScoreHero({
             {teams.map(([tid, tname, rec, score, other]) => (
               <div key={tid} className="flex items-center gap-3">
                 <Crest
-                  color={colorOf(tid)}
-                  size="h-11 w-11 text-[15px] shadow-lg ring-1 ring-white/15"
+                  size="h-11 w-11 text-[15px] shadow-lg"
                   text={monogram(tname)}
                 />
                 <div className="min-w-0 flex-1">
@@ -195,8 +196,7 @@ export function ScoreHero({
           {teams.map(([tid, tname, rec, score, other], i) => (
             <div key={tid} className={`text-center ${i === 1 ? "order-3" : "order-1"}`}>
               <Crest
-                color={colorOf(tid)}
-                size="mx-auto h-16 w-16 text-xl shadow-lg ring-2 ring-white/15 lg:h-20 lg:w-20 lg:text-2xl"
+                size="mx-auto h-16 w-16 text-xl shadow-lg lg:h-20 lg:w-20 lg:text-2xl"
                 text={monogram(tname)}
               />
               <Link
@@ -290,7 +290,6 @@ export function ScoreHero({
                     <td className="py-1.5 pl-3 text-left">
                       <span className="flex items-center gap-2">
                         <Crest
-                          color={colorOf(tid)}
                           size="h-5 w-5 text-[9px] sm:h-6 sm:w-6 sm:text-[10px]"
                           text={monogram(tname)}
                         />
