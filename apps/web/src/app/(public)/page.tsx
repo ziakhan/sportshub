@@ -33,7 +33,10 @@ async function getHomePageData() {
   const [featuredClubs, rawUpcomingTryouts, totalClubs, totalTeams, totalTryouts] =
     await Promise.all([
       prisma.tenant.findMany({
-        where: { status: { in: ["ACTIVE", "UNCLAIMED"] } },
+        where: { status: { in: ["ACTIVE", "UNCLAIMED"] },
+      // Census imports are only public once reviewed; merged-away rows never are.
+      publishedAt: { not: null },
+      mergedIntoId: null },
         select: {
           id: true,
           slug: true,
@@ -53,7 +56,10 @@ async function getHomePageData() {
           isPublished: true,
           isPublic: true,
           scheduledAt: { gte: new Date() },
-          tenant: { status: { in: ["ACTIVE", "UNCLAIMED"] } },
+          tenant: { status: { in: ["ACTIVE", "UNCLAIMED"] },
+      // Census imports are only public once reviewed; merged-away rows never are.
+      publishedAt: { not: null },
+      mergedIntoId: null },
         },
         select: {
           id: true,
@@ -74,7 +80,10 @@ async function getHomePageData() {
         orderBy: { scheduledAt: "asc" },
         take: 3,
       }),
-      prisma.tenant.count({ where: { status: { in: ["ACTIVE", "UNCLAIMED"] } } }),
+      prisma.tenant.count({ where: { status: { in: ["ACTIVE", "UNCLAIMED"] },
+      // Census imports are only public once reviewed; merged-away rows never are.
+      publishedAt: { not: null },
+      mergedIntoId: null } }),
       prisma.team.count(),
       prisma.tryout.count({ where: { isPublished: true, isPublic: true } }),
     ])
