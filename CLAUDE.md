@@ -25,6 +25,12 @@
 - **News is ALWAYS a card** (owner 2026-07-25): cover image + kind chip + title + date — every surface (news tab, feed, social, club/team/season pages, web and native). Never a list row with an icon.
 - **Server never leads the client**: mobile API changes are additive; never remove/rename fields fielded bundles read.
 
+## 🎨 DESIGN TOOLING LAW (owner, 2026-08-15 — PERMANENT)
+- **Every NEW design — a surface, template, component look, or visual system — starts with a ui-ux-pro-max consult** (the Skill). Applying an already-approved spec mechanically does not require re-consulting, but any fresh visual decision does. No exceptions for agents: briefs must pass the consult's conclusions down.
+- **Product UI graphics (icons, placeholders, motifs, dynamic art like jersey-number mugs) are hand-authored SVG in code** — they must be themable, dynamic, and crisp at every size. Image generators are the wrong tool here.
+- **Marketing/illustrative/photographic assets use image-generation tools** (Canva / Higgsfield connectors when authorized, or external models), never hand-drawn SVG.
+- Design iterations follow estimate-first: draft on a preview page (~10 min), owner approves the look, THEN wire and validate.
+
 ## Tech Stack
 - **Monorepo**: Turborepo with `apps/web` (Next.js 14 App Router) and `packages/` (db, ui, auth, payments, config)
 - **Auth**: NextAuth.js v4 with Credentials provider (email/password, bcrypt, JWT sessions)
