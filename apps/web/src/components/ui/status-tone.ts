@@ -65,3 +65,29 @@ const STATUS_TONES: Record<string, BadgeTone> = {
 export function toneForStatus(status: string): BadgeTone {
   return STATUS_TONES[status.toUpperCase()] ?? "neutral"
 }
+
+/**
+ * Solid fill for a status rail — the coloured strip down the left edge of a
+ * card whose badge already carries the same status (operator dashboards,
+ * 2026-08-14). Keyed off the badge tone so the rail and the pill can never
+ * disagree; literal class strings so Tailwind keeps them.
+ */
+const RAIL_TONES: Record<BadgeTone, string> = {
+  neutral: "bg-ink-300",
+  play: "bg-play-500",
+  hoop: "bg-hoop-500",
+  court: "bg-court-500",
+  gold: "bg-gold-400",
+  live: "bg-live-500",
+  success: "bg-court-500",
+  warning: "bg-amber-400",
+  danger: "bg-red-500",
+}
+
+export function railForTone(tone: BadgeTone): string {
+  return RAIL_TONES[tone]
+}
+
+export function railForStatus(status: string): string {
+  return RAIL_TONES[toneForStatus(status)]
+}

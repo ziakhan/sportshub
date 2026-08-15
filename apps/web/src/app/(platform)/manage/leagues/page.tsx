@@ -2,7 +2,17 @@
 
 import { useState, useEffect } from "react"
 import Link from "next/link"
-import { StatTile, AnimatedNumber, Button, PanelHeader, CourtBackdropLayer } from "@/components/ui"
+import {
+  StatTile,
+  AnimatedNumber,
+  Button,
+  PanelHeader,
+  CourtBackdropLayer,
+  Badge,
+  toneForStatus,
+  railForStatus,
+} from "@/components/ui"
+import { seasonStatusLabel } from "@/lib/leagues/season-progress"
 import { brandStyle } from "@/lib/club-page/brand"
 
 interface Season {
@@ -37,15 +47,6 @@ interface OrgGroup {
   org: Organization
   leagues: League[]
   seasons: number
-}
-
-const STATUS_LABELS: Record<string, { label: string; color: string }> = {
-  DRAFT: { label: "Draft", color: "bg-ink-100 text-ink-700" },
-  REGISTRATION: { label: "Open for Registration", color: "bg-court-50 text-court-700" },
-  REGISTRATION_CLOSED: { label: "Registration Closed", color: "bg-play-50 text-play-700" },
-  FINALIZED: { label: "Finalized", color: "bg-hoop-50 text-hoop-700" },
-  IN_PROGRESS: { label: "In Progress", color: "bg-play-50 text-play-700" },
-  COMPLETED: { label: "Completed", color: "bg-ink-100 text-ink-600" },
 }
 
 const ACTIVE_STATUSES = new Set(["REGISTRATION", "REGISTRATION_CLOSED", "IN_PROGRESS"])
@@ -238,26 +239,29 @@ export default function LeaguesPage() {
           <div className="space-y-4">
             {leagues.map((league, i) => {
               const latest = league.seasons[0]
-              const latestStatus = latest
-                ? STATUS_LABELS[latest.status] || STATUS_LABELS.DRAFT
-                : null
               return (
                 <Link
                   key={league.id}
                   href={`/manage/leagues/${league.id}`}
                   style={{ animationDelay: `${i * 60}ms` }}
-                  className="reveal border-ink-100 shadow-soft hover:border-[color:var(--brand-line)] hover:bg-[var(--brand-softer)] block rounded-2xl border bg-white p-6 transition-all duration-200 hover:-translate-y-0.5"
+                  className="reveal border-ink-100 shadow-soft hover:border-[color:var(--brand-line)] hover:bg-[var(--brand-softer)] group relative block overflow-hidden rounded-2xl border bg-white p-6 pl-7 transition-all duration-200 hover:-translate-y-0.5"
                 >
+                  {/* Status rail: the season the league is living in, read at
+                      a glance before any text (2026-08-14 affordance pass). */}
+                  <span
+                    aria-hidden
+                    className={`absolute inset-y-0 left-0 w-1.5 ${
+                      latest ? railForStatus(latest.status) : "bg-ink-200"
+                    }`}
+                  />
                   <div className="flex items-start justify-between gap-4">
                     <div>
                       <div className="mb-1 flex flex-wrap items-center gap-2">
                         <h3 className="text-ink-950 text-lg font-semibold">{league.name}</h3>
-                        {latestStatus && (
-                          <span
-                            className={`rounded-full px-2 py-0.5 text-xs font-medium ${latestStatus.color}`}
-                          >
-                            {latest!.label}: {latestStatus.label}
-                          </span>
+                        {latest && (
+                          <Badge tone={toneForStatus(latest.status)}>
+                            {latest.label}: {seasonStatusLabel(latest.status)}
+                          </Badge>
                         )}
                       </div>
                       {league.organization && (
@@ -279,13 +283,27 @@ export default function LeaguesPage() {
                         </p>
                       )}
                     </div>
-                    <div className="text-right">
-                      <div className="text-[color:var(--brand-ink)] font-condensed text-2xl font-bold leading-none">
-                        <AnimatedNumber value={league._count.seasons} />
+                    <div className="flex shrink-0 items-center gap-4">
+                      <div className="text-right">
+                        <div className="text-[color:var(--brand-ink)] font-condensed text-2xl font-bold leading-none">
+                          <AnimatedNumber value={league._count.seasons} />
+                        </div>
+                        <div className="text-ink-500 mt-1 text-xs">
+                          season{league._count.seasons === 1 ? "" : "s"}
+                        </div>
                       </div>
-                      <div className="text-ink-500 mt-1 text-xs">
-                        season{league._count.seasons === 1 ? "" : "s"}
-                      </div>
+                      <span className="border-ink-100 text-ink-400 group-hover:border-[color:var(--brand-line)] group-hover:text-[color:var(--brand-ink)] flex h-9 w-9 items-center justify-center rounded-full border transition">
+                        <svg
+                          className="h-4 w-4"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          aria-hidden="true"
+                        >
+                          <path d="m9 18 6-6-6-6" strokeLinecap="round" strokeLinejoin="round" />
+                        </svg>
+                      </span>
                     </div>
                   </div>
                 </Link>

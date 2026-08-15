@@ -1,11 +1,12 @@
 import { redirect } from "next/navigation"
-import Link from "next/link"
 import { getCurrentUser } from "@/lib/auth-helpers"
 import { getCompletionChecklist } from "@/lib/onboarding/checklist"
 import { getLinkParentNudge } from "@/lib/family/nudge"
 import { LinkParentBanner } from "@/components/family/link-parent-banner"
 import { CourtBackdropLayer } from "@/components/ui"
 import { getDashboardData } from "./get-dashboard-data"
+import { getCommandHero } from "./command-hero-data"
+import { CommandHero } from "./sections/command-hero"
 import { FinishSetupCard } from "./sections/finish-setup-card"
 import { AdminSection } from "./sections/admin-section"
 import { ParentSection } from "./sections/parent-section"
@@ -40,30 +41,50 @@ export default async function DashboardPage() {
   const hasParentRole = roles.includes("Parent")
   const hasPlayerRole = roles.includes("Player")
 
+  // Operators open on their season, not on a greeting (2026-08-14 rebuild):
+  // one state-aware command card, chosen by precedence in command-hero-data.
+  const commandHero =
+    hasLeagueRole || hasClubRole
+      ? await getCommandHero({
+          data: dashboardData,
+          leagueIds: dbUser.roles
+            .filter((r: any) => r.leagueId)
+            .map((r: any) => r.leagueId as string),
+          tenantIds: dbUser.roles
+            .filter((r: any) => r.tenantId)
+            .map((r: any) => r.tenantId as string),
+          hasLeagueRole,
+          hasClubRole,
+        })
+      : null
+
   return (
     <div className="space-y-8">
-      {/* Court system v2, screen 04: the greeting is the one loud card on a
+      {/* Court system v2, screen 04: the hero is the one loud card on a
           working screen, arena night with its own small court crop, so the
           texture can never fight the data below it. */}
-      <div className="shadow-soft relative isolate overflow-hidden rounded-[30px]">
-        <CourtBackdropLayer variant="navy" intensity="band" />
-        <div className="relative z-10 p-8">
-          <div className="flex flex-wrap items-start justify-between gap-4">
-            <div>
-              <div className="text-gold-400 mb-3 text-[11px] font-black uppercase tracking-[0.22em]">
-                Dashboard
+      {commandHero ? (
+        <CommandHero hero={commandHero} firstName={dbUser.firstName || "there"} />
+      ) : (
+        <div className="shadow-soft relative isolate overflow-hidden rounded-[30px]">
+          <CourtBackdropLayer variant="navy" intensity="band" />
+          <div className="relative z-10 p-8">
+            <div className="flex flex-wrap items-start justify-between gap-4">
+              <div>
+                <div className="text-gold-400 mb-3 text-[11px] font-black uppercase tracking-[0.22em]">
+                  Dashboard
+                </div>
+                <h1 className="font-display text-3xl font-black tracking-[-0.02em] text-white sm:text-4xl">
+                  Welcome back, {dbUser.firstName || "User"}!
+                </h1>
+                <p className="text-ink-200 mt-2 max-w-2xl">
+                  Here&apos;s what&apos;s happening across your roles.
+                </p>
               </div>
-              <h1 className="font-display text-3xl font-black tracking-[-0.02em] text-white sm:text-4xl">
-                Welcome back, {dbUser.firstName || "User"}!
-              </h1>
-              <p className="text-ink-200 mt-2 max-w-2xl">
-                Here&apos;s what&apos;s happening across your roles.
-              </p>
             </div>
-
           </div>
         </div>
-      </div>
+      )}
 
       {linkParentNudge && (
         <LinkParentBanner

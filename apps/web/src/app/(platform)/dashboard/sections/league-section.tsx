@@ -1,6 +1,15 @@
 import type { ReactNode } from "react"
+import Link from "next/link"
 import type { DashboardData } from "../get-dashboard-data"
-import { StatTile, AnimatedNumber, Button } from "@/components/ui"
+import {
+  StatTile,
+  AnimatedNumber,
+  Button,
+  Badge,
+  toneForStatus,
+  railForStatus,
+} from "@/components/ui"
+import { seasonStatusLabel } from "@/lib/leagues/season-progress"
 
 interface LeagueSectionProps {
   data: NonNullable<DashboardData["leagueOwner"]>
@@ -61,18 +70,29 @@ export function LeagueSection({ data }: LeagueSectionProps) {
             />
           </div>
 
+          {/* Whole card is the link (parity of affordance, 2026-08-14): a
+              status-tinted rail + pill say where the season is, the chevron
+              says it opens. No nested control inside the link. */}
           <div className="grid gap-4 lg:grid-cols-2">
             {data.leagues.map((league, i) => (
-              <div
+              <Link
                 key={league.id}
-                className="reveal border-ink-100 shadow-soft card-lift rounded-3xl border bg-white p-5 transition-colors hover:border-[color:var(--brand-line)]"
+                href={`/manage/leagues/${league.leagueId}/seasons/${league.id}/manage`}
+                className="reveal border-ink-100 shadow-soft card-lift group relative block overflow-hidden rounded-3xl border bg-white p-5 pl-6 transition-colors hover:border-[color:var(--brand-line)]"
                 style={{ animationDelay: `${i * 70}ms` }}
               >
+                <span
+                  aria-hidden
+                  className={`absolute inset-y-0 left-0 w-1.5 ${railForStatus(league.status)}`}
+                />
                 <div className="flex items-start justify-between gap-3">
-                  <div>
+                  <div className="min-w-0">
                     <h3 className="text-ink-950 font-semibold">{league.name}</h3>
                     <p className="text-ink-500 mt-1 text-sm">{league.season}</p>
                   </div>
+                  <Badge tone={toneForStatus(league.status)}>
+                    {seasonStatusLabel(league.status)}
+                  </Badge>
                 </div>
 
                 <div className="mt-4 grid grid-cols-2 gap-3">
@@ -94,16 +114,21 @@ export function LeagueSection({ data }: LeagueSectionProps) {
                   <span className="text-ink-400 text-xs uppercase tracking-[0.12em]">
                     League workspace
                   </span>
-                  <Button
-                    href={`/manage/leagues/${league.leagueId}/seasons/${league.id}/manage`}
-                    variant="subtle"
-                    size="sm"
-                    icon={ACTION_ICONS.arrow}
-                  >
+                  <span className="text-ink-700 group-hover:text-[color:var(--brand-ink)] inline-flex items-center gap-1.5 text-sm font-semibold transition">
                     Open
-                  </Button>
+                    <svg
+                      className="h-4 w-4"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      aria-hidden="true"
+                    >
+                      <path d="m9 18 6-6-6-6" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  </span>
                 </div>
-              </div>
+              </Link>
             ))}
           </div>
         </>

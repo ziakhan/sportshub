@@ -2,7 +2,7 @@
 export { cn } from "./cn"
 export { Card } from "./card"
 export { Badge, type BadgeTone } from "./badge"
-export { toneForStatus } from "./status-tone"
+export { toneForStatus, railForStatus, railForTone } from "./status-tone"
 export { SectionHeader } from "./section-header"
 export { PageBand } from "./page-band"
 export { StatBlock } from "./stat-block"

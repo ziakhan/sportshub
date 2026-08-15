@@ -65,7 +65,8 @@ export function ClubSection({ data }: ClubSectionProps) {
         <div className="space-y-2 p-4">
           <AttentionRow
             label={`${Math.max(data.tenants.length, 1)} club workspace${data.tenants.length === 1 ? "" : "s"} active`}
-            href="/dashboard"
+            /* Was a self-link to /dashboard: a row that went nowhere. */
+            href={data.tenants[0] ? `/clubs/${data.tenants[0].id}` : "/clubs/create"}
             icon={<IconBuilding className="text-play-600 h-4 w-4" />}
             iconTone="bg-play-50"
           />
@@ -126,25 +127,33 @@ export function ClubSection({ data }: ClubSectionProps) {
                         tone="bg-hoop-50 text-hoop-700"
                       />
                     </div>
-                    <div className="border-ink-100 mt-4 flex flex-wrap gap-3 border-t pt-4">
-                      <Link
+                    {/* Kit buttons, not text links (parity of affordance,
+                        2026-08-14): three equal-weight jobs, three buttons. */}
+                    <div className="border-ink-100 mt-4 flex flex-wrap gap-2 border-t pt-4">
+                      <Button
                         href={`/clubs/${tenant.id}/teams`}
-                        className="text-court-700 hover:text-court-800 text-sm font-semibold transition"
+                        variant="secondary"
+                        tone="court"
+                        size="sm"
                       >
                         Teams
-                      </Link>
-                      <Link
+                      </Button>
+                      <Button
                         href={`/clubs/${tenant.id}/tryouts`}
-                        className="text-hoop-700 hover:text-hoop-800 text-sm font-semibold transition"
+                        variant="secondary"
+                        tone="hoop"
+                        size="sm"
                       >
                         Tryouts
-                      </Link>
-                      <Link
+                      </Button>
+                      <Button
                         href={`/clubs/${tenant.id}/settings`}
-                        className="text-ink-600 hover:text-ink-700 text-sm font-semibold transition"
+                        variant="subtle"
+                        size="sm"
+                        icon={<IconGear />}
                       >
                         Settings
-                      </Link>
+                      </Button>
                     </div>
                   </div>
                 ))}
@@ -783,6 +792,22 @@ function IconAlert({ className }: { className?: string }) {
       <path d="M10.29 3.86 1.82 18A2 2 0 0 0 3.53 21h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z" />
       <path d="M12 9v4" />
       <path d="M12 17h.01" />
+    </svg>
+  )
+}
+
+function IconGear({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      aria-hidden="true"
+    >
+      <circle cx="12" cy="12" r="3" />
+      <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
     </svg>
   )
 }

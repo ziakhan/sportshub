@@ -11,9 +11,13 @@ interface DoMoreSectionProps {
 
 /**
  * Discoverability card for self-serve capabilities the user hasn't adopted yet.
- * Roles accrue from actions — anyone can start any of these at any time, no
+ * Roles accrue from actions: anyone can start any of these at any time, no
  * matter how they joined. Mirrors the "+ New" menu in the top nav; surfaces the
  * actions the user doesn't already have so they know the door is open.
+ *
+ * CROSS-ROLE ONLY (2026-08-14): every item is filtered by `!hasRole`, so an
+ * operator's own primary actions (create a league, create a club) can never
+ * hide down here. Those live in the command hero at the top of the page.
  */
 export function DoMoreSection({
   hasParent,
@@ -61,7 +65,7 @@ export function DoMoreSection({
     <div className="reveal border-ink-100 shadow-soft rounded-[30px] border bg-white p-8">
       <PanelHeader title="Do more on the platform" />
       <p className="text-ink-600 -mt-2 text-sm">
-        Start anything below — you can take on a new role at any time, no setup required first.
+        Take on a new role at any time. No setup required first.
       </p>
 
       <div className="mt-5 grid gap-3 sm:grid-cols-2">
@@ -77,10 +81,21 @@ export function DoMoreSection({
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 5v14M5 12h14" />
               </svg>
             </span>
-            <div>
+            <div className="min-w-0 flex-1">
               <div className="text-ink-900 text-sm font-semibold">{action.title}</div>
               <div className="text-ink-600 mt-0.5 text-sm">{action.description}</div>
             </div>
+            {/* Chevron: this is a navigable row, and it should look like one. */}
+            <svg
+              className="text-ink-300 group-hover:text-[color:var(--brand-ink)] mt-1 h-4 w-4 flex-shrink-0 transition"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              aria-hidden="true"
+            >
+              <path d="m9 18 6-6-6-6" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
           </Link>
         ))}
       </div>

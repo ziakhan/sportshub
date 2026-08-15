@@ -149,6 +149,9 @@ export interface DashboardData {
       leagueId: string
       name: string
       season: string
+      /** Season lifecycle status — drives the card's status rail + pill and
+       *  the command hero's state choice (additive, 2026-08-14). */
+      status: string
       _count: { teams: number; games: number }
     }>
     /** Actionable counts (UX audit 2026-07-18) — what needs the operator */
@@ -622,6 +625,7 @@ export async function getDashboardData(user: UserWithRoles): Promise<DashboardDa
           leagueId: s.leagueId,
           name: s.league.name,
           season: s.label,
+          status: s.status,
           _count: { teams: s._count.teamSubmissions, games: s._count.games },
         })),
         liveNow,
