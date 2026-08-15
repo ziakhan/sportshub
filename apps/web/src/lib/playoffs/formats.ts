@@ -58,7 +58,7 @@ export function playoffOptionsFor(teamCount: number, qualifying: number): Format
     out.push({
       key: "SINGLE_ELIM",
       label: `Bracket of ${q}`,
-      description: `Straight knockout — ${q} teams, seeded from standings.`,
+      description: `Straight knockout: ${q} teams, seeded from standings.`,
       games: q - 1,
       rounds: Math.log2(q),
       recommended: q >= 4,
@@ -75,7 +75,7 @@ export function playoffOptionsFor(teamCount: number, qualifying: number): Format
         key: "ELIM_CONSOLATION",
         label: `Bracket of ${q} with consolation`,
         description:
-          "Every team keeps playing — losers drop into a placement bracket settling every position.",
+          "Every team keeps playing; losers drop into a placement bracket settling every position.",
         games: q === 4 ? 4 : (q * Math.log2(q)) / 2,
         rounds: Math.log2(q),
       })
@@ -98,7 +98,7 @@ export function playoffOptionsFor(teamCount: number, qualifying: number): Format
     out.push({
       key: "ROUND_ROBIN",
       label: `Round-robin of ${q}`,
-      description: `Everyone plays everyone (${(q * (q - 1)) / 2} games); the table crowns the champion — every team gets ${q - 1} games.`,
+      description: `Everyone plays everyone (${(q * (q - 1)) / 2} games); the table crowns the champion, and every team gets ${q - 1} games.`,
       games: (q * (q - 1)) / 2,
       rounds: q - 1,
       recommended: q <= 4 && !isPow2(q),
@@ -151,7 +151,7 @@ function roundLabel(teamsLeft: number, slot: number): string {
   if (teamsLeft === 2) return "Final"
   if (teamsLeft === 4) return `Semifinal ${slot + 1}`
   if (teamsLeft === 8) return `Quarterfinal ${slot + 1}`
-  return `Round of ${teamsLeft} — Game ${slot + 1}`
+  return `Round of ${teamsLeft} · Game ${slot + 1}`
 }
 
 export function buildPlan(format: PlayoffFormatKey, qualifying: number): PlayoffPlan {
@@ -206,7 +206,7 @@ export function buildPlan(format: PlayoffFormatKey, qualifying: number): Playoff
             slot,
             home: current[i],
             away: current[i + 1],
-            label: `Consolation — Round ${round - 1}, Game ${i / 2 + 1}`,
+            label: `Consolation · Round ${round - 1}, Game ${i / 2 + 1}`,
           })
           next.push({ winnerOf: [round, slot] })
         }
@@ -249,7 +249,7 @@ export function buildPlan(format: PlayoffFormatKey, qualifying: number): Playoff
           slot: slot++,
           home: { seed: Math.min(a, b) },
           away: { seed: Math.max(a, b) },
-          label: `Round-robin — Round ${r + 1}`,
+          label: `Round-robin · Round ${r + 1}`,
         })
       }
       teams.splice(1, 0, teams.pop()!) // rotate all but first

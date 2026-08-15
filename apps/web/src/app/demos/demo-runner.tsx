@@ -7,6 +7,9 @@ import { DemoPlayer } from "@/components/demo-directory/player"
 import { claimStory } from "@/components/demo-directory/stories/claim-story"
 import { gameDayStory } from "@/components/demo-directory/stories/game-day-story"
 import { loopStory } from "@/components/demo-directory/stories/loop-story"
+import { moneyStory } from "@/components/demo-directory/stories/money-story"
+import { playersSeasonStory } from "@/components/demo-directory/stories/players-season-story"
+import { playoffsStory } from "@/components/demo-directory/stories/playoffs-story"
 import { rosterStory } from "@/components/demo-directory/stories/roster-story"
 import { seasonStory } from "@/components/demo-directory/stories/season-story"
 import { waiversStory } from "@/components/demo-directory/stories/waivers-story"
@@ -39,6 +42,9 @@ const SCRIPTS: Record<
   "game-day": { script: gameDayStory, role: "Scorer's table", roleTone: "referee" },
   "claim-your-club": { script: claimStory, role: "Club", roleTone: "club" },
   "your-week": { script: yourWeekStory, role: "Parent", roleTone: "parent" },
+  "players-season": { script: playersSeasonStory, role: "Player", roleTone: "parent" },
+  "money-picture": { script: moneyStory, role: "Club", roleTone: "club" },
+  "standings-to-playoffs": { script: playoffsStory, role: "League", roleTone: "league" },
   waivers: { script: waiversStory, role: "League", roleTone: "league" },
 }
 

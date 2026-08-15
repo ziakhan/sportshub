@@ -112,7 +112,7 @@ export async function sendDueReminders(now = new Date()): Promise<{ reminded: nu
       day: "numeric",
     })
     const title = "Payment coming up"
-    const message = `${p.description ?? "Installment"} — ${money} due ${when}.`
+    const message = `${p.description ?? "Installment"}: ${money} due ${when}.`
 
     await notify(prisma, {
       userId: p.payerId,
@@ -132,7 +132,7 @@ export async function sendDueReminders(now = new Date()): Promise<{ reminded: nu
       if (user?.email) {
         await sendEmail({
           to: user.email,
-          subject: `Payment reminder — ${money} due ${when}`,
+          subject: `Payment reminder: ${money} due ${when}`,
           html: `<p>${message}</p><p>It will be charged automatically to your card on file. See your schedule: <a href="${appBaseUrl()}/payments">My payments</a>.</p>`,
         }).catch(() => {})
       }

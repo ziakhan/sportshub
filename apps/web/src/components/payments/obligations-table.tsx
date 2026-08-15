@@ -214,9 +214,9 @@ export function ObligationsTable({
                               <>
                                 {" "}
                                 This organization also accepts:{" "}
-                                {o.offlineMethods.map((m) => METHOD_LABEL[m] ?? m).join(", ")} —
-                                pay them directly and they&apos;ll record it here. Offline payments
-                                are arranged directly with the organizer — the platform can&apos;t
+                                {o.offlineMethods.map((m) => METHOD_LABEL[m] ?? m).join(", ")}.
+                                Pay them directly and they&apos;ll record it here. Offline payments
+                                are arranged directly with the organizer; the platform can&apos;t
                                 refund them.
                               </>
                             ) : null}
@@ -333,7 +333,7 @@ function RecordPaymentModal({
       <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-xl">
         <h3 className="text-lg font-semibold text-ink-900">Record a payment</h3>
         <p className="mt-1 text-sm text-ink-500">
-          {obligation.description} — {formatCurrency(remaining, obligation.currency)} remaining
+          {obligation.description}: {formatCurrency(remaining, obligation.currency)} remaining
         </p>
         {error && (
           <div className="mt-3 rounded-md bg-hoop-50 px-3 py-2 text-sm text-hoop-700">{error}</div>

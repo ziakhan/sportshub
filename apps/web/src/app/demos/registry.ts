@@ -141,18 +141,12 @@ export const DEMOS: DemoEntry[] = [
     promise:
       "Every game, stat line, highlight and award on one page a kid is proud to share.",
     description:
-      "The page opens on a player header with the season record, the team and the photo. You move down through the game log, where every night has its own stat line, then to a highlight clip and the player of the game award that came with it. The last beat shares the page as a link, which is the version a kid actually sends to family.",
-    plannedChapters: [
-      "The season header",
-      "Game log and stats",
-      "Highlight and award",
-      "Share the page",
-    ],
+      "It opens on the page the season builds for her: her team, her number, six averages written out in words, and every night she played on its own line with the numbers she put up. Last night's game is already there, because it was scored at the table rather than written on a clipboard. Then the part that matters to a kid: until somebody uploads a photo she gets a hand drawn mugshot with her jersey number on the chest, never a grey circle, and you watch the swap happen along with the one sentence the upload control carries about whose photo you may upload. The last stretch is the eighteen point night that won her Player of the Game, the share sheet with its consent line and its choice between her page and a twenty four hour story, and a handle that turns all of it into a link she can send to her grandmother.",
     audiences: ["parents", "clubs"],
     kind: "chapter",
     stage: "phone",
-    durationLabel: "75 sec",
-    status: "coming-soon",
+    durationLabel: "1 min 11 sec",
+    status: "live",
     thumbEyebrow: "Chapter 7",
   },
   {
@@ -161,13 +155,12 @@ export const DEMOS: DemoEntry[] = [
     promise:
       "Who has paid, who is on a plan, who is overdue, and the reminder that goes out without a spreadsheet.",
     description:
-      "A club treasurer opens the money view and sees paid, on a plan and overdue in one table. You watch her filter to the overdue families, open one account to read its installment history, and send a reminder from the same screen. A payment lands while she is there, and the row moves without anyone touching a spreadsheet.",
-    plannedChapters: ["Who has paid", "Open an account", "Send the reminder"],
+      "One screen carries every dollar the club is owed: collected, outstanding, overdue aged the way an accountant ages it, and waived, because clubs quietly carry families every season and that money should be visible. You watch the table filter to what is still open, and one family's plan open underneath itself, a deposit and three installments with two ticked, one missed and one still to come. The missed one is the honest case: not a family refusing to pay, a card that expired in October. Then the part nobody else shows you, because there is no button for it: the reminder goes out on a schedule, three days before the charge, the day after it is missed, then every four days, and you read the actual email. A card gets updated, an e-transfer taken at the door gets recorded with a note, and the four numbers at the top move last, ending with overdue at zero.",
     audiences: ["clubs"],
     kind: "chapter",
     stage: "desktop",
-    durationLabel: "90 sec",
-    status: "coming-soon",
+    durationLabel: "1 min 18 sec",
+    status: "live",
     thumbEyebrow: "Chapter 8",
   },
   {
@@ -176,18 +169,12 @@ export const DEMOS: DemoEntry[] = [
     promise:
       "Results roll into standings and tiebreakers, then the bracket builds itself and publishes.",
     description:
-      "A final score is confirmed and the standings recalculate in front of you, with the tiebreaker rule shown for the two teams level at the top. The league then builds the playoff bracket from those seeds and checks gym availability for each round. The last beat publishes the bracket to the public league page.",
-    plannedChapters: [
-      "A result comes in",
-      "Standings and tiebreakers",
-      "Build the bracket",
-      "Publish it",
-    ],
+      "The last game of the regular season is signed off at the scorer's table, and one press writes the box score, completes the game and changes what the standings are made of. They recalculate in front of you, because they are worked out from completed games at the moment you look rather than by a nightly job that might not have run. Two teams finish level and the row shows its own working: they split their meetings, so head to head settles nothing and the next rule decides it. Then the question nobody wants on the Thursday before playoffs, who is allowed to play, answered from the scorekeeper's attendance roll call, with a commissioner's override that will not save without a written reason. The last chapter is the bracket: fourteen games seeded off the table you just watched settle, the consolation round that keeps every team playing twice, and the public league page carrying all of it the same second.",
     audiences: ["leagues"],
     kind: "chapter",
     stage: "desktop",
-    durationLabel: "75 sec",
-    status: "coming-soon",
+    durationLabel: "1 min 22 sec",
+    status: "live",
     thumbEyebrow: "Chapter 9",
   },
   {

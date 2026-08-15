@@ -664,7 +664,7 @@ export function ScoringConsole({
       <div className="mx-auto max-w-lg p-8 text-center">
         <h2 className="text-ink-900 text-xl font-bold">Final</h2>
         <p className="text-ink-900 mt-2 text-3xl font-bold">
-          {game.homeTeam.name} {fold.homeScore} — {fold.awayScore} {game.awayTeam.name}
+          {game.homeTeam.name} {fold.homeScore} · {fold.awayScore} {game.awayTeam.name}
         </p>
         <div className="mt-4 flex justify-center gap-4">
           <a
@@ -994,7 +994,7 @@ export function ScoringConsole({
     return (
       <div className="mx-auto max-w-5xl space-y-4 p-4">
         <h2 className="text-ink-950 text-center text-lg font-bold">
-          Review: {game.homeTeam.name} {fold.homeScore} — {fold.awayScore} {game.awayTeam.name}
+          Review: {game.homeTeam.name} {fold.homeScore} · {fold.awayScore} {game.awayTeam.name}
         </h2>
         <div className="flex flex-col gap-4 md:flex-row">
           {boxTable(game.homeTeam.id, game.homeTeam.name)}
@@ -1400,11 +1400,11 @@ export function ScoringConsole({
         ) : pendingAction ? (
           <p className="text-play-700 text-xs font-semibold">
             {EVENT_LABELS[pendingAction.type]}
-            {pendingAction.made === false ? " miss" : ""} — now tap the player
+            {pendingAction.made === false ? " miss" : ""}. Now tap the player
           </p>
         ) : pendingPlayer ? (
           <p className="text-play-700 text-xs font-semibold">
-            #{jerseyOf(pendingPlayer.playerId)} — now tap an action
+            #{jerseyOf(pendingPlayer.playerId)}. Now tap an action
           </p>
         ) : (
           <p className="text-ink-400 text-xs">
