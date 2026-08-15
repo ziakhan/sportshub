@@ -77,3 +77,4 @@ demo-clips/
 
 # unlisted share bundles uploaded straight to the box (not in git)
 apps/web/public/x/
+.tooling/
