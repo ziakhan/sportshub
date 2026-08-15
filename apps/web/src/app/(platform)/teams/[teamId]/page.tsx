@@ -223,6 +223,7 @@ export default async function TeamHomePage({ params }: { params: { teamId: strin
               <li key={r.player.id} className="flex items-center gap-3 py-2">
                 <PlayerMug
                   name={`${r.player.firstName} ${r.player.lastName}`}
+                  accentKey={r.player.id}
                   jerseyNumber={r.jerseyNumber}
                   photoUrl={r.player.photoUrl}
                   sizeClassName="h-8 w-8 rounded-lg"

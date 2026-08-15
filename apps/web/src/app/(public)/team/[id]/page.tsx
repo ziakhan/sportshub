@@ -359,6 +359,7 @@ export default async function PublicTeamPage({ params }: { params: { id: string 
                       >
                         <PlayerMug
                           name={rosterNames.get(tp.player.id) ?? "Player"}
+                          accentKey={tp.player.id}
                           jerseyNumber={tp.jerseyNumber}
                           photoUrl={playerDisplayPhoto(tp.player, participant)}
                           sizeClassName="h-8 w-8 rounded-lg"

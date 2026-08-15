@@ -101,6 +101,7 @@ export default async function PublicPlayerPage({ params }: { params: { id: strin
         mark={
           <PlayerMug
             name={name}
+            accentKey={data.player.id}
             jerseyNumber={jersey ?? null}
             photoUrl={playerDisplayPhoto(data.player, participant)}
             sizeClassName="h-16 w-16 rounded-2xl sm:h-20 sm:w-20"

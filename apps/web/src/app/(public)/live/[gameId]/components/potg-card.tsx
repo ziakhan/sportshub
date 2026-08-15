@@ -19,6 +19,7 @@ export function PotgCard({ model }: { model: GameModel }) {
           player's head shot, then the sketched mug with their number. */}
       <PlayerMug
         name={nameOf(game.potgPlayerId)}
+        accentKey={game.potgPlayerId}
         jerseyNumber={jerseyOf(game.potgPlayerId) === "?" ? null : jerseyOf(game.potgPlayerId)}
         photoUrl={game.potgPhotoUrl ?? photoOf(game.potgPlayerId)}
         sizeClassName="h-16 w-16 rounded-full"

@@ -120,6 +120,7 @@ export default function PlayersPage() {
                   <div className="flex min-w-0 items-center gap-3">
                     <PlayerMug
                       name={`${player.firstName} ${player.lastName}`}
+                      accentKey={player.id}
                       /* The card shows the club jersey when they have one,
                          otherwise the number on their own profile. */
                       jerseyNumber={player.teams[0]?.jerseyNumber ?? player.jerseyNumber}

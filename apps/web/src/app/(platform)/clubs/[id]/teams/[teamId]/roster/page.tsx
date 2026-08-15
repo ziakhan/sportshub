@@ -270,6 +270,7 @@ export default async function TeamRosterPage({
                           ruling 2026-08-14). */}
                       <PlayerMug
                         name={`${tp.player.firstName} ${tp.player.lastName}`}
+                        accentKey={tp.player.id}
                         jerseyNumber={tp.jerseyNumber}
                         photoUrl={tp.player.photoUrl}
                         sizeClassName="h-8 w-8 rounded-full"

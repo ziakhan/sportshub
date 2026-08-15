@@ -2,6 +2,7 @@
 
 import Link from "next/link"
 import { PlayerMug } from "@/components/ui"
+import { accentForKey } from "@/lib/ui/player-accent"
 import { FlashNum } from "@/components/scoring/flash-num"
 import type { PlayerLine } from "@/lib/scoring/fold"
 import { SECTION_HEADING } from "./ui-bits"
@@ -44,14 +45,18 @@ function LeaderCell({
       </div>
     )
   }
+  const accent = accentForKey(entry.l.playerId)
   return (
     <div
-      // Tint history: 8%/3% read as almost nothing, 17%/9% was a touch hot.
-      // Settled at two ink steps (owner ruling 2026-08-14) — the better line
-      // still sits on the stronger wash, without a club colour deciding it.
+      // Tint history: 8%/3% read as almost nothing, 17%/9% was a touch hot,
+      // two flat ink steps read grey (owner, 2026-08-15). Now the card picks up
+      // the PLAYER's accent — 8% for the better line, 4.5% for the other — so
+      // the two cards are told apart by whose they are, not only by strength.
+      // Still not a club colour: the tone is hashed from the player id.
       className={`flex min-w-0 flex-1 items-center gap-2 rounded-2xl p-2 md:gap-3 md:p-3 ${
         mirror ? "md:flex-row-reverse md:text-right" : ""
-      } ${won ? "bg-ink-100" : "bg-ink-50"}`}
+      }`}
+      style={{ backgroundColor: won ? accent.washSoft : accent.washFaint }}
     >
       {/* Photos shipped 2026-08-14, and this circle became the photo slot
           exactly as the old comment predicted. No photo yet = the sketched
@@ -60,6 +65,7 @@ function LeaderCell({
           is already tinted. */}
       <PlayerMug
         name={shortName(entry.l.playerId)}
+        accentKey={entry.l.playerId}
         jerseyNumber={jerseyOf(entry.l.playerId) === "?" ? null : jerseyOf(entry.l.playerId)}
         photoUrl={photoOf(entry.l.playerId)}
         sizeClassName="h-9 w-9 rounded-full md:h-12 md:w-12"
