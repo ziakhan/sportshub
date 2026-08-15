@@ -194,7 +194,7 @@ export function MockPill({
     neutral: "bg-ink-50 text-ink-600 ring-ink-200",
     court: "bg-court-50 text-court-700 ring-court-100",
     hoop: "bg-hoop-50 text-hoop-600 ring-hoop-100",
-    gold: "bg-gold-50 text-gold-700 ring-gold-100",
+    gold: "bg-gold-50 text-gold-600 ring-gold-100",
     play: "bg-play-50 text-play-700 ring-play-100",
   }
   return (
@@ -1235,7 +1235,7 @@ export function MockPollResults({
                 o.mine
                   ? "border-play-400 ring-play-200 ring-1"
                   : winning
-                    ? "border-gold-300"
+                    ? "border-gold-400"
                     : "border-ink-100",
                 "data-[demo-hover=true]:border-ink-300",
                 "data-[demo-press=true]:scale-[0.99]"

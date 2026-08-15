@@ -111,15 +111,14 @@ export const DEMOS: DemoEntry[] = [
     slug: "claim-your-club",
     title: "Claim your club and make it yours",
     promise:
-      "Find your club page, claim it with the contact already on file, then set colours, crest and staff.",
+      "Find your club page, claim it with the contact already on file, then give it your colour, your crest and your words.",
     description:
-      "You search the directory and find a club page that already exists, built from public league listings. The claim goes to the contact on file, verification comes back, and the page unlocks. From there the club sets its colours, uploads the crest and adds two staff, and the public page changes as each one is saved.",
-    plannedChapters: ["Find your club", "Verify the contact", "Colours, crest and staff"],
+      "It opens in the public directory, where your club is probably already listed: a page built from public league listings, with the city right and nothing else. You watch it get searched up, opened, and claimed, and the claim is the part worth watching. The code goes to the contact already on file, masked on screen, so nobody can type their way into somebody else's club, and the corrections sit next to it because an imported listing is usually a little wrong. Six digits, a fourteen day reservation, and the page unlocks. The last chapter is the branding screen: a colour picked, a crest uploaded, a tagline and a paragraph typed, one save, and the same public page reloading with the club's own mark on the crest, its colour on the baseline stripe, and no claim button left on it.",
     audiences: ["clubs"],
     kind: "chapter",
     stage: "desktop",
-    durationLabel: "60 sec",
-    status: "coming-soon",
+    durationLabel: "1 min 6 sec",
+    status: "live",
     thumbEyebrow: "Chapter 5",
   },
   {
@@ -128,13 +127,12 @@ export const DEMOS: DemoEntry[] = [
     promise:
       "A parent opens the app and sees exactly what is happening, for both kids, with the gym address in one tap.",
     description:
-      "A parent opens the app on a Tuesday morning and gets the week for two kids on one screen. Practice tonight, a game Saturday, and the gym address one tap from directions. A fee reminder and an unsigned waiver are sitting in the same week, and both get handled without leaving it.",
-    plannedChapters: ["Open the week", "Two kids, one screen", "Directions in one tap"],
+      "Tuesday morning, one phone, two kids on two teams. Practice tonight, Noah's practice tomorrow, a game Saturday, and every line carries the gym, because the gym is the thing families get wrong. She answers Saturday with one tap and opens directions from the row itself. Then the week breaks the way weeks do: a gym change lands on the game she has already answered, and this is the part worth watching, because the row updates where it stands and her Going survives it. Nobody asks her a second time whether her daughter is playing. A fee installment and an unsigned waiver are sitting in the same week, and both get handled without leaving it.",
     audiences: ["parents"],
     kind: "chapter",
     stage: "phone",
-    durationLabel: "60 sec",
-    status: "coming-soon",
+    durationLabel: "1 min 1 sec",
+    status: "live",
     thumbEyebrow: "Chapter 6",
   },
   {
@@ -196,15 +194,14 @@ export const DEMOS: DemoEntry[] = [
     slug: "waivers",
     title: "Waivers, start to finish",
     promise:
-      "Send the waiver, a parent signs it on their phone, and the roster shows who is cleared to play.",
+      "A league adds the season waiver, a parent signs it on her phone, and the compliance grid goes green without anybody chasing anybody.",
     description:
-      "A club sends the season waiver to every family on the roster in one action. A parent opens it on her phone, reads it, signs with a finger, and the confirmation comes straight back. On the club roster the cleared to play column turns green as signatures arrive, and the two families still outstanding get a reminder.",
-    plannedChapters: ["Send the waiver", "Sign on the phone", "Cleared to play"],
-    audiences: ["clubs", "parents"],
+      "A league adds Ontario's concussion code from a template, reads the real text on screen, and the demo stops on the detail that costs leagues a season: it renews yearly, so last year's signature is not an answer. There is no recipient picker, because the roster is the recipient list and the emails go out the moment a team is approved. Then the parent side, on the phone, from the email: the document, her name, who she is signing as, a signature drawn with a finger, and an acknowledgment that names her daughter rather than agreeing to nothing in particular. Her cell on the league's grid turns green while you watch. The last stretch is the part nobody demos: two families still outstanding, both named, and the reminders that go out on their own at seven days and twenty four hours, until a hundred and ten of a hundred and ten are signed before the first whistle.",
+    audiences: ["clubs", "parents", "leagues"],
     kind: "chapter",
     stage: "split",
-    durationLabel: "60 sec",
-    status: "coming-soon",
+    durationLabel: "1 min 14 sec",
+    status: "live",
     thumbEyebrow: "Chapter 10",
   },
 ]

@@ -187,6 +187,7 @@ export function PhoneFrame({
 export function SplitStage({
   mode,
   hasPhone,
+  soloPhone,
   desktop,
   phone,
   url,
@@ -197,6 +198,8 @@ export function SplitStage({
   mode: StageMode
   /** Reserve the phone column even before the phone arrives. */
   hasPhone: boolean
+  /** The whole demo happens on the phone: no browser window on the stage. */
+  soloPhone?: boolean
   desktop: ReactNode
   phone?: ReactNode
   url: string
@@ -262,6 +265,38 @@ export function SplitStage({
       <PhoneFrame>{phone}</PhoneFrame>
     </div>
   ) : null
+
+  /* A phone-only demo: one frame, centred, scaled on its own. The desktop is
+     not dimmed or emptied, it is simply not part of this story. */
+  if (soloPhone) {
+    const scale = fitToPanel(width, panel.h, PHONE_FRAME_W, PHONE_FRAME_H)
+    return (
+      <div ref={outerRef} className="w-full">
+        <div
+          ref={stageRef}
+          className="relative mx-auto overflow-hidden"
+          style={
+            scale
+              ? { height: PHONE_FRAME_H * scale, width: "100%" }
+              : { aspectRatio: `${PHONE_FRAME_W} / ${PHONE_FRAME_H}`, width: "100%" }
+          }
+        >
+          <div
+            className="absolute left-1/2 top-0 origin-top"
+            style={{
+              width: PHONE_FRAME_W,
+              height: PHONE_FRAME_H,
+              transform: `translateX(-50%) scale(${scale})`,
+              transformOrigin: "top center",
+            }}
+          >
+            <PhoneFrame>{phone}</PhoneFrame>
+          </div>
+          {children}
+        </div>
+      </div>
+    )
+  }
 
   /* Narrow screens: the two frames stack and each gets its own scale, so the
      phone stays close to life size instead of shrinking with the desktop. */

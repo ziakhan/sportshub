@@ -1586,7 +1586,7 @@ export function PhonePotgCard({
   return (
     <div
       className={cn(
-        "border-gold-300 from-gold-50 flex items-center gap-3 rounded-2xl border bg-gradient-to-r to-white p-2.5",
+        "border-gold-400 from-gold-50 flex items-center gap-3 rounded-2xl border bg-gradient-to-r to-white p-2.5",
         fresh && "live-pop"
       )}
     >
@@ -1598,7 +1598,7 @@ export function PhonePotgCard({
         frameClassName="border-gold-400 bg-gold-50 border-2"
       />
       <div className="min-w-0">
-        <p className="text-gold-700 text-[9px] font-bold uppercase tracking-[0.2em]">
+        <p className="text-gold-600 text-[9px] font-bold uppercase tracking-[0.2em]">
           🏀 Player of the Game
         </p>
         <p className="text-ink-950 truncate text-[13px] font-semibold">

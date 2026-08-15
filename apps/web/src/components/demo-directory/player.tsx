@@ -257,6 +257,7 @@ export function DemoPlayer({
       <SplitStage
         mode={stage}
         hasPhone={hasPhone}
+        soloPhone={script.soloPhone}
         desktop={surfaces.desktop}
         phone={surfaces.phone}
         url={url}
@@ -291,11 +292,14 @@ export function DemoPlayer({
       </SplitStage>
 
       {/* Small screens show the desktop surface small. Say so rather than
-          panning or zooming around it. */}
-      <p className="text-ink-400 mt-3 text-[11px] font-medium sm:hidden">
-        The desktop screen is scaled down to fit your phone. Turn it sideways, or open
-        this on a laptop, to read every detail.
-      </p>
+          panning or zooming around it. A phone-only demo has nothing to
+          apologise for, so it says nothing. */}
+      {!script.soloPhone && (
+        <p className="text-ink-400 mt-3 text-[11px] font-medium sm:hidden">
+          The desktop screen is scaled down to fit your phone. Turn it sideways, or open
+          this on a laptop, to read every detail.
+        </p>
+      )}
 
       {/* Caption */}
       <div className="mt-4">

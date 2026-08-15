@@ -4,10 +4,13 @@ import Link from "next/link"
 import { useEffect, useState } from "react"
 import { cn } from "@/components/ui/cn"
 import { DemoPlayer } from "@/components/demo-directory/player"
+import { claimStory } from "@/components/demo-directory/stories/claim-story"
 import { gameDayStory } from "@/components/demo-directory/stories/game-day-story"
 import { loopStory } from "@/components/demo-directory/stories/loop-story"
 import { rosterStory } from "@/components/demo-directory/stories/roster-story"
 import { seasonStory } from "@/components/demo-directory/stories/season-story"
+import { waiversStory } from "@/components/demo-directory/stories/waivers-story"
+import { yourWeekStory } from "@/components/demo-directory/stories/your-week-story"
 import type { DemoScript } from "@/components/demo-directory/types"
 import { AUDIENCE_LABELS, DEMOS, type DemoEntry } from "./registry"
 
@@ -34,6 +37,9 @@ const SCRIPTS: Record<
   "everyone-in-the-loop": { script: loopStory, role: "Club", roleTone: "club" },
   "season-planned-to-published": { script: seasonStory, role: "League", roleTone: "league" },
   "game-day": { script: gameDayStory, role: "Scorer's table", roleTone: "referee" },
+  "claim-your-club": { script: claimStory, role: "Club", roleTone: "club" },
+  "your-week": { script: yourWeekStory, role: "Parent", roleTone: "parent" },
+  waivers: { script: waiversStory, role: "League", roleTone: "league" },
 }
 
 export function DemoStage({ demo }: { demo: DemoEntry }) {

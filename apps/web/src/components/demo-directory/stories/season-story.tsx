@@ -847,7 +847,7 @@ export const seasonStory: DemoScript = {
             </>
           }
         >
-          <div className="border-gold-200 bg-gold-50 rounded-2xl border px-4 py-3">
+          <div className="border-gold-100 bg-gold-50 rounded-2xl border px-4 py-3">
             <p className="text-gold-900 text-[13px] font-bold">
               Saved as a draft. Clubs and families see nothing until you publish.
             </p>
@@ -1513,7 +1513,7 @@ function ScheduleScreen({
               className={`rounded-2xl border px-4 py-2.5 ${
                 published
                   ? "border-court-200 bg-court-50"
-                  : "border-gold-300 bg-gold-50"
+                  : "border-gold-400 bg-gold-50"
               }`}
             >
               <p

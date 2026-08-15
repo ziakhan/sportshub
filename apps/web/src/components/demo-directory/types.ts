@@ -70,6 +70,13 @@ export interface DemoScript {
   initialStage: StageMode
   /** The desktop surface, and the phone surface when the story has one. */
   render: (ctx: DemoRenderContext) => { desktop: ReactNode; phone?: ReactNode }
+  /**
+   * A demo that only ever happens on a phone. The stage drops the browser
+   * window entirely rather than parking a dimmed empty one beside the handset,
+   * and the phone is scaled on its own so it reads at close to life size.
+   * Stories that hand off between surfaces leave this alone.
+   */
+  soloPhone?: boolean
   /** Address shown in the browser chrome bar before any beat sets its own. */
   desktopUrl: string
 }
