@@ -2459,11 +2459,16 @@ export function MockEndCard({
   title,
   line,
   next,
+  cta,
 }: {
   eyebrow: string
   title: string
   line: string
-  next: string
+  /** The demo that follows this one in the rail. */
+  next?: string
+  /** Overrides the chip outright: the LAST story has nowhere to point but the
+   *  directory itself. */
+  cta?: string
 }) {
   return (
     <div className="absolute inset-0 z-40 flex items-center justify-center overflow-hidden bg-[#0b1628]">
@@ -2482,7 +2487,7 @@ export function MockEndCard({
           <svg viewBox="0 0 24 24" className="h-3.5 w-3.5 fill-current" aria-hidden="true">
             <path d="M8 5v14l11-7z" />
           </svg>
-          Watch the next: {next}
+          {cta ?? `Watch the next: ${next}`}
         </span>
       </div>
     </div>

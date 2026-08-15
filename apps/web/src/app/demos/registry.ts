@@ -98,18 +98,12 @@ export const DEMOS: DemoEntry[] = [
     promise:
       "The full scoring console on one side, a parent watching live on the other, through to the referee sign off and the recap.",
     description:
-      "One side is the scoring console at the scorer table, running the clock, the fouls and the substitutions as the game goes. The other side is a parent stuck at work, watching the same game update play by play on her phone. The demo runs through the final buzzer, the referee sign off, and the recap that posts to the team page minutes later.",
-    plannedChapters: [
-      "Tip off at the table",
-      "A parent follows live",
-      "Final buzzer and sign off",
-      "The recap posts",
-    ],
+      "One side is the scoring console at the scorer's table: the game clock, the two starting fives, the action pad, the substitutions drawer. The other side is a mother stuck at work with the same game on her phone, and the two are locked together. Every tap at the table lands on her screen while you watch: the score flashes green, a foul flashes red, a substitution flashes amber, the play-by-play line writes itself with the assist named, and one clock ticks on both screens at once. It includes the part nobody demos, a wrong entry fixed with UNDO and the phone walking the number back, then runs through the buzzer, the referee's signature at the table, and the recap, the player of the game and the standings landing on her phone minutes later.",
     audiences: ["leagues", "clubs", "parents"],
     kind: "story",
     stage: "split",
-    durationLabel: "3 min",
-    status: "coming-soon",
+    durationLabel: "2 min 25 sec",
+    status: "live",
     featured: true,
     thumbEyebrow: "Story 4",
   },

@@ -4,6 +4,7 @@ import Link from "next/link"
 import { useEffect, useState } from "react"
 import { cn } from "@/components/ui/cn"
 import { DemoPlayer } from "@/components/demo-directory/player"
+import { gameDayStory } from "@/components/demo-directory/stories/game-day-story"
 import { loopStory } from "@/components/demo-directory/stories/loop-story"
 import { rosterStory } from "@/components/demo-directory/stories/roster-story"
 import { seasonStory } from "@/components/demo-directory/stories/season-story"
@@ -32,6 +33,7 @@ const SCRIPTS: Record<
   "roster-story": { script: rosterStory, role: "Club", roleTone: "club" },
   "everyone-in-the-loop": { script: loopStory, role: "Club", roleTone: "club" },
   "season-planned-to-published": { script: seasonStory, role: "League", roleTone: "league" },
+  "game-day": { script: gameDayStory, role: "Scorer's table", roleTone: "referee" },
 }
 
 export function DemoStage({ demo }: { demo: DemoEntry }) {

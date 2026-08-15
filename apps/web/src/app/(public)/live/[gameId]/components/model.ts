@@ -242,7 +242,7 @@ export function buildModel(data: LivePayload, fold: FoldResult): GameModel {
         if (e.made === false && n.eventType === "REBOUND") {
           const off = (n.metadata as { offensive?: boolean } | null)?.offensive
           tail = n.playerId
-            ? ` — ${off ? "offensive" : "defensive"} rebound #${jerseyOf(n.playerId)} ${shortName(n.playerId)}`
+            ? ` · ${off ? "offensive" : "defensive"} rebound #${jerseyOf(n.playerId)} ${shortName(n.playerId)}`
             : null
           consumed.add(j)
           break
