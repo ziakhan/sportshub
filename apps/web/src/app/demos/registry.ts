@@ -25,6 +25,17 @@ export interface DemoEntry {
   title: string
   /** One line, what the viewer will see happen. No em-dashes. */
   promise: string
+  /**
+   * Two or three sentences for the intro stage: what the viewer will actually
+   * watch, beat by beat, in plain words. Read before pressing play, so it names
+   * the moments rather than selling the feature.
+   */
+  description: string
+  /**
+   * Chapter names for a demo that is not filmed yet. Live demos take their
+   * chapter list from the script instead, so this stays empty for them.
+   */
+  plannedChapters?: string[]
   audiences: DemoAudience[]
   /** A story hands off between surfaces; a chapter stays on one. */
   kind: "story" | "chapter"
@@ -44,6 +55,8 @@ export const DEMOS: DemoEntry[] = [
     title: "Build a team, fill the roster",
     promise:
       "A club posts a tryout, families register and pay, offers go out, and the roster locks in.",
+    description:
+      "You open on a club team page with no tryout posted yet, and watch the manager set the date, the gym and the fee. The listing goes live and the same moment lands on a parent phone, where she registers her daughter and pays in a few taps. The registration comes back to the club side, an offer goes out, and the empty roster spot fills in.",
     audiences: ["clubs", "parents"],
     kind: "story",
     stage: "split",
@@ -56,6 +69,9 @@ export const DEMOS: DemoEntry[] = [
     title: "Everyone in the loop",
     promise:
       "One announcement reaches every phone on the team, and the replies, polls and chat stay in one place.",
+    description:
+      "A coach writes one message about a gym change and sends it to the whole team. It arrives as a notification on the parent side, where the thread, the yes or no poll and the replies all sit on one screen. You watch the read count climb and a parent question get answered without anyone opening a group chat.",
+    plannedChapters: ["Write the message", "It lands on every phone", "Replies and the poll"],
     audiences: ["clubs", "parents"],
     kind: "story",
     stage: "split",
@@ -68,6 +84,14 @@ export const DEMOS: DemoEntry[] = [
     title: "A season, planned to published",
     promise:
       "A league plans dates and gyms, clubs submit teams, the schedule generates, and every calendar updates.",
+    description:
+      "A league sets the season window, adds the gyms it has booked and opens team submissions. Clubs send their teams in, the schedule generates in one pass, and the two conflicts it finds get flagged before anything goes public. The last stretch publishes the season, and the same games appear on a parent calendar.",
+    plannedChapters: [
+      "Set the season",
+      "Clubs submit teams",
+      "Generate the schedule",
+      "Publish to calendars",
+    ],
     audiences: ["leagues", "clubs"],
     kind: "story",
     stage: "split",
@@ -80,6 +104,14 @@ export const DEMOS: DemoEntry[] = [
     title: "Game day, both sides at once",
     promise:
       "The full scoring console on one side, a parent watching live on the other, through to the referee sign off and the recap.",
+    description:
+      "One side is the scoring console at the scorer table, running the clock, the fouls and the substitutions as the game goes. The other side is a parent stuck at work, watching the same game update play by play on her phone. The demo runs through the final buzzer, the referee sign off, and the recap that posts to the team page minutes later.",
+    plannedChapters: [
+      "Tip off at the table",
+      "A parent follows live",
+      "Final buzzer and sign off",
+      "The recap posts",
+    ],
     audiences: ["leagues", "clubs", "parents"],
     kind: "story",
     stage: "split",
@@ -93,6 +125,9 @@ export const DEMOS: DemoEntry[] = [
     title: "Claim your club and make it yours",
     promise:
       "Find your club page, claim it with the contact already on file, then set colours, crest and staff.",
+    description:
+      "You search the directory and find a club page that already exists, built from public league listings. The claim goes to the contact on file, verification comes back, and the page unlocks. From there the club sets its colours, uploads the crest and adds two staff, and the public page changes as each one is saved.",
+    plannedChapters: ["Find your club", "Verify the contact", "Colours, crest and staff"],
     audiences: ["clubs"],
     kind: "chapter",
     stage: "desktop",
@@ -105,6 +140,9 @@ export const DEMOS: DemoEntry[] = [
     title: "Your week",
     promise:
       "A parent opens the app and sees exactly what is happening, for both kids, with the gym address in one tap.",
+    description:
+      "A parent opens the app on a Tuesday morning and gets the week for two kids on one screen. Practice tonight, a game Saturday, and the gym address one tap from directions. A fee reminder and an unsigned waiver are sitting in the same week, and both get handled without leaving it.",
+    plannedChapters: ["Open the week", "Two kids, one screen", "Directions in one tap"],
     audiences: ["parents"],
     kind: "chapter",
     stage: "phone",
@@ -117,6 +155,14 @@ export const DEMOS: DemoEntry[] = [
     title: "The player's season",
     promise:
       "Every game, stat line, highlight and award on one page a kid is proud to share.",
+    description:
+      "The page opens on a player header with the season record, the team and the photo. You move down through the game log, where every night has its own stat line, then to a highlight clip and the player of the game award that came with it. The last beat shares the page as a link, which is the version a kid actually sends to family.",
+    plannedChapters: [
+      "The season header",
+      "Game log and stats",
+      "Highlight and award",
+      "Share the page",
+    ],
     audiences: ["parents", "clubs"],
     kind: "chapter",
     stage: "phone",
@@ -129,6 +175,9 @@ export const DEMOS: DemoEntry[] = [
     title: "The money picture",
     promise:
       "Who has paid, who is on a plan, who is overdue, and the reminder that goes out without a spreadsheet.",
+    description:
+      "A club treasurer opens the money view and sees paid, on a plan and overdue in one table. You watch her filter to the overdue families, open one account to read its installment history, and send a reminder from the same screen. A payment lands while she is there, and the row moves without anyone touching a spreadsheet.",
+    plannedChapters: ["Who has paid", "Open an account", "Send the reminder"],
     audiences: ["clubs"],
     kind: "chapter",
     stage: "desktop",
@@ -141,6 +190,14 @@ export const DEMOS: DemoEntry[] = [
     title: "Standings to playoffs",
     promise:
       "Results roll into standings and tiebreakers, then the bracket builds itself and publishes.",
+    description:
+      "A final score is confirmed and the standings recalculate in front of you, with the tiebreaker rule shown for the two teams level at the top. The league then builds the playoff bracket from those seeds and checks gym availability for each round. The last beat publishes the bracket to the public league page.",
+    plannedChapters: [
+      "A result comes in",
+      "Standings and tiebreakers",
+      "Build the bracket",
+      "Publish it",
+    ],
     audiences: ["leagues"],
     kind: "chapter",
     stage: "desktop",
@@ -153,6 +210,9 @@ export const DEMOS: DemoEntry[] = [
     title: "Waivers, start to finish",
     promise:
       "Send the waiver, a parent signs it on their phone, and the roster shows who is cleared to play.",
+    description:
+      "A club sends the season waiver to every family on the roster in one action. A parent opens it on her phone, reads it, signs with a finger, and the confirmation comes straight back. On the club roster the cleared to play column turns green as signatures arrive, and the two families still outstanding get a reminder.",
+    plannedChapters: ["Send the waiver", "Sign on the phone", "Cleared to play"],
     audiences: ["clubs", "parents"],
     kind: "chapter",
     stage: "split",

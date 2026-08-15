@@ -35,6 +35,41 @@ const SPLIT_H = Math.max(DESKTOP_H, PHONE_FRAME_H)
 /** Below this the two frames stack instead of sitting side by side. */
 const STACK_BELOW = 780
 
+/**
+ * Fit to panel (owner ruling 2026-08-15: "too zoomed out").
+ *
+ * The stage is measured once at mount and again only on resize, then the whole
+ * frame group is scaled by a single transform to fill the panel: most of
+ * whichever axis binds first, so there is a margin but not a moat. Upscaling to
+ * 1.15x is allowed because the frames are laid out in rem and a transform keeps
+ * text crisp on a large display. The floor keeps a mid-size window readable.
+ *
+ * This scale NEVER changes during playback. The no-zoom law governs the
+ * recording; this is layout, decided before the first beat.
+ */
+const FIT_RATIO = 0.96
+const MIN_SCALE = 0.5
+const MAX_SCALE = 1.15
+/** Room kept for the caption bar and the beat stepper under the stage. */
+const DEFAULT_RESERVE_BELOW = 170
+
+function fitToPanel(
+  availW: number,
+  availH: number,
+  logicalW: number,
+  logicalH: number
+): number {
+  if (availW <= 0) return 0
+  const widthFit = availW / logicalW
+  const heightFit = availH > 0 ? availH / logicalH : Number.POSITIVE_INFINITY
+  const bounded = Math.min(
+    MAX_SCALE,
+    Math.max(MIN_SCALE, Math.min(widthFit, heightFit) * FIT_RATIO)
+  )
+  // The floor may not push the stage past the panel edge.
+  return Math.min(bounded, widthFit)
+}
+
 /* ── Desktop ─────────────────────────────────────────────────────────────── */
 
 /** Browser window for league and club surfaces, the collaborative side. */
@@ -153,6 +188,7 @@ export function SplitStage({
   phone,
   url,
   stageRef,
+  reserveBelow = DEFAULT_RESERVE_BELOW,
   children,
 }: {
   mode: StageMode
@@ -163,22 +199,46 @@ export function SplitStage({
   url: string
   /** The cursor overlay measures against this box. */
   stageRef: React.RefObject<HTMLDivElement>
+  /** Pixels of panel kept free under the stage for caption and controls. */
+  reserveBelow?: number
   /** Overlays: cursor, ripple, toast. */
   children?: ReactNode
 }) {
   const outerRef = useRef<HTMLDivElement>(null)
-  const [width, setWidth] = useState(0)
+  const [panel, setPanel] = useState({ w: 0, h: 0 })
 
+  /* Measured at mount and on resize only. The guard against an unchanged box
+     is what keeps the observer from looping when our own height changes. */
   useEffect(() => {
     const outer = outerRef.current
     if (!outer) return
-    const update = () => setWidth(outer.clientWidth)
-    update()
-    const ro = new ResizeObserver(update)
-    ro.observe(outer)
-    return () => ro.disconnect()
-  }, [])
+    let raf = 0
 
+    const measure = () => {
+      const w = Math.round(outer.clientWidth)
+      const top = outer.getBoundingClientRect().top
+      const h = Math.round(
+        Math.max(320, (window.innerHeight || 0) - top - reserveBelow)
+      )
+      setPanel((prev) => (prev.w === w && prev.h === h ? prev : { w, h }))
+    }
+
+    measure()
+    const schedule = () => {
+      cancelAnimationFrame(raf)
+      raf = requestAnimationFrame(measure)
+    }
+    const ro = new ResizeObserver(schedule)
+    ro.observe(outer)
+    window.addEventListener("resize", schedule)
+    return () => {
+      cancelAnimationFrame(raf)
+      ro.disconnect()
+      window.removeEventListener("resize", schedule)
+    }
+  }, [reserveBelow])
+
+  const width = panel.w
   const showPhone = hasPhone && (mode === "split" || mode === "phone")
   const stacked = width > 0 && width < STACK_BELOW
 
@@ -222,11 +282,12 @@ export function SplitStage({
     )
   }
 
-  // One scale for the whole stage. Reserving the phone column up front is what
-  // keeps the desktop frame from resizing when the phone slides in.
+  // One scale for the whole stage, fitted to the panel in both axes. Reserving
+  // the phone column up front is what keeps the desktop frame from resizing
+  // when the phone slides in.
   const logicalW = hasPhone ? SPLIT_W : DESKTOP_W
   const logicalH = hasPhone ? SPLIT_H : DESKTOP_H
-  const scale = width > 0 ? Math.min(1, width / logicalW) : 0
+  const scale = fitToPanel(width, panel.h, logicalW, logicalH)
 
   return (
     <div ref={outerRef} className="w-full">

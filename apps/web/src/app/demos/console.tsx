@@ -65,7 +65,7 @@ export function DemoConsole({ children }: { children: ReactNode }) {
   return (
     <div className="flex h-[100dvh] w-full flex-col overflow-hidden bg-[#0b1628] text-white lg:flex-row">
       {/* ── Left rail (lg and up) ─────────────────────────────────────────── */}
-      <aside className="relative isolate hidden w-[300px] shrink-0 flex-col border-r border-white/10 lg:flex">
+      <aside className="relative isolate hidden w-[320px] shrink-0 flex-col border-r border-white/10 lg:flex">
         <CourtBackdropLayer variant="navy" intensity="band" className="opacity-60" />
 
         <div className="relative z-10 flex min-h-0 flex-1 flex-col">
@@ -87,7 +87,7 @@ export function DemoConsole({ children }: { children: ReactNode }) {
             {filter}
           </div>
 
-          <div className="min-h-0 flex-1 overflow-y-auto px-3 pb-6">
+          <div className="min-h-0 flex-1 overflow-y-auto px-3.5 pb-6">
             <p className="px-2 pb-2 text-[11px] font-semibold text-white/40">
               {shown.length} {shown.length === 1 ? "demo" : "demos"}
             </p>
@@ -161,7 +161,10 @@ export function DemoConsole({ children }: { children: ReactNode }) {
           }}
         />
         <CourtBackdropLayer variant="navy" intensity="ambient" />
-        <div className="relative z-10 mx-auto w-full max-w-[1200px] px-4 py-6 sm:px-8 sm:py-10 lg:px-12 lg:py-12">
+        {/* The stage panel runs wide on purpose: the player measures this box
+            and scales the frames to fill it, so every 100px of padding we do
+            not need is 100px of legible product. */}
+        <div className="relative z-10 mx-auto flex min-h-full w-full max-w-[1760px] flex-col px-4 py-5 sm:px-6 sm:py-7 lg:px-8 lg:py-8">
           {children}
         </div>
       </main>
@@ -202,9 +205,14 @@ function SearchField({
 }
 
 /**
- * One row in the rail, or one card in the phone strip. Coming-soon demos stay
- * selectable on purpose: picking one puts its promise on the stage, which is
- * the honest answer to "what will this show me".
+ * One row in the rail, or one card in the phone strip.
+ *
+ * Owner ruling 2026-08-15: the rail is a title list, not a summary. The title
+ * leads and carries the weight of a link, and the only support under it is the
+ * duration and whether this is a story or a chapter. The two-line promise moved
+ * to the intro stage, where the viewer has room to read it before pressing play.
+ * Coming-soon demos stay selectable on purpose: picking one shows what it will
+ * cover, which is the honest answer to "what will this show me".
  */
 function DemoItem({
   demo,
@@ -223,24 +231,57 @@ function DemoItem({
       href={`/demos/${demo.slug}`}
       aria-current={active ? "true" : undefined}
       className={cn(
-        "group relative block overflow-hidden rounded-xl border px-3.5 py-3 outline-none transition-colors duration-200",
+        "group relative block overflow-hidden rounded-xl border px-4 py-3.5 outline-none transition-colors duration-200",
         "focus-visible:ring-2 focus-visible:ring-gold-400/70",
         active
           ? "border-gold-400/60 bg-white/[0.10]"
           : "border-white/10 bg-white/[0.03] hover:border-white/25 hover:bg-white/[0.07]",
         soon && !active && "opacity-65 hover:opacity-90",
-        compact && "w-[228px]"
+        compact && "w-[248px]"
       )}
     >
       {active && (
         <span aria-hidden="true" className="absolute inset-y-0 left-0 w-[3px] bg-gold-400" />
       )}
 
-      <div className="flex items-center gap-2">
+      <div className="flex items-start gap-2.5">
+        <p
+          className={cn(
+            "min-w-0 flex-1 text-[15px] font-bold leading-snug tracking-[-0.01em]",
+            active ? "text-white" : "text-white/90 group-hover:text-white"
+          )}
+        >
+          {demo.title}
+        </p>
+        <span
+          aria-hidden="true"
+          className={cn(
+            "mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full transition-colors duration-200",
+            soon
+              ? "bg-white/[0.06] text-white/35"
+              : active
+                ? "bg-gold-400 text-[#0b1628]"
+                : "bg-white/10 text-white/60 group-hover:bg-gold-400 group-hover:text-[#0b1628]"
+          )}
+        >
+          {soon ? (
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" className="h-2.5 w-2.5">
+              <circle cx="12" cy="12" r="9" />
+              <path d="M12 7.5V12l3 2" />
+            </svg>
+          ) : (
+            <svg viewBox="0 0 24 24" className="h-2.5 w-2.5 fill-current">
+              <path d="M8 5v14l11-7z" />
+            </svg>
+          )}
+        </span>
+      </div>
+
+      <div className="mt-2 flex items-center gap-2">
         <span
           className={cn(
             "inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.14em]",
-            isStory ? "text-gold-400" : "text-white/55"
+            isStory ? "text-gold-400" : "text-white/50"
           )}
         >
           <span
@@ -252,33 +293,16 @@ function DemoItem({
           />
           {isStory ? "Story" : "Chapter"}
         </span>
-        <span className="text-[10px] font-semibold tabular-nums text-white/40">
+        <span aria-hidden="true" className="h-2.5 w-px bg-white/15" />
+        <span className="text-[10.5px] font-semibold tabular-nums text-white/45">
           {demo.durationLabel}
         </span>
-        <span
-          className={cn(
-            "ml-auto text-[10px] font-bold uppercase tracking-[0.12em]",
-            soon ? "text-white/40" : "text-play-300"
-          )}
-        >
-          {soon ? "Soon" : "Play"}
-        </span>
-      </div>
-
-      <p
-        className={cn(
-          "mt-1.5 text-[13.5px] font-semibold leading-snug",
-          active ? "text-white" : "text-white/85 group-hover:text-white"
+        {soon && (
+          <span className="ml-auto text-[10px] font-bold uppercase tracking-[0.12em] text-white/40">
+            Soon
+          </span>
         )}
-      >
-        {demo.title}
-      </p>
-
-      {!compact && (
-        <p className="mt-1 line-clamp-2 text-[11.5px] leading-relaxed text-white/45">
-          {demo.promise}
-        </p>
-      )}
+      </div>
     </Link>
   )
 }

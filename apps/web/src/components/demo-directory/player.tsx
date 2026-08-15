@@ -10,8 +10,13 @@ import type { DemoScript, StageMode } from "./types"
  * The demo directory player (2026-08-15).
  *
  * Wraps the fixed stage with the controls a scripted product tour needs:
- * play and pause, chapter jump chips, a progress bar, autoplay when the demo
- * scrolls into view, and a caption bar that names the beat.
+ * play and pause, chapter jump chips, a progress bar, and a caption bar that
+ * names the beat.
+ *
+ * Owner ruling 2026-08-15 (read then play): the player no longer starts itself
+ * when it scrolls into view. The intro stage mounts it with `autoStart` the
+ * moment the viewer presses Play, so a demo only ever runs because someone
+ * asked for it. Nothing else about the timeline changed.
  *
  * Everything is derived from the beat index, so jumping is exact: chapter 2
  * looks the same whether you watched chapter 1 or skipped it.
@@ -21,24 +26,37 @@ export function DemoPlayer({
   role,
   roleTone = "club",
   className,
+  autoStart = false,
+  onExit,
+  exitLabel = "Back to intro",
 }: {
   script: DemoScript
   /** Who is acting, shown on the caption chip. */
   role: string
   roleTone?: "club" | "league" | "parent" | "referee"
   className?: string
+  /** Start playing as soon as the player mounts (the Play press did this). */
+  autoStart?: boolean
+  /** Shows a small link back to the intro stage. */
+  onExit?: () => void
+  exitLabel?: string
 }) {
   const { beats, chapters } = script
   const reduced = usePrefersReducedMotion()
 
   const [index, setIndex] = useState(0)
-  const [playing, setPlaying] = useState(false)
+  const [playing, setPlaying] = useState(autoStart)
   const [elapsed, setElapsed] = useState(0)
   const [done, setDone] = useState(false)
 
   const rootRef = useRef<HTMLDivElement>(null)
   const stageRef = useRef<HTMLDivElement>(null)
-  const startedRef = useRef(false)
+
+  /* Reduced motion resolves after the first paint, so an autostarted demo
+     stops itself and hands over to the beat stepper. */
+  useEffect(() => {
+    if (reduced) setPlaying(false)
+  }, [reduced])
 
   const beat = beats[index]
 
@@ -105,25 +123,6 @@ export function DemoPlayer({
     return () => clearInterval(id)
   }, [index, playing, reduced, starts, beat])
 
-  /* Autoplay once the demo is actually on screen. */
-  useEffect(() => {
-    const root = rootRef.current
-    if (!root || reduced) return
-    const io = new IntersectionObserver(
-      (entries) => {
-        for (const e of entries) {
-          if (e.isIntersecting && !startedRef.current) {
-            startedRef.current = true
-            setPlaying(true)
-          }
-        }
-      },
-      { threshold: 0.45 }
-    )
-    io.observe(root)
-    return () => io.disconnect()
-  }, [reduced])
-
   const jumpTo = useCallback(
     (next: number) => {
       setDone(false)
@@ -154,6 +153,25 @@ export function DemoPlayer({
     <div ref={rootRef} className={cn("select-none", className)}>
       {/* Controls */}
       <div className="mb-3 flex flex-wrap items-center gap-2">
+        {onExit && (
+          <button
+            type="button"
+            onClick={onExit}
+            className="text-ink-400 hover:text-ink-800 inline-flex items-center gap-1 text-[11px] font-semibold transition-colors"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.4"
+              aria-hidden="true"
+              className="h-3 w-3"
+            >
+              <path d="M14 6l-6 6 6 6" />
+            </svg>
+            {exitLabel}
+          </button>
+        )}
         <button
           type="button"
           onClick={() => {

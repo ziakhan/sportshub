@@ -12,7 +12,7 @@ export default function DemosWelcomePage() {
   const chapters = DEMOS.length - stories
 
   return (
-    <div className="flex min-h-[60vh] items-center justify-center">
+    <div className="flex min-h-[60vh] flex-1 items-center justify-center">
       <div className="relative isolate w-full max-w-2xl overflow-hidden rounded-3xl border border-white/12 bg-white/[0.05] px-6 py-9 shadow-[0_40px_120px_-60px_rgba(0,0,0,0.9)] sm:px-10 sm:py-12">
         {/* Amber arc motif: the house mark, not decoration for its own sake. */}
         <span
@@ -41,7 +41,7 @@ export default function DemosWelcomePage() {
             {[
               "Choose an audience on the left to see only what fits you.",
               "Stories play both sides at once, so you see the club and the parent.",
-              "Press play, or step through it a beat at a time.",
+              "Each demo opens with a short read, then one button plays it.",
             ].map((line) => (
               <li key={line} className="flex items-start gap-2.5 text-[13.5px] text-white/70">
                 <span
