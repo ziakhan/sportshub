@@ -152,8 +152,10 @@ export default function EditPlayerPage() {
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
             {/* Photo first: it is the thing every roster, box score and game
-                page shows, and until one exists they see the sketched mug. */}
-            <div className="border-ink-100 rounded-2xl border p-4">
+                page shows, and until one exists they see the sketched mug.
+                id="photo" is the deep-link target for every Add photo
+                affordance on player cards and the player page. */}
+            <div id="photo" className="border-ink-100 scroll-mt-24 rounded-2xl border p-4">
               <span className={`${labelClass} mb-2`}>Player photo</span>
               <PlayerPhotoField
                 name={playerName}

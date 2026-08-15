@@ -111,7 +111,19 @@ export default async function PublicPlayerPage({ params }: { params: { id: strin
         className="mb-4"
       />
 
-      <div className="mb-4 flex justify-end">
+      <div className="mb-4 flex items-center justify-end gap-2">
+        {scope.playerIds.has(data.player.id) && (
+          <Link
+            href={`/players/${data.player.id}/edit#photo`}
+            className="bg-ink-50 text-ink-700 ring-ink-200 hover:bg-ink-100 inline-flex items-center gap-1.5 rounded-full px-4 py-1.5 text-xs font-semibold ring-1 transition"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-3.5 w-3.5">
+              <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+              <circle cx="12" cy="13" r="4" />
+            </svg>
+            {data.player.photoUrl ? "Change photo" : "Add photo"}
+          </Link>
+        )}
         <FollowButton
           playerId={data.player.id}
           initialFollowing={followState === "active"}

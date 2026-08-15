@@ -118,15 +118,29 @@ export default function PlayersPage() {
               >
                 <div className="flex items-center justify-between gap-4">
                   <div className="flex min-w-0 items-center gap-3">
-                    <PlayerMug
-                      name={`${player.firstName} ${player.lastName}`}
-                      accentKey={player.id}
-                      /* The card shows the club jersey when they have one,
-                         otherwise the number on their own profile. */
-                      jerseyNumber={player.teams[0]?.jerseyNumber ?? player.jerseyNumber}
-                      photoUrl={player.photoUrl}
-                      size="lg"
-                    />
+                    <Link
+                      href={`/players/${player.id}/edit#photo`}
+                      title={player.photoUrl ? "Change photo" : "Add a photo"}
+                      className="group relative shrink-0"
+                    >
+                      <PlayerMug
+                        name={`${player.firstName} ${player.lastName}`}
+                        accentKey={player.id}
+                        /* The card shows the club jersey when they have one,
+                           otherwise the number on their own profile. */
+                        jerseyNumber={player.teams[0]?.jerseyNumber ?? player.jerseyNumber}
+                        photoUrl={player.photoUrl}
+                        size="lg"
+                      />
+                      {!player.photoUrl && (
+                        <span className="bg-play-600 absolute -bottom-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full text-white ring-2 ring-white transition group-hover:scale-110">
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="h-3 w-3">
+                            <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+                            <circle cx="12" cy="13" r="4" />
+                          </svg>
+                        </span>
+                      )}
+                    </Link>
                     <div className="min-w-0">
                     <h3 className="font-display text-ink-950 text-xl font-semibold">
                       {player.firstName} {player.lastName}
