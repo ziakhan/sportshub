@@ -58,20 +58,20 @@ const SHOWCASE_SEASON = "2026-27"
 // on web AND native without a nullable-season API change (old fielded
 // bundles read season fields; server never leads the client).
 const NPH_SHELL_LEAGUES: Array<[string, string]> = [
-  ["NPA Canada", "National Preparatory Association — Canada's top prep basketball circuit."],
-  ["WNPA Canada", "Women's National Preparatory Association — elite girls prep basketball."],
-  ["NPH D1", "NPH D1 — Academy, Scholastic and Junior divisions."],
+  ["NPA Canada", "National Preparatory Association, Canada's top prep basketball circuit."],
+  ["WNPA Canada", "Women's National Preparatory Association, elite girls prep basketball."],
+  ["NPH D1", "NPH D1: Academy, Scholastic and Junior divisions."],
 ]
 const DIRECTORY_LEAGUES: Array<[string, string]> = [
   ["Ontario Basketball League (OBL)", "Ontario Basketball's provincial club league."],
-  ["National Junior Circuit", "Junior club basketball circuit — Toronto & GTA."],
-  ["National Senior Circuit", "Senior club basketball circuit — Toronto & GTA."],
+  ["National Junior Circuit", "Junior club basketball circuit in Toronto & GTA."],
+  ["National Senior Circuit", "Senior club basketball circuit in Toronto & GTA."],
   ["Hoop City League", "Toronto community basketball league."],
   ["Toronto Big League", "GTA club basketball league."],
   ["Phoenix League", "Toronto youth basketball league."],
-  ["OSBA — Ontario Scholastic Basketball Association", "Ontario's elite high-school prep league."],
-  ["JUEL — Junior Elite League", "Ontario's provincial girls development league."],
-  ["CYBL — Canadian Youth Basketball League", "GTA youth league — spring and winter seasons."],
+  ["OSBA (Ontario Scholastic Basketball Association)", "Ontario's elite high-school prep league."],
+  ["JUEL (Junior Elite League)", "Ontario's provincial girls development league."],
+  ["CYBL (Canadian Youth Basketball League)", "GTA youth league for spring and winter seasons."],
 ]
 // Fall/winter-only demo clubs (owner 2026-07-29): A = established, applied
 // with complete rosters; B = freshly onboarded, roster ready, applies LIVE.
@@ -165,10 +165,10 @@ const ADULT_NAMES = ["Alex","Sam","Jordan","Taylor","Morgan","Casey","Jamie","Ro
 const LAST_NAMES = ["Thompson","Williams","Chen","Patel","Singh","Osei","Diallo","Nguyen","Garcia","Martinez","Brown","Wilson","Campbell","Grant","Baptiste","Charles","Pierre","Ahmed","Hassan","Ali","Khan","Kim","Park","Lee","Wong","Liu","Sharma","Gupta","Okafor","Mensah","Boateng","Silva","Santos","Rodriguez","Taylor","Anderson","Jackson","White","Harris","Robinson","Clarke","Lewis","Walker","Young","Allen","Wright","Scott","Green","Baker","Adams","Morris","Reid","Murray","Sinclair"]
 
 const HIGHLIGHT_VIDEOS = [
-  { id: "DLgjY3EF_fo", title: "NPH Showcase — Best Plays of the Weekend" },
-  { id: "LGBsYRZ0jmU", title: "Grade 11: Toronto Lords vs West United — Full Highlights" },
-  { id: "QKvLqlGZEic", title: "Grade 8 Division — Top Plays, Week 4" },
-  { id: "2OYIiF2YwIs", title: "Saturday Showcase — Around the League" },
+  { id: "DLgjY3EF_fo", title: "NPH Showcase: Best Plays of the Weekend" },
+  { id: "LGBsYRZ0jmU", title: "Grade 11: Toronto Lords vs West United (Full Highlights)" },
+  { id: "QKvLqlGZEic", title: "Grade 8 Division: Top Plays, Week 4" },
+  { id: "2OYIiF2YwIs", title: "Saturday Showcase: Around the League" },
   { id: "kmhxcuhYNjk", title: "Player Spotlight: Rising Stars of Summer 2026" },
   { id: "TmslsvOqTUU", title: "Grade 10 Game of the Week: Burlington Force vs Royal Crown" },
 ]
@@ -687,7 +687,7 @@ async function seed() {
   const winterLeague = await p.league.create({
     data: {
       name: WINTER_LEAGUE,
-      description: "North Pole Hoops' flagship grade-based circuit — every game scored live with stats, standings and recaps.",
+      description: "North Pole Hoops' flagship grade-based circuit, every game scored live with stats, standings and recaps.",
       ownerId: nph.id,
       statDepth: "STANDARD",
       periodType: "QUARTERS",
@@ -825,7 +825,7 @@ async function seed() {
       const tryout = await p.tryout.create({
         data: {
           tenantId: row.id, teamId: team.id,
-          title: `${club.name} Grade ${grade} Tryouts — ${WINTER_SEASON}`,
+          title: `${club.name} Grade ${grade} Tryouts, ${WINTER_SEASON}`,
           description: `Open evaluation for the ${WINTER_SEASON} NPH Showcase League squad.`,
           ageGroup: `Grade ${grade}`, gender: "MALE",
           location: gymFor(club.city),
@@ -885,7 +885,7 @@ async function seed() {
             includesBall: template.includesBall, includesBag: template.includesBag,
             includesShoes: template.includesShoes, includesUniform: template.includesUniform,
             includesTracksuit: template.includesTracksuit,
-            message: `Congratulations — we'd love to have ${kidName.firstName} on the Grade ${grade} squad this season.`,
+            message: `Congratulations, we'd love to have ${kidName.firstName} on the Grade ${grade} squad this season.`,
             expiresAt: new Date(tryoutAt.getTime() + days(10)),
             respondedAt: outcome === "EXPIRED" ? null : respondedAt,
             createdAt: new Date(tryoutAt.getTime() + days(1)),
@@ -927,7 +927,7 @@ async function seed() {
           data: {
             payerUserId: parent.id, payeeTenantId: row.id,
             referenceType: "Offer", referenceId: offer.id,
-            description: `${WINTER_SEASON} season fee — ${teamName}`,
+            description: `${WINTER_SEASON} season fee for ${teamName}`,
             amount: seasonFee, status: obligationStatus,
             dueDate: new Date(tryoutAt.getTime() + days(30)),
           },
@@ -948,8 +948,8 @@ async function seed() {
                 obligationId: obligation.id, recordedById: row.ownerId,
                 description:
                   k === 0
-                    ? `${WINTER_SEASON} deposit — ${teamName}`
-                    : `${WINTER_SEASON} installment ${k}/3 — ${teamName}`,
+                    ? `${WINTER_SEASON} deposit for ${teamName}`
+                    : `${WINTER_SEASON} installment ${k}/3 for ${teamName}`,
                 installmentNumber: k + 1,
                 // deposit on accept, then the 1st of each following month
                 createdAt: new Date(respondedAt.getTime() + days(k * 30)),
@@ -980,7 +980,7 @@ async function seed() {
         data: {
           payerTenantId: row.id, payeeLeagueId: winterLeague.id,
           referenceType: "TeamSubmission", referenceId: submission.id,
-          description: `${WINTER_LEAGUE} team entry — ${teamName} (${WINTER_SEASON})`,
+          description: `${WINTER_LEAGUE} team entry for ${teamName} (${WINTER_SEASON})`,
           amount: LEAGUE_TEAM_FEE, status: "PAID",
         },
         select: { id: true },
@@ -991,7 +991,7 @@ async function seed() {
           amount: LEAGUE_TEAM_FEE, currency: "CAD",
           status: "SUCCEEDED", paymentType: "LEAGUE_FEE", method: "ETRANSFER",
           payeeId: nph.id, recordedById: nph.id,
-          description: `${WINTER_LEAGUE} team entry — ${teamName} (${WINTER_SEASON})`,
+          description: `${WINTER_LEAGUE} team entry for ${teamName} (${WINTER_SEASON})`,
           createdAt: new Date(now.getTime() - days(40)),
         },
       })
@@ -1196,7 +1196,7 @@ async function seed() {
         sessionDayId: week5SatDay.id,
         startTime: "09:00",
         endTime: "15:00",
-        message: "Final regular-season Saturday — two courts running all morning.",
+        message: "Final regular-season Saturday, two courts running all morning.",
         createdById: nph.id,
       },
       select: { id: true },
@@ -1207,7 +1207,7 @@ async function seed() {
           userId: refId,
           type: "referee_request",
           title: `${WINTER_LEAGUE} needs a referee`,
-          message: "Saturday 09:00–15:00 — first to accept gets the day.",
+          message: "Saturday 09:00–15:00, first to accept gets the day.",
           link: "/referee/requests",
           referenceId: offer.id,
           referenceType: "RefereeSessionRequest",
@@ -1232,7 +1232,7 @@ async function seed() {
     await p.post.create({
       data: {
         kind: "VIDEO", title: v.title, slug: `nph-demo-highlights-${i + 1}`,
-        body: "Courtside highlights from around the NPH Showcase League — follow your team to catch every clip.",
+        body: "Courtside highlights from around the NPH Showcase League. Follow your team to catch every clip.",
         status: "PUBLISHED", publishedAt: new Date(now.getTime() - days(i * 2 + 1)),
         authorId: nph.id,
         tags: { create: [{ leagueId: winterLeague.id }, { teamId: team.id }, { tenantId: team.tenantId }] },
@@ -1242,8 +1242,8 @@ async function seed() {
   }
   const annos = [
     { key: "lords", title: "Summer 2026 championship picture taking shape", content: "Top four in each grade division qualify for championship weekend at Pan Am Sports Centre, July 25–26. All games live-scored with stats and recaps." },
-    { key: "force", title: "Fall League tryouts open across the West End", content: "Burlington Force, West United and the Monarchs have posted Fall League tryouts — register on the marketplace, roll call happens on your phone at the door." },
-    { key: "crown", title: "March Break Elite Camp — registration open", content: "Five days of skill development with our coaching staff. Ages 12–17, all levels welcome. Early-bird pricing ends February 1." },
+    { key: "force", title: "Fall League tryouts open across the West End", content: "Burlington Force, West United and the Monarchs have posted Fall League tryouts. Register on the marketplace, roll call happens on your phone at the door." },
+    { key: "crown", title: "March Break Elite Camp: registration open", content: "Five days of skill development with our coaching staff. Ages 12–17, all levels welcome. Early-bird pricing ends February 1." },
   ]
   for (let i = 0; i < annos.length; i++) {
     const a = annos[i]
@@ -1255,7 +1255,7 @@ async function seed() {
 
   // ── Reviews (ratings live on browse + club pages) ─────────────────────
   const reviewLines = [
-    ["Great coaches, great communication", "Our son improved so much this season. Offers, sizes and payments were all on our phone — zero paperwork."],
+    ["Great coaches, great communication", "Our son improved so much this season. Offers, sizes and payments were all on our phone. Zero paperwork."],
     ["Well organized club", "Tryout to roster in a week, and we always knew what we owed and when. The team chat keeps everyone in the loop."],
     ["Development first", "Coaches actually develop every kid on the roster, not just the stars. Live stats after every game are a huge bonus."],
     ["Smooth season", "Schedules, standings and recaps all in one place. Best-run club we've been part of."],
@@ -1286,7 +1286,7 @@ async function seed() {
   const springLeague = await p.league.create({
     data: {
       name: SPRING_LEAGUE,
-      description: "NPH's fall season — October through March, registration open now. Clubs are holding tryouts and submitting rosters.",
+      description: "NPH's fall season: October through March, registration open now. Clubs are holding tryouts and submitting rosters.",
       ownerId: nph.id, statDepth: "STANDARD", periodType: "QUARTERS",
     },
   })
@@ -1370,7 +1370,7 @@ async function seed() {
       data: {
         payerTenantId: row.id, payeeLeagueId: springLeague.id,
         referenceType: "TeamSubmission", referenceId: submission.id,
-        description: `${SPRING_LEAGUE} team entry — ${club.name} Fall Grade ${sourceGrade} (${SPRING_SEASON})`,
+        description: `${SPRING_LEAGUE} team entry for ${club.name} Fall Grade ${sourceGrade} (${SPRING_SEASON})`,
         amount: LEAGUE_TEAM_FEE, status: "PAID",
       },
       select: { id: true },
@@ -1381,7 +1381,7 @@ async function seed() {
         amount: LEAGUE_TEAM_FEE, currency: "CAD",
         status: "SUCCEEDED", paymentType: "LEAGUE_FEE", method: "ETRANSFER",
         payeeId: nph.id, recordedById: nph.id,
-        description: `${SPRING_LEAGUE} team entry — ${club.name} Fall Grade ${sourceGrade} (${SPRING_SEASON})`,
+        description: `${SPRING_LEAGUE} team entry for ${club.name} Fall Grade ${sourceGrade} (${SPRING_SEASON})`,
         createdAt: new Date(now.getTime() - days(6)),
       },
     })
@@ -1438,7 +1438,7 @@ async function seed() {
       data: {
         payerTenantId: row.id, payeeLeagueId: springLeague.id,
         referenceType: "TeamSubmission", referenceId: submission.id,
-        description: `${SPRING_LEAGUE} team entry — ${teamName} (${SPRING_SEASON})`,
+        description: `${SPRING_LEAGUE} team entry for ${teamName} (${SPRING_SEASON})`,
         amount: LEAGUE_TEAM_FEE, status: "PAID",
       },
       select: { id: true },
@@ -1449,7 +1449,7 @@ async function seed() {
         amount: LEAGUE_TEAM_FEE, currency: "CAD",
         status: "SUCCEEDED", paymentType: "LEAGUE_FEE", method: "ETRANSFER",
         payeeId: nph.id, recordedById: nph.id,
-        description: `${SPRING_LEAGUE} team entry — ${teamName} (${SPRING_SEASON})`,
+        description: `${SPRING_LEAGUE} team entry for ${teamName} (${SPRING_SEASON})`,
         createdAt: new Date(now.getTime() - days(6)),
       },
     })
@@ -1500,11 +1500,11 @@ async function seed() {
         status: "APPROVED",
         dayOfWeek: 0,
         latestStart: "12:00",
-        reason: "Traveling back to Ottawa — we need to head home early Sunday afternoon.",
+        reason: "Traveling back to Ottawa. We need to head home early Sunday afternoon.",
         requestedById: forceOwnerId,
         decidedById: nph.id,
         decidedAt: new Date(now.getTime() - days(2)),
-        decisionNote: "Approved — best effort, we'll aim your Sunday games at the morning block.",
+        decisionNote: "Approved: best effort, we'll aim your Sunday games at the morning block.",
       },
     })
   }
@@ -1520,7 +1520,7 @@ async function seed() {
         status: "PENDING",
         dayOfWeek: 6,
         earliestStart: "14:00",
-        reason: "Our head coach works Saturday mornings — afternoon tip-offs only, please.",
+        reason: "Our head coach works Saturday mornings, so afternoon tip-offs only, please.",
         requestedById: forceOwnerId,
       },
     })
@@ -1568,7 +1568,7 @@ async function seed() {
     const tryout = await p.tryout.create({
       data: {
         tenantId: row.id, teamId: isLords ? lordsSpringTeam.id : null,
-        title: `${club.name} Fall League Tryouts — Grade ${grade}`,
+        title: `${club.name} Fall League Tryouts, Grade ${grade}`,
         description: `Evaluation for our ${SPRING_SEASON} NPH Fall League entry. All players welcome.`,
         ageGroup: `Grade ${grade}`, gender: "MALE",
         location: gymFor(club.city), scheduledAt: tryoutAt, duration: 120,
@@ -1624,7 +1624,7 @@ async function seed() {
             includesTracksuit: lordsSpringTemplate.includesTracksuit,
             message: accepted
               ? "Welcome to the Fall Elite squad!"
-              : `${kid.firstName} impressed at evaluations — we'd love to have him on the Fall Elite roster. Premium package includes full kit.`,
+              : `${kid.firstName} impressed at evaluations. We'd love to have him on the Fall Elite roster. Premium package includes full kit.`,
             expiresAt: new Date(now.getTime() + days(7)),
             respondedAt: accepted ? new Date(now.getTime() - days(1)) : null,
             ...(accepted
@@ -1669,7 +1669,7 @@ async function seed() {
               seasonFee: Math.round(fullFee * 0.8),
               includesBall: false, includesBag: false, includesShoes: false,
               includesUniform: false, includesTracksuit: false,
-              message: `${kid.firstName} impressed at evaluations — we'd love to have him on the Fall Elite roster. Pick the package that fits: returning players keep their kit.`,
+              message: `${kid.firstName} impressed at evaluations. We'd love to have him on the Fall Elite roster. Pick the package that fits: returning players keep their kit.`,
             },
           })
         }
@@ -1740,7 +1740,7 @@ async function seed() {
       data: {
         userId: demoParent.id, type: "offer_received",
         title: "New offer from Toronto Lords",
-        message: "Toronto Lords Fall Elite has sent an offer — Premium package, expires in 7 days.",
+        message: "Toronto Lords Fall Elite has sent an offer: Premium package, expires in 7 days.",
         link: "/offers", referenceId: springOfferForDemo, referenceType: "Offer",
       },
     })
@@ -1907,7 +1907,7 @@ async function seed() {
     }
   }
   const commentLines = [
-    "What a game — the fourth quarter was unreal.",
+    "What a game! The fourth quarter was unreal.",
     "Go Lords! 🏀",
     "Defense wins games. Proud of these kids.",
     "That comeback!!",
@@ -1963,16 +1963,16 @@ async function seed() {
 
   // ── Team chats: every winter team has a living thread ─────────────────
   const chatLines: Array<[string, "coach" | "parent"]> = [
-    ["Practice moved to 6:30pm this Thursday — same gym.", "coach"],
+    ["Practice moved to 6:30pm this Thursday, same gym.", "coach"],
     ["Thanks coach, we'll be there!", "parent"],
     ["Great win on Saturday everyone. Film session before next practice.", "coach"],
     ["Does anyone have a spare size AM jersey for pictures?", "parent"],
     ["Reminder: bring BOTH jerseys to every game from now on.", "coach"],
-    ["Carpool from the west end — we have 2 seats, message me.", "parent"],
+    ["Carpool from the west end: we have 2 seats, message me.", "parent"],
     ["Team photos this Saturday, arrive 45 min before tip.", "coach"],
     ["What time do doors open at Pan Am for the early game?", "parent"],
     ["Doors open 8:15 for the 9am tip.", "coach"],
-    ["Standings update: we're in the playoff picture — keep it going!", "coach"],
+    ["Standings update: we're in the playoff picture, keep it going!", "coach"],
   ]
   let chatMessages = 0
   for (const team of teams) {
@@ -2004,7 +2004,7 @@ async function seed() {
     data: {
       userId: demoParent.id, type: "team_chat",
       title: `New message in ${lordsG9.name} chat`,
-      message: "Coach: Standings update — we're in the playoff picture!",
+      message: "Coach: Standings update, we're in the playoff picture!",
       link: `/teams/${lordsG9.id}/chat`, referenceId: lordsG9.id, referenceType: "Team",
     },
   })
@@ -2018,7 +2018,7 @@ async function seed() {
       teamId: lordsG9.id,
       createdById: lordsG9.coachId,
       title: "Summer tournament plans",
-      description: "Two questions — helps us commit to August tournaments before entry deadlines.",
+      description: "Two questions to help us commit to August tournaments before entry deadlines.",
       createdAt: new Date(now.getTime() - days(2)),
       questions: {
         create: [
@@ -2185,7 +2185,7 @@ async function seed() {
   await p.notification.create({
     data: {
       userId: demoParent.id, type: "practice_schedule",
-      title: `Practice schedule — ${lordsG9.name}`,
+      title: `Practice schedule: ${lordsG9.name}`,
       message: lordsSlots.map(slotLabel).join(" · "),
       link: `/teams/${lordsG9.id}/calendar`, referenceId: lordsG9.id, referenceType: "Team",
     },
@@ -2199,7 +2199,7 @@ async function seed() {
     data: {
       createdById: lordsG9.coachId,
       title: "Team Photo Day 📸",
-      description: "Wear the home jersey — families welcome.",
+      description: "Wear the home jersey, families welcome.",
       location: "Main gym",
       startAt: new Date(now.getTime() + 86_400_000 * 6),
       durationMinutes: 90,
@@ -2210,7 +2210,7 @@ async function seed() {
     data: {
       userId: demoParent.id, type: "team_event",
       title: `New team event: Team Photo Day 📸`,
-      message: "Sat at Main gym — see the team calendar.",
+      message: "Sat at Main gym, see the team calendar.",
       link: `/teams/${lordsG9.id}/calendar`, referenceId: photoDay.id, referenceType: "TeamEvent",
     },
   })
@@ -2237,7 +2237,7 @@ async function seed() {
       seasonId: winterSeason.id,
       playerId: forceG10Summer.roster[forceG10Summer.roster.length - 1],
       eligible: true,
-      note: "Injury exemption — missed Weeks 2-4 with a broken wrist; approved by the league July 20.",
+      note: "Injury exemption: missed Weeks 2-4 with a broken wrist; approved by the league July 20.",
       setById: nph.id,
     },
   })
@@ -2323,7 +2323,7 @@ async function seed() {
   const showcaseVenueDefs = [
     { name: "The Playground Burlington", address: "Burlington, ON", city: "Burlington" },
     { name: "Six Park East", address: "Toronto, ON", city: "Toronto" },
-    { name: "UTM — University of Toronto Mississauga", address: "3359 Mississauga Rd", city: "Mississauga" },
+    { name: "UTM (University of Toronto Mississauga)", address: "3359 Mississauga Rd", city: "Mississauga" },
   ]
   const showcaseVenues: Array<{ id: string; courtIds: string[] }> = []
   for (const v of showcaseVenueDefs) {
@@ -2513,7 +2513,7 @@ async function seed() {
       answers: {
         "Brief synopsis of your team and top prospects": "Scarborough-based program, 6 years running. U15 group won the city championship; PG Wei Ali and F Darius Robinson are Div-1 prospects.",
         "Why do you want to join this league?": "Our families want a season with guaranteed games, real refs and published stats. Showcase League is the standard in the GTA.",
-        "Program vision — goals over the next 1, 3 and 5 years": "Year 1: compete in Tier 1. Year 3: field teams U13 through U19. Year 5: a girls program and a permanent home gym.",
+        "Program vision: goals over the next 1, 3 and 5 years": "Year 1: compete in Tier 1. Year 3: field teams U13 through U19. Year 5: a girls program and a permanent home gym.",
       },
       signedById: titans.ownerId,
       signatureName: `${titansOwnerUser.firstName} ${titansOwnerUser.lastName}`,
@@ -2549,7 +2549,7 @@ async function seed() {
     data: {
       payerTenantId: titans.id, payeeLeagueId: showcaseLeague.id,
       referenceType: "TeamSubmission", referenceId: titansU15Sub.id,
-      description: `${SHOWCASE_LEAGUE} team entry — Scarborough Titans U15 (${SHOWCASE_SEASON})`,
+      description: `${SHOWCASE_LEAGUE} team entry for Scarborough Titans U15 (${SHOWCASE_SEASON})`,
       amount: LEAGUE_TEAM_FEE, status: "PARTIALLY_PAID",
       dueDate: new Date(showcaseStart.getTime() - days(14)), // balance: 2 wks before tip-off
     },
@@ -2560,7 +2560,7 @@ async function seed() {
       obligationId: titansDeposit.id, amount: LEAGUE_TEAM_FEE / 2, currency: "CAD",
       status: "SUCCEEDED", paymentType: "LEAGUE_FEE", method: "ETRANSFER",
       payeeId: nph.id, recordedById: nph.id,
-      description: `50% deposit — Scarborough Titans U15 (${SHOWCASE_SEASON})`,
+      description: `50% deposit for Scarborough Titans U15 (${SHOWCASE_SEASON})`,
       createdAt: new Date(now.getTime() - days(4)),
     },
   })
@@ -2608,7 +2608,7 @@ async function seed() {
     data: {
       payerTenantId: monarchsFW.tenantId, payeeLeagueId: showcaseLeague.id,
       referenceType: "TeamSubmission", referenceId: monarchsSub.id,
-      description: `${SHOWCASE_LEAGUE} team entry — Mississauga Monarchs U15 (${SHOWCASE_SEASON})`,
+      description: `${SHOWCASE_LEAGUE} team entry for Mississauga Monarchs U15 (${SHOWCASE_SEASON})`,
       amount: LEAGUE_TEAM_FEE, status: "PENDING",
       dueDate: new Date(now.getTime() - days(6)), // OVERDUE — deposit never arrived
     },
@@ -2687,7 +2687,7 @@ async function seed() {
       leagueId: showcaseLeague.id,
       createdById: nph.id,
       title: "Championship Weekend planning",
-      description: "Help us shape the Tier 1 finals weekend — two quick questions.",
+      description: "Help us shape the Tier 1 finals weekend: two quick questions.",
       status: "OPEN",
       questions: {
         create: [
@@ -2762,7 +2762,7 @@ async function seed() {
       primaryColor: "#d7282f",
       tagline: "A pathway for Canadian basketball to the next level",
       description:
-        "North Pole Hoops provides a pathway for Canadian basketball to the next level, from elementary school to the pros — leagues, showcases, scouting and media.",
+        "North Pole Hoops provides a pathway for Canadian basketball to the next level, from elementary school to the pros: leagues, showcases, scouting and media.",
       // The NPH rulebook (Phase A): every league inherits these live —
       // Showcase + Fall leave the fields null; Summer keeps deliberate
       // overrides (20 games, its own hours) to demo the override UI.
@@ -2784,7 +2784,7 @@ async function seed() {
         applicationQuestions: [
           "Brief synopsis of your team and top prospects",
           "Why do you want to join this league?",
-          "Program vision — goals over the next 1, 3 and 5 years",
+          "Program vision: goals over the next 1, 3 and 5 years",
           // Structured question (owner 2026-07-31): typed input, not a text line
           {
             label: "How many seasons has your program competed at Tier 1?",

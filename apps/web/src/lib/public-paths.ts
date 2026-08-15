@@ -59,6 +59,9 @@ const PUBLIC_PAGE_PREFIXES = [
   "/legal",
   // Animated end-to-end product demo (owner brief 2026-07-19)
   "/demo",
+  // Public demo directory: ten scripted walkthroughs, no account needed
+  // (phase-1 launch, owner brief 2026-08-14). Separate surface from /demo.
+  "/demos",
   "/unsubscribed",
   // Anonymous club-claim wizard + completion landing (owner 2026-07-18:
   // claim-first, account-at-end — no session until the token is redeemed)
