@@ -84,18 +84,12 @@ export const DEMOS: DemoEntry[] = [
     promise:
       "A league plans dates and gyms, clubs submit teams, the schedule generates, and every calendar updates.",
     description:
-      "A league sets the season window, adds the gyms it has booked and opens team submissions. Clubs send their teams in, the schedule generates in one pass, and the two conflicts it finds get flagged before anything goes public. The last stretch publishes the season, and the same games appear on a parent calendar.",
-    plannedChapters: [
-      "Set the season",
-      "Clubs submit teams",
-      "Generate the schedule",
-      "Publish to calendars",
-    ],
+      "It opens on a league with 24 clubs and not one registered team, planning anyway because the gyms want an answer this week. The estimates go in grade by grade, the weekends and the two buildings go in after them, and the plan answers the question every league guesses at: the season needs 315 court-hours, the buildings hold 286, so 29 are still to book, month by month and weekend by weekend. Then the clubs enter, four teams in one press with the agreement signed, and the league approves them until 23 of 24 are in. The third chapter is the one nobody else shows you: the first generate is refused, and the refusal names the weekend, the gym, both grades and the six games that do not fit, with the fix priced in court-hours. The league books the Sunday, generates again, and 210 games land with no back-to-backs, no five-hour waits, every grade in one building and nothing double-booked. The last stretch is the draft nobody can see, one publish, and a parent's calendar filling with her daughter's season.",
     audiences: ["leagues", "clubs"],
     kind: "story",
     stage: "split",
-    durationLabel: "2 min",
-    status: "coming-soon",
+    durationLabel: "2 min 8 sec",
+    status: "live",
     thumbEyebrow: "Story 3",
   },
   {

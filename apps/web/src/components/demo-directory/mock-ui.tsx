@@ -1640,6 +1640,817 @@ export function PhonePinnedStrip({ author, children }: { author: string; childre
   )
 }
 
+/* ── Season planning kit (story 3) ───────────────────────────────────────── *
+ *
+ * Every piece below stands in for a surface that ships today, named where the
+ * mirror is not obvious:
+ *   · MockStepRail — plan/page.tsx STEPS: teams, your buildings, your
+ *     calendar, publish, schedule, each with the hint the rail really carries.
+ *   · MockStepper and the grade row chips — plan/teams-step.tsx: the
+ *     "Grade | Expected teams" table, the minus / count / plus control, and
+ *     "In this plan", "N registered", "N games".
+ *   · MockWeekendRow and MockGymCard — plan/gyms-weekends-step.tsx: "When
+ *     would you like to run sessions?" with its "N of M weekends on" counter,
+ *     the "Home gym" and "In the pool" role chips, courts and hours.
+ *   · MockFraction — plan-shared.ts Fraction and its three-tone law: fits is
+ *     court, tight is gold, over is hoop, and the number is always written
+ *     out so colour never carries the fact on its own.
+ *   · MockAskSheet — plan-ui.tsx AskSheet: the "What you need to book"
+ *     trigger, the season line "N court-days · N court-hours · N games with
+ *     no building yet", the "Month by month" rows, and the weekend chips
+ *     whose words are "needs a building", "assumed, not booked yet", or
+ *     silence for a booking that is confirmed.
+ *   · MockFinding — lib/scheduler-v2/audit.ts, finding code
+ *     "grade-does-not-fit": the arithmetic inside the sentence, then the
+ *     three options the auditor offers under it.
+ *   · MockEntryRow — manage/components/clubs-tab.tsx: "Club entries (N)",
+ *     "planned N teams · submitted N · signed by X", and "Approve entry".
+ *   · MockJourney — manage/components/plan-door.tsx STAGES.
+ *   · MockGamesTable — manage/components/schedule-tab.tsx: the gold "Draft"
+ *     badge every game wears until Game.publishedAt is stamped.
+ */
+
+/**
+ * The wizard rail. Five steps, always visible and always clickable, which is
+ * also why the demo walks the wizard by pressing it: the rail is the one
+ * control that survives every screen change, so the pointer always presses
+ * something that is still there when it lands.
+ */
+export function MockStepRail({
+  step,
+  steps,
+  idPrefix,
+}: {
+  step: number
+  steps: { label: string; hint: string }[]
+  /** Each step becomes `<idPrefix>-<n>` so a beat can walk by name. */
+  idPrefix?: string
+}) {
+  return (
+    <div className="flex flex-wrap items-center gap-1.5">
+      {steps.map((s, i) => {
+        const n = i + 1
+        const active = n === step
+        const done = n < step
+        return (
+          <span
+            key={s.label}
+            data-demo-target={idPrefix ? `${idPrefix}-${n}` : undefined}
+            className={cn(
+              "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-bold transition-all duration-300 motion-reduce:transition-none",
+              "data-[demo-hover=true]:border-play-400 data-[demo-hover=true]:shadow-sm",
+              "data-[demo-press=true]:scale-[0.96]",
+              active
+                ? "border-court-700 bg-court-600 text-white"
+                : done
+                  ? "border-court-200 bg-court-50 text-court-800"
+                  : "border-ink-200 text-ink-500 bg-white"
+            )}
+          >
+            <span
+              className={cn(
+                "flex h-4 w-4 items-center justify-center rounded-full text-[9px] font-bold tabular-nums",
+                active
+                  ? "bg-white/25 text-white"
+                  : done
+                    ? "bg-court-100 text-court-700"
+                    : "bg-ink-100 text-ink-500"
+              )}
+            >
+              {done ? "✓" : n}
+            </span>
+            {s.label}
+            <span className={cn("font-medium", active ? "text-white/70" : "text-ink-400")}>
+              {s.hint}
+            </span>
+          </span>
+        )
+      })}
+    </div>
+  )
+}
+
+/** The minus / count / plus control every grade estimate is typed into. */
+export function MockStepper({ id, value }: { id?: string; value: number }) {
+  return (
+    <span className="border-ink-300 inline-flex h-8 items-center rounded-lg border bg-white shadow-sm">
+      <span className="text-ink-500 w-7 text-center text-[14px] font-bold">−</span>
+      <span className="text-ink-900 min-w-[30px] text-center text-[13px] font-bold tabular-nums">
+        <MockCounter value={value} duration={420} />
+      </span>
+      <span
+        data-demo-target={id}
+        className={cn(
+          "text-ink-700 w-7 rounded-r-lg text-center text-[14px] font-bold transition-all duration-200 motion-reduce:transition-none",
+          "data-[demo-hover=true]:bg-play-50 data-[demo-hover=true]:text-play-700",
+          "data-[demo-press=true]:bg-play-100 data-[demo-press=true]:scale-95"
+        )}
+      >
+        +
+      </span>
+    </span>
+  )
+}
+
+export type FractionTone = "fits" | "tight" | "over" | "quiet"
+
+/** "18/12 games", with the overage written out beside it. */
+export function MockFraction({
+  is,
+  of,
+  unit,
+  tone = "fits",
+}: {
+  is: number
+  of: number
+  unit: string
+  tone?: FractionTone
+}) {
+  const tones: Record<FractionTone, string> = {
+    fits: "border-court-200 bg-court-50 text-court-800",
+    tight: "border-gold-400 bg-gold-50 text-gold-600",
+    over: "border-hoop-300 bg-hoop-50 text-hoop-800",
+    quiet: "border-ink-200 bg-ink-50 text-ink-500",
+  }
+  return (
+    <span
+      className={cn(
+        "inline-flex items-center gap-1 rounded-full border px-2 py-[1.5px] text-[11px] font-bold tabular-nums",
+        tones[tone]
+      )}
+    >
+      {is}/{of} {unit}
+      {is > of && <span className="font-extrabold">▲{is - of}</span>}
+    </span>
+  )
+}
+
+/** One building, the way step 2 lists it. */
+export function MockGymCard({
+  id,
+  name,
+  city,
+  home,
+  courts,
+  hours,
+  note,
+  fresh,
+}: {
+  id?: string
+  name: string
+  city: string
+  home?: boolean
+  courts: string
+  hours: string
+  note?: string
+  fresh?: boolean
+}) {
+  return (
+    <div
+      data-demo-target={id}
+      className={cn(
+        "border-ink-300 rounded-2xl border bg-white px-3 py-2.5 shadow-sm transition-all duration-200 motion-reduce:transition-none",
+        fresh && "live-row-in",
+        "data-[demo-hover=true]:border-play-300 data-[demo-hover=true]:ring-play-100 data-[demo-hover=true]:ring-2"
+      )}
+    >
+      <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+        <span className="text-ink-900 text-[13.5px] font-bold">
+          {name} · {city}
+        </span>
+        <span
+          className={cn(
+            "rounded-full border px-2 py-0.5 text-[10.5px] font-bold",
+            home
+              ? "border-court-200 bg-court-50 text-court-800"
+              : "border-ink-200 bg-ink-50 text-ink-500"
+          )}
+        >
+          {home ? "Home gym" : "In the pool"}
+        </span>
+      </div>
+      <p className="text-ink-600 mt-1 text-[11.5px] font-semibold tabular-nums">
+        {courts} · {hours}
+      </p>
+      {note && <p className="text-ink-400 mt-0.5 text-[11px]">{note}</p>}
+    </div>
+  )
+}
+
+/** The weekend row: which dates this season plays on, and how many are on. */
+export function MockWeekendRow({
+  idPrefix,
+  weekends,
+  on,
+}: {
+  idPrefix: string
+  weekends: { key: string; label: string; on: boolean }[]
+  /** The counter line under the row, already counted by the caller. */
+  on: number
+}) {
+  return (
+    <div>
+      <p className="text-ink-800 text-[12.5px] font-bold">
+        When would you like to run sessions?
+      </p>
+      <div className="mt-1.5 flex flex-wrap gap-1">
+        {weekends.map((w) => (
+          <span
+            key={w.key}
+            data-demo-target={`${idPrefix}-${w.key}`}
+            className={cn(
+              "rounded-lg border px-2 py-1 text-[11px] font-bold tabular-nums transition-all duration-200 motion-reduce:transition-none",
+              w.on
+                ? "border-court-300 bg-court-50 text-court-800"
+                : "border-ink-200 text-ink-400 bg-white",
+              "data-[demo-hover=true]:border-play-300",
+              "data-[demo-press=true]:scale-[0.94]"
+            )}
+          >
+            {w.label}
+          </span>
+        ))}
+      </div>
+      <p className="text-ink-500 mt-1.5 text-[11px] font-semibold">
+        <MockCounter value={on} duration={420} /> of {weekends.length} weekends on. The draw fills
+        these first.
+      </p>
+    </div>
+  )
+}
+
+/** One weekend on the calendar board: what it holds and whether it fits. */
+export function MockWeekendCard({
+  date,
+  gym,
+  grades,
+  is,
+  of,
+  tone,
+  fresh,
+  delay = 0,
+}: {
+  date: string
+  gym: string
+  grades: string[]
+  is: number
+  of: number
+  tone: FractionTone
+  fresh?: boolean
+  delay?: number
+}) {
+  const border: Record<FractionTone, string> = {
+    fits: "border-ink-200",
+    tight: "border-gold-400 bg-gold-50/40",
+    over: "border-hoop-300 bg-hoop-50/50",
+    quiet: "border-ink-200",
+  }
+  return (
+    <div
+      className={cn(
+        "rounded-xl border bg-white px-2.5 py-2",
+        border[tone],
+        fresh && "live-row-in"
+      )}
+      style={fresh ? { animationDelay: `${delay}ms` } : undefined}
+    >
+      <p className="text-ink-900 text-[11.5px] font-bold tabular-nums">{date}</p>
+      <p className="text-ink-400 truncate text-[10.5px]">{gym}</p>
+      <div className="mt-1 flex flex-wrap gap-1">
+        {grades.map((g) => (
+          <span
+            key={g}
+            className="bg-court-50 text-court-800 rounded-md px-1.5 py-0.5 text-[9.5px] font-bold"
+          >
+            {g}
+          </span>
+        ))}
+      </div>
+      <div className="mt-1.5">
+        <MockFraction is={is} of={of} unit="games" tone={tone} />
+      </div>
+    </div>
+  )
+}
+
+/**
+ * The ask, as the sheet somebody reads down the phone to a gym.
+ *
+ * The headline is the one sentence the product does not print today: the ask
+ * sheet gives the season in court-days and court-hours and leaves the operator
+ * to subtract what the buildings hold. This demo does the subtraction on
+ * camera, because that number is the whole reason a league plans before a
+ * single team has registered.
+ */
+export function MockAskSheet({
+  toggleId,
+  open,
+  season,
+  headline,
+  supply,
+  months,
+}: {
+  toggleId?: string
+  open?: boolean
+  /** "31.5 court-days · 315 court-hours · 20 games with no building yet" */
+  season: string
+  headline?: string
+  /** The two lines the headline subtracts, written out. */
+  supply?: { label: string; value: string }[]
+  months: { label: string; courtDays: string; courtHours: string; weekends: string }[]
+}) {
+  return (
+    <div>
+      <div className="flex flex-wrap items-center gap-2">
+        <MockButton id={toggleId} tone="quiet" size="sm">
+          What you need to book
+        </MockButton>
+        <span className="text-ink-500 text-[11.5px] font-semibold tabular-nums">{season}</span>
+      </div>
+
+      {/* The sheet is laid out for a narrow column, because it sits beside the
+          board it is about and the frame never scrolls: every line is one
+          line, and nothing here reflows when the numbers change. */}
+      {open && (
+        <div className="border-ink-100 bg-ink-50/60 live-pop mt-2 rounded-xl border p-2.5">
+          {headline && (
+            <div className="border-hoop-200 bg-hoop-50 rounded-xl border px-3 py-1.5">
+              <p className="text-hoop-800 text-[16px] font-extrabold leading-tight">{headline}</p>
+              {supply && (
+                <p className="border-hoop-200/70 text-hoop-800/80 mt-1.5 border-t pt-1.5 text-[11px] font-semibold">
+                  {supply.map((s, i) => (
+                    <span key={s.label}>
+                      {i > 0 && " · "}
+                      {s.label} <span className="font-extrabold tabular-nums">{s.value}</span>
+                    </span>
+                  ))}
+                </p>
+              )}
+            </div>
+          )}
+
+          <p className="text-ink-400 mt-2 text-[10.5px] font-bold uppercase tracking-[0.08em]">
+            Month by month
+          </p>
+          <div className="mt-1 space-y-1">
+            {months.map((m) => (
+              <div
+                key={m.label}
+                className="border-ink-100 flex items-baseline gap-2 rounded-lg border bg-white px-2.5 py-[3px]"
+              >
+                <span className="text-ink-900 whitespace-nowrap text-[12px] font-bold">
+                  {m.label}
+                </span>
+                <span className="text-ink-600 whitespace-nowrap text-[11px] font-semibold tabular-nums">
+                  {m.courtDays} court-days · {m.courtHours} court-hours
+                </span>
+                <span className="text-ink-400 ml-auto whitespace-nowrap text-[10.5px]">
+                  {m.weekends}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+/**
+ * The weekend-by-weekend half of the ask: where every rental stands. It rides
+ * under the board rather than inside the sheet, because these chips are about
+ * the weekends the board is showing and the frame has the room there.
+ */
+export function MockBlockChips({
+  blocks,
+}: {
+  blocks: { key: string; weekend: string; gym: string; status: "needed" | "assumed" | "confirmed" }[]
+}) {
+  const words = {
+    needed: "needs a building",
+    assumed: "assumed, not booked yet",
+    confirmed: "",
+  }
+  const tones = {
+    needed: "border-hoop-300 bg-hoop-50 text-hoop-800",
+    assumed: "border-gold-400 bg-gold-50 text-gold-600",
+    confirmed: "border-court-200 bg-court-50 text-court-800",
+  }
+  return (
+    <div className="live-pop">
+      <p className="text-ink-400 text-[10.5px] font-bold uppercase tracking-[0.08em]">
+        Weekend by weekend
+      </p>
+      <div className="mt-1 flex flex-wrap gap-1">
+        {blocks.map((b) => (
+          <span
+            key={b.key}
+            className={cn(
+              "inline-flex shrink-0 items-center gap-1 rounded-full border px-2 py-[1px] text-[10.5px] font-bold",
+              tones[b.status]
+            )}
+          >
+            <span className="tabular-nums">{b.weekend}</span>
+            <span className="font-semibold opacity-80">
+              {[b.gym, words[b.status]].filter(Boolean).join(" · ")}
+            </span>
+          </span>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+/**
+ * A feasibility finding, the way the auditor writes one: the arithmetic in
+ * the sentence, then the options, each one a thing you can actually go and do.
+ */
+export function MockFinding({
+  severity,
+  title,
+  message,
+  options,
+  optionId,
+}: {
+  severity: "block" | "clear"
+  title: string
+  message?: string
+  options?: string[]
+  /** The first option is pressable, because pressing it is the fix. */
+  optionId?: string
+}) {
+  const block = severity === "block"
+  return (
+    <div
+      className={cn(
+        "live-pop rounded-2xl border px-4 py-3",
+        block ? "border-hoop-300 bg-hoop-50" : "border-court-200 bg-court-50"
+      )}
+    >
+      <div className="flex items-center gap-2">
+        <span
+          className={cn(
+            "flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[11px] font-black text-white",
+            block ? "bg-hoop-600" : "bg-court-600"
+          )}
+        >
+          {block ? "!" : "✓"}
+        </span>
+        <p
+          className={cn(
+            "text-[13.5px] font-extrabold",
+            block ? "text-hoop-900" : "text-court-900"
+          )}
+        >
+          {title}
+        </p>
+      </div>
+      {message && (
+        <p
+          className={cn(
+            "mt-1.5 text-[12.5px] leading-relaxed",
+            block ? "text-hoop-900/85" : "text-court-900/85"
+          )}
+        >
+          {message}
+        </p>
+      )}
+      {options && options.length > 0 && (
+        <div className="mt-2 space-y-1">
+          {options.map((o, i) => (
+            <span
+              key={o}
+              data-demo-target={i === 0 ? optionId : undefined}
+              className={cn(
+                "flex items-center gap-2 rounded-xl border px-2.5 py-1.5 text-[12px] font-semibold transition-all duration-200 motion-reduce:transition-none",
+                i === 0
+                  ? "border-hoop-300 text-hoop-900 bg-white"
+                  : "border-hoop-200/70 text-hoop-800/80 bg-white/60",
+                "data-[demo-hover=true]:border-play-400 data-[demo-hover=true]:ring-play-100 data-[demo-hover=true]:ring-2",
+                "data-[demo-press=true]:scale-[0.99]"
+              )}
+            >
+              <span
+                className={cn(
+                  "h-1.5 w-1.5 shrink-0 rounded-full",
+                  i === 0 ? "bg-hoop-500" : "bg-hoop-300"
+                )}
+              />
+              {o}
+            </span>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+/** Plan, divisions, generate, publish: where this season is on the road. */
+export function MockJourney({ stages, at }: { stages: string[]; at: number }) {
+  return (
+    <div className="flex flex-wrap items-center gap-1.5">
+      {stages.map((s, i) => (
+        <span
+          key={s}
+          className={cn(
+            "rounded-full px-2.5 py-0.5 text-[11px] font-bold transition-colors duration-300 motion-reduce:transition-none",
+            i === at
+              ? "bg-play-600 text-white"
+              : i < at
+                ? "bg-court-50 text-court-800"
+                : "bg-ink-50 text-ink-400"
+          )}
+        >
+          {i < at ? `✓ ${s}` : s}
+        </span>
+      ))}
+    </div>
+  )
+}
+
+/** A checkbox row, the shape the product's own BrandCheckbox draws. */
+export function MockCheck({
+  id,
+  checked,
+  label,
+  meta,
+}: {
+  id?: string
+  checked: boolean
+  label: string
+  meta?: string
+}) {
+  return (
+    <span
+      data-demo-target={id}
+      className={cn(
+        "flex items-center gap-2.5 rounded-xl border px-3 py-2 transition-all duration-200 motion-reduce:transition-none",
+        checked ? "border-play-300 bg-play-50/60" : "border-ink-200 bg-white",
+        "data-[demo-hover=true]:border-play-400",
+        "data-[demo-press=true]:scale-[0.99]"
+      )}
+    >
+      <span
+        className={cn(
+          "flex h-4 w-4 shrink-0 items-center justify-center rounded border-2",
+          checked ? "border-play-600 bg-play-600" : "border-ink-300 bg-white"
+        )}
+      >
+        {checked && (
+          <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="4" className="h-2.5 w-2.5">
+            <path d="M5 13l4 4L19 7" />
+          </svg>
+        )}
+      </span>
+      <span className="text-ink-900 min-w-0 flex-1 truncate text-[12.5px] font-semibold">
+        {label}
+      </span>
+      {meta && <span className="text-ink-400 shrink-0 text-[11px]">{meta}</span>}
+    </span>
+  )
+}
+
+/** One club's entry in the league's queue. */
+export function MockEntryRow({
+  club,
+  meta,
+  status,
+  approveId,
+  fresh,
+}: {
+  club: string
+  /** "planned 4 teams · submitted 4 · signed by Dana Michaels" */
+  meta: string
+  status: "submitted" | "approved" | "waiting"
+  approveId?: string
+  fresh?: boolean
+}) {
+  return (
+    <div
+      className={cn(
+        "border-ink-50 flex flex-wrap items-center gap-x-3 gap-y-1.5 border-b px-3 py-2 last:border-b-0",
+        fresh && "live-row-in"
+      )}
+    >
+      <Crest name={club} size="xs" />
+      <span className="min-w-0">
+        <span className="text-ink-900 text-[12.5px] font-bold">{club}</span>
+        <span className="text-ink-500 ml-2 text-[11px]">{meta}</span>
+      </span>
+      <span className="ml-auto flex shrink-0 items-center gap-2">
+        <MockPill
+          tone={status === "approved" ? "court" : status === "submitted" ? "play" : "neutral"}
+        >
+          {status === "waiting" ? "not entered" : status}
+        </MockPill>
+        {status === "submitted" && (
+          <MockButton id={approveId} tone="court" size="sm">
+            Approve entry
+          </MockButton>
+        )}
+      </span>
+    </div>
+  )
+}
+
+export interface MockGame {
+  when: string
+  division: string
+  home: string
+  away: string
+  venue: string
+}
+
+/** The generated schedule, cascading in the way a solved season lands. */
+export function MockGamesTable({
+  games,
+  published,
+  cascade,
+}: {
+  games: MockGame[]
+  /** Published games drop the gold Draft badge. */
+  published?: boolean
+  /** Rows arrive one after another instead of simply being there. */
+  cascade?: boolean
+}) {
+  const head =
+    "px-3 py-1.5 text-left text-[10px] font-semibold uppercase tracking-[0.1em] text-ink-500"
+  const cell = "px-3 py-[3px] text-[11.5px] text-ink-600 whitespace-nowrap"
+  return (
+    <table className="w-full table-fixed">
+      <thead className="bg-ink-50">
+        <tr>
+          <th className={cn(head, "w-[152px]")}>When</th>
+          <th className={cn(head, "w-[104px]")}>Division</th>
+          <th className={head}>Game</th>
+          <th className={cn(head, "w-[164px]")}>Gym</th>
+          <th className={cn(head, "w-[84px]")}>Status</th>
+        </tr>
+      </thead>
+      <tbody className="divide-ink-50 divide-y">
+        {games.map((g, i) => (
+          <tr
+            key={`${g.when}-${g.home}`}
+            className={cn("bg-white", cascade && "live-row-in")}
+            style={cascade ? { animationDelay: `${i * 60}ms` } : undefined}
+          >
+            <td className={cn(cell, "text-ink-900 font-semibold tabular-nums")}>{g.when}</td>
+            <td className={cell}>{g.division}</td>
+            <td className={cn(cell, "text-ink-900 truncate")}>
+              {g.home} <span className="text-ink-400">vs</span> {g.away}
+            </td>
+            <td className={cn(cell, "truncate")}>{g.venue}</td>
+            <td className="px-3 py-[3px]">
+              <MockPill tone={published ? "court" : "gold"}>
+                {published ? "Published" : "Draft"}
+              </MockPill>
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  )
+}
+
+/** The promises a schedule makes, ticked off one at a time. */
+export function MockGuarantees({
+  items,
+  shown,
+}: {
+  items: { label: string; value: string }[]
+  /** How many rows have landed so far. */
+  shown: number
+}) {
+  return (
+    <div className="space-y-1.5 px-4 py-3">
+      {items.map((it, i) => (
+        <div
+          key={it.label}
+          className={cn(
+            "flex items-center gap-2 rounded-xl border px-2.5 py-1.5 transition-all duration-300 motion-reduce:transition-none",
+            i < shown
+              ? "border-court-200 bg-court-50 live-row-in opacity-100"
+              : "border-ink-100 bg-white opacity-40"
+          )}
+        >
+          <span
+            className={cn(
+              "flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-[9px] font-black text-white",
+              i < shown ? "bg-court-600" : "bg-ink-200"
+            )}
+          >
+            ✓
+          </span>
+          <span
+            className={cn(
+              "min-w-0 flex-1 text-[12px] font-semibold",
+              i < shown ? "text-court-900" : "text-ink-400"
+            )}
+          >
+            {it.label}
+          </span>
+          <span
+            className={cn(
+              "shrink-0 text-[12px] font-extrabold tabular-nums",
+              i < shown ? "text-court-800" : "text-ink-300"
+            )}
+          >
+            {it.value}
+          </span>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+/* ── Phone: the season as a family gets it ───────────────────────────────── */
+
+/** The month grid, filling with game days as the schedule publishes. */
+export function PhoneMonthGrid({
+  month,
+  days,
+  filled,
+}: {
+  month: string
+  /** 1-based day numbers that carry a game. */
+  days: number[]
+  /** Nothing is on the calendar until the season publishes. */
+  filled: boolean
+}) {
+  const first = 0 // November 2026 starts on a Sunday, so the grid is square.
+  const cells = Array.from({ length: 35 }, (_, i) => i - first + 1)
+  return (
+    <div className="border-ink-100 rounded-2xl border bg-white px-2.5 py-2.5">
+      <p className="text-ink-900 text-[12px] font-bold">{month}</p>
+      <div className="text-ink-400 mt-1.5 grid grid-cols-7 gap-y-1 text-center text-[9px] font-bold">
+        {["S", "M", "T", "W", "T", "F", "S"].map((d, i) => (
+          <span key={`${d}-${i}`}>{d}</span>
+        ))}
+      </div>
+      <div className="mt-0.5 grid grid-cols-7 gap-x-0.5 gap-y-0.5">
+        {cells.map((n, i) => {
+          const has = filled && n > 0 && n <= 30 && days.includes(n)
+          return (
+            <span
+              key={i}
+              className={cn(
+                "flex h-[26px] flex-col items-center justify-center rounded-md text-[10px] font-semibold tabular-nums",
+                n <= 0 || n > 30
+                  ? "text-transparent"
+                  : has
+                    ? "bg-court-50 text-court-900 live-row-in"
+                    : "text-ink-500"
+              )}
+              style={has ? { animationDelay: `${days.indexOf(n) * 70}ms` } : undefined}
+            >
+              {n > 0 && n <= 30 ? n : "."}
+              <span
+                className={cn(
+                  "mt-[1px] h-[3px] w-[3px] rounded-full",
+                  has ? "bg-court-600" : "bg-transparent"
+                )}
+              />
+            </span>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
+/** One game on the family's calendar. */
+export function PhoneGameRow({
+  day,
+  title,
+  meta,
+  fresh,
+  delay = 0,
+}: {
+  day: string
+  title: string
+  meta: string
+  fresh?: boolean
+  delay?: number
+}) {
+  return (
+    <div
+      className={cn(
+        "border-ink-100 flex items-center gap-2.5 rounded-xl border bg-white px-2.5 py-1.5",
+        fresh && "live-row-in"
+      )}
+      style={fresh ? { animationDelay: `${delay}ms` } : undefined}
+    >
+      <span className="bg-court-50 text-court-700 flex h-7 w-8 shrink-0 flex-col items-center justify-center rounded-lg text-[9px] font-bold uppercase leading-none">
+        {day}
+      </span>
+      <div className="min-w-0">
+        <p className="text-ink-900 truncate text-[11.5px] font-semibold">{title}</p>
+        <p className="text-ink-400 truncate text-[10px]">{meta}</p>
+      </div>
+    </div>
+  )
+}
+
 /* ── End card ────────────────────────────────────────────────────────────── */
 
 /** The last frame: what was just watched, and the invitation to watch more. */

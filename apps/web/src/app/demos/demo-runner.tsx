@@ -6,6 +6,7 @@ import { cn } from "@/components/ui/cn"
 import { DemoPlayer } from "@/components/demo-directory/player"
 import { loopStory } from "@/components/demo-directory/stories/loop-story"
 import { rosterStory } from "@/components/demo-directory/stories/roster-story"
+import { seasonStory } from "@/components/demo-directory/stories/season-story"
 import type { DemoScript } from "@/components/demo-directory/types"
 import { AUDIENCE_LABELS, DEMOS, type DemoEntry } from "./registry"
 
@@ -30,6 +31,7 @@ const SCRIPTS: Record<
 > = {
   "roster-story": { script: rosterStory, role: "Club", roleTone: "club" },
   "everyone-in-the-loop": { script: loopStory, role: "Club", roleTone: "club" },
+  "season-planned-to-published": { script: seasonStory, role: "League", roleTone: "league" },
 }
 
 export function DemoStage({ demo }: { demo: DemoEntry }) {

@@ -99,7 +99,10 @@ export function DesktopFrame({
           <span className="h-3 w-3 rounded-full bg-[#fbbf24]" />
           <span className="h-3 w-3 rounded-full bg-[#34d399]" />
         </div>
-        <div className="border-ink-200 text-ink-500 mx-auto flex min-w-0 max-w-[52%] items-center gap-1.5 truncate rounded-full border bg-white px-4 py-1 text-xs">
+        {/* Wide enough for a workspace route with a query on it: a demo that
+            moves between screens has to be able to READ the address it moved
+            to, and an ellipsis in the middle of a route says nothing. */}
+        <div className="border-ink-200 text-ink-500 mx-auto flex min-w-0 max-w-[66%] items-center gap-1.5 truncate rounded-full border bg-white px-4 py-1 text-xs">
           <svg
             viewBox="0 0 24 24"
             fill="none"
