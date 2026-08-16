@@ -32,6 +32,10 @@ export function BrandWordmark({
       <span className={sports}>Sports</span>
       <span className={hub}>Hub</span>
       <span
+        /* Brand lockup glyph, not readable copy: the readability gate skips it
+           by design (scripts/demo/readability-audit.mjs). Its size belongs to
+           the wordmark, not to the page it sits on. */
+        data-brand-glyph="true"
         className={`bg-hoop-500 relative -top-[0.35em] ml-1 inline-block self-start rounded-[4px] font-extrabold leading-none tracking-[0.08em] text-white ${s.box}`}
       >
         ONE
@@ -44,6 +48,7 @@ export function BrandWordmark({
 export function BrandIcon({ size = 36 }: { size?: number }) {
   return (
     <span
+      data-brand-glyph="true"
       className="relative inline-flex items-center justify-center bg-gradient-to-br from-[#1e2d4d] to-[#0b1628] font-extrabold text-white shadow-sm"
       style={{ width: size, height: size, borderRadius: Math.round(size * 0.3) }}
       aria-hidden="true"

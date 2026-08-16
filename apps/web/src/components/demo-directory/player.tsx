@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { cn } from "@/components/ui/cn"
-import { SplitStage } from "./frames"
+import { SceneStage, SplitStage } from "./frames"
 import {
   AnimatedCursor,
   BeatCallout,
@@ -162,6 +162,16 @@ export function DemoPlayer({
     return current
   }, [beats, index, script.desktopUrl])
 
+  /* Scene presentation has no address bar, so the context strip carries the
+     same duty and accumulates the same way. */
+  const context = useMemo(() => {
+    let current = script.context
+    for (let i = 0; i <= index && i < beats.length; i += 1) {
+      if (beats[i].context) current = beats[i].context
+    }
+    return current
+  }, [beats, index, script.context])
+
   /* Autoplay: advance when the beat's hold runs out. The hold is script time,
      so the wall-clock wait is that divided by the playback rate. */
   useEffect(() => {
@@ -219,9 +229,71 @@ export function DemoPlayer({
     reduced,
   }
   const surfaces = script.render(ctx)
+  const scene = script.presentation === "scene"
+
+  /* The overlay pack, built once and handed to whichever stage is presenting:
+     the hand, the ring, the balloon and the toast all measure against the same
+     `stageRef`, so neither presentation has its own choreography. */
+  const overlays = (
+    <>
+      <AnimatedCursor
+        stageRef={stageRef}
+        target={beat?.cursor}
+        hover={beat?.hover}
+        press={beat?.press}
+        beatKey={beatKey}
+        reduced={reduced}
+      />
+      {/* The ring goes on from the top of the beat, so the eye is already on
+          the right element while the hand is still travelling to it. */}
+      <EmphasisRing
+        key={`ring-${beatKey}`}
+        stageRef={stageRef}
+        target={emphasisTarget(beat)}
+        beatKey={beatKey}
+        reduced={reduced}
+      />
+      {/* The balloon lands WITH the hand. A beat with nothing to click puts
+          it up almost at once, because there is no glide to wait for. */}
+      <BeatCallout
+        key={`callout-${beatKey}`}
+        stageRef={stageRef}
+        text={beat?.callout}
+        target={calloutTarget(beat)}
+        beatKey={beatKey}
+        reduced={reduced}
+        delayMs={(beat?.cursor ? CURSOR_ARRIVE_MS : 180) / rate}
+      />
+      {beat?.toast && !reduced && (
+        <div className="pointer-events-none absolute inset-x-0 top-4 z-40 flex justify-center">
+          <div className="demo-toast bg-ink-950 flex items-center gap-3 rounded-2xl px-5 py-3 text-white shadow-[0_24px_60px_-20px_rgba(15,23,42,0.6)]">
+            <span className="bg-court-500 flex h-6 w-6 items-center justify-center rounded-full">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="3"
+                className="h-3.5 w-3.5"
+              >
+                <path d="M5 13l4 4L19 7" />
+              </svg>
+            </span>
+            <span className="text-[14px] font-semibold">{beat.toast}</span>
+          </div>
+        </div>
+      )}
+    </>
+  )
 
   return (
-    <div ref={rootRef} className={cn("select-none", className)}>
+    <div
+      ref={rootRef}
+      className={cn("select-none", className)}
+      /* The timeline in script milliseconds. The pacing gate reads this rather
+         than watching a demo play out in real time. */
+      data-demo-runtime-ms={total}
+      data-demo-beats={beats.length}
+    >
       <DemoOverlayStyles />
 
       {/* Controls */}
@@ -230,7 +302,7 @@ export function DemoPlayer({
           <button
             type="button"
             onClick={onExit}
-            className="text-ink-400 hover:text-ink-800 inline-flex items-center gap-1 text-[11px] font-semibold transition-colors"
+            className="text-ink-400 hover:text-ink-800 inline-flex items-center gap-1 text-[14px] font-semibold transition-colors"
           >
             <svg
               viewBox="0 0 24 24"
@@ -253,7 +325,7 @@ export function DemoPlayer({
           }}
           disabled={reduced}
           className={cn(
-            "inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-bold transition-colors",
+            "inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-[14px] font-bold transition-colors",
             reduced
               ? "bg-ink-100 text-ink-400"
               : playing
@@ -291,7 +363,7 @@ export function DemoPlayer({
                 type="button"
                 onClick={() => jumpTo(first)}
                 className={cn(
-                  "rounded-full px-3 py-1 text-[11px] font-semibold transition-colors",
+                  "rounded-full px-3 py-1 text-[14px] font-semibold transition-colors",
                   active
                     ? "bg-court-50 text-court-700 ring-court-200 ring-1 ring-inset"
                     : "text-ink-500 hover:bg-ink-100 bg-white"
@@ -305,7 +377,7 @@ export function DemoPlayer({
 
         <div className="ml-auto flex items-center gap-3">
           <SpeedControl rate={rate} onChange={setDemoRate} disabled={reduced} />
-          <span className="text-ink-400 text-[11px] font-semibold tabular-nums">
+          <span className="text-ink-400 text-[14px] font-semibold tabular-nums">
             Beat {index + 1} of {beats.length}
           </span>
         </div>
@@ -319,64 +391,33 @@ export function DemoPlayer({
         />
       </div>
 
-      {/* Stage */}
-      <SplitStage
-        mode={stage}
-        hasPhone={hasPhone}
-        soloPhone={script.soloPhone}
-        desktop={surfaces.desktop}
-        phone={surfaces.phone}
-        url={url}
-        stageRef={stageRef}
-        reserveBelow={reserveBelow}
-      >
-        <AnimatedCursor
+      {/* Stage. Two presentations, one set of overlays: the cursor, the ring,
+          the callout and the toast measure against `stageRef` either way. */}
+      {scene ? (
+        <SceneStage
+          mode={stage === "desktop" ? "wide" : "duo"}
+          desktop={surfaces.desktop}
+          phone={surfaces.phone}
+          context={context}
           stageRef={stageRef}
-          target={beat?.cursor}
-          hover={beat?.hover}
-          press={beat?.press}
-          beatKey={beatKey}
-          reduced={reduced}
-        />
-        {/* The ring goes on from the top of the beat, so the eye is already on
-            the right element while the hand is still travelling to it. */}
-        <EmphasisRing
-          key={`ring-${beatKey}`}
+          reserveBelow={reserveBelow}
+        >
+          {overlays}
+        </SceneStage>
+      ) : (
+        <SplitStage
+          mode={stage}
+          hasPhone={hasPhone}
+          soloPhone={script.soloPhone}
+          desktop={surfaces.desktop}
+          phone={surfaces.phone}
+          url={url}
           stageRef={stageRef}
-          target={emphasisTarget(beat)}
-          beatKey={beatKey}
-          reduced={reduced}
-        />
-        {/* The balloon lands WITH the hand. A beat with nothing to click puts
-            it up almost at once, because there is no glide to wait for. */}
-        <BeatCallout
-          key={`callout-${beatKey}`}
-          stageRef={stageRef}
-          text={beat?.callout}
-          target={calloutTarget(beat)}
-          beatKey={beatKey}
-          reduced={reduced}
-          delayMs={(beat?.cursor ? CURSOR_ARRIVE_MS : 180) / rate}
-        />
-        {beat?.toast && !reduced && (
-          <div className="pointer-events-none absolute inset-x-0 top-4 z-40 flex justify-center">
-            <div className="demo-toast bg-ink-950 flex items-center gap-3 rounded-2xl px-5 py-3 text-white shadow-[0_24px_60px_-20px_rgba(15,23,42,0.6)]">
-              <span className="bg-court-500 flex h-6 w-6 items-center justify-center rounded-full">
-                <svg
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="3"
-                  className="h-3.5 w-3.5"
-                >
-                  <path d="M5 13l4 4L19 7" />
-                </svg>
-              </span>
-              <span className="text-[13px] font-semibold">{beat.toast}</span>
-            </div>
-          </div>
-        )}
-      </SplitStage>
+          reserveBelow={reserveBelow}
+        >
+          {overlays}
+        </SplitStage>
+      )}
 
       {/* Small screens show the desktop surface small. Say so rather than
           panning or zooming around it. A phone-only demo has nothing to
@@ -388,14 +429,20 @@ export function DemoPlayer({
         </p>
       )}
 
-      {/* Caption */}
+      {/* Caption. ONE VOICE (owner ruling 2026-08-16): when the beat explains
+          itself at the point of action, the bar under the stage stops talking
+          over it and shows the chapter alone. Reduced motion keeps the
+          sentence, because there the caption IS the narration. */}
       <div className="mt-4">
         <StepCaption
           role={role}
           roleTone={roleTone}
           chapterTitle={chapters.find((c) => c.id === activeChapter)?.title}
+          quiet={Boolean(beat?.callout) && !reduced}
         >
-          {beat?.caption}
+          {beat?.callout && !reduced
+            ? chapters.find((c) => c.id === activeChapter)?.title
+            : beat?.caption}
         </StepCaption>
       </div>
 
@@ -405,18 +452,18 @@ export function DemoPlayer({
           type="button"
           onClick={() => jumpTo(index - 1)}
           className={cn(
-            "text-ink-400 hover:text-ink-700 text-xs font-semibold",
+            "text-ink-400 hover:text-ink-700 text-[14px] font-semibold",
             index === 0 && "invisible"
           )}
         >
           Back a beat
         </button>
         {reduced ? (
-          <p className="text-ink-400 text-[11px] font-medium">
+          <p className="text-ink-400 text-[14px] font-medium">
             Motion is reduced on this device, so each beat shows its finished screen.
           </p>
         ) : (
-          <p className="text-ink-400 text-[11px] font-medium">
+          <p className="text-ink-400 text-[14px] font-medium">
             Jump to any chapter above. Nothing here needs an account.
           </p>
         )}
@@ -424,7 +471,7 @@ export function DemoPlayer({
           type="button"
           onClick={() => jumpTo(index + 1)}
           className={cn(
-            "text-ink-600 hover:text-ink-900 text-xs font-semibold",
+            "text-ink-600 hover:text-ink-900 text-[14px] font-semibold",
             index >= beats.length - 1 && "invisible"
           )}
         >
@@ -510,7 +557,7 @@ function SpeedControl({
             className={cn(
               // The pseudo element is the touch target: 44px tall, centred on
               // the chip, invisible, and it does not change the row's height.
-              "relative min-w-[44px] cursor-pointer rounded-full px-2.5 py-1 text-[13px] font-bold tabular-nums transition-colors duration-200",
+              "relative min-w-[44px] cursor-pointer rounded-full px-2.5 py-1 text-[14px] font-bold tabular-nums transition-colors duration-200",
               "after:absolute after:inset-x-0 after:top-1/2 after:h-11 after:-translate-y-1/2 after:content-['']",
               "focus-visible:ring-court-600 outline-none focus-visible:ring-2 focus-visible:ring-offset-1",
               "motion-reduce:transition-none",

@@ -363,6 +363,219 @@ export function SplitStage({
   )
 }
 
+/* ── Scene stage (owner ruling 2026-08-16, audit D2) ─────────────────────── */
+
+/**
+ * The presentation the old homepage flow-demo proved, restated as law.
+ *
+ * 1. NO browser chrome and NO site header. A scene is a focused working REGION
+ *    of a product screen, introduced by one slim context line. Chrome costs
+ *    40 to 96 vertical pixels and buys nothing a recording needs.
+ * 2. The region is composed at 1160 logical and rendered at scale 1.0 on a
+ *    computer, so 14px authored text reaches the viewer as 14px. The readability
+ *    audit (`scripts/demo/readability-audit.mjs`) is the gate on that promise.
+ * 3. A second frame is never bought by shrinking the first. When the phone
+ *    joins, the DESKTOP REGION IS COMPOSED NARROWER (900) and the phone arrives
+ *    at life size beside it. Both fit the same fixed box, so the stage never
+ *    resizes and the scale never moves.
+ *
+ * The height is the binding constraint at 1440x900: the panel under the player
+ * chrome is about 640px, so the box is 600 logical tall and scenes are authored
+ * to that. A taller box would silently reintroduce the shrink this exists to
+ * kill.
+ */
+export const SCENE_BOX_H = 600
+export const SCENE_WIDE_W = 1160
+export const SCENE_DUO_W = 900
+export const SCENE_PHONE_W = 390
+const SCENE_PHONE_BEZEL = 12
+export const SCENE_PHONE_FRAME_W = SCENE_PHONE_W + SCENE_PHONE_BEZEL * 2
+const SCENE_GAP = 40
+/** The box both layouts live in: the widest of them, so it never resizes. */
+export const SCENE_BOX_W = SCENE_DUO_W + SCENE_GAP + SCENE_PHONE_FRAME_W
+/** Room under the scene for the context of the player: caption and stepper. */
+const SCENE_RESERVE_BELOW = 150
+
+export function SceneStage({
+  mode,
+  desktop,
+  phone,
+  context,
+  stageRef,
+  reserveBelow = SCENE_RESERVE_BELOW,
+  children,
+}: {
+  /** "duo" composes the desktop narrower and brings the phone in beside it. */
+  mode: "wide" | "duo"
+  desktop: ReactNode
+  phone?: ReactNode
+  /** The slim strip over the region: "NPH Showcase League · Plan". */
+  context?: string
+  stageRef: React.RefObject<HTMLDivElement>
+  reserveBelow?: number
+  children?: ReactNode
+}) {
+  const outerRef = useRef<HTMLDivElement>(null)
+  const [panel, setPanel] = useState({ w: 0, h: 0 })
+
+  useEffect(() => {
+    const outer = outerRef.current
+    if (!outer) return
+    let raf = 0
+    const measure = () => {
+      const w = Math.round(outer.clientWidth)
+      const top = outer.getBoundingClientRect().top
+      const h = Math.round(Math.max(320, (window.innerHeight || 0) - top - reserveBelow))
+      setPanel((prev) => (prev.w === w && prev.h === h ? prev : { w, h }))
+    }
+    measure()
+    const schedule = () => {
+      cancelAnimationFrame(raf)
+      raf = requestAnimationFrame(measure)
+    }
+    const ro = new ResizeObserver(schedule)
+    ro.observe(outer)
+    window.addEventListener("resize", schedule)
+    return () => {
+      cancelAnimationFrame(raf)
+      ro.disconnect()
+      window.removeEventListener("resize", schedule)
+    }
+  }, [reserveBelow])
+
+  /* Never above 1: upscaling a composed region would defeat the point of
+     composing it. Never below the panel either, in both axes. */
+  const scale =
+    panel.w > 0
+      ? Math.min(1, panel.w / SCENE_BOX_W, (panel.h || SCENE_BOX_H) / SCENE_BOX_H)
+      : 0
+
+  const deskW = mode === "duo" ? SCENE_DUO_W : SCENE_WIDE_W
+
+  return (
+    <div ref={outerRef} className="w-full">
+      <div
+        ref={stageRef}
+        data-demo-stage="true"
+        data-demo-scale={scale ? scale.toFixed(3) : undefined}
+        className="relative mx-auto overflow-hidden"
+        style={
+          scale
+            ? { height: SCENE_BOX_H * scale, width: "100%" }
+            : { aspectRatio: `${SCENE_BOX_W} / ${SCENE_BOX_H}`, width: "100%" }
+        }
+      >
+        {/* One fixed box, both layouts inside it. The frames are positioned
+            ABSOLUTELY rather than laid out in a flex row, because a hidden
+            phone in the flow would still claim its column and push the region
+            off the stage. Wide centres the region in the box; duo narrows it,
+            slides it left and brings the phone in beside it, once, at the
+            publish chapter. */}
+        <div
+          className="absolute left-1/2 top-0 origin-top"
+          style={{
+            width: SCENE_BOX_W,
+            height: SCENE_BOX_H,
+            transform: `translateX(-50%) scale(${scale})`,
+            transformOrigin: "top center",
+          }}
+        >
+          <div
+            className="border-ink-200/70 absolute top-0 flex flex-col overflow-hidden rounded-2xl border bg-white shadow-[0_24px_60px_-34px_rgba(15,23,42,0.45)] transition-[width,left] duration-[450ms] ease-out motion-reduce:transition-none"
+            style={{
+              width: deskW,
+              left: mode === "duo" ? 0 : (SCENE_BOX_W - SCENE_WIDE_W) / 2,
+              height: SCENE_BOX_H,
+            }}
+          >
+            {context && (
+              <div className="border-ink-100 bg-ink-50 text-ink-600 flex shrink-0 items-center gap-2 border-b px-5 py-2 text-[14px] font-semibold">
+                <span
+                  aria-hidden="true"
+                  className="bg-court-500 h-2 w-2 shrink-0 rounded-full"
+                />
+                <span className="truncate">{context}</span>
+              </div>
+            )}
+            <div className="relative min-h-0 flex-1 overflow-hidden bg-white">{desktop}</div>
+          </div>
+
+          {phone && (
+            <div
+              className="absolute top-0 transition-all duration-[550ms] ease-out motion-reduce:transition-none"
+              style={{
+                width: SCENE_PHONE_FRAME_W,
+                left: SCENE_DUO_W + SCENE_GAP,
+                opacity: mode === "duo" ? 1 : 0,
+                transform: mode === "duo" ? "translateX(0)" : "translateX(48px)",
+              }}
+            >
+              <ScenePhoneFrame>{phone}</ScenePhoneFrame>
+            </div>
+          )}
+        </div>
+
+        {children}
+      </div>
+    </div>
+  )
+}
+
+/**
+ * The handset, life size in the axis that decides legibility.
+ *
+ * 390 logical wide at scale 1.0 is a real iPhone's point width, so phone text
+ * authored at 15px is 15px on the viewer's screen. The frame is SHORTER than a
+ * real handset (576 of screen, not 844) because the stage box is 600 tall at a
+ * 900px viewport: a full-height handset could only fit by scaling to 0.74,
+ * which is the exact failure this presentation exists to prevent. Recorded in
+ * the fidelity sheet rather than hidden.
+ */
+function ScenePhoneFrame({ children, time = "9:41" }: { children: ReactNode; time?: string }) {
+  const screenH = SCENE_BOX_H - SCENE_PHONE_BEZEL * 2
+  return (
+    <div
+      className="rounded-[46px] bg-[#0b0b0f] p-[12px] shadow-[0_30px_70px_-34px_rgba(15,23,42,0.7)]"
+      style={{ width: SCENE_PHONE_FRAME_W, height: SCENE_BOX_H }}
+    >
+      <div
+        className="relative flex flex-col overflow-hidden rounded-[34px] bg-white"
+        style={{ width: SCENE_PHONE_W, height: screenH }}
+      >
+        <div className="text-ink-900 relative z-20 flex shrink-0 items-center justify-between px-6 pb-1 pt-3 text-[14px] font-semibold">
+          <span>{time}</span>
+          <div className="absolute left-1/2 top-2.5 h-[24px] w-[86px] -translate-x-1/2 rounded-full bg-[#0b0b0f]" />
+          <span className="flex items-center gap-1.5">
+            <svg viewBox="0 0 18 12" className="h-3 w-[18px] fill-current" aria-hidden="true">
+              <rect x="0" y="7" width="3" height="5" rx="0.8" />
+              <rect x="5" y="5" width="3" height="7" rx="0.8" />
+              <rect x="10" y="2.5" width="3" height="9.5" rx="0.8" />
+              <rect x="15" y="0" width="3" height="12" rx="0.8" opacity="0.35" />
+            </svg>
+            <svg viewBox="0 0 25 12" className="h-3 w-6" aria-hidden="true">
+              <rect
+                x="0.5"
+                y="0.5"
+                width="21"
+                height="11"
+                rx="3"
+                fill="none"
+                stroke="currentColor"
+                opacity="0.4"
+              />
+              <rect x="2" y="2" width="15" height="8" rx="1.5" className="fill-current" />
+            </svg>
+          </span>
+        </div>
+        <div className="relative min-h-0 flex-1 overflow-hidden">{children}</div>
+        <div className="pointer-events-none absolute inset-x-0 bottom-1.5 z-20 flex justify-center">
+          <div className="bg-ink-900/70 h-[4px] w-[110px] rounded-full" />
+        </div>
+      </div>
+    </div>
+  )
+}
+
 /** Scales one logical box to the measured width, reserving its height. */
 function ScaledBox({
   width,

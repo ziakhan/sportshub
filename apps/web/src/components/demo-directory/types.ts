@@ -28,8 +28,24 @@ export interface DemoChapter {
 export interface DemoBeat {
   id: string
   chapter: string
-  /** The caption bar line. One sentence, present tense, no em-dashes. */
+  /**
+   * The caption bar line. One sentence, present tense, no em-dashes.
+   *
+   * ONE VOICE (owner ruling 2026-08-16): a beat that carries a `callout` is
+   * explained at the point of action, so the caption bar drops its sentence
+   * for that beat and shows the chapter name alone. Two voices narrating the
+   * same moment is what made the last cut hard to follow. Write the caption
+   * anyway: it is what the beat stepper and reduced motion read.
+   */
   caption: string
+  /**
+   * The slim one-line strip over the scene: "NPH Showcase League · Plan".
+   *
+   * Scene presentation has no browser chrome and no site header, so this is
+   * the only thing telling the viewer which product screen they are on. It
+   * accumulates like `url` does: set it when the story moves screens.
+   */
+  context?: string
   /** How long the beat holds before autoplay moves on, in milliseconds. */
   hold: number
   /** Switches the stage layout from this beat onward. */
@@ -124,4 +140,22 @@ export interface DemoScript {
   soloPhone?: boolean
   /** Address shown in the browser chrome bar before any beat sets its own. */
   desktopUrl: string
+  /**
+   * How the stage presents the story (owner ruling 2026-08-16, audit D2).
+   *
+   *   "frames": the 2026-08-15 stage: a mock browser window (chrome, traffic
+   *     lights, address bar) at 1120x660 with a phone column reserved beside
+   *     it, the pair scaled to fit the panel. Every story written before the
+   *     rebuild uses this.
+   *
+   *   "scene": the presentation the old homepage flow-demo proved and the
+   *     owner ruled back in: NO browser chrome, NO site header, the screen
+   *     composed as a focused working REGION at 1160 logical and rendered at
+   *     scale 1.0 on a computer, so text authored at 14px reaches the viewer
+   *     at 14px. When a phone joins, the desktop region is composed NARROWER
+   *     rather than scaled down, and the phone is life size.
+   */
+  presentation?: "frames" | "scene"
+  /** Context strip before any beat sets its own (scene presentation only). */
+  context?: string
 }

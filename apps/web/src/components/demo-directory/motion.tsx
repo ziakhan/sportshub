@@ -643,11 +643,18 @@ export function StepCaption({
   roleTone = "club",
   children,
   chapterTitle,
+  quiet,
 }: {
   role: string
   roleTone?: "club" | "league" | "parent" | "referee"
   children: ReactNode
   chapterTitle?: string
+  /**
+   * The beat is explaining itself on the stage, so this bar holds the place
+   * rather than narrating: the line goes quiet and the chapter chip on the
+   * right drops, because the line already IS the chapter.
+   */
+  quiet?: boolean
 }) {
   const tones: Record<string, string> = {
     club: "bg-court-50 text-court-700 ring-court-100",
@@ -659,17 +666,22 @@ export function StepCaption({
     <div className="border-ink-100 bg-white/95 flex flex-wrap items-start gap-x-3 gap-y-2 rounded-2xl border px-4 py-3 shadow-[0_10px_30px_-24px_rgba(15,23,42,0.5)]">
       <span
         className={cn(
-          "mt-0.5 inline-flex shrink-0 items-center rounded-full px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-[0.12em] ring-1 ring-inset",
+          "mt-0.5 inline-flex shrink-0 items-center rounded-full px-2.5 py-1 text-[14px] font-semibold uppercase tracking-[0.1em] ring-1 ring-inset",
           tones[roleTone]
         )}
       >
         {role}
       </span>
-      <p className="text-ink-700 min-w-[200px] flex-1 text-sm font-medium leading-relaxed">
+      <p
+        className={cn(
+          "min-w-[200px] flex-1 text-[15px] font-medium leading-relaxed transition-colors duration-300 motion-reduce:transition-none",
+          quiet ? "text-ink-400 font-semibold" : "text-ink-700"
+        )}
+      >
         {children}
       </p>
-      {chapterTitle && (
-        <span className="text-ink-400 mt-1 hidden shrink-0 text-[11px] font-semibold uppercase tracking-[0.14em] sm:block">
+      {chapterTitle && !quiet && (
+        <span className="text-ink-400 mt-1 hidden shrink-0 text-[14px] font-semibold uppercase tracking-[0.12em] sm:block">
           {chapterTitle}
         </span>
       )}

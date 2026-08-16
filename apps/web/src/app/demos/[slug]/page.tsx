@@ -46,10 +46,10 @@ export default function DemoPlayerPage({ params }: { params: { slug: string } })
 
           <div className="min-w-0 flex-1">
             <div className="flex min-w-0 items-baseline gap-2.5">
-              <h1 className="truncate text-[14px] font-bold leading-tight tracking-[-0.01em] text-white sm:text-[15px]">
+              <h1 className="truncate text-[15px] font-bold leading-tight tracking-[-0.01em] text-white sm:text-[16px]">
                 {demo.title}
               </h1>
-              <span className="hidden shrink-0 items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.14em] text-white/45 sm:inline-flex">
+              <span className="hidden shrink-0 items-center gap-1.5 text-[14px] font-bold uppercase tracking-[0.12em] text-white/50 sm:inline-flex">
                 <span
                   aria-hidden="true"
                   className={
@@ -60,7 +60,7 @@ export default function DemoPlayerPage({ params }: { params: { slug: string } })
                 />
                 {isStory ? "Story" : "Chapter"}
               </span>
-              <span className="shrink-0 text-[11px] font-semibold tabular-nums text-white/50">
+              <span className="shrink-0 text-[14px] font-semibold tabular-nums text-white/50">
                 {demo.durationLabel}
               </span>
             </div>

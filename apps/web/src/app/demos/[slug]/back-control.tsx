@@ -41,7 +41,7 @@ export function DemoBackControl() {
       type="button"
       onClick={go}
       aria-label={hasHistory ? "Go back" : "Back to all demos"}
-      className="inline-flex min-h-[44px] shrink-0 items-center gap-1.5 rounded-xl py-2 pl-2 pr-3 text-[13px] font-bold text-white/75 outline-none transition-colors duration-200 hover:bg-white/10 hover:text-white focus-visible:ring-2 focus-visible:ring-gold-400/70"
+      className="inline-flex min-h-[44px] shrink-0 items-center gap-1.5 rounded-xl py-2 pl-2 pr-3 text-[14px] font-bold text-white/75 outline-none transition-colors duration-200 hover:bg-white/10 hover:text-white focus-visible:ring-2 focus-visible:ring-gold-400/70"
     >
       <svg
         viewBox="0 0 24 24"
