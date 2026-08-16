@@ -484,7 +484,7 @@ export const playoffsStory: DemoScript = {
     paced({
       id: "to-schedule",
       chapter: "weekend",
-      caption: "Saturday night, and one of them does not happen.",
+      caption: "One of the two is not played.",
       context: CTX_SCHEDULE,
       cursor: "row-yvy",
       press: true,
@@ -503,7 +503,7 @@ export const playoffsStory: DemoScript = {
     paced({
       id: "forfeit-ok",
       chapter: "weekend",
-      caption: "One sentence, and it says exactly what it will do to the table.",
+      caption: "The dialog names what it will do to the table.",
       cursor: "confirm-forfeit",
       press: true,
       toast: `Forfeit recorded · ${FORFEIT_GAME.away} awarded the win`,
@@ -516,16 +516,16 @@ export const playoffsStory: DemoScript = {
       context: CTX_STANDINGS,
       emphasize: "row-vaughan",
       callout:
-        "A forfeit is a win, a loss, and no points at all. It can never flatter a differential.",
+        "A forfeit is a win, a loss and no points, so nobody's differential moves.",
       set: { screen: "standings", table: "forfeit" },
     }),
     paced({
       id: "review",
       chapter: "weekend",
-      caption: "Sunday night, the game that decides first place is at the review screen.",
+      caption: "The game that decides first place is at the review screen.",
       context: CTX_TABLE,
       emphasize: "review-head",
-      callout: "The scorer's table has the sheet. Nothing counts until it is signed.",
+      callout: "Nothing counts until the sheet is signed at the table.",
       set: { screen: "review" },
     }),
     paced({
@@ -547,10 +547,10 @@ export const playoffsStory: DemoScript = {
     paced({
       id: "settled",
       chapter: "weekend",
-      caption: "And the table has already moved. Every row is at ten games.",
+      caption: "The table has already moved. Every row is at ten games.",
       context: CTX_STANDINGS,
       emphasize: "row-mba",
-      callout: "Nobody typed a result into a standings page. The table reads the games.",
+      callout: "The table reads the games. There is no standings page to type into.",
       set: { screen: "standings", table: "final" },
     }),
 
@@ -560,13 +560,12 @@ export const playoffsStory: DemoScript = {
       chapter: "rule",
       caption: "Two teams finished seven and three, and the Tiebreakers column is empty.",
       emphasize: "tb-col",
-      callout:
-        "The order between them is an accident, and that is what leagues argue about in March.",
+      callout: "With no rules written down, the order between them is arbitrary.",
     }),
     paced({
       id: "rules-tab",
       chapter: "rule",
-      caption: "This league never wrote its tiebreakers down. Most have not.",
+      caption: "This league has no tiebreakers written down.",
       context: `${CTX_RULES} · Tiebreakers`,
       emphasize: "tb-empty",
       callout: "One screen, and the rules are the league's own, in its own order.",
@@ -578,7 +577,7 @@ export const playoffsStory: DemoScript = {
       caption: "Head-to-head first.",
       cursor: "tb-add-1",
       press: true,
-      callout: "The rule every parent already believes in: who beat whom.",
+      callout: "Head-to-head reads only games those two teams played against each other.",
       set: { order: 1 },
     }),
     paced({
@@ -586,7 +585,7 @@ export const playoffsStory: DemoScript = {
       chapter: "rule",
       caption: "Then the ladder under it, applied top to bottom until one team wins the tiebreaker.",
       emphasize: "tb-list",
-      callout: "Six rules, ending in a coin flip that always lands the same way.",
+      callout: "Six rules, applied in order, ending in a tie-break that is deterministic.",
       set: { order: 6 },
     }),
     paced({
@@ -596,7 +595,7 @@ export const playoffsStory: DemoScript = {
       cursor: "tb-lock",
       press: true,
       toast: "Tiebreakers locked · Feb 8, 2027",
-      callout: "Locked means nobody reorders them once they start deciding somebody's season.",
+      callout: "Locked means the order cannot be changed once it starts placing teams.",
       set: { locked: true },
     }),
     paced({
@@ -613,15 +612,14 @@ export const playoffsStory: DemoScript = {
       chapter: "rule",
       caption: "Four teams finished six and four, and every row names the rule that placed it.",
       emphasize: "row-cluster",
-      callout:
-        "The column is the engine's own record of which rule separated which teams.",
+      callout: "The column records which rule separated which teams.",
     }),
 
     /* ── 3. Who can play ──────────────────────────────────────────────── */
     paced({
       id: "floor",
       chapter: "who",
-      caption: "Then the question nobody wants on the Thursday before playoffs.",
+      caption: "Then the question of who is allowed to play.",
       context: `${CTX_RULES} · Playoffs`,
       emphasize: "min-games",
       callout: "Four games of ten, written down before the playoffs rather than argued during them.",
@@ -630,7 +628,7 @@ export const playoffsStory: DemoScript = {
     paced({
       id: "roster",
       chapter: "who",
-      caption: "Games played come from the scorekeeper's roll call, not from a coach's memory.",
+      caption: "Games played come from the scorekeeper's roll call.",
       context: CTX_TEAM,
       emphasize: "gp-col",
       callout: "Attendance is taken at the start of every scored game, and that record counts.",
@@ -642,25 +640,25 @@ export const playoffsStory: DemoScript = {
       caption: `One player is short. ${SHORT_PLAYER.name} broke a wrist in December.`,
       cursor: "row-short",
       press: true,
-      callout: "Three of four. The badge is automatic; the argument is not.",
+      callout: "The badge is computed. Whether she plays is still the league's call.",
       set: { override: true },
     }),
     paced({
       id: "note",
       chapter: "who",
-      caption: "The league can overrule it, and the product will not let them do it quietly.",
+      caption: "The league can overrule it, and the note is required.",
       type: { key: "note", text: RULING_NOTE },
-      callout: "The note is required, and the note IS the ruling.",
+      callout: "The note is stored with the ruling and stays on her record.",
       emphasize: "ruling-note",
     }),
     paced({
       id: "ruled",
       chapter: "who",
-      caption: "Ruled in, with the reason attached to her name for anybody who asks in March.",
+      caption: "Ruled in, with the reason attached to her name.",
       cursor: "rule-eligible",
       press: true,
       toast: "Ruling saved",
-      callout: "A decision somebody made and signed.",
+      callout: "The ruling names who made it and when.",
       set: { ruled: true, override: false },
     }),
 
@@ -679,7 +677,7 @@ export const playoffsStory: DemoScript = {
       chapter: "bracket",
       caption: `All ${PLAYOFF_TEAMS} teams make the playoffs, and everyone plays at least two games.`,
       emphasize: "in-sentence",
-      callout: "Nobody's season ends because of a table.",
+      callout: "No team is knocked out by where it finished in the table.",
     }),
     paced({
       id: "fit",

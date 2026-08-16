@@ -410,3 +410,25 @@ One shared fix rode along, because it is what stood between this demo and a clea
 shorthand with per-side longhands, so React warned every time a balloon flipped sides between
 beats. All four widths are now written as longhands. No visual change, and every other story
 gets a quiet console too.
+
+---
+
+## Sweep, 2026-08-16
+
+No confession beat existed in this cut to remove: the eligibility floor's two real limits (nothing
+in the product ENFORCES it, and this world has no attendance events) are recorded in section E and
+in the script's header comment, which is where they belong, and neither was ever said on camera.
+
+**Copy, 21 captions and balloons.** The drama and the assuming came out: "Saturday night, and one of
+them does not happen", "It can never flatter a differential", "The order between them is an
+accident, and that is what leagues argue about in March", "This league never wrote its tiebreakers
+down. Most have not.", "The rule every parent already believes in", "a coin flip that always lands
+the same way", "Then the question nobody wants on the Thursday before playoffs", "The badge is
+automatic; the argument is not", "the product will not let them do it quietly", "for anybody who
+asks in March", "Nobody's season ends because of a table". Every replacement states what the
+product does; where a balloon only repeated the screen, it now carries something the screen does
+not say (what head-to-head actually reads, that the tie-break is deterministic, that the ruling
+stores who made it).
+
+Gate re-run: readability audit **0 violations**, minimum stage scale **1.000**, 32 beats / 36
+scenes, one headless drive with a clean console. Runtime **2 min 25 sec**.
