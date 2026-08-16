@@ -203,7 +203,7 @@ export const teamDropsOutStory: DemoScript = {
       chapter: "ask",
       caption: `${TEAMS_IN} teams are in, and the whole season is already drawn.`,
       emphasize: "season-strip",
-      callout: `${TEAMS_IN} teams, ${GAMES_IN} games already drawn. This is the worst possible moment for somebody to leave.`,
+      callout: `${TEAMS_IN} teams and ${GAMES_IN} games are already on the board.`,
     }),
     paced({
       id: "queue",
@@ -216,16 +216,16 @@ export const teamDropsOutStory: DemoScript = {
     paced({
       id: "reason",
       chapter: "ask",
-      caption: "They wrote down why, because the product makes them.",
+      caption: "The club had to write down why.",
       emphasize: "wd-reason",
       callout: "The reason is required, so a league is never guessing what happened.",
     }),
     paced({
       id: "warning",
       chapter: "ask",
-      caption: "And the league is told what pressing Approve will do.",
+      caption: "The screen names what Approve will do before it is pressed.",
       emphasize: "wd-warn",
-      callout: "It says the consequence before the button, not after it.",
+      callout: "Ten cancelled games and a dead entry fee, said in advance.",
     }),
     paced({
       id: "approve",
@@ -235,7 +235,7 @@ export const teamDropsOutStory: DemoScript = {
       press: true,
       toast: `${TEAM} withdrawn · ${CANCELLED} games cancelled`,
       set: { approved: true },
-      callout: "One press. Everything after this happens without anybody typing.",
+      callout: "Everything after this press runs on its own.",
     }),
 
     /* ── 2. What approving does ───────────────────────────────────────── */
@@ -245,11 +245,10 @@ export const teamDropsOutStory: DemoScript = {
       caption: "Four things happened, and all four are one transaction.",
       /* The strip stops naming a product screen, because this card is not
          one: the cascade runs on the server and nothing shows it. Punch 3. */
-      context: `${LEAGUE} · ${SEASON} · What the approval did`,
+      context: undefined,
       set: { cascade: true, step: 0 },
       emphasize: "cascade-card",
-      callout:
-        "Nothing in the product shows an operator this list. It is the code, read out loud.",
+      callout: "All four writes are one transaction. If any of them failed, none of them happened.",
     }),
     paced({
       id: "casc-1",
@@ -282,39 +281,35 @@ export const teamDropsOutStory: DemoScript = {
     paced({
       id: "told",
       chapter: "approve",
-      caption: `The ${OPPONENT_CLUBS} clubs they were due to play hear it from the system.`,
+      caption: `The ${OPPONENT_CLUBS} clubs they were due to play are told.`,
       set: { notice: true },
       emphasize: "notice-card",
-      callout:
-        "Nine club offices, told automatically. Not a phone call, not a group email, not a list built by hand.",
+      callout: "The list is the fixtures that were cancelled, so nobody assembles it.",
     }),
     paced({
       id: "told-honest",
       chapter: "approve",
-      caption: "Club offices, and only club offices. This schedule is not published yet.",
+      caption: "Club offices, because this schedule is not published to families yet.",
       emphasize: "notice-foot",
-      callout:
-        "The demo counts what the product really tells: the opposing clubs. Families hear it from their club.",
+      callout: "Families hear it from their own club, which is who told them they were entered.",
     }),
 
     /* ── 3. Who is now short ──────────────────────────────────────────── */
     paced({
       id: "schedule",
       chapter: "short",
-      caption: "Now the part that decides whether a league trusts you.",
+      caption: "Ten games came off a season that was already drawn.",
       context: CTX_SCHEDULE,
       set: { cascade: false, notice: false, shortView: true },
       emphasize: "gap-callout",
-      callout:
-        "Ten games vanished from a drawn season. Somebody is now owed games they were promised.",
+      callout: "Somebody is now owed games the league guaranteed them.",
     }),
     paced({
       id: "count",
       chapter: "short",
       caption: `${SHORT_COUNT} teams are under the ${GUARANTEE} game guarantee, and it names them.`,
       emphasize: "gap-line",
-      callout:
-        "The league does not go hunting. The screen says how many, and which, with each one's real count.",
+      callout: "The screen names them and carries each one's real count.",
     }),
     paced({
       id: "vanguard",
@@ -354,30 +349,28 @@ export const teamDropsOutStory: DemoScript = {
     paced({
       id: "add",
       chapter: "fix",
-      caption: "Then the button the whole demo is about.",
+      caption: "Add ONLY the missing games.",
       cursor: "gap-add",
       press: true,
       set: { dialog: true },
-      callout:
-        "Not regenerate. Not rebuild the season. Add only the games that are missing.",
+      callout: "The season is not regenerated. Five games are appended to it.",
     }),
     paced({
       id: "confirm",
       chapter: "fix",
-      caption: "The product says it in its own words before it does it.",
+      caption: "The dialog says it in the product's own words.",
       cursor: "confirm-add",
       press: true,
       toast: `${NEW_GAMES} games added · nothing else changed`,
       set: { dialog: false, committed: true },
-      callout: "Nobody's existing schedule changes. That sentence is the product's, not ours.",
+      callout: "Every game already on the board is treated as immovable.",
     }),
     paced({
       id: "proof",
       chapter: "fix",
-      caption: "The callout is gone, and every team has its ten.",
+      caption: "The warning is gone, and every team has its ten.",
       emphasize: "gap-clear",
-      callout:
-        "The generator treats every existing game as immovable: same courts, same times, same weekends.",
+      callout: "Same courts, same times, same weekends for everybody who was already scheduled.",
     }),
     paced({
       id: "draft",
@@ -598,16 +591,13 @@ function CascadeCard({ step, notice }: { step: number; notice: boolean }) {
   return (
     <div
       data-demo-target="cascade-card"
-      className="flex min-h-0 flex-1 flex-col justify-center bg-[#0b1628] px-10 py-6 text-white"
+      className="flex min-h-0 flex-1 flex-col justify-center bg-[#0b1628] px-10 py-5 text-white"
     >
-      <p className="text-gold-400 text-[15px] font-bold uppercase tracking-[0.16em]">
-        What one Approve set off
-      </p>
-      <p className="font-display mt-1.5 text-[34px] font-extrabold leading-none">
+      <p className="font-display text-[30px] font-extrabold leading-none">
         One transaction, four writes
       </p>
       <p className="mt-1.5 text-[16px] font-semibold text-white/70">
-        {TEAM} · {DIVISION} · nothing typed by a human being
+        {TEAM} · {DIVISION}
       </p>
 
       <div className="mt-4 space-y-2">
@@ -615,7 +605,7 @@ function CascadeCard({ step, notice }: { step: number; notice: boolean }) {
           <div
             key={r.label}
             className={cn(
-              "flex items-baseline gap-4 rounded-2xl border px-4 py-2.5 transition-opacity duration-500 motion-reduce:transition-none",
+              "flex items-baseline gap-4 rounded-2xl border px-4 py-3 transition-opacity duration-500 motion-reduce:transition-none",
               i < step ? "border-white/15 bg-white/[0.07] opacity-100" : "border-white/5 opacity-20"
             )}
           >
@@ -635,7 +625,7 @@ function CascadeCard({ step, notice }: { step: number; notice: boolean }) {
       {notice && (
         <div
           data-demo-target="notice-card"
-          className="live-pop mt-4 rounded-2xl border border-white/15 bg-white/[0.07] px-4 py-3"
+          className="live-pop mt-3 rounded-2xl border border-white/15 bg-white/[0.07] px-4 py-2.5"
         >
           <p className="text-[15px] font-bold uppercase tracking-[0.06em] text-white/50">
             And then, by itself
@@ -646,9 +636,8 @@ function CascadeCard({ step, notice }: { step: number; notice: boolean }) {
             data-demo-target="notice-foot"
             className="mt-2 border-t border-white/10 pt-2 text-[15px] font-medium text-white/55"
           >
-            Sent to the front office of all {OPPONENT_CLUBS} opposing clubs. Referees and the
-            league office are left out on purpose, and this schedule has not been published yet, so
-            no family calendar carried these games.
+            Sent to the front office of all {OPPONENT_CLUBS} opposing clubs. This schedule has not
+            been published yet, so no family calendar carried these games.
           </p>
         </div>
       )}

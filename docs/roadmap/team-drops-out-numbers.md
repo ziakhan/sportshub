@@ -292,14 +292,39 @@ Same cascade otherwise. **PUNCH: one shared audience helper**, per the parity la
 
 | Gate | Result |
 |---|---|
-| `scripts/demo/readability-audit.mjs --routes /demos/team-drops-out` | **0 violations**, minimum stage scale **1.000**, 23 beats, 27 scenes audited |
+| `scripts/demo/readability-audit.mjs --routes /demos/team-drops-out` | **0 violations**, minimum stage scale **1.000**, 23 beats, 27 scenes audited (sweep re-run 2026-08-16) |
 | Same, `--viewport 390x844 --floor 11 --scope stage` (keyhole) | **0 violations** |
 | Same, `--viewport 390x844 --floor 14 --scope chrome` | **0 violations** |
 | Full playback drive, 23 beats stepped plus a 2x autoplay pass | **0 console errors**, **0 page errors** |
 | Chapter jumps | **4 of 4 exact**: every chip lands on its own chapter's first beat, with the right context strip |
-| Runtime at 1x | **1 min 50 sec** (`data-demo-runtime-ms` = 109500) |
+| Runtime at 1x | **1 min 43 sec** (sweep cut, shorter balloons) |
 | Scene overflow (any node past the 600 logical box) | **none**, all 23 beats |
 | 390x844 horizontal overflow | **0 px** (`documentElement.scrollWidth` 390 = `clientWidth` 390) |
 | `tsc --noEmit` | clean |
 | Em-dash sweep | clean. No em-dash or en-dash anywhere in the script or its registry entry |
 | Database writes | **none**. Every derivation ran the product's own arithmetic over read-only queries |
+
+---
+
+## Sweep, 2026-08-16
+
+**The narration confession is out.** The cascade beat's balloon read "Nothing in the product shows
+an operator this list. It is the code, read out loud." Under the owner's no-confession rule that
+sentence is gone; the balloon now states the fact the card exists to make: all four writes are one
+transaction, and if any of them failed none of them happened. The card also stopped claiming a
+product screen it is not: its context strip no longer says "`LEAGUE` · `SEASON` · What the
+approval did", and its subtitle dropped "nothing typed by a human being". Punch 3 below is
+unchanged, and is still where a real receipt screen gets asked for.
+
+The `told-honest` beat kept its scope but lost its meta: "The demo counts what the product really
+tells" became a plain statement that families hear it from their own club.
+
+**Copy.** Twelve captions and balloons rewritten: "This is the worst possible moment for somebody to
+leave", "Now the part that decides whether a league trusts you", "Then the button the whole demo is
+about", "Not a phone call, not a group email, not a list built by hand", "Not regenerate. Not
+rebuild the season.", "That sentence is the product's, not ours." Two triple-negative constructions
+and two meta references to the demo itself are out with them. The registry description lost "the
+part no league has ever been shown" and "it is the reason this demo exists".
+
+**Screen.** The transaction card was half empty under its four rows and its notice card was clipped;
+the rows now carry the height and the whole card, notice included, is on screen.
