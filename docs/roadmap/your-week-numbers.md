@@ -62,7 +62,7 @@ product decision, not a bug, and it is a good one to make: the demo's own last b
 | 12 to 14 | `moved`, `inplace`, `survives` | `PATCH /api/teams/[id]/practices/[practiceId]` | the same move the everyone-in-the-loop demo performs; the agenda re-renders the same row on its 45 second poll |
 | 15 to 16 | `home`, `pay` | `/` then `/payments` | `app/(public)/home-personal-band.tsx`; `app/(platform)/payments/page.tsx` |
 | 17 to 18 | `waiver-notif`, `sign` | the bell and a push, then `/waivers/sign/[token]` | `lib/waivers/reminders.ts`; `app/(public)/waivers/sign/[token]/page.tsx` |
-| 19 | `punch`, the honest beat | n/a | Section 0 |
+| ~~19~~ | ~~`punch`, the honest beat~~ | **DELETED, sweep 2026-08-16** | See the sweep table below |
 | 20 | `end` | n/a, the end card | |
 
 ---
@@ -206,7 +206,8 @@ that is the real state this demo shows.
 | Choice | Why |
 |---|---|
 | **One handset, life size** | `OWNER` the brief. 390 logical at scale 1.0 on a computer; on a phone the stage shows the whole handset scaled to the viewport width |
-| 4 of the 5 real items drawn | The handset screen is 390 by 508 and the scene never scrolls. Thursday is named under the list rather than dropped |
+| 4 of the 5 real items drawn | The handset screen is 390 by 508 and the scene never scrolls. Thursday is named under the list rather than dropped, and the sweep tightened the rows until the Saturday game's RSVP pills AND that line are both fully on screen |
+| The agenda's "AUGUST 2026" month header is not drawn | Height, and only height. `PRODUCT` `agenda-list.tsx` draws it; this week is one month long, so the 24px it costs buys the RSVP row instead. Sweep 2026-08-16 |
 | The page subtitle is not drawn | Height, section G. The title is |
 | The week is presented as Monday to Saturday | `DB` those are the real dates; the agenda groups by day and the demo shows them in order |
 | The maps result is a card, not a screenshot of Google Maps | The demo does not fake a third-party surface; it shows the address handing off |
@@ -219,14 +220,37 @@ that is the real state this demo shows.
 
 | Gate | Result |
 |---|---|
-| `scripts/demo/readability-audit.mjs --routes /demos/your-week` | **0 violations**, minimum stage scale **1.000**, 20 beats, 25 scenes audited |
+| `scripts/demo/readability-audit.mjs --routes /demos/your-week` | **0 violations**, minimum stage scale **1.000**, 19 beats, 24 scenes audited (sweep re-run 2026-08-16) |
 | Same, `--viewport 390x844 --floor 11 --scope stage` (keyhole) | **0 violations** |
 | Same, `--viewport 390x844 --floor 14 --scope chrome` | **0 violations** |
-| Full playback drive, 20 beats stepped twice plus a 2x autoplay pass | **0 console errors**, **0 page errors** |
+| Full playback drive, 19 beats stepped end to end | **0 console errors**, **0 page errors** |
 | Chapter jumps | **5 of 5 exact**: beats 1, 5, 8, 12, 15 |
-| Runtime at 1x | **1 min 45 sec** |
-| Scene overflow (any node past the composed box) | **0 px**, all 20 beats |
+| Runtime at 1x | **1 min 31 sec** (sweep cut) |
+| Scene overflow (any node past the composed box) | **0 px**, all 19 beats, re-measured by screenshot on every beat |
 | 390x844 horizontal overflow | **0 px** |
 | `tsc --noEmit` | clean |
 | Em-dash sweep | clean |
 | Database writes | **none** |
+
+---
+
+## J. Sweep, 2026-08-16: what came out under the no-confession rule
+
+The owner's rule for this pass: a demo never stops to admit what it is missing, and no mock panel
+carries a narrator's line. Seven things came out of this cut, and nothing the product really does
+was lost with them.
+
+| Cut | Was | Why | Where the gap is closed |
+|---|---|---|---|
+| The `punch` beat, whole | A balloon saying neither the fee nor the waiver is in the week list, and that putting them there is "a change the product has not made" | A confession on camera | The chapter now ends on the signing page. The gap stays punch 1 in section 0, for the product backlog |
+| `directions` balloon | "Three taps from the week. Real, and further away than it should be." | Same | "Three taps from the week to the map, and every one of them exists today." The walk itself still shows the distance |
+| `tap` caption | "The address is not on the row, and here is the honest path to it." | Same | "The street address is not on the row. This is the path to it." |
+| Popover panel line | "The popover is where the row goes deeper. There is no address on it." | Narrator's line inside a mock | The beat's balloon says what the popover is for |
+| Game page panel line | "The gym name is the link. This is also the page that goes live when the game starts." | Same | Moved into the beat's balloon |
+| Venue page panel line | "The venue page is the only place the street address lives." | Same | Moved into the beat's balloon |
+| Home band panel line | "A count, not a dollar figure and not a date. That is exactly what this card carries today." | Same, and half confession | The balloon says "counted rather than itemised" |
+| Waiver panel line | "Waivers are one of the few things the product will push to a phone, because an unsigned one stops a player at the door." | Same | The notification's own copy already says she cannot play |
+
+Eleven captions and balloons were also rewritten off the copy law: "no binder and no group chat to
+scroll", "the thing families get wrong", "Not a link to a form", "Then the week breaks the way weeks
+do", and the rest of the drama and the assuming.

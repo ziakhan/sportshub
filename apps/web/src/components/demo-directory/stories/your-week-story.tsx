@@ -36,8 +36,17 @@ import type { DemoBeat, DemoScript } from "../types"
  * product does not do it: `MyCalendarItem` has no waiver or fee field, and
  * `my-contexts.ts`'s `actionsDue` (offers, payments, RSVPs, chats, referee
  * offers) has no waiver field at all. So this cut stages the REAL surfaces a
- * fee and a waiver actually reach a guardian on, and says on screen that they
- * are not in the week list today. Punch 1 in `docs/roadmap/your-week-numbers.md`.
+ * fee and a waiver reach a guardian on. Punch 1 in
+ * `docs/roadmap/your-week-numbers.md`.
+ *
+ * NO CONFESSIONS ON CAMERA (sweep, 2026-08-16). The 08-16 cut ended the last
+ * chapter on a `punch` beat that told the viewer, in a balloon, that neither
+ * the fee nor the waiver is in the week list and that putting them there is a
+ * change the product has not made. It also called the three taps to a map
+ * "further away than it should be", and five mock panels carried a narrator's
+ * line rather than product copy. All of it is gone. What the product does is
+ * shown; what it does not do stays in this file and the numbers sheet, which is
+ * where the product backlog reads it.
  *
  * TWO MORE THINGS THE PREVIOUS CUT INVENTED AND THIS ONE DOES NOT:
  *   · a gold "Moved" badge and an amber pulse on a changed row. The real
@@ -210,31 +219,30 @@ export const yourWeekStory: DemoScript = {
     paced({
       id: "open",
       chapter: "week",
-      caption: "Monday morning, one phone, two children on two teams.",
+      caption: "One phone, two children on two teams, and the week in order.",
       emphasize: "agenda",
-      callout: "Five things this week, in order, with no binder and no group chat to scroll.",
+      callout: "One list for the household, rather than one calendar per team.",
     }),
     paced({
       id: "lenses",
       chapter: "week",
-      caption: "Both kids are on the same list, and it says which is which.",
+      caption: "Both children are on the same list, and it says which is which.",
       emphasize: "lenses",
-      callout: `A calendar per child per team. Tap ${DAUGHTER}'s off and her half of the week goes quiet.`,
+      callout: `A calendar per child per team. Tap ${DAUGHTER}'s off and her half goes quiet.`,
     }),
     paced({
       id: "where",
       chapter: "week",
-      caption: "Every line carries the gym.",
+      caption: "Every line carries the gym and the team.",
       emphasize: "row-tue",
-      callout: "Because the gym is the thing families get wrong, not the time.",
+      callout: "The gym is on the row because it changes more often than the time.",
     }),
     paced({
       id: "cancelled",
       chapter: "week",
-      caption: "And Monday is already off.",
+      caption: "Monday is already cancelled, and it stays on the list struck through.",
       emphasize: "row-cancelled",
-      callout:
-        "A cancelled practice stays where it was with a line through it, so nobody drives to it out of habit.",
+      callout: "A row that disappears is a row nobody can check against their memory.",
     }),
 
     /* ── 2. Answer it here ────────────────────────────────────────────── */
@@ -243,7 +251,7 @@ export const yourWeekStory: DemoScript = {
       chapter: "answer",
       caption: "Saturday needs an answer, and it is asked on the row itself.",
       emphasize: "rsvp",
-      callout: "Not a link to a form. Three buttons under the game she is already looking at.",
+      callout: "Three buttons on the row, so answering costs no navigation.",
     }),
     paced({
       id: "going",
@@ -252,25 +260,25 @@ export const yourWeekStory: DemoScript = {
       cursor: "rsvp-going",
       press: true,
       set: { rsvp: "going" },
-      callout: "One tap, and the coach's roll call has her before Saturday.",
+      callout: "The coach's roll call has her before Saturday.",
     }),
     paced({
       id: "twokids",
       chapter: "answer",
       caption: "When two of her children are on the same event, each gets their own row of buttons.",
       emphasize: "rsvp",
-      callout: "She is never answering for the wrong child.",
+      callout: "The answer is per child, so one press cannot cover both.",
     }),
 
     /* ── 3. Where the gym is ──────────────────────────────────────────── */
     paced({
       id: "tap",
       chapter: "gym",
-      caption: "The address is not on the row, and here is the honest path to it.",
+      caption: "The street address is not on the row. This is the path to it.",
       cursor: "row-sat",
       press: true,
       set: { view: "popover" },
-      callout: "Tapping the game opens what the product really opens.",
+      callout: "Tapping a row opens its details rather than jumping straight out of the week.",
     }),
     paced({
       id: "gamepage",
@@ -279,57 +287,56 @@ export const yourWeekStory: DemoScript = {
       cursor: "open-game",
       press: true,
       set: { view: "game" },
-      callout: "Which is also where she watches it if she cannot be in the building.",
+      callout: "The same page goes live when the game starts, so she can watch from here.",
     }),
     paced({
       id: "venue",
       chapter: "gym",
-      caption: "And the gym name is a link.",
+      caption: "The gym name is a link.",
       cursor: "venue-link",
       press: true,
       set: { view: "venue" },
-      callout: "The venue page carries the street address, which is the thing she actually needs.",
+      callout: "The venue page is where the street address lives.",
     }),
     paced({
       id: "directions",
       chapter: "gym",
-      caption: "Directions, in her own maps app.",
+      caption: "Directions, in the maps app she already uses.",
       cursor: "directions",
       press: true,
       set: { directions: true },
-      callout: "Three taps from the week. Real, and further away than it should be.",
+      callout: "Three taps from the week to the map, and every one of them exists today.",
     }),
 
     /* ── 4. Plans change ──────────────────────────────────────────────── */
     paced({
       id: "moved",
       chapter: "change",
-      caption: "Then the week breaks the way weeks do.",
+      caption: "The coach moves Tuesday's practice to eight.",
       set: { view: "week", moved: true },
       emphasize: "row-tue",
-      callout: `The coach moved Tuesday's practice to eight, and the row she already had says eight.`,
+      callout: "The row she already had now says eight. It is the same row.",
     }),
     paced({
       id: "inplace",
       chapter: "change",
       caption: "Nothing was added and nothing vanished.",
       emphasize: "agenda",
-      callout:
-        "The same row with a new time. No second entry to reconcile, no duplicate on her phone calendar.",
+      callout: "A subscribed phone calendar gets the same edit, so there is no duplicate.",
     }),
     paced({
       id: "survives",
       chapter: "change",
-      caption: "And the answer she already gave survives it.",
+      caption: "The answer she already gave is still on the game.",
       emphasize: "rsvp",
-      callout: "Her Going is attached to the game, not to the time, so nobody asks her twice.",
+      callout: "An RSVP is tied to the game rather than to its time, so nobody asks twice.",
     }),
 
     /* ── 5. Fee and waiver ────────────────────────────────────────────── */
     paced({
       id: "home",
       chapter: "owed",
-      caption: "Two things are owed this week, and neither of them is in the week.",
+      caption: "Two things are owed this week, and both arrive on their own surface.",
       set: { view: "home" },
       emphasize: "band",
       callout: "The fee is a card on her home screen, counted rather than itemised.",
@@ -346,36 +353,27 @@ export const yourWeekStory: DemoScript = {
     paced({
       id: "waiver-notif",
       chapter: "owed",
-      caption: "The waiver arrives on its own, and it arrives as a push.",
+      caption: "The waiver arrives as a push of its own.",
       set: { view: "waiver" },
       emphasize: "w-notif",
-      callout: `It names ${DAUGHTER}, names the document, and says what it costs her: she cannot play.`,
+      callout: `It names ${DAUGHTER}, names the document, and says she cannot play until it is signed.`,
     }),
     paced({
       id: "sign",
       chapter: "owed",
-      caption: "And signing it is a minute on the same phone.",
+      caption: "Signing it is a minute on the same phone.",
       cursor: "w-open",
       press: true,
       set: { view: "sign" },
-      callout: "A link that opens the document itself, with no app to install and no password to find.",
-    }),
-    paced({
-      id: "punch",
-      chapter: "owed",
-      caption: "One honest thing about both of them.",
-      set: { view: "week", moved: true },
-      emphasize: "agenda",
-      callout:
-        "Neither the fee nor the waiver appears in this week list today. They arrive as their own push, their own card and their own email, and putting them here is a change the product has not made.",
+      callout: "The link opens the document itself. No app to install, no password to find.",
     }),
     paced({
       id: "end",
       chapter: "owed",
       caption:
-        "Two children, one week, one screen, an answer that survives a change, and the two things she owes shown where they really live.",
+        "Two children, one week, one screen, an answer that survives a change, and the two things she owes on the surfaces they arrive on.",
       hold: 4400,
-      set: { endCard: true },
+      set: { view: "week", moved: true, endCard: true },
     }),
   ],
 
@@ -446,14 +444,14 @@ function Week({ rsvp, moved }: { rsvp: string; moved: boolean }) {
     <div className="flex h-full flex-col">
       <p className="text-ink-900 shrink-0 text-[17px] font-extrabold">{CAL_TITLE}</p>
 
+      {/* Composition: the agenda's "AUGUST 2026" month header is real and is
+          not drawn here. The week is one month long and the handset's 508
+          would rather spend those pixels on the Saturday game's RSVP row.
+          Declared in section H of the numbers sheet. */}
       <div data-demo-target="lenses" className="mt-1 flex shrink-0 flex-wrap gap-1">
         <Lens color="var(--brand, #1a73e8)" label={`${SON} · Grade 9`} />
         <Lens color="#e0821e" label={`${DAUGHTER} · Grade 10 Girls`} />
       </div>
-
-      <p className="text-ink-400 mt-1.5 shrink-0 text-[14px] font-bold uppercase tracking-[0.1em]">
-        August 2026
-      </p>
 
       <div data-demo-target="agenda" className="mt-1 min-h-0 flex-1 space-y-1 overflow-hidden">
         {SHOWN.map((r) => (
@@ -487,7 +485,7 @@ function AgendaRow({ row, time, rsvp }: { row: Row; time: string; rsvp: string }
     <div
       data-demo-target={row.cancelled ? "row-cancelled" : row.id}
       className={cn(
-        "flex gap-2 rounded-xl border bg-white px-2 py-1 transition-colors duration-300 motion-reduce:transition-none",
+        "flex gap-2 rounded-xl border bg-white px-2 py-0.5 transition-colors duration-300 motion-reduce:transition-none",
         row.cancelled ? "border-ink-200" : "border-ink-200"
       )}
       style={{ borderLeft: `4px solid ${row.cancelled ? "#c9ced6" : edge}` }}
@@ -496,13 +494,15 @@ function AgendaRow({ row, time, rsvp }: { row: Row; time: string; rsvp: string }
         <span className="text-ink-900 block text-[17px] font-extrabold leading-none tabular-nums">
           {row.day}
         </span>
-        <span className="text-ink-400 block text-[14px] font-bold uppercase">{row.weekday}</span>
+        <span className="text-ink-400 block text-[14px] font-bold uppercase leading-tight">
+          {row.weekday}
+        </span>
       </span>
       <span className="min-w-0 flex-1">
         <span className="flex items-center gap-1.5">
           <span
             className={cn(
-              "text-[14px] font-bold tabular-nums",
+              "text-[14px] font-bold leading-tight tabular-nums",
               row.cancelled ? "text-ink-400 line-through" : "text-ink-700"
             )}
           >
@@ -512,16 +512,21 @@ function AgendaRow({ row, time, rsvp }: { row: Row; time: string; rsvp: string }
         </span>
         <span
           className={cn(
-            "block truncate text-[15px] font-bold",
+            "block truncate text-[15px] font-bold leading-tight",
             row.cancelled ? "text-ink-400 line-through" : "text-ink-900"
           )}
         >
           {row.title}
         </span>
-        <span className="text-ink-500 block truncate text-[14px] font-medium">{row.where}</span>
+        <span className="text-ink-500 block truncate text-[14px] font-medium leading-tight">
+          {row.where}
+        </span>
 
         {row.id === "row-sat" && (
-          <span data-demo-target="rsvp" className="border-ink-100 mt-1 flex items-center gap-1.5 border-t pt-1">
+          <span
+            data-demo-target="rsvp"
+            className="border-ink-100 mt-0.5 flex items-center gap-1.5 border-t pt-0.5"
+          >
             <span className="text-ink-400 shrink-0 text-[14px] font-semibold">{SON}</span>
             <span className="flex gap-1">
               <Pill id="rsvp-going" label="✓ Going" on={rsvp === "going"} tone="court" />
@@ -583,9 +588,6 @@ function Popover() {
           Open game page →
         </span>
       </div>
-      <p className="text-ink-500 text-[14px] font-medium leading-snug">
-        The popover is where the row goes deeper. There is no address on it.
-      </p>
     </div>
   )
 }
@@ -608,9 +610,6 @@ function GamePage() {
           <span className="text-white/60"> · Court 1</span>
         </p>
       </div>
-      <p className="text-ink-500 text-[14px] font-medium leading-snug">
-        The gym name is the link. This is also the page that goes live when the game starts.
-      </p>
     </div>
   )
 }
@@ -630,13 +629,10 @@ function VenuePage({ directions }: { directions: boolean }) {
         <div className="border-court-200 bg-court-50 live-pop rounded-2xl border px-3 py-2.5">
           <p className="text-court-800 text-[15px] font-bold">Maps</p>
           <p className="text-court-700 mt-0.5 text-[14px] font-semibold leading-snug">
-            {GYM_ADDRESS}, opened in the app she already uses.
+            {GYM_ADDRESS}
           </p>
         </div>
       )}
-      <p className="text-ink-500 text-[14px] font-medium leading-snug">
-        The venue page is the only place the street address lives.
-      </p>
     </div>
   )
 }
@@ -656,9 +652,6 @@ function HomeBand() {
         <p className="text-hoop-800 text-[17px] font-extrabold">{BAND_TITLE}</p>
         <p className="text-hoop-700 mt-0.5 text-[15px] font-bold">{BAND_DETAIL}</p>
       </div>
-      <p className="text-ink-500 text-[14px] font-medium leading-snug">
-        A count, not a dollar figure and not a date. That is exactly what this card carries today.
-      </p>
     </div>
   )
 }
@@ -729,10 +722,6 @@ function WaiverNotice() {
           Tap to sign →
         </span>
       </div>
-      <p className="text-ink-500 text-[14px] font-medium leading-snug">
-        Waivers are one of the few things the product will push to a phone, because an unsigned one
-        stops a player at the door.
-      </p>
     </div>
   )
 }

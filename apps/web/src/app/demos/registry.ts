@@ -276,11 +276,11 @@ export const DEMOS: DemoEntry[] = [
     promise:
       "One phone, two children, and a real week from a real database: four practices, one already cancelled, a Saturday game answered in a tap, and a change that does not ask her the same question twice.",
     description:
-      "One life-size phone, and every line on it is a row in the database rather than a drawing. A guardian with two children at the same club opens her week: her daughter's Monday practice, already cancelled and still sitting there with a line through it so nobody drives to it out of habit; her son's Tuesday; her daughter's Wednesday; and a Saturday game. Both children are on the same list, and it says which is which. Saturday needs an answer and asks for it on the row itself, three buttons under the game she is already looking at, and when two of her children are on the same event each one gets their own row of buttons so she is never answering for the wrong child. Then the demo does something demos do not usually do: it shows how far the gym address really is, walking the three taps it actually takes to get from the week to a map, and says out loud that it is further than it should be. The week breaks the way weeks do, the coach moves Tuesday's practice, and the row she already had simply says the new time, with nothing added, nothing vanished and her answer still attached, because an RSVP is tied to the game rather than to its time. The last stretch is the two things she owes, a fee installment and a waiver her daughter cannot play without, shown on the surfaces they really arrive on, with an honest note that they are not in the week list today.",
+      "One life-size phone, and every line on it is a row in the database rather than a drawing. A guardian with two children at the same club opens her week: her daughter's Monday practice, already cancelled and still sitting there with a line through it so nobody drives to it out of habit; her son's Tuesday; her daughter's Wednesday; and a Saturday game. Both children are on the same list, and it says which is which. Saturday needs an answer and asks for it on the row itself, three buttons under the game she is already looking at, and when two of her children are on the same event each one gets their own row of buttons so she is never answering for the wrong child. Then the walk to the gym address: the row, the game page, the venue page, the map, three taps that all exist today. The coach moves Tuesday's practice, and the row she already had simply says the new time, with nothing added, nothing vanished and her answer still attached, because an RSVP is tied to the game rather than to its time. The last stretch is the two things she owes, a fee installment and a waiver her daughter cannot play without, on the surfaces they really arrive on: a card on her home screen, the payment plan behind it, and a push that names the child and the document.",
     audiences: ["parents"],
     kind: "chapter",
     stage: "phone",
-    durationLabel: "1 min 45 sec",
+    durationLabel: "1 min 31 sec",
     status: "live",
     chapterCount: 5,
     /* No volatile numbers in the bullets: the week moves with the seed. */
@@ -289,7 +289,7 @@ export const DEMOS: DemoEntry[] = [
       "A cancelled practice stays where it was, struck through, so nobody drives to it",
       "Answer the game on the row, one row of buttons per child",
       "A practice moves and the row just says the new time, with her answer still on it",
-      "The fee and the waiver shown where they really arrive, not where it would be convenient",
+      "The fee and the waiver shown on the surfaces they really arrive on",
     ],
     chapterTitles: [
       "Two kids, one week",
