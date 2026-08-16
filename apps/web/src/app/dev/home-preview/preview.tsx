@@ -180,10 +180,12 @@ const THE_CHECKLIST = [
 ]
 
 /* The comparison table (owner 2026-08-17: "name them all... green check marks
-   and red X's... we have to be very sure"). Verdicts come from
-   docs/research/tool-feature-matrix-2026-07.md, taken conservatively: partial
-   covers paid add-ons, separate products and shallow versions. JerseyWatch
-   and Spond join once the verification round lands. */
+   and red X's... we have to be very sure"). Every verdict verified against
+   each platform's published feature and pricing pages in the August 2026
+   research round (sources in docs/research/tool-feature-matrix-2026-07.md
+   and its addendum), taken conservatively: partial covers paid add-ons,
+   separate products and shallow versions, and the competitor gets the
+   benefit of any doubt. */
 type CompareCell = "y" | "p" | "n" | "-"
 
 const COMPARE_COLUMNS = [
@@ -194,22 +196,25 @@ const COMPARE_COLUMNS = [
   "LeagueApps",
   "GameChanger",
   "Exposure Events",
+  "JerseyWatch",
+  "Spond",
 ]
 
 /** cells[0] is always us; the rest follow COMPARE_COLUMNS order. */
 const COMPARE_ROWS: { label: string; cells: CompareCell[] }[] = [
-  { label: "Registration and payments", cells: ["y", "y", "y", "y", "y", "y", "n", "y"] },
-  { label: "Installment payment plans", cells: ["y", "y", "y", "y", "y", "y", "n", "-"] },
-  { label: "Season scheduling with constraints", cells: ["y", "y", "y", "y", "y", "p", "n", "y"] },
-  { label: "Standings and playoff brackets", cells: ["y", "y", "y", "p", "p", "p", "n", "y"] },
-  { label: "Referee assignment and sign-off", cells: ["y", "n", "y", "y", "p", "n", "n", "-"] },
-  { label: "Live play-by-play, basketball", cells: ["y", "p", "p", "p", "p", "n", "y", "p"] },
-  { label: "Full box scores, basketball", cells: ["y", "n", "p", "p", "p", "n", "y", "p"] },
-  { label: "Team chat with polls", cells: ["y", "p", "p", "p", "p", "p", "p", "p"] },
-  { label: "Automatic game recaps and news", cells: ["y", "n", "p", "n", "n", "n", "p", "n"] },
-  { label: "Public player pages with season stats", cells: ["y", "n", "p", "p", "n", "n", "p", "p"] },
-  { label: "Waivers and e-signatures", cells: ["y", "p", "-", "p", "y", "p", "n", "p"] },
-  { label: "Free to start", cells: ["y", "p", "y", "n", "n", "p", "y", "p"] },
+  { label: "Registration and payments", cells: ["y", "y", "y", "y", "y", "y", "n", "y", "y", "y"] },
+  { label: "Installment payment plans", cells: ["y", "y", "y", "y", "y", "y", "n", "p", "y", "y"] },
+  { label: "Season scheduling with constraints", cells: ["y", "y", "y", "y", "y", "p", "n", "y", "y", "n"] },
+  { label: "Standings and playoff brackets", cells: ["y", "y", "y", "y", "p", "y", "p", "y", "p", "n"] },
+  { label: "Referee assignment and sign-off", cells: ["y", "p", "y", "y", "p", "p", "n", "p", "n", "n"] },
+  { label: "Live scoring with full box scores, basketball", cells: ["y", "p", "p", "y", "p", "n", "y", "p", "n", "n"] },
+  { label: "Team chat with polls", cells: ["y", "y", "y", "y", "p", "p", "p", "p", "p", "y"] },
+  { label: "Family calendar with RSVP", cells: ["y", "y", "y", "y", "y", "y", "y", "n", "p", "y"] },
+  { label: "Waivers and e-signatures", cells: ["y", "p", "y", "y", "y", "y", "n", "y", "y", "y"] },
+  { label: "Automatic game recaps and news", cells: ["y", "n", "p", "n", "n", "n", "p", "n", "n", "n"] },
+  { label: "Public player pages with season stats", cells: ["y", "n", "p", "p", "n", "n", "p", "p", "-", "-"] },
+  { label: "Public club and league pages", cells: ["y", "y", "y", "y", "y", "p", "n", "p", "y", "y"] },
+  { label: "Free to start", cells: ["y", "p", "y", "n", "n", "p", "y", "p", "p", "y"] },
 ]
 
 /* The quiet theme: each role does its own share, the app connects them. */
@@ -523,7 +528,7 @@ function CompareTable() {
         </div>
 
         <div className="mt-10 overflow-x-auto rounded-2xl bg-white shadow-xl ring-1 ring-ink-100">
-          <table className="w-full min-w-[860px] border-collapse text-left">
+          <table className="w-full min-w-[1080px] border-collapse text-left">
             <thead>
               <tr className="border-b border-ink-100">
                 <th className="px-5 py-4 text-[14px] font-bold uppercase tracking-[0.1em] text-ink-400">
@@ -565,8 +570,9 @@ function CompareTable() {
         </div>
 
         <p className="mt-4 text-center text-[14px] text-ink-500">
-          JerseyWatch and Spond join the table once our verification round finishes. Spot
-          something that changed? Tell us and we&apos;ll fix it.
+          Checked against each platform&apos;s published feature and pricing pages, August 2026.
+          SportsEngine&apos;s live scoring product excludes basketball; its basketball stats are
+          manual entry. Spot something that changed? Tell us and we&apos;ll fix it.
         </p>
       </div>
     </section>

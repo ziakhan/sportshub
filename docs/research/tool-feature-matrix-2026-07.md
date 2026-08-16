@@ -27,7 +27,7 @@ itSportsNet, eSportsDesk, OrgsOnline, BracketMaker)
 | Software price | Free front door + club tiers $249–649/season + $39/team/season league media | Free core + $425–795/yr bundles | Quote-only (paid) | $58–69/mo + fees | Subscription (quote) | $0 sub + one-time setup (~$495 rep.) | Free for coaches/staff | $2/team credit + $30 marketing credit | Free/ad-based or cheap |
 | Payment take rate | **2% + $0.30** | Undisclosed %, volume-tiered | "Lowest rates" (undisclosed) | **3.25% + $2.00** [1] | ~3.25% + $1.50 [2] | ~5–5.9% (reviewer-rep.) | — (no payments) | Processor + 1% EventStore | varies/none |
 | Free tier | ✓ | ✓ | ✗ | ✗ | ◐ (consumer app) | ◐ (no sub) | ✓ | ◐ (5 credits) | ✓ |
-| Consumer/family subscription | $9.99/mo Family Pass | ✗ (ads instead) | ✗ | Play $9.99–19.99/mo [3] | ✗ | ✗ | $9.99/mo (or $39.99/yr!) [4] | ✗ | ✗ |
+| Consumer/family subscription | $9.99/mo Family Pass | **✓ TeamLinkt Plus CA$4.99/mo** [11] | ✗ | Play $9.99–19.99/mo [3] | ✗ | ✗ | $9.99/mo (or $39.99/yr!) [4] | ✗ | ✗ |
 
 ## League operator
 
@@ -130,6 +130,13 @@ itSportsNet, eSportsDesk, OrgsOnline, BracketMaker)
     team staff and paying subscribers — not public content. And GC has **no
     league layer at all** (no registration, payments, cross-team standings,
     websites, officials).
+11. **CORRECTED 2026-08-15:** TeamLinkt previously had no consumer subscription
+    (ads instead). **TeamLinkt Plus now exists at CA$4.99/mo** — ad-free for up
+    to 5 users, all-schedules view + attendance reports, 20-min video
+    upload/download, custom team colours, 14-day trial. They have entered the
+    family-monetization lane at **62% of our proposed $7.99 Plus**. Re-argue our
+    Plus price against $4.99, not only against GameChanger's $39.99/yr.
+    ([[business-model-v3]] §3e.)
 
 ## What the matrix says (read this bit)
 
@@ -151,3 +158,42 @@ itSportsNet, eSportsDesk, OrgsOnline, BracketMaker)
    app-store presence (built, not launched), French (blocks Quebec).
 
 ⬅ [[expansion-strategy-2026-07]] · [[competitor-tracker]] · [[business-model]]
+
+---
+
+## Addendum: August 2026 verification round (for the public landing table)
+
+A dedicated re-verification pass (2026-08-17, per-claim source URLs in the
+research agent transcript) checked every claim the landing page's comparison
+table publishes, against each platform's current official feature and pricing
+pages, and added **JerseyWatch** and **Spond** columns. Corrections to the
+July matrix:
+
+- **RAMP brackets: ✗ → ✓.** July's "absent" verdict traced to TeamLinkt's own
+  comparison page (biased, and footnoted as such). RAMP's site confirms
+  playoff brackets with automatic advancement. Real correction.
+- **SportsEngine live scoring excludes basketball** (first-party help doc:
+  Score Live is football, hockey, lacrosse only; basketball gets manual stat
+  entry). July's ◐ stands but the carve-out is stronger than captured. Also:
+  HQ price rose to $67/mo annual ($79 monthly); no polls in team chat.
+- **TeamSnap**: new "TeamSnap Officials" product (officials ✗ → ◐); the
+  3.25% + $1.50 take rate is now first-party confirmed; a TeamSnap+ consumer
+  subscription exists (price unpublished).
+- **LeagueApps**: waivers ◐ → ✓ (true e-signatures, April 2025), standings
+  and RSVP ◐ → ✓, officials ✗ → ◐. The July "auto highlight clips" claim did
+  not re-verify; drop it.
+- **GameChanger**: standings ✗-leaning → ◐ (a League/Tournament product now
+  computes cross-team standings; still no brackets). More pricing tiers than
+  July captured. Basketball career-stats gap reconfirmed.
+- **Exposure Events**: officials ? → ◐ (native RefBook integration), waivers
+  ◐ → ✓, streaming ✗ → ◐ (BallerTV/BeTheBeast/YouTube Live integrations).
+- **JerseyWatch** (new): full on front-office (registration, payments,
+  installments, waivers, scheduling, public site; $29/mo after first month,
+  3.5% + $1); absent on game-day and social (no live scoring, brackets,
+  officials, true chat, auto-recaps).
+- **Spond** (new): team/club communication tool, not league ops. Full on
+  registration, installments, chat + polls, RSVP calendar, digital waivers,
+  public site; verified absent on live scoring, auto-scheduling,
+  standings/brackets, officials. Free core.
+- **Auto public game recaps remain white space across all nine** — best
+  competitor case is GameChanger's, gated to staff and subscribers.
