@@ -2,759 +2,796 @@
 
 import type { ReactNode } from "react"
 import { cn } from "@/components/ui/cn"
-import { CourtBackdropLayer } from "@/components/ui/court-backdrop"
-import {
-  PhoneAction,
-  PhoneCardRow,
-  PhoneMoneyRow,
-  PhonePushBanner,
-  PhoneSheet,
-  PhoneShell,
-  PhoneSuccess,
-} from "../mock-ui"
-import type { DemoScript } from "../types"
+import { Btn, StatusChip } from "../scene-kit"
+import type { DemoBeat, DemoScript } from "../types"
 
 /**
- * Chapter 6: "Your week" (owner-signed script, 2026-08-15).
+ * "Your week", rebuilt 2026-08-16 to the gold standard set by the season
+ * story, the schedule-change demo, the waivers demo, game day, the referees
+ * demo, the roster story, the money picture and the loop story.
  *
- * THE ARGUMENT. A parent with two kids on two teams is running two schedules
- * out of two group chats, and the question they ask on a Tuesday morning is
- * small and constant: what is happening this week, where is it, and is there
- * anything I owe. This chapter answers all three on one screen and then breaks
- * the week on purpose, because the honest version of a family calendar is not
- * the one where nothing changes.
+ * ONE LIFE-SIZE HANDSET. `OWNER` the brief: "life-size phone". So the stage is
+ * a single 390 logical handset at scale 1.0 on a computer, and the whole
+ * handset inside the viewport on a phone. Nothing else is on the stage,
+ * because nothing else is in this story.
  *
- * THE PAINFUL DETAIL (owner's law, named for this chapter): WHEN THE GYM
- * MOVES, THE ANSWER SHE ALREADY GAVE HAS TO SURVIVE IT. Anybody can redraw a
- * row. The reason a family stops trusting a calendar is being asked the same
- * question twice, so the change lands ON the row she already answered, the row
- * pulses where it changed, and her Going stays exactly where she put it.
+ * THE WEEK IS REAL, EVERY ROW OF IT. `DB` Jordan Reyes has two children at
+ * Toronto Lords: Darius (#37, Grade 9) and Danielle (#20, Grade 10 Girls).
+ * Their week of 17 to 23 August 2026 in this database is:
  *
- * TRUTH TO THE PRODUCT. Every surface mirrors one that ships today:
- *   · the screen — app/(platform)/calendar/page.tsx and my-calendar.tsx: the
- *     "My Calendar" header, one lens chip per kid labelled "First · Team" from
- *     lib/calendar/my-calendar.ts, the Agenda and Grid switch (a phone is
- *     forced to Agenda, which is why this one never offers it), and the "Add
- *     to phone" subscription button;
- *   · the agenda — components/calendar/agenda-list.tsx: the sticky uppercase
- *     month header, the date tile with the day number over the weekday, today
- *     filled in brand colour, and the day's items stacked beside it;
- *   · the item cards — my-calendar.tsx KIND_CARD and KIND_EDGE: a game is
- *     energy-soft with an orange left edge, a practice is white with an indigo
- *     edge, an event is highlight-soft with a gold one. Titles are the
- *     product's own: a practice is "Practice", a game is "vs {opponent}", and
- *     the meta line is "location · team";
- *   · the RSVP — components/calendar/rsvp-control.tsx: three pills, "✓ Going"
- *     in court green, "? Maybe" in amber, "✕ Can't go" in red, one row per kid
- *     with the kid's first name beside it because there is more than one;
- *   · the directions — the venue page's "Get directions →", which is a
- *     maps.google.com query built from the venue's coordinates;
- *   · the notification — api/games/[id]/route.ts: type "game_rescheduled",
- *     title "Game Rescheduled", and the message written exactly as the product
- *     writes it, matchup then new time then gym then court.
+ *   Mon 17, 6:00 p.m.  Danielle's practice, The Playground   CANCELLED
+ *   Tue 18, 6:30 p.m.  Darius's practice, The Playground
+ *   Wed 19, 6:30 p.m.  Danielle's practice, The Playground
+ *   Thu 20, 7:00 p.m.  Darius's practice, The Playground
+ *   Sat 22, 9:00 a.m.  Oakville Panthers vs Toronto Lords Grade 9, Court 1
  *
- * ONE HONEST NOTE. The fee and the waiver sitting inside the week are the one
- * thing here that the product does not surface on the calendar yet: today they
- * arrive as their own email and their own push. The owner's brief puts them in
- * the week because that is where a parent is when they can act on them, and
- * they are drawn in the product's own badge language rather than a new one.
+ * Not one of those was invented, including the cancelled Monday. And Tuesday's
+ * practice is the SAME practice the everyone-in-the-loop demo moves, which is
+ * why the change chapter here shows it arriving on her phone: the two demos
+ * are two ends of one event.
  *
- * MOTION. Nothing pans, zooms or scrolls: the phone is the only frame, and it
- * holds the whole week at once. The sheet rises from the bottom edge the way
- * the product's own sheets do, the changed row pulses amber in place, and the
- * two outstanding cards go green where they stand.
+ * THE INVENTED PLACEMENT IS PUNCHED, NOT STAGED. The 2026-08-15 cut put a fee
+ * installment and an unsigned waiver INSIDE the week list, as rows between the
+ * practices. That placement was flagged to the owner and never ruled, and the
+ * product does not do it: `MyCalendarItem` has no waiver or fee field, and
+ * `my-contexts.ts`'s `actionsDue` (offers, payments, RSVPs, chats, referee
+ * offers) has no waiver field at all. So this cut stages the REAL surfaces a
+ * fee and a waiver actually reach a guardian on, and says on screen that they
+ * are not in the week list today. Punch 1 in `docs/roadmap/your-week-numbers.md`.
+ *
+ * TWO MORE THINGS THE PREVIOUS CUT INVENTED AND THIS ONE DOES NOT:
+ *   · a gold "Moved" badge and an amber pulse on a changed row. The real
+ *     agenda just re-renders the same row with the new time on its next poll.
+ *   · "Get directions" on the RSVP sheet. Directions live on the VENUE page,
+ *     which is three taps from the row, and the demo walks those three taps
+ *     instead of pretending there is one.
+ *
+ * TRUTH TO THE PRODUCT, SCREEN BY SCREEN:
+ *   · the week is `app/(platform)/calendar/my-calendar.tsx` in its AGENDA
+ *     view, which a phone is forced into, with `components/calendar/agenda-list.tsx`
+ *     drawing the month header and the date rail;
+ *   · the RSVP pills are `components/calendar/rsvp-control.tsx`, verbatim;
+ *   · the venue page and its directions link are `app/(public)/venues/[venueId]/page.tsx`;
+ *   · the fee card is `app/(public)/home-personal-band.tsx`, "Needs your attention";
+ *   · the plan is `app/(platform)/payments/page.tsx`, "Payment plan";
+ *   · the waiver notification is `lib/waivers/reminders.ts` and the signing
+ *     page is `app/(public)/waivers/sign/[token]/page.tsx`.
  */
 
-/* ── Cast ────────────────────────────────────────────────────────────────── */
+/* ── Cast, all read out of the seeded world ──────────────────────────────── */
 
-const PARENT = "Bello family"
-const AMARA = "Amara · U11 Girls Rep"
-const NOAH = "Noah · U13 Boys Rep"
+const PARENT = "Jordan Reyes"
+/** `DB` Player a18c732d, #37, Toronto Lords Grade 9. */
+const SON = "Darius"
+const SON_TEAM = "Toronto Lords Grade 9"
+/** `DB` Player 729b0d07, #20, Toronto Lords Grade 10 Girls. */
+const DAUGHTER = "Danielle"
+const DAU_TEAM = "Toronto Lords Grade 10 Girls"
 
-const GYM_OLD = "Riverside CC, Court 2"
-const GYM_NEW = "Northside HS, Court 1"
-const OPPONENT = "Lakeshore Lightning"
+const GYM = "The Playground"
+/** `DB` Venue c805d634: 952 Century Dr, Burlington. */
+const GYM_ADDRESS = "952 Century Dr, Burlington"
+
+/**
+ * The week. Every row `DB`. `PRODUCT` the agenda's own shapes: a practice's
+ * title is the word "Practice", a game's is "vs {opponent}", and the line
+ * under it is `[location, teamName].join(" · ")` with no court on it.
+ */
+interface Row {
+  day: string
+  weekday: string
+  time: string
+  title: string
+  where: string
+  kind: "practice" | "game"
+  who: "son" | "daughter"
+  cancelled?: boolean
+  id?: string
+}
+const WEEK: Row[] = [
+  {
+    day: "17",
+    weekday: "Mon",
+    time: "6:00 – 7:30 PM",
+    title: "Practice",
+    where: `${GYM} · ${DAU_TEAM}`,
+    kind: "practice",
+    who: "daughter",
+    cancelled: true,
+  },
+  {
+    day: "18",
+    weekday: "Tue",
+    time: "6:30 – 8:00 PM",
+    title: "Practice",
+    where: `${GYM} · ${SON_TEAM}`,
+    kind: "practice",
+    who: "son",
+    id: "row-tue",
+  },
+  {
+    day: "19",
+    weekday: "Wed",
+    time: "6:30 – 8:00 PM",
+    title: "Practice",
+    where: `${GYM} · ${DAU_TEAM}`,
+    kind: "practice",
+    who: "daughter",
+  },
+  {
+    day: "20",
+    weekday: "Thu",
+    time: "7:00 – 8:30 PM",
+    title: "Practice",
+    where: `${GYM} · ${SON_TEAM}`,
+    kind: "practice",
+    who: "son",
+  },
+  {
+    day: "22",
+    weekday: "Sat",
+    time: "9:00 – 10:30 AM",
+    title: "vs Oakville Panthers Grade 9",
+    where: `${GYM} · ${SON_TEAM}`,
+    kind: "game",
+    who: "son",
+    id: "row-sat",
+  },
+]
+/** The four the 390 by 508 handset draws; Thursday is counted under them. */
+const SHOWN = WEEK.filter((r) => r.weekday !== "Thu")
+
+/** `DB` the Tuesday practice moved by the everyone-in-the-loop demo. */
+const MOVED_TIME = "8:00 – 9:30 PM"
+
+/**
+ * `DB` PaymentObligation e2f5e46b: $895 for Danielle's summer season, $447.50
+ * paid in two real offline payments, $447.50 still open across installments
+ * 2/3 and 3/3, 137 days past its 2026-04-01 date.
+ */
+const PER = 223.75
+const OWING = 447.5
+
+/**
+ * `DB` WaiverSignRequest ffa1aaa7: the league's Rowan's Law waiver, emailed to
+ * this guardian on 17 July for Danielle, expiring 5 October, `consumedAt` NULL.
+ * Darius's twin request (a5436e45) was consumed the next day. So one of her two
+ * children is signed and one is not, and that is the real state.
+ */
+const WAIVER = "Concussion Code of Conduct (Rowan's Law)"
+const LEAGUE = "NPH Summer League"
+
+/**
+ * `PRODUCT` `my-calendar.tsx` lines 47 to 51. The page's subtitle, "Every game,
+ * practice and event across all your teams · answer Going or Can't go right
+ * here", is real and is NOT drawn: at 390 it takes three lines of the handset's
+ * 508, and the demo would rather spend them on the week itself.
+ */
+const CAL_TITLE = "My Calendar"
+/** `PRODUCT` `home-personal-band.tsx` lines 36 to 42 and 87 to 89. */
+const BAND_HEADING = "Needs your attention"
+const BAND_TITLE = "1 payment due"
+const BAND_DETAIL = "View and pay"
+/** `PRODUCT` `payments/page.tsx` lines 66 to 69 and 72 to 115. */
+const PAY_HEAD = `1 open item · $${OWING.toFixed(2)} outstanding.`
+/** `PRODUCT` `lib/waivers/reminders.ts` lines 164 to 166. */
+const WAIVER_TITLE = "Waiver still unsigned"
+const WAIVER_MSG = `${LEAGUE}: ${DAUGHTER} can't play until you sign "${WAIVER}". Tap to sign, it takes a minute.`
+
+const money = (n: number) => `$${n.toFixed(2)}`
+
+/* ── Pacing ──────────────────────────────────────────────────────────────── */
+
+function paced(b: Omit<DemoBeat, "hold"> & { hold?: number }): DemoBeat {
+  if (b.hold) return b as DemoBeat
+  const arrive = b.cursor ? 620 : 220
+  const settle = 500
+  const read = b.callout ? b.callout.trim().split(/\s+/).length * 180 + 900 : 2400
+  return { ...b, hold: Math.round(arrive + read + (b.callout ? settle : 0)) }
+}
+
+/* ── The script ──────────────────────────────────────────────────────────── */
 
 export const yourWeekStory: DemoScript = {
+  presentation: "scene",
+  scenePhones: true,
   desktopUrl: "/calendar",
-  initialStage: "phone",
-  soloPhone: true,
+  initialStage: "desktop",
   chapters: [
-    { id: "two", title: "Two kids, one calendar" },
-    { id: "rsvp", title: "RSVP and directions" },
-    { id: "change", title: "Plans change, calmly" },
+    { id: "week", title: "Two kids, one week" },
+    { id: "answer", title: "Answer it here" },
+    { id: "gym", title: "Where the gym is" },
+    { id: "change", title: "Plans change" },
+    { id: "owed", title: "Fee and waiver" },
   ],
 
   beats: [
-    /* ── 1. Two kids, one calendar ────────────────────────────────────── */
-    {
+    /* ── 1. Two kids, one week ────────────────────────────────────────── */
+    paced({
       id: "open",
-      chapter: "two",
-      caption:
-        "Tuesday, ten past eight. Two kids, two teams, two coaches, and one screen that already knows all of it.",
-      hold: 3200,
-      stage: "phone",
-      set: { screen: "week" },
-    },
-    {
+      chapter: "week",
+      caption: "Monday morning, one phone, two children on two teams.",
+      emphasize: "agenda",
+      callout: "Five things this week, in order, with no binder and no group chat to scroll.",
+    }),
+    paced({
       id: "lenses",
-      chapter: "two",
-      caption:
-        "Each kid is their own calendar, named and coloured, and either one can be switched off when you only want to look at one of them.",
-      hold: 3000,
-      cursor: "lens-noah",
-      hover: "lens-noah",
-    },
-    {
-      id: "week",
-      chapter: "two",
-      caption:
-        "Practice tonight, Noah's practice tomorrow, a game Saturday. Every line carries the gym, because the gym is the thing families get wrong.",
-      hold: 3200,
-    },
-    {
-      id: "subscribe",
-      chapter: "two",
-      caption:
-        "It can also live in the phone's own calendar app, subscribed, so it keeps up on its own without anybody re-adding anything.",
-      hold: 2800,
-      cursor: "add-to-phone",
-      hover: "add-to-phone",
-    },
+      chapter: "week",
+      caption: "Both kids are on the same list, and it says which is which.",
+      emphasize: "lenses",
+      callout: `A calendar per child per team. Tap ${DAUGHTER}'s off and her half of the week goes quiet.`,
+    }),
+    paced({
+      id: "where",
+      chapter: "week",
+      caption: "Every line carries the gym.",
+      emphasize: "row-tue",
+      callout: "Because the gym is the thing families get wrong, not the time.",
+    }),
+    paced({
+      id: "cancelled",
+      chapter: "week",
+      caption: "And Monday is already off.",
+      emphasize: "row-cancelled",
+      callout:
+        "A cancelled practice stays where it was with a line through it, so nobody drives to it out of habit.",
+    }),
 
-    /* ── 2. RSVP and directions ───────────────────────────────────────── */
-    {
-      id: "tap-game",
-      chapter: "rsvp",
-      caption: "Saturday is the one she has to answer.",
-      hold: 2200,
-      cursor: "row-sat",
-      press: true,
-    },
-    {
-      id: "sheet",
-      chapter: "rsvp",
-      caption:
-        "Opening it gives the whole thing: the matchup, the time, how long it runs, the gym and the court.",
-      hold: 2800,
-      set: { sheet: "game" },
-    },
-    {
+    /* ── 2. Answer it here ────────────────────────────────────────────── */
+    paced({
+      id: "rsvp",
+      chapter: "answer",
+      caption: "Saturday needs an answer, and it is asked on the row itself.",
+      emphasize: "rsvp",
+      callout: "Not a link to a form. Three buttons under the game she is already looking at.",
+    }),
+    paced({
       id: "going",
-      chapter: "rsvp",
-      caption: "Going, Maybe, or Can't go. One tap.",
-      hold: 2600,
+      chapter: "answer",
+      caption: "Going.",
       cursor: "rsvp-going",
       press: true,
-      set: { rsvp: "GOING" },
-      toast: "Amara is going",
-    },
-    {
-      id: "per-kid",
-      chapter: "rsvp",
-      caption:
-        "And because there are two kids in this house, the answer has a name on it. Nobody has to work out which child was just marked in.",
-      hold: 2800,
-    },
-    {
-      id: "directions-press",
-      chapter: "rsvp",
-      caption: "The gym she has never driven to is one tap from directions.",
-      hold: 2400,
+      set: { rsvp: "going" },
+      callout: "One tap, and the coach's roll call has her before Saturday.",
+    }),
+    paced({
+      id: "twokids",
+      chapter: "answer",
+      caption: "When two of her children are on the same event, each gets their own row of buttons.",
+      emphasize: "rsvp",
+      callout: "She is never answering for the wrong child.",
+    }),
+
+    /* ── 3. Where the gym is ──────────────────────────────────────────── */
+    paced({
+      id: "tap",
+      chapter: "gym",
+      caption: "The address is not on the row, and here is the honest path to it.",
+      cursor: "row-sat",
+      press: true,
+      set: { view: "popover" },
+      callout: "Tapping the game opens what the product really opens.",
+    }),
+    paced({
+      id: "gamepage",
+      chapter: "gym",
+      caption: "From there, the game page.",
+      cursor: "open-game",
+      press: true,
+      set: { view: "game" },
+      callout: "Which is also where she watches it if she cannot be in the building.",
+    }),
+    paced({
+      id: "venue",
+      chapter: "gym",
+      caption: "And the gym name is a link.",
+      cursor: "venue-link",
+      press: true,
+      set: { view: "venue" },
+      callout: "The venue page carries the street address, which is the thing she actually needs.",
+    }),
+    paced({
+      id: "directions",
+      chapter: "gym",
+      caption: "Directions, in her own maps app.",
       cursor: "directions",
       press: true,
-    },
-    {
-      id: "maps",
-      chapter: "rsvp",
-      caption:
-        "Address, court and the map handoff, from the row itself. No screenshot of a message from August.",
-      hold: 2800,
-      set: { sheet: "maps" },
-    },
+      set: { directions: true },
+      callout: "Three taps from the week. Real, and further away than it should be.",
+    }),
 
-    /* ── 3. Plans change, calmly ──────────────────────────────────────── */
-    {
-      id: "push",
+    /* ── 4. Plans change ──────────────────────────────────────────────── */
+    paced({
+      id: "moved",
       chapter: "change",
-      caption: "Then Thursday happens, the way it always does.",
-      hold: 3000,
-      set: { sheet: "", push: true },
-    },
-    {
-      id: "row-moves",
+      caption: "Then the week breaks the way weeks do.",
+      set: { view: "week", moved: true },
+      emphasize: "row-tue",
+      callout: `The coach moved Tuesday's practice to eight, and the row she already had says eight.`,
+    }),
+    paced({
+      id: "inplace",
       chapter: "change",
-      caption:
-        "The row she already looked at changes where it stands. Same game, new gym, and the line that moved is the line that flashes.",
-      hold: 3400,
-      set: { push: false, moved: true },
-    },
-    {
-      id: "rsvp-holds",
+      caption: "Nothing was added and nothing vanished.",
+      emphasize: "agenda",
+      callout:
+        "The same row with a new time. No second entry to reconcile, no duplicate on her phone calendar.",
+    }),
+    paced({
+      id: "survives",
       chapter: "change",
-      caption:
-        "Her answer rides along. She is not asked a second time whether Amara is playing, because she already said so and a building changing is not her problem to re-solve.",
-      hold: 3400,
-    },
-    {
-      id: "fee-press",
-      chapter: "change",
-      caption:
-        "The other two things in this week are the ones that usually arrive as email nobody opens.",
-      hold: 2600,
-      cursor: "fee-pay",
+      caption: "And the answer she already gave survives it.",
+      emphasize: "rsvp",
+      callout: "Her Going is attached to the game, not to the time, so nobody asks her twice.",
+    }),
+
+    /* ── 5. Fee and waiver ────────────────────────────────────────────── */
+    paced({
+      id: "home",
+      chapter: "owed",
+      caption: "Two things are owed this week, and neither of them is in the week.",
+      set: { view: "home" },
+      emphasize: "band",
+      callout: "The fee is a card on her home screen, counted rather than itemised.",
+    }),
+    paced({
+      id: "pay",
+      chapter: "owed",
+      caption: "Opening it shows the plan behind the number.",
+      cursor: "band-card",
       press: true,
-    },
-    {
-      id: "fee-sheet",
-      chapter: "change",
-      caption:
-        "The installment is written out before anything is charged: which one it is, what is left, and the card already on file.",
-      hold: 3000,
-      set: { sheet: "fee" },
-    },
-    {
-      id: "fee-paid",
-      chapter: "change",
-      caption: "Paid, from the week, in about four seconds.",
-      hold: 2400,
-      cursor: "fee-confirm",
+      set: { view: "payments" },
+      callout: `The deposit and the first installment are in. Two of ${money(PER)} are not.`,
+    }),
+    paced({
+      id: "waiver-notif",
+      chapter: "owed",
+      caption: "The waiver arrives on its own, and it arrives as a push.",
+      set: { view: "waiver" },
+      emphasize: "w-notif",
+      callout: `It names ${DAUGHTER}, names the document, and says what it costs her: she cannot play.`,
+    }),
+    paced({
+      id: "sign",
+      chapter: "owed",
+      caption: "And signing it is a minute on the same phone.",
+      cursor: "w-open",
       press: true,
-    },
-    {
-      id: "fee-receipt",
-      chapter: "change",
+      set: { view: "sign" },
+      callout: "A link that opens the document itself, with no app to install and no password to find.",
+    }),
+    paced({
+      id: "punch",
+      chapter: "owed",
+      caption: "One honest thing about both of them.",
+      set: { view: "week", moved: true },
+      emphasize: "agenda",
+      callout:
+        "Neither the fee nor the waiver appears in this week list today. They arrive as their own push, their own card and their own email, and putting them here is a change the product has not made.",
+    }),
+    paced({
+      id: "end",
+      chapter: "owed",
       caption:
-        "The receipt is the confirmation: what was charged, what is left on the plan, and when the next one goes.",
-      hold: 2800,
-      set: { feePaid: true },
-      toast: "Paid $85.00",
-    },
-    {
-      id: "waiver-press",
-      chapter: "change",
-      caption: "The row it came from is green, and the last thing in the week is the one document Noah cannot play without.",
-      hold: 2800,
-      cursor: "waiver-sign",
-      press: true,
-      set: { sheet: "" },
-    },
-    {
-      id: "waiver-signed",
-      chapter: "change",
-      caption:
-        "Signed on the same screen, recorded against the season, and off the list.",
-      hold: 2800,
-      set: { waiverSigned: true },
-      toast: "Signed and recorded",
-    },
-    {
-      id: "clear",
-      chapter: "change",
-      caption:
-        "Tuesday morning to Thursday night: two kids, one gym change, a fee and a waiver, and nothing left owing anybody.",
-      hold: 3800,
-    },
-    {
-      id: "end-card",
-      chapter: "change",
-      caption: "The week, answered.",
-      hold: 3800,
+        "Two children, one week, one screen, an answer that survives a change, and the two things she owes shown where they really live.",
+      hold: 4400,
       set: { endCard: true },
-    },
+    }),
   ],
 
+  /* ── Render ────────────────────────────────────────────────────────── */
+
   render: ({ get }) => {
-    const sheet = get<string>("sheet", "")
-    const rsvp = get<string>("rsvp", "")
-    const moved = get("moved", false)
-    const feePaid = get("feePaid", false)
-    const waiverSigned = get("waiverSigned", false)
-    const endCard = get("endCard", false)
-
-    const phone = (
-      <div className="relative h-full">
-        <PhoneShell title="My Calendar" subtitle={PARENT} activeTab="Calendar">
-          <WeekScreen
-            rsvp={rsvp}
-            moved={moved}
-            feePaid={feePaid}
-            waiverSigned={waiverSigned}
+    const view = get<string>("view", "week")
+    return {
+      desktop: (
+        <div className="relative flex h-full flex-col">
+          <Phone
+            view={view}
+            rsvp={get<string>("rsvp", "")}
+            moved={get("moved", false)}
+            directions={get("directions", false)}
           />
-        </PhoneShell>
-
-        <PhoneSheet
-          open={sheet === "game"}
-          title={`Game · Ravens vs ${OPPONENT}`}
-          subtitle={`Sat Oct 18, 9:00 AM · 90 min · ${moved ? GYM_NEW : GYM_OLD}`}
-        >
-          <GameSheet rsvp={rsvp} />
-        </PhoneSheet>
-
-        <PhoneSheet open={sheet === "maps"} title={moved ? "Northside HS" : "Riverside CC"} subtitle="Court 2 · 12 min away">
-          <MapsSheet />
-        </PhoneSheet>
-
-        <PhoneSheet open={sheet === "fee"} title="Fall 2026 season fee" subtitle="Amara Bello · U11 Girls Rep">
-          <FeeSheet paid={feePaid} />
-        </PhoneSheet>
-
-        {get("push", false) && (
-          <PhonePushBanner
-            title="Game Rescheduled"
-            body={`Riverside Ravens vs ${OPPONENT} has moved to Sat Oct 18, 9:00 AM at Northside HS (Court 1).`}
-          />
-        )}
-
-        {endCard && <PhoneEndCard />}
-      </div>
-    )
-
-    /* Phone-only: the stage drops the browser window entirely rather than
-       parking a dimmed empty one beside the handset. */
-    return { desktop: null, phone }
+          {get("endCard", false) && <EndCard />}
+        </div>
+      ),
+      frameLabels: { left: `${PARENT} · /calendar`, right: "" },
+    }
   },
 }
 
-/* ── The week ─────────────────────────────────────────────────────────────── */
+/* ── The handset ─────────────────────────────────────────────────────────── */
 
-function WeekScreen({
+function Phone({
+  view,
   rsvp,
   moved,
-  feePaid,
-  waiverSigned,
+  directions,
 }: {
+  view: string
   rsvp: string
   moved: boolean
-  feePaid: boolean
-  waiverSigned: boolean
+  directions: boolean
 }) {
-  const handled = feePaid && waiverSigned
+  return (
+    <div className="flex h-full flex-col bg-[#f6f7f9]">
+      <div className="flex items-baseline gap-2 bg-[#0b1628] px-4 pb-2.5 pt-2 text-white">
+        <p className="text-[15px] font-bold leading-tight">{PARENT}</p>
+        <p className="text-[14px] font-medium text-white/60">Parent · two players</p>
+      </div>
+
+      <div key={view} className="demo-fade-in min-h-0 flex-1 overflow-hidden px-3 py-2.5">
+        {view === "week" && <Week rsvp={rsvp} moved={moved} />}
+        {view === "popover" && <Popover />}
+        {view === "game" && <GamePage />}
+        {view === "venue" && <VenuePage directions={directions} />}
+        {view === "home" && <HomeBand />}
+        {view === "payments" && <Payments />}
+        {view === "waiver" && <WaiverNotice />}
+        {view === "sign" && <SignPage />}
+      </div>
+
+      <TabBar
+        active={
+          view === "home" ? "Home" : view === "payments" || view === "sign" ? "Home" : "Calendar"
+        }
+      />
+    </div>
+  )
+}
+
+/** `/calendar` in the agenda view a phone is forced into. */
+function Week({ rsvp, moved }: { rsvp: string; moved: boolean }) {
   return (
     <div className="flex h-full flex-col">
-      {/* Lens chips: one calendar per kid, exactly as the product labels them. */}
-      <div className="flex shrink-0 items-center gap-1">
-        <LensChip id="lens-amara" label={AMARA} dot="bg-play-500" />
-        <LensChip id="lens-noah" label={NOAH} dot="bg-court-500" />
+      <p className="text-ink-900 shrink-0 text-[17px] font-extrabold">{CAL_TITLE}</p>
+
+      <div data-demo-target="lenses" className="mt-1 flex shrink-0 flex-wrap gap-1">
+        <Lens color="var(--brand, #1a73e8)" label={`${SON} · Grade 9`} />
+        <Lens color="#e0821e" label={`${DAUGHTER} · Grade 10 Girls`} />
       </div>
 
-      <div className="mt-2 flex shrink-0 items-center gap-2">
-        <p className="text-ink-400 text-[9.5px] font-bold uppercase tracking-[0.16em]">
-          October 2026
+      <p className="text-ink-400 mt-1.5 shrink-0 text-[14px] font-bold uppercase tracking-[0.1em]">
+        August 2026
+      </p>
+
+      <div data-demo-target="agenda" className="mt-1 min-h-0 flex-1 space-y-1 overflow-hidden">
+        {SHOWN.map((r) => (
+          <AgendaRow
+            key={`${r.day}-${r.title}`}
+            row={r}
+            time={moved && r.id === "row-tue" ? MOVED_TIME : r.time}
+            rsvp={r.id === "row-sat" ? rsvp : ""}
+          />
+        ))}
+        <p className="text-ink-400 px-1 text-[14px] font-semibold">
+          and Thursday&apos;s practice, 7:00 PM, same gym
         </p>
-        <span
-          data-demo-target="add-to-phone"
-          className="border-ink-200 text-ink-600 ml-auto shrink-0 rounded-full border bg-white px-2 py-[3px] text-[9.5px] font-bold transition-all duration-200 motion-reduce:transition-none data-[demo-hover=true]:border-play-400 data-[demo-hover=true]:text-play-700"
-        >
-          Add to phone
-        </span>
-      </div>
-
-      <div className="mt-1 min-h-0 flex-1 space-y-1.5">
-        <DayGroup day="14" weekday="Tue" today>
-          <ItemCard
-            kind="practice"
-            time="6:00 – 7:30 PM"
-            title="Practice"
-            meta={`Riverside CC, Court 1 · ${"U11 Girls Rep"}`}
-            lens="bg-play-500"
-          />
-        </DayGroup>
-
-        <DayGroup day="15" weekday="Wed">
-          <ItemCard
-            kind="practice"
-            time="7:30 – 9:00 PM"
-            title="Practice"
-            meta="Northside HS · U13 Boys Rep"
-            lens="bg-court-500"
-          />
-        </DayGroup>
-
-        <DayGroup day="18" weekday="Sat">
-          <ItemCard
-            id="row-sat"
-            kind="game"
-            time="9:00 – 10:30 AM"
-            title={`vs ${OPPONENT}`}
-            meta={`${moved ? GYM_NEW : GYM_OLD} · U11 Girls Rep`}
-            metaPulse={moved}
-            lens="bg-play-500"
-            badge={
-              moved ? (
-                <span className="bg-gold-400 rounded-full px-1.5 py-[1px] text-[9px] font-black uppercase tracking-wide text-[#0b1628]">
-                  Moved
-                </span>
-              ) : undefined
-            }
-            footer={
-              rsvp ? (
-                <div className="border-ink-100 mt-1.5 flex items-center gap-1.5 border-t pt-1.5">
-                  <span className="text-ink-500 text-[9.5px] font-bold uppercase tracking-[0.1em]">
-                    Amara
-                  </span>
-                  <span className="bg-court-600 rounded-full px-2 py-[2px] text-[10px] font-bold text-white">
-                    ✓ Going
-                  </span>
-                  <span className="text-ink-400 ml-auto text-[9.5px]">Answered Tuesday</span>
-                </div>
-              ) : undefined
-            }
-          />
-        </DayGroup>
-      </div>
-
-      <div className="mt-1.5 shrink-0">
-        <p className="text-ink-400 mb-1 text-[9.5px] font-bold uppercase tracking-[0.16em]">
-          {handled ? "Nothing outstanding" : "Needs you this week"}
-        </p>
-        <div className="space-y-1.5">
-          <ActionCard
-            id="fee-pay"
-            done={feePaid}
-            title="Season fee, installment 2 of 4"
-            meta="Amara · due Friday 17 Oct"
-            action="Pay $85"
-            doneLabel="Paid"
-          />
-          <ActionCard
-            id="waiver-sign"
-            done={waiverSigned}
-            title="Concussion Code of Conduct"
-            meta="Noah · before the first game"
-            action="Sign"
-            doneLabel="Signed"
-          />
-        </div>
       </div>
     </div>
   )
 }
 
-function LensChip({ id, label, dot }: { id: string; label: string; dot: string }) {
+function Lens({ color, label }: { color: string; label: string }) {
   return (
-    <span
-      data-demo-target={id}
-      className="border-ink-200 flex min-w-0 items-center gap-1 rounded-full border bg-white px-2 py-[3px] transition-all duration-200 motion-reduce:transition-none data-[demo-hover=true]:border-play-400 data-[demo-hover=true]:ring-play-100 data-[demo-hover=true]:ring-2"
-    >
-      <span className={cn("h-1.5 w-1.5 shrink-0 rounded-full", dot)} />
-      <span className="text-ink-700 truncate text-[9.5px] font-bold">{label}</span>
+    <span className="border-ink-200 text-ink-700 inline-flex items-center gap-1.5 rounded-full border bg-white px-2 py-0.5 text-[14px] font-semibold">
+      <span aria-hidden="true" className="h-2 w-2 rounded-full" style={{ background: color }} />
+      {label}
     </span>
   )
 }
 
-/** The date tile and the day's items beside it, as the agenda stacks them. */
-function DayGroup({
-  day,
-  weekday,
-  today,
-  children,
-}: {
-  day: string
-  weekday: string
-  today?: boolean
-  children: ReactNode
-}) {
+function AgendaRow({ row, time, rsvp }: { row: Row; time: string; rsvp: string }) {
+  const edge = row.kind === "game" ? "#e0821e" : "var(--brand, #1a73e8)"
   return (
-    <div className="flex items-start gap-1.5">
-      <span
-        className={cn(
-          "flex h-[38px] w-[34px] shrink-0 flex-col items-center justify-center rounded-lg",
-          today ? "bg-play-600 text-white" : "bg-ink-100/70 text-ink-700"
-        )}
-      >
-        <span className="text-[13px] font-bold leading-none tabular-nums">{day}</span>
-        <span className="mt-[2px] text-[8px] font-bold uppercase tracking-wide opacity-80">
-          {weekday}
+    <div
+      data-demo-target={row.cancelled ? "row-cancelled" : row.id}
+      className={cn(
+        "flex gap-2 rounded-xl border bg-white px-2 py-1 transition-colors duration-300 motion-reduce:transition-none",
+        row.cancelled ? "border-ink-200" : "border-ink-200"
+      )}
+      style={{ borderLeft: `4px solid ${row.cancelled ? "#c9ced6" : edge}` }}
+    >
+      <span className="w-[34px] shrink-0 text-center">
+        <span className="text-ink-900 block text-[17px] font-extrabold leading-none tabular-nums">
+          {row.day}
         </span>
-      </span>
-      <div className="min-w-0 flex-1 space-y-1">{children}</div>
-    </div>
-  )
-}
-
-/** One item. The left edge and the fill are the product's own kind colours. */
-function ItemCard({
-  id,
-  kind,
-  time,
-  title,
-  meta,
-  metaPulse,
-  lens,
-  badge,
-  footer,
-}: {
-  id?: string
-  kind: "game" | "practice" | "event"
-  time: string
-  title: string
-  meta: string
-  /** The line that just changed flashes where it changed, and only it. */
-  metaPulse?: boolean
-  lens: string
-  badge?: ReactNode
-  footer?: ReactNode
-}) {
-  const fill = {
-    game: "bg-energy-soft/60",
-    practice: "bg-white",
-    event: "bg-highlight-soft/60",
-  }[kind]
-  const edge = {
-    game: "var(--energy)",
-    practice: "var(--brand)",
-    event: "var(--highlight)",
-  }[kind]
-
-  return (
-    <div
-      data-demo-target={id}
-      className={cn(
-        "border-ink-100 relative overflow-hidden rounded-xl border py-1.5 pl-2.5 pr-2 transition-all duration-200 motion-reduce:transition-none",
-        fill,
-        "data-[demo-hover=true]:border-play-300 data-[demo-hover=true]:shadow-sm",
-        "data-[demo-press=true]:scale-[0.99]"
-      )}
-    >
-      <span
-        aria-hidden="true"
-        className="absolute inset-y-0 left-0 w-[3px]"
-        style={{ backgroundColor: edge }}
-      />
-      <div className="flex items-center gap-1.5">
-        <span className="text-ink-500 text-[9.5px] font-bold tabular-nums">{time}</span>
-        {badge && <span className="live-pop ml-auto">{badge}</span>}
-      </div>
-      <div className="mt-[1px] flex items-center gap-1.5">
-        <span className={cn("h-1.5 w-1.5 shrink-0 rounded-full", lens)} />
-        <span className="text-ink-900 min-w-0 truncate text-[12px] font-bold">{title}</span>
-      </div>
-      <p
-        key={meta}
-        className={cn(
-          "text-ink-500 truncate text-[10px]",
-          metaPulse && "demo-pulse-amber"
-        )}
-      >
-        {meta}
-      </p>
-      {footer}
-    </div>
-  )
-}
-
-/** A thing the week is waiting on, and the same card once it is not. */
-function ActionCard({
-  id,
-  done,
-  title,
-  meta,
-  action,
-  doneLabel,
-}: {
-  id: string
-  done: boolean
-  title: string
-  meta: string
-  action: string
-  doneLabel: string
-}) {
-  return (
-    <div
-      className={cn(
-        "flex items-center gap-2 rounded-xl border px-2.5 py-1.5 transition-colors duration-500 motion-reduce:transition-none",
-        done ? "border-court-200 bg-court-50" : "border-amber-200 bg-amber-50"
-      )}
-    >
-      <span
-        className={cn(
-          "flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px] font-black text-white",
-          done ? "bg-court-600" : "bg-amber-500"
-        )}
-      >
-        {done ? "✓" : "!"}
+        <span className="text-ink-400 block text-[14px] font-bold uppercase">{row.weekday}</span>
       </span>
       <span className="min-w-0 flex-1">
-        <span className="text-ink-900 block truncate text-[11px] font-bold">{title}</span>
-        <span className="text-ink-500 block truncate text-[9.5px]">{meta}</span>
+        <span className="flex items-center gap-1.5">
+          <span
+            className={cn(
+              "text-[14px] font-bold tabular-nums",
+              row.cancelled ? "text-ink-400 line-through" : "text-ink-700"
+            )}
+          >
+            {time}
+          </span>
+          {row.cancelled && <StatusChip tone="hoop">Cancelled</StatusChip>}
+        </span>
+        <span
+          className={cn(
+            "block truncate text-[15px] font-bold",
+            row.cancelled ? "text-ink-400 line-through" : "text-ink-900"
+          )}
+        >
+          {row.title}
+        </span>
+        <span className="text-ink-500 block truncate text-[14px] font-medium">{row.where}</span>
+
+        {row.id === "row-sat" && (
+          <span data-demo-target="rsvp" className="border-ink-100 mt-1 flex items-center gap-1.5 border-t pt-1">
+            <span className="text-ink-400 shrink-0 text-[14px] font-semibold">{SON}</span>
+            <span className="flex gap-1">
+              <Pill id="rsvp-going" label="✓ Going" on={rsvp === "going"} tone="court" />
+              <Pill label="? Maybe" on={false} tone="gold" />
+              <Pill label="✕ Can't go" on={false} tone="hoop" />
+            </span>
+          </span>
+        )}
       </span>
-      {done ? (
-        <span className="bg-court-600 live-pop shrink-0 rounded-lg px-2 py-1 text-[10px] font-bold text-white">
-          {doneLabel}
-        </span>
-      ) : (
-        <span
-          data-demo-target={id}
-          className="bg-[color:var(--brand,#1a73e8)] shrink-0 rounded-lg px-2 py-1 text-[10px] font-bold text-white transition-all duration-200 motion-reduce:transition-none data-[demo-hover=true]:brightness-110 data-[demo-hover=true]:shadow-md data-[demo-press=true]:scale-[0.96]"
-        >
-          {action}
-        </span>
-      )}
     </div>
   )
 }
 
-/**
- * The end card at phone size. The shared MockEndCard is laid out for a 1120px
- * frame, and a demo that never leaves the handset has to close inside it.
- */
-function PhoneEndCard() {
-  return (
-    <div className="absolute inset-0 z-40 flex items-center justify-center overflow-hidden bg-[#0b1628]">
-      <CourtBackdropLayer variant="navy" intensity="immersive" />
-      <div className="live-pop relative z-10 px-6 text-center">
-        <p className="text-gold-400 text-[9.5px] font-bold uppercase tracking-[0.2em]">
-          Chapter 6 of 10
-        </p>
-        <h2 className="font-display mt-1.5 text-[24px] font-extrabold leading-[1.06] tracking-tight text-white">
-          Your week
-        </h2>
-        <p className="mt-2 text-[11.5px] leading-relaxed text-white/65">
-          Both kids, every gym, the answer you already gave, and the two things you owed, on one
-          screen on a Tuesday morning.
-        </p>
-        <span className="bg-gold-400 mt-4 inline-flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-[11px] font-bold text-[#0b1628]">
-          <svg viewBox="0 0 24 24" className="h-3 w-3 fill-current" aria-hidden="true">
-            <path d="M8 5v14l11-7z" />
-          </svg>
-          Watch the next: Waivers, start to finish
-        </span>
-      </div>
-    </div>
-  )
-}
-
-/* ── Sheets ───────────────────────────────────────────────────────────────── */
-
-function GameSheet({ rsvp }: { rsvp: string }) {
-  return (
-    <div>
-      <div className="border-ink-100 rounded-xl border px-2.5 py-2">
-        <p className="text-ink-500 text-[10px] font-bold uppercase tracking-[0.12em]">
-          Who is going
-        </p>
-        <div className="mt-1.5 flex items-center gap-1.5">
-          <span className="text-ink-700 w-[42px] shrink-0 truncate text-[11px] font-bold">
-            Amara
-          </span>
-          <RsvpPill id="rsvp-going" mark="✓" label="Going" tone="going" on={rsvp === "GOING"} />
-          <RsvpPill mark="?" label="Maybe" tone="maybe" on={rsvp === "MAYBE"} />
-          <RsvpPill mark="✕" label="Can't go" tone="out" on={rsvp === "NOT_GOING"} />
-        </div>
-      </div>
-
-      <div className="mt-2">
-        <span
-          data-demo-target="directions"
-          className="border-ink-200 flex items-center gap-2 rounded-xl border bg-white px-2.5 py-2 transition-all duration-200 motion-reduce:transition-none data-[demo-hover=true]:border-play-400 data-[demo-hover=true]:ring-play-100 data-[demo-hover=true]:ring-2 data-[demo-press=true]:scale-[0.99]"
-        >
-          <span className="bg-play-50 text-play-700 flex h-6 w-6 shrink-0 items-center justify-center rounded-lg text-[11px]">
-            ➤
-          </span>
-          <span className="text-ink-800 min-w-0 flex-1 text-[11.5px] font-bold">
-            Get directions →
-          </span>
-          <span className="text-ink-400 text-[10px]">12 min</span>
-        </span>
-      </div>
-
-      <div className="mt-2">
-        <PhoneAction tone="quiet">Open game page →</PhoneAction>
-      </div>
-    </div>
-  )
-}
-
-function RsvpPill({
-  id,
-  mark,
+function Pill({
   label,
-  tone,
   on,
+  tone,
+  id,
 }: {
-  id?: string
-  mark: string
   label: string
-  tone: "going" | "maybe" | "out"
   on: boolean
+  tone: "court" | "gold" | "hoop"
+  id?: string
 }) {
-  const filled = {
-    going: "border-court-600 bg-court-600 text-white",
-    maybe: "border-amber-500 bg-amber-500 text-white",
-    out: "border-red-600 bg-red-600 text-white",
-  }[tone]
+  const active =
+    tone === "court"
+      ? "border-court-600 bg-court-600 text-white"
+      : tone === "gold"
+        ? "border-amber-500 bg-amber-500 text-white"
+        : "border-red-600 bg-red-600 text-white"
   return (
     <span
       data-demo-target={id}
       className={cn(
-        "flex min-w-0 flex-1 items-center justify-center gap-1 rounded-lg border px-1.5 py-1 text-[10px] font-bold transition-all duration-200 motion-reduce:transition-none",
-        on ? filled : "border-ink-200 text-ink-600 bg-white",
-        "data-[demo-hover=true]:border-court-400",
-        "data-[demo-press=true]:scale-[0.95]"
+        "rounded-full border px-2 py-0.5 text-[14px] font-bold",
+        on ? active : "border-ink-300 text-ink-600 bg-white"
       )}
     >
-      <span>{mark}</span>
-      <span className="truncate">{label}</span>
+      {label}
     </span>
   )
 }
 
-function MapsSheet() {
+/** `my-calendar.tsx`'s item popover. */
+function Popover() {
+  const row = WEEK[4]
   return (
-    <div>
-      {/* The map preview the venue page embeds, standing in at phone size. */}
-      <div className="border-ink-100 relative h-[92px] overflow-hidden rounded-xl border bg-[#e8eef4]">
-        <span aria-hidden="true" className="absolute inset-x-0 top-[26px] h-[7px] bg-[#cfdae6]" />
-        <span aria-hidden="true" className="absolute inset-x-0 top-[62px] h-[5px] bg-[#cfdae6]" />
-        <span aria-hidden="true" className="absolute inset-y-0 left-[74px] w-[7px] bg-[#cfdae6]" />
-        <span aria-hidden="true" className="absolute inset-y-0 left-[188px] w-[5px] bg-[#cfdae6]" />
-        <span className="bg-energy live-pop absolute left-[112px] top-[34px] flex h-6 w-6 items-center justify-center rounded-full text-[11px] text-white shadow-md">
-          ●
+    <div className="space-y-2">
+      <p className="text-ink-900 text-[17px] font-extrabold leading-tight">
+        Game · {row.title}
+      </p>
+      <div className="border-ink-200 rounded-2xl border bg-white px-3 py-2.5">
+        <p className="text-ink-900 text-[15px] font-bold tabular-nums">
+          Sat, Aug 22 · {row.time}
+        </p>
+        <p className="text-ink-500 mt-0.5 text-[14px] font-medium">{row.where}</p>
+        <p className="text-ink-400 mt-1.5 text-[14px] font-semibold">{SON} · Going</p>
+        <span data-demo-target="open-game" className="text-play-700 mt-2 block text-[15px] font-bold">
+          Open game page →
         </span>
       </div>
-      <p className="text-ink-900 mt-2 text-[12px] font-bold">Northside HS, Court 1</p>
-      <p className="text-ink-500 text-[11px]">1441 Lakeshore Blvd W, Toronto, ON M6K 3C1</p>
-      <div className="mt-2.5">
-        <PhoneAction>Open in Maps</PhoneAction>
-      </div>
+      <p className="text-ink-500 text-[14px] font-medium leading-snug">
+        The popover is where the row goes deeper. There is no address on it.
+      </p>
     </div>
   )
 }
 
-function FeeSheet({ paid }: { paid: boolean }) {
-  if (paid) {
-    return (
-      <PhoneSuccess
-        title="Paid $85.00"
-        body="Installment 2 of 4 is settled. The receipt is in your email and on the club's books."
-        rows={[
-          { label: "Paid today", value: "$85.00" },
-          { label: "Left on the plan", value: "$170.00" },
-          { label: "Next charge", value: "17 Nov" },
-        ]}
-      />
-    )
-  }
+/** `/live/[gameId]`, the public game page. */
+function GamePage() {
   return (
-    <div>
-      <div className="border-ink-100 rounded-xl border px-2.5 py-1.5">
-        <PhoneMoneyRow label="Season fee" value="$340.00" />
-        <PhoneMoneyRow label="Already paid, installment 1" value="$85.00" />
-        <PhoneMoneyRow label="Due today, installment 2 of 4" value="$85.00" strong />
-        <p className="text-ink-400 text-[10px]">
-          Two more of $85.00, on 17 November and 17 December.
+    <div className="space-y-2">
+      <div className="rounded-2xl bg-[#0b1628] px-3 py-3 text-white">
+        <p className="text-[14px] font-bold uppercase tracking-[0.1em] text-white/60">
+          {LEAGUE} · Sat, Aug 22
+        </p>
+        <p className="mt-1 text-[17px] font-extrabold leading-tight">Oakville Panthers Grade 9</p>
+        <p className="text-[17px] font-extrabold leading-tight">{SON_TEAM}</p>
+        <p className="mt-1.5 text-[14px] font-semibold text-white/70">9:00 AM</p>
+        <p className="mt-1.5 text-[15px] font-bold">
+          <span data-demo-target="venue-link" className="text-gold-400 underline">
+            {GYM}
+          </span>
+          <span className="text-white/60"> · Court 1</span>
         </p>
       </div>
-      <div className="mt-2">
-        <PhoneCardRow brand="Visa" last4="4242" />
-      </div>
-      <div className="mt-2.5">
-        <PhoneAction id="fee-confirm">Pay $85.00</PhoneAction>
-      </div>
-      <p className="text-ink-400 mt-1.5 text-center text-[10px]">
-        Nothing is charged until you press it.
+      <p className="text-ink-500 text-[14px] font-medium leading-snug">
+        The gym name is the link. This is also the page that goes live when the game starts.
       </p>
+    </div>
+  )
+}
+
+/** `/venues/[venueId]`. */
+function VenuePage({ directions }: { directions: boolean }) {
+  return (
+    <div className="space-y-2">
+      <p className="text-ink-900 text-[17px] font-extrabold">{GYM}</p>
+      <div className="border-ink-200 rounded-2xl border bg-white px-3 py-2.5">
+        <p className="text-ink-800 text-[15px] font-semibold">{GYM_ADDRESS}</p>
+        <span data-demo-target="directions" className="text-play-700 mt-2 block text-[15px] font-bold">
+          Get directions →
+        </span>
+      </div>
+      {directions && (
+        <div className="border-court-200 bg-court-50 live-pop rounded-2xl border px-3 py-2.5">
+          <p className="text-court-800 text-[15px] font-bold">Maps</p>
+          <p className="text-court-700 mt-0.5 text-[14px] font-semibold leading-snug">
+            {GYM_ADDRESS}, opened in the app she already uses.
+          </p>
+        </div>
+      )}
+      <p className="text-ink-500 text-[14px] font-medium leading-snug">
+        The venue page is the only place the street address lives.
+      </p>
+    </div>
+  )
+}
+
+/** `/`, the signed-in home band. */
+function HomeBand() {
+  return (
+    <div className="space-y-2">
+      <p className="text-ink-900 text-[17px] font-extrabold">Home</p>
+      <p data-demo-target="band" className="text-ink-500 text-[14px] font-bold uppercase tracking-[0.08em]">
+        {BAND_HEADING}
+      </p>
+      <div
+        data-demo-target="band-card"
+        className="border-hoop-300 bg-hoop-50/60 rounded-2xl border px-3 py-2.5"
+      >
+        <p className="text-hoop-800 text-[17px] font-extrabold">{BAND_TITLE}</p>
+        <p className="text-hoop-700 mt-0.5 text-[15px] font-bold">{BAND_DETAIL}</p>
+      </div>
+      <p className="text-ink-500 text-[14px] font-medium leading-snug">
+        A count, not a dollar figure and not a date. That is exactly what this card carries today.
+      </p>
+    </div>
+  )
+}
+
+/** `/payments`, "My payments". */
+function Payments() {
+  return (
+    <div className="space-y-2">
+      <p className="text-ink-900 text-[17px] font-extrabold">My payments</p>
+      <p className="text-ink-600 text-[15px] font-semibold">{PAY_HEAD}</p>
+      <p className="text-ink-400 text-[14px] font-bold uppercase tracking-[0.08em]">Payment plan</p>
+      <div className="space-y-1">
+        <PayRow label="Deposit" when="Paid at signup" amount={PER} status="Paid" />
+        <PayRow label="Installment 1" when="Apr 13" amount={PER} status="Paid" />
+        <PayRow label="Installment 2" when="May 1" amount={PER} status="Upcoming" />
+        <PayRow label="Installment 3" when="Jun 1" amount={PER} status="Upcoming" />
+      </div>
+      <p className="text-ink-500 text-[14px] font-medium leading-snug">
+        Summer 2026 season fee · {DAU_TEAM}
+      </p>
+    </div>
+  )
+}
+
+function PayRow({
+  label,
+  when,
+  amount,
+  status,
+}: {
+  label: string
+  when: string
+  amount: number
+  status: "Paid" | "Upcoming"
+}) {
+  const paid = status === "Paid"
+  return (
+    <div
+      className={cn(
+        "flex items-center gap-2 rounded-xl border bg-white px-2.5 py-1.5",
+        paid ? "border-court-200 bg-court-50/50" : "border-ink-200"
+      )}
+    >
+      <span className="min-w-0">
+        <span className="text-ink-900 block text-[15px] font-bold">{label}</span>
+        <span className="text-ink-500 block text-[14px] font-medium">{when}</span>
+      </span>
+      <span className="text-ink-900 ml-auto shrink-0 text-[15px] font-bold tabular-nums">
+        {money(amount)}
+      </span>
+      <StatusChip tone={paid ? "court" : "neutral"}>{status}</StatusChip>
+    </div>
+  )
+}
+
+/** The waiver reminder, `lib/waivers/reminders.ts`. */
+function WaiverNotice() {
+  return (
+    <div className="space-y-2">
+      <p className="text-ink-900 text-[17px] font-extrabold">Notifications</p>
+      <div
+        data-demo-target="w-notif"
+        className="border-hoop-300 live-pop rounded-2xl border bg-white px-3 py-2.5"
+      >
+        <p className="text-hoop-800 text-[15px] font-bold">{WAIVER_TITLE}</p>
+        <p className="text-ink-700 mt-1 text-[14px] font-medium leading-snug">{WAIVER_MSG}</p>
+        <span data-demo-target="w-open" className="text-play-700 mt-2 block text-[15px] font-bold">
+          Tap to sign →
+        </span>
+      </div>
+      <p className="text-ink-500 text-[14px] font-medium leading-snug">
+        Waivers are one of the few things the product will push to a phone, because an unsigned one
+        stops a player at the door.
+      </p>
+    </div>
+  )
+}
+
+/** `/waivers/sign/[token]`, a public token page. */
+function SignPage() {
+  return (
+    <div className="space-y-2">
+      <p className="text-ink-400 text-[14px] font-bold uppercase tracking-[0.1em]">{LEAGUE}</p>
+      <p className="text-ink-900 text-[17px] font-extrabold leading-tight">{WAIVER}</p>
+      <div className="border-ink-200 rounded-2xl border bg-white px-3 py-2.5">
+        <p className="text-ink-600 text-[14px] font-medium leading-snug">
+          Required · renews every year · version 1
+        </p>
+        <p className="text-ink-800 mt-1.5 text-[14px] font-medium leading-snug">
+          I acknowledge that I have reviewed the concussion code of conduct with {DAUGHTER}.
+        </p>
+        <div className="border-ink-300 mt-2 h-[54px] rounded-xl border border-dashed bg-white" />
+        <p className="text-ink-400 mt-1 text-[14px] font-medium">Sign with your finger</p>
+      </div>
+      <Btn tone="court" size="sm">
+        Sign and finish
+      </Btn>
+    </div>
+  )
+}
+
+function TabBar({ active }: { active: string }) {
+  return (
+    <div className="border-ink-200 flex shrink-0 items-center justify-around border-t bg-white px-1.5 pb-4 pt-2">
+      {["Home", "Chat", "Calendar", "My Kids", "Social"].map((t) => (
+        <span
+          key={t}
+          className={cn("text-[14px] font-bold", t === active ? "text-play-700" : "text-ink-400")}
+        >
+          {t}
+        </span>
+      ))}
+    </div>
+  )
+}
+
+/* ── End card ────────────────────────────────────────────────────────────── */
+
+function EndCard(): ReactNode {
+  return (
+    <div className="absolute inset-0 z-20 flex items-center justify-center bg-[#0b1628] px-8 text-white">
+      <div className="live-pop max-w-[340px] text-center">
+        <p className="text-gold-400 text-[15px] font-bold uppercase tracking-[0.18em]">
+          A parent chapter
+        </p>
+        <h3 className="font-display mt-2 text-[26px] font-extrabold leading-tight">Your week</h3>
+        <p className="mt-3 text-[15px] leading-relaxed text-white/75">
+          A real week for two real children: four practices, one of them already cancelled, a
+          Saturday game answered in one tap, an address three taps away, and a practice that moved
+          without asking her the same question twice.
+        </p>
+        <p className="mt-4 text-[14px] font-semibold text-white/50">Next: claim your club</p>
+      </div>
     </div>
   )
 }

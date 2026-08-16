@@ -265,21 +265,30 @@ export const DEMOS: DemoEntry[] = [
     slug: "your-week",
     title: "Your week",
     promise:
-      "A parent opens the app and sees exactly what is happening, for both kids, with the gym address in one tap.",
+      "One phone, two children, and a real week from a real database: four practices, one already cancelled, a Saturday game answered in a tap, and a change that does not ask her the same question twice.",
     description:
-      "Tuesday morning, one phone, two kids on two teams. Practice tonight, Noah's practice tomorrow, a game Saturday, and every line carries the gym, because the gym is the thing families get wrong. She answers Saturday with one tap and opens directions from the row itself. Then the week breaks the way weeks do: a gym change lands on the game she has already answered, and this is the part worth watching, because the row updates where it stands and her Going survives it. Nobody asks her a second time whether her daughter is playing. A fee installment and an unsigned waiver are sitting in the same week, and both get handled without leaving it.",
+      "One life-size phone, and every line on it is a row in the database rather than a drawing. A guardian with two children at the same club opens her week: her daughter's Monday practice, already cancelled and still sitting there with a line through it so nobody drives to it out of habit; her son's Tuesday; her daughter's Wednesday; and a Saturday game. Both children are on the same list, and it says which is which. Saturday needs an answer and asks for it on the row itself, three buttons under the game she is already looking at, and when two of her children are on the same event each one gets their own row of buttons so she is never answering for the wrong child. Then the demo does something demos do not usually do: it shows how far the gym address really is, walking the three taps it actually takes to get from the week to a map, and says out loud that it is further than it should be. The week breaks the way weeks do, the coach moves Tuesday's practice, and the row she already had simply says the new time, with nothing added, nothing vanished and her answer still attached, because an RSVP is tied to the game rather than to its time. The last stretch is the two things she owes, a fee installment and a waiver her daughter cannot play without, shown on the surfaces they really arrive on, with an honest note that they are not in the week list today.",
     audiences: ["parents"],
     kind: "chapter",
     stage: "phone",
-    durationLabel: "1 min 1 sec",
+    durationLabel: "1 min 45 sec",
     status: "live",
-    chapterCount: 3,
+    chapterCount: 5,
+    /* No volatile numbers in the bullets: the week moves with the seed. */
     bullets: [
-      "Both kids' weeks on one screen, no binder, no group chat",
-      "Gym address and directions one tap from the game card",
-      "A time change lands calmly: updated card, nothing missed",
+      "Both children's week on one screen, with the gym on every line",
+      "A cancelled practice stays where it was, struck through, so nobody drives to it",
+      "Answer the game on the row, one row of buttons per child",
+      "A practice moves and the row just says the new time, with her answer still on it",
+      "The fee and the waiver shown where they really arrive, not where it would be convenient",
     ],
-    chapterTitles: ["Two kids, one calendar", "RSVP and directions", "Plans change, calmly"],
+    chapterTitles: [
+      "Two kids, one week",
+      "Answer it here",
+      "Where the gym is",
+      "Plans change",
+      "Fee and waiver",
+    ],
     thumbEyebrow: "Chapter 6",
   },
   {
