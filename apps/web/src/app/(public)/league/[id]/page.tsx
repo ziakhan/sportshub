@@ -455,8 +455,7 @@ export default async function PublicLeagueHubPage({ params }: { params: { id: st
               <SectionHeader title="Standings" accent="gold" className="mb-5" />
               {standings.tiebreakerOrder.length === 0 && (
                 <p className="text-ink-400 -mt-2 mb-4 text-xs">
-                  Tied teams are shown in win-percentage order — this league hasn&apos;t configured
-                  tiebreaker rules yet.
+                  Tied teams are shown in win-percentage order.
                 </p>
               )}
               <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
