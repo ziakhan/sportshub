@@ -27,3 +27,24 @@ here was fixed in the demo job: this is the product's list.
 ## Naming
 
 - The ⋯ menu on a board gym section has no "add a court" item. Courts are changed with a stepper whose button then reads "We rented 3 courts". It works, but a league looking for "add a court" will not find those words. (`plan/plan-ui.tsx` `GymMenu`)
+
+## From the homepage screenshot round (owner feedback, 2026-08-17)
+
+- **Public league page reads plain white.** The owner, looking at a real capture of it on the
+  launch page: "again plain white. If that is a real screen then we need some work on that."
+  The standings and score cards sit on an untinted ground with no court system anywhere below
+  the hero band. (`app/(public)/league/[id]/page.tsx`)
+- **News article header wastes the top of the phone.** Too much white space above the fold: the
+  back control, the GAME RECAP pill and the date could be flattened into one lower row so the
+  title and score art land higher. (`app/(public)/news/[slug]/page.tsx`)
+- **Score art ruling renewed:** the big two-colour team panel on recaps stays for now ("keep it
+  till we make a better decision"), so no work on it yet, but it is not considered settled.
+- **Player of the Game chip uses a basketball emoji as its icon.** House rule is SVG icons,
+  never emoji. (recap article body)
+- **Recap footer line** "Recap generated automatically from the official scoring record" is the
+  kind of machine confession the copy law now removes; reword to name the source, not the
+  automation ("From the official scoring record").
+- **Seeded chat copy carries an em-dash on camera**: "Carpool from the west end — two seats,
+  message me." in the Lords Grade 9 team chat (seed-nph-demo). Sweep seed strings next reseed.
+- **Seeded event time litter**: "NPH Summer Media Day" sits at 2:54 to 6:54 AM on the family
+  calendar. Reseed with a sane time.

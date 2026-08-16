@@ -22,17 +22,60 @@ import Link from "next/link"
 import { CourtBackdrop } from "@/components/ui"
 import { DEMOS, type DemoAudience } from "@/app/demos/registry"
 
-/* Rotating hero slogans. All from the approved creative set. */
-const SLOGANS = [
-  "Youth basketball. All of it. One app.",
-  "Registration to final buzzer, already built.",
-  "Tryouts become signed, paid rosters.",
-  "Game moved? Everyone already knows.",
-  "Watch every game live.",
-  "Your name in the news.",
+/* Rotating hero slogans, from the approved creative set. Each carries its own
+   accent, the way the product home page colours "All of it." in gold. */
+const SLOGANS: { key: string; node: React.ReactNode }[] = [
+  {
+    key: "one-app",
+    node: (
+      <>
+        Youth basketball. <span className="text-gold-400">All of it.</span> One app.
+      </>
+    ),
+  },
+  {
+    key: "already-built",
+    node: (
+      <>
+        Registration to final buzzer, <span className="text-court-400">already built</span>.
+      </>
+    ),
+  },
+  {
+    key: "rosters",
+    node: (
+      <>
+        Tryouts become <span className="text-gold-400">signed, paid rosters</span>.
+      </>
+    ),
+  },
+  {
+    key: "game-moved",
+    node: (
+      <>
+        <span className="text-hoop-400">Game moved?</span> Everyone already knows.
+      </>
+    ),
+  },
+  {
+    key: "watch-live",
+    node: (
+      <>
+        Watch every game <span className="text-live-500">live</span>.
+      </>
+    ),
+  },
+  {
+    key: "in-the-news",
+    node: (
+      <>
+        <span className="text-play-300">Your name</span> in the news.
+      </>
+    ),
+  },
 ]
 
-const IDENTITIES = ["Parent", "Club", "League", "Referee", "Player"] as const
+const IDENTITIES = ["Player", "Parent", "Club", "League", "Referee", "Trainer", "Media"] as const
 type Identity = (typeof IDENTITIES)[number]
 
 /* Audience pill tones on light cards: parents indigo, clubs orange, leagues green. */
@@ -153,15 +196,15 @@ function Hero() {
       </header>
 
       <div className="hp-rise mx-auto flex w-full max-w-4xl flex-col items-center px-5 pb-24 pt-20 text-center sm:pt-28">
-        <p className="inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-1.5 text-[13px] font-semibold uppercase tracking-[0.14em] text-gold-400 ring-1 ring-white/15">
-          <span className="h-1.5 w-1.5 rounded-full bg-gold-400" aria-hidden="true" />
-          Coming this fall
-    </p>
+        <p className="flex items-center gap-3 text-2xl font-bold uppercase tracking-[0.18em] text-gold-400 sm:text-3xl">
+          <span className="h-2.5 w-2.5 rounded-full bg-gold-400 motion-safe:animate-pulse" aria-hidden="true" />
+          Launching this fall
+        </p>
 
         <h1 className="mt-7 grid w-full text-balance text-[44px] font-bold leading-[1.05] tracking-tight text-white sm:text-6xl lg:text-7xl">
           {SLOGANS.map((s, i) => (
             <span
-              key={s}
+              key={s.key}
               aria-hidden={i !== active}
               className={`col-start-1 row-start-1 transition-opacity ${
                 i === active
@@ -169,7 +212,7 @@ function Hero() {
                   : "pointer-events-none opacity-0 duration-300"
               }`}
             >
-              {s}
+              {s.node}
             </span>
           ))}
         </h1>
@@ -210,14 +253,15 @@ function Hero() {
           </fieldset>
 
           <div className="mt-4 flex flex-col gap-2.5 sm:flex-row">
-            <label className="sr-only" htmlFor="hp-email">
-              Email
+            <label className="sr-only" htmlFor="hp-contact">
+              Email or phone number
             </label>
             <input
-              id="hp-email"
-              type="email"
+              id="hp-contact"
+              type="text"
+              autoComplete="email"
               required
-              placeholder="you@example.com"
+              placeholder="you@example.com or (416) 555-0134"
               className="min-w-0 flex-1 rounded-xl border-0 bg-white px-5 py-3.5 text-base text-ink-950 shadow-lg ring-1 ring-white/30 placeholder:text-ink-400 focus:outline-none focus:ring-2 focus:ring-gold-400"
             />
             <button
@@ -229,7 +273,7 @@ function Hero() {
           </div>
 
           <p className="mt-3 text-[13px] text-white/55">
-            We&apos;ll email you about the launch and nothing else. Unsubscribe anytime.
+            We&apos;ll reach you about the launch and nothing else. Unsubscribe anytime.
           </p>
 
           {submitted && (
@@ -635,21 +679,9 @@ function PreviewNotes() {
         </p>
         <ul className="mt-4 list-disc space-y-3 pl-5 text-[15px] leading-relaxed text-ink-700">
           <li>
-            <span className="font-semibold">Email or phone capture:</span> the earlier ruling said
-            phone, the latest word said email, so the form above uses email. The phone version of
-            the same field:
-            <span className="mt-2 flex max-w-sm gap-2">
-              <input
-                type="tel"
-                readOnly
-                value="(416) 555-0134"
-                className="min-w-0 flex-1 rounded-lg border border-ink-200 bg-white px-4 py-2 text-[15px] text-ink-950"
-                aria-label="Phone capture variant"
-              />
-              <span className="rounded-lg bg-ink-950 px-4 py-2 text-[15px] font-bold text-white">
-                Text me at launch
-              </span>
-            </span>
+            <span className="font-semibold">Capture field:</span> takes email or phone, per your
+            call. Which one arrived gets detected at wire time, along with validation and the
+            anti-bot layer.
           </li>
           <li>
             The screenshots are real captures from the running app. Signup buttons are hidden in
