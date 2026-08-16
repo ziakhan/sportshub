@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react"
 import Link from "next/link"
-import { Crest } from "@/components/ui"
+import { Crest, OverlayPortal } from "@/components/ui"
 
 interface Club {
   id: string
@@ -59,6 +59,7 @@ export function ClubSearch() {
   // Close dropdown on click outside
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
+      if ((e.target as Element).closest?.("[data-overlay-portal]")) return
       if (wrapperRef.current && !wrapperRef.current.contains(e.target as Node)) {
         setShowDropdown(false)
       }
@@ -123,9 +124,11 @@ export function ClubSearch() {
           </button>
         </div>
 
-        {/* Autocomplete dropdown */}
+        {/* Autocomplete dropdown, through the body portal so nothing on the
+            page can cover or clip it (owner 2026-08-17). */}
         {showDropdown && results.length > 0 && (
-          <div className="border-ink-100 shadow-panel absolute z-50 mt-2 w-full overflow-hidden rounded-2xl border bg-white">
+          <OverlayPortal anchorRef={wrapperRef} open>
+          <div className="border-ink-100 shadow-panel overflow-hidden rounded-2xl border bg-white">
             {results.map((club) => (
               <button
                 key={club.id}
@@ -153,12 +156,15 @@ export function ClubSearch() {
               </button>
             )}
           </div>
+          </OverlayPortal>
         )}
 
         {showDropdown && query.length >= 2 && results.length === 0 && !loading && (
-          <div className="border-ink-100 text-ink-500 shadow-panel absolute z-50 mt-2 w-full rounded-2xl border bg-white p-4 text-center text-sm">
-            No clubs found matching &ldquo;{query}&rdquo;
-          </div>
+          <OverlayPortal anchorRef={wrapperRef} open>
+            <div className="border-ink-100 text-ink-500 shadow-panel rounded-2xl border bg-white p-4 text-center text-sm">
+              No clubs found matching &ldquo;{query}&rdquo;
+            </div>
+          </OverlayPortal>
         )}
       </div>
 

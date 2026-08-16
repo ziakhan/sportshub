@@ -40,7 +40,7 @@ export function SearchFirst({ onProceed }: { onProceed: () => void }) {
       <div>
         <h2 className="text-ink-900 text-lg font-semibold">Is your club already listed?</h2>
         <p className="text-ink-600 mt-1 text-sm">
-          We&apos;ve mapped over a thousand Canadian clubs. If yours is here, claim it — you keep
+          We&apos;ve mapped over a thousand Canadian clubs. If yours is here, claim it: you keep
           its league connections and public page instead of starting from zero.
         </p>
       </div>
@@ -84,10 +84,10 @@ export function SearchFirst({ onProceed }: { onProceed: () => void }) {
           onClick={onProceed}
           disabled={q.trim().length < 2 && results === null}
         >
-          My club isn&apos;t listed — create a new one
+          My club isn&apos;t listed, create a new one
         </Button>
         {q.trim().length < 2 && results === null && (
-          <p className="text-ink-400 mt-1 text-xs">Search first — it takes ten seconds.</p>
+          <p className="text-ink-400 mt-1 text-xs">Search first. It takes ten seconds.</p>
         )}
       </div>
     </div>

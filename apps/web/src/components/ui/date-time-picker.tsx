@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useMemo, useRef, useState, type ChangeEvent, type ReactNode } from "react"
+import { OverlayPortal } from "./overlay-portal"
 
 /**
  * Branded date/time picker (owner 2026-07-21) — replaces the native
@@ -193,6 +194,7 @@ export function DateTimePicker({
   useEffect(() => {
     if (!open) return
     const onDoc = (e: MouseEvent) => {
+      if ((e.target as Element).closest?.("[data-overlay-portal]")) return
       if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
     }
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false)
@@ -258,7 +260,8 @@ export function DateTimePicker({
       </button>
 
       {open && (
-        <div className="border-ink-200 shadow-panel absolute z-50 mt-2 w-[336px] max-w-[calc(100vw-2rem)] overflow-hidden rounded-2xl border bg-white">
+        <OverlayPortal anchorRef={ref} open matchWidth={false}>
+        <div className="border-ink-200 shadow-panel w-[336px] max-w-[calc(100vw-2rem)] overflow-hidden rounded-2xl border bg-white">
           <PanelWatermark />
           {/* Court-navy header band (2026-08-13) — the month and year controls
               sit on the house gradient instead of a plain white strip. */}
@@ -374,6 +377,7 @@ export function DateTimePicker({
             )}
           </div>
         </div>
+        </OverlayPortal>
       )}
     </div>
   )

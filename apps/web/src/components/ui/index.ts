@@ -44,6 +44,7 @@ export {
   type CourtBackdropIntensity,
 } from "./court-backdrop"
 export { BrandListbox, type BrandListboxOption } from "./brand-listbox"
+export { OverlayPortal } from "./overlay-portal"
 export { ChipGroup, type ChipOption } from "./chip-group"
 export { ChoiceCardGroup, type ChoiceCardOption } from "./choice-card"
 export { BrandCheckbox } from "./brand-checkbox"

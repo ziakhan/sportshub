@@ -1,7 +1,7 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
-import { BrandListbox, Button, PanelHeader } from "@/components/ui"
+import { useState, useEffect, useCallback, useRef } from "react"
+import { BrandListbox, Button, OverlayPortal, PanelHeader } from "@/components/ui"
 import { POSTURES, postureByKey, postureFromFlags } from "@/lib/payments/postures"
 
 /**
@@ -89,6 +89,7 @@ export default function AdminPaymentsPage() {
 
   // Club override editor
   const [search, setSearch] = useState("")
+  const searchBoxRef = useRef<HTMLDivElement>(null)
   const [hits, setHits] = useState<ClubHit[]>([])
   const [club, setClub] = useState<ClubHit | null>(null)
   const [clubPosture, setClubPosture] = useState<string>(INHERIT)
@@ -312,12 +313,12 @@ export default function AdminPaymentsPage() {
       <div className="border-ink-100 shadow-soft reveal rounded-2xl border bg-white p-6 [animation-delay:160ms]">
         <PanelHeader title="Per-club policy" />
         <p className="text-ink-500 mb-4 mt-1 text-sm">
-          Give one club a different posture — force them through the platform, require their own
+          Give one club a different posture: force them through the platform, require their own
           Stripe account, or hand them the choice. &ldquo;Platform default&rdquo; follows the
           policy above.
         </p>
 
-        <div className="relative max-w-md">
+        <div className="relative max-w-md" ref={searchBoxRef}>
           <input
             type="text"
             value={search}
@@ -326,7 +327,8 @@ export default function AdminPaymentsPage() {
             className="border-ink-200 w-full rounded-md border px-3 py-2 text-sm"
           />
           {hits.length > 0 && (
-            <div className="border-ink-200 absolute z-10 mt-1 w-full rounded-md border bg-white shadow-lg">
+            <OverlayPortal anchorRef={searchBoxRef} open gap={4}>
+            <div className="border-ink-200 rounded-md border bg-white shadow-lg">
               {hits.slice(0, 8).map((h) => (
                 <button
                   key={h.id}
@@ -338,6 +340,7 @@ export default function AdminPaymentsPage() {
                 </button>
               ))}
             </div>
+            </OverlayPortal>
           )}
         </div>
 

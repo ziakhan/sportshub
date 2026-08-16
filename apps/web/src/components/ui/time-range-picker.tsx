@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react"
 import { BrandSelect } from "./date-time-picker"
+import { OverlayPortal } from "./overlay-portal"
 
 /**
  * Time-range picker (2026-08-04) — companion to DateTimePicker's "date" mode
@@ -122,6 +123,7 @@ export function TimeRangePicker({
   useEffect(() => {
     if (!open) return
     const onDoc = (e: MouseEvent) => {
+      if ((e.target as Element).closest?.("[data-overlay-portal]")) return
       if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
     }
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false)
@@ -167,7 +169,8 @@ export function TimeRangePicker({
       </button>
 
       {open && (
-        <div className="border-ink-200 shadow-panel absolute z-50 mt-2 w-[316px] max-w-[calc(100vw-2rem)] space-y-3 rounded-2xl border bg-white p-3">
+        <OverlayPortal anchorRef={ref} open matchWidth={false}>
+        <div className="border-ink-200 shadow-panel w-[316px] max-w-[calc(100vw-2rem)] space-y-3 rounded-2xl border bg-white p-3">
           <TimeRow label="Starts" hh={shh} mm={smm} onPick={pickStart} />
           <div className="border-ink-100 border-t pt-3">
             <TimeRow
@@ -191,6 +194,7 @@ export function TimeRangePicker({
             </button>
           </div>
         </div>
+        </OverlayPortal>
       )}
     </div>
   )

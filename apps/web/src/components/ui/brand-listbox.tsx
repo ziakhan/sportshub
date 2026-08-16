@@ -1,6 +1,7 @@
 "use client"
 
 import { useCallback, useEffect, useId, useRef, useState } from "react"
+import { OverlayPortal } from "./overlay-portal"
 
 /**
  * Branded listbox — the replacement for a native <select> (2026-08-13).
@@ -105,6 +106,8 @@ export function BrandListbox({
   useEffect(() => {
     if (!open) return
     const onDoc = (e: MouseEvent) => {
+      const t = e.target as Element
+      if (t.closest?.("[data-overlay-portal]")) return
       if (wrapRef.current && !wrapRef.current.contains(e.target as Node)) setOpen(false)
     }
     document.addEventListener("mousedown", onDoc)
@@ -112,8 +115,12 @@ export function BrandListbox({
   }, [open])
 
   // Focus the list when it opens so arrows work without a second tab press.
+  // One frame deferred: the portal mounts the list a commit after `open`
+  // flips (it measures the anchor first), so a same-commit focus finds null.
   useEffect(() => {
-    if (open) listRef.current?.focus()
+    if (!open) return
+    const id = requestAnimationFrame(() => listRef.current?.focus())
+    return () => cancelAnimationFrame(id)
   }, [open])
 
   // Keep the active option in view while arrowing through a long list.
@@ -237,7 +244,9 @@ export function BrandListbox({
         </svg>
       </button>
 
-      {open && (
+      {/* The panel rides a body portal so no later sibling's stacking context
+          and no overflow-hidden card can cover or clip it (owner 2026-08-17). */}
+      <OverlayPortal anchorRef={wrapRef} open={open} align={upward ? "above" : "below"}>
         <ul
           id={listId}
           ref={listRef}
@@ -246,9 +255,7 @@ export function BrandListbox({
           aria-label={ariaLabel}
           aria-activedescendant={activeIndex >= 0 ? optionId(activeIndex) : undefined}
           onKeyDown={onListKeyDown}
-          className={`border-ink-200 shadow-panel absolute z-50 max-h-64 w-full overflow-auto rounded-xl border bg-white p-1 focus:outline-none ${
-            upward ? "bottom-full mb-2" : "top-full mt-2"
-          }`}
+          className="border-ink-200 shadow-panel max-h-64 w-full overflow-auto rounded-xl border bg-white p-1 focus:outline-none"
         >
           {options.length === 0 && (
             <li className="text-ink-500 px-3 py-2.5 text-sm">Nothing to choose from</li>
@@ -290,7 +297,7 @@ export function BrandListbox({
             )
           })}
         </ul>
-      )}
+      </OverlayPortal>
     </div>
   )
 }

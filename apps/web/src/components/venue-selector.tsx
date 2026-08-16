@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect, useRef, useCallback } from "react"
+import { OverlayPortal } from "@/components/ui"
 
 interface Venue {
   id: string
@@ -138,6 +139,7 @@ export function VenueSelector({ value, venueName, onSelect, onClear }: VenueSele
   // Click outside to close
   useEffect(() => {
     function handleClick(e: MouseEvent) {
+      if ((e.target as Element).closest?.("[data-overlay-portal]")) return
       if (wrapperRef.current && !wrapperRef.current.contains(e.target as Node)) {
         setShowDropdown(false)
       }
@@ -266,11 +268,10 @@ export function VenueSelector({ value, venueName, onSelect, onClear }: VenueSele
   }
 
   return (
-    // While the dropdown is open the WHOLE selector must sit above the form
-    // fields below it — z-50 on the inner list alone loses to any sibling
-    // that makes its own stacking context (owner bug 2026-08-10: the list
-    // rendered behind the next input, first entry unreadable).
-    <div ref={wrapperRef} className={`relative ${showDropdown ? "z-50" : ""}`}>
+    // The dropdowns render through OverlayPortal into document.body (owner
+    // 2026-08-17): the old wrapper z-50 still lost to sibling stacking
+    // contexts and got clipped by overflow-hidden cards on some forms.
+    <div ref={wrapperRef} className="relative">
       <div className="relative">
         <input
           type="text"
@@ -290,7 +291,8 @@ export function VenueSelector({ value, venueName, onSelect, onClear }: VenueSele
       </div>
 
       {showDropdown && manual && (
-        <div className="absolute z-50 mt-1 w-full space-y-2 rounded-lg border border-gray-200 bg-white p-3 shadow-lg">
+        <OverlayPortal anchorRef={wrapperRef} open gap={4}>
+          <div className="space-y-2 rounded-lg border border-gray-200 bg-white p-3 shadow-lg">
           <p className="text-xs font-semibold text-gray-500">Add a new venue</p>
           <input
             type="text"
@@ -340,11 +342,13 @@ export function VenueSelector({ value, venueName, onSelect, onClear }: VenueSele
               {creating ? "Adding…" : "Add venue"}
             </button>
           </div>
-        </div>
+          </div>
+        </OverlayPortal>
       )}
 
       {showDropdown && !manual && (
-        <div className="absolute z-50 mt-1 w-full rounded-lg border border-gray-200 bg-white shadow-lg max-h-72 overflow-y-auto">
+        <OverlayPortal anchorRef={wrapperRef} open gap={4}>
+        <div className="max-h-72 overflow-y-auto rounded-lg border border-gray-200 bg-white shadow-lg">
           {/* Existing venues */}
           {existingVenues.length > 0 && (
             <div>
@@ -364,7 +368,7 @@ export function VenueSelector({ value, venueName, onSelect, onClear }: VenueSele
               of letting "no results" read as an empty directory. */}
           {!googleLoaded && query.length >= 2 && (
             <div className="border-b border-gray-50 bg-amber-50 px-3 py-1.5 text-xs text-amber-700">
-              Map search unavailable right now — you can still pick an existing venue or add one
+              Map search unavailable right now. You can still pick an existing venue or add one
               manually below.
             </div>
           )}
@@ -405,6 +409,7 @@ export function VenueSelector({ value, venueName, onSelect, onClear }: VenueSele
             </button>
           )}
         </div>
+        </OverlayPortal>
       )}
     </div>
   )
