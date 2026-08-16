@@ -79,6 +79,17 @@ export interface DemoEntry {
    * reads the real chapter titles off the script.
    */
   chapterCount: number
+  /**
+   * Three or four concrete moments from the script, the card's selling copy.
+   * Each names a painful detail the demo actually shows. No em-dashes, and no
+   * volatile numbers: figures that the realism pass may change stay out.
+   */
+  bullets: string[]
+  /**
+   * Chapter titles mirrored from the script, for the card's scrubber labels.
+   * The re-drive checkpoint verifies these against the script.
+   */
+  chapterTitles: string[]
   /** A story hands off between surfaces; a chapter stays on one. */
   kind: "story" | "chapter"
   /** How the stage is framed, which is also the thumbnail glyph. */
@@ -105,6 +116,19 @@ export const DEMOS: DemoEntry[] = [
     durationLabel: "1 min 35 sec",
     status: "live",
     chapterCount: 5,
+    bullets: [
+      "A tryout posted, a family registered and paid in the same sitting",
+      "Jersey sizes, tracksuit and shoes collected the moment the offer is accepted",
+      "Three jersey number preferences, no group-chat chasing",
+      "The roster board flips to complete: sizes, waivers, fees, all green",
+    ],
+    chapterTitles: [
+      "Build the team",
+      "Post the tryout",
+      "A family signs up",
+      "The offer, accepted",
+      "The roster fills",
+    ],
     thumbEyebrow: "Story 1",
   },
   {
@@ -120,6 +144,13 @@ export const DEMOS: DemoEntry[] = [
     durationLabel: "1 min 25 sec",
     status: "live",
     chapterCount: 4,
+    bullets: [
+      "One gym change written once, landing on every family phone",
+      "Read receipts: the club sees exactly who has not opened it yet",
+      "A parent's question answered in the open, not in ten DMs",
+      "A poll closes the tournament debate with a count",
+    ],
+    chapterTitles: ["The announcement", "Every phone at once", "The conversation", "The poll"],
     thumbEyebrow: "Story 2",
   },
   {
@@ -135,6 +166,18 @@ export const DEMOS: DemoEntry[] = [
     durationLabel: "2 min 8 sec",
     status: "live",
     chapterCount: 4,
+    bullets: [
+      "Dates, gyms and court-hours planned before a single game exists",
+      "Clubs submit teams straight into the plan, signed and counted",
+      "The whole season generated in one pass, conflicts caught first",
+      "Publish once: every club, team and family calendar updates itself",
+    ],
+    chapterTitles: [
+      "Plan before it exists",
+      "Clubs come in",
+      "Divisions and the generate",
+      "Draft, then publish once",
+    ],
     thumbEyebrow: "Story 3",
   },
   {
@@ -151,6 +194,19 @@ export const DEMOS: DemoEntry[] = [
     status: "live",
     featured: true,
     chapterCount: 5,
+    bullets: [
+      "The full scoring console: makes, misses, rebounds, assists, fouls",
+      "The same clock ticking on the console and the parent's phone",
+      "Every basket flashes on the phone the second it is scored",
+      "The referee signs off, the recap and standings write themselves",
+    ],
+    chapterTitles: [
+      "Tip-off at the table",
+      "Scoring, honestly",
+      "What the family sees",
+      "The buzzer and the sign-off",
+      "The story writes itself",
+    ],
     thumbEyebrow: "Story 4",
   },
   {
@@ -166,6 +222,12 @@ export const DEMOS: DemoEntry[] = [
     durationLabel: "1 min 6 sec",
     status: "live",
     chapterCount: 3,
+    bullets: [
+      "Your club is probably already listed: find it and open it",
+      "A six digit code goes to the contact on file, nobody hijacks a club",
+      "Crest, colour and your own words live the same afternoon",
+    ],
+    chapterTitles: ["Find your club", "Claim it", "Make it yours"],
     thumbEyebrow: "Chapter 5",
   },
   {
@@ -181,6 +243,12 @@ export const DEMOS: DemoEntry[] = [
     durationLabel: "1 min 1 sec",
     status: "live",
     chapterCount: 3,
+    bullets: [
+      "Both kids' weeks on one screen, no binder, no group chat",
+      "Gym address and directions one tap from the game card",
+      "A time change lands calmly: updated card, nothing missed",
+    ],
+    chapterTitles: ["Two kids, one calendar", "RSVP and directions", "Plans change, calmly"],
     thumbEyebrow: "Chapter 6",
   },
   {
@@ -196,6 +264,12 @@ export const DEMOS: DemoEntry[] = [
     durationLabel: "1 min 11 sec",
     status: "live",
     chapterCount: 4,
+    bullets: [
+      "Points, rebounds and assists kept for every game she played",
+      "A real photo replaces the sketched mug in one tap",
+      "Player of the Game, shareable the night it happens",
+    ],
+    chapterTitles: ["Her season, kept", "The photo", "Player of the Game", "Share it"],
     thumbEyebrow: "Chapter 7",
   },
   {
@@ -211,6 +285,16 @@ export const DEMOS: DemoEntry[] = [
     durationLabel: "1 min 18 sec",
     status: "live",
     chapterCount: 3,
+    bullets: [
+      "Who has paid, who is on a plan, who is overdue, one screen",
+      "Payment plans that record themselves, cash included",
+      "The overdue reminder goes out on schedule, no club action",
+    ],
+    chapterTitles: [
+      "Where every dollar stands",
+      "One family, one plan",
+      "The reminder sends itself",
+    ],
     thumbEyebrow: "Chapter 8",
   },
   {
@@ -226,6 +310,16 @@ export const DEMOS: DemoEntry[] = [
     durationLabel: "1 min 22 sec",
     status: "live",
     chapterCount: 3,
+    bullets: [
+      "Standings that recalculate themselves after every final",
+      "A tie broken on screen, with the rule that decided it named",
+      "The bracket builds itself and the public page carries it instantly",
+    ],
+    chapterTitles: [
+      "The table tells the truth",
+      "Who qualifies",
+      "The bracket builds itself",
+    ],
     thumbEyebrow: "Chapter 9",
   },
   {
@@ -240,6 +334,12 @@ export const DEMOS: DemoEntry[] = [
        the one holding the compliance grid, so the card sits on their shelf. */
     primaryAudience: "leagues",
     chapterCount: 3,
+    bullets: [
+      "Send the waiver pack once, the roster is the recipient list",
+      "Rowan's Law concussion code signed on a phone in a minute",
+      "The board goes green team by team, reminders chase the rest",
+    ],
+    chapterTitles: ["Send once", "Sign on the phone", "Green across the board"],
     kind: "chapter",
     stage: "split",
     durationLabel: "1 min 14 sec",

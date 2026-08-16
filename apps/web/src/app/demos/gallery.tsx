@@ -9,31 +9,34 @@ import {
   AUDIENCE_LABELS,
   DEMOS,
   SOLO_GROUPS,
-  openingSentences,
   primaryAudienceOf,
   type DemoAudience,
   type DemoEntry,
 } from "./registry"
 
 /**
- * The demo gallery (owner ruling 2026-08-15: gallery first, then a full screen
- * player).
+ * The demo gallery, text-first (owner ruling 2026-08-16, preview variant D).
  *
- * The persistent rail is gone. A rail cost 320px of every demo forever so that
- * a viewer could switch walkthroughs they were not watching, and it left the
- * cards no room to say anything. This page spends that room instead: a court
- * navy header band with the search and the audience chips in it, then grouped
- * shelves of cards that carry the whole promise, the written description, the
- * duration and the chapter count, so a viewer knows what they are about to
- * watch before they spend two minutes on it.
+ * Thumbnails are gone: at card size a screenshot decorates instead of
+ * informing, so the card spends its room on the pitch. Every card is a pitch
+ * block: tagline, one paragraph, then bullets that name the exact painful
+ * moments the demo shows, because "jersey sizes collected at accept" sells
+ * what a 6px-tall roster table never could.
  *
- * Shelves: the four cross-role stories first, wide, because they are the ones
- * that show two sides of a single moment. Then one shelf per audience, each
- * solo appearing exactly once, on the shelf it is really for.
+ * The video affordance is scrubber language, not a play sign stamped over
+ * content: a segmented chapter track with a play head, real chapter names
+ * under the segments on the wide bands, and the duration at the end. On
+ * hover the first segment fills gold.
  *
- * Every card is a real link to /demos/<slug>. Nothing here is a click handler
- * pretending to be navigation, so tab order is the reading order, the browser
- * back button returns to this grid, and Next restores the scroll position.
+ * Shelves: the four cross-role stories first as full-width bands (paragraph
+ * left, bullets right), then one shelf per audience with its solos 2-up.
+ * Every card is a real link to /demos/<slug>: tab order is reading order,
+ * browser back returns here with scroll restored.
+ *
+ * On phones the card compacts deliberately: bullets and scrubber labels are
+ * held back (the intro screen inside the player carries them) so the page
+ * reads as tagline, promise, track, Watch. The full phone-first pass is its
+ * own design round.
  */
 
 const FILTERS = [
@@ -42,6 +45,13 @@ const FILTERS = [
   { value: "clubs", label: "Clubs" },
   { value: "leagues", label: "Leagues" },
 ]
+
+/** "1 min 35 sec" → "1:35", for the scrubber and eyebrow. */
+function shortDuration(label: string): string {
+  const m = /(\d+)\s*min(?:\s*(\d+)\s*sec)?/.exec(label)
+  if (!m) return label
+  return `${m[1]}:${(m[2] ?? "0").padStart(2, "0")}`
+}
 
 export function DemoGallery() {
   const [audience, setAudience] = useState<DemoAudience | "all">("all")
@@ -55,7 +65,9 @@ export function DemoGallery() {
          actually serves. */
       if (audience !== "all" && !demo.audiences.includes(audience)) return false
       if (!q) return true
-      return `${demo.title} ${demo.promise} ${demo.description}`.toLowerCase().includes(q)
+      return `${demo.title} ${demo.promise} ${demo.description} ${demo.bullets.join(" ")}`
+        .toLowerCase()
+        .includes(q)
     })
   }, [audience, query])
 
@@ -84,7 +96,7 @@ export function DemoGallery() {
           className="pointer-events-none absolute -bottom-32 left-1/3 h-72 w-72 rounded-full bg-play-500/10 blur-3xl"
         />
 
-        <div className="relative z-10 mx-auto w-full max-w-[1440px] px-4 pb-6 pt-5 sm:px-7 sm:pb-8 sm:pt-6">
+        <div className="relative z-10 mx-auto w-full max-w-[1520px] px-4 pb-6 pt-5 sm:px-7 sm:pb-8 sm:pt-6">
           <Link
             href="/"
             className="inline-flex items-center rounded-lg outline-none transition-opacity hover:opacity-80 focus-visible:ring-2 focus-visible:ring-gold-400/70"
@@ -95,13 +107,13 @@ export function DemoGallery() {
 
           <div className="mt-5 flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between lg:gap-10">
             <div className="min-w-0">
-              <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-gold-400">
+              <p className="text-[12px] font-bold uppercase tracking-[0.2em] text-gold-400">
                 See it work
               </p>
               <h1 className="font-display mt-2 text-[32px] font-extrabold leading-[1.05] tracking-tight text-white sm:text-[42px]">
                 Product demos
               </h1>
-              <p className="mt-2.5 max-w-xl text-[15px] leading-relaxed text-white/65">
+              <p className="mt-2.5 max-w-xl text-[16px] leading-relaxed text-white/70">
                 Ten short walkthroughs of the real screens. Nothing to install, nothing
                 to sign up for.
               </p>
@@ -129,7 +141,7 @@ export function DemoGallery() {
       <main className="relative isolate">
         <CourtBackdropLayer variant="navy" intensity="ambient" />
 
-        <div className="relative z-10 mx-auto w-full max-w-[1440px] px-4 py-8 sm:px-7 sm:py-10">
+        <div className="relative z-10 mx-auto w-full max-w-[1520px] px-4 py-8 sm:px-7 sm:py-10">
           {nothing ? (
             <div className="rounded-3xl border border-white/12 bg-white/[0.04] px-6 py-12 text-center">
               <p className="text-[17px] font-bold text-white">Nothing matches that</p>
@@ -148,7 +160,7 @@ export function DemoGallery() {
               </button>
             </div>
           ) : (
-            <div className="space-y-11">
+            <div className="space-y-12">
               {stories.length > 0 && (
                 <section aria-labelledby="shelf-stories">
                   <ShelfHeading
@@ -157,9 +169,9 @@ export function DemoGallery() {
                     blurb="One moment, both ends of it: the workspace on one side, the family phone on the other, running together."
                     count={stories.length}
                   />
-                  <div className="mt-5 grid gap-5 lg:grid-cols-2">
+                  <div className="mt-5 grid gap-5">
                     {stories.map((demo) => (
-                      <DemoCard key={demo.slug} demo={demo} size="large" />
+                      <PitchCard key={demo.slug} demo={demo} wide />
                     ))}
                   </div>
                 </section>
@@ -173,9 +185,9 @@ export function DemoGallery() {
                     blurb={shelf.blurb}
                     count={shelf.demos.length}
                   />
-                  <div className="mt-5 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+                  <div className="mt-5 grid gap-5 lg:grid-cols-2">
                     {shelf.demos.map((demo) => (
-                      <DemoCard key={demo.slug} demo={demo} size="solo" />
+                      <PitchCard key={demo.slug} demo={demo} />
                     ))}
                   </div>
                 </section>
@@ -183,7 +195,7 @@ export function DemoGallery() {
             </div>
           )}
 
-          <p className="mt-12 border-t border-white/10 pt-5 text-[12px] leading-relaxed text-white/35">
+          <p className="mt-12 border-t border-white/10 pt-5 text-[13px] leading-relaxed text-white/40">
             Every demo runs on a sample club and league. Real accounts, rosters and
             payments are never shown, and nothing here needs a sign in.
           </p>
@@ -207,14 +219,14 @@ function ShelfHeading({
   return (
     <div className="flex flex-col gap-1.5 border-l-[3px] border-gold-400 pl-4">
       <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-        <h2 id={id} className="font-display text-[22px] font-extrabold tracking-tight text-white sm:text-[26px]">
+        <h2 id={id} className="font-display text-[24px] font-extrabold tracking-tight text-white sm:text-[28px]">
           {title}
         </h2>
-        <span className="text-[11px] font-bold uppercase tracking-[0.16em] text-white/40">
+        <span className="text-[12px] font-bold uppercase tracking-[0.16em] text-white/40">
           {count} {count === 1 ? "demo" : "demos"}
         </span>
       </div>
-      <p className="max-w-2xl text-[13.5px] leading-relaxed text-white/55">{blurb}</p>
+      <p className="max-w-2xl text-[14.5px] leading-relaxed text-white/55">{blurb}</p>
     </div>
   )
 }
@@ -251,217 +263,159 @@ function SearchField({
   )
 }
 
+/** Audience pill tones: parents indigo, clubs orange, leagues green. */
+const PILL_TONE: Record<DemoAudience, string> = {
+  parents: "bg-play-500/15 text-play-300 ring-play-400/30",
+  clubs: "bg-hoop-500/15 text-hoop-300 ring-hoop-400/30",
+  leagues: "bg-court-500/15 text-court-300 ring-court-400/30",
+}
+
+function AudiencePills({ demo }: { demo: DemoEntry }) {
+  return (
+    <span className="flex flex-wrap gap-1.5">
+      {demo.audiences.map((a) => (
+        <span
+          key={a}
+          className={cn(
+            "rounded-full px-2.5 py-1 text-[13px] font-bold uppercase tracking-[0.08em] ring-1",
+            PILL_TONE[a]
+          )}
+        >
+          {AUDIENCE_LABELS[a]}
+        </span>
+      ))}
+    </span>
+  )
+}
+
 /**
- * One card. The whole thing is the link, so a keyboard lands on it once and
- * Enter plays it, and the amber Play affordance is decoration that follows the
- * same hover and focus state rather than a second tab stop.
+ * The video affordance: a chapter scrubber. A segmented track with a play
+ * head reads as video chrome without covering anything, and the real chapter
+ * names under the wide bands preview the demo's arc. On hover the first
+ * segment fills gold: the card telling you it will play.
  */
-function DemoCard({ demo, size }: { demo: DemoEntry; size: "large" | "solo" }) {
-  const large = size === "large"
+function ChapterTrack({ demo, labels }: { demo: DemoEntry; labels: boolean }) {
+  return (
+    <div className="mt-6">
+      <div className="flex items-center gap-3">
+        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-white/10 ring-1 ring-white/20">
+          <svg viewBox="0 0 24 24" fill="currentColor" className="ml-0.5 h-3 w-3 text-gold-400" aria-hidden="true">
+            <path d="M8 5v14l11-7z" />
+          </svg>
+        </span>
+        <div className="flex h-1.5 flex-1 gap-1.5">
+          {demo.chapterTitles.map((t, i) => (
+            <span key={t} className="h-full flex-1 overflow-hidden rounded-full bg-white/15">
+              {i === 0 && (
+                <span className="block h-full w-0 rounded-full bg-gold-400 transition-all duration-500 group-hover:w-full motion-reduce:transition-none" />
+              )}
+            </span>
+          ))}
+        </div>
+        <span className="shrink-0 text-[14px] font-bold tabular-nums text-white/60">
+          {shortDuration(demo.durationLabel)}
+        </span>
+      </div>
+      {labels ? (
+        <div className="mt-2 hidden gap-1.5 pl-10 pr-12 lg:flex">
+          {demo.chapterTitles.map((t) => (
+            <span key={t} className="flex-1 truncate text-[13px] font-medium text-white/50">
+              {t}
+            </span>
+          ))}
+        </div>
+      ) : (
+        <p className="mt-2 pl-10 text-[13px] font-medium text-white/50">
+          {demo.chapterCount} chapters, jump to any of them
+        </p>
+      )}
+    </div>
+  )
+}
+
+/**
+ * One pitch block. The whole card is the link, so a keyboard lands on it once
+ * and Enter plays it; the gold Watch button is decoration riding the same
+ * hover and focus state, never a second tab stop.
+ */
+function PitchCard({ demo, wide = false }: { demo: DemoEntry; wide?: boolean }) {
   const live = demo.status === "live"
-  const isStory = demo.kind === "story"
-  const blurb = openingSentences(demo.description, large ? 420 : 300)
 
   return (
     <Link
       href={`/demos/${demo.slug}`}
       className={cn(
-        "group relative isolate flex flex-col overflow-hidden rounded-3xl border border-white/12 bg-white/[0.05]",
+        "group relative isolate block overflow-hidden rounded-2xl bg-[#13223f] p-6 ring-1 ring-white/10",
         "shadow-[0_30px_80px_-50px_rgba(0,0,0,0.95)] outline-none transition-all duration-200",
-        "hover:-translate-y-0.5 hover:border-white/25 hover:bg-white/[0.08]",
+        "hover:-translate-y-0.5 hover:ring-gold-400/50 hover:shadow-[0_12px_40px_rgba(0,0,0,0.45)]",
         "focus-visible:ring-2 focus-visible:ring-gold-400/70",
-        "motion-reduce:transform-none motion-reduce:transition-none"
+        "motion-reduce:transform-none motion-reduce:transition-none",
+        "sm:p-8"
       )}
     >
-      <DemoThumb demo={demo} large={large} />
-
-      <div className={cn("flex min-h-0 flex-1 flex-col", large ? "px-6 py-5" : "px-5 py-5")}>
-        <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1.5">
-          <span
-            className={cn(
-              "inline-flex items-center gap-1.5 text-[10.5px] font-bold uppercase tracking-[0.14em]",
-              isStory ? "text-gold-400" : "text-white/50"
-            )}
-          >
-            <span
-              aria-hidden="true"
-              className={cn(
-                "h-1.5 w-1.5 rounded-full",
-                isStory ? "bg-gold-400" : "border border-white/50"
-              )}
-            />
-            {isStory ? "Story" : "Chapter"}
-          </span>
-          <span aria-hidden="true" className="h-2.5 w-px bg-white/15" />
-          <span className="text-[11px] font-semibold tabular-nums text-white/50">
-            {demo.durationLabel}
-          </span>
-          <span aria-hidden="true" className="h-2.5 w-px bg-white/15" />
-          <span className="text-[11px] font-semibold tabular-nums text-white/50">
-            {demo.chapterCount} chapters
-          </span>
-        </div>
-
-        <h3
-          className={cn(
-            "font-display mt-2.5 font-extrabold leading-[1.12] tracking-tight text-white",
-            large ? "text-[24px] sm:text-[27px]" : "text-[19px]"
-          )}
-        >
-          {demo.title}
-        </h3>
-
-        <p
-          className={cn(
-            "mt-2 font-semibold leading-relaxed text-white/80",
-            large ? "text-[15px]" : "text-[13.5px]"
-          )}
-        >
-          {demo.promise}
-        </p>
-
-        <p
-          className={cn(
-            "mt-2.5 leading-relaxed text-white/55",
-            large ? "text-[13.5px]" : "text-[12.5px]"
-          )}
-        >
-          {blurb}
-        </p>
-
-        <div className="mt-auto flex flex-wrap items-center gap-2 pt-5">
-          <div className="flex flex-wrap items-center gap-1.5">
-            {demo.audiences.map((a) => (
-              <span
-                key={a}
-                className="rounded-full border border-white/15 bg-white/[0.06] px-2.5 py-0.5 text-[11px] font-semibold text-white/70"
-              >
-                {AUDIENCE_LABELS[a]}
-              </span>
-            ))}
-          </div>
-
-          <span
-            className={cn(
-              "ml-auto inline-flex items-center gap-2 rounded-full py-1 pl-1 pr-3 text-[12.5px] font-bold transition-colors duration-200",
-              live
-                ? "text-white/70 group-hover:bg-gold-400/12 group-hover:text-gold-400"
-                : "text-white/40"
-            )}
-          >
-            <span
-              aria-hidden="true"
-              className={cn(
-                "flex h-7 w-7 items-center justify-center rounded-full transition-colors duration-200",
-                live
-                  ? "bg-white/10 text-white group-hover:bg-gold-400 group-hover:text-[#0b1628]"
-                  : "bg-white/[0.06] text-white/40"
-              )}
-            >
-              {live ? (
-                <svg viewBox="0 0 24 24" className="h-3 w-3 fill-current">
-                  <path d="M8 5v14l11-7z" />
-                </svg>
-              ) : (
-                <svg
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2.4"
-                  className="h-3 w-3"
-                >
-                  <circle cx="12" cy="12" r="9" />
-                  <path d="M12 7.5V12l3 2" />
-                </svg>
-              )}
-            </span>
-            {live ? "Play" : "Being filmed"}
-          </span>
-        </div>
-      </div>
-    </Link>
-  )
-}
-
-/**
- * Thumbnail slot. Until there are real captures, the card shows the SHAPE of
- * the demo on a court band: a browser window, a phone, or both side by side,
- * which is exactly what the stage will look like when it plays.
- *
- * The mock frames carry the REAL aspect ratios of the stage (1120x660 and
- * 320x668) and are sized off the band's height, so a wide story card and a
- * narrow solo card show the same proportions rather than the same pixels.
- */
-function DemoThumb({ demo, large }: { demo: DemoEntry; large: boolean }) {
-  const showDesktop = demo.stage !== "phone"
-  const showPhone = demo.stage !== "desktop"
-  const both = showDesktop && showPhone
-
-  return (
-    <div
-      className={cn(
-        "relative isolate shrink-0 overflow-hidden bg-[#0b1628]",
-        large ? "aspect-[21/9]" : "aspect-[16/10]"
-      )}
-    >
-      <CourtBackdropLayer variant="navy" intensity="band" />
-
-      <span className="absolute left-4 top-3 z-10 text-[10px] font-bold uppercase tracking-[0.16em] text-gold-400">
-        {demo.thumbEyebrow}
-      </span>
-      {demo.status !== "live" && (
-        <span className="absolute right-4 top-3 z-10 rounded-full bg-white/12 px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.12em] text-white/80 ring-1 ring-inset ring-white/20">
-          Soon
-        </span>
-      )}
-
-      {/* inset-0 on purpose: the frames are sized as a share of the band, and a
-          percentage height needs a parent with a definite one. */}
-      <div className="absolute inset-0 z-10 flex items-end justify-center gap-2 px-5 pt-9 sm:gap-3">
-        {showDesktop && (
-          <div
-            className={cn(
-              "aspect-[1120/660] w-auto rounded-t-lg bg-white/[0.92] shadow-[0_-10px_30px_-14px_rgba(0,0,0,0.85)] ring-1 ring-white/30",
-              both ? "h-[70%]" : "h-[80%]"
-            )}
-          >
-            <div className="flex h-[11%] items-center gap-1 rounded-t-lg bg-[#eef1f5] px-2">
-              <span className="h-1 w-1 rounded-full bg-[#f87171]" />
-              <span className="h-1 w-1 rounded-full bg-[#fbbf24]" />
-              <span className="h-1 w-1 rounded-full bg-[#34d399]" />
-            </div>
-            <div className="space-y-1.5 px-3 py-2.5">
-              <div className="h-2 w-1/2 rounded-full bg-[#0b1628]/25" />
-              <div className="h-1.5 w-3/4 rounded-full bg-[#0b1628]/10" />
-              <div className="h-1.5 w-2/3 rounded-full bg-[#0b1628]/10" />
-              <div className="h-1.5 w-1/2 rounded-full bg-[#0b1628]/10" />
-            </div>
-          </div>
-        )}
-        {showPhone && (
-          <div
-            className={cn(
-              "aspect-[320/668] w-auto rounded-t-[12px] bg-[#0b0b0f] p-[4px] shadow-[0_-10px_30px_-14px_rgba(0,0,0,0.85)]",
-              both ? "h-[86%]" : "h-[94%]"
-            )}
-          >
-            <div className="h-full w-full rounded-t-[9px] bg-white/[0.92] px-2 py-1.5">
-              <div className="mx-auto h-1 w-1/2 rounded-full bg-[#0b1628]/40" />
-              <div className="mt-2.5 space-y-1.5">
-                <div className="h-1.5 w-full rounded-full bg-[#0b1628]/15" />
-                <div className="h-1.5 w-3/4 rounded-full bg-[#0b1628]/15" />
-                <div className="h-1.5 w-5/6 rounded-full bg-[#0b1628]/10" />
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Amber wash on hover: the card is about to play something. */}
+      {/* Quiet house motif so the block is never a plain slab. */}
       <span
         aria-hidden="true"
-        className="pointer-events-none absolute inset-0 z-20 bg-gold-400/0 transition-colors duration-200 group-hover:bg-gold-400/[0.07]"
+        className="pointer-events-none absolute -right-16 -top-24 h-64 w-64 rounded-full border-[10px] border-white/[0.04]"
       />
-    </div>
+
+      <div className={wide ? "lg:grid lg:grid-cols-[1.05fr_1fr] lg:gap-12" : ""}>
+        <div>
+          <p className="text-[14px] font-bold uppercase tracking-[0.18em] text-gold-400">
+            {demo.thumbEyebrow} · {shortDuration(demo.durationLabel)}
+            {!live && <span className="ml-2 text-white/45">coming soon</span>}
+          </p>
+          <h3
+            className={cn(
+              "font-display mt-2 font-extrabold leading-[1.08] text-white",
+              wide ? "text-[30px] sm:text-[36px]" : "text-[27px] sm:text-[32px]"
+            )}
+          >
+            {demo.title}
+          </h3>
+          <p className="mt-3 max-w-[58ch] text-[17px] leading-relaxed text-white/85 sm:text-[18.5px]">
+            {demo.promise}
+          </p>
+        </div>
+        {/* On phones the bullets wait inside the player's intro; the card
+            stays a glance: tagline, promise, track, Watch. */}
+        <ul className={cn("hidden md:block", wide ? "mt-5 space-y-3 lg:mt-1.5" : "mt-4 space-y-3")}>
+          {demo.bullets.map((b) => (
+            <li key={b} className="flex items-start gap-3 text-[17px] leading-snug text-white/85">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="3"
+                aria-hidden="true"
+                className="mt-0.5 h-[18px] w-[18px] shrink-0 text-gold-400"
+              >
+                <path d="M5 13l4 4L19 7" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+              {b}
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      <ChapterTrack demo={demo} labels={wide} />
+
+      <div className="mt-5 flex flex-wrap items-center justify-between gap-3">
+        <AudiencePills demo={demo} />
+        <span
+          className={cn(
+            "inline-flex items-center gap-2 rounded-xl px-5 py-3 text-[17px] font-bold transition-colors duration-200",
+            live
+              ? "bg-gold-400 text-[#0b1628] group-hover:bg-gold-500"
+              : "bg-white/10 text-white/50"
+          )}
+        >
+          <svg viewBox="0 0 24 24" fill="currentColor" className="h-[18px] w-[18px]" aria-hidden="true">
+            <path d="M8 5v14l11-7z" />
+          </svg>
+          {live ? "Watch the demo" : "Being filmed"}
+        </span>
+      </div>
+    </Link>
   )
 }
