@@ -488,6 +488,14 @@ export function DemoPlayer({
         <div className="border-ink-200 mt-3 flex flex-wrap items-center gap-3 rounded-2xl border bg-white px-4 py-3">
           <p className="text-ink-700 text-[15px] font-semibold">That is the whole story.</p>
           <div className="ml-auto flex flex-wrap items-center gap-2">
+            {/* The soft ask (owner 2026-08-17): demos stay open, and the person
+                who just watched one gets one calm invitation, never a gate. */}
+            <Link
+              href="/#notify"
+              className={cn(TRANSPORT, "bg-gold-500 text-ink-950 hover:bg-gold-400")}
+            >
+              Get notified at launch
+            </Link>
             <button
               type="button"
               onClick={restart}

@@ -223,6 +223,7 @@ function Hero() {
         </p>
 
         <form
+          id="notify"
           className="mt-10 w-full max-w-xl"
           onSubmit={(e) => {
             e.preventDefault()

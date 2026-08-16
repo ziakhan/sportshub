@@ -66,6 +66,14 @@ export default function DemoPlayerPage({ params }: { params: { slug: string } })
             </div>
           </div>
 
+          {/* The soft ask (owner 2026-08-17): one quiet button, no gate. */}
+          <Link
+            href="/#notify"
+            className="shrink-0 rounded-lg bg-gold-500 px-3 py-1.5 text-[13px] font-bold text-ink-950 outline-none transition-colors hover:bg-gold-400 focus-visible:ring-2 focus-visible:ring-white/70"
+          >
+            Get notified
+          </Link>
+
           <Link
             href="/"
             className="hidden shrink-0 items-center rounded-lg px-1 outline-none transition-opacity hover:opacity-80 focus-visible:ring-2 focus-visible:ring-gold-400/70 sm:inline-flex"
