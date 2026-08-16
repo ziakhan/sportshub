@@ -222,11 +222,11 @@ export const DEMOS: DemoEntry[] = [
     promise:
       "A real league game kept on the scorer's phone, live on a father's phone the whole way, through the referee's signature and the paper scoresheet.",
     description:
-      "Two phones, side by side, and one game running through both. The left one is the scorer's table: the game-day checklist, the roll call at the door, the two starting fives, the action pad with makes, misses, rebounds, assists and fouls, and the substitutions drawer. The right one belongs to a father who is not in the building. Every tap at the table lands on his screen while you watch: the score flashes green, a foul flashes red, a substitution flashes amber, the play-by-play line writes itself with the assist named, and one clock ticks on both phones at once. It includes the part nobody demos, a wrong entry fixed with UNDO and the phone walking the number back, then runs through the buzzer, the referee's signature at the table, the official scoresheet as a printable PDF, and the recap, the player of the game and the division table landing on his phone minutes later.",
+      "Two phones, side by side, and one game running through both. The left one is the scorer's table: the game-day checklist, the roll call at the door, the two starting fives, the action pad with makes, misses, rebounds, assists and fouls, and the substitutions drawer. The right one belongs to a father who is not in the building. Every tap at the table lands on his screen while you watch: the score flashes green, a foul flashes red, a substitution flashes amber, the play-by-play line writes itself with the assist named, and one clock ticks on both phones at once. It includes a wrong entry fixed with UNDO and the phone walking the number back, then runs through the buzzer, the referee's signature at the table, the official scoresheet as a printable PDF, and the recap, the player of the game and the division table landing on his phone minutes later.",
     audiences: ["leagues", "clubs", "parents"],
     kind: "story",
     stage: "split",
-    durationLabel: "2 min 57 sec",
+    durationLabel: "2 min 50 sec",
     status: "live",
     featured: true,
     chapterCount: 5,

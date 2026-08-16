@@ -431,3 +431,29 @@ teams on equal wins, and this table does not run those tiebreakers.
 | Chapter jumps | 5 chapters, each lands on its first beat exactly (the audit walks every chip) |
 | Runtime at 1x | **2 min 56 sec** (target 2:45 to 3:20) |
 | Screenshots | `scratchpad/overnight/game-day/`: roll call, mid-game sync flash, sign-off, recap |
+
+---
+
+## Sweep, 2026-08-16
+
+No confession beat existed in this cut, and no screen was short: every one of the 51 beats was
+re-shot at 1440 and the two handsets are full on all of them. The sweep was a copy pass and one
+stale label.
+
+**Copy, 17 captions and balloons.** Gone: "No laptop, no cable, no software", "A sheet that only
+counts the shots that went in is not a scoresheet", "He never has to read a word to know what
+happened", "And now the thing that happens at every scorer's table in the country", "No app, no
+account, no login", "his father watches it happen from his desk", "his father did not miss any of
+it", "on the drive home", "Nobody has to remember who had the good night". Two triple-negative
+constructions went with them, along with the invented detail that the father is at work at his desk
+(the demo knows he is not in the building; it does not know where he is).
+
+Where a balloon only restated the screen it now carries something the screen does not: why minutes
+are only counted when somebody runs the clock, why attempts have to be recorded for a shooting line
+to exist, and what a PIN proves that a drawn signature does not.
+
+**One stale label.** The end card's eyebrow read "Story 4 of 10"; the directory holds thirteen
+demos. It reads "A game-day story" now, so the count cannot go stale again.
+
+Gate re-run: readability audit **0 violations**, minimum stage scale **1.000**, 51 beats / 56
+scenes, one headless drive with a clean console. Runtime **2 min 50 sec**.

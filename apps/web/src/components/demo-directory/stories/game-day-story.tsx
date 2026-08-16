@@ -697,17 +697,16 @@ export const gameDayStory: DemoScript = {
       caption:
         "The scorer's table is a phone on a folding table, and it opens the game with two questions.",
       emphasize: "clock-yes",
-      callout:
-        "Whoever is keeping score opens the game on their own phone. No laptop, no cable, no software.",
+      callout: "Whoever is keeping score opens the game on their own phone.",
       set: { screen: "checklist" },
     }),
     paced({
       id: "clock-choice",
       chapter: "tipoff",
-      caption: "Somebody is running the clock tonight, so the minutes on this sheet will be real.",
+      caption: "The table says whether it is running the clock.",
       cursor: "clock-yes",
       press: true,
-      callout: "An unoperated clock counts minutes wrongly, so the table says up front whether it has one.",
+      callout: "Minutes played are only counted when somebody is starting and stopping it.",
       set: { clockChoice: true },
     }),
     /* PRESS, THEN RESULT (2026-08-16). State is applied at the TOP of a beat, so
@@ -727,8 +726,7 @@ export const gameDayStory: DemoScript = {
       chapter: "tipoff",
       caption: "Roll call happens at the door, on the same phone.",
       emphasize: "roll-call",
-      callout:
-        "Everyone starts present. The table taps whoever did not make it, at the door, in about ten seconds.",
+      callout: "Everyone starts present, so the table only taps whoever did not make it.",
       set: { screen: "attendance" },
     }),
     paced({
@@ -753,8 +751,7 @@ export const gameDayStory: DemoScript = {
       chapter: "tipoff",
       caption: "Five and five, confirmed before anybody touches the ball.",
       emphasize: "start-away-37",
-      callout:
-        "The starting five is what makes minutes and who was on the floor mean something in the box score later.",
+      callout: "The starting five is what lets the box score say who was on the floor.",
       set: { screen: "lineup" },
     }),
     paced({
@@ -772,8 +769,7 @@ export const gameDayStory: DemoScript = {
       caption: `${PARENT} is not in the building. He opens the game from a link.`,
       stage: "split",
       emphasize: "live-state",
-      callout:
-        "Darius's father is at work. Same game, same clock, in his hand, with nothing to install.",
+      callout: "The same game and the same clock, with nothing to install.",
       toast: "Q1 under way",
       set: { phone: "game", screen: "console", evts: AT.tip, clockBase: 600, running: true },
     }),
@@ -791,7 +787,7 @@ export const gameDayStory: DemoScript = {
       caption: "Two for Darius Reyes, and the number that moved is the number that flashes.",
       cursor: "floor-away-37",
       press: true,
-      callout: "Two taps at the table, and it is on his father's screen before the ball is back in play.",
+      callout: "Two taps at the table, and it is on the other phone before the ball is back in play.",
       set: { evts: AT.dariusTwo, act: "" },
     }),
     paced({
@@ -817,7 +813,7 @@ export const gameDayStory: DemoScript = {
       caption: "The attempt goes on the sheet as a miss.",
       cursor: "floor-away-37",
       press: true,
-      callout: "A sheet that only counts the shots that went in is not a scoresheet.",
+      callout: "Attempts are what make a shooting percentage possible later.",
       set: { evts: AT.miss, act: "" },
     }),
     paced({
@@ -850,7 +846,7 @@ export const gameDayStory: DemoScript = {
       caption: "Fouls are counted at both ends, and the phone turns that one red.",
       cursor: "floor-home-32",
       press: true,
-      callout: "Green means points, red means a foul. He never has to read a word to know what happened.",
+      callout: "Green is points and red is a foul, so the colour says it before the words do.",
       set: { evts: AT.foul, act: "" },
     }),
     paced({
@@ -911,7 +907,7 @@ export const gameDayStory: DemoScript = {
     paced({
       id: "arm-three",
       chapter: "scoring",
-      caption: "And now the thing that happens at every scorer's table in the country.",
+      caption: "Then a wrong entry.",
       cursor: "act-3",
       press: true,
       set: { act: "+3" },
@@ -982,7 +978,7 @@ export const gameDayStory: DemoScript = {
     paced({
       id: "no-account",
       chapter: "family",
-      caption: "No app, no account, no login. Somebody sent him a link.",
+      caption: "He was sent a link. There is no app and no account behind it.",
       hold: 3000,
     }),
 
@@ -990,7 +986,7 @@ export const gameDayStory: DemoScript = {
     paced({
       id: "last-minute",
       chapter: "buzzer",
-      caption: "Under a minute, and the table is still the only place these numbers come from.",
+      caption: "Under a minute, and every number still comes from the table.",
       cursor: "phone-tab-game",
       press: true,
       set: { phone: "game", clockBase: 41, running: true },
@@ -1022,7 +1018,7 @@ export const gameDayStory: DemoScript = {
     paced({
       id: "seal",
       chapter: "buzzer",
-      caption: "Darius seals it, and his father watches it happen from his desk.",
+      caption: "Darius seals it, and it lands on the other phone as it happens.",
       cursor: "floor-away-37",
       press: true,
       set: { evts: AT.seal, act: "" },
@@ -1051,7 +1047,7 @@ export const gameDayStory: DemoScript = {
       chapter: "buzzer",
       caption: "Player of the game comes off the sheet, with the top scorer already suggested.",
       emphasize: "approval-sign",
-      callout: "Nobody has to remember who had the good night. The sheet already knows.",
+      callout: "The top scorer is suggested from the sheet, and the table can pick anybody.",
       set: { screen: "review" },
     }),
     paced({
@@ -1069,7 +1065,7 @@ export const gameDayStory: DemoScript = {
       caption: "A PIN is the other way, checked against the referee's own account.",
       cursor: "approval-pin",
       press: true,
-      callout: "That one is the strong approval: it proves which referee signed, not just that somebody did.",
+      callout: "A PIN proves which referee signed, where a drawn signature proves only that one was drawn.",
       set: { mode: "pin" },
     }),
     paced({
@@ -1113,7 +1109,7 @@ export const gameDayStory: DemoScript = {
       chapter: "story",
       caption: "Player of the game lands with it.",
       emphasize: "potg",
-      callout: "Twenty two points, four rebounds, one assist, and his father did not miss any of it.",
+      callout: "Twenty two points, four rebounds and one assist, straight off the sheet.",
       set: { potgCard: true },
     }),
     paced({
@@ -1121,7 +1117,7 @@ export const gameDayStory: DemoScript = {
       chapter: "story",
       caption: "And the division moves, because a signed result is a result the league can count.",
       emphasize: "standings",
-      callout: "Toronto Lords go from sixth to fourth on the drive home. Nobody typed a score anywhere.",
+      callout: "Toronto Lords move from sixth to fourth, computed from completed games.",
       set: { standings: true },
     }),
     paced({
@@ -1306,7 +1302,7 @@ export const gameDayStory: DemoScript = {
         </div>
         {endCard && (
           <MockEndCard
-            eyebrow="Story 4 of 10"
+            eyebrow="A game-day story"
             title="Both phones"
             line="One game, kept on a phone at the table, arriving live on the phone of everybody who could not be there."
             next="Next: everyone in the loop"
