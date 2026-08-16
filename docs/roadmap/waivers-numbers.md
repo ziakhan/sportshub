@@ -411,3 +411,34 @@ deviation is listed.
 | `tsc --noEmit` (apps/web) | clean |
 | Em-dash sweep | clean across the story, the registry entry and this page |
 | Screenshots | `scratchpad/overnight/waivers/` : phone signing, board going green, reminder cadence |
+
+---
+
+## Sweep, 2026-08-16
+
+**FULL SCREENS.** The compliance board drew **three** team rows under a "3 of 22" chip with about
+290px of empty panel under them, while the beat said the board counts the whole season. All
+**twenty two** approved teams are on it now, as a two column grid, each with the signed count read
+out of the database on 2026-08-16 (27 signatures across 220 rostered players: Toronto Lords Grade 9
+7/10, Burlington Force Grade 9 7/10, Toronto Lords Grade 10 Girls 6/10, Burlington Force Grade 10
+Girls 7/10, and eighteen teams on 0/10). Opening a roster narrows the board to a three row window
+around that team, because the expansion names all ten of its players; the chip says "3 of 22" only
+then. "Only missing" now really filters the grid.
+
+**The cron confession is out.** The reminder card's footer read: "The cron only looks at seasons
+starting inside the next seven days, so this season, which tipped off in April, is past both of its
+windows. The rule is the product; the dates are the calendar." Deleted, along with the context strip
+that called the card "What the cron does next" (no such screen exists) and the "lists built by hand"
+row's clipboard joke. The card still states the rule, the two windows and the ledger row that
+guarantees the once; the season-date caveat lives in this file.
+
+**Copy, 17 captions and balloons.** Gone: "not an attachment somebody emails", "where the league
+actually stands today", "named, not counted", "word for word", "The document is the document",
+"Nothing else is asked for", "so the product asks rather than assuming", "Not a tick box agreeing to
+nothing in particular", "The league did not type this in", "no spreadsheet anywhere near it", "the
+list a coach would otherwise build by hand", "made for free", "never blasts the same inbox twice",
+"And nobody chases anybody". The registry description lost "the badge that costs leagues a season if
+they miss it", "turns the camera around" and "the part nobody demos".
+
+Gate re-run: readability audit **0 violations**, minimum stage scale **1.000**, 29 beats / 32
+scenes, one headless drive with a clean console. Runtime **2 min 02 sec**.

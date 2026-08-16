@@ -141,15 +141,43 @@ I confirm that I have reviewed the Ontario Concussion Awareness Resource for my 
 1. I will help create a culture where concussions are taken seriously. Fair play and respect for all participants come first.`
 
 /**
- * Three consecutive rows of the board, in the order the endpoint returns them
- * (`waiver-status/route.ts` orders submissions by `createdAt` asc): positions
- * 16, 17 and 18 of 22. The middle one is the team that changes.
+ * ALL TWENTY TWO approved teams, in the order the endpoint returns them
+ * (`waiver-status/route.ts` orders submissions by `createdAt` asc), each with
+ * its REAL signed count read out of the database on 2026-08-16: 27 signatures
+ * across 220 rostered players, and the four teams carrying all of them.
+ *
+ * The 2026-08-16 cut drew THREE of these rows under a "3 of 22" chip, with
+ * about 290px of empty panel under them, while the beat said the board counts
+ * the whole season. A compliance board that claims 22 teams draws 22 teams, so
+ * it is a two column grid now. Opening a team narrows it back to one column
+ * around that team, because the expansion names all ten of its players.
  */
 const BOARD_TEAMS: { team: string; signed: number; id?: string }[] = [
+  { team: "Toronto Lords Grade 9", signed: 7 },
+  { team: "Burlington Force Grade 9", signed: 7 },
+  { team: "North Toronto Huskies Grade 9", signed: 0 },
+  { team: "Mississauga Monarchs Grade 9", signed: 0 },
+  { team: "Oakville Panthers Grade 9", signed: 0 },
+  { team: "West United Prep Grade 9", signed: 0 },
+  { team: "CKATT Basketball Grade 9", signed: 0 },
+  { team: "Kings Court Basketball Grade 9", signed: 0 },
+  { team: "Toronto Lords Grade 10", signed: 0 },
+  { team: "Burlington Force Grade 10", signed: 0 },
+  { team: "North Toronto Huskies Grade 10", signed: 0 },
+  { team: "Mississauga Monarchs Grade 10", signed: 0 },
+  { team: "Oakville Panthers Grade 10", signed: 0 },
+  { team: "West United Prep Grade 10", signed: 0 },
+  { team: "CKATT Basketball Grade 10", signed: 0 },
   { team: "Kings Court Basketball Grade 10", signed: 0 },
   { team: PLAYER_TEAM, signed: 6, id: "team-lords" },
   { team: "Burlington Force Grade 10 Girls", signed: 7 },
+  { team: "North Toronto Huskies Grade 10 Girls", signed: 0 },
+  { team: "Mississauga Monarchs Grade 10 Girls", signed: 0 },
+  { team: "Oakville Panthers Grade 10 Girls", signed: 0 },
+  { team: "West United Prep Grade 10 Girls", signed: 0 },
 ]
+/** The window the board narrows to while a team is open. */
+const OPEN_WINDOW = 3
 
 /**
  * The whole Toronto Lords Grade 10 Girls roster, in the order the endpoint
@@ -217,12 +245,12 @@ const CADENCE = [
   {
     n: "Once each",
     label: "A row in the ledger is the lock",
-    note: "WaiverReminder is unique on player, waiver, season and window, so a missed cron day or a late start date never mails anybody twice.",
+    note: "The reminder row is unique on player, waiver, season and window, so a missed day or a late start date never mails anybody twice.",
   },
   {
     n: "0",
     label: "lists built by hand",
-    note: "Nobody exports a spreadsheet, nobody stands at the door with a clipboard, and the reminder stops the moment the signature lands.",
+    note: "The window picks the season, and the season's own rosters pick the guardians. The reminders stop the moment the signature lands.",
   },
 ]
 
@@ -261,10 +289,9 @@ export const waiversStory: DemoScript = {
     paced({
       id: "library",
       chapter: "doc",
-      caption: "A league's waiver is a document the league owns, not an attachment somebody emails.",
+      caption: "The league's waiver is a document the league owns.",
       emphasize: "doc-row",
-      callout:
-        "One document, one text, one version. Everybody in this league signs exactly this.",
+      callout: "One stored text and one version, so everybody signs the same words.",
     }),
     paced({
       id: "renews",
@@ -289,7 +316,7 @@ export const waiversStory: DemoScript = {
       context: CTX_BOARD,
       set: { screen: "board" },
       emphasize: "totals",
-      callout: `Twenty two approved teams, ${CELLS} rostered players, and this is where the league actually stands today.`,
+      callout: `Twenty two approved teams and ${CELLS} rostered players, counted from the rosters.`,
     }),
     paced({
       id: "no-picker",
@@ -305,21 +332,21 @@ export const waiversStory: DemoScript = {
       cursor: "team-lords",
       press: true,
       set: { expanded: true },
-      callout: "Six of ten on this team, and the four who have not signed are named, not counted.",
+      callout: "The four who have not signed are named on the row, with their guardian.",
     }),
     paced({
       id: "pending",
       chapter: "doc",
       caption: "One of them has a guardian who has already signed for his other child.",
       emphasize: "row-danielle",
-      callout: "Jordan Reyes signed for his son in July. Her link is unopened in the same inbox.",
+      callout: "Jordan Reyes signed for his son in July. Her link is still unopened.",
     }),
 
     /* ── 2. A minute on a phone ───────────────────────────────────────── */
     paced({
       id: "email",
       chapter: "sign",
-      caption: "This is what the league sent him, word for word.",
+      caption: "This is the email the league sent him.",
       stage: "split",
       set: { phone: "email" },
       emphasize: "mail-card",
@@ -335,19 +362,18 @@ export const waiversStory: DemoScript = {
          this beat; the page it opens is the next one. */
       cursor: "mail-cta",
       press: true,
-      callout: "No app to install and no account to make. The link in the email is the key.",
+      callout: "The link is the key. There is no account to make first.",
     }),
     paced({
       id: "read",
       chapter: "sign",
-      caption: "The document is the document.",
+      caption: "The link opens the stored document.",
       emphasize: "doc-body",
       set: { phone: "doc" },
       /* The renewal is carried on this beat rather than its own: the header
          line "For Danielle Reyes · renews yearly" sits directly above the ring,
          so the viewer reads both without buying a second beat for it. */
-      callout:
-        "The whole stored text, on her phone, for Danielle Reyes by name, and renewing next year.",
+      callout: "For Danielle Reyes by name, and it renews next year.",
     }),
     paced({
       id: "form",
@@ -355,7 +381,7 @@ export const waiversStory: DemoScript = {
       caption: "Under the document, three things and a button.",
       set: { phone: "form" },
       emphasize: "form-top",
-      callout: "His name, who he is to the player, and a signature. Nothing else is asked for.",
+      callout: "His name, who he is to the player, and a signature.",
     }),
     paced({
       id: "name",
@@ -372,8 +398,7 @@ export const waiversStory: DemoScript = {
       cursor: "rel-parent",
       press: true,
       set: { relation: "parent" },
-      callout:
-        "A player over eighteen signs for themselves. A fifteen year old cannot, so the product asks rather than assuming.",
+      callout: "A player over eighteen signs for themselves, so the form asks who is signing.",
     }),
     paced({
       id: "pad",
@@ -391,8 +416,7 @@ export const waiversStory: DemoScript = {
       cursor: "ack-check",
       press: true,
       set: { acked: true },
-      callout:
-        "Not a tick box agreeing to nothing in particular. It names the child and it names the authority to sign for her.",
+      callout: "It names the child, and it names the authority to sign for her.",
     }),
     paced({
       id: "submit",
@@ -420,7 +444,7 @@ export const waiversStory: DemoScript = {
       context: CTX_BOARD,
       set: { signed: true },
       emphasize: "row-danielle",
-      callout: "The league did not type this in. It is the same signature, read from the other end.",
+      callout: "The board is reading the same signature record from the other end.",
     }),
     paced({
       id: "badge",
@@ -436,16 +460,16 @@ export const waiversStory: DemoScript = {
       caption: `${SIGNED_AFTER} signed, ${OUT_AFTER} outstanding, across every approved team.`,
       emphasize: "totals",
       holdMs: 0,
-      callout: "One arithmetic for the whole season, and no spreadsheet anywhere near it.",
+      callout: "One count for the whole season, recomputed on every read.",
     }),
     paced({
       id: "missing",
       chapter: "board",
-      caption: "Only missing is the list a coach would otherwise build by hand.",
+      caption: "Only missing filters the board to the teams with a gap.",
       cursor: "only-missing",
       press: true,
       set: { onlyMissing: true },
-      callout: "Every team with a gap, and nothing else. That is the chase list, made for free.",
+      callout: "That filtered list is the chase list, and it is the whole of it.",
     }),
     paced({
       id: "resend",
@@ -454,7 +478,7 @@ export const waiversStory: DemoScript = {
       cursor: "resend-all",
       press: true,
       set: { notice: RESEND_NOTICE, onlyMissing: false },
-      callout: "It is not the first send. The first send already happened, the day each team was approved.",
+      callout: "The first send already happened, the day each team was approved.",
     }),
     paced({
       id: "skipped",
@@ -462,16 +486,16 @@ export const waiversStory: DemoScript = {
       caption: `${RESEND_SENT} emails, and the ${LIVE_LINKS_AFTER} families with a live link were left alone.`,
       emphasize: "notice",
       holdMs: 0,
-      callout: "An unopened link is left alone. Re-sending never blasts the same inbox twice.",
+      callout: "A family whose link is still live is skipped, so no inbox gets it twice.",
     }),
     paced({
       id: "cadence",
       chapter: "board",
-      caption: "And nobody chases anybody.",
-      context: CTX_LEDGER,
+      caption: "The reminders run on a clock.",
+      context: undefined,
       set: { ledger: true, shown: 0 },
       emphasize: "ledger",
-      callout: "This part runs on a clock, not on somebody remembering. Here is the whole of it.",
+      callout: "Two windows, once each, and a ledger row that guarantees the once.",
     }),
     paced({ id: "cad-1", chapter: "board", caption: "Seven days before the season starts.", set: { shown: 1 }, hold: 2700 }),
     paced({ id: "cad-2", chapter: "board", caption: "Then twenty four hours before.", set: { shown: 2 }, hold: 2400 }),
@@ -631,10 +655,9 @@ function WaiverLibrary() {
 
 /**
  * `manage/leagues/[id]/seasons/[seasonId]/waivers`, drawn from
- * `waiver-status-view.tsx`. Three consecutive team rows of the 22, which is
- * what the region holds at scale 1.0 with one roster open, and the count chip
- * carries the product's own "N of M" shape so the slice is stated on screen
- * rather than hidden.
+ * `waiver-status-view.tsx`. All 22 approved teams as a two column grid, and a
+ * three row window around the open team when a roster is expanded. The count
+ * chip carries the product's own "N of M" shape either way.
  */
 function SigningBoard({
   expanded,
@@ -649,6 +672,12 @@ function SigningBoard({
 }) {
   const total = signed ? SIGNED_AFTER : SIGNED_BEFORE
   const outstanding = signed ? OUT_AFTER : OUT_BEFORE
+  const openIndex = BOARD_TEAMS.findIndex((t) => t.id === "team-lords")
+  const rows = expanded
+    ? BOARD_TEAMS.slice(openIndex - 1, openIndex - 1 + OPEN_WINDOW)
+    : onlyMissing
+      ? BOARD_TEAMS.filter((t) => t.signed < 10)
+      : BOARD_TEAMS
 
   return (
     <div className="bg-ink-50/70 flex min-h-0 flex-1 flex-col px-6 py-3">
@@ -689,7 +718,7 @@ function SigningBoard({
             rows of the twenty two the endpoint returns. Same honesty device the
             schedule-change demo uses for its "3 of 11" games chip. */}
         <Chip tone="neutral" strong>
-          3 of {TEAMS_TOTAL} teams
+          {rows.length} of {TEAMS_TOTAL} teams
         </Chip>
         <span className="ml-auto">
           <Btn id="resend-all" tone="quiet" size="sm">
@@ -701,8 +730,13 @@ function SigningBoard({
       {/* No panel chrome: the real page (`waiver-status-view.tsx`) is a plain
           vertical stack of team cards under the badges row, with no section
           header over it. */}
-      <div className="min-h-0 flex-1 space-y-1.5">
-        {BOARD_TEAMS.map((t) => {
+      <div
+        className={cn(
+          "min-h-0 flex-1",
+          expanded ? "space-y-1.5" : "grid grid-cols-2 content-start gap-x-3 gap-y-0.5"
+        )}
+      >
+        {rows.map((t) => {
           const isTarget = t.id === "team-lords"
           const teamSigned = isTarget && signed ? t.signed + 1 : t.signed
           return (
@@ -752,7 +786,7 @@ function BoardTeam({
     >
       <div
         data-demo-target={id}
-        className="flex w-full items-center gap-2.5 px-3.5 py-1.5"
+        className="flex w-full items-center gap-2.5 px-3.5 py-1"
       >
         <span className="text-ink-400 shrink-0 text-[14px]">{open ? "▾" : "▸"}</span>
         <span className="text-ink-900 text-[15px] font-bold">{team}</span>
@@ -873,11 +907,6 @@ function CadenceLedger({ shown }: { shown: number }) {
         ))}
       </div>
 
-      <p className="mt-4 border-t border-white/10 pt-3 text-[15px] font-medium text-white/55">
-        The cron only looks at seasons starting inside the next seven days, so this season, which
-        tipped off in April, is past both of its windows. The rule is the product; the dates are
-        the calendar.
-      </p>
     </div>
   )
 }
