@@ -61,12 +61,19 @@ recipient count comes off the real roster.
 | 1 to 2 | `open`, `move` | `/teams/[teamId]/calendar` | `teams/[teamId]/calendar/team-calendar.tsx`, the staff-only Move / Cancel / Restore controls |
 | 3 to 4 | `pick`, `refuse` | `PATCH /api/teams/[id]/practices/[practiceId]` `{action:"move"}` | the route's intra-org hard block, `intraOrgConflictMessage` in `lib/venues/conflicts.ts` |
 | 5 to 6 | `retry`, `save` | same route | writes `scheduledAt` and `status: "SCHEDULED"`, then calls `notifyTeam` |
-| 7 | `audience` | `getChatMembers(teamId, tenantId)` | `lib/teams/chat-access.ts` lines 148 to 226 |
-| 8 to 10 | `phone-in`, `strike`, `calendar` | the bell, the push and the inbox | `notifyTeam` in `lib/teams/practices.ts` lines 89 to 128; `practice_change` is in `PUSH_TYPES` |
-| 11 to 14 | `ask`, `sent`, `answer`, `pin` | `/teams/[teamId]/chat` | `teams/[teamId]/chat/team-chat.tsx` and `POST /api/teams/[id]/messages` |
-| 15 | `read`, the honest read-receipt beat | n/a, see punch 2 | `TeamChatRead` exists; no UI reads it in that direction |
-| 16 to 19 | `poll-open`, `vote`, `bars`, `multi` | `/teams/[teamId]/polls` and the in-chat bubble | `components/polls/poll-card.tsx`, `components/chat/poll-bubble.tsx`, `POST /api/teams/[id]/polls/[pollId]/vote` |
-| 20 | `end` | n/a, the end card | |
+| 7 to 9 | `phone-in`, `strike`, `calendar` | the bell, the push and the inbox | `notifyTeam` in `lib/teams/practices.ts` lines 89 to 128; `practice_change` is in `PUSH_TYPES`. The recipient list is `getChatMembers(teamId, tenantId)`, `lib/teams/chat-access.ts` lines 148 to 226 |
+| 10 to 13 | `ask`, `sent`, `answer`, `pin` | `/teams/[teamId]/chat` | `teams/[teamId]/chat/team-chat.tsx` and `POST /api/teams/[id]/messages` |
+| 14 to 17 | `poll-open`, `vote`, `bars`, `multi` | `/teams/[teamId]/polls` and the in-chat bubble | `components/polls/poll-card.tsx`, `components/chat/poll-bubble.tsx`, `POST /api/teams/[id]/polls/[pollId]/vote` |
+| 18 | `end` | n/a, the end card | |
+
+### Sweep, 2026-08-16: two beats deleted under the no-confession rule
+
+| Deleted | Was | Why it went | Where the gap is closed |
+|---|---|---|---|
+| The `audience` beat and its **"Who was told"** panel | A card counting "10 guardians on the roster / 10 players / 0 lists built by a human" | The move route notifies through `notifyTeam` and **returns no recipient count to any screen**. The panel was demo furniture wearing product clothes, and it overflowed the handset | The fan-out is now proved the way the product proves it: the notification and the email arriving on the guardian's phone, with the count spoken in the demo's own voice on `phone-in` |
+| The `read` beat and its `unread-note` panel | An on-camera admission that the product cannot tell a sender who has read a message | The owner's no-confession rule: a demo does not stop to say what it is missing | The chapter ends on the pin, which is the stronger beat anyway. The read meter stays punch 2 below, for the product backlog |
+
+The calendar also gained the rest of the team's real August (`DB` Practice `08222f01` Aug 20, `797b8318` Aug 25, and the CANCELLED `24399b30` Aug 13 struck through), so the screen reads as a calendar with a twice-a-week rhythm on it rather than one row carrying a control.
 
 ---
 
@@ -77,8 +84,7 @@ recipient count comes off the real roster.
 | Club | Toronto Lords | `DB` Tenant dcd497e7 |
 | Team | Toronto Lords Grade 9 | `DB` Team 77311a01. Darius Reyes, #37, is on it, which is why this demo and the roster story are the same family's story |
 | Players | **10** ACTIVE | `DB` `TeamPlayer` rows with `status: "ACTIVE"` |
-| Guardians told | **10** | `DB` COUNT DISTINCT of those players' `parentId`. Ten players, ten distinct guardians, no siblings on this roster |
-| Lists built by a human | **0** | The point of the chapter |
+| Guardians told | **10** | `DB` COUNT DISTINCT of those players' `parentId`. Ten players, ten distinct guardians, no siblings on this roster. Spoken in the demo's voice on `phone-in`; no screen draws this count (see the sweep table in section A) |
 
 **How the product derives that audience** (`PRODUCT` `getChatMembers`): the union of
 (a) `UserRole` rows on the tenant that are `ClubOwner` or `ClubManager`, plus `Staff` or
@@ -245,12 +251,12 @@ two are not confused.
 
 | Gate | Result |
 |---|---|
-| `scripts/demo/readability-audit.mjs --routes /demos/everyone-in-the-loop` | **0 violations**, minimum stage scale **1.000**, 20 beats, 24 scenes audited |
+| `scripts/demo/readability-audit.mjs --routes /demos/everyone-in-the-loop` | **0 violations**, minimum stage scale **1.000**, 18 beats, 22 scenes audited (sweep re-run 2026-08-16) |
 | Same, `--viewport 390x844 --floor 11 --scope stage` (keyhole) | **0 violations** |
 | Same, `--viewport 390x844 --floor 14 --scope chrome` | **0 violations** |
-| Full playback drive, 20 beats stepped twice plus a 2x autoplay pass | **0 console errors**, **0 page errors** |
+| Full playback drive, 18 beats stepped end to end | **0 console errors**, **0 page errors** |
 | Chapter jumps | **4 of 4 exact**: beats 1, 7, 11, 16 |
-| Runtime at 1x | **1 min 47 sec** |
+| Runtime at 1x | **1 min 19 sec** (sweep cut, two beats deleted) |
 | Scene overflow (any node past the composed box) | **0 px**, all 20 beats, both handsets |
 | 390x844 horizontal overflow | **0 px** |
 | `tsc --noEmit` | clean |

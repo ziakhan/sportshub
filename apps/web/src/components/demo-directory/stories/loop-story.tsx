@@ -37,15 +37,23 @@ import type { DemoBeat, DemoScript } from "../types"
  *      and vote counts all came out of the local seeded database, and each is
  *      written down in the numbers sheet.
  *
- * THE READ METER IS NOT STAGED, AND THAT IS A DECISION, NOT AN OMISSION.
- * `TeamChatRead(userId, teamId, lastReadAt)` exists and is written on every
- * read, but the ONLY code that reads it is `getUnreadChatCounts`, which
- * answers "how many have I not read". Nothing anywhere answers "who has read
- * mine". The 2026-08-15 cut of this demo drew a read meter counting eleven of
- * twelve with the twelfth family named; no such panel exists in the product.
- * It is gone, replaced by a beat that says what the product really gives a
- * sender, and the meter is punch 2 in the numbers sheet. This is a standing
- * owner decision: build the small panel or keep the beat honest.
+ * TWO THINGS THIS CUT DOES NOT SHOW, AND DOES NOT TALK ABOUT EITHER (sweep,
+ * 2026-08-16, the owner's no-confession rule: a demo does not stop to admit
+ * what it is missing).
+ *
+ *   1. THE READ METER. `TeamChatRead(userId, teamId, lastReadAt)` is written on
+ *      every read, but the only reader is `getUnreadChatCounts`, which answers
+ *      "how many have I not read". Nothing answers "who has read mine". The
+ *      2026-08-15 cut drew a meter counting eleven of twelve; the 08-16 cut
+ *      replaced it with a beat CONFESSING the gap on camera. Both are gone. The
+ *      chapter now ends on the pin, and the meter stays punch 2 in the numbers
+ *      sheet for the product backlog.
+ *   2. THE "WHO WAS TOLD" PANEL. The move route notifies through `notifyTeam`
+ *      and returns no recipient count to any screen, so a panel counting
+ *      guardians was demo furniture wearing product clothes. Deleted. The
+ *      fan-out is now proved the way the product proves it, by the notification
+ *      and the email arriving on the guardian's phone, with the count spoken in
+ *      the demo's own voice rather than drawn as a screen.
  *
  * TRUTH TO THE PRODUCT, SCREEN BY SCREEN:
  *   · the team calendar and its Move control are `teams/[teamId]/calendar/team-calendar.tsx`;
@@ -76,6 +84,23 @@ const OLD_WHEN = "Tue, Aug 18, 6:30 p.m."
 const NEW_WHEN = "Tue, Aug 18, 8:00 p.m."
 const GYM = "The Playground"
 const DURATION = 90
+
+/**
+ * The rest of the team's August, so the calendar reads as a calendar.
+ *
+ * `DB` this team practises TWICE A WEEK at the same gym, Tuesdays at 6:30 and
+ * Thursdays at 7:00: Practice `08222f01` (Aug 20) and `797b8318` (Aug 25) are
+ * the two after the one being moved, and `24399b30` (Aug 13) is a real
+ * CANCELLED row, which is why the list carries a cancelled state.
+ */
+const CANCELLED_ROW = {
+  when: "Thu, Aug 13, 7:00 p.m.",
+  where: `${GYM} · ${DURATION} min`,
+}
+const REST_OF_WEEK = [
+  { when: "Thu, Aug 20, 7:00 p.m.", kind: "Practice", where: `${GYM} · ${DURATION} min` },
+  { when: "Tue, Aug 25, 6:30 p.m.", kind: "Practice", where: `${GYM} · ${DURATION} min` },
+]
 
 /**
  * The refusal. `PRODUCT` `intraOrgConflictMessage` in `lib/venues/conflicts.ts`
@@ -157,37 +182,35 @@ export const loopStory: DemoScript = {
     paced({
       id: "open",
       chapter: "change",
-      caption: "A coach with a problem, on the phone he actually has on him.",
+      caption: `The coach's team calendar. Tuesday's practice at ${GYM} has to move.`,
       emphasize: "cal-list",
-      callout: `Tuesday's practice at ${GYM} has to move, and ${GUARDIANS} families do not know yet.`,
+      callout: `${GUARDIANS} families already have this practice on their calendars.`,
     }),
     paced({
       id: "move",
       chapter: "change",
-      caption: "There is one control for it, on the practice itself.",
+      caption: "Move is on the practice itself.",
       cursor: "move-btn",
       press: true,
       set: { view: "move" },
-      callout: "Move. Not a message to write, not a list to build, not a group chat to open.",
+      callout: "Moving it is the whole job. Nobody writes a message.",
     }),
     paced({
       id: "pick",
       chapter: "change",
-      caption: "He picks a time.",
+      caption: "He picks seven o'clock.",
       cursor: "time-field",
       press: true,
       set: { picked: "7:00 p.m." },
-      callout: "Seven o'clock, which is the obvious answer and also the wrong one.",
     }),
     paced({
       id: "refuse",
       chapter: "change",
-      caption: "And the product refuses him.",
+      caption: "The product refuses that time.",
       cursor: "save-btn",
       press: true,
       set: { conflict: true },
-      callout:
-        "His own club already has the Grade 10 Girls on that floor at seven. It names the booking rather than just saying no.",
+      callout: "His own club has the Grade 10 Girls on that floor at seven, and it says so.",
     }),
     paced({
       id: "retry",
@@ -196,7 +219,6 @@ export const loopStory: DemoScript = {
       cursor: "time-field",
       press: true,
       set: { picked: "8:00 p.m.", conflict: false },
-      callout: "The same gym, ninety minutes, an hour and a half later.",
     }),
     paced({
       id: "save",
@@ -206,95 +228,79 @@ export const loopStory: DemoScript = {
       press: true,
       toast: `Practice moved · ${NEW_WHEN}`,
       set: { view: "moved" },
-      callout: "That is the whole job. Nobody was asked who should be told.",
+      callout: "Nobody was asked who to tell. The roster is the audience.",
     }),
 
     /* ── 2. Every phone ───────────────────────────────────────────────── */
     paced({
-      id: "audience",
-      chapter: "phones",
-      caption: "Because the product already knows.",
-      emphasize: "audience-card",
-      callout:
-        "The audience is the roster and the staff on it, worked out from the team, not typed by a coach.",
-    }),
-    paced({
       id: "phone-in",
       chapter: "phones",
-      caption: `It lands on ${PARENT}'s phone before he has put his own down.`,
+      caption: `It reaches ${PARENT}, one of the ${GUARDIANS} guardians on that roster.`,
       stage: "split",
       set: { phone: "notif" },
       emphasize: "p-notif",
-      callout: "A push, a bell entry and an email, from one function, so they cannot disagree.",
+      callout: "The list came off the team. No coach typed a name.",
     }),
     paced({
       id: "strike",
       chapter: "phones",
-      caption: "And look at how it says it.",
+      caption: "The old time struck through, the new one in bold.",
       emphasize: "p-strike",
-      callout: "The old time struck through and the new one in bold. She reads it without opening anything.",
+      callout: "One function writes the push, the bell entry and the email, so they agree.",
     }),
     paced({
       id: "calendar",
       chapter: "phones",
-      caption: "The last line is the one that ends the phone calls.",
+      caption: "The last line of the email.",
       emphasize: "p-tail",
-      callout: "Subscribed phone calendars update themselves. She does not edit anything.",
+      callout: "A subscribed phone calendar updates itself. There is nothing to edit.",
     }),
 
     /* ── 3. In the open ───────────────────────────────────────────────── */
     paced({
       id: "ask",
       chapter: "thread",
-      caption: "She has a question, and the product gives it somewhere to go.",
+      caption: "She has a question, and asks it in the team thread.",
       set: { phone: "chat", view: "chat" },
       cursor: "composer",
       type: { key: "typed", text: "Is the door still on Century Dr at 8?" },
-      callout: "The team thread, not a private text to the coach at ten at night.",
+      callout: "One thread per team, so the answer reaches everybody at once.",
     }),
     paced({
       id: "sent",
       chapter: "thread",
-      caption: "Asked in front of everybody.",
+      caption: "Asked in the open.",
       cursor: "send-msg",
       press: true,
       set: { asked: true },
-      callout: `The thread says who she is, "${PLAYER}'s parent", so nobody has to work it out.`,
+      callout: `The thread says who she is, "${PLAYER}'s parent", under her name.`,
     }),
     paced({
       id: "answer",
       chapter: "thread",
-      caption: "And answered where all ten families can read it.",
+      caption: "The coach answers once.",
       set: { answered: true },
       emphasize: "coach-msg",
-      callout: "One answer instead of ten. The staff badge says it is the coach talking.",
+      callout: "The staff badge marks it as the coach rather than another parent.",
     }),
     paced({
       id: "pin",
       chapter: "thread",
-      caption: "Then it gets pinned, which is the part that saves the next question.",
+      caption: "Pinned to the top of the thread.",
       cursor: "pin-btn",
       press: true,
       set: { pinned: true },
-      callout: "Pinned to the top of the thread, so the family who reads it on Tuesday finds it.",
-    }),
-    paced({
-      id: "read",
-      chapter: "thread",
-      caption: "One honest thing about read receipts.",
-      emphasize: "unread-note",
-      callout:
-        "Each person gets an unread badge for what they have not opened. The sender is not shown who has read it, and this demo will not draw a meter the product does not have.",
+      callout: "The family who opens the thread on Tuesday finds it without scrolling.",
     }),
 
     /* ── 4. The poll ──────────────────────────────────────────────────── */
     paced({
       id: "poll-open",
       chapter: "poll",
-      caption: "The other thing a team argues about is money and weekends.",
+      caption: "The same team, and an open poll about the August tournament.",
       set: { view: "poll", phone: "poll" },
       emphasize: "poll-card",
-      callout: "A real poll on this team, with the price in the question where it belongs.",
+      callout: "The fee is in the question, so nobody votes yes and then asks the price.",
     }),
     paced({
       id: "vote",
@@ -303,27 +309,27 @@ export const loopStory: DemoScript = {
       cursor: "p-opt-1",
       press: true,
       set: { voted: true },
-      callout: "Pick one, submit, done. She can change it later and the count follows her.",
+      callout: "She can change her answer later, and the count follows her.",
     }),
     paced({
       id: "bars",
       chapter: "poll",
-      caption: "And the coach watches it settle.",
+      caption: "The coach watches the count settle.",
       emphasize: "poll-q1",
-      callout: "Nine of ten families answered, and two of the yeses want a carpool. That is a plan.",
+      callout: `${Q1_VOTED} of ${GUARDIANS} answered, and two of the yeses need a carpool.`,
     }),
     paced({
       id: "multi",
       chapter: "poll",
-      caption: "The second question is the one a group chat can never do.",
+      caption: "The second question takes any number of answers.",
       emphasize: "poll-q2",
-      callout: "Pick any weekend that works, and the answer is a count per weekend rather than a scroll.",
+      callout: "A count per weekend, rather than a scroll through replies.",
     }),
     paced({
       id: "end",
       chapter: "poll",
       caption:
-        "One practice moved, ten families told without a list, the question asked and answered in the open, and the tournament decided by a count.",
+        "A practice moved in two presses, every family told, the question answered in the open, and the weekend decided by a count.",
       hold: 4400,
       set: { endCard: true },
     }),
@@ -425,6 +431,19 @@ function TeamCalendar({
       <p className="text-ink-900 text-[17px] font-extrabold">Team calendar</p>
 
       <div data-demo-target="cal-list" className="space-y-1.5">
+        {/* `DB` Practice 24399b30, a real CANCELLED row on this team.
+            `PRODUCT` the calendar strikes a cancelled practice through and
+            chips it rather than removing it. */}
+        <div className="border-ink-200 rounded-xl border bg-white px-3 py-2 opacity-60">
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-ink-900 text-[15px] font-bold line-through">
+              {CANCELLED_ROW.when}
+            </span>
+            <Chip tone="neutral">Cancelled</Chip>
+          </div>
+          <p className="text-ink-500 mt-0.5 text-[14px] font-medium">{CANCELLED_ROW.where}</p>
+        </div>
+
         <div
           className={cn(
             "rounded-xl border bg-white px-3 py-2 transition-colors duration-300 motion-reduce:transition-none",
@@ -440,11 +459,7 @@ function TeamCalendar({
           <p className="text-ink-500 mt-0.5 text-[14px] font-medium">
             {GYM} · {DURATION} min
           </p>
-          {moved ? (
-            <p className="text-court-700 mt-1 text-[14px] font-bold">
-              Moved · {GUARDIANS} families told
-            </p>
-          ) : stage === "move" ? (
+          {moved ? null : stage === "move" ? (
             <div className="mt-1.5 space-y-1.5">
               <div className="flex items-center gap-1.5">
                 <span
@@ -484,44 +499,19 @@ function TeamCalendar({
           )}
         </div>
 
-        <div className="border-ink-200 rounded-xl border bg-white px-3 py-2">
-          <div className="flex items-center justify-between gap-2">
-            <span className="text-ink-900 text-[15px] font-bold">Thu, Aug 20, 7:00 p.m.</span>
-            <Chip tone="neutral">Practice</Chip>
+        {/* The rest of the week, so the calendar reads as a calendar rather
+            than one row with a control on it. `DB` the team's other seeded
+            practices and its next league game. */}
+        {REST_OF_WEEK.map((e) => (
+          <div key={e.when} className="border-ink-200 rounded-xl border bg-white px-3 py-2">
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-ink-900 text-[15px] font-bold">{e.when}</span>
+              <Chip tone="neutral">{e.kind}</Chip>
+            </div>
+            <p className="text-ink-500 mt-0.5 text-[14px] font-medium">{e.where}</p>
           </div>
-          <p className="text-ink-500 mt-0.5 text-[14px] font-medium">
-            {GYM} · {DURATION} min
-          </p>
-        </div>
+        ))}
       </div>
-
-      {moved && (
-        <div
-          data-demo-target="audience-card"
-          className="border-court-200 bg-court-50/60 live-pop rounded-2xl border px-3 py-2"
-        >
-          <p className="text-court-800 text-[15px] font-bold">Who was told</p>
-          <div className="mt-1 space-y-0.5">
-            <AudienceRow label="Guardians on the roster" value={`${GUARDIANS}`} />
-            <AudienceRow label="Players" value={`${PLAYERS}`} />
-            <AudienceRow label="Lists built by a human" value="0" />
-          </div>
-          <p className="text-court-700 mt-1 text-[14px] font-medium leading-snug">
-            The roster is the audience. Add a player tomorrow and the next change reaches them too.
-          </p>
-        </div>
-      )}
-    </div>
-  )
-}
-
-function AudienceRow({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex items-baseline gap-2">
-      <span className="text-court-800 w-[36px] shrink-0 text-[17px] font-extrabold tabular-nums">
-        {value}
-      </span>
-      <span className="text-court-700 text-[14px] font-semibold">{label}</span>
     </div>
   )
 }
@@ -573,13 +563,18 @@ function CoachChat({
         )}
       </div>
 
-      <p
-        data-demo-target="unread-note"
-        className="border-ink-200 text-ink-500 mt-1.5 shrink-0 rounded-xl border bg-white px-2.5 py-1.5 text-[14px] font-medium leading-snug"
-      >
-        Everyone on this thread carries their own unread badge. What the product does not do today is
-        tell the sender who has opened it.
-      </p>
+      {/* The composer, which the coach's end of the thread has too. */}
+      <div className="mt-1.5 flex shrink-0 items-center gap-1.5">
+        <span className="border-ink-300 text-ink-400 min-w-0 flex-1 truncate rounded-full border bg-white px-3 py-1.5 text-[15px] font-medium">
+          {CHAT_PLACEHOLDER}
+        </span>
+        <span className="text-ink-500 shrink-0 text-[17px]" aria-hidden="true">
+          📊
+        </span>
+        <Btn tone="quiet" size="sm">
+          Send
+        </Btn>
+      </div>
     </div>
   )
 }
@@ -643,12 +638,12 @@ function Bubble({
 /** `components/polls/poll-card.tsx`, the staff view. */
 function CoachPoll({ voted }: { voted: boolean }) {
   return (
-    <div data-demo-target="poll-card" className="space-y-2">
+    <div data-demo-target="poll-card" className="space-y-1.5">
       <div className="flex items-center justify-between gap-2">
         <p className="text-ink-900 min-w-0 truncate text-[17px] font-extrabold">{POLL_TITLE}</p>
         <StatusChip tone="court">Open</StatusChip>
       </div>
-      <p className="text-ink-400 text-[14px] font-medium">
+      <p className="text-ink-400 text-[14px] font-medium leading-tight">
         {COACH} · Aug 14 · {Q1_VOTED + (voted ? 1 : 0)} votes
       </p>
 
@@ -695,17 +690,17 @@ function PollQuestion({
 }) {
   const lead = Math.max(...options.map((o) => o.votes), 1)
   return (
-    <div data-demo-target={id} className="border-ink-200 rounded-xl border bg-white px-2.5 py-2">
-      <p className="text-ink-900 text-[15px] font-bold leading-snug">{prompt}</p>
-      <p className="text-ink-400 mt-0.5 text-[14px] font-semibold">
+    <div data-demo-target={id} className="border-ink-200 rounded-xl border bg-white px-2.5 py-1.5">
+      <p className="text-ink-900 text-[15px] font-bold leading-tight">{prompt}</p>
+      <p className="text-ink-400 text-[14px] font-semibold leading-tight">
         {multi ? "Pick any" : "Pick one"} · {voted} voted
       </p>
-      <div className="mt-1.5 space-y-1">
+      <div className="mt-1 space-y-0.5">
         {options.map((o, i) => (
           <div
             key={o.label}
             className={cn(
-              "border-ink-100 relative overflow-hidden rounded-lg border bg-white px-2 py-1",
+              "border-ink-100 relative overflow-hidden rounded-lg border bg-white px-2 py-0.5",
               flashFirst && i === 0 && "live-pop"
             )}
           >
@@ -781,7 +776,7 @@ function Inbox() {
       </div>
 
       <p className="text-ink-400 text-[14px] font-bold uppercase tracking-[0.1em]">
-        And the same thing by email
+        The same change, by email
       </p>
       <div className="border-ink-200 rounded-2xl border bg-white px-3 py-2.5">
         <p className="text-ink-900 text-[15px] font-bold leading-snug">{EMAIL_SUBJECT}</p>
@@ -793,10 +788,6 @@ function Inbox() {
           {EMAIL_TAIL}
         </p>
       </div>
-
-      <p className="text-ink-500 text-[14px] font-medium leading-snug">
-        A push, a bell entry and an email. She has not opened the app yet.
-      </p>
     </div>
   )
 }
@@ -905,9 +896,22 @@ function ParentPoll({ voted }: { voted: boolean }) {
           {voted ? `${total} votes · tap to change` : "Tap an option to choose, then submit."}
         </p>
       </div>
-      <p className="text-ink-500 text-[14px] font-medium leading-snug">
-        The same poll, in the thread she is already in. No link, no sign-in, no form.
-      </p>
+      {/* The second question is on her phone too: the poll bubble carries
+          every question in the poll. `DB` Poll d2a61a8d, question 2. */}
+      <div className="border-ink-200 rounded-2xl border bg-white px-3 py-2.5">
+        <p className="text-ink-900 text-[15px] font-bold leading-snug">{Q2.prompt}</p>
+        <div className="mt-1.5 flex flex-wrap gap-1">
+          {Q2.options.map((o) => (
+            <span
+              key={o.label}
+              className="border-ink-200 text-ink-700 rounded-full border bg-white px-2 py-0.5 text-[14px] font-semibold"
+            >
+              {o.label}
+            </span>
+          ))}
+        </div>
+        <p className="text-ink-500 mt-1.5 text-[14px] font-medium">Pick any that work.</p>
+      </div>
     </div>
   )
 }
@@ -942,10 +946,10 @@ function EndCard(): ReactNode {
           Everyone in the loop
         </h3>
         <p className="mt-3 text-[15px] leading-relaxed text-white/75">
-          A practice moved in two presses, refused once by the club&apos;s own booking and named,
-          then ten families told by push, bell and email with nobody building a list. The question
-          answered where all ten could read it, and the tournament settled by a count instead of an
-          argument.
+          A practice moved in two presses, refused once by the club&apos;s own booking with that
+          booking named, then ten families told by push, bell and email with nobody building a list.
+          The question answered where all ten could read it, and the tournament weekend settled by a
+          count.
         </p>
         <p className="mt-4 text-[14px] font-semibold text-white/50">Next: your week</p>
       </div>

@@ -144,11 +144,11 @@ export const DEMOS: DemoEntry[] = [
     promise:
       "A coach moves one practice in two presses, every family on the roster is told by push, bell and email, and the question and the tournament are both settled in the open.",
     description:
-      "Two phones. On the left a coach with a problem and no time: Tuesday's practice has to move. There is one control for it, on the practice itself, and the first time he tries the product refuses him and says why, naming his own club's booking that is already on that floor at seven o'clock. He takes eight instead, and that is the entire job. Nobody asked him who should be told, because the roster is the audience: every guardian on it, worked out by the product, with no list typed by anybody. The right phone is a parent who has not opened the app. She gets a push, a bell entry and an email that say the same thing because one function writes all three, with the old time struck through and the new one in bold, and a last line that ends the phone calls: subscribed phone calendars update themselves. She has a question, and instead of texting the coach privately at ten at night she asks it in the team thread, where it is answered once in front of everybody and pinned so the family reading on Tuesday finds it. The demo is straight about what the product does not do here, and shows what it really gives instead. The last chapter is a real poll on this real team, with the tournament fee in the question where it belongs, a vote from her phone, and the second question a group chat can never do: pick any weekend that works, and get a count per weekend instead of a scroll.",
+      "Two phones. On the left a coach whose Tuesday practice has to move. There is one control for it, on the practice itself, and the first time he tries the product refuses him and says why, naming his own club's booking that is already on that floor at seven o'clock. He takes eight instead, and that is the entire job. Nobody asked him who should be told, because the roster is the audience: every guardian on it, worked out by the product, with no list typed by anybody. The right phone is a parent who has not opened the app. She gets a push, a bell entry and an email that say the same thing because one function writes all three, with the old time struck through and the new one in bold, and a last line that ends the phone calls: subscribed phone calendars update themselves. She has a question, and asks it in the team thread, where it is answered once in front of everybody and pinned so the family reading on Tuesday finds it. The last chapter is a real poll on this real team, with the tournament fee in the question where it belongs, a vote from her phone, and a second question that takes any number of answers: pick any weekend that works, and get a count per weekend instead of a scroll.",
     audiences: ["clubs", "parents"],
     kind: "story",
     stage: "phone",
-    durationLabel: "1 min 47 sec",
+    durationLabel: "1 min 19 sec",
     status: "live",
     chapterCount: 4,
     /* No volatile numbers in the bullets: roster sizes and vote counts move
@@ -158,7 +158,7 @@ export const DEMOS: DemoEntry[] = [
       "The product refuses the wrong time and names the club's own booking that is in the way",
       "Every guardian on the roster told by push, bell and email from one function",
       "A parent's question answered once in the open, then pinned for whoever reads it later",
-      "A real poll with the fee in the question, and a pick-any weekend question with a count",
+      "A real poll with the fee in the question, and a pick-any-weekend question with a count",
     ],
     chapterTitles: ["The change", "Every phone", "In the open", "The poll"],
     thumbEyebrow: "Story 2",
