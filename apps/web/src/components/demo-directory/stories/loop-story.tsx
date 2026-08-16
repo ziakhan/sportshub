@@ -1,1074 +1,954 @@
 "use client"
 
 import type { ReactNode } from "react"
-import { TypeText } from "../motion"
-import {
-  MockBand,
-  MockButton,
-  MockDialog,
-  MockEmailPreview,
-  MockEndCard,
-  MockField,
-  MockListbox,
-  MockPanel,
-  MockPill,
-  MockPollResults,
-  MockReadMeter,
-  MockRow,
-  MockTextArea,
-  MockTile,
-  MockTopBar,
-  PhoneChatBubble,
-  PhoneChatComposer,
-  PhoneChatDay,
-  PhonePinnedStrip,
-  PhonePollBubble,
-  PhonePostCard,
-  PhonePushBanner,
-  PhoneShell,
-  PhoneTypingLine,
-  type MockPollOption,
-} from "../mock-ui"
-import { Crest } from "@/components/ui/crest"
-import type { DemoScript } from "../types"
+import { cn } from "@/components/ui/cn"
+import { Btn, Chip, StatusChip } from "../scene-kit"
+import type { DemoBeat, DemoScript } from "../types"
 
 /**
- * Story 2: "Everyone in the loop" (owner-signed script, 2026-08-15).
+ * "Everyone in the loop", rebuilt 2026-08-16 to the gold standard set by the
+ * season story, the schedule-change demo, the waivers demo, game day, the
+ * referees demo, the roster story and the money picture.
  *
- * THE ARGUMENT. Every club already has a way to tell families things. It is a
- * group chat, a phone tree, and a parent who forwards. This story is about the
- * three moments that costs them: the message that only some people got, the
- * question answered privately eleven times, and the decision nobody can find
- * afterwards.
+ * THE OWNER'S RULING FOR THIS CUT, AND WHAT THE PRODUCT ACTUALLY SHIPS:
  *
- * THE PAINFUL DETAIL (owner's law, named for this story): SHOW THE AUDIENCE
- * PICK AND SHOW THE READ COUNTS. A club sending to "the whole club" when it
- * meant one team is the reason families tune the channel out, and a club that
- * cannot see who has read it is the reason somebody ends up forwarding. So the
- * audience is chosen on camera, and chapter two is built around a number
- * climbing to eleven of twelve with the twelfth family named.
+ *   Ruled: "the announcement becomes a PRACTICE gym change (the club's own
+ *   event, one team, honest recipient count derived from the real roster)."
  *
- * TRUTH TO THE PRODUCT. Every surface here mirrors one that ships today:
- *   · the composer — components/comms/message-composer.tsx: the audience list
- *     with its live recipient counts, subject and body with their "n/max"
- *     counters, the preview pane, and the "Send to ~N recipients?" confirm
- *     that stands between a draft and twelve inboxes;
- *   · the audience labels come from lib/comms/audiences.ts, which really does
- *     offer "Everyone engaged with the club (n)" beside a per-team option. The
- *     separator is a middot here because the product's own label uses an
- *     em-dash, which the house copy rule does not allow;
- *   · the thread — app/(platform)/teams/[teamId]/chat/team-chat.tsx: play-600
- *     for your own bubbles, court-50 for everyone else, the STAFF badge, the
- *     six-emoji reaction row, "Dana Michaels is typing…", "Message the team…";
- *   · the poll — clubs/[id]/polls/club-polls.tsx and components/polls/
- *     poll-card.tsx, including "Also post to team chats" (off by default) and
- *     the staff-only line of voter names under each option;
- *   · the poll in the thread — components/chat/poll-bubble.tsx.
+ *   Shipped: `PATCH /api/teams/[id]/practices/[practiceId]` takes exactly
+ *   three actions, `move` (with a new `scheduledAt`), `cancel` and `restore`.
+ *   **It cannot change a practice's venue.** The create route takes a
+ *   `venueId`; the move route does not. So a club that loses its gym has to
+ *   cancel the practice and create another one, which is two notifications and
+ *   a lost RSVP list.
  *
- * The read meter is the one panel that reads a number the product currently
- * only counts in the other direction: TeamChatRead (userId, teamId,
- * lastReadAt) is what the unread badge is built on, and this is the same
- * cursor asked "who has opened it" instead of "have I".
+ * This demo therefore films the change the product REALLY makes, a practice
+ * moved in time on the club's own event, with the gym named in the message
+ * because the gym is what families get wrong. The missing venue edit is punch
+ * 1 in `docs/roadmap/loop-numbers.md` rather than a fabricated screen.
  *
- * MOTION. Nothing pans, zooms or scrolls. The read bar and the poll bars are
- * width transitions on elements that persist across beats, so they travel
- * rather than cut; the counters tween; the cursor fades out on beats where
- * nobody's hand is involved.
+ * THE THREE LAWS:
+ *   1. PRESENTATION (audit D2). Two handsets at 390 logical, scale 1.0. The
+ *      owner's phone-first chart authorizes composing the club's side as a
+ *      phone; the family's side is not a composition at all.
+ *   2. PACING. Stop, explain, act, one voice.
+ *   3. EVERY NUMBER DERIVED. The team, the practice, its gym, its time, the
+ *      recipient count, the chat and the poll with its real questions, options
+ *      and vote counts all came out of the local seeded database, and each is
+ *      written down in the numbers sheet.
+ *
+ * THE READ METER IS NOT STAGED, AND THAT IS A DECISION, NOT AN OMISSION.
+ * `TeamChatRead(userId, teamId, lastReadAt)` exists and is written on every
+ * read, but the ONLY code that reads it is `getUnreadChatCounts`, which
+ * answers "how many have I not read". Nothing anywhere answers "who has read
+ * mine". The 2026-08-15 cut of this demo drew a read meter counting eleven of
+ * twelve with the twelfth family named; no such panel exists in the product.
+ * It is gone, replaced by a beat that says what the product really gives a
+ * sender, and the meter is punch 2 in the numbers sheet. This is a standing
+ * owner decision: build the small panel or keep the beat honest.
+ *
+ * TRUTH TO THE PRODUCT, SCREEN BY SCREEN:
+ *   · the team calendar and its Move control are `teams/[teamId]/calendar/team-calendar.tsx`;
+ *   · the refusal is `intraOrgConflictMessage` in `lib/venues/conflicts.ts`,
+ *     verbatim, including the quoted title and the time;
+ *   · the notification, push and email are the move branch of the practices
+ *     PATCH route, word for word, and the audience is `getChatMembers`;
+ *   · the thread is `teams/[teamId]/chat/team-chat.tsx`, down to the STAFF
+ *     badge, the sender context line, the reaction row and the pin strip;
+ *   · the poll is `components/polls/poll-card.tsx` and the in-chat
+ *     `components/chat/poll-bubble.tsx`.
  */
 
-/* ── Cast ────────────────────────────────────────────────────────────────── */
+/* ── Cast, all read out of the seeded world ──────────────────────────────── */
 
-/** The twelve families on the team, in the order they opened the message. */
-const FAMILIES = [
-  "Ngozi Bello",
-  "Ruth Njoku",
-  "Carmen Reyes",
-  "Simran Kaur",
-  "Irina Petrov",
-  "Yusra Ahmed",
-  "Marie Tremblay",
-  "Clare Donnelly",
-  "Rania Haddad",
-  "Deirdre Fitzgerald",
-  "Paulo Okafor",
-]
-/** The twelfth. She is the whole point of the read meter. */
-const LAST_FAMILY = "Wendy Chan"
-const TEAM_SIZE = 12
+const CLUB = "Toronto Lords"
+/** `DB` Team 77311a01, 10 ACTIVE players, 10 distinct guardians. */
+const TEAM = "Toronto Lords Grade 9"
+const PLAYERS = 10
+const GUARDIANS = 10
 
-const SUBJECT = "Gym change for Saturday"
-const BODY =
-  "Saturday's game moves to Riverside CC, Court 2. Same 9:00 AM tip, doors at 8:30."
+/**
+ * `DB` Practice f256efde on that team: SCHEDULED, 2026-08-18T22:30Z, which is
+ * 6:30 p.m. America/Toronto, 90 minutes, at The Playground.
+ * `PRODUCT` `formatPracticeDate` writes "Tue, Aug 18, 6:30 p.m." in en-CA.
+ */
+const OLD_WHEN = "Tue, Aug 18, 6:30 p.m."
+const NEW_WHEN = "Tue, Aug 18, 8:00 p.m."
+const GYM = "The Playground"
+const DURATION = 90
 
-const AUDIENCES = [
-  { value: "everyone", label: "Everyone engaged with the club (214)" },
-  { value: "u11g", label: "Team · U11 Girls Rep families (12)" },
-  { value: "u13g", label: "Team · U13 Girls Rep families (12)" },
-  { value: "tryout", label: "Tryout · U11 Girls Fall Tryout registrants (14)" },
-]
-const AUDIENCE_PICKED = AUDIENCES[1].label
+/**
+ * The refusal. `PRODUCT` `intraOrgConflictMessage` in `lib/venues/conflicts.ts`
+ * line 184, verbatim except the em-dash, which the house rule turns into a
+ * middot. `DB` the club's own Grade 10 Girls practice really does sit on that
+ * court at 7:00 p.m. that evening.
+ */
+const CONFLICT =
+  'Your organization already has a practice at this venue then · "Toronto Lords Grade 10 Girls practice" (Aug 18, 7:00 p.m.). Pick a different time or venue.'
 
-const URL_MESSAGES = "/manage/clubs/riverside-ravens/messages"
-const URL_SENT = "/manage/clubs/riverside-ravens/messages/gym-change-saturday"
-const URL_POLLS = "/manage/clubs/riverside-ravens/polls"
+/** `PRODUCT` the move branch of the practices PATCH route, lines 79 to 84. */
+const NOTIF_TITLE = `Practice moved · ${TEAM}`
+const NOTIF_MSG = `${OLD_WHEN} → ${NEW_WHEN}`
+const EMAIL_SUBJECT = `Practice moved · ${TEAM}: now ${NEW_WHEN}`
+const EMAIL_TAIL = "Team calendar (subscribed phone calendars update automatically)"
 
-/** Who voted for what, which is the line only staff see on a poll card. */
-const FRIDAY_VOTERS = [
-  "Ngozi Bello",
-  "Ruth Njoku",
-  "Carmen Reyes",
-  "Simran Kaur",
-  "Irina Petrov",
-  "Yusra Ahmed",
-  "Marie Tremblay",
-  "Clare Donnelly",
-]
-const SUNDAY_VOTERS = ["Rania Haddad", "Deirdre Fitzgerald", "Paulo Okafor"]
+/** `DB` the guardian this whole demo directory follows. */
+const PARENT = "Jordan Reyes"
+const PLAYER = "Darius Reyes"
+
+/** `PRODUCT` `team-chat.tsx`: the composer, the badge and the context line. */
+const CHAT_PLACEHOLDER = "Message the team…"
+const COACH = "Marcus Bell"
+
+/**
+ * `DB` Poll d2a61a8d, "August tournament plans", OPEN, on this team, with two
+ * real questions and their real vote counts.
+ */
+const POLL_TITLE = "August tournament plans"
+const Q1 = {
+  prompt: "Should we enter the Waterloo Summer Classic? ($95/player)",
+  multi: false,
+  options: [
+    { label: "Yes, count us in", votes: 6 },
+    { label: "Yes, if we can carpool", votes: 2 },
+    { label: "No, sitting this one out", votes: 1 },
+  ],
+}
+const Q2 = {
+  prompt: "Which August weekends can your family travel?",
+  multi: true,
+  options: [
+    { label: "Aug 8-9", votes: 3 },
+    { label: "Aug 15-16", votes: 3 },
+    { label: "Aug 22-23", votes: 3 },
+  ],
+}
+/** `ARITH` nine votes on question one, out of ten guardians. */
+const Q1_VOTED = 9
+
+const pct = (v: number, all: number) => (all === 0 ? 0 : Math.round((v / all) * 100))
+
+/* ── Pacing ──────────────────────────────────────────────────────────────── */
+
+function paced(b: Omit<DemoBeat, "hold"> & { hold?: number }): DemoBeat {
+  if (b.hold) return b as DemoBeat
+  const arrive = b.cursor ? 620 : 220
+  const settle = 500
+  const read = b.callout ? b.callout.trim().split(/\s+/).length * 180 + 900 : 2400
+  return { ...b, hold: Math.round(arrive + read + (b.callout ? settle : 0)) }
+}
+
+/* ── The script ──────────────────────────────────────────────────────────── */
 
 export const loopStory: DemoScript = {
-  desktopUrl: URL_MESSAGES,
+  presentation: "scene",
+  scenePhones: true,
+  desktopUrl: "/teams/lords-grade-9/calendar",
   initialStage: "desktop",
   chapters: [
-    { id: "announce", title: "The announcement" },
-    { id: "phones", title: "Every phone at once" },
-    { id: "talk", title: "The conversation" },
+    { id: "change", title: "The change" },
+    { id: "phones", title: "Every phone" },
+    { id: "thread", title: "In the open" },
     { id: "poll", title: "The poll" },
   ],
 
   beats: [
-    /* ── 1. The announcement ──────────────────────────────────────────── */
-    {
-      id: "compose-open",
-      chapter: "announce",
-      caption:
-        "Riverside Ravens have a gym change for Saturday and twelve families who need to know about it.",
-      hold: 2600,
-      set: { screen: "compose" },
-    },
-    {
-      id: "open-audience",
-      chapter: "announce",
-      caption: "Who it goes to is the first field, not an afterthought at the end.",
-      hold: 2000,
-      cursor: "audience",
+    /* ── 1. The change ────────────────────────────────────────────────── */
+    paced({
+      id: "open",
+      chapter: "change",
+      caption: "A coach with a problem, on the phone he actually has on him.",
+      emphasize: "cal-list",
+      callout: `Tuesday's practice at ${GYM} has to move, and ${GUARDIANS} families do not know yet.`,
+    }),
+    paced({
+      id: "move",
+      chapter: "change",
+      caption: "There is one control for it, on the practice itself.",
+      cursor: "move-btn",
       press: true,
-      set: { audOpen: true },
-    },
-    {
-      id: "pick-audience",
-      chapter: "announce",
-      caption:
-        "The whole club is right there, with 214 people behind it. This one is for a single team, so it goes to a single team.",
-      hold: 2800,
-      cursor: "audience-opt-u11g",
+      set: { view: "move" },
+      callout: "Move. Not a message to write, not a list to build, not a group chat to open.",
+    }),
+    paced({
+      id: "pick",
+      chapter: "change",
+      caption: "He picks a time.",
+      cursor: "time-field",
       press: true,
-      set: { audience: AUDIENCE_PICKED, recipients: 12 },
-    },
-    {
-      id: "type-subject",
-      chapter: "announce",
-      caption: "Subject.",
-      hold: 2500,
-      cursor: "field-subject",
-      type: { key: "subject", text: SUBJECT },
-      set: { audOpen: false },
-    },
-    {
-      id: "type-body",
-      chapter: "announce",
-      caption: "Then the message itself.",
-      hold: 4400,
-      cursor: "field-body",
-      type: { key: "body", text: BODY },
-    },
-    {
-      id: "preview",
-      chapter: "announce",
-      caption:
-        "Beside it is the thing a family actually receives, down to the unsubscribe line.",
-      hold: 2200,
-      cursor: "preview-pane",
-      hover: "preview-pane",
-    },
-    {
-      id: "press-send",
-      chapter: "announce",
-      caption: "Nothing this club sends goes out on one click.",
-      hold: 2200,
-      cursor: "send-message",
+      set: { picked: "7:00 p.m." },
+      callout: "Seven o'clock, which is the obvious answer and also the wrong one.",
+    }),
+    paced({
+      id: "refuse",
+      chapter: "change",
+      caption: "And the product refuses him.",
+      cursor: "save-btn",
       press: true,
-      set: { dialog: "confirm" },
-    },
-    {
-      id: "confirm-send",
-      chapter: "announce",
-      caption: "Twelve families, all of them, at the same moment.",
-      hold: 2600,
-      cursor: "confirm-send",
+      set: { conflict: true },
+      callout:
+        "His own club already has the Grade 10 Girls on that floor at seven. It names the booking rather than just saying no.",
+    }),
+    paced({
+      id: "retry",
+      chapter: "change",
+      caption: "Eight o'clock, then.",
+      cursor: "time-field",
       press: true,
-      toast: "Sent to 12 families",
-    },
+      set: { picked: "8:00 p.m.", conflict: false },
+      callout: "The same gym, ninety minutes, an hour and a half later.",
+    }),
+    paced({
+      id: "save",
+      chapter: "change",
+      caption: "Saved.",
+      cursor: "save-btn",
+      press: true,
+      toast: `Practice moved · ${NEW_WHEN}`,
+      set: { view: "moved" },
+      callout: "That is the whole job. Nobody was asked who should be told.",
+    }),
 
-    /* ── 2. Every phone at once ───────────────────────────────────────── */
-    {
-      id: "push",
+    /* ── 2. Every phone ───────────────────────────────────────────────── */
+    paced({
+      id: "audience",
       chapter: "phones",
-      caption:
-        "It lands on every phone on the team at once. Nobody has to be told, and nobody has to forward it.",
-      hold: 2800,
+      caption: "Because the product already knows.",
+      emphasize: "audience-card",
+      callout:
+        "The audience is the roster and the staff on it, worked out from the team, not typed by a coach.",
+    }),
+    paced({
+      id: "phone-in",
+      chapter: "phones",
+      caption: `It lands on ${PARENT}'s phone before he has put his own down.`,
       stage: "split",
-      url: URL_SENT,
-      set: { dialog: "", screen: "sent", phone: "home", push: true, read: 2 },
-    },
-    {
-      id: "read-7",
+      set: { phone: "notif" },
+      emphasize: "p-notif",
+      callout: "A push, a bell entry and an email, from one function, so they cannot disagree.",
+    }),
+    paced({
+      id: "strike",
       chapter: "phones",
-      caption: "The club can watch it land. Seven of twelve inside two minutes.",
-      hold: 2600,
-      set: { read: 7 },
-    },
-    {
-      id: "tap-push",
+      caption: "And look at how it says it.",
+      emphasize: "p-strike",
+      callout: "The old time struck through and the new one in bold. She reads it without opening anything.",
+    }),
+    paced({
+      id: "calendar",
       chapter: "phones",
-      caption: "She taps it and lands on the message itself, on her team's page.",
-      hold: 2400,
-      cursor: "phone-push",
-      press: true,
-      set: { phone: "post" },
-    },
-    {
-      id: "read-11",
-      chapter: "phones",
-      caption: "Eleven of twelve.",
-      hold: 2400,
-      set: { read: 11, push: false },
-    },
-    {
-      id: "outstanding",
-      chapter: "phones",
-      caption:
-        "And the twelfth is not a mystery. The family who has not opened it is named, with the nudge sitting next to the name.",
-      hold: 3000,
-      cursor: "remind",
-      hover: "remind",
-    },
+      caption: "The last line is the one that ends the phone calls.",
+      emphasize: "p-tail",
+      callout: "Subscribed phone calendars update themselves. She does not edit anything.",
+    }),
 
-    /* ── 3. The conversation ──────────────────────────────────────────── */
-    {
-      id: "open-chat",
-      chapter: "talk",
-      caption:
-        "The question comes back through the team's own thread, not to the coach's personal number at 9 at night.",
-      hold: 2600,
-      stage: "phone",
-      set: { phone: "chat" },
-    },
-    {
-      id: "type-question",
-      chapter: "talk",
-      caption: "She asks it once.",
-      hold: 3000,
-      cursor: "chat-input",
-      type: { key: "question", text: "Is 8:30 for warmup or just doors open?" },
-    },
-    {
-      id: "send-question",
-      chapter: "talk",
-      caption: "Where all twelve families can see it, which is the point.",
-      hold: 2200,
-      cursor: "chat-send",
+    /* ── 3. In the open ───────────────────────────────────────────────── */
+    paced({
+      id: "ask",
+      chapter: "thread",
+      caption: "She has a question, and the product gives it somewhere to go.",
+      set: { phone: "chat", view: "chat" },
+      cursor: "composer",
+      type: { key: "typed", text: "Is the door still on Century Dr at 8?" },
+      callout: "The team thread, not a private text to the coach at ten at night.",
+    }),
+    paced({
+      id: "sent",
+      chapter: "thread",
+      caption: "Asked in front of everybody.",
+      cursor: "send-msg",
       press: true,
-      set: { msgs: 1 },
-    },
-    {
-      id: "typing",
-      chapter: "talk",
-      caption: "The coach is on it.",
-      hold: 1800,
-      set: { typing: true },
-    },
-    {
-      id: "coach-reply",
-      chapter: "talk",
-      caption: "Answered once, for everybody, in about forty seconds.",
-      hold: 2600,
-      set: { typing: false, msgs: 2, reactRow: true },
-    },
-    {
-      id: "react",
-      chapter: "talk",
-      caption:
-        "A thumbs up is the whole reply. Reactions do not notify anybody, so eleven other phones stay quiet.",
-      hold: 2700,
-      cursor: "react-thumb",
+      set: { asked: true },
+      callout: `The thread says who she is, "${PLAYER}'s parent", so nobody has to work it out.`,
+    }),
+    paced({
+      id: "answer",
+      chapter: "thread",
+      caption: "And answered where all ten families can read it.",
+      set: { answered: true },
+      emphasize: "coach-msg",
+      callout: "One answer instead of ten. The staff badge says it is the coach talking.",
+    }),
+    paced({
+      id: "pin",
+      chapter: "thread",
+      caption: "Then it gets pinned, which is the part that saves the next question.",
+      cursor: "pin-btn",
       press: true,
-      set: { reacted: true },
-    },
+      set: { pinned: true },
+      callout: "Pinned to the top of the thread, so the family who reads it on Tuesday finds it.",
+    }),
+    paced({
+      id: "read",
+      chapter: "thread",
+      caption: "One honest thing about read receipts.",
+      emphasize: "unread-note",
+      callout:
+        "Each person gets an unread badge for what they have not opened. The sender is not shown who has read it, and this demo will not draw a meter the product does not have.",
+    }),
 
     /* ── 4. The poll ──────────────────────────────────────────────────── */
-    {
-      id: "polls-open",
+    paced({
+      id: "poll-open",
       chapter: "poll",
-      caption: "The other thing that lives in a group chat is deciding something.",
-      hold: 2300,
-      stage: "split",
-      url: URL_POLLS,
-      set: { screen: "polls", reactRow: false },
-    },
-    {
-      id: "new-poll",
-      chapter: "poll",
-      caption: "A poll is the same shape as the announcement. Ask it, choose who, send it.",
-      hold: 2000,
-      cursor: "new-poll",
-      press: true,
-      set: { dialog: "poll" },
-    },
-    {
-      id: "type-poll-title",
-      chapter: "poll",
-      caption: "The question.",
-      hold: 2900,
-      cursor: "field-poll-title",
-      type: { key: "pollTitle", text: "Team dinner: Friday or Sunday?" },
-    },
-    {
-      id: "type-opt-1",
-      chapter: "poll",
-      caption: "Two options, spelled out so nobody answers a different question.",
-      hold: 2600,
-      cursor: "field-opt1",
-      type: { key: "opt1", text: "Friday after practice" },
-    },
-    {
-      id: "type-opt-2",
-      chapter: "poll",
-      caption: "And the second.",
-      hold: 2000,
-      cursor: "field-opt2",
-      type: { key: "opt2", text: "Sunday lunch" },
-    },
-    {
-      id: "relay",
-      chapter: "poll",
-      caption:
-        "It can drop straight into the thread the conversation already happened in. That is off by default, so it is a decision, not a default.",
-      hold: 2500,
-      cursor: "relay",
-      press: true,
-      set: { relay: true },
-    },
-    {
-      id: "publish-poll",
-      chapter: "poll",
-      caption: "Published.",
-      hold: 2400,
-      cursor: "publish-poll",
-      press: true,
-      toast: "Poll published. Also posted to 1 team chat.",
-      set: { pollLive: true, fri: 0, sun: 0 },
-    },
-    {
-      id: "phone-poll",
-      chapter: "poll",
-      caption: "On her phone it is two buttons in the thread, not forty messages under it.",
-      hold: 2100,
-      set: { dialog: "", pollInChat: true },
-    },
-    {
+      caption: "The other thing a team argues about is money and weekends.",
+      set: { view: "poll", phone: "poll" },
+      emphasize: "poll-card",
+      callout: "A real poll on this team, with the price in the question where it belongs.",
+    }),
+    paced({
       id: "vote",
       chapter: "poll",
-      caption: "She taps Friday.",
-      hold: 2200,
-      cursor: "vote-friday",
+      caption: "She answers on her phone in one tap.",
+      cursor: "p-opt-1",
       press: true,
-      set: { voted: true, fri: 1, sun: 0 },
-    },
-    {
-      id: "bars-1",
+      set: { voted: true },
+      callout: "Pick one, submit, done. She can change it later and the count follows her.",
+    }),
+    paced({
+      id: "bars",
       chapter: "poll",
-      caption: "The bars on the club side fill as the answers come in.",
-      hold: 2400,
-      set: { fri: 5, sun: 2 },
-    },
-    {
-      id: "bars-2",
+      caption: "And the coach watches it settle.",
+      emphasize: "poll-q1",
+      callout: "Nine of ten families answered, and two of the yeses want a carpool. That is a plan.",
+    }),
+    paced({
+      id: "multi",
       chapter: "poll",
-      caption:
-        "Eleven of twelve answered before dinner, and the club can see exactly which family chose what.",
-      hold: 2600,
-      set: { fri: 8, sun: 3 },
-    },
-    {
-      id: "close-poll",
-      chapter: "poll",
-      caption: "Friday wins. Closing it stops the answer moving.",
-      hold: 2200,
-      cursor: "close-poll",
-      press: true,
-      set: { closed: true },
-    },
-    {
-      id: "pin",
+      caption: "The second question is the one a group chat can never do.",
+      emphasize: "poll-q2",
+      callout: "Pick any weekend that works, and the answer is a count per weekend rather than a scroll.",
+    }),
+    paced({
+      id: "end",
       chapter: "poll",
       caption:
-        "Then the coach pins the result to the thread, so it is the first thing anybody opening the chat sees. Nobody scrolls back through a week to find it.",
-      hold: 3100,
-      toast: "Pinned to the team chat",
-      set: { pinned: true },
-    },
-    {
-      id: "end-card",
-      chapter: "poll",
-      caption:
-        "One message everybody read, one question answered once, one decision on the record.",
-      hold: 4000,
+        "One practice moved, ten families told without a list, the question asked and answered in the open, and the tournament decided by a count.",
+      hold: 4400,
       set: { endCard: true },
-    },
+    }),
   ],
 
-  render: ({ get, typingKey }) => {
-    const screen = get<string>("screen", "compose")
-    const dialog = get<string>("dialog", "")
-    const phone = get<string>("phone", "")
-    const endCard = get("endCard", false)
+  /* ── Render ────────────────────────────────────────────────────────── */
 
-    const typed: Typed = (key, placeholder) => (
-      <TypeText
-        text={get<string>(key, "")}
-        typing={typingKey === key}
-        placeholder={placeholder}
+  render: ({ get, typingKey }) => {
+    const view = get<string>("view", "calendar")
+
+    const club = (
+      <div className="relative flex h-full flex-col">
+        <CoachPhone
+          view={view}
+          picked={get<string>("picked", "")}
+          conflict={get("conflict", false)}
+          asked={get("asked", false)}
+          answered={get("answered", false)}
+          pinned={get("pinned", false)}
+          voted={get("voted", false)}
+        />
+        {get("endCard", false) && <EndCard />}
+      </div>
+    )
+
+    const phone = (
+      <ParentPhone
+        view={get<string>("phone", "notif")}
+        typed={get<string>("typed", "")}
+        typing={typingKey === "typed"}
+        asked={get("asked", false)}
+        answered={get("answered", false)}
+        voted={get("voted", false)}
       />
     )
-    /**
-     * The same value, NOT animated. Two TypeText instances on one key would
-     * each roll their own uneven cadence and visibly drift apart, so the
-     * preview pane waits out the keystrokes and lands finished, which is also
-     * what a preview pane looks like from across a room.
-     */
-    const settled: Typed = (key, placeholder) => {
-      const value = get<string>(key, "")
-      if (!value || typingKey === key) {
-        return <span className="text-ink-400">{placeholder}</span>
-      }
-      return <span>{value}</span>
+
+    return {
+      desktop: club,
+      phone,
+      frameLabels: { left: `${COACH} · coach`, right: `${PARENT} · parent` },
     }
-    /** Length of a typed value, for the composer's live character counters. */
-    const len = (key: string) => get<string>(key, "").length
-
-    const read = get("read", 0)
-    const fri = get("fri", 0)
-    const sun = get("sun", 0)
-    const voted = get("voted", false)
-    const closed = get("closed", false)
-
-    const pollOptions: MockPollOption[] = [
-      {
-        id: "friday",
-        label: "Friday after practice",
-        count: fri,
-        mine: voted,
-        voters: FRIDAY_VOTERS.slice(0, fri),
-      },
-      {
-        id: "sunday",
-        label: "Sunday lunch",
-        count: sun,
-        voters: SUNDAY_VOTERS.slice(0, sun),
-      },
-    ]
-
-    /* ── Desktop ──────────────────────────────────────────────────────── */
-
-    const desktop = (
-      <div className="relative flex h-full flex-col">
-        <MockTopBar
-          workspace="Riverside Ravens"
-          tabs={["Dashboard", "Teams", "Programs", "Polls", "Messages"]}
-          activeTab={screen === "polls" ? "Polls" : "Messages"}
-        />
-
-        <div key={screen} className="demo-fade-in flex min-h-0 flex-1 flex-col">
-          {screen === "compose" && (
-            <ComposeScreen
-              typed={typed}
-              settled={settled}
-              audience={get<string>("audience", "")}
-              audOpen={get("audOpen", false)}
-              recipients={get("recipients", 0)}
-              subjectLen={len("subject")}
-              bodyLen={len("body")}
-            />
-          )}
-          {screen === "sent" && <SentScreen read={read} />}
-          {screen === "polls" && (
-            <PollsScreen
-              live={get("pollLive", false)}
-              closed={closed}
-              options={pollOptions}
-              voterCount={fri + sun}
-            />
-          )}
-        </div>
-
-        <ConfirmSendDialog open={dialog === "confirm"} />
-        <NewPollDialog
-          open={dialog === "poll"}
-          typed={typed}
-          relay={get("relay", false)}
-        />
-
-        {endCard && (
-          <MockEndCard
-            eyebrow="Story 2 of 10"
-            title="Everyone in the loop"
-            line="One gym change, twelve families, a question answered in the open and a decision that is still there next week."
-            next="A season, planned to published"
-          />
-        )}
-      </div>
-    )
-
-    /* ── Phone ────────────────────────────────────────────────────────── */
-
-    const phoneNode = (
-      <div className="relative h-full">
-        {phone === "post" ? (
-          <PhoneShell title="U11 Girls Rep" subtitle="Team page" activeTab="Teams">
-            {/* A team page is a page, not one card on a white field: the new
-                message sits on top of the week that was already there. */}
-            <div className="space-y-2.5">
-              <PhonePostCard
-                club="Riverside Ravens"
-                kind="Announcement"
-                title={SUBJECT}
-                body={BODY}
-                meta="Dana Michaels, head coach · 2 minutes ago"
-                audience="Sent to all 12 families on this team"
-              />
-              <div>
-                <p className="text-ink-500 mb-1.5 px-1 text-[10px] font-semibold uppercase tracking-[0.12em]">
-                  Earlier this week
-                </p>
-                <div className="space-y-2">
-                  <WeekRow day="Sat" title="Game vs Lakeshore Lightning" meta="9:00 AM · Riverside CC, Court 2" />
-                  <WeekRow day="Thu" title="Practice" meta="6:00 PM · Riverside CC, Court 1" />
-                </div>
-              </div>
-            </div>
-          </PhoneShell>
-        ) : phone === "chat" ? (
-          <PhoneShell title="U11 Girls Rep" subtitle="Team chat" activeTab="Teams">
-            <ChatScreen
-              typed={typed}
-              msgs={get("msgs", 0)}
-              typingNow={get("typing", false)}
-              reactRow={get("reactRow", false)}
-              reacted={get("reacted", false)}
-              pollInChat={get("pollInChat", false)}
-              pollOptions={pollOptions}
-              voterCount={fri + sun}
-              voted={voted}
-              closed={closed}
-              pinned={get("pinned", false)}
-            />
-          </PhoneShell>
-        ) : (
-          <PhoneShell title="This week" subtitle="Bello family">
-            <WeekScreen />
-          </PhoneShell>
-        )}
-
-        {get("push", false) && (
-          <PhonePushBanner
-            id="phone-push"
-            title={`Riverside Ravens: ${SUBJECT}`}
-            body={BODY}
-          />
-        )}
-      </div>
-    )
-
-    return { desktop, phone: phoneNode }
   },
 }
 
-/* ── Desktop screens ──────────────────────────────────────────────────────── */
+/* ── The coach's phone ───────────────────────────────────────────────────── */
 
-function ComposeScreen({
-  typed,
-  settled,
-  audience,
-  audOpen,
-  recipients,
-  subjectLen,
-  bodyLen,
+function CoachPhone({
+  view,
+  picked,
+  conflict,
+  asked,
+  answered,
+  pinned,
+  voted,
 }: {
-  typed: Typed
-  settled: Typed
-  audience: string
-  audOpen: boolean
-  recipients: number
-  subjectLen: number
-  bodyLen: number
+  view: string
+  picked: string
+  conflict: boolean
+  asked: boolean
+  answered: boolean
+  pinned: boolean
+  voted: boolean
 }) {
   return (
-    <>
-      <MockBand
-        eyebrow="Club workspace"
-        title="Messages"
-        description="Reach one team or the whole club. Consent is checked automatically on every send."
-        action={
-          recipients > 0 ? <MockPill tone="play">~{recipients} recipients</MockPill> : undefined
-        }
-      />
-      <div className="bg-ink-50/60 min-h-0 flex-1 px-6 py-5">
-        <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,0.9fr)] gap-6">
-          <div className="space-y-3.5">
-            <div>
-              <MockListbox
-                id="audience"
-                label="Audience"
-                value={audience}
-                open={audOpen}
-                placeholder="Select an audience"
-                options={AUDIENCES}
-              />
-              <p className="text-ink-400 mt-1 text-[11px] leading-snug">
-                Audiences are counted live from who is actually involved with the club.
-              </p>
-            </div>
-
-            <div>
-              <MockField id="field-subject" label="Subject">
-                {typed("subject", "Tryouts for next season are open")}
-              </MockField>
-              <p className="text-ink-400 mt-1 text-right text-[11px] tabular-nums">
-                {subjectLen}/150
-              </p>
-            </div>
-
-            <MockTextArea
-              id="field-body"
-              label="Message"
-              rows={5}
-              counter={`${bodyLen}/5000`}
-            >
-              {typed("body", "Hi families,")}
-            </MockTextArea>
-
-            <MockButton id="send-message">Send message</MockButton>
-          </div>
-
-          <MockEmailPreview
-            id="preview-pane"
-            org="Riverside Ravens"
-            subject={settled("subject", "Your subject line")}
-            body={settled("body", "Your message will appear here as you type.")}
-          />
-        </div>
+    <div className="flex h-full flex-col bg-[#f6f7f9]">
+      <div className="flex items-baseline gap-2 bg-[#0b1628] px-4 pb-2.5 pt-2 text-white">
+        <p className="text-[15px] font-bold leading-tight">{TEAM}</p>
+        <p className="text-[14px] font-medium text-white/60">{CLUB}</p>
       </div>
-    </>
-  )
-}
 
-function SentScreen({ read }: { read: number }) {
-  return (
-    <>
-      <MockBand
-        eyebrow="Messages · Sent 2 minutes ago"
-        title={SUBJECT}
-        action={<MockPill tone="court">12 recipients</MockPill>}
-      />
-      <div className="bg-ink-50/60 min-h-0 flex-1 px-6 py-4">
-        <div className="grid grid-cols-3 gap-3">
-          <MockTile compact label="Delivered" value="12" tone="court" />
-          <MockTile compact label="Skipped for consent" value="0" />
-          <MockTile compact label="Audience" value={<span className="text-[15px]">U11 Girls Rep</span>} />
-        </div>
-
-        <div className="mt-3 grid grid-cols-2 gap-3">
-          <MockPanel title="What went out" meta="Dana Michaels">
-            <div className="px-4 py-3">
-              <p className="text-ink-400 text-[11px]">From Riverside Ravens via SportsHub</p>
-              <p className="text-ink-950 mt-1.5 text-[14px] font-bold">{SUBJECT}</p>
-              <p className="text-ink-700 mt-2 text-[12.5px] leading-relaxed">{BODY}</p>
-              <div className="border-ink-100 mt-3 flex flex-wrap gap-1.5 border-t pt-2.5">
-                <MockPill tone="play">Email</MockPill>
-                <MockPill tone="play">Phone notification</MockPill>
-                <MockPill tone="neutral">Team page</MockPill>
-              </div>
-            </div>
-          </MockPanel>
-
-          <MockPanel title="Read receipts" meta="Live">
-            <MockReadMeter
-              read={read}
-              total={TEAM_SIZE}
-              readers={FAMILIES}
-              outstanding={read >= TEAM_SIZE - 1 && read < TEAM_SIZE ? [LAST_FAMILY] : []}
-              remindId="remind"
-            />
-          </MockPanel>
-        </div>
-      </div>
-    </>
-  )
-}
-
-function PollsScreen({
-  live,
-  closed,
-  options,
-  voterCount,
-}: {
-  live: boolean
-  closed: boolean
-  options: MockPollOption[]
-  voterCount: number
-}) {
-  return (
-    <>
-      <MockBand
-        eyebrow="Club workspace"
-        title="Polls"
-        description="Ask the club or one team something, and keep the answer where everybody can find it."
-        action={
-          <MockButton id="new-poll" tone="court">
-            New Poll
-          </MockButton>
-        }
-      />
-      <div className="bg-ink-50/60 min-h-0 flex-1 px-6 py-4">
-        {live && (
-          <section className="border-ink-100 live-row-in rounded-2xl border bg-white px-4 py-3.5 shadow-sm">
-            <div className="flex items-start justify-between gap-3">
-              <div className="min-w-0">
-                <div className="flex items-center gap-2">
-                  <h3 className="text-ink-900 truncate text-[15px] font-bold">
-                    Team dinner: Friday or Sunday?
-                  </h3>
-                  <MockPill tone={closed ? "neutral" : "court"}>
-                    {closed ? "Closed" : "Open"}
-                  </MockPill>
-                  <MockPill tone="play">U11 Girls Rep</MockPill>
-                </div>
-                <p className="text-ink-400 mt-0.5 text-[11px]">
-                  Dana Michaels · Sep 24 · {voterCount} {voterCount === 1 ? "vote" : "votes"}
-                </p>
-              </div>
-              <div className="shrink-0">
-                <MockButton id="close-poll" tone="quiet" size="sm">
-                  {closed ? "Reopen" : "Close"}
-                </MockButton>
-              </div>
-            </div>
-            <div className="mt-3">
-              <MockPollResults
-                prompt=""
-                options={options}
-                voterCount={voterCount}
-                staff
-                closed={closed}
-              />
-            </div>
-          </section>
+      <div key={view} className="demo-fade-in min-h-0 flex-1 overflow-hidden px-3 py-2.5">
+        {(view === "calendar" || view === "move" || view === "moved") && (
+          <TeamCalendar stage={view} picked={picked} conflict={conflict} />
         )}
-
-        <MockPanel
-          title="Earlier polls"
-          meta="This season"
-          className="mt-3"
-          action={<MockPill tone="neutral">3 closed</MockPill>}
-        >
-          <MockRow
-            title="Which weekend works for the season kickoff?"
-            meta="Closed 4 September · 186 votes"
-            right={<MockPill>Closed</MockPill>}
-            muted
-          />
-          <MockRow
-            title="Warm up shirt colour for the rep teams"
-            meta="Closed 28 August · 141 votes"
-            right={<MockPill>Closed</MockPill>}
-            muted
-          />
-        </MockPanel>
+        {view === "chat" && (
+          <CoachChat asked={asked} answered={answered} pinned={pinned} />
+        )}
+        {view === "poll" && <CoachPoll voted={voted} />}
       </div>
-    </>
+
+      <TabBar tabs={["Home", "Chat", "Calendar", "My Team", "Social"]} active="Calendar" />
+    </div>
   )
 }
 
-/* ── Desktop dialogs ──────────────────────────────────────────────────────── */
-
-/** The step between a draft and twelve inboxes. */
-function ConfirmSendDialog({ open }: { open: boolean }) {
-  return (
-    <MockDialog
-      open={open}
-      title="Send to ~12 recipients?"
-      subtitle="Recipients without marketing consent are skipped automatically."
-      footer={
-        <>
-          <MockButton tone="quiet" size="sm">
-            Cancel
-          </MockButton>
-          <MockButton id="confirm-send" size="sm">
-            Send now
-          </MockButton>
-        </>
-      }
-    >
-      <div className="border-ink-100 rounded-2xl border px-4 py-3">
-        <div className="flex items-center gap-2.5">
-          <Crest name="Riverside Ravens" size="sm" />
-          <div className="min-w-0">
-            <p className="text-ink-900 text-[13px] font-bold">{AUDIENCE_PICKED}</p>
-            <p className="text-ink-500 text-[11px]">
-              Every parent and guardian on the U11 Girls Rep roster.
-            </p>
-          </div>
-        </div>
-        <div className="border-ink-100 mt-2.5 border-t pt-2.5">
-          <p className="text-ink-500 text-[11px] font-semibold uppercase tracking-[0.1em]">
-            Subject
-          </p>
-          <p className="text-ink-900 mt-0.5 text-[13px] font-semibold">{SUBJECT}</p>
-        </div>
-      </div>
-    </MockDialog>
-  )
-}
-
-function NewPollDialog({
-  open,
-  typed,
-  relay,
+/** `teams/[teamId]/calendar`, composed at 390. */
+function TeamCalendar({
+  stage,
+  picked,
+  conflict,
 }: {
-  open: boolean
-  typed: Typed
-  relay: boolean
+  stage: string
+  picked: string
+  conflict: boolean
 }) {
+  const moved = stage === "moved"
   return (
-    <MockDialog
-      open={open}
-      title="New poll"
-      subtitle="Riverside Ravens · Fall 2026"
-      footer={
-        <>
-          <MockButton tone="quiet" size="sm">
-            Cancel
-          </MockButton>
-          <MockButton id="publish-poll" size="sm">
-            Publish Poll
-          </MockButton>
-        </>
-      }
-    >
-      <div className="space-y-3">
-        <MockField id="field-poll-title" label="Title">
-          {typed("pollTitle", "Which weekend works for the season kickoff?")}
-        </MockField>
+    <div className="space-y-2">
+      <p className="text-ink-900 text-[17px] font-extrabold">Team calendar</p>
 
-        <div className="border-ink-100 bg-ink-50/50 space-y-2 rounded-xl border p-3">
-          <div className="flex items-center justify-between">
-            <span className="text-ink-700 text-[11px] font-semibold uppercase tracking-[0.1em]">
-              Question 1
+      <div data-demo-target="cal-list" className="space-y-1.5">
+        <div
+          className={cn(
+            "rounded-xl border bg-white px-3 py-2 transition-colors duration-300 motion-reduce:transition-none",
+            moved ? "border-court-300 bg-court-50/60" : "border-play-300"
+          )}
+        >
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-ink-900 text-[15px] font-bold">
+              {moved ? NEW_WHEN : OLD_WHEN}
             </span>
-            <span className="text-ink-400 text-[11px]">Allow multiple choices</span>
+            <Chip tone={moved ? "court" : "play"}>Practice</Chip>
           </div>
-          <MockField id="field-opt1" label="Option 1">
-            {typed("opt1", "Option 1")}
-          </MockField>
-          <MockField id="field-opt2" label="Option 2">
-            {typed("opt2", "Option 2")}
-          </MockField>
-          <span className="text-play-600 block text-[11px] font-semibold">+ Add option</span>
-        </div>
-
-        <div className="border-ink-100 rounded-xl border p-3">
-          <span
-            data-demo-target="relay"
-            className="flex items-center gap-2 transition-all duration-200 motion-reduce:transition-none data-[demo-press=true]:scale-[0.99]"
-          >
-            <span
-              className={`flex h-4 w-4 shrink-0 items-center justify-center rounded border-2 ${
-                relay ? "border-play-600 bg-play-600" : "border-ink-300 bg-white"
-              }`}
-            >
-              {relay && (
-                <svg
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="white"
-                  strokeWidth="4"
-                  className="h-2.5 w-2.5"
-                >
-                  <path d="M5 13l4 4L19 7" />
-                </svg>
-              )}
-            </span>
-            <span className="text-ink-700 text-[12.5px] font-semibold">
-              Also post to team chats
-            </span>
-          </span>
-          <p className="text-ink-400 mt-1 text-[11px]">
-            Off by default. Pick specific teams to post this poll into their chat too.
+          <p className="text-ink-500 mt-0.5 text-[14px] font-medium">
+            {GYM} · {DURATION} min
           </p>
-          {relay && (
-            <div className="live-row-in mt-2 flex flex-wrap gap-1.5">
-              <MockPill tone="play">U11 Girls Rep</MockPill>
-              <MockPill tone="neutral">U13 Girls Rep</MockPill>
-              <MockPill tone="neutral">U16 Boys Rep</MockPill>
+          {moved ? (
+            <p className="text-court-700 mt-1 text-[14px] font-bold">
+              Moved · {GUARDIANS} families told
+            </p>
+          ) : stage === "move" ? (
+            <div className="mt-1.5 space-y-1.5">
+              <div className="flex items-center gap-1.5">
+                <span
+                  data-demo-target="time-field"
+                  className={cn(
+                    "border-ink-300 flex-1 rounded-lg border bg-white px-2.5 py-1.5 text-[15px] font-semibold",
+                    picked ? "text-ink-900" : "text-ink-400"
+                  )}
+                >
+                  {picked || "New time"}
+                </span>
+                <Btn id="save-btn" size="sm">
+                  Save
+                </Btn>
+                <Btn tone="quiet" size="sm">
+                  Cancel
+                </Btn>
+              </div>
+              {conflict && (
+                <p
+                  data-demo-target="conflict"
+                  className="border-hoop-300 bg-hoop-50 text-hoop-900 live-pop rounded-lg border px-2.5 py-1.5 text-[14px] font-semibold leading-snug"
+                >
+                  {CONFLICT}
+                </p>
+              )}
+            </div>
+          ) : (
+            <div className="mt-1.5 flex gap-1.5">
+              <Btn id="move-btn" tone="quiet" size="sm">
+                Move
+              </Btn>
+              <Btn tone="quiet" size="sm">
+                Cancel
+              </Btn>
             </div>
           )}
         </div>
+
+        <div className="border-ink-200 rounded-xl border bg-white px-3 py-2">
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-ink-900 text-[15px] font-bold">Thu, Aug 20, 7:00 p.m.</span>
+            <Chip tone="neutral">Practice</Chip>
+          </div>
+          <p className="text-ink-500 mt-0.5 text-[14px] font-medium">
+            {GYM} · {DURATION} min
+          </p>
+        </div>
       </div>
-    </MockDialog>
-  )
-}
 
-/* ── Phone screens ────────────────────────────────────────────────────────── */
-
-function WeekScreen() {
-  return (
-    <div className="space-y-2">
-      <p className="text-ink-500 mb-1 text-[10px] font-semibold uppercase tracking-[0.12em]">
-        Amara · U11 Girls Rep
-      </p>
-      <WeekRow day="Thu" title="Practice" meta="6:00 PM · Riverside CC, Court 1" />
-      <WeekRow day="Sat" title="Game vs Lakeshore Lightning" meta="9:00 AM · Home" />
-      <WeekRow day="Tue" title="Practice" meta="6:00 PM · Riverside CC, Court 1" />
-      <p className="text-ink-500 mb-1 mt-3 text-[10px] font-semibold uppercase tracking-[0.12em]">
-        Noah · U13 Boys Rep
-      </p>
-      <WeekRow day="Fri" title="Practice" meta="7:30 PM · Northside HS" />
+      {moved && (
+        <div
+          data-demo-target="audience-card"
+          className="border-court-200 bg-court-50/60 live-pop rounded-2xl border px-3 py-2"
+        >
+          <p className="text-court-800 text-[15px] font-bold">Who was told</p>
+          <div className="mt-1 space-y-0.5">
+            <AudienceRow label="Guardians on the roster" value={`${GUARDIANS}`} />
+            <AudienceRow label="Players" value={`${PLAYERS}`} />
+            <AudienceRow label="Lists built by a human" value="0" />
+          </div>
+          <p className="text-court-700 mt-1 text-[14px] font-medium leading-snug">
+            The roster is the audience. Add a player tomorrow and the next change reaches them too.
+          </p>
+        </div>
+      )}
     </div>
   )
 }
 
-function WeekRow({ day, title, meta }: { day: string; title: string; meta: string }) {
+function AudienceRow({ label, value }: { label: string; value: string }) {
   return (
-    <div className="border-ink-100 flex items-center gap-2.5 rounded-xl border bg-white px-2.5 py-2">
-      <span className="bg-court-50 text-court-700 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[10px] font-bold uppercase">
-        {day}
+    <div className="flex items-baseline gap-2">
+      <span className="text-court-800 w-[36px] shrink-0 text-[17px] font-extrabold tabular-nums">
+        {value}
       </span>
-      <div className="min-w-0">
-        <p className="text-ink-900 truncate text-[12px] font-semibold">{title}</p>
-        <p className="text-ink-400 truncate text-[10.5px]">{meta}</p>
-      </div>
+      <span className="text-court-700 text-[14px] font-semibold">{label}</span>
     </div>
   )
 }
 
-/**
- * The thread. Everything the story adds to it arrives in the same column, so
- * the screen never reflows around the pointer: the pinned strip sits above the
- * day marker, the poll comes in under the last bubble, and the composer is
- * pinned to the bottom of the phone the whole time.
- */
-function ChatScreen({
-  typed,
-  msgs,
-  typingNow,
-  reactRow,
-  reacted,
-  pollInChat,
-  pollOptions,
-  voterCount,
-  voted,
-  closed,
+/** `teams/[teamId]/chat`, the coach's end. */
+function CoachChat({
+  asked,
+  answered,
   pinned,
 }: {
-  typed: Typed
-  msgs: number
-  typingNow: boolean
-  reactRow: boolean
-  reacted: boolean
-  pollInChat: boolean
-  pollOptions: MockPollOption[]
-  voterCount: number
-  voted: boolean
-  closed: boolean
+  asked: boolean
+  answered: boolean
   pinned: boolean
 }) {
   return (
     <div className="flex h-full flex-col">
+      <p className="text-ink-900 shrink-0 text-[17px] font-extrabold">Team chat</p>
+
       {pinned && (
-        <div className="mb-1.5 shrink-0">
-          <PhonePinnedStrip author="Dana Michaels">
-            Team dinner is Friday after practice.
-          </PhonePinnedStrip>
+        <div className="border-gold-400 bg-gold-50 live-pop mt-1.5 shrink-0 rounded-xl border px-2.5 py-1.5">
+          <p className="text-gold-600 text-[14px] font-bold uppercase tracking-[0.06em]">Pinned</p>
+          <p className="text-ink-800 text-[14px] font-semibold leading-snug">
+            Century Dr door, 8:00. Court 2.
+          </p>
         </div>
       )}
 
-      {/* The phone frame never scrolls, so the thread makes room the way a real
-          thread does: once the poll arrives, the oldest message is above the
-          fold. Both trims happen on beats with no pointer on screen. */}
-      <div className="min-h-0 flex-1">
-        {!pollInChat && (
-          <>
-            <PhoneChatDay>Today</PhoneChatDay>
-            <PhoneChatBubble
-              author="Dana Michaels"
-              context="Head coach"
-              staff
-              time="4:12 PM"
-            >
-              Gym change is up on the team page. Riverside CC, Court 2 on Saturday.
-            </PhoneChatBubble>
-          </>
+      <div className="mt-1.5 min-h-0 flex-1 space-y-1.5 overflow-hidden">
+        <Bubble who="You" staff body={`Practice moved to ${NEW_WHEN}, same gym.`} time="5:12 p.m." />
+        {asked && (
+          <Bubble
+            who={PARENT}
+            context={`${PLAYER}'s parent`}
+            body="Is the door still on Century Dr at 8?"
+            time="5:14 p.m."
+            fresh
+          />
         )}
-
-        {msgs >= 1 && (
-          <PhoneChatBubble mine author="You" time="4:31 PM">
-            Is 8:30 for warmup or just doors open?
-          </PhoneChatBubble>
-        )}
-
-        {typingNow && <PhoneTypingLine name="Dana Michaels" />}
-
-        {msgs >= 2 && (
-          <PhoneChatBubble
-            author="Dana Michaels"
-            context="Head coach"
+        {answered && (
+          <Bubble
+            who="You"
             staff
-            time="4:32 PM"
-            reactId="react-thumb"
-            showReactRow={reactRow}
-            reactions={reacted ? [{ emoji: "👍", count: 1, mine: true }] : undefined}
-          >
-            Doors at 8:30, warmup starts 8:40. Full kit please.
-          </PhoneChatBubble>
-        )}
-
-        {pollInChat && (
-          <PhonePollBubble
-            question="Team dinner: Friday or Sunday?"
-            options={pollOptions}
-            voterCount={voterCount}
-            voted={voted}
-            closed={closed}
-            idPrefix="vote"
+            body="Yes, Century Dr door. We are on Court 2."
+            time="5:15 p.m."
+            reactions={[["👍", 4]]}
+            pin={!pinned}
+            fresh
           />
         )}
       </div>
 
-      {/* Sending empties the box, the way it does in the product. */}
-      <div className="-mx-3 -mb-3 mt-1 shrink-0">
-        <PhoneChatComposer inputId="chat-input" sendId="chat-send">
-          {msgs >= 1 ? (
-            <span className="text-ink-400">Message the team…</span>
-          ) : (
-            typed("question", "Message the team…")
-          )}
-        </PhoneChatComposer>
+      <p
+        data-demo-target="unread-note"
+        className="border-ink-200 text-ink-500 mt-1.5 shrink-0 rounded-xl border bg-white px-2.5 py-1.5 text-[14px] font-medium leading-snug"
+      >
+        Everyone on this thread carries their own unread badge. What the product does not do today is
+        tell the sender who has opened it.
+      </p>
+    </div>
+  )
+}
+
+function Bubble({
+  who,
+  context,
+  staff,
+  body,
+  time,
+  reactions,
+  pin,
+  fresh,
+}: {
+  who: string
+  context?: string
+  staff?: boolean
+  body: string
+  time: string
+  reactions?: [string, number][]
+  pin?: boolean
+  fresh?: boolean
+}) {
+  return (
+    <div
+      className={cn(
+        "border-ink-200 rounded-xl border bg-white px-2.5 py-1.5",
+        staff && "border-play-200 bg-play-50/40",
+        fresh && "live-row-in"
+      )}
+    >
+      <div className="flex flex-wrap items-center gap-1.5">
+        <span className="text-ink-900 text-[14px] font-bold">{who}</span>
+        {staff && <StatusChip tone="play">Staff</StatusChip>}
+        {context && <span className="text-ink-400 text-[14px] font-medium">{context}</span>}
+        <span className="text-ink-400 ml-auto text-[14px] font-medium">{time}</span>
+      </div>
+      <p className="text-ink-800 mt-0.5 text-[15px] font-medium leading-snug">{body}</p>
+      <div className="mt-1 flex items-center gap-1.5">
+        {reactions?.map(([e, n]) => (
+          <span
+            key={e}
+            className="border-ink-200 text-ink-700 rounded-full border bg-white px-1.5 text-[14px] font-semibold"
+          >
+            {e} {n}
+          </span>
+        ))}
+        {pin && (
+          <span
+            data-demo-target="pin-btn"
+            className="text-play-700 ml-auto text-[14px] font-bold"
+          >
+            Pin
+          </span>
+        )}
       </div>
     </div>
   )
 }
 
-/* ── Bits ─────────────────────────────────────────────────────────────────── */
+/** `components/polls/poll-card.tsx`, the staff view. */
+function CoachPoll({ voted }: { voted: boolean }) {
+  return (
+    <div data-demo-target="poll-card" className="space-y-2">
+      <div className="flex items-center justify-between gap-2">
+        <p className="text-ink-900 min-w-0 truncate text-[17px] font-extrabold">{POLL_TITLE}</p>
+        <StatusChip tone="court">Open</StatusChip>
+      </div>
+      <p className="text-ink-400 text-[14px] font-medium">
+        {COACH} · Aug 14 · {Q1_VOTED + (voted ? 1 : 0)} votes
+      </p>
 
-/** Renders one state key as text that types itself when the beat says so. */
-type Typed = (key: string, placeholder?: string) => ReactNode
+      <PollQuestion
+        id="poll-q1"
+        prompt={Q1.prompt}
+        multi={Q1.multi}
+        voted={Q1_VOTED + (voted ? 1 : 0)}
+        options={Q1.options.map((o, i) => ({
+          ...o,
+          votes: o.votes + (voted && i === 0 ? 1 : 0),
+        }))}
+        total={GUARDIANS}
+        flashFirst={voted}
+      />
+      <PollQuestion
+        id="poll-q2"
+        prompt={Q2.prompt}
+        multi={Q2.multi}
+        voted={3}
+        options={Q2.options}
+        total={GUARDIANS}
+      />
+    </div>
+  )
+}
+
+function PollQuestion({
+  id,
+  prompt,
+  multi,
+  voted,
+  options,
+  total,
+  flashFirst,
+}: {
+  id?: string
+  prompt: string
+  multi: boolean
+  voted: number
+  options: { label: string; votes: number }[]
+  total: number
+  flashFirst?: boolean
+}) {
+  const lead = Math.max(...options.map((o) => o.votes), 1)
+  return (
+    <div data-demo-target={id} className="border-ink-200 rounded-xl border bg-white px-2.5 py-2">
+      <p className="text-ink-900 text-[15px] font-bold leading-snug">{prompt}</p>
+      <p className="text-ink-400 mt-0.5 text-[14px] font-semibold">
+        {multi ? "Pick any" : "Pick one"} · {voted} voted
+      </p>
+      <div className="mt-1.5 space-y-1">
+        {options.map((o, i) => (
+          <div
+            key={o.label}
+            className={cn(
+              "border-ink-100 relative overflow-hidden rounded-lg border bg-white px-2 py-1",
+              flashFirst && i === 0 && "live-pop"
+            )}
+          >
+            <span
+              aria-hidden="true"
+              className="bg-play-100 absolute inset-y-0 left-0 transition-[width] duration-500 motion-reduce:transition-none"
+              style={{ width: `${(o.votes / lead) * 100}%` }}
+            />
+            <span className="relative flex items-center justify-between gap-2">
+              <span className="text-ink-900 truncate text-[14px] font-semibold">{o.label}</span>
+              <span className="text-ink-600 shrink-0 text-[14px] font-bold tabular-nums">
+                {o.votes} · {pct(o.votes, total)}%
+              </span>
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+/* ── The parent's phone ──────────────────────────────────────────────────── */
+
+function ParentPhone({
+  view,
+  typed,
+  typing,
+  asked,
+  answered,
+  voted,
+}: {
+  view: string
+  typed: string
+  typing: boolean
+  asked: boolean
+  answered: boolean
+  voted: boolean
+}) {
+  return (
+    <div className="flex h-full flex-col bg-[#f6f7f9]">
+      <div className="flex items-baseline gap-2 bg-[#0b1628] px-4 pb-2.5 pt-2 text-white">
+        <p className="text-[15px] font-bold leading-tight">{PARENT}</p>
+        <p className="text-[14px] font-medium text-white/60">Parent · two players</p>
+      </div>
+
+      <div key={view} className="demo-fade-in min-h-0 flex-1 overflow-hidden px-3 py-2.5">
+        {view === "notif" && <Inbox />}
+        {view === "chat" && (
+          <ParentChat typed={typed} typing={typing} asked={asked} answered={answered} />
+        )}
+        {view === "poll" && <ParentPoll voted={voted} />}
+      </div>
+
+      <TabBar tabs={["Home", "Chat", "Calendar", "My Kids", "Social"]} active={view === "chat" ? "Chat" : "Home"} />
+    </div>
+  )
+}
+
+function Inbox() {
+  return (
+    <div className="space-y-2">
+      <p className="text-ink-900 text-[17px] font-extrabold">Notifications</p>
+
+      <div
+        data-demo-target="p-notif"
+        className="border-play-300 live-pop rounded-2xl border bg-white px-3 py-2.5"
+      >
+        <p className="text-ink-900 text-[15px] font-bold leading-snug">{NOTIF_TITLE}</p>
+        <p data-demo-target="p-strike" className="text-ink-700 mt-1 text-[14px] font-semibold">
+          <s className="text-ink-400">{OLD_WHEN}</s> <span aria-hidden="true">→</span>{" "}
+          <span className="text-ink-950 font-bold">{NEW_WHEN}</span>
+        </p>
+      </div>
+
+      <p className="text-ink-400 text-[14px] font-bold uppercase tracking-[0.1em]">
+        And the same thing by email
+      </p>
+      <div className="border-ink-200 rounded-2xl border bg-white px-3 py-2.5">
+        <p className="text-ink-900 text-[15px] font-bold leading-snug">{EMAIL_SUBJECT}</p>
+        <p className="text-ink-700 mt-1 text-[14px] font-semibold">
+          <s className="text-ink-400">{OLD_WHEN}</s> <span aria-hidden="true">→</span>{" "}
+          <span className="text-ink-950 font-bold">{NEW_WHEN}</span> at {GYM}
+        </p>
+        <p data-demo-target="p-tail" className="text-play-700 mt-1.5 text-[14px] font-bold leading-snug">
+          {EMAIL_TAIL}
+        </p>
+      </div>
+
+      <p className="text-ink-500 text-[14px] font-medium leading-snug">
+        A push, a bell entry and an email. She has not opened the app yet.
+      </p>
+    </div>
+  )
+}
+
+function ParentChat({
+  typed,
+  typing,
+  asked,
+  answered,
+}: {
+  typed: string
+  typing: boolean
+  asked: boolean
+  answered: boolean
+}) {
+  return (
+    <div className="flex h-full flex-col">
+      <p className="text-ink-900 shrink-0 text-[17px] font-extrabold">{TEAM}</p>
+      <div className="mt-1.5 min-h-0 flex-1 space-y-1.5 overflow-hidden">
+        <Bubble who={COACH} staff body={`Practice moved to ${NEW_WHEN}, same gym.`} time="5:12 p.m." />
+        {asked && (
+          <Bubble
+            who="You"
+            context={`${PLAYER}'s parent`}
+            body="Is the door still on Century Dr at 8?"
+            time="5:14 p.m."
+            fresh
+          />
+        )}
+        {answered && (
+          <Bubble
+            who={COACH}
+            staff
+            body="Yes, Century Dr door. We are on Court 2."
+            time="5:15 p.m."
+            reactions={[["👍", 4]]}
+            fresh
+          />
+        )}
+      </div>
+      <div className="mt-1.5 flex shrink-0 items-center gap-1.5">
+        <span
+          data-demo-target="composer"
+          className={cn(
+            "border-ink-300 min-w-0 flex-1 truncate rounded-full border bg-white px-3 py-1.5 text-[15px] font-medium",
+            typed ? "text-ink-900" : "text-ink-400"
+          )}
+        >
+          {asked ? CHAT_PLACEHOLDER : typed || CHAT_PLACEHOLDER}
+          {typing && <span className="bg-play-600 ml-0.5 inline-block h-4 w-[2px] align-middle" />}
+        </span>
+        <span className="text-ink-500 shrink-0 text-[17px]" aria-hidden="true">
+          📊
+        </span>
+        <Btn id="send-msg" size="sm">
+          Send
+        </Btn>
+      </div>
+    </div>
+  )
+}
+
+/** `components/chat/poll-bubble.tsx`, the family's end. */
+function ParentPoll({ voted }: { voted: boolean }) {
+  const opts = Q1.options.map((o, i) => ({ ...o, votes: o.votes + (voted && i === 0 ? 1 : 0) }))
+  const lead = Math.max(...opts.map((o) => o.votes), 1)
+  const total = Q1_VOTED + (voted ? 1 : 0)
+  return (
+    <div className="space-y-2">
+      <p className="text-ink-900 text-[17px] font-extrabold">{TEAM}</p>
+      <div className="border-play-200 bg-play-50/40 rounded-2xl border px-3 py-2.5">
+        <p className="text-ink-900 text-[15px] font-bold leading-snug">{Q1.prompt}</p>
+        <div className="mt-1.5 space-y-1">
+          {opts.map((o, i) => (
+            <div
+              key={o.label}
+              data-demo-target={i === 0 ? "p-opt-1" : undefined}
+              className={cn(
+                "relative overflow-hidden rounded-lg border bg-white px-2 py-1.5",
+                voted && i === 0 ? "border-court-400" : "border-ink-200"
+              )}
+            >
+              <span
+                aria-hidden="true"
+                className={cn(
+                  "absolute inset-y-0 left-0 transition-[width] duration-500 motion-reduce:transition-none",
+                  voted && i === 0 ? "bg-court-100" : "bg-play-100"
+                )}
+                style={{ width: voted ? `${(o.votes / lead) * 100}%` : "0%" }}
+              />
+              <span className="relative flex items-center justify-between gap-2">
+                <span className="text-ink-900 truncate text-[14px] font-semibold">
+                  {o.label}
+                  {voted && i === 0 && <span className="text-court-700 ml-1.5">✓ your pick</span>}
+                </span>
+                {voted && (
+                  <span className="text-ink-600 shrink-0 text-[14px] font-bold tabular-nums">
+                    {o.votes} · {pct(o.votes, GUARDIANS)}%
+                  </span>
+                )}
+              </span>
+            </div>
+          ))}
+        </div>
+        <p className="text-ink-500 mt-1.5 text-[14px] font-medium">
+          {voted ? `${total} votes · tap to change` : "Tap an option to choose, then submit."}
+        </p>
+      </div>
+      <p className="text-ink-500 text-[14px] font-medium leading-snug">
+        The same poll, in the thread she is already in. No link, no sign-in, no form.
+      </p>
+    </div>
+  )
+}
+
+/* ── Shared ──────────────────────────────────────────────────────────────── */
+
+function TabBar({ tabs, active }: { tabs: string[]; active: string }) {
+  return (
+    <div className="border-ink-200 flex shrink-0 items-center justify-around border-t bg-white px-1.5 pb-4 pt-2">
+      {tabs.map((t) => (
+        <span
+          key={t}
+          className={cn("text-[14px] font-bold", t === active ? "text-play-700" : "text-ink-400")}
+        >
+          {t}
+        </span>
+      ))}
+    </div>
+  )
+}
+
+/* ── End card ────────────────────────────────────────────────────────────── */
+
+function EndCard(): ReactNode {
+  return (
+    <div className="absolute inset-0 z-20 flex items-center justify-center bg-[#0b1628] px-8 text-white">
+      <div className="live-pop max-w-[340px] text-center">
+        <p className="text-gold-400 text-[15px] font-bold uppercase tracking-[0.18em]">
+          A club story
+        </p>
+        <h3 className="font-display mt-2 text-[26px] font-extrabold leading-tight">
+          Everyone in the loop
+        </h3>
+        <p className="mt-3 text-[15px] leading-relaxed text-white/75">
+          A practice moved in two presses, refused once by the club&apos;s own booking and named,
+          then ten families told by push, bell and email with nobody building a list. The question
+          answered where all ten could read it, and the tournament settled by a count instead of an
+          argument.
+        </p>
+        <p className="mt-4 text-[14px] font-semibold text-white/50">Next: your week</p>
+      </div>
+    </div>
+  )
+}
