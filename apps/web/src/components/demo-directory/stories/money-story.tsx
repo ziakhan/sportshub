@@ -2,838 +2,899 @@
 
 import type { ReactNode } from "react"
 import { cn } from "@/components/ui/cn"
-import { PlayerMug } from "@/components/ui/player-mug"
-import { TypeText } from "../motion"
-import {
-  MockButton,
-  MockDialog,
-  MockEmailPreview,
-  MockEndCard,
-  MockPill,
-  MockTile,
-  MockTopBar,
-} from "../mock-ui"
-import type { DemoScript } from "../types"
+import { Btn, Chip, Panel, StatusChip } from "../scene-kit"
+import type { DemoBeat, DemoScript } from "../types"
 
 /**
- * Chapter 8: "The money picture" (owner-signed script, 2026-08-15).
+ * "The money picture", rebuilt 2026-08-16 to the gold standard set by
+ * `season-story.tsx`, `waivers-story.tsx`, `roster-story.tsx` and the rest of
+ * the 08-16 set, to the same three laws:
  *
- * THE ARGUMENT. Club money is run out of a spreadsheet and a group chat, and
- * the worst job in amateur sport is the volunteer treasurer standing in a gym
- * doorway telling a parent they are two hundred dollars behind. This chapter
- * is about removing that conversation, not about a nicer table.
+ *   1. PRESENTATION (audit D2). A focused working REGION composed at 1160
+ *      logical and rendered at scale 1.0, no browser chrome, no site header.
+ *      When the family's phone joins, the region is composed NARROWER (900)
+ *      rather than scaled down. `scripts/demo/readability-audit.mjs` gates it.
+ *   2. PACING. Stop, explain, act, one voice.
+ *   3. EVERY NUMBER DERIVED. The four tiles, the aging split, the overdue
+ *      count, the family, her plan, her two real payments and the price list
+ *      were all read out of the local seeded database, most of them by running
+ *      the product's own `merchantObligations` and `summarize` over it. Every
+ *      one is written down in `docs/roadmap/money-picture-numbers.md`.
  *
- * THE PAINFUL DETAIL (owner's law, named for this chapter): NOBODY MAKES THE
- * AWKWARD CALL. The reminders are not a button somebody has to be brave enough
- * to press. They are scheduled: three days before the charge, the day after it
- * is missed, then every four days, and they stop the moment the money is
- * recorded, whether it arrived by card or by e-transfer at the door. The demo
- * shows the schedule and shows the email, because "we send reminders" means
- * nothing until you can read the one that goes out with your club's name on it.
+ * THE SCREEN IS THE REAL ONE. `/clubs/[id]/payments`
+ * (`app/(platform)/clubs/[id]/payments/page.tsx`) reading
+ * `lib/payments/queries.ts`, which is the SAME module the mobile money surface
+ * reads, so the parity law holds. The tiles, the overdue banner, the by-type
+ * pills, the table columns, the filter chips, the status badges, the row's
+ * overdue counter, the expanded payment history, the record-payment modal and
+ * the waive confirmation are all that page's own copy.
  *
- * TRUTH TO THE PRODUCT. Every surface mirrors one that ships today:
- *   · the screen — app/(platform)/clubs/[id]/payments/page.tsx: the four tiles
- *     Collected, Outstanding, Overdue, Waived, the red overdue banner reading
- *     "N payments overdue" with its "1–30 days", "31–60 days" and "60+ days"
- *     aging, the by-type pill row, and the "Owed to {club}" panel;
- *   · the table — components/payments/obligations-table.tsx: the filter chips
- *     All, Open, Owed, Partially paid, Paid, Waived, Cancelled, the From /
- *     For / Amount / Paid / Status columns, the status pill wording from
- *     components/payments/types.ts, the red "Overdue Nd" badge, the expanded
- *     payment history written "{date} · {method} · recorded by {name}", and
- *     the Record payment and Waive actions;
- *   · the modal — the same file's "Record a payment": "{description} —
- *     {remaining} remaining", "Amount received", "Method" with Cash,
- *     e-Transfer, Cheque and Other, and "Note (optional)" carrying the
- *     product's own placeholder, "e.g. paid at the door";
- *   · the plan — lib/payments/installments.ts computeDefaultPlan: a 25%
- *     deposit and three equal installments on the first of the next three
- *     months, labelled "Deposit" then "Installment N" the way
- *     app/(platform)/payments/page.tsx labels them for the family;
- *   · the reminder — lib/payments/scheduled.ts: reminderLeadDays defaulting to
- *     3, OVERDUE_NAG_DAYS of 4, OVERDUE_MAX_DAYS of 90, the notification
- *     titles "Payment coming up" and "Payment overdue", and both email bodies
- *     word for word.
+ * THE DESK STAYS DESKTOP (audit D, owner exception): a money table is an
+ * operator working surface. The family's phone is a real phone surface, so the
+ * reminder chapter puts the notification and the email where they actually
+ * land.
  *
- * TWO SCRIPT CORRECTIONS THE PRODUCT FORCED (2026-08-15):
- *   1. The brief said "filter to overdue". There is no Overdue filter, and
- *      adding one to a demo would be selling a control that does not exist.
- *      Overdue is not a state, it is a date passing: the filter is "Open" and
- *      lateness rides on the row as "Overdue 12d". So the demo presses Open,
- *      and the banner above the table is what counts the late ones.
- *   2. The brief said "send the reminder". There is no send button anywhere in
- *      the payments UI, and that is the feature rather than a gap: the club
- *      never sends it, the schedule does. The beat became the schedule and the
- *      email itself, which is a better beat and a true one.
+ * SAME FAMILY AS THE REST OF THE DIRECTORY. `DB` Jordan Reyes, guardian of
+ * Darius (#37) and Danielle (#20), is one of the eight families this club is
+ * genuinely owed money by: obligation `e2f5e46b`, $895, $447.50 paid, 137 days
+ * late. Her two payments on it are real rows: cash in March, e-transfer in
+ * April. The demo did not have to invent a debtor.
  *
- * MOTION. One fixed browser window. The table filters in place, one row opens
- * underneath itself, two rows go green where they stand, and the four tiles at
- * the top move last, because the tiles are the answer and the answer comes
- * after the work.
+ * FOUR THINGS THE PRODUCT CANNOT HONESTLY SHOW, DECLARED IN SECTION F OF THE
+ * NUMBERS SHEET RATHER THAN STAGED AS FEATURES:
+ *   1. THE REMINDER CRON IS NOT RUNNING ON THE BOX TODAY (runbook #36). The
+ *      cadence in this demo is what the code schedules, and the demo says so
+ *      on the card instead of implying mail is going out tonight.
+ *   2. THERE IS NO "MISSED" PAYMENT STATUS. The enum is PENDING, PROCESSING,
+ *      SUCCEEDED, FAILED, REFUNDED, DISPUTED. The previous cut of this demo
+ *      invented a "Missed, card expired" chip; it is gone.
+ *   3. THERE IS NO OVERDUE FILTER. The real chips are All, Open, Paid, Waived,
+ *      Cancelled, and lateness rides on the row as "Overdue 137d".
+ *   4. NOTHING IN THIS DATABASE IS WAIVED. Zero `WAIVED` obligations exist, so
+ *      the Waived tile starts at zero and the demo says what the button does
+ *      rather than pretending the club has already used it.
  */
 
-/* ── Cast ────────────────────────────────────────────────────────────────── */
+/* ── Cast, read out of the seeded world ──────────────────────────────────── */
 
-const CLUB = "Riverside Ravens"
+/** `DB` Tenant dcd497e7, "Toronto Lords", Toronto, CAD. */
+const CLUB = "Toronto Lords"
+const CTX = `${CLUB} · Payments`
 
-interface Row {
-  id: string
-  family: string
-  type: string
-  description: string
-  amount: string
-  paid: string
-  status: "Owed" | "Partially paid" | "Paid" | "Waived"
-  overdueDays?: number
-  open: boolean
-}
+/**
+ * The four tiles. `PRODUCT` produced by `summarize(merchantObligations({
+ * tenantId }))` in `lib/payments/queries.ts`, which is exactly what the page
+ * calls; run against this club on 2026-08-16 and copied here.
+ */
+const COLLECTED = 23270
+const OUTSTANDING = 3580
+const OVERDUE = 3580
+const WAIVED = 0
+/** `PRODUCT` `summarize().overdueCount` and `.aging`. */
+const OVERDUE_COUNT = 8
+const AGING_60PLUS = 3580
+/** `PRODUCT` `summarize().byType`, and `TYPE_LABEL.Offer` is "Season fee". */
+const BY_TYPE: [string, number][] = [["Season fee", 23270]]
 
-const ROWS: Row[] = [
-  {
-    id: "malik",
-    family: "Sana Malik",
-    type: "Season fee",
-    description: "Amara Bello · U11 Girls Rep",
-    amount: "$340.00",
-    paid: "$170.00",
-    status: "Partially paid",
-    overdueDays: 12,
-    open: true,
-  },
-  {
-    id: "thompson",
-    family: "Grace Thompson",
-    type: "Season fee",
-    description: "Noah Thompson · U13 Boys Rep",
-    amount: "$340.00",
-    paid: "$255.00",
-    status: "Partially paid",
-    overdueDays: 5,
-    open: true,
-  },
-  {
-    id: "sundaram",
-    family: "Meera Sundaram",
-    type: "Camp",
-    description: "March Break Camp · week 1",
-    amount: "$210.00",
-    paid: "—",
-    status: "Owed",
-    open: true,
-  },
-  {
-    id: "ruiz",
-    family: "Tomas Ruiz",
-    type: "Season fee",
-    description: "Mateo Ruiz · U13 Boys Rep",
-    amount: "$340.00",
-    paid: "$85.00",
-    status: "Partially paid",
-    open: true,
-  },
-  {
-    id: "nair",
-    family: "Priya Nair",
-    type: "Season fee",
-    description: "Priya Nair · U11 Girls Rep",
-    amount: "$340.00",
-    paid: "$340.00",
-    status: "Paid",
-    open: false,
-  },
-  {
-    id: "whitfield",
-    family: "Ben Whitfield",
-    type: "Team fee",
-    description: "U13 Boys Rep · gym share",
-    amount: "$120.00",
-    paid: "—",
-    status: "Waived",
-    open: false,
-  },
+/** `DB` 30 obligations on this club, 22 PAID and 8 PARTIALLY_PAID. */
+const TOTAL_ROWS = 30
+const OPEN_ROWS = 8
+
+/** `PRODUCT` the real filter chips. There is no Overdue chip. */
+const FILTERS = ["All", "Open", "Paid", "Waived", "Cancelled"]
+
+/**
+ * The eight open rows. `DB` every one is $895 with $447.50 paid, due
+ * 2026-04-01, and 137 days late as of 2026-08-16. Guardian names are real.
+ */
+const FEE = 895
+const PAID = 447.5
+const REMAINING = 447.5
+const LATE_DAYS = 137
+const OPEN = [
+  { payer: "Jordan Reyes", team: "Toronto Lords Grade 10 Girls" },
+  { payer: "Elena Lewis", team: "Toronto Lords Grade 9" },
+  { payer: "Chris Campbell", team: "Toronto Lords Grade 9" },
+  { payer: "Jamie Clarke", team: "Toronto Lords Grade 10" },
+  { payer: "Jordan Wilson", team: "Toronto Lords Grade 10 Girls" },
+  { payer: "Kevin Campbell", team: "Toronto Lords Grade 10 Girls" },
+]
+const OPEN_SHOWN = 4
+
+/** `DB` the family this directory already follows. */
+const FAMILY = "Jordan Reyes"
+const FAMILY_TEAM = "Toronto Lords Grade 10 Girls"
+/** `DB` the description on the obligation itself; the row stores an em-dash. */
+const FAMILY_DESC = `Summer 2026 season fee · ${FAMILY_TEAM}`
+
+/**
+ * Her plan, and it is not a mock: `DB` two `Payment` rows on obligation
+ * e2f5e46b, both SUCCEEDED, both offline, and `ARITH` $895 / 4 = $223.75,
+ * which is what `computeDefaultPlan(895)` returns for a deposit and three.
+ */
+const PER = 223.75
+const HISTORY = [
+  { when: "Mar 14", method: "Cash", amount: PER, label: "Summer 2026 deposit" },
+  { when: "Apr 13", method: "e-Transfer", amount: PER, label: "Summer 2026 installment 1/3" },
+]
+const REMAINING_TERMS = [
+  { label: "Summer 2026 installment 2/3", amount: PER },
+  { label: "Summer 2026 installment 3/3", amount: PER },
 ]
 
+/**
+ * The club's price list. Every line `DB` except the rep season, which is the
+ * `OWNER` band the roster story sends its offer at.
+ */
+const TIERS = [
+  { what: "Tryout", price: "$25", detail: "Fall tryouts, per player, one evening", tag: "DB" },
+  { what: "House league", price: "$220", detail: "Eight Saturdays, U8 to U12, jersey and medal", tag: "DB" },
+  { what: "Skills camp", price: "$275 a week", detail: "or $950 for the full camp", tag: "DB" },
+  { what: "Summer program", price: "$795 to $1,495", detail: "Returning, New Player, Elite All-In", tag: "DB" },
+  { what: "Rep season", price: "$3,600", detail: "Deposit and three monthly installments", tag: "OWNER" },
+]
+
+/** `PRODUCT` the record-payment modal, `obligations-table.tsx` lines 334 to 374. */
+const NOTE = "paid at the door"
+
+/**
+ * The cadence, exactly as `lib/payments/scheduled.ts` schedules it.
+ * `PaymentConfig.reminderLeadDays` defaults to 3, `OVERDUE_NAG_DAYS` is 4 and
+ * `OVERDUE_MAX_DAYS` is 90.
+ */
+const LEAD_DAYS = 3
+const NAG_DAYS = 4
+const MAX_DAYS = 90
+
+/** `PRODUCT` `scheduled.ts` lines 113 to 114, and 136 to 138. */
+const DUE_TITLE = "Payment coming up"
+const DUE_MSG = `${FAMILY_DESC}: $223.75 due Sep 1.`
+const DUE_SUBJECT = "Payment reminder: $223.75 due Sep 1"
+const DUE_BODY =
+  "It will be charged automatically to your card on file. See your schedule: My payments."
+/** `PRODUCT` `scheduled.ts` lines 236 and 241 to 246; the row writes an em-dash. */
+const LATE_TITLE = "Payment overdue"
+const LATE_MSG = `${FAMILY_DESC} · $447.50 was due ${LATE_DAYS} days ago.`
+
+const money = (n: number) =>
+  `$${n.toLocaleString("en-CA", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+const round = (n: number) => `$${n.toLocaleString("en-CA")}`
+
+/* ── Pacing ──────────────────────────────────────────────────────────────── */
+
+function paced(b: Omit<DemoBeat, "hold"> & { hold?: number }): DemoBeat {
+  if (b.hold) return b as DemoBeat
+  const arrive = b.cursor ? 620 : 220
+  const settle = 500
+  const read = b.callout ? b.callout.trim().split(/\s+/).length * 180 + 900 : 2400
+  return { ...b, hold: Math.round(arrive + read + (b.callout ? settle : 0)) }
+}
+
+/* ── The script ──────────────────────────────────────────────────────────── */
+
 export const moneyStory: DemoScript = {
-  desktopUrl: "/clubs/riverside-ravens/payments",
+  presentation: "scene",
+  desktopUrl: "/clubs/toronto-lords/payments",
+  context: CTX,
   initialStage: "desktop",
   chapters: [
-    { id: "stands", title: "Where every dollar stands" },
-    { id: "family", title: "One family, one plan" },
-    { id: "reminder", title: "The reminder sends itself" },
+    { id: "stands", title: "Every dollar owed" },
+    { id: "charges", title: "What it charges" },
+    { id: "plan", title: "One family's plan" },
+    { id: "remind", title: "The reminder" },
+    { id: "door", title: "Cash at the door" },
   ],
 
   beats: [
     /* ── 1. Where every dollar stands ─────────────────────────────────── */
-    {
+    paced({
       id: "open",
       chapter: "stands",
-      caption:
-        "One screen, every dollar the club is owed. No spreadsheet, no second copy of the truth in somebody's email.",
-      hold: 3400,
-      set: { screen: "payments" },
-    },
-    {
-      id: "tiles",
+      caption: "Every dollar a club is owed, on one screen it did not have to build.",
+      emphasize: "tiles",
+      callout: "Collected, outstanding, overdue and waived, worked out from the obligations themselves.",
+    }),
+    paced({
+      id: "waived-tile",
       chapter: "stands",
-      caption:
-        "Collected, outstanding, overdue and waived. Waived is on there because clubs quietly carry families every season and that money should be visible, not lost.",
-      hold: 3600,
-    },
-    {
-      id: "banner",
+      caption: "Including the one nobody else counts.",
+      emphasize: "tile-waived",
+      callout:
+        "Clubs carry families every season. Money written off has a name here instead of vanishing.",
+    }),
+    paced({
+      id: "overdue",
       chapter: "stands",
-      caption:
-        "Overdue gets its own line, aged the way an accountant ages it: what is one to thirty days late, what is a month, what has been sitting since the summer.",
-      hold: 3600,
-      cursor: "overdue-banner",
-      hover: "overdue-banner",
-    },
-    {
+      caption: "Overdue is aged the way an accountant ages it.",
+      emphasize: "overdue-band",
+      callout: "Eight payments, and the whole amount is more than sixty days out. That is not a reminder problem.",
+    }),
+    paced({
       id: "bytype",
       chapter: "stands",
-      caption:
-        "And split by what it was for, so a treasurer can answer the board question before it is asked.",
-      hold: 3000,
-      cursor: "type-pills",
-      hover: "type-pills",
-    },
-    {
-      id: "statuses",
-      chapter: "stands",
-      caption:
-        "Every family sits in one of five states. Owed, partially paid, paid, waived, cancelled. There is no sixth state called probably.",
-      hold: 3200,
-    },
-    {
+      caption: "And it says what kind of money it is.",
+      emphasize: "bytype",
+      callout: "Season fees here, because season fees are all this club has raised so far.",
+    }),
+    paced({
       id: "filter",
       chapter: "stands",
-      caption: "Open is the filter that matters: everything still owing, nothing already settled.",
-      hold: 3200,
-      cursor: "chip-open",
+      caption: "Filter to what is still open.",
+      cursor: "filter-open",
       press: true,
-      set: { filter: "open" },
-    },
-    {
-      id: "late",
-      chapter: "stands",
-      caption:
-        "Late is not a status, it is a date that went past. So it rides on the row with the number of days on it, and two families are carrying one.",
-      hold: 3400,
-    },
+      set: { filter: "Open" },
+      callout:
+        "Thirty rows becomes eight. There is no overdue filter, because lateness belongs on the row.",
+    }),
 
-    /* ── 2. One family, one plan ──────────────────────────────────────── */
-    {
-      id: "open-row",
-      chapter: "family",
-      caption: "Twelve days is the one worth opening.",
-      hold: 2800,
-      cursor: "row-malik",
+    /* ── 2. What the club charges ─────────────────────────────────────── */
+    paced({
+      id: "tiers",
+      chapter: "charges",
+      caption: "The money on that screen comes from a price list, not a guess.",
+      set: { view: "tiers" },
+      emphasize: "tier-list",
+      callout: "One club, five products, and every one of them raises its own obligation.",
+    }),
+    paced({
+      id: "small",
+      chapter: "charges",
+      caption: "The small ones matter most, because they are the ones clubs stop chasing.",
+      emphasize: "tier-0",
+      callout:
+        "A twenty five dollar tryout is not worth an invoice to a human being. It is worth one to a machine.",
+    }),
+    paced({
+      id: "big",
+      chapter: "charges",
+      caption: "And the big one is the reason a payment plan exists at all.",
+      emphasize: "tier-4",
+      callout: "Nobody writes one cheque for a rep season. Deposit and three, dated, agreed on accept.",
+    }),
+
+    /* ── 3. One family, one plan ──────────────────────────────────────── */
+    paced({
+      id: "row",
+      chapter: "plan",
+      caption: "One of the eight, and this is the honest case.",
+      set: { view: "table", filter: "Open" },
+      cursor: "row-family",
       press: true,
-    },
-    {
-      id: "plan",
-      chapter: "family",
-      caption:
-        "The whole plan, written out: a deposit at signup and three installments on the first of the month. Two are ticked, one missed, one has not come round yet.",
-      hold: 3800,
+      callout: `${FAMILY} paid half and stopped. The row says how much and how late, without anybody working it out.`,
+    }),
+    paced({
+      id: "expand",
+      chapter: "plan",
+      caption: "Open it and the plan is underneath.",
       set: { expanded: true },
-    },
-    {
-      id: "why",
-      chapter: "family",
-      caption:
-        "This is what late usually is. Not a family refusing to pay, a card that expired in October. Nobody decided anything and nobody noticed.",
-      hold: 3800,
-    },
-    {
-      id: "history",
-      chapter: "family",
-      caption:
-        "Every payment carries how it arrived and who recorded it, so the cash somebody took at the door in September is on the same line as the card charges.",
-      hold: 3400,
-    },
+      emphasize: "history",
+      callout: "Four parts of two hundred and twenty three seventy five. Two are in.",
+    }),
+    paced({
+      id: "offline",
+      chapter: "plan",
+      caption: "And look at how they arrived.",
+      emphasize: "history",
+      callout: "Cash in March, an e-transfer in April. Both recorded, both on the record, neither on a card.",
+    }),
+    paced({
+      id: "left",
+      chapter: "plan",
+      caption: "Two are not.",
+      emphasize: "remaining",
+      callout: "Four hundred and forty seven fifty, a hundred and thirty seven days past its date.",
+    }),
 
-    /* ── 3. The reminder sends itself ─────────────────────────────────── */
-    {
-      id: "mail",
-      chapter: "reminder",
-      caption:
-        "Nobody pressed send. There is no send button on this screen, and that is the point.",
-      hold: 3800,
-      set: { mail: true },
-    },
-    {
+    /* ── 4. The reminder sends itself ─────────────────────────────────── */
+    paced({
       id: "cadence",
-      chapter: "reminder",
-      caption:
-        "Three days before the charge it says a payment is coming. The day after it is missed it says it is overdue. Then every four days, and it gives up at ninety rather than nagging a family forever.",
-      hold: 3800,
-    },
-    {
+      chapter: "remind",
+      caption: "Which is where the club stops being the one doing the chasing.",
+      set: { view: "cadence" },
+      emphasize: "cadence-card",
+      callout: "Three days before it is due, the day after it is missed, then every four days.",
+    }),
+    paced({
       id: "stops",
-      chapter: "reminder",
-      caption:
-        "It also tells them how to make it stop, including the sentence that saves the club a phone call: already paid us directly, we will record it and this ends.",
-      hold: 3600,
-    },
-    {
-      id: "malik-paid",
-      chapter: "reminder",
-      caption: "She updates the card that evening, the charge goes through, and the row moves itself.",
-      hold: 3200,
-      set: { mail: false, malikPaid: true },
-      toast: "Payment received, $170.00",
-    },
-    {
-      id: "record-press",
-      chapter: "reminder",
-      caption:
-        "The other one paid by e-transfer on Saturday, in a gym, to a coach. That money is real and it has to land here too.",
-      hold: 3000,
-      cursor: "record-thompson",
+      chapter: "remind",
+      caption: "And it knows when to stop.",
+      emphasize: "cadence-stop",
+      callout:
+        "Ninety days and the machine quits. Past that it is a conversation, not a notification.",
+    }),
+    paced({
+      id: "phone",
+      chapter: "remind",
+      caption: "This is what actually lands.",
+      stage: "split",
+      set: { phone: "due" },
+      emphasize: "p-due",
+      callout: "The notification and the email say the same thing, because one function writes both.",
+    }),
+    paced({
+      id: "late",
+      chapter: "remind",
+      caption: "And this is what lands when it is already late.",
+      set: { phone: "late" },
+      emphasize: "p-late",
+      callout:
+        "Named, dated and counted. No club owner had to sit down on a Sunday and write it.",
+    }),
+    paced({
+      id: "honest",
+      chapter: "remind",
+      caption: "One honest line about that.",
+      stage: "desktop",
+      emphasize: "cadence-honest",
+      callout:
+        "That is the schedule in the code. On this machine the job is switched off, and the demo will not pretend otherwise.",
+    }),
+
+    /* ── 5. Cash at the door ──────────────────────────────────────────── */
+    paced({
+      id: "door",
+      chapter: "door",
+      caption: "Because most of this money still arrives in a gym.",
+      set: { view: "table", expanded: true },
+      cursor: "record-btn",
       press: true,
-    },
-    {
-      id: "record-modal",
-      chapter: "reminder",
-      caption: "Cash, e-transfer, cheque or other, with what is left already filled in.",
-      hold: 3200,
+      callout: "She hands over the rest at the door on Saturday, and it gets recorded there.",
+    }),
+    paced({
+      id: "modal",
+      chapter: "door",
+      caption: "Amount, method, and a note in the club's own words.",
       set: { modal: true },
-    },
-    {
-      id: "record-note",
-      chapter: "reminder",
-      caption: "And a note, because in eight months somebody will ask.",
-      hold: 3000,
-      cursor: "note-field",
-      type: { key: "note", text: "paid at the door" },
-    },
-    {
-      id: "record-confirm",
-      chapter: "reminder",
-      caption: "Recorded against the family, not against a memory.",
-      hold: 2800,
-      cursor: "record-confirm",
+      emphasize: "modal-note",
+      callout: `Cash, four forty seven fifty, and "${NOTE}". The note is what makes it findable in November.`,
+    }),
+    paced({
+      id: "recorded",
+      chapter: "door",
+      caption: "Recorded.",
+      cursor: "modal-save",
       press: true,
-    },
-    {
-      id: "thompson-paid",
-      chapter: "reminder",
-      caption: "The reminders for that family stop on the same press.",
-      hold: 3200,
-      set: { modal: false, thompsonPaid: true },
-      toast: "Payment recorded, $85.00",
-    },
-    {
+      toast: `Payment recorded · ${money(REMAINING)} · Cash`,
+      set: { modal: false, recorded: true },
+      callout: "The obligation closes itself, and the family is told without anybody sending a message.",
+    }),
+    paced({
       id: "tiles-move",
-      chapter: "reminder",
+      chapter: "door",
+      caption: "And the four numbers at the top move last.",
+      emphasize: "tiles",
+      callout: "Collected up, outstanding down, overdue down, all from one row closing.",
+    }),
+    paced({
+      id: "waive",
+      chapter: "door",
+      caption: "The other button on that row is the one clubs never say out loud.",
+      cursor: "waive-btn",
+      emphasize: "waive-btn",
+      callout:
+        "Waive the rest. It keeps what was paid, writes off what is left, and tells the family it is done.",
+    }),
+    paced({
+      id: "end",
+      chapter: "door",
       caption:
-        "Then the numbers at the top catch up, because they were never a separate report. They are the same rows added up.",
-      hold: 3600,
-      set: { filter: "all" },
-    },
-    {
-      id: "zero",
-      chapter: "reminder",
-      caption:
-        "Overdue at zero, the banner gone, and not one awkward conversation in a gym doorway.",
-      hold: 3600,
-    },
-    {
-      id: "end-card",
-      chapter: "reminder",
-      caption: "The money picture.",
-      hold: 3800,
+        "One screen for every dollar, a plan that records itself, cash included, and a reminder nobody has to remember to send.",
+      hold: 4400,
       set: { endCard: true },
-    },
+    }),
   ],
 
-  render: ({ get, typingKey }) => {
-    const filter = get<string>("filter", "all")
-    const expanded = get("expanded", false)
-    const mail = get("mail", false)
-    const modal = get("modal", false)
-    const malikPaid = get("malikPaid", false)
-    const thompsonPaid = get("thompsonPaid", false)
-    const endCard = get("endCard", false)
+  /* ── Render ────────────────────────────────────────────────────────── */
 
-    const rows = ROWS.map((r) => {
-      if (r.id === "malik" && malikPaid) {
-        return { ...r, paid: "$340.00", status: "Paid" as const, overdueDays: undefined, open: false }
-      }
-      if (r.id === "thompson" && thompsonPaid) {
-        return { ...r, paid: "$340.00", status: "Paid" as const, overdueDays: undefined, open: false }
-      }
-      return r
-    })
-    const shown = filter === "open" ? rows.filter((r) => r.open) : rows
-
-    const overdueCount = rows.filter((r) => r.overdueDays).length
-    const overdueTotal = malikPaid && thompsonPaid ? "$0.00" : malikPaid ? "$85.00" : "$255.00"
-    const collected = malikPaid && thompsonPaid ? "$18,670.00" : malikPaid ? "$18,585.00" : "$18,415.00"
-    const outstanding = malikPaid && thompsonPaid ? "$985.00" : malikPaid ? "$1,070.00" : "$1,240.00"
+  render: ({ get }) => {
+    const view = get<string>("view", "table")
+    const recorded = get("recorded", false)
 
     const desktop = (
-      <div className="relative flex h-full flex-col bg-[#f7f8fa]">
-        <MockTopBar
-          workspace={CLUB}
-          tabs={["Dashboard", "Teams", "Programs", "Payments"]}
-          activeTab="Payments"
-        />
-
-        <div className="flex min-h-0 flex-1 flex-col gap-3 px-6 py-3">
-          <div className="grid shrink-0 grid-cols-4 gap-3">
-            <MockTile label="Collected" value={<Money value={collected} tone="text-court-700" />} compact />
-            <MockTile label="Outstanding" value={<Money value={outstanding} tone="text-hoop-600" />} compact />
-            <MockTile
-              label="Overdue"
-              value={
-                <Money
-                  value={overdueTotal}
-                  tone={overdueTotal === "$0.00" ? "text-court-700" : "text-red-600"}
-                />
-              }
-              compact
-            />
-            <MockTile label="Waived" value={<Money value="$120.00" tone="text-ink-600" />} compact />
-          </div>
-
-          {overdueCount > 0 ? (
-            <div
-              data-demo-target="overdue-banner"
-              className={cn(
-                "flex shrink-0 flex-wrap items-center gap-2 rounded-2xl border border-red-200 bg-red-50 px-4 py-2 text-[12.5px] text-red-700 transition-all duration-300 motion-reduce:transition-none",
-                "data-[demo-hover=true]:ring-2 data-[demo-hover=true]:ring-red-200"
-              )}
-            >
-              <span className="font-semibold">
-                {overdueCount} payment{overdueCount !== 1 ? "s" : ""} overdue
-              </span>
-              <span>1–30 days: {overdueTotal}</span>
-              <span className="text-red-500/70">· 31–60 days: $0.00</span>
-              <span className="text-red-500/70">· 60+ days: $0.00</span>
-            </div>
+      <div className="relative flex h-full flex-col">
+        <div key={view} className="demo-fade-in flex min-h-0 flex-1 flex-col">
+          {view === "tiers" ? (
+            <Tiers />
+          ) : view === "cadence" ? (
+            <Cadence />
           ) : (
-            <div className="border-court-200 bg-court-50 text-court-800 live-pop flex shrink-0 items-center gap-2 rounded-2xl border px-4 py-2 text-[12.5px]">
-              <span className="bg-court-600 flex h-4 w-4 items-center justify-center rounded-full text-[9px] font-black text-white">
-                ✓
-              </span>
-              <span className="font-semibold">Nothing overdue</span>
-              <span className="text-court-700/80">Every family is on time or on a plan.</span>
-            </div>
+            <MoneyDesk
+              filter={get<string>("filter", "All")}
+              expanded={get("expanded", false)}
+              recorded={recorded}
+              modal={get("modal", false)}
+            />
           )}
-
-          <div
-            data-demo-target="type-pills"
-            className={cn(
-              "text-ink-600 flex shrink-0 flex-wrap gap-2 rounded-xl text-[11.5px] transition-all duration-200 motion-reduce:transition-none",
-              "data-[demo-hover=true]:ring-play-100 data-[demo-hover=true]:ring-2"
-            )}
-          >
-            {[
-              ["Season fee", "$17,000.00"],
-              ["Tryout fee", "$1,240.00"],
-              ["Camp", "$1,415.00"],
-            ].map(([label, amount]) => (
-              <span
-                key={label}
-                className="bg-ink-50 ring-ink-200 rounded-full px-3 py-1 font-medium ring-1 ring-inset"
-              >
-                {label}: {amount}
-              </span>
-            ))}
-          </div>
-
-          <section className="border-ink-100 min-h-0 flex-1 overflow-hidden rounded-2xl border bg-white shadow-[0_10px_30px_-26px_rgba(15,23,42,0.55)]">
-            <header className="border-ink-100 flex items-center gap-3 border-b px-4 py-2">
-              <h2 className="text-ink-900 text-[15px] font-semibold">Owed to {CLUB}</h2>
-              <div className="ml-auto flex flex-wrap items-center gap-1.5">
-                {["All", "Open", "Owed", "Partially paid", "Paid", "Waived", "Cancelled"].map((c) => {
-                  const active =
-                    (filter === "open" && c === "Open") || (filter === "all" && c === "All")
-                  return (
-                    <span
-                      key={c}
-                      data-demo-target={c === "Open" ? "chip-open" : undefined}
-                      className={cn(
-                        "rounded-full border px-2.5 py-[3px] text-[11px] font-semibold transition-all duration-200 motion-reduce:transition-none",
-                        active
-                          ? "border-play-600 bg-play-600 text-white shadow-sm"
-                          : "border-ink-200 text-ink-600 bg-white",
-                        !active && "data-[demo-hover=true]:border-play-300 data-[demo-hover=true]:bg-play-50/60",
-                        "data-[demo-press=true]:scale-[0.96]"
-                      )}
-                    >
-                      {c}
-                    </span>
-                  )
-                })}
-              </div>
-            </header>
-
-            <table className="w-full table-fixed">
-              <thead className="bg-ink-50">
-                <tr>
-                  <Th className="w-[180px]">From</Th>
-                  <Th>For</Th>
-                  <Th className="w-[92px] text-right">Amount</Th>
-                  <Th className="w-[92px] text-right">Paid</Th>
-                  <Th className="w-[186px]">Status</Th>
-                  <Th className="w-[192px]" />
-                </tr>
-              </thead>
-              <tbody className="divide-ink-50 divide-y">
-                {shown.map((r) => (
-                  <PaymentRow
-                    key={r.id}
-                    row={r}
-                    expanded={expanded && r.id === "malik" && !malikPaid}
-                    justPaid={
-                      (r.id === "malik" && malikPaid) || (r.id === "thompson" && thompsonPaid)
-                    }
-                  />
-                ))}
-              </tbody>
-            </table>
-          </section>
         </div>
-
-        {/* The reminder, as the family receives it. Nobody at the club pressed
-            anything: this is the cron's own output. */}
-        <MockDialog
-          open={mail}
-          title="Payment overdue"
-          subtitle="Sent automatically, 12 days after the missed charge. No club action, no button."
-        >
-          <MockEmailPreview
-            org={CLUB}
-            subject="Payment overdue — $170.00"
-            body={
-              <>
-                <p>Season fee 2026-27 — $170.00 was due 12 days ago.</p>
-                <p className="mt-2">
-                  Please settle it (or update your card if a charge failed):{" "}
-                  <span className="text-play-600 font-semibold underline">My payments</span>. Already
-                  paid the club directly? They&apos;ll record it and this reminder stops.
-                </p>
-              </>
-            }
-          />
-          <div className="mt-3 flex flex-wrap items-center gap-1.5">
-            <MockPill tone="neutral">3 days before, Payment coming up</MockPill>
-            <MockPill tone="gold">Day after, Payment overdue</MockPill>
-            <MockPill tone="gold">Then every 4 days</MockPill>
-            <MockPill tone="neutral">Stops at 90 days</MockPill>
-          </div>
-        </MockDialog>
-
-        {/* Record a payment: the money that arrives in a gym, not on a card. */}
-        <MockDialog
-          open={modal}
-          title="Record a payment"
-          subtitle="Season fee 2026-27 — $85.00 remaining"
-          footer={
-            <>
-              <MockButton tone="quiet" size="sm">
-                Cancel
-              </MockButton>
-              <MockButton id="record-confirm" tone="court" size="sm">
-                Record payment
-              </MockButton>
-            </>
-          }
-        >
-          <div className="grid grid-cols-2 gap-3">
-            <Field label="Amount received">
-              <span className="text-ink-900 font-semibold tabular-nums">$85.00</span>
-            </Field>
-            <Field label="Method">
-              <span className="text-ink-900 font-semibold">e-Transfer</span>
-            </Field>
-          </div>
-          <div className="mt-3">
-            <Field id="note-field" label="Note (optional)">
-              <TypeText
-                text={get<string>("note", "")}
-                typing={typingKey === "note"}
-                placeholder="e.g. paid at the door"
-              />
-            </Field>
-          </div>
-          <p className="text-ink-400 mt-2 text-[11.5px]">
-            Recorded payments show on the family&apos;s own history with your name against them.
-          </p>
-        </MockDialog>
-
-        {endCard && (
-          <MockEndCard
-            eyebrow="Chapter 8 of 10"
-            title="The money picture"
-            line="Every dollar owed on one screen, one family's plan written out in full, and reminders that go out on a schedule instead of on somebody's nerve."
-            next="Standings to playoffs"
-          />
-        )}
+        {get("endCard", false) && <EndCard />}
       </div>
     )
 
-    return { desktop }
+    const phone = <FamilyPhone view={get<string>("phone", "due")} />
+
+    return { desktop, phone }
   },
 }
 
-/* ── Pieces ──────────────────────────────────────────────────────────────── */
+/* ── The club's money desk ───────────────────────────────────────────────── */
 
-function Money({ value, tone }: { value: string; tone: string }) {
+function MoneyDesk({
+  filter,
+  expanded,
+  recorded,
+  modal,
+}: {
+  filter: string
+  expanded: boolean
+  recorded: boolean
+  modal: boolean
+}) {
+  const collected = recorded ? COLLECTED + REMAINING : COLLECTED
+  const outstanding = recorded ? OUTSTANDING - REMAINING : OUTSTANDING
+  const overdue = recorded ? OVERDUE - REMAINING : OVERDUE
+  const overdueCount = recorded ? OVERDUE_COUNT - 1 : OVERDUE_COUNT
+  /* Expanded, the family row stands alone: the plan under it needs the
+     height, and no beat after the expand targets another row. */
+  const shown = expanded ? 1 : OPEN_SHOWN
+
   return (
-    <span key={value} className={cn("demo-pulse-green rounded text-[21px]", tone)}>
-      {value}
+    <div className="relative flex min-h-0 flex-1 flex-col">
+      <div className="bg-ink-50/70 min-h-0 flex-1 px-6 py-3">
+        <div data-demo-target="tiles" className="grid grid-cols-4 gap-3">
+          <MoneyTile label="Collected" value={round(collected)} tone="court" flash={recorded} />
+          <MoneyTile label="Outstanding" value={round(outstanding)} tone="hoop" flash={recorded} />
+          <MoneyTile label="Overdue" value={round(overdue)} tone="red" flash={recorded} />
+          <MoneyTile label="Waived" value={round(WAIVED)} tone="ink" id="tile-waived" />
+        </div>
+
+        <div
+          data-demo-target="overdue-band"
+          className="mt-2.5 flex flex-wrap items-center gap-2 rounded-2xl border border-red-200 bg-red-50 px-4 py-2 text-[15px] text-red-700"
+        >
+          <span className="font-bold">{overdueCount} payments overdue</span>
+          <span className="font-semibold tabular-nums">
+            60+ days: {round(recorded ? AGING_60PLUS - REMAINING : AGING_60PLUS)}
+          </span>
+        </div>
+
+        <div data-demo-target="bytype" className="text-ink-600 mt-2 flex flex-wrap gap-2">
+          {BY_TYPE.map(([type, amount]) => (
+            <span
+              key={type}
+              className="bg-ink-50 ring-ink-200 rounded-full px-3 py-1 text-[14px] font-semibold ring-1 ring-inset"
+            >
+              {type}: {round(amount)}
+            </span>
+          ))}
+        </div>
+
+        <div className="mt-2.5">
+          <Panel
+            title={`Owed to ${CLUB}`}
+            meta={`${filter === "Open" ? OPEN_ROWS : TOTAL_ROWS} of ${TOTAL_ROWS}`}
+            action={
+              <span className="flex gap-1.5">
+                {FILTERS.map((f) => (
+                  <span
+                    key={f}
+                    data-demo-target={f === "Open" ? "filter-open" : undefined}
+                    className={cn(
+                      "rounded-full px-3 py-0.5 text-[14px] font-semibold",
+                      f === filter ? "bg-play-100 text-play-800" : "text-ink-500 bg-ink-50"
+                    )}
+                  >
+                    {f}
+                  </span>
+                ))}
+              </span>
+            }
+          >
+            <div className="px-4 py-2">
+              <div className="text-ink-500 grid grid-cols-[1.1fr_1.6fr_0.7fr_0.7fr_1fr_0.9fr] gap-2 px-2 pb-1 text-[14px] font-bold uppercase tracking-[0.06em]">
+                <span>From</span>
+                <span>For</span>
+                <span className="text-right">Amount</span>
+                <span className="text-right">Paid</span>
+                <span>Status</span>
+                <span />
+              </div>
+              <div className="space-y-1">
+                {OPEN.slice(0, shown).map((r) => {
+                  const mine = r.payer === FAMILY
+                  const done = mine && recorded
+                  return (
+                    <div key={r.payer}>
+                      <div
+                        data-demo-target={mine ? "row-family" : undefined}
+                        className={cn(
+                          "border-ink-100 grid grid-cols-[1.1fr_1.6fr_0.7fr_0.7fr_1fr_0.9fr] items-center gap-2 rounded-xl border bg-white px-2 py-1.5 transition-colors duration-300 motion-reduce:transition-none",
+                          done && "border-court-200 bg-court-50/60",
+                          mine && !done && "border-gold-400 bg-gold-50/40"
+                        )}
+                      >
+                        <span className="text-ink-900 truncate text-[15px] font-bold">{r.payer}</span>
+                        <span className="text-ink-600 truncate text-[14px] font-medium">
+                          Summer 2026 season fee · {r.team}
+                        </span>
+                        <span className="text-ink-900 text-right text-[15px] font-semibold tabular-nums">
+                          {round(FEE)}
+                        </span>
+                        <span className="text-ink-600 text-right text-[15px] font-semibold tabular-nums">
+                          {done ? round(FEE) : money(PAID)}
+                        </span>
+                        <span className="flex items-center gap-1.5">
+                          <StatusChip tone={done ? "court" : "gold"}>
+                            {done ? "Paid" : "Partially paid"}
+                          </StatusChip>
+                          {!done && (
+                            <span className="text-[14px] font-bold text-red-600 tabular-nums">
+                              Overdue {LATE_DAYS}d
+                            </span>
+                          )}
+                        </span>
+                        <span className="flex justify-end gap-1.5">
+                          {mine && !done && (
+                            <>
+                              <Btn id="record-btn" tone="quiet" size="sm">
+                                Record payment
+                              </Btn>
+                              <Btn id="waive-btn" tone="ghost" size="sm">
+                                Waive
+                              </Btn>
+                            </>
+                          )}
+                        </span>
+                      </div>
+
+                      {mine && expanded && (
+                        <div className="border-ink-100 mt-1 rounded-xl border bg-white px-3 py-1.5">
+                          <div data-demo-target="history" className="space-y-1">
+                            {HISTORY.map((h) => (
+                              <div
+                                key={h.label}
+                                className="border-ink-100 flex items-center gap-2 rounded-lg border bg-white px-2.5 py-0.5"
+                              >
+                                <span className="text-ink-500 w-[64px] shrink-0 text-[14px] font-semibold">
+                                  {h.when}
+                                </span>
+                                <span className="text-ink-800 text-[14px] font-bold">{h.method}</span>
+                                <span className="text-ink-500 truncate text-[14px] font-medium">
+                                  {h.label}
+                                </span>
+                                <span className="text-ink-900 ml-auto shrink-0 text-[14px] font-bold tabular-nums">
+                                  {money(h.amount)}
+                                </span>
+                              </div>
+                            ))}
+                            {recorded && (
+                              <div className="border-court-200 bg-court-50 live-pop flex items-center gap-2 rounded-lg border px-2.5 py-0.5">
+                                <span className="text-court-700 w-[64px] shrink-0 text-[14px] font-semibold">
+                                  Today
+                                </span>
+                                <span className="text-court-800 text-[14px] font-bold">Cash</span>
+                                <span className="text-court-700 truncate text-[14px] font-medium">
+                                  recorded by the club · &ldquo;{NOTE}&rdquo;
+                                </span>
+                                <span className="text-court-800 ml-auto shrink-0 text-[14px] font-bold tabular-nums">
+                                  {money(REMAINING)}
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                          {!recorded && (
+                            <div data-demo-target="remaining" className="mt-1.5 space-y-1">
+                              {REMAINING_TERMS.map((t) => (
+                                <div
+                                  key={t.label}
+                                  className="border-gold-400 bg-gold-50/50 flex items-center gap-2 rounded-lg border border-dashed px-2.5 py-0.5"
+                                >
+                                  <span className="text-ink-500 w-[64px] shrink-0 text-[14px] font-semibold">
+                                    not in
+                                  </span>
+                                  <span className="text-ink-700 truncate text-[14px] font-medium">
+                                    {t.label}
+                                  </span>
+                                  <span className="text-ink-900 ml-auto shrink-0 text-[14px] font-bold tabular-nums">
+                                    {money(t.amount)}
+                                  </span>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+              <p className="text-ink-400 mt-1.5 px-2 text-[14px] font-semibold">
+                and {OPEN_ROWS - shown} more open, every one of them half paid
+              </p>
+            </div>
+          </Panel>
+        </div>
+      </div>
+
+      {modal && <RecordModal />}
+    </div>
+  )
+}
+
+function MoneyTile({
+  label,
+  value,
+  tone,
+  id,
+  flash,
+}: {
+  label: string
+  value: string
+  tone: "court" | "hoop" | "red" | "ink"
+  id?: string
+  flash?: boolean
+}) {
+  const color =
+    tone === "court"
+      ? "text-court-700"
+      : tone === "hoop"
+        ? "text-hoop-600"
+        : tone === "red"
+          ? "text-red-600"
+          : "text-ink-600"
+  return (
+    <div
+      data-demo-target={id}
+      className="border-ink-200 rounded-2xl border bg-white px-4 py-2 shadow-[0_2px_10px_-8px_rgba(15,23,42,0.4)]"
+    >
+      <p className="text-ink-500 text-[14px] font-bold uppercase tracking-[0.08em]">{label}</p>
+      <p
+        className={cn(
+          "mt-0.5 text-[28px] font-extrabold leading-none tabular-nums",
+          color,
+          flash && "live-pop"
+        )}
+      >
+        {value}
+      </p>
+    </div>
+  )
+}
+
+/** `obligations-table.tsx` lines 334 to 374, verbatim. */
+function RecordModal() {
+  return (
+    <div className="absolute inset-0 z-30 flex items-center justify-center bg-[#0b1628]/45 px-8">
+      <div className="live-pop w-full max-w-[520px] rounded-2xl bg-white p-5 shadow-[0_40px_90px_-40px_rgba(15,23,42,0.7)]">
+        <h4 className="font-display text-ink-900 text-[20px] font-extrabold">Record a payment</h4>
+        <p className="text-ink-500 mt-1 text-[15px] font-medium">
+          {FAMILY_DESC}: {money(REMAINING)} remaining
+        </p>
+        <div className="mt-3 grid grid-cols-2 gap-3">
+          <ModalField label="Amount received">
+            <span className="text-ink-900 tabular-nums">{money(REMAINING)}</span>
+          </ModalField>
+          <ModalField label="Method">
+            <span className="text-ink-900">Cash</span>
+          </ModalField>
+        </div>
+        <div className="mt-3">
+          <ModalField label="Note (optional)" id="modal-note">
+            <span className="text-ink-900">{NOTE}</span>
+          </ModalField>
+        </div>
+        <div className="mt-4 flex justify-end gap-2">
+          <Btn tone="quiet" size="sm">
+            Cancel
+          </Btn>
+          <Btn id="modal-save" tone="court" size="sm">
+            Record payment
+          </Btn>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function ModalField({
+  label,
+  children,
+  id,
+}: {
+  label: string
+  children: ReactNode
+  id?: string
+}) {
+  return (
+    <span data-demo-target={id} className="block">
+      <span className="text-ink-600 mb-1 block text-[14px] font-semibold">{label}</span>
+      <span className="border-ink-300 block rounded-lg border bg-white px-3 py-1.5 text-[15px] font-semibold">
+        {children}
+      </span>
     </span>
   )
 }
 
-function Th({ children, className }: { children?: ReactNode; className?: string }) {
-  return (
-    <th
-      className={cn(
-        "text-ink-500 px-4 py-1 text-left text-[10px] font-semibold uppercase tracking-[0.1em]",
-        className
-      )}
-    >
-      {children}
-    </th>
-  )
-}
+/* ── The price list ──────────────────────────────────────────────────────── */
 
-const STATUS_TONE: Record<Row["status"], string> = {
-  Owed: "bg-hoop-50 text-hoop-700",
-  "Partially paid": "bg-play-50 text-play-700",
-  Paid: "bg-court-50 text-court-700",
-  Waived: "bg-ink-100 text-ink-600",
-}
-
-function PaymentRow({
-  row,
-  expanded,
-  justPaid,
-}: {
-  row: Row
-  expanded: boolean
-  justPaid: boolean
-}) {
+function Tiers() {
   return (
-    <>
-      <tr
-        data-demo-target={`row-${row.id}`}
-        className={cn(
-          "bg-white transition-all duration-300 motion-reduce:transition-none",
-          "data-[demo-hover=true]:bg-play-50/40",
-          "data-[demo-press=true]:bg-play-50/70",
-          justPaid && "bg-court-50/60"
-        )}
-      >
-        <td className="px-4 py-1">
-          <span className="flex items-center gap-2">
-            <PlayerMug
-              name={row.family}
-              accentKey={row.family}
-              sizeClassName="h-[22px] w-[22px] rounded-full"
-            />
-            <span className="text-ink-900 truncate text-[12.5px] font-semibold">{row.family}</span>
-          </span>
-        </td>
-        <td className="px-4 py-1">
-          <span className="flex min-w-0 items-center gap-2">
-            <span className="bg-ink-50 text-ink-600 ring-ink-200 shrink-0 rounded-full px-2 py-[1px] text-[10px] font-semibold ring-1 ring-inset">
-              {row.type}
-            </span>
-            <span className="text-ink-500 truncate text-[11.5px]">{row.description}</span>
-          </span>
-        </td>
-        <td className="text-ink-900 px-4 py-1 text-right text-[12px] font-semibold tabular-nums">
-          {row.amount}
-        </td>
-        <td className="text-ink-600 px-4 py-1 text-right text-[12px] tabular-nums">
-          <span key={row.paid} className={cn(justPaid && "demo-pulse-green rounded")}>
-            {row.paid}
-          </span>
-        </td>
-        <td className="px-4 py-1">
-          <span className="flex flex-wrap items-center gap-1.5">
-            <span
-              key={row.status}
+    <div className="bg-ink-50/70 min-h-0 flex-1 px-6 py-4">
+      <Panel title={`What ${CLUB} charges`} meta="every one of these raises its own obligation">
+        <div data-demo-target="tier-list" className="space-y-2 px-5 py-3">
+          {TIERS.map((t, i) => (
+            <div
+              key={t.what}
+              data-demo-target={`tier-${i}`}
               className={cn(
-                "rounded-full px-2 py-[2px] text-[11px] font-semibold",
-                STATUS_TONE[row.status],
-                justPaid && "demo-pulse-green"
+                "flex items-center gap-4 rounded-xl border bg-white px-4 py-2.5",
+                i === 4 ? "border-play-300" : "border-ink-100"
               )}
             >
-              {row.status}
-            </span>
-            {row.overdueDays ? (
-              <span className="rounded-full bg-red-50 px-2 py-[2px] text-[10.5px] font-bold text-red-700 ring-1 ring-inset ring-red-200">
-                Overdue {row.overdueDays}d
+              <span className="text-ink-900 w-[190px] shrink-0 text-[17px] font-bold">{t.what}</span>
+              <span className="text-court-700 w-[170px] shrink-0 text-[20px] font-extrabold tabular-nums">
+                {t.price}
               </span>
-            ) : null}
-          </span>
-        </td>
-        <td className="px-4 py-1">
-          {row.status !== "Paid" && row.status !== "Waived" && (
-            <span className="flex items-center justify-end gap-2">
-              <span
-                data-demo-target={row.id === "thompson" ? "record-thompson" : undefined}
-                className={cn(
-                  "border-ink-200 text-ink-700 select-none rounded-lg border bg-white px-2 py-[3px] text-[11px] font-semibold transition-all duration-200 motion-reduce:transition-none",
-                  "data-[demo-hover=true]:border-play-400 data-[demo-hover=true]:shadow-sm",
-                  "data-[demo-press=true]:scale-[0.96]"
-                )}
-              >
-                Record payment
-              </span>
-              <span className="text-ink-400 text-[11px] font-semibold">Waive</span>
-            </span>
-          )}
-        </td>
-      </tr>
-
-      {expanded && (
-        <tr className="bg-ink-50/60">
-          <td colSpan={6} className="px-4 py-1.5">
-            <div className="live-pop grid grid-cols-[minmax(0,1fr)_312px] gap-4">
-              <div>
-                <p className="text-ink-500 text-[10px] font-bold uppercase tracking-[0.12em]">
-                  Payment plan
-                </p>
-                <div className="mt-1 grid grid-cols-2 gap-x-3 gap-y-1">
-                  <Installment label="Deposit" when="Sep 1, 2026" amount="$85.00" state="paid" />
-                  <Installment label="Installment 1" when="Oct 1, 2026" amount="$85.00" state="paid" />
-                  <Installment
-                    label="Installment 2"
-                    when="Nov 1, 2026"
-                    amount="$85.00"
-                    state="missed"
-                  />
-                  <Installment
-                    label="Installment 3"
-                    when="Dec 1, 2026"
-                    amount="$85.00"
-                    state="upcoming"
-                  />
-                </div>
-                <p className="text-ink-400 mt-1 text-[10.5px]">
-                  Scheduled payments charge automatically to the default card on file.
-                </p>
-              </div>
-              <div>
-                <p className="text-ink-500 text-[10px] font-bold uppercase tracking-[0.12em]">
-                  Payment history
-                </p>
-                <div className="mt-1 space-y-1">
-                  <HistoryLine
-                    amount="$85.00"
-                    meta="Sep 1, 2026 · Cash · recorded by Dana Michaels"
-                  />
-                  <HistoryLine amount="$85.00" meta="Oct 1, 2026 · Card (online)" />
-                  <HistoryLine amount="$85.00" meta="Nov 1, 2026 · Card (online) · failed" failed />
-                </div>
-              </div>
+              <span className="text-ink-600 min-w-0 flex-1 text-[15px] font-medium">{t.detail}</span>
+              <Chip tone={t.tag === "DB" ? "court" : "gold"}>
+                {t.tag === "DB" ? "in the database" : "rep season band"}
+              </Chip>
             </div>
-          </td>
-        </tr>
-      )}
-    </>
-  )
-}
-
-function Installment({
-  label,
-  when,
-  amount,
-  state,
-}: {
-  label: string
-  when: string
-  amount: string
-  state: "paid" | "missed" | "upcoming"
-}) {
-  const tone = {
-    paid: "border-court-200 bg-court-50",
-    missed: "border-red-200 bg-red-50",
-    upcoming: "border-ink-200 bg-white",
-  }[state]
-  const mark = { paid: "✓", missed: "!", upcoming: "·" }[state]
-  const markTone = {
-    paid: "bg-court-600 text-white",
-    missed: "bg-red-600 text-white",
-    upcoming: "bg-ink-200 text-ink-500",
-  }[state]
-  const word = { paid: "Paid", missed: "Missed, card expired", upcoming: "Upcoming" }[state]
-  return (
-    <div className={cn("flex items-center gap-2 rounded-xl border px-2 py-[3px]", tone)}>
-      <span
-        className={cn(
-          "flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-[9px] font-black",
-          markTone
-        )}
-      >
-        {mark}
-      </span>
-      <span className="min-w-0 flex-1">
-        <span className="text-ink-900 block text-[11px] font-semibold leading-tight">{label}</span>
-        <span className="text-ink-500 block text-[9.5px] leading-tight">
-          {when} · {word}
-        </span>
-      </span>
-      <span className="text-ink-900 shrink-0 text-[11.5px] font-bold tabular-nums">{amount}</span>
+          ))}
+        </div>
+      </Panel>
+      <p className="text-ink-500 mt-3 px-1 text-[15px] font-medium leading-snug">
+        A tryout, a house league, a camp, a summer program and a rep season are five different
+        prices with five different rhythms. They land in one ledger, which is the only reason the
+        four numbers at the top of the last screen can be trusted.
+      </p>
     </div>
   )
 }
 
-function HistoryLine({
-  amount,
-  meta,
-  failed,
-}: {
-  amount: string
-  meta: string
-  failed?: boolean
-}) {
+/* ── The cadence ─────────────────────────────────────────────────────────── */
+
+function Cadence() {
+  const steps = [
+    {
+      when: `${LEAD_DAYS} days before it is due`,
+      what: DUE_TITLE,
+      how: "notification and email, once",
+    },
+    {
+      when: "the day after it is missed",
+      what: LATE_TITLE,
+      how: "notification and email, once",
+    },
+    {
+      when: `then every ${NAG_DAYS} days`,
+      what: `${LATE_TITLE}, again`,
+      how: "guaranteed by a ledger row, never twice in a window",
+    },
+    {
+      when: `after ${MAX_DAYS} days`,
+      what: "nothing",
+      how: "the machine stops and the club takes over",
+    },
+  ]
   return (
-    <div className="border-ink-100 flex items-baseline gap-2 rounded-lg border bg-white px-2 py-[2px]">
-      <span
-        className={cn(
-          "shrink-0 text-[11.5px] font-bold tabular-nums",
-          failed ? "text-red-600 line-through" : "text-ink-900"
-        )}
+    <div className="bg-ink-50/70 min-h-0 flex-1 px-6 py-4">
+      <Panel title="What goes out, and when" meta="lib/payments/scheduled.ts">
+        <div data-demo-target="cadence-card" className="space-y-2 px-5 py-3">
+          {steps.map((s, i) => (
+            <div
+              key={s.when}
+              data-demo-target={i === 3 ? "cadence-stop" : undefined}
+              className={cn(
+                "flex items-center gap-4 rounded-xl border bg-white px-4 py-2.5",
+                i === 3 ? "border-ink-200 border-dashed" : "border-play-200"
+              )}
+            >
+              <span className="text-play-700 w-[230px] shrink-0 text-[16px] font-bold">
+                {s.when}
+              </span>
+              <span className="text-ink-900 w-[220px] shrink-0 text-[16px] font-bold">{s.what}</span>
+              <span className="text-ink-600 min-w-0 flex-1 text-[15px] font-medium">{s.how}</span>
+            </div>
+          ))}
+        </div>
+      </Panel>
+      <p
+        data-demo-target="cadence-honest"
+        className="border-ink-200 text-ink-600 mt-3 rounded-2xl border bg-white px-5 py-3 text-[15px] font-medium leading-snug"
       >
-        {amount}
-      </span>
-      <span className="text-ink-500 min-w-0 truncate text-[10px]">{meta}</span>
+        That is the schedule the code keeps: a daily job reads what is due and what is late and
+        writes exactly one message per person per window. It is switched off on this machine, so
+        nothing in this demo is claiming mail went out tonight. Turning it on is one environment
+        variable and one scheduled job, and the copy above is what families would receive.
+      </p>
     </div>
   )
 }
 
-function Field({
-  id,
-  label,
-  children,
-}: {
-  id?: string
-  label: string
-  children: ReactNode
-}) {
+/* ── The family's phone ──────────────────────────────────────────────────── */
+
+function FamilyPhone({ view }: { view: string }) {
+  const late = view === "late"
   return (
-    <label className="block">
-      <span className="text-ink-600 mb-1 block text-[11px] font-semibold uppercase tracking-[0.1em]">
-        {label}
-      </span>
-      <span
-        data-demo-target={id}
-        className={cn(
-          "border-ink-200 flex min-h-[36px] w-full items-center rounded-xl border bg-white px-3 py-2 text-[13px] transition-all duration-200 motion-reduce:transition-none",
-          "data-[demo-hover=true]:border-play-300 data-[demo-hover=true]:ring-play-100 data-[demo-hover=true]:ring-2"
-        )}
-      >
-        {children}
-      </span>
-    </label>
+    <div className="flex h-full flex-col bg-[#f6f7f9]">
+      <div className="flex items-baseline gap-2 bg-[#0b1628] px-4 pb-2.5 pt-2 text-white">
+        <p className="text-[15px] font-bold leading-tight">{FAMILY}</p>
+        <p className="text-[14px] font-medium text-white/60">Parent · two players</p>
+      </div>
+
+      <div key={view} className="demo-fade-in min-h-0 flex-1 overflow-hidden px-3 py-2.5">
+        <p className="text-ink-900 text-[17px] font-extrabold">Notifications</p>
+
+        <div
+          data-demo-target={late ? "p-late" : "p-due"}
+          className={cn(
+            "live-pop mt-2 rounded-2xl border bg-white px-3 py-2.5",
+            late ? "border-red-300" : "border-ink-200"
+          )}
+        >
+          <p className={cn("text-[15px] font-bold", late ? "text-red-700" : "text-ink-900")}>
+            {late ? LATE_TITLE : DUE_TITLE}
+          </p>
+          <p className="text-ink-600 mt-1 text-[14px] font-medium leading-snug">
+            {late ? LATE_MSG : DUE_MSG}
+          </p>
+        </div>
+
+        <p className="text-ink-400 mt-3 text-[14px] font-bold uppercase tracking-[0.1em]">
+          And the same thing by email
+        </p>
+        <div className="border-ink-200 mt-1.5 rounded-2xl border bg-white px-3 py-2.5">
+          <p className="text-ink-900 text-[15px] font-bold leading-snug">
+            {late ? `${LATE_TITLE} · ${money(REMAINING)}` : DUE_SUBJECT}
+          </p>
+          <p className="text-ink-600 mt-1 text-[14px] font-medium leading-snug">
+            {late ? LATE_MSG : DUE_BODY}
+          </p>
+          <p className="text-play-700 mt-1.5 text-[14px] font-bold">My payments</p>
+        </div>
+
+        <p className="text-ink-500 mt-3 text-[14px] font-medium leading-snug">
+          One function writes both, so the bell and the inbox can never disagree.
+        </p>
+      </div>
+
+      <div className="border-ink-200 flex shrink-0 items-center justify-around border-t bg-white px-1.5 pb-4 pt-2">
+        {["Home", "Chat", "Calendar", "My Kids", "Social"].map((t) => (
+          <span
+            key={t}
+            className={cn("text-[14px] font-bold", t === "Home" ? "text-play-700" : "text-ink-400")}
+          >
+            {t}
+          </span>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+/* ── End card ────────────────────────────────────────────────────────────── */
+
+function EndCard() {
+  return (
+    <div className="absolute inset-0 z-20 flex items-center justify-center bg-[#0b1628] px-12 text-white">
+      <div className="live-pop max-w-[760px] text-center">
+        <p className="text-gold-400 text-[15px] font-bold uppercase tracking-[0.18em]">
+          A club chapter
+        </p>
+        <h3 className="font-display mt-2 text-[34px] font-extrabold leading-tight">
+          The money picture
+        </h3>
+        <p className="mt-3 text-[17px] leading-relaxed text-white/75">
+          Twenty three thousand collected, three and a half thousand outstanding and every dollar of
+          it more than sixty days old, on one screen nobody had to build in a spreadsheet. One
+          family&apos;s plan opened underneath itself with the cash and the e-transfer that really
+          paid it, the rest taken at the door and recorded with a note, and a reminder schedule that
+          runs without a club owner remembering it.
+        </p>
+        <p className="mt-5 text-[15px] font-semibold text-white/50">
+          Next: everyone in the loop
+        </p>
+      </div>
+    </div>
   )
 }
