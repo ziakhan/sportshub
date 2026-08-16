@@ -1,122 +1,220 @@
 "use client"
 
 import type { ReactNode } from "react"
-import { TypeText } from "../motion"
-import {
-  MockBand,
-  MockButton,
-  MockChips,
-  MockChoiceCards,
-  MockCounter,
-  MockDialog,
-  MockEmptyState,
-  MockEndCard,
-  MockField,
-  MockListbox,
-  MockPanel,
-  MockPill,
-  MockRosterTable,
-  MockRow,
-  MockTile,
-  MockTopBar,
-  PhoneAction,
-  PhoneLabel,
-  PhoneMoneyRow,
-  PhoneOfferCard,
-  PhoneProgramCard,
-  PhoneSheet,
-  PhoneShell,
-  PhoneSuccess,
-  type MockRosterPlayer,
-} from "../mock-ui"
-import { Crest } from "@/components/ui/crest"
-import { PlayerMug } from "@/components/ui/player-mug"
-import type { DemoScript } from "../types"
+import { cn } from "@/components/ui/cn"
+import { Btn, Chip, StatusChip } from "../scene-kit"
+import type { DemoBeat, DemoScript } from "../types"
 
 /**
- * Story 1: "Build a team, fill the roster" (full cut, 2026-08-15).
+ * "Build a team, fill the roster" (roster story), rebuilt 2026-08-16 to the
+ * gold standard set by `season-story.tsx`, `schedule-change-story.tsx`,
+ * `waivers-story.tsx`, `game-day-story.tsx`, `team-drops-out-story.tsx` and
+ * `the-referees-story.tsx`.
  *
- * The first cut stopped at the tryout reaching a phone, and the owner ruled it
- * incomplete: a story about filling a roster has to END WITH THE ROSTER FILLED.
- * This is the whole arc, in five chapters, and it obeys the content law that
- * came with the ruling.
+ * THE THREE LAWS THIS CUT OBEYS:
  *
- * THE CONTENT LAW (owner, 2026-08-15). A demo earns its length by showing the
- * PAINFUL DETAIL the product removes, never by montaging past it. Named
- * explicitly for this story: after the parent accepts, the demo SHOWS THE
- * DETAILS SUBMISSION — uniform size, tracksuit size, shoe size and jersey
- * number — because collecting those is, in the owner's words, "a very hard,
- * troublesome period for the parents in the club". Chapter four is therefore
- * the longest chapter in the cut, and every field is picked on camera.
+ *   1. PRESENTATION (audit D2). No browser chrome, no site header. Every
+ *      surface is a focused working REGION composed at a logical size and
+ *      rendered at scale 1.0, so 14px authored text reaches the viewer at
+ *      14px. `scripts/demo/readability-audit.mjs` is the machine gate.
+ *   2. PACING. Stop, explain, act, ONE VOICE. Every dwell is computed from
+ *      the balloon's own word count; a beat carrying a balloon silences the
+ *      caption bar.
+ *   3. EVERY NUMBER DERIVED. The club, the team, the tryout, its fee, its
+ *      venue, its five signups, the family, the player, his sizes, his jersey
+ *      preferences, the pending offer and the roster that fills are read out
+ *      of the local seeded database, and every one is written down with its
+ *      source in `docs/roadmap/roster-story-numbers.md`.
  *
- * TRUTH TO THE PRODUCT. The mock beats mirror real surfaces field for field:
- *   · the accept flow — apps/web/src/app/(platform)/offers/offer-response-form.tsx
- *     (package, uniform / tracksuit / shoe listboxes, jersey preferences 1st
- *     and 2nd, pay in full against a payment plan with the schedule written
- *     out, the card already on file, "Pay $X & Accept");
- *   · the roster — app/(platform)/clubs/[id]/teams/[teamId]/roster/page.tsx
- *     (mug carrying the jersey number, player, position, uniform, tracksuit,
- *     shoes, waivers, finalized) and its "No players on roster" empty state;
- *   · the tryout signups table and its per-player "Make offer".
+ * TWO HANDSETS, NO DESKTOP (audit D, the phone-first chart). The owner ruled
+ * team creation, tryout posting and offer SEND onto the phone with fabrication
+ * allowed, and the parent's half is not a fabrication at all: `/tryouts/[id]`
+ * and `/offers` are responsive pages a guardian reaches from the app's own
+ * mobile bottom bar (`components/nav/bottom-tabs.tsx`: Home, Chat, Calendar,
+ * My Kids, Social). So the stage is the LEFT handset (the club) and the RIGHT
+ * one (Jordan Reyes), and every club screen composed at 390 is declared as a
+ * phone composition in section H of the numbers sheet.
  *
- * MOTION. Nothing pans, zooms or scrolls. The stage is fixed, the phone slides
- * into a slot reserved from the first frame, screens crossfade in place, and
- * every state a beat sets is derived by replaying beats, so a chapter jump
- * lands on exactly the same frame as watching it through.
+ * THE SPINE IS A REAL PENDING OFFER. `DB` offer bb219828 is live in this
+ * database right now: PENDING, to Darius Reyes, on `Toronto Lords Grade 10
+ * (Fall/Winter 2026-27)`, a team with zero players on it, carrying the seeded
+ * message and a ten day expiry. The club is genuinely mid-build of a fall
+ * roster in this world, which is exactly the story.
+ *
+ * TRUTH TO THE PRODUCT, SCREEN BY SCREEN:
+ *   · team creation is `clubs/[id]/teams/create/page.tsx`, including the rule
+ *     that nobody types a team name: age group plus a picked suffix, and the
+ *     product writes the name from the club's SHORT name;
+ *   · the tryout is `clubs/[id]/tryouts/create/page.tsx`, down to the draft
+ *     note and the two buttons;
+ *   · the family's registration is `components/registration/program-signup-form.tsx`,
+ *     down to "Who's playing?", the eligibility chips and the offline payment
+ *     sentence this club really renders;
+ *   · the packages are `components/offers/offer-composer.tsx`, including the
+ *     real `Auto: 25% + 3 monthly` control and its balance check line;
+ *   · the send is `bulk-offer-button.tsx` and `POST /api/offers/bulk`;
+ *   · the accept is `app/(platform)/offers/offer-response-form.tsx`, field for
+ *     field and label for label;
+ *   · the roster is `clubs/[id]/teams/[teamId]/roster/page.tsx`.
+ *
+ * THREE THINGS THE PRODUCT CANNOT HONESTLY SHOW, AND THEY ARE DECLARED
+ * (numbers sheet section F, not hidden here):
+ *   1. NO SEEDED CLUB CAN TAKE ONLINE MONEY. There is exactly one
+ *      `PaymentConfig` row in this database, on a different tenant, with
+ *      `stripeAccountStatus: "pending"`, and the platform default online mode
+ *      is NONE. The payment step of the accept form is gated on `online`, so
+ *      today every seeded club would render the OFFLINE sentence instead. The
+ *      demo films the online branch because that is the code path a club takes
+ *      the day it finishes Connect onboarding, and says so.
+ *   2. THERE ARE ZERO `OfferOption` AND ZERO `OfferInstallmentTerm` ROWS in
+ *      this database. The 227 accepted offers are single-package legacy rows.
+ *      The plan on screen is therefore computed by the product's own arithmetic
+ *      rather than read off a row.
+ *   3. `computeDefaultPlan` IN `lib/payments/installments.ts` HAS NO
+ *      PRODUCTION CALLER. The shipping path is `autofillPlan` in
+ *      `offer-composer.tsx`, which is the identical arithmetic reimplemented
+ *      client side. Both were run for this cut and agree to the cent.
  */
 
-/* ── Cast ────────────────────────────────────────────────────────────────── */
+/* ── Cast, all read out of the seeded world ──────────────────────────────── */
 
-const ROSTER: MockRosterPlayer[] = [
-  { name: "Amara Bello", number: "23", position: "Guard", uniform: "YM", tracksuit: "YL", shoes: "7" },
-  { name: "Sofia Njoku", number: "3", position: "Guard", uniform: "YM", tracksuit: "YM", shoes: "6.5" },
-  { name: "Hannah Reyes", number: "5", position: "Forward", uniform: "YL", tracksuit: "YL", shoes: "7.5" },
-  { name: "Mia Kaur", number: "7", position: "Guard", uniform: "YS", tracksuit: "YM", shoes: "6" },
-  { name: "Elena Petrov", number: "8", position: "Forward", uniform: "YL", tracksuit: "YL", shoes: "7" },
-  { name: "Zara Ahmed", number: "10", position: "Centre", uniform: "AS", tracksuit: "AS", shoes: "8" },
-  { name: "Chloe Tremblay", number: "11", position: "Guard", uniform: "YM", tracksuit: "YM", shoes: "6.5" },
-  { name: "Ava Donnelly", number: "12", position: "Forward", uniform: "YM", tracksuit: "YL", shoes: "7" },
-  { name: "Leila Haddad", number: "14", position: "Guard", uniform: "YS", tracksuit: "YS", shoes: "5.5" },
-  { name: "Nora Fitzgerald", number: "21", position: "Centre", uniform: "AS", tracksuit: "AM", shoes: "8.5" },
-]
+/** `DB` Tenant dcd497e7, name "Toronto Lords", shortName "Lords", Toronto. */
+const CLUB = "Toronto Lords"
+const SHORT = "Lords"
 
-const EXISTING_TEAMS = [
-  { name: "U9 Boys Development", meta: "Fall 2026 · House", roster: "11 of 12" },
-  { name: "U11 Boys Rep", meta: "Fall 2026 · Rep", roster: "10 of 10" },
-  { name: "U13 Girls Rep", meta: "Fall 2026 · Rep", roster: "12 of 12" },
-  { name: "U13 Boys Rep", meta: "Fall 2026 · Rep", roster: "11 of 12" },
-  { name: "U16 Girls Rep", meta: "Fall 2026 · Rep", roster: "10 of 12" },
-  { name: "U16 Boys Rep", meta: "Fall 2026 · Rep", roster: "12 of 12" },
-]
+/**
+ * `DB` Team d430fbd8 is real and empty: "Toronto Lords Grade 10 (Fall/Winter
+ * 2026-27)", MALE, zero players. `PRODUCT` the create screen composes a name
+ * from the club's SHORT name and cannot emit parentheses, so the name the
+ * shipping picker writes for that same team is this one.
+ */
+const TEAM = `${SHORT} Grade 10 Fall/Winter 2026-27`
+const SUFFIX = "Fall/Winter 2026-27"
+const AGE = "Grade 10"
 
+/** `DB` the club already fields "Toronto Lords Grade 10", which is why a
+ *  suffix is required at all. `PRODUCT` the helper sentence, verbatim. */
+const SUFFIX_HINT = "Only needed when you field more than one team in the same age group."
+
+/** `DB` Tryout 1689307c on this club. The row stores an em-dash in its title;
+ *  the house copy rule renders the middot. */
+const TRYOUT = `${CLUB} Fall Tryouts · Grade 9 & 10`
+const TRYOUT_DAY = "Thu, Aug 20"
+const TRYOUT_TIME = "6:30 – 8:30 PM"
+/** `DB` Venue c805d634. */
+const VENUE = "The Playground"
+const VENUE_CITY = "Burlington"
+/** `DB` Tryout.fee, and the owner's tryout tier. */
+const TRYOUT_FEE = 25
+/** `DB` Tryout.maxParticipants. */
+const CAP = 30
+
+/** `DB` five `TryoutSignup` rows on that tryout, every one PENDING. */
 const SIGNUPS = [
-  { name: "Sofia Njoku", born: "2015", paid: true },
-  { name: "Hannah Reyes", born: "2015", paid: true },
-  { name: "Mia Kaur", born: "2016", paid: true },
-  { name: "Elena Petrov", born: "2015", paid: true },
+  { player: "Darius Reyes", parent: "Jordan Reyes" },
+  { player: "Ibrahim White", parent: "Carlos Diallo" },
+  { player: "Isaiah Clarke", parent: "Robin Osei" },
+  { player: "Daniel Grant", parent: "Nadia Kim" },
+  { player: "Isaiah Boateng", parent: "Mark Young" },
 ]
 
-/** Clothing sizes, trimmed to the five a U11 team actually orders. */
-const CLOTHING = [
-  { value: "YS", label: "YS" },
-  { value: "YM", label: "YM" },
-  { value: "YL", label: "YL" },
-  { value: "AS", label: "AS" },
-  { value: "AM", label: "AM" },
-]
-const SHOES = ["5.5", "6", "6.5", "7", "7.5", "8"].map((s) => ({ value: s, label: s }))
+/** `DB` User 2a6333d5, summer-parent-lords@sportshub.demo. */
+const PARENT = "Jordan Reyes"
+/** `DB` Player a18c732d, born 2011-12-20, and `DB` TryoutSignup.playerAge. */
+const PLAYER = "Darius Reyes"
+const PLAYER_AGE = 15
+/** `DB` Player 729b0d07, the sister, on Toronto Lords Grade 10 Girls. */
+const SISTER = "Danielle Reyes"
 
-const URL_TEAMS = "/manage/clubs/riverside-ravens/teams"
-const URL_ROSTER = "/manage/clubs/riverside-ravens/teams/u11-girls-rep/roster"
-const URL_PROGRAMS = "/manage/clubs/riverside-ravens/programs"
-const URL_SIGNUPS = "/manage/clubs/riverside-ravens/tryouts/u11-girls-fall/signups"
+/**
+ * The rep season fee. `OWNER` the 2026-08-16 ruling puts a rep season in the
+ * $3,000 to $5,000 band; `DB` the live pending offer carries a seeded $1,250
+ * and the club's three saved templates are its SUMMER prices ($795, $895,
+ * $1,495). Nothing was written to the database: the demo raises the number to
+ * the ruled band on screen and says so in the numbers sheet.
+ */
+const FEE = 3600
+/** `PRODUCT` `autofillPlan(3600)` and `computeDefaultPlan(3600)` both return
+ *  a $900 deposit and three $900 installments. Both were run for this cut. */
+const DEPOSIT = 900
+const PER = 900
+const TERMS = [
+  { label: "Installment 1", amount: PER, due: "Sep 1" },
+  { label: "Installment 2", amount: PER, due: "Oct 1" },
+  { label: "Installment 3", amount: PER, due: "Nov 1" },
+]
+
+/** `DB` Offer bb219828's own message. The row stores an em-dash. */
+const OFFER_MESSAGE =
+  "Darius had a strong summer · we'd love to have him back for the fall/winter season."
+/** `DB` the same row says ten days, and `PRODUCT` 10 is one of the real
+ *  expiry chips (3, 5, 7, 10, 14). */
+const EXPIRES_DAYS = 10
+
+/**
+ * `DB` Darius's accepted summer offer 6a179f47 recorded exactly these. The
+ * fall accept collects them again, and the demo reuses his real answers
+ * rather than inventing a growth spurt.
+ */
+const UNIFORM = "YL"
+const TRACKSUIT = "AM"
+const SHOE = "9"
+const PREFS = [37, 1, 7]
+
+/**
+ * The roster that fills. `DB` the ten players on Toronto Lords Grade 9 with
+ * their real jersey numbers: this is the group that moves up to Grade 10 for
+ * the fall, and five of them are the tryout signups above.
+ */
+const ROSTER = [
+  { name: "Daniel Grant", num: 4 },
+  { name: "Ethan Lee", num: 15 },
+  { name: "Cameron Baptiste", num: 17 },
+  { name: "Isaiah Clarke", num: 18 },
+  { name: "Zion Nguyen", num: 21 },
+  { name: "Ibrahim White", num: 28 },
+  { name: "Isaiah Boateng", num: 29 },
+  { name: "Darius Reyes", num: 37 },
+  { name: "Cole Campbell", num: 34 },
+  { name: "Owen Lee", num: 38 },
+]
+const ROSTER_SHOWN = 5
+
+/**
+ * `DB` HouseLeague 7d5b9a63 on this club: "Lords Saturday House League",
+ * eight Saturdays, $220, The Playground, 10:00 to 12:00, U8 to U12, jersey
+ * and medal included. The audit's "~$500 house" tier is NOT what this world
+ * holds, and the demo shows the number the database has.
+ */
+const HOUSE_FEE = 220
+
+/** `PRODUCT` `program-signup-form.tsx` line 464, the offline branch this club
+ *  really renders, with `methodsText(["CASH","ETRANSFER"])`. */
+const OFFLINE_LINE =
+  "This organizer accepts cash, e-Transfer · pay them directly after registering. Offline payments are arranged directly with the organizer, the platform can't refund them."
+
+const money = (n: number) => `$${n.toLocaleString("en-CA")}`
+
+/* ── Pacing ──────────────────────────────────────────────────────────────── */
+
+function paced(b: Omit<DemoBeat, "hold"> & { hold?: number }): DemoBeat {
+  if (b.hold) return b as DemoBeat
+  const arrive = b.cursor ? 620 : 220
+  const settle = 500
+  const read = b.callout ? b.callout.trim().split(/\s+/).length * 180 + 900 : 2400
+  return { ...b, hold: Math.round(arrive + read + (b.callout ? settle : 0)) }
+}
+
+/* ── The script ──────────────────────────────────────────────────────────── */
 
 export const rosterStory: DemoScript = {
-  desktopUrl: URL_TEAMS,
+  presentation: "scene",
+  scenePhones: true,
+  desktopUrl: "/clubs/toronto-lords/teams",
   initialStage: "desktop",
   chapters: [
-    { id: "build", title: "Build the team" },
-    { id: "post", title: "Post the tryout" },
+    { id: "team", title: "Build the team" },
+    { id: "tryout", title: "Post the tryout" },
     { id: "family", title: "A family signs up" },
     { id: "offer", title: "The offer, accepted" },
     { id: "roster", title: "The roster fills" },
@@ -124,1227 +222,1262 @@ export const rosterStory: DemoScript = {
 
   beats: [
     /* ── 1. Build the team ────────────────────────────────────────────── */
-    {
-      id: "teams-open",
-      chapter: "build",
-      caption:
-        "Riverside Ravens run six teams this fall. The U11 girls team does not exist yet.",
-      hold: 2800,
-      set: { screen: "teams" },
-    },
-    {
-      id: "press-new-team",
-      chapter: "build",
-      caption: "Creating it is one button and one short form.",
-      hold: 1900,
+    paced({
+      id: "open",
+      chapter: "team",
+      caption: "A club building next season starts with nothing on the board.",
+      emphasize: "club-teams",
+      callout: "The summer teams are done. The fall roster does not exist yet, and that is the job.",
+    }),
+    paced({
+      id: "new",
+      chapter: "team",
+      caption: "One control, on the phone the club actually carries.",
       cursor: "new-team",
       press: true,
-      set: { dialog: "team" },
-    },
-    {
-      id: "type-team-name",
-      chapter: "build",
-      caption: "Name the team.",
-      hold: 2500,
-      cursor: "field-team-name",
-      type: { key: "teamName", text: "U11 Girls Rep" },
-    },
-    {
-      id: "pick-age",
-      chapter: "build",
-      caption: "Age group is a set of chips, not a dropdown to hunt through.",
-      hold: 1800,
-      cursor: "chip-age-U11",
+      set: { view: "create" },
+      callout: "Making a team takes a picker and a press, not a form somebody has to sit down for.",
+    }),
+    paced({
+      id: "age",
+      chapter: "team",
+      caption: "Pick the age group.",
+      cursor: "age-field",
       press: true,
-      set: { age: "U11" },
-    },
-    {
-      id: "pick-gender",
-      chapter: "build",
-      caption: "Division next.",
-      hold: 1600,
-      cursor: "chip-gender-Girls",
+      set: { age: true },
+      callout: "Grade 10, because this summer's Grade 9 group moves up together.",
+    }),
+    paced({
+      id: "suffix",
+      chapter: "team",
+      caption: "The club already fields a Grade 10, so the product asks which one this is.",
+      cursor: "suffix-field",
+      type: { key: "suffixTyped", text: SUFFIX },
+      set: { suffix: true },
+      callout: "A second team in the same bracket needs a suffix, and the screen says exactly why.",
+    }),
+    paced({
+      id: "name",
+      chapter: "team",
+      caption: "And then the part nobody has to argue about.",
+      emphasize: "name-preview",
+      callout:
+        "Nobody types a team name. The product writes it from the club's short name, so it reads the same everywhere.",
+    }),
+    paced({
+      id: "staff",
+      chapter: "team",
+      caption: "A coach goes on at the same time.",
+      cursor: "staff-field",
       press: true,
-      set: { gender: "Girls" },
-    },
-    {
-      id: "open-coach",
-      chapter: "build",
-      caption: "The head coach is already on staff, so she is one pick away.",
-      hold: 1700,
-      cursor: "coach",
+      set: { staff: true },
+      callout: "Head coach now, or an email invite that assigns the role the moment it is accepted.",
+    }),
+    paced({
+      id: "create",
+      chapter: "team",
+      caption: "Made.",
+      cursor: "create-btn",
       press: true,
-      set: { coachOpen: true },
-    },
-    {
-      id: "pick-coach",
-      chapter: "build",
-      caption: "Dana Michaels takes the team. Her access starts the moment it is saved.",
-      hold: 2000,
-      cursor: "coach-opt-dana",
-      press: true,
-      set: { coach: "Dana Michaels", coachOpen: false },
-    },
-    {
-      id: "create-team",
-      chapter: "build",
-      caption: "The team exists.",
-      hold: 2500,
-      cursor: "create-team",
-      press: true,
-      toast: "Team created",
-      url: URL_ROSTER,
-      set: { dialog: "", teamCreated: true, screen: "roster", roster: 0 },
-    },
-    {
-      id: "empty-roster",
-      chapter: "build",
-      caption:
-        "And the roster behind it is empty, which is the actual work every club starts the season with.",
-      hold: 2800,
-    },
+      toast: `Team created · ${TEAM}`,
+      set: { view: "created" },
+      callout: "One team, one coach, and a roster with nobody on it. That is the honest starting line.",
+    }),
 
     /* ── 2. Post the tryout ───────────────────────────────────────────── */
-    {
-      id: "programs-open",
-      chapter: "post",
-      caption: "Nobody tries out for a team they cannot find, so the tryout goes up next.",
-      hold: 2500,
-      url: URL_PROGRAMS,
-      set: { screen: "programs" },
-    },
-    {
-      id: "press-post",
-      chapter: "post",
-      caption: "One button opens the form. Nothing to set up first.",
-      hold: 1800,
-      cursor: "post-tryout",
+    paced({
+      id: "tryout-open",
+      chapter: "tryout",
+      caption: "Now the club needs players in the gym.",
+      set: { view: "tryout" },
+      emphasize: "tryout-form",
+      callout: "The tryout hangs off the team you just made, so everything it collects lands there.",
+    }),
+    paced({
+      id: "tryout-where",
+      chapter: "tryout",
+      caption: "The gym is picked, not typed.",
+      cursor: "venue-field",
       press: true,
-      set: { dialog: "tryout" },
-    },
-    {
-      id: "type-title",
-      chapter: "post",
-      caption: "Name it.",
-      hold: 2500,
-      cursor: "field-title",
-      type: { key: "title", text: "U11 Girls Fall Tryout" },
-    },
-    {
-      id: "pick-when",
-      chapter: "post",
-      caption: "Pick the date and the gym that is already on file.",
-      hold: 2200,
-      cursor: "field-when",
-      set: {
-        when: "Saturday 12 September, 6:00 PM",
-        gym: "Riverside Community Centre, Court 2",
-      },
-    },
-    {
-      id: "type-fee",
-      chapter: "post",
-      caption: "Set the tryout fee. It is collected when a family registers, not at the door.",
-      hold: 2100,
-      cursor: "field-fee",
-      type: { key: "fee", text: "25" },
-      emphasize: true,
-      callout:
-        "The fee is charged at registration, so no volunteer is standing at the door with a cash box on tryout night.",
-    },
-    {
-      id: "publish",
-      chapter: "post",
-      caption: "Published to the club page, the league listing and the marketplace in one press.",
-      hold: 2600,
-      cursor: "publish-tryout",
+      set: { venue: true },
+      callout: `${VENUE} is already in the club's venues, so the address comes with it.`,
+    }),
+    paced({
+      id: "tryout-when",
+      chapter: "tryout",
+      caption: "A date and two hours on the floor.",
+      cursor: "when-field",
       press: true,
-      toast: "Tryout published",
-      set: { dialog: "", published: true, openPrograms: "1" },
-    },
+      set: { when: true },
+      callout: "Thursday evening, six thirty to eight thirty, which is when a gym is free.",
+    }),
+    paced({
+      id: "tryout-fee",
+      chapter: "tryout",
+      caption: "And what it costs to walk in.",
+      cursor: "fee-field",
+      type: { key: "feeTyped", text: `${TRYOUT_FEE}` },
+      set: { fee: true },
+      callout: `Twenty five dollars and thirty spots. A tryout fee is small on purpose, and it is still money the club has to chase.`,
+    }),
+    paced({
+      id: "tryout-publish",
+      chapter: "tryout",
+      caption: "Published to the marketplace in the same sitting.",
+      cursor: "publish-btn",
+      press: true,
+      toast: "Tryout created and published",
+      set: { view: "tryout-live" },
+      callout: "It is a draft until you say otherwise, and one press puts it in front of families.",
+    }),
 
     /* ── 3. A family signs up ─────────────────────────────────────────── */
-    {
+    paced({
       id: "phone-in",
       chapter: "family",
-      caption:
-        "Over the next week thirteen families register. This is the fourteenth, on her phone.",
-      hold: 2800,
+      caption: `It reaches ${PARENT}, who has two children at this club.`,
       stage: "split",
-      url: URL_SIGNUPS,
-      set: { screen: "signups", signups: 13, phone: "programs" },
-    },
-    {
-      id: "press-register",
+      set: { phone: "tryout" },
+      emphasize: "p-tryout",
+      callout: "This is her own screen in the app, not a copy of the club's.",
+    }),
+    paced({
+      id: "who",
       chapter: "family",
-      caption: "She found the club through the league listing. Registering starts on the card.",
-      hold: 2200,
-      cursor: "phone-register",
+      caption: "The first question is the one that stops most sign-up forms.",
+      emphasize: "who-list",
+      callout: "Who is playing. Her kids are already on the account, so she picks rather than retypes.",
+    }),
+    paced({
+      id: "eligible",
+      chapter: "family",
+      caption: "And the product knows which of them this is for.",
+      cursor: "kid-darius",
       press: true,
-      set: { phone: "register" },
-    },
-    {
-      id: "pick-kid",
+      set: { picked: true },
+      callout: `${SISTER.split(" ")[0]} is flagged outside the age group rather than quietly accepted, and she is still allowed to ask.`,
+    }),
+    paced({
+      id: "register",
       chapter: "family",
-      caption: "She picks which of her two kids is trying out. Both are already on her account.",
-      hold: 2100,
-      cursor: "chip-kid-amara",
+      caption: "The fee is on the button.",
+      cursor: "register-btn",
       press: true,
-      set: { kid: "amara" },
-    },
-    {
-      id: "press-pay",
+      set: { registered: true, phone: "registered" },
+      callout: "Twenty five dollars, said before she presses, so nobody finds out at the door.",
+    }),
+    paced({
+      id: "offline",
       chapter: "family",
-      caption: "The tryout fee is paid here, in the same flow, not in cash at the gym door.",
-      hold: 2300,
-      cursor: "phone-pay",
-      press: true,
-      set: { paySheet: true },
-    },
-    {
-      id: "confirm-pay",
-      chapter: "family",
-      caption: "Two taps with the card already on file, and the club side updates as she does it.",
-      hold: 3000,
-      cursor: "phone-pay-confirm",
-      press: true,
-      set: { paySheet: false, phone: "registered", signups: 14, newSignup: true },
-    },
-    {
-      id: "club-count",
-      chapter: "family",
-      caption:
-        "Fourteen registered, fourteen paid, and nobody is reconciling a list against a cash box.",
-      hold: 2600,
-    },
+      caption: "And this club takes it in person, which the product says out loud.",
+      emphasize: "offline-line",
+      callout:
+        "Cash or e-transfer, arranged with the club. The platform does not pretend it can refund money it never held.",
+    }),
 
-    /* ── 4. The offer, accepted properly ──────────────────────────────── */
-    {
-      id: "hover-offer",
+    /* ── 4. The offer, accepted ───────────────────────────────────────── */
+    paced({
+      id: "signups",
       chapter: "offer",
-      caption: "The tryout runs. The coach picks his team, and every pick is an offer.",
-      hold: 2200,
-      cursor: "make-offer",
-    },
-    {
-      id: "press-offer",
+      caption: "Tryout night is over, and the club has a list.",
+      set: { view: "signups", phone: "idle" },
+      emphasize: "signup-list",
+      callout: "Five players in the gym, every one attached to a guardian who can be written to.",
+    }),
+    paced({
+      id: "bulk",
       chapter: "offer",
-      caption: "Offers go out from the signup list itself.",
-      hold: 1900,
-      cursor: "make-offer",
+      caption: "The offers go out together.",
+      cursor: "bulk-btn",
       press: true,
-      set: { dialog: "offer" },
-    },
-    {
-      id: "offer-package",
+      set: { view: "compose" },
+      callout: "Compose the package once, tick who gets it, and the club stops writing five of the same email.",
+    }),
+    paced({
+      id: "package",
       chapter: "offer",
-      caption: "The offer carries the package, the fee, the gear and the deadline to respond.",
-      hold: 2400,
-      cursor: "field-package",
-      set: { offerReady: true },
-    },
-    {
-      id: "send-offer",
+      caption: "The package is the whole season written down.",
+      cursor: "fee-input",
+      type: { key: "repFeeTyped", text: "3600" },
+      set: { repFee: true },
+      callout: "A rep season with the full kit in it, at one number the family can hold you to.",
+    }),
+    paced({
+      id: "auto",
       chapter: "offer",
-      caption: "Sent.",
-      hold: 2400,
-      cursor: "send-offer",
+      caption: "And then the control this chapter exists for.",
+      cursor: "auto-plan",
       press: true,
-      toast: "Offer sent to the Bello family",
-      set: { dialog: "", offerSent: true },
-    },
-    {
-      id: "phone-offer",
+      set: { plan: true },
+      callout:
+        "One press writes a deposit and three monthly installments, and the screen checks its own arithmetic.",
+    }),
+    paced({
+      id: "send",
       chapter: "offer",
-      caption: "It arrives as an offer she can act on, not an email thread she has to answer.",
-      hold: 2700,
+      caption: "Sent, with a deadline on it.",
+      cursor: "send-btn",
+      press: true,
+      toast: `5 offers sent · expire in ${EXPIRES_DAYS} days`,
+      set: { view: "sent" },
+      callout: "Ten days to answer. An offer with no expiry is how a club loses a roster spot to a maybe.",
+    }),
+    paced({
+      id: "arrive",
+      chapter: "offer",
+      caption: `On ${PARENT}'s phone it is one screen, not a thread to scroll back through.`,
       set: { phone: "offer" },
-    },
-    {
-      id: "press-accept",
+      emphasize: "offer-card",
+      callout: "The team, the money, the kit and the words the coach wrote, all in one place.",
+    }),
+    paced({
+      id: "sizes",
       chapter: "offer",
-      caption:
-        "Accepting opens the part clubs chase families for all season. It happens once, here.",
-      hold: 2500,
-      cursor: "phone-accept",
+      caption: "Accepting is where the club stops chasing sizes.",
+      cursor: "size-uniform",
       press: true,
-      set: { phone: "accept" },
-    },
-    {
-      id: "pick-uniform",
-      chapter: "offer",
-      caption: "Uniform size.",
-      hold: 1800,
-      cursor: "chip-uniform-YM",
-      press: true,
-      set: { uniform: "YM" },
-      emphasize: true,
+      set: { sizes: true },
       callout:
-        "Sizes are collected here, so nobody chases families in a group chat later.",
-    },
-    {
-      id: "pick-tracksuit",
+        "Uniform, tracksuit and shoes, asked once, at the only moment a parent is guaranteed to be paying attention.",
+    }),
+    paced({
+      id: "jersey",
       chapter: "offer",
-      caption: "Tracksuit size.",
-      hold: 1700,
-      cursor: "chip-tracksuit-YL",
+      caption: "Three jersey numbers, in order.",
+      cursor: "pref-1",
       press: true,
-      set: { tracksuit: "YL" },
-    },
-    {
-      id: "open-shoe",
+      set: { prefs: true },
+      callout: `He wants ${PREFS[0]} again, and two fallbacks, so nobody runs a group chat about numbers.`,
+    }),
+    paced({
+      id: "plan",
       chapter: "offer",
-      caption: "Shoe size, in half sizes, because that is how shoes are ordered.",
-      hold: 1700,
-      cursor: "shoe",
+      caption: "The plan is on her screen before she agrees to it.",
+      emphasize: "plan-card",
+      callout: `${money(DEPOSIT)} now and three more, dated. Not "we'll work something out".`,
+    }),
+    paced({
+      id: "accept",
+      chapter: "offer",
+      caption: "Accepted.",
+      cursor: "accept-btn",
       press: true,
-      set: { shoeOpen: true },
-    },
-    {
-      id: "pick-shoe",
-      chapter: "offer",
-      caption: "Picked.",
-      hold: 1800,
-      cursor: "shoe-opt-7",
-      press: true,
-      set: { shoe: "7", shoeOpen: false },
-    },
-    {
-      id: "type-jersey",
-      chapter: "offer",
-      caption: "Jersey number, first choice.",
-      hold: 2200,
-      cursor: "field-jersey1",
-      type: { key: "jersey1", text: "23" },
-    },
-    {
-      id: "type-jersey-2",
-      chapter: "offer",
-      caption: "And a fallback, in case another kid on the team already wears it.",
-      hold: 2000,
-      cursor: "field-jersey2",
-      type: { key: "jersey2", text: "3" },
-    },
-    {
-      id: "pick-plan",
-      chapter: "offer",
-      caption:
-        "The club offered a payment plan, so she takes it. The schedule is spelled out before she agrees to it.",
-      hold: 2900,
-      cursor: "plan-INSTALLMENTS",
-      press: true,
-      set: { plan: "INSTALLMENTS" },
-    },
-    {
-      id: "accept-pay",
-      chapter: "offer",
-      caption:
-        "One pass on a phone: sizes, number, plan, deposit, waiver. This is the six weeks of chasing that clubs do every single season.",
-      hold: 3200,
-      cursor: "phone-accept-pay",
-      press: true,
-      toast: "Offer accepted",
-      set: { phone: "accepted", accepted: true },
-    },
+      set: { accepted: true, phone: "accepted" },
+      callout: "One press pays the deposit, books the three charges and puts him on the roster.",
+    }),
 
-    /* ── 5. The roster fills itself ───────────────────────────────────── */
-    {
-      id: "roster-first",
+    /* ── 5. The roster fills ──────────────────────────────────────────── */
+    paced({
+      id: "roster",
       chapter: "roster",
-      caption:
-        "Everything she chose is already on the roster: number 23, three sizes, waiver signed at accept. Nobody typed it twice.",
-      hold: 3300,
+      caption: "Which is the screen the whole thing was for.",
       stage: "desktop",
-      url: URL_ROSTER,
-      set: { screen: "roster", roster: 1, rosterFrom: 0 },
-    },
-    {
-      id: "roster-four",
+      set: { view: "roster", phone: "idle" },
+      emphasize: "roster-list",
+      callout: "Ten of ten, and every line arrived by itself as a family accepted.",
+    }),
+    paced({
+      id: "roster-sizes",
       chapter: "roster",
-      caption: "The rest of the offers come back over the week.",
-      hold: 2200,
-      set: { roster: 4, rosterFrom: 1 },
-    },
-    {
-      id: "roster-seven",
+      caption: "The sizes are already on it.",
+      emphasize: "row-darius",
+      callout: "Uniform, tracksuit and shoes, straight off the accept. Nobody sent a spreadsheet.",
+    }),
+    paced({
+      id: "roster-status",
       chapter: "roster",
-      caption: "Every one of them arrives the same way, finished.",
-      hold: 2000,
-      set: { roster: 7, rosterFrom: 4 },
-    },
-    {
-      id: "roster-full",
+      caption: "And the two things a manager actually chases are chips, not memory.",
+      emphasize: "row-status",
+      callout: "Whether the number is finalised, and whether the waivers are signed.",
+    }),
+    paced({
+      id: "house",
+      chapter: "roster",
+      caption: "The same club runs the other end of the age range too.",
+      set: { view: "programs" },
+      emphasize: "house-card",
+      callout: "Eight Saturdays at two hundred and twenty dollars, on the same gym and the same books.",
+    }),
+    paced({
+      id: "end",
       chapter: "roster",
       caption:
-        "Ten players, ten sets of sizes, ten signed waivers, ten fees on plan or paid. None of it chased.",
-      hold: 3300,
-      toast: "Roster complete",
-      set: { roster: 10, rosterFrom: 7 },
-      emphasize: "roster-tiles",
-      callout:
-        "Every counter filled itself as families accepted, so the club knows the team is ready without auditing a spreadsheet.",
-    },
-    {
-      id: "end-card",
-      chapter: "roster",
-      caption: "That is one team, from an empty page to a full roster.",
-      hold: 4200,
+        "A team made on a phone, a tryout filled, one offer accepted with sizes, a number and a payment plan, and a roster that finished itself.",
+      hold: 4400,
       set: { endCard: true },
-    },
+    }),
   ],
 
+  /* ── Render ────────────────────────────────────────────────────────── */
+
   render: ({ get, typingKey }) => {
-    const screen = get<string>("screen", "teams")
-    const dialog = get<string>("dialog", "")
-    const phone = get<string>("phone", "")
-    const endCard = get("endCard", false)
+    const view = get<string>("view", "teams")
 
-    /* One field types at a time, and which one is a property of the beat. The
-       screens take this closure rather than the raw key, so no component has
-       to know how the script names its state. */
-    const typed: Typed = (key, placeholder) => (
-      <TypeText text={get<string>(key, "")} typing={typingKey === key} placeholder={placeholder} />
-    )
-
-    /* ── Desktop ──────────────────────────────────────────────────────── */
-
-    const activeTab =
-      screen === "programs" || screen === "signups" ? "Programs" : "Teams"
-
-    const desktop = (
+    const club = (
       <div className="relative flex h-full flex-col">
-        <MockTopBar
-          workspace="Riverside Ravens"
-          tabs={["Dashboard", "Teams", "Programs", "Payments", "People"]}
-          activeTab={activeTab}
+        <ClubPhone
+          view={view}
+          age={get("age", false)}
+          suffix={get("suffix", false)}
+          suffixTyped={get<string>("suffixTyped", "")}
+          typingSuffix={typingKey === "suffixTyped"}
+          staff={get("staff", false)}
+          venue={get("venue", false)}
+          when={get("when", false)}
+          fee={get("fee", false)}
+          feeTyped={get<string>("feeTyped", "")}
+          typingFee={typingKey === "feeTyped"}
+          repFee={get("repFee", false)}
+          repFeeTyped={get<string>("repFeeTyped", "")}
+          typingRepFee={typingKey === "repFeeTyped"}
+          plan={get("plan", false)}
+          accepted={get("accepted", false)}
         />
-
-        {/* Screens crossfade in place: opacity only, so nothing the pointer
-            is aiming at ever moves under it. */}
-        <div key={screen} className="demo-fade-in flex min-h-0 flex-1 flex-col">
-          {screen === "teams" && <TeamsScreen teamCreated={get("teamCreated", false)} />}
-          {screen === "roster" && (
-            <RosterScreen count={get("roster", 0)} from={get("rosterFrom", 0)} />
-          )}
-          {screen === "programs" && (
-            <ProgramsScreen
-              published={get("published", false)}
-              openPrograms={get<string>("openPrograms", "0")}
-            />
-          )}
-          {screen === "signups" && (
-            <SignupsScreen
-              count={get("signups", 13)}
-              fresh={get("newSignup", false)}
-              offerSent={get("offerSent", false)}
-            />
-          )}
-        </div>
-
-        <CreateTeamDialog
-          open={dialog === "team"}
-          typed={typed}
-          age={get<string>("age", "")}
-          gender={get<string>("gender", "")}
-          coach={get<string>("coach", "")}
-          coachOpen={get("coachOpen", false)}
-        />
-        <PostTryoutDialog
-          open={dialog === "tryout"}
-          typed={typed}
-          when={get<string>("when", "")}
-          gym={get<string>("gym", "")}
-        />
-        <SendOfferDialog open={dialog === "offer"} ready={get("offerReady", false)} />
-
-        {endCard && (
-          <MockEndCard
-            eyebrow="Story 1 of 10"
-            title="Build a team, fill the roster"
-            line="Posted, registered, paid, offered, accepted and rostered. One club, one family, no spreadsheet in sight."
-            next="Everyone in the loop"
-          />
-        )}
+        {get("endCard", false) && <EndCard />}
       </div>
     )
 
-    /* ── Phone ────────────────────────────────────────────────────────── */
-
-    const phoneNode = (
-      <div className="relative h-full">
-        {phone === "register" ? (
-          <PhoneShell title="U11 Girls Fall Tryout" subtitle="Riverside Ravens">
-            <RegisterScreen kid={get<string>("kid", "")} />
-          </PhoneShell>
-        ) : phone === "registered" ? (
-          <PhoneShell title="You are registered" subtitle="Riverside Ravens">
-            <PhoneSuccess
-              title="Amara is registered for the U11 Girls Fall Tryout"
-              body="It is on your calendar, and the club has her details already."
-              rows={[
-                { label: "When", value: "Sat 12 Sep, 6:00 PM" },
-                { label: "Where", value: "Riverside CC, Court 2" },
-                { label: "Paid", value: "$25.00" },
-              ]}
-            />
-          </PhoneShell>
-        ) : phone === "offer" ? (
-          <PhoneShell title="You have an offer" subtitle="Riverside Ravens">
-            <PhoneOfferCard
-              club="Riverside Ravens"
-              team="U11 Girls Rep"
-              season="Fall 2026"
-              packageLabel="Full season, gear included"
-              includes="Uniform, tracksuit, shoes and a game ball. 3 practices a week plus league games."
-              fee="$525.00"
-              expires="Friday 19 September"
-              acceptId="phone-accept"
-            />
-          </PhoneShell>
-        ) : phone === "accept" ? (
-          <PhoneShell title="Accept the offer" subtitle="U11 Girls Rep">
-            <AcceptScreen
-              typed={typed}
-              uniform={get<string>("uniform", "")}
-              tracksuit={get<string>("tracksuit", "")}
-              shoe={get<string>("shoe", "")}
-              shoeOpen={get("shoeOpen", false)}
-              plan={get<string>("plan", "")}
-            />
-          </PhoneShell>
-        ) : phone === "accepted" ? (
-          <PhoneShell title="Amara is on the team" subtitle="U11 Girls Rep">
-            <PhoneSuccess
-              title="Amara Bello is on the U11 Girls Rep roster"
-              body="Her sizes and number went to the club with the acceptance. Practices are already on your calendar."
-              rows={[
-                { label: "Jersey", value: "23" },
-                { label: "Uniform / tracksuit", value: "YM / YL" },
-                { label: "Shoes", value: "7" },
-                { label: "Paid today", value: "$175.00" },
-                { label: "Next payment", value: "15 Oct, $175.00" },
-              ]}
-            />
-          </PhoneShell>
-        ) : (
-          <PhoneShell title="Riverside Ravens" subtitle="Following">
-            <p className="text-ink-500 mb-2 px-1 text-[11px] font-semibold uppercase tracking-[0.14em]">
-              Programs near you
-            </p>
-            <div className="space-y-2.5">
-              <PhoneProgramCard
-                kind="Tryout"
-                title="U11 Girls Fall Tryout"
-                club="Riverside Ravens"
-                meta="Saturday 12 September, 6:00 PM at Riverside Community Centre"
-                fee="$25"
-                action="Register"
-                actionId="phone-register"
-              />
-              <PhoneProgramCard
-                kind="House league"
-                title="House League Fall registration"
-                club="Riverside Ravens"
-                meta="Opens 1 September, ages 8 to 14"
-                fee="$210"
-              />
-            </div>
-          </PhoneShell>
-        )}
-
-        <PhoneSheet
-          open={get("paySheet", false)}
-          title="Pay $25.00"
-          subtitle="Tryout fee for Amara Bello"
-        >
-          <div className="space-y-3">
-            <div className="border-ink-100 rounded-xl border bg-white px-3 py-2">
-              <PhoneMoneyRow label="U11 Girls Fall Tryout" value="$25.00" />
-              <PhoneMoneyRow label="Due now" value="$25.00" strong />
-            </div>
-            <div className="border-ink-200 flex items-center gap-2 rounded-xl border bg-white px-2.5 py-2">
-              <span className="bg-ink-900 flex h-5 w-7 shrink-0 items-center justify-center rounded text-[7px] font-bold uppercase tracking-wide text-white">
-                Visa
-              </span>
-              <span className="text-ink-800 text-[12px] font-semibold">•••• 4242</span>
-              <MockPill tone="neutral">Default</MockPill>
-            </div>
-            <PhoneAction id="phone-pay-confirm">Pay $25.00</PhoneAction>
-            <p className="text-ink-400 text-center text-[10px]">
-              Card handled by Stripe. The club never sees the number.
-            </p>
-          </div>
-        </PhoneSheet>
-      </div>
+    const phone = (
+      <ParentPhone
+        view={get<string>("phone", "idle")}
+        picked={get("picked", false)}
+        sizes={get("sizes", false)}
+        prefs={get("prefs", false)}
+        accepted={get("accepted", false)}
+      />
     )
 
-    return { desktop, phone: phoneNode }
+    return {
+      desktop: club,
+      phone,
+      frameLabels: { left: `${CLUB} · club`, right: `${PARENT} · parent` },
+    }
   },
 }
 
-/* ── Desktop screens ──────────────────────────────────────────────────────── */
-
-function TeamsScreen({ teamCreated }: { teamCreated: boolean }) {
-  return (
-    <>
-      <MockBand
-        eyebrow="Club workspace"
-        title="Teams"
-        description="Every team the club runs this season, with the roster each one is carrying."
-        action={
-          <MockButton id="new-team" icon={<PlusIcon />}>
-            Create a team
-          </MockButton>
-        }
-      />
-      <div className="bg-ink-50/60 min-h-0 flex-1 px-6 py-5">
-        <div className="grid grid-cols-3 gap-3">
-          {EXISTING_TEAMS.map((t) => (
-            <TeamCard key={t.name} {...t} />
-          ))}
-          {teamCreated && (
-            <TeamCard
-              name="U11 Girls Rep"
-              meta="Fall 2026 · Rep · Dana Michaels"
-              roster="0 of 10"
-              fresh
-            />
-          )}
-        </div>
-      </div>
-    </>
-  )
-}
-
-function TeamCard({
-  name,
-  meta,
-  roster,
-  fresh,
-}: {
-  name: string
-  meta: string
-  roster: string
-  fresh?: boolean
-}) {
-  const empty = roster.startsWith("0 ")
-  return (
-    <div
-      className={`border-ink-100 rounded-2xl border bg-white px-3.5 py-3 shadow-[0_10px_28px_-24px_rgba(15,23,42,0.6)] ${
-        fresh ? "live-row-in ring-play-200 ring-2" : ""
-      }`}
-    >
-      <div className="flex items-center gap-2.5">
-        <Crest name={name} size="sm" />
-        <div className="min-w-0">
-          <p className="text-ink-900 truncate text-[13px] font-bold leading-tight">{name}</p>
-          <p className="text-ink-400 truncate text-[11px]">{meta}</p>
-        </div>
-      </div>
-      <div className="mt-2.5">
-        <MockPill tone={empty ? "hoop" : "court"}>Roster {roster}</MockPill>
-      </div>
-    </div>
-  )
-}
-
-function RosterScreen({ count, from }: { count: number; from: number }) {
-  const players = ROSTER.slice(0, count)
-  const complete = count >= ROSTER.length
-  return (
-    <>
-      <MockBand
-        eyebrow="U11 Girls Rep · Fall 2026 · Dana Michaels"
-        title="Roster"
-        action={
-          <MockPill tone={complete ? "court" : count === 0 ? "hoop" : "gold"}>
-            {complete ? "Roster complete" : count === 0 ? "Nobody on it yet" : "Filling"}
-          </MockPill>
-        }
-      />
-      <div className="bg-ink-50/60 min-h-0 flex-1 px-6 py-4">
-        {/* The four counters are one object as far as the script is concerned:
-            the roster-complete beat rings them together. */}
-        <div data-demo-target="roster-tiles" className="grid grid-cols-4 gap-3">
-          <MockTile
-            compact
-            label="Roster"
-            tone={complete ? "court" : "neutral"}
-            value={
-              <span>
-                <MockCounter value={count} /> of {ROSTER.length}
-              </span>
-            }
-          />
-          <MockTile
-            compact
-            label="Sizes recorded"
-            value={
-              <span>
-                <MockCounter value={count} /> of {ROSTER.length}
-              </span>
-            }
-          />
-          <MockTile
-            compact
-            label="Waivers signed"
-            tone={complete ? "court" : "neutral"}
-            value={
-              <span>
-                <MockCounter value={count} /> of {ROSTER.length}
-              </span>
-            }
-          />
-          <MockTile compact label="Fees paid or on plan" value={<MockCounter value={count} />} />
-        </div>
-
-        <MockPanel
-          title="Players"
-          meta={complete ? "Kit order ready" : "Offers still out"}
-          className="mt-3"
-          action={<MockPill tone="play">Fall 2026</MockPill>}
-        >
-          {count === 0 ? (
-            <div className="px-6 py-6">
-              <MockEmptyState
-                title="No players on roster"
-                body="Players appear here once they accept their offers."
-                icon={<PeopleIcon />}
-              />
-            </div>
-          ) : (
-            <MockRosterTable players={players} freshFrom={from} />
-          )}
-        </MockPanel>
-      </div>
-    </>
-  )
-}
-
-function ProgramsScreen({
-  published,
-  openPrograms,
-}: {
-  published: boolean
-  openPrograms: string
-}) {
-  return (
-    <>
-      <MockBand
-        eyebrow="Club workspace"
-        title="Programs"
-        description="Tryouts, camps and house leagues families can find and pay for."
-        action={
-          <MockButton id="post-tryout" icon={<PlusIcon />}>
-            Post a tryout
-          </MockButton>
-        }
-      />
-      <div className="bg-ink-50/60 min-h-0 flex-1 px-6 py-5">
-        <div className="grid grid-cols-4 gap-3">
-          <MockTile label="Teams" value="7" />
-          <MockTile label="Registered players" value="74" />
-          <MockTile
-            label="Open programs"
-            value={openPrograms}
-            tone={published ? "court" : "neutral"}
-          />
-          <MockTile label="Waitlist" value="12" tone="hoop" />
-        </div>
-
-        <MockPanel
-          title="This season"
-          meta="Fall 2026"
-          className="mt-4"
-          action={<MockPill tone="neutral">4 programs</MockPill>}
-        >
-          {published && (
-            <div className="live-row-in border-court-100 bg-court-50/50 flex items-center gap-3 border-b px-4 py-3">
-              <span className="bg-court-600 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-white">
-                <CheckIcon />
-              </span>
-              <div className="min-w-0 flex-1">
-                <p className="text-ink-900 truncate text-[13px] font-semibold">
-                  U11 Girls Fall Tryout
-                </p>
-                <p className="text-ink-500 truncate text-[11px]">
-                  Saturday 12 September, 6:00 PM at Riverside Community Centre
-                </p>
-              </div>
-              <MockPill tone="court">Published</MockPill>
-            </div>
-          )}
-          <MockRow
-            title="House League Fall registration"
-            meta="Opens 1 September, 48 spots"
-            right={<MockPill tone="gold">Draft</MockPill>}
-          />
-          <MockRow
-            title="Spring Skills Camp"
-            meta="Finished 22 June, 36 registered"
-            right={<MockPill>Closed</MockPill>}
-            muted
-          />
-          <MockRow
-            title="U16 Girls Fall Tryout"
-            meta="Saturday 12 September, 8:00 PM"
-            right={<MockPill tone="gold">Draft</MockPill>}
-          />
-        </MockPanel>
-      </div>
-    </>
-  )
-}
-
-function SignupsScreen({
-  count,
-  fresh,
-  offerSent,
-}: {
-  count: number
-  fresh: boolean
-  offerSent: boolean
-}) {
-  return (
-    <>
-      <MockBand
-        eyebrow="U11 Girls Fall Tryout · 12 September"
-        title="Signups"
-        action={<MockPill tone="court">Open</MockPill>}
-      />
-      <div className="bg-ink-50/60 min-h-0 flex-1 px-6 py-4">
-        <div className="grid grid-cols-4 gap-3">
-          <MockTile
-            label="Registered"
-            tone="court"
-            value={<MockCounter value={count} />}
-          />
-          <MockTile label="Fees paid" value={<MockCounter value={count} />} />
-          <MockTile label="Spots at the tryout" value="24" />
-          <MockTile label="Offers out" value={offerSent ? "1" : "0"} tone="hoop" />
-        </div>
-
-        <MockPanel
-          title="Signups"
-          meta="Five most recent"
-          className="mt-3"
-          action={<MockPill tone="neutral">All paid</MockPill>}
-        >
-          {fresh && (
-            <SignupRow
-              name="Amara Bello"
-              born="2015"
-              fresh
-              action={
-                offerSent ? (
-                  <MockPill tone="play">Offer sent</MockPill>
-                ) : (
-                  <MockButton id="make-offer" size="sm" tone="court">
-                    Make offer
-                  </MockButton>
-                )
-              }
-            />
-          )}
-          {SIGNUPS.map((s) => (
-            <SignupRow key={s.name} name={s.name} born={s.born} />
-          ))}
-        </MockPanel>
-      </div>
-    </>
-  )
-}
-
-function SignupRow({
-  name,
-  born,
-  fresh,
-  action,
-}: {
-  name: string
-  born: string
-  fresh?: boolean
-  action?: React.ReactNode
-}) {
-  return (
-    <div
-      className={`border-ink-50 flex items-center gap-3 border-b px-4 py-2 last:border-b-0 ${
-        fresh ? "live-row-in bg-court-50/40" : ""
-      }`}
-    >
-      <PlayerMug name={name} accentKey={name} sizeClassName="h-7 w-7 rounded-full" />
-      <div className="min-w-0 flex-1">
-        <p className="text-ink-900 truncate text-[12.5px] font-semibold">{name}</p>
-        <p className="text-ink-400 truncate text-[11px]">Born {born} · Registered and paid</p>
-      </div>
-      <MockPill tone="court">Paid $25</MockPill>
-      <div className="w-[104px] text-right">{action}</div>
-    </div>
-  )
-}
-
-/* ── Desktop dialogs ──────────────────────────────────────────────────────── */
-
-function CreateTeamDialog({
-  open,
-  typed,
-  age,
-  gender,
-  coach,
-  coachOpen,
-}: {
-  open: boolean
-  typed: Typed
-  age: string
-  gender: string
-  coach: string
-  coachOpen: boolean
-}) {
-  return (
-    <MockDialog
-      open={open}
-      title="Create a team"
-      subtitle="Rosters, schedules and payments all hang off the team you make here."
-      footer={
-        <>
-          <MockButton tone="quiet" size="sm">
-            Cancel
-          </MockButton>
-          <MockButton id="create-team" size="sm">
-            Create team
-          </MockButton>
-        </>
-      }
-    >
-      <div className="space-y-3.5">
-        <MockField id="field-team-name" label="Team name">
-          {typed("teamName", "Name this team")}
-        </MockField>
-        {/* The coach picker sits ABOVE the chips on purpose: its popover opens
-            downward, and the dialog clips at its own rounded edge. */}
-        <div className="grid grid-cols-2 gap-4">
-          <MockListbox
-            id="coach"
-            label="Head coach"
-            value={coach}
-            open={coachOpen}
-            placeholder="Choose from staff"
-            options={[
-              { value: "dana", label: "Dana Michaels" },
-              { value: "priya", label: "Priya Raman" },
-              { value: "marcus", label: "Marcus Webb" },
-              { value: "sam", label: "Sam Oduya" },
-            ]}
-          />
-          <MockField label="Season">
-            <span className="text-ink-900">Fall 2026</span>
-          </MockField>
-        </div>
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <span className="text-ink-600 mb-1.5 block text-[11px] font-semibold uppercase tracking-[0.1em]">
-              Age group
-            </span>
-            <MockChips
-              idPrefix="chip-age"
-              value={age}
-              options={["U9", "U11", "U13", "U16"].map((v) => ({ value: v, label: v }))}
-            />
-          </div>
-          <div>
-            <span className="text-ink-600 mb-1.5 block text-[11px] font-semibold uppercase tracking-[0.1em]">
-              Division
-            </span>
-            <MockChips
-              idPrefix="chip-gender"
-              value={gender}
-              options={["Girls", "Boys", "Coed"].map((v) => ({ value: v, label: v }))}
-            />
-          </div>
-        </div>
-      </div>
-    </MockDialog>
-  )
-}
-
-function PostTryoutDialog({
-  open,
-  typed,
-  when,
-  gym,
-}: {
-  open: boolean
-  typed: Typed
-  when: string
-  gym: string
-}) {
-  return (
-    <MockDialog
-      open={open}
-      title="Post a tryout"
-      subtitle="Families see this on your club page and on the marketplace."
-      footer={
-        <>
-          <MockButton tone="quiet" size="sm">
-            Cancel
-          </MockButton>
-          <MockButton id="publish-tryout" size="sm">
-            Publish tryout
-          </MockButton>
-        </>
-      }
-    >
-      <div className="space-y-3">
-        <MockField id="field-title" label="Tryout name">
-          {typed("title", "Name this tryout")}
-        </MockField>
-        <div className="grid grid-cols-2 gap-3">
-          <MockField id="field-when" label="Date and time">
-            <span className={when ? "text-ink-900" : "text-ink-400"}>
-              {when || "Choose a date"}
-            </span>
-          </MockField>
-          <MockField id="field-gym" label="Gym">
-            <span className={gym ? "text-ink-900" : "text-ink-400"}>
-              {gym || "Choose a venue"}
-            </span>
-          </MockField>
-        </div>
-        <div className="grid grid-cols-2 gap-3">
-          <MockField id="field-fee" label="Tryout fee" hint="Collected at registration">
-            <span className="text-ink-400 mr-0.5">$</span>
-            {typed("fee", "0")}
-          </MockField>
-          <MockField label="Team this feeds">
-            <span className="text-ink-900">U11 Girls Rep</span>
-          </MockField>
-        </div>
-      </div>
-    </MockDialog>
-  )
-}
-
-function SendOfferDialog({ open, ready }: { open: boolean; ready: boolean }) {
-  return (
-    <MockDialog
-      open={open}
-      title="Send an offer to Amara Bello"
-      subtitle="U11 Girls Rep · Fall 2026"
-      footer={
-        <>
-          <MockButton tone="quiet" size="sm">
-            Cancel
-          </MockButton>
-          <MockButton id="send-offer" size="sm">
-            Send offer
-          </MockButton>
-        </>
-      }
-    >
-      <div className="space-y-3">
-        <div className="border-ink-100 flex items-center gap-3 rounded-2xl border px-3 py-2.5">
-          <PlayerMug name="Amara Bello" accentKey="Amara Bello" sizeClassName="h-9 w-9 rounded-full" />
-          <div className="min-w-0">
-            <p className="text-ink-900 text-[13px] font-bold">Amara Bello</p>
-            <p className="text-ink-500 text-[11px]">
-              Born 2015 · Tried out 12 September · Guard
-            </p>
-          </div>
-          <div className="ml-auto">
-            <MockPill tone="court">Paid $25</MockPill>
-          </div>
-        </div>
-        <MockField id="field-package" label="Package">
-          <span className={ready ? "text-ink-900 font-semibold" : "text-ink-400"}>
-            {ready ? "Full season, gear included · $525.00" : "Choose a package"}
-          </span>
-        </MockField>
-        {ready && (
-          <div className="flex flex-wrap gap-1.5">
-            <MockPill tone="play">Uniform</MockPill>
-            <MockPill tone="play">Tracksuit</MockPill>
-            <MockPill tone="play">Shoes</MockPill>
-            <MockPill tone="play">Game ball</MockPill>
-            <MockPill tone="neutral">3 practices a week</MockPill>
-          </div>
-        )}
-        <div className="grid grid-cols-2 gap-3">
-          <MockField label="Payment plan offered">
-            <span className="text-ink-900">$175 deposit, then 2 payments of $175</span>
-          </MockField>
-          <MockField label="Respond by">
-            <span className="text-ink-900">Friday 19 September</span>
-          </MockField>
-        </div>
-      </div>
-    </MockDialog>
-  )
-}
-
-/* ── Phone screens ────────────────────────────────────────────────────────── */
-
-function RegisterScreen({ kid }: { kid: string }) {
-  return (
-    <div className="space-y-3">
-      <div className="border-ink-100 rounded-2xl border bg-white px-3 py-2.5">
-        <p className="text-ink-900 text-[12px] font-bold">Saturday 12 September, 6:00 PM</p>
-        <p className="text-ink-500 mt-0.5 text-[11px]">Riverside Community Centre, Court 2</p>
-        <p className="text-ink-400 mt-1 text-[10.5px]">Ages 9 to 11 · 24 spots · 10 left</p>
-      </div>
-
-      <div>
-        <PhoneLabel>Who is trying out</PhoneLabel>
-        <MockChips
-          idPrefix="chip-kid"
-          value={kid}
-          options={[
-            { value: "amara", label: "Amara Bello, 10" },
-            { value: "noah", label: "Noah Bello, 13" },
-          ]}
-        />
-      </div>
-
-      <div className="border-ink-100 rounded-2xl border bg-white px-3 py-2">
-        <PhoneMoneyRow label="Tryout fee" value="$25.00" />
-        <PhoneMoneyRow label="Due now" value="$25.00" strong />
-      </div>
-
-      <PhoneAction id="phone-pay">Pay $25.00 and register</PhoneAction>
-      <p className="text-ink-400 text-center text-[10px]">
-        Your spot is held as soon as the fee clears.
-      </p>
-    </div>
-  )
-}
+/* ── The club's phone ────────────────────────────────────────────────────── */
 
 /**
- * The details submission. This screen is the reason the story is long: it is
- * the paperwork clubs spend six weeks collecting by text message, done once,
- * by the person who actually knows the answers, at the moment she is already
- * saying yes.
+ * Every screen in this handset is a PHONE COMPOSITION of a screen the product
+ * ships wide today (`/clubs/[id]/teams`, `/clubs/[id]/teams/create`,
+ * `/clubs/[id]/tryouts/create`, the tryout signups page with its bulk offer
+ * modal, and `/clubs/[id]/teams/[teamId]/roster`). The owner authorized
+ * exactly that in the 2026-08-16 phone-first chart; each one is listed in
+ * section H of `roster-story-numbers.md` with the fields it keeps and drops.
  */
-function AcceptScreen({
-  typed,
-  uniform,
-  tracksuit,
-  shoe,
-  shoeOpen,
+function ClubPhone({
+  view,
+  age,
+  suffix,
+  suffixTyped,
+  typingSuffix,
+  staff,
+  venue,
+  when,
+  fee,
+  feeTyped,
+  typingFee,
+  repFee,
+  repFeeTyped,
+  typingRepFee,
   plan,
+  accepted,
 }: {
-  typed: Typed
-  uniform: string
-  tracksuit: string
-  shoe: string
-  shoeOpen: boolean
-  plan: string
+  view: string
+  age: boolean
+  suffix: boolean
+  suffixTyped: string
+  typingSuffix: boolean
+  staff: boolean
+  venue: boolean
+  when: boolean
+  fee: boolean
+  feeTyped: string
+  typingFee: boolean
+  repFee: boolean
+  repFeeTyped: string
+  typingRepFee: boolean
+  plan: boolean
+  accepted: boolean
 }) {
   return (
-    <div className="space-y-2.5">
-      <div>
-        <PhoneLabel>Uniform size</PhoneLabel>
-        <MockChips idPrefix="chip-uniform" value={uniform} options={CLOTHING} />
-      </div>
-      <div>
-        <PhoneLabel>Tracksuit size</PhoneLabel>
-        <MockChips idPrefix="chip-tracksuit" value={tracksuit} options={CLOTHING} />
-      </div>
-      <div className="grid grid-cols-3 gap-2">
-        <MockListbox
-          id="shoe"
-          label="Shoe"
-          value={shoe}
-          open={shoeOpen}
-          placeholder="Size"
-          options={SHOES}
-        />
-        <div>
-          <span className="text-ink-600 mb-1 block text-[11px] font-semibold uppercase tracking-[0.1em]">
-            Jersey 1st
-          </span>
-          <span
-            data-demo-target="field-jersey1"
-            className="border-ink-200 text-ink-900 flex min-h-[36px] items-center justify-center rounded-xl border bg-white px-2 text-[13px] font-bold shadow-sm transition-all duration-200 motion-reduce:transition-none data-[demo-hover=true]:border-play-300"
-          >
-            {typed("jersey1", "#")}
-          </span>
-        </div>
-        <div>
-          <span className="text-ink-600 mb-1 block text-[11px] font-semibold uppercase tracking-[0.1em]">
-            2nd
-          </span>
-          <span
-            data-demo-target="field-jersey2"
-            className="border-ink-200 text-ink-900 flex min-h-[36px] items-center justify-center rounded-xl border bg-white px-2 text-[13px] font-bold shadow-sm transition-all duration-200 motion-reduce:transition-none data-[demo-hover=true]:border-play-300"
-          >
-            {typed("jersey2", "#")}
-          </span>
-        </div>
+    <div className="flex h-full flex-col bg-[#f6f7f9]">
+      <div className="flex items-baseline gap-2 bg-[#0b1628] px-4 pb-2.5 pt-2 text-white">
+        <p className="text-[15px] font-bold leading-tight">{CLUB}</p>
+        <p className="text-[14px] font-medium text-white/60">Club workspace</p>
       </div>
 
-      <div>
-        <PhoneLabel>Payment</PhoneLabel>
-        <MockChoiceCards
-          idPrefix="plan"
-          value={plan}
-          options={[
-            {
-              value: "FULL",
-              title: "Pay in full",
-              description: <span className="text-ink-900 font-bold">$525.00</span>,
-            },
-            {
-              value: "INSTALLMENTS",
-              title: "Payment plan",
-              badge: "Most families",
-              description: (
-                <>
-                  <span className="text-ink-900 font-bold">$175.00</span> deposit now, then $175 on
-                  15 Oct and $175 on 15 Nov, charged to your card automatically.
-                </>
-              ),
-            },
-          ]}
-        />
+      <div key={view} className="demo-fade-in min-h-0 flex-1 overflow-hidden px-3 py-2.5">
+        {view === "teams" && <TeamsList />}
+        {(view === "create" || view === "created") && (
+          <CreateTeam
+            age={age}
+            suffix={suffix}
+            suffixTyped={suffixTyped}
+            typingSuffix={typingSuffix}
+            staff={staff}
+            created={view === "created"}
+          />
+        )}
+        {(view === "tryout" || view === "tryout-live") && (
+          <CreateTryout
+            venue={venue}
+            when={when}
+            fee={fee}
+            feeTyped={feeTyped}
+            typingFee={typingFee}
+            live={view === "tryout-live"}
+          />
+        )}
+        {view === "signups" && <SignupList />}
+        {(view === "compose" || view === "sent") && (
+          <Compose
+            repFee={repFee}
+            repFeeTyped={repFeeTyped}
+            typingRepFee={typingRepFee}
+            plan={plan}
+            sent={view === "sent"}
+          />
+        )}
+        {view === "roster" && <RosterBoard accepted={accepted} />}
+        {view === "programs" && <Programs />}
       </div>
 
-      <p className="text-ink-400 text-[10px]">
-        Visa •••• 4242 on file. Season waiver is signed with this acceptance.
-      </p>
-
-      <PhoneAction id="phone-accept-pay">
-        {plan === "FULL" ? "Pay $525.00 and accept" : "Pay $175.00 and accept"}
-      </PhoneAction>
+      <TabBar tabs={["Home", "Chat", "Calendar", "My Club", "Social"]} active="My Club" />
     </div>
   )
 }
 
-/* ── Bits ─────────────────────────────────────────────────────────────────── */
-
-/** Renders one state key as text that types itself when the beat says so. */
-type Typed = (key: string, placeholder?: string) => ReactNode
-
-function PlusIcon() {
+/** `/clubs/[id]/teams`. */
+function TeamsList() {
   return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="h-3.5 w-3.5">
-      <path d="M12 5v14M5 12h14" />
-    </svg>
+    <div data-demo-target="club-teams" className="space-y-2">
+      <div className="flex items-center justify-between">
+        <p className="text-ink-900 text-[17px] font-extrabold">Teams</p>
+        <span>
+          <Btn id="new-team" size="sm">
+            Create team
+          </Btn>
+        </span>
+      </div>
+      <p className="text-ink-400 text-[14px] font-bold uppercase tracking-[0.1em]">Summer 2026</p>
+      {["Toronto Lords Grade 9", "Toronto Lords Grade 10", "Toronto Lords Grade 10 Girls"].map(
+        (t) => (
+          <div
+            key={t}
+            className="border-ink-200 flex items-center justify-between gap-2 rounded-xl border bg-white px-3 py-2"
+          >
+            <span className="text-ink-900 min-w-0 truncate text-[15px] font-bold">{t}</span>
+            <Chip tone="neutral">10 players</Chip>
+          </div>
+        )
+      )}
+      <p className="text-ink-400 pt-1 text-[14px] font-bold uppercase tracking-[0.1em]">
+        Fall/Winter 2026-27
+      </p>
+      <div className="border-ink-200 rounded-2xl border border-dashed bg-white px-4 py-5 text-center">
+        <p className="text-ink-900 text-[15px] font-bold">No teams yet</p>
+        <p className="text-ink-500 mt-1 text-[14px] font-medium leading-snug">
+          The season starts here.
+        </p>
+      </div>
+    </div>
   )
 }
 
-function CheckIcon() {
+/** `/clubs/[id]/teams/create`. */
+function CreateTeam({
+  age,
+  suffix,
+  suffixTyped,
+  typingSuffix,
+  staff,
+  created,
+}: {
+  age: boolean
+  suffix: boolean
+  suffixTyped: string
+  typingSuffix: boolean
+  staff: boolean
+  created: boolean
+}) {
+  const name = age ? [SHORT, AGE, suffix ? suffixTyped : ""].filter(Boolean).join(" ") : ""
   return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" className="h-4 w-4">
-      <path d="M5 13l4 4L19 7" />
-    </svg>
+    <div className="space-y-2">
+      <p className="text-ink-900 text-[17px] font-extrabold">Create New Team</p>
+      <p className="text-ink-500 text-[14px] font-medium leading-snug">
+        Add a team to your club and assign coaching staff
+      </p>
+
+      <Field label="Age Group">
+        <Picker id="age-field" filled={age}>
+          {age ? AGE : "Select age group…"}
+        </Picker>
+      </Field>
+
+      <Field label="Suffix" hint={SUFFIX_HINT}>
+        <span
+          data-demo-target="suffix-field"
+          className={cn(
+            "border-ink-300 block rounded-lg border bg-white px-3 py-1.5 text-[15px] font-semibold",
+            suffix ? "text-ink-900" : "text-ink-400"
+          )}
+        >
+          {suffix ? (
+            <>
+              {suffixTyped}
+              {typingSuffix && (
+                <span className="bg-play-600 ml-0.5 inline-block h-4 w-[2px] align-middle" />
+              )}
+            </>
+          ) : (
+            "Your own suffix, e.g. Elite, North, 2B"
+          )}
+        </span>
+      </Field>
+
+      <div
+        data-demo-target="name-preview"
+        className={cn(
+          "rounded-xl border px-3 py-2 transition-colors duration-300 motion-reduce:transition-none",
+          name ? "border-court-200 bg-court-50/70" : "border-ink-200 bg-white"
+        )}
+      >
+        <p className="text-ink-500 text-[14px] font-bold uppercase tracking-[0.06em]">
+          Team name (written for you)
+        </p>
+        <p className={cn("mt-0.5 text-[16px] font-extrabold", name ? "text-ink-900" : "text-ink-400")}>
+          {name || "Pick an age group above"}
+        </p>
+      </div>
+
+      <Field label="Staff Assignment">
+        <Picker id="staff-field" filled={staff}>
+          {staff ? "Marcus Bell · Head Coach" : "Add existing staff…"}
+        </Picker>
+      </Field>
+
+      <div className="pt-0.5">
+        {created ? (
+          <div className="border-court-200 bg-court-50 live-pop rounded-xl border px-3 py-2">
+            <p className="text-court-800 text-[15px] font-bold">Team Created!</p>
+            <p className="text-court-700 mt-0.5 text-[14px] font-semibold leading-snug">
+              {TEAM} ({AGE}) has been created. 1 staff member assigned.
+            </p>
+          </div>
+        ) : (
+          <Btn id="create-btn">Create Team</Btn>
+        )}
+      </div>
+    </div>
   )
 }
 
-function PeopleIcon() {
+/** `/clubs/[id]/tryouts/create`. */
+function CreateTryout({
+  venue,
+  when,
+  fee,
+  feeTyped,
+  typingFee,
+  live,
+}: {
+  venue: boolean
+  when: boolean
+  fee: boolean
+  feeTyped: string
+  typingFee: boolean
+  live: boolean
+}) {
   return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-5 w-5">
-      <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
-      <circle cx="9" cy="7" r="4" />
-      <path d="M22 21v-2a4 4 0 0 0-3-3.9" />
-    </svg>
+    <div data-demo-target="tryout-form" className="space-y-1.5">
+      <p className="text-ink-900 text-[17px] font-extrabold">Create Tryout</p>
+
+      <Field label="Team">
+        <Picker filled>{TEAM}</Picker>
+      </Field>
+      <Field label="Title">
+        <Picker filled>{TRYOUT}</Picker>
+      </Field>
+      <Field label="Venue">
+        <Picker id="venue-field" filled={venue}>
+          {venue ? `${VENUE} · ${VENUE_CITY}` : "Search venues…"}
+        </Picker>
+      </Field>
+
+      <div className="grid grid-cols-[1.5fr_1fr_1fr] gap-1.5">
+        <Field label="Date and time">
+          <Picker id="when-field" filled={when} small>
+            {when ? `${TRYOUT_DAY} · ${TRYOUT_TIME}` : "Pick a date"}
+          </Picker>
+        </Field>
+        <Field label="Fee ($)">
+          <span
+            data-demo-target="fee-field"
+            className={cn(
+              "border-ink-300 block rounded-lg border bg-white px-2 py-1.5 text-[15px] font-semibold tabular-nums",
+              fee ? "text-ink-900" : "text-ink-400"
+            )}
+          >
+            {fee ? (
+              <>
+                ${feeTyped}
+                {typingFee && (
+                  <span className="bg-play-600 ml-0.5 inline-block h-4 w-[2px] align-middle" />
+                )}
+              </>
+            ) : (
+              "0.00"
+            )}
+          </span>
+        </Field>
+        <Field label="Max">
+          <Picker filled small>
+            {CAP}
+          </Picker>
+        </Field>
+      </div>
+
+      {live ? (
+        <div className="border-court-200 bg-court-50 live-pop rounded-xl border px-3 py-2">
+          <p className="text-court-800 text-[15px] font-bold">Published to the marketplace</p>
+          <p className="text-court-700 mt-0.5 text-[14px] font-semibold leading-snug">
+            {TRYOUT_DAY} · {VENUE} · {money(TRYOUT_FEE)} · {CAP} spots
+          </p>
+        </div>
+      ) : (
+        <>
+          <p className="text-ink-500 text-[14px] font-medium leading-snug">
+            Tryouts are saved as drafts. You can publish them to the marketplace from the tryouts
+            list.
+          </p>
+          <div className="flex gap-2">
+            <Btn tone="quiet" size="sm">
+              Save draft
+            </Btn>
+            <Btn id="publish-btn" size="sm">
+              Create &amp; publish
+            </Btn>
+          </div>
+        </>
+      )}
+    </div>
+  )
+}
+
+/** The tryout's signups page, with the real bulk control on it. */
+function SignupList() {
+  return (
+    <div className="space-y-2">
+      <p className="text-ink-900 text-[17px] font-extrabold leading-tight">Tryout signups</p>
+      <p className="text-ink-500 text-[14px] font-medium">
+        {TRYOUT_DAY} · {VENUE}
+      </p>
+      <div data-demo-target="signup-list" className="space-y-1.5">
+        {SIGNUPS.map((s) => (
+          <div
+            key={s.player}
+            className="border-ink-200 flex items-center justify-between gap-2 rounded-xl border bg-white px-3 py-1.5"
+          >
+            <span className="min-w-0">
+              <span className="text-ink-900 block truncate text-[15px] font-bold">{s.player}</span>
+              <span className="text-ink-500 block truncate text-[14px] font-medium">
+                {s.parent}
+              </span>
+            </span>
+            <StatusChip tone="gold">PENDING</StatusChip>
+          </div>
+        ))}
+      </div>
+      <div className="pt-0.5">
+        <Btn id="bulk-btn" size="sm">
+          Send Offers ({SIGNUPS.length})
+        </Btn>
+      </div>
+    </div>
+  )
+}
+
+/** `bulk-offer-button.tsx` with `offer-composer.tsx` inside it. */
+function Compose({
+  repFee,
+  repFeeTyped,
+  typingRepFee,
+  plan,
+  sent,
+}: {
+  repFee: boolean
+  repFeeTyped: string
+  typingRepFee: boolean
+  plan: boolean
+  sent: boolean
+}) {
+  if (sent) {
+    return (
+      <div className="space-y-2">
+        <div className="border-court-200 bg-court-50 live-pop rounded-2xl border px-3.5 py-3">
+          <p className="text-court-800 text-[17px] font-extrabold">
+            {SIGNUPS.length} offers sent
+          </p>
+          <p className="text-court-700 mt-1 text-[14px] font-semibold leading-snug">
+            {TEAM} · {money(FEE)} · expire in {EXPIRES_DAYS} days
+          </p>
+        </div>
+        <div className="space-y-1.5">
+          {SIGNUPS.map((s) => (
+            <div
+              key={s.player}
+              className="border-ink-200 live-row-in flex items-center justify-between gap-2 rounded-xl border bg-white px-3 py-1.5"
+            >
+              <span className="text-ink-900 truncate text-[15px] font-bold">{s.player}</span>
+              <StatusChip tone="play">SENT</StatusChip>
+            </div>
+          ))}
+        </div>
+      </div>
+    )
+  }
+  return (
+    <div className="space-y-1.5">
+      <p className="text-ink-900 text-[17px] font-extrabold leading-tight">Send Offers</p>
+      <p className="text-ink-500 text-[14px] font-medium leading-snug">
+        Compose the packages once; everyone you tick gets the same offer.
+      </p>
+
+      <div className="border-ink-200 rounded-xl border bg-white px-3 py-1.5">
+        <div className="flex items-end gap-2">
+          <Field label="Fee ($)" className="w-[104px] shrink-0">
+            <span
+              data-demo-target="fee-input"
+              className={cn(
+                "border-ink-300 block rounded-lg border bg-white px-2.5 py-1.5 text-[15px] font-semibold tabular-nums",
+                repFee ? "text-ink-900" : "text-ink-400"
+              )}
+            >
+              {repFee ? (
+                <>
+                  ${repFeeTyped}
+                  {typingRepFee && (
+                    <span className="bg-play-600 ml-0.5 inline-block h-4 w-[2px] align-middle" />
+                  )}
+                </>
+              ) : (
+                "0.00"
+              )}
+            </span>
+          </Field>
+          <Field label="Installments" className="min-w-0 flex-1">
+            <Picker filled>4 installments</Picker>
+          </Field>
+        </div>
+        <div className="mt-1.5 flex flex-wrap gap-1">
+          {["Uniform", "Tracksuit", "Shoes", "Basketball", "Bag"].map((i) => (
+            <span
+              key={i}
+              className={cn(
+                "rounded-full px-2 py-0.5 text-[14px] font-semibold",
+                i === "Bag" ? "bg-ink-100 text-ink-500" : "bg-court-50 text-court-700"
+              )}
+            >
+              {i === "Bag" ? i : `✓ ${i}`}
+            </span>
+          ))}
+        </div>
+      </div>
+
+      <div className="border-ink-200 rounded-xl border bg-white px-3 py-1.5">
+        <div className="flex items-center justify-between gap-2">
+          <span className="text-ink-700 text-[14px] font-bold">
+            Payment plan (deposit + installments)
+          </span>
+          <span
+            data-demo-target="auto-plan"
+            className={cn(
+              "shrink-0 rounded-lg border px-2 py-0.5 text-[14px] font-bold",
+              plan ? "border-play-500 text-play-700" : "border-ink-300 text-ink-600"
+            )}
+          >
+            Auto: 25% + 3 monthly
+          </span>
+        </div>
+        {plan && (
+          <div className="live-pop mt-1.5 space-y-1">
+            <PlanRow label="Deposit" amount={DEPOSIT} due="on accept" />
+            {TERMS.map((t) => (
+              <PlanRow key={t.label} label={t.label} amount={t.amount} due={t.due} />
+            ))}
+            <p className="text-court-700 pt-0.5 text-[14px] font-bold tabular-nums">
+              Deposit {money(DEPOSIT)} + installments {money(PER * 3)} = {money(FEE)} ✓
+            </p>
+          </div>
+        )}
+      </div>
+
+      <div className="flex items-center justify-between gap-2">
+        <span className="text-ink-500 text-[14px] font-semibold">
+          {SIGNUPS.length} of {SIGNUPS.length} eligible selected
+        </span>
+        <Btn id="send-btn" size="sm">
+          Send to {SIGNUPS.length} players
+        </Btn>
+      </div>
+    </div>
+  )
+}
+
+function PlanRow({ label, amount, due }: { label: string; amount: number; due: string }) {
+  return (
+    <div className="border-ink-100 flex items-center justify-between gap-2 rounded-lg border bg-white px-2.5 py-0.5">
+      <span className="text-ink-800 text-[14px] font-semibold">{label}</span>
+      <span className="text-ink-500 ml-auto text-[14px] font-medium">{due}</span>
+      <span className="text-ink-900 text-[14px] font-bold tabular-nums">{money(amount)}</span>
+    </div>
+  )
+}
+
+/** `/clubs/[id]/teams/[teamId]/roster`, composed as cards. */
+function RosterBoard({ accepted }: { accepted: boolean }) {
+  return (
+    <div className="space-y-2">
+      <div className="flex items-baseline justify-between gap-2">
+        <p className="text-ink-900 min-w-0 truncate text-[17px] font-extrabold">Roster</p>
+        <Chip tone="court" strong>
+          {ROSTER.length} of {ROSTER.length}
+        </Chip>
+      </div>
+      <p className="text-ink-500 text-[14px] font-medium">
+        {TEAM} · {AGE} Boys
+      </p>
+      <div data-demo-target="roster-list" className="space-y-1.5">
+        {ROSTER.slice(0, ROSTER_SHOWN).map((p, i) => {
+          const mine = p.name === PLAYER
+          return (
+            <div
+              key={p.name}
+              data-demo-target={mine ? "row-darius" : undefined}
+              className={cn(
+                "border-ink-200 live-row-in rounded-xl border bg-white px-3 py-1.5",
+                mine && accepted && "border-court-200 bg-court-50/60"
+              )}
+              style={{ animationDelay: `${i * 70}ms` }}
+            >
+              <div className="flex items-center gap-2">
+                <span className="bg-ink-900 flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[14px] font-bold tabular-nums text-white">
+                  {p.num}
+                </span>
+                <span className="text-ink-900 min-w-0 truncate text-[15px] font-bold">{p.name}</span>
+                <span
+                  data-demo-target={mine ? "row-status" : undefined}
+                  className="ml-auto flex shrink-0 items-center gap-1"
+                >
+                  <StatusChip tone="court">Finalized</StatusChip>
+                  <StatusChip tone="court">Signed</StatusChip>
+                </span>
+              </div>
+              <p className="text-ink-500 mt-0.5 text-[14px] font-medium tabular-nums">
+                Uniform {mine ? UNIFORM : "AM"} · Tracksuit {mine ? TRACKSUIT : "AM"} · Shoes{" "}
+                {mine ? SHOE : "10"}
+              </p>
+            </div>
+          )
+        })}
+      </div>
+      <p className="text-ink-400 px-1 text-[14px] font-semibold">
+        and {ROSTER.length - ROSTER_SHOWN} more, all finalised
+      </p>
+    </div>
+  )
+}
+
+/** The club's other product, at the price the database actually holds. */
+function Programs() {
+  return (
+    <div className="space-y-2">
+      <p className="text-ink-900 text-[17px] font-extrabold">Programs</p>
+      <div className="border-ink-200 rounded-2xl border bg-white px-3.5 py-2.5">
+        <p className="text-ink-900 text-[15px] font-bold">{TEAM}</p>
+        <p className="text-ink-500 mt-0.5 text-[14px] font-medium">
+          Rep season · {money(FEE)} · deposit and three installments
+        </p>
+      </div>
+      <div
+        data-demo-target="house-card"
+        className="border-court-200 bg-court-50/50 rounded-2xl border px-3.5 py-2.5"
+      >
+        <p className="text-ink-900 text-[15px] font-bold">Lords Saturday House League</p>
+        <p className="text-ink-500 mt-0.5 text-[14px] font-medium leading-snug">
+          Eight Saturdays · {VENUE} · 10:00 to 12:00 · U8 to U12
+        </p>
+        <p className="text-court-700 mt-1 text-[15px] font-extrabold tabular-nums">
+          {money(HOUSE_FEE)}
+          <span className="text-ink-500 ml-1.5 text-[14px] font-semibold">
+            reversible jersey and a medal included
+          </span>
+        </p>
+      </div>
+      <p className="text-ink-500 px-1 text-[14px] font-medium leading-snug">
+        Two products, one club, one set of books.
+      </p>
+    </div>
+  )
+}
+
+/* ── The parent's phone ──────────────────────────────────────────────────── */
+
+/**
+ * Not a fabrication. `/tryouts/[id]` and `/offers` are responsive pages a
+ * guardian reaches from the app's own mobile bottom bar, which is why the tab
+ * strip below is the real parent bar: Home, Chat, Calendar, My Kids, Social
+ * (`components/nav/bottom-tabs.tsx`, the `hasKids` context slot).
+ */
+function ParentPhone({
+  view,
+  picked,
+  sizes,
+  prefs,
+  accepted,
+}: {
+  view: string
+  picked: boolean
+  sizes: boolean
+  prefs: boolean
+  accepted: boolean
+}) {
+  return (
+    <div className="flex h-full flex-col bg-[#f6f7f9]">
+      <div className="flex items-baseline gap-2 bg-[#0b1628] px-4 pb-2.5 pt-2 text-white">
+        <p className="text-[15px] font-bold leading-tight">{PARENT}</p>
+        <p className="text-[14px] font-medium text-white/60">Parent · two players</p>
+      </div>
+
+      <div key={view} className="demo-fade-in min-h-0 flex-1 overflow-hidden px-3 py-2.5">
+        {(view === "tryout" || view === "registered") && (
+          <TryoutSignup picked={picked} registered={view === "registered"} />
+        )}
+        {(view === "offer" || view === "accepted") && (
+          <OfferAccept sizes={sizes} prefs={prefs} accepted={accepted} />
+        )}
+        {view === "idle" && (
+          <div className="border-ink-200 rounded-2xl border border-dashed bg-white px-4 py-6 text-center">
+            <p className="text-ink-900 text-[15px] font-bold">Nothing waiting</p>
+            <p className="text-ink-500 mt-1 text-[14px] font-medium leading-snug">
+              The club is working. She is not.
+            </p>
+          </div>
+        )}
+      </div>
+
+      <TabBar tabs={["Home", "Chat", "Calendar", "My Kids", "Social"]} active="Home" />
+    </div>
+  )
+}
+
+/** `/tryouts/[id]` with `program-signup-form.tsx` under it. */
+function TryoutSignup({ picked, registered }: { picked: boolean; registered: boolean }) {
+  if (registered) {
+    return (
+      <div className="space-y-2">
+        <div className="border-court-200 bg-court-50 live-pop rounded-2xl border px-3.5 py-3">
+          <p className="text-court-800 text-[17px] font-extrabold">Registered!</p>
+          <p className="text-court-700 mt-1 text-[14px] font-semibold leading-snug">
+            {PLAYER} is registered for {TRYOUT}.
+          </p>
+          <p className="text-court-700 mt-1 text-[15px] font-extrabold tabular-nums">
+            {money(TRYOUT_FEE)} due
+          </p>
+        </div>
+        <p
+          data-demo-target="offline-line"
+          className="border-ink-200 text-ink-600 rounded-xl border bg-white px-3 py-2 text-[14px] font-medium leading-snug"
+        >
+          {OFFLINE_LINE}
+        </p>
+      </div>
+    )
+  }
+  return (
+    <div data-demo-target="p-tryout" className="space-y-2">
+      <p className="text-ink-900 text-[17px] font-extrabold leading-tight">{TRYOUT}</p>
+      <div className="border-ink-200 flex items-center justify-between gap-2 rounded-xl border bg-white px-3 py-1.5">
+        <span className="min-w-0">
+          <span className="text-ink-900 block text-[15px] font-bold">
+            {TRYOUT_DAY} · {TRYOUT_TIME}
+          </span>
+          <span className="text-ink-500 block truncate text-[14px] font-medium">
+            {VENUE} · {VENUE_CITY}
+          </span>
+        </span>
+        <span className="text-ink-900 shrink-0 text-[17px] font-extrabold tabular-nums">
+          {money(TRYOUT_FEE)}
+        </span>
+      </div>
+
+      <p className="text-ink-900 text-[15px] font-bold">Who&apos;s playing?</p>
+      <div data-demo-target="who-list" className="space-y-1.5">
+        <div
+          data-demo-target="kid-darius"
+          className={cn(
+            "flex items-center gap-2 rounded-xl border px-3 py-1.5 transition-colors duration-300 motion-reduce:transition-none",
+            picked ? "border-court-300 bg-court-50" : "border-ink-200 bg-white"
+          )}
+        >
+          <span
+            className={cn(
+              "flex h-5 w-5 shrink-0 items-center justify-center rounded-md border text-[14px] font-black",
+              picked ? "border-court-600 bg-court-600 text-white" : "border-ink-300 text-transparent"
+            )}
+            aria-hidden="true"
+          >
+            ✓
+          </span>
+          <span className="min-w-0">
+            <span className="text-ink-900 block text-[15px] font-bold">{PLAYER}</span>
+            <span className="text-ink-500 block text-[14px] font-medium">
+              b. 2011 · {PLAYER_AGE}
+            </span>
+          </span>
+        </div>
+        <div className="border-ink-200 flex items-center gap-2 rounded-xl border bg-white px-3 py-1.5">
+          <span
+            className="border-ink-300 flex h-5 w-5 shrink-0 items-center justify-center rounded-md border"
+            aria-hidden="true"
+          />
+          <span className="min-w-0">
+            <span className="text-ink-900 block text-[15px] font-bold">{SISTER}</span>
+            <span className="text-gold-600 block text-[14px] font-semibold">
+              Outside age group
+            </span>
+          </span>
+        </div>
+      </div>
+
+      <div className="pt-0.5">
+        <Btn id="register-btn">Register · {money(TRYOUT_FEE)}.00</Btn>
+      </div>
+      <p className="text-ink-500 text-[14px] font-medium leading-snug">{OFFLINE_LINE}</p>
+    </div>
+  )
+}
+
+/** `/offers` with `offer-response-form.tsx` under it. */
+function OfferAccept({
+  sizes,
+  prefs,
+  accepted,
+}: {
+  sizes: boolean
+  prefs: boolean
+  accepted: boolean
+}) {
+  if (accepted) {
+    return (
+      <div className="space-y-2">
+        <div className="border-court-200 bg-court-50 live-pop rounded-2xl border px-3.5 py-3">
+          <p className="text-court-800 text-[17px] font-extrabold">On the roster</p>
+          <p className="text-court-700 mt-1 text-[14px] font-semibold leading-snug">
+            {PLAYER} · {TEAM} · number {PREFS[0]}
+          </p>
+        </div>
+        <div className="border-ink-200 rounded-2xl border bg-white px-3.5 py-2.5">
+          <p className="text-ink-500 text-[14px] font-bold uppercase tracking-[0.06em]">
+            Payment plan
+          </p>
+          <div className="mt-1 space-y-1">
+            <div className="border-court-100 bg-court-50/60 flex items-center justify-between gap-2 rounded-lg border px-2.5 py-1">
+              <span className="text-ink-800 text-[14px] font-semibold">Deposit</span>
+              <span className="text-ink-500 ml-auto text-[14px] font-medium">Paid at signup</span>
+              <span className="text-ink-900 text-[14px] font-bold tabular-nums">
+                {money(DEPOSIT)}
+              </span>
+            </div>
+            {TERMS.map((t) => (
+              <div
+                key={t.label}
+                className="border-ink-100 flex items-center justify-between gap-2 rounded-lg border bg-white px-2.5 py-1"
+              >
+                <span className="text-ink-800 text-[14px] font-semibold">{t.label}</span>
+                <span className="text-ink-500 ml-auto text-[14px] font-medium">
+                  {t.due}, 2026
+                </span>
+                <span className="text-ink-900 text-[14px] font-bold tabular-nums">
+                  {money(t.amount)}
+                </span>
+              </div>
+            ))}
+          </div>
+          <p className="text-ink-500 mt-1.5 text-[14px] font-medium leading-snug">
+            Scheduled payments charge automatically to your default card. Update it any time under
+            Manage cards.
+          </p>
+        </div>
+      </div>
+    )
+  }
+  return (
+    <div className="space-y-2">
+      <p className="text-ink-900 text-[17px] font-extrabold">Accept Offer</p>
+      <div data-demo-target="offer-card" className="border-ink-200 rounded-xl border bg-white px-3 py-2">
+        <p className="text-ink-900 text-[15px] font-bold leading-snug">
+          {TEAM} <span className="text-court-700">{money(FEE)}</span>
+        </p>
+        <p className="text-ink-500 mt-0.5 text-[14px] font-medium leading-snug">
+          Includes Uniform, Tracksuit, Shoes, Basketball
+        </p>
+        <p className="text-ink-600 mt-1 text-[14px] font-medium leading-snug">
+          &ldquo;{OFFER_MESSAGE}&rdquo;
+        </p>
+      </div>
+
+      <div className="grid grid-cols-3 gap-1.5">
+        <Field label="Uniform">
+          <Picker id="size-uniform" filled={sizes} small>
+            {sizes ? UNIFORM : "Select…"}
+          </Picker>
+        </Field>
+        <Field label="Tracksuit">
+          <Picker filled={sizes} small>
+            {sizes ? TRACKSUIT : "Select…"}
+          </Picker>
+        </Field>
+        <Field label="Shoe Size">
+          <Picker filled={sizes} small>
+            {sizes ? SHOE : "Select…"}
+          </Picker>
+        </Field>
+      </div>
+
+      <div>
+        <span className="text-ink-600 mb-1 block text-[14px] font-semibold">
+          Jersey Number Preferences
+        </span>
+        <div className="grid grid-cols-3 gap-1.5">
+          {["1st Choice", "2nd Choice", "3rd Choice"].map((c, i) => (
+            <span key={c} className="block">
+              <span
+                data-demo-target={i === 0 ? "pref-1" : undefined}
+                className={cn(
+                  "border-ink-300 block rounded-lg border bg-white px-2 py-1.5 text-center text-[15px] font-bold tabular-nums",
+                  prefs ? "text-ink-900" : "text-ink-400"
+                )}
+              >
+                {prefs ? `#${PREFS[i]}` : "#"}
+              </span>
+              <span className="text-ink-400 mt-0.5 block text-center text-[14px] font-semibold">
+                {c}
+              </span>
+            </span>
+          ))}
+        </div>
+      </div>
+
+      <div
+        data-demo-target="plan-card"
+        className="border-play-500 rounded-xl border bg-white px-3 py-2"
+      >
+        <p className="text-ink-900 text-[15px] font-bold">Payment plan</p>
+        <p className="text-ink-600 mt-0.5 text-[14px] font-medium leading-snug">
+          {money(DEPOSIT)} deposit now, then {money(PER)} on {TERMS[0].due}, {money(PER)} on{" "}
+          {TERMS[1].due}, {money(PER)} on {TERMS[2].due}
+        </p>
+        <p className="text-ink-400 mt-0.5 text-[14px] font-medium">
+          Auto-charged to your card on file.
+        </p>
+      </div>
+
+      <div className="flex items-center justify-between gap-2">
+        <span className="text-ink-700 text-[14px] font-bold tabular-nums">
+          Due now: {money(DEPOSIT)}
+        </span>
+        <Btn id="accept-btn" tone="court" size="sm">
+          Pay {money(DEPOSIT)}.00 &amp; Accept
+        </Btn>
+      </div>
+    </div>
+  )
+}
+
+/* ── Shared bits ─────────────────────────────────────────────────────────── */
+
+function Field({
+  label,
+  hint,
+  children,
+  className,
+}: {
+  label: string
+  hint?: string
+  children: ReactNode
+  className?: string
+}) {
+  return (
+    <span className={cn("block", className)}>
+      <span className="text-ink-600 mb-1 block text-[14px] font-semibold">{label}</span>
+      {children}
+      {hint && <span className="text-ink-400 mt-0.5 block text-[14px] font-medium leading-snug">{hint}</span>}
+    </span>
+  )
+}
+
+function Picker({
+  children,
+  id,
+  filled,
+  small,
+}: {
+  children: ReactNode
+  id?: string
+  filled?: boolean
+  small?: boolean
+}) {
+  return (
+    <span
+      data-demo-target={id}
+      className={cn(
+        "border-ink-300 flex items-center justify-between gap-1 rounded-lg border bg-white text-[15px] font-semibold",
+        small ? "px-2 py-1.5" : "px-3 py-1.5",
+        filled ? "text-ink-900" : "text-ink-400"
+      )}
+    >
+      <span className="min-w-0 truncate">{children}</span>
+      <span className="text-ink-400 shrink-0 text-[14px]">▾</span>
+    </span>
+  )
+}
+
+function TabBar({ tabs, active }: { tabs: string[]; active: string }) {
+  return (
+    <div className="border-ink-200 flex shrink-0 items-center justify-around border-t bg-white px-1.5 pb-4 pt-2">
+      {tabs.map((t) => (
+        <span
+          key={t}
+          className={cn("text-[14px] font-bold", t === active ? "text-play-700" : "text-ink-400")}
+        >
+          {t}
+        </span>
+      ))}
+    </div>
+  )
+}
+
+/* ── End card ────────────────────────────────────────────────────────────── */
+
+function EndCard() {
+  return (
+    <div className="absolute inset-0 z-20 flex items-center justify-center bg-[#0b1628] px-8 text-white">
+      <div className="live-pop max-w-[340px] text-center">
+        <p className="text-gold-400 text-[15px] font-bold uppercase tracking-[0.18em]">
+          A club story
+        </p>
+        <h3 className="font-display mt-2 text-[26px] font-extrabold leading-tight">
+          Build a team, fill the roster
+        </h3>
+        <p className="mt-3 text-[15px] leading-relaxed text-white/75">
+          A team made on a phone with a name nobody typed, a tryout published in the same sitting,
+          five offers composed once, and one accept that collected three sizes, three jersey numbers
+          and a {money(DEPOSIT)} deposit with three dated installments behind it.
+        </p>
+        <p className="mt-4 text-[14px] font-semibold text-white/50">Next: the money picture</p>
+      </div>
+    </div>
   )
 }

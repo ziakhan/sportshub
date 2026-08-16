@@ -107,20 +107,23 @@ export const DEMOS: DemoEntry[] = [
     slug: "roster-story",
     title: "Build a team, fill the roster",
     promise:
-      "A club creates a team, posts a tryout, a family registers and pays, the offer is accepted with sizes and number, and the roster fills.",
+      "A club builds next season's team on a phone, posts a tryout, and one accept collects the sizes, the jersey number and a payment plan the club never has to chase.",
     description:
-      "It starts on an empty club workspace: the U11 girls team gets made, a coach is assigned, and the roster behind it has nobody on it. The tryout goes up with its date, gym and fee, and a parent finds it on her phone, picks which of her two kids is trying out and pays the fee there. Then the part clubs chase families for all season: she accepts the offer and, on the same screen, picks the uniform size, the tracksuit size, the shoe size, her jersey number with a fallback, and the payment plan with its schedule written out. The last chapter is the club roster filling in, sizes and waivers already recorded, until it reads ten of ten.",
+      "Two phones, and the whole thing happens on them. The left one belongs to a real club with a real problem: the summer teams are done and the fall roster does not exist. A team gets made in a few presses, and the product writes its name rather than letting anybody type one, because a club that types team names ends up with four spellings of the same team. The tryout goes up in the same sitting, with the gym, the evening, the fee and the cap on it. The right phone belongs to a guardian with two children at that club, and the first thing the sign-up asks is which of them is playing: her son is eligible, her daughter is flagged outside the age group rather than quietly accepted. Then the part clubs spend a whole season chasing. Five offers composed once and sent together, with the season fee, the kit and a deadline on each. She opens hers and, on one screen, picks the uniform size, the tracksuit size, the shoe size, three jersey numbers in order, and reads the payment plan before she agrees to it: a deposit now and three dated installments the product worked out itself. One press pays the deposit, books the three charges and puts him on the roster, which fills in behind her with the sizes already on it.",
     audiences: ["clubs", "parents"],
     kind: "story",
-    stage: "split",
-    durationLabel: "1 min 35 sec",
+    stage: "phone",
+    durationLabel: "2 min 46 sec",
     status: "live",
     chapterCount: 5,
+    /* No volatile numbers in the bullets: fees and counts move with the seed,
+       and a bullet that goes stale is a bullet that lies on the card. */
     bullets: [
-      "A tryout posted, a family registered and paid in the same sitting",
-      "Jersey sizes, tracksuit and shoes collected the moment the offer is accepted",
-      "Three jersey number preferences, no group-chat chasing",
-      "The roster board flips to complete: sizes, waivers, fees, all green",
+      "A team made on a phone, with a name the product writes so nobody types four spellings of it",
+      "A tryout posted and published in the same sitting, gym, fee and cap included",
+      "One package composed once and sent to every player who tried out",
+      "Sizes, tracksuit, shoes and three jersey numbers collected at the only moment a parent is paying attention",
+      "A deposit and three dated installments on her screen before she agrees to anything",
     ],
     chapterTitles: [
       "Build the team",
