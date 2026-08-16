@@ -88,6 +88,16 @@ const hideLaunchChrome = (page) =>
     })
   })
 
+// The demo-mode welcome popup is local chrome; the launch build will not have
+// it. Dismiss it before shooting so home captures show the page.
+const dismissWelcome = async (page) => {
+  const dismiss = page.getByText("Look around first", { exact: true }).first()
+  if (await dismiss.isVisible({ timeout: 1500 }).catch(() => false)) {
+    await dismiss.click().catch(() => {})
+    await page.waitForTimeout(800)
+  }
+}
+
 const browser = await chromium.launch()
 const storageState = await ensureSession(PARENT).catch((e) => {
   console.log(`AUTH FAILED for ${PARENT}: ${e}`)
@@ -136,6 +146,7 @@ for (const shot of SHOTS) {
       await tab.click({ timeout: 8000 }).catch(() => console.log(`${shot.name}: tab miss`))
       await page.waitForTimeout(1500)
     }
+    await dismissWelcome(page)
     await hideLaunchChrome(page)
     if (shot.scrollY) {
       await page.evaluate((y) => window.scrollTo(0, y), shot.scrollY)

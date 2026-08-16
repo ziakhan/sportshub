@@ -429,6 +429,34 @@ function PhoneFrame({
   )
 }
 
+function BrowserFrame({ src, alt, caption }: { src: string; alt: string; caption: string }) {
+  return (
+    <figure className="flex w-full max-w-2xl flex-col gap-4">
+      <div className="overflow-hidden rounded-xl bg-ink-900 shadow-2xl ring-1 ring-white/10">
+        <div className="flex items-center gap-2 bg-ink-800 px-4 py-2.5">
+          <span className="h-2.5 w-2.5 rounded-full bg-white/20" />
+          <span className="h-2.5 w-2.5 rounded-full bg-white/20" />
+          <span className="h-2.5 w-2.5 rounded-full bg-white/20" />
+          <span className="ml-3 rounded-md bg-ink-950/60 px-3 py-1 text-[12px] text-white/50">
+            ysportshub.com
+          </span>
+        </div>
+        <Image
+          src={src}
+          alt={alt}
+          width={1440}
+          height={900}
+          loading="eager"
+          className="h-auto w-full"
+        />
+      </div>
+      <figcaption className="text-center text-[14px] leading-relaxed text-white/70">
+        {caption}
+      </figcaption>
+    </figure>
+  )
+}
+
 function Screenshots() {
   return (
     <CourtBackdrop variant="ink" floor="planks" intensity="immersive">
@@ -447,39 +475,43 @@ function Screenshots() {
 
         <div className="mt-14 flex flex-col items-center gap-10 lg:flex-row lg:items-start lg:justify-center">
           <PhoneFrame
-            src="/home-preview/live-game-phone.png"
-            alt="A live game on a phone: score 54 to 26 in the third quarter, quarter scores and game leaders below"
-            caption="A live game on a parent's phone. Score, box score, play by play. No refresh, it just moves."
+            src="/home-preview/shots/parent-calendar-phone.png"
+            alt="A family calendar on a phone: practices and games for two kids with Going, Maybe and Can't go buttons on each row"
+            caption="The family week. Practices, games, and the RSVP right on the row."
             className="lg:mt-10"
           />
 
-          <figure className="flex w-full max-w-2xl flex-col gap-4">
-            <div className="overflow-hidden rounded-xl bg-ink-900 shadow-2xl ring-1 ring-white/10">
-              <div className="flex items-center gap-2 bg-ink-800 px-4 py-2.5">
-                <span className="h-2.5 w-2.5 rounded-full bg-white/20" />
-                <span className="h-2.5 w-2.5 rounded-full bg-white/20" />
-                <span className="h-2.5 w-2.5 rounded-full bg-white/20" />
-                <span className="ml-3 rounded-md bg-ink-950/60 px-3 py-1 text-[12px] text-white/50">
-                  ysportshub.com
-                </span>
-              </div>
-              <Image
-                src="/home-preview/league-desktop.png"
-                alt="A league page on desktop: final scores and standings tables with records, streaks and games back"
-                width={1440}
-                height={900}
-                loading="eager"
-                className="h-auto w-full"
-              />
-            </div>
-            <figcaption className="text-center text-[14px] leading-relaxed text-white/70">
-              Standings settle themselves as finals come in.
-            </figcaption>
-          </figure>
+          <BrowserFrame
+            src="/home-preview/shots/news-cards-desktop.png"
+            alt="A news grid on desktop: game recap cards with team crests and scores, milestone cards and a club announcement"
+            caption="Finals become recaps and milestone cards on their own."
+          />
+
+          <PhoneFrame
+            src="/home-preview/shots/parent-team-chat-phone.png"
+            alt="A team chat on a phone: coach messages, a carpool note from a parent, and a poll with live results"
+            caption="Team chat with polls. One thread, every parent."
+            className="lg:mt-10"
+          />
+        </div>
+
+        <div className="mt-12 flex flex-col items-center gap-10 lg:flex-row lg:items-start lg:justify-center">
+          <PhoneFrame
+            src="/home-preview/shots/game-live-boxscore-phone.png"
+            alt="Live team stats on a phone: field goals, three pointers, free throws, rebounds, assists, steals and blocks as bars"
+            caption="A live game on a parent's phone. Full team stats, no refresh, it just moves."
+            className="lg:mt-10"
+          />
+
+          <BrowserFrame
+            src="/home-preview/league-desktop.png"
+            alt="A league page on desktop: final scores and standings tables with records, streaks and games back"
+            caption="Standings settle themselves as finals come in."
+          />
 
           <PhoneFrame
             src="/home-preview/news-recap-phone.png"
-            alt="A game recap article on a phone: Toronto Lords Grade 10 Girls beat Burlington Force 54 to 33"
+            alt="A game recap article on a phone: Toronto Lords Grade 10 Girls beat Burlington Force 54 to 33, Player of the Game named"
             caption="Every game gets a recap. Your name in the news."
             className="lg:mt-10"
           />

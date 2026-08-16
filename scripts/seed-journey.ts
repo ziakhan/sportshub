@@ -569,7 +569,7 @@ export async function seedJourneyStage1() {
   console.log("✓ D1 (60) + NPA (14) + WNPA (10) fully approved, sessions + venues ready")
 
   // ── Showcase League: mid-registration ──
-  const slLeague = await mkLeague(SL_LEAGUE, "NPH's flagship grade-based circuit — ARETE, DMV CHILL, GAME SPEAKS and PRIME conferences, Grade 7 through 12 plus Junior Girls.")
+  const slLeague = await mkLeague(SL_LEAGUE, "NPH's flagship grade-based circuit: ARETE, DMV CHILL, GAME SPEAKS and PRIME conferences, Grade 7 through 12 plus Junior Girls.")
   const slSeason = await mkSeason(slLeague.id, SL_SEASON, "REGISTRATION", 10)
   const slDivs = await mkDivisions(slSeason.id, "SL")
   // Division ids per grade → unit keys for each weekend's allow-list.

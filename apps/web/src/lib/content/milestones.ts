@@ -139,7 +139,7 @@ function copyFor(
     case "FIRST_20":
       return {
         title: `${name}'s first 20-point game`,
-        body: `${name} scored ${value} points — their first 20-point game.`,
+        body: `${name} scored ${value} points, their first 20-point game.`,
       }
     case "FIRST_DOUBLE_DOUBLE":
       return {

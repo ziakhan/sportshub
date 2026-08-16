@@ -107,7 +107,7 @@ const CLUBS: ClubCfg[] = [
     city: "Oakville", color: "#be123c", accent: "#fda4af", girls: true,
     tagline: "Play hard. Play smart. Play together.",
     description:
-      "Oakville Panthers is a family-run club that keeps rosters small on purpose — ten to twelve players so everyone gets minutes. Summer league, fall/winter league, and a four-week summer camp.",
+      "Oakville Panthers is a family-run club that keeps rosters small on purpose, ten to twelve players so everyone gets minutes. Summer league, fall/winter league, and a four-week summer camp.",
   },
   {
     key: "west", slug: "nphj-west-united-prep", name: "West United Prep", short: "West United",
@@ -511,7 +511,7 @@ async function seed() {
     data: {
       name: SUMMER_LEAGUE,
       description:
-        "NPH's summer circuit — weekend basketball from April through September at the Playground and Haber. Every game is scored live with stats, standings, recaps and Player of the Game cards.",
+        "NPH's summer circuit: weekend basketball from April through September at the Playground and Haber. Every game is scored live with stats, standings, recaps and Player of the Game cards.",
       ownerId: nph.id,
       organizationId: org?.id ?? null,
       statDepth: "STANDARD",
@@ -728,7 +728,7 @@ async function seed() {
         data: {
           tenantId: row.id, name, seasonFee: fee, installments: INSTALLMENTS,
           practiceSessions: 24, gamesMin: 13, gamesMax: 15,
-          programDescription: `${cfg.name} summer program — two practices a week plus weekend games in the NPH Summer League. ${SUMMER_MARKER}`,
+          programDescription: `${cfg.name} summer program: two practices a week plus weekend games in the NPH Summer League. ${SUMMER_MARKER}`,
           isActive: true, ...extras,
         },
         select: {
@@ -1532,7 +1532,7 @@ async function seed() {
     ["Great win on the weekend everyone. Film before next practice.", "coach"],
     ["Does anyone have a spare AM jersey for team photos?", "parent"],
     ["Bring BOTH jerseys to every game from here on.", "coach"],
-    ["Carpool from the west end — two seats, message me.", "parent"],
+    ["Carpool from the west end, two seats, message me.", "parent"],
     ["Doors open 45 minutes before the first tip on Saturday.", "coach"],
     ["What court are we on for the 9am?", "parent"],
     ["Court 2 at the Playground. See you there.", "coach"],
