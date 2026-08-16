@@ -20,6 +20,36 @@ export const AUDIENCE_LABELS: Record<DemoAudience, string> = {
   leagues: "Leagues",
 }
 
+/**
+ * The gallery's solo sections, in order, under "The big stories".
+ *
+ * A solo demo appears in exactly ONE of these, decided by its primary
+ * audience, so the grid reads as a shelf rather than the same card three
+ * times. Stories keep appearing under every audience they serve, because a
+ * story is the club side and the parent side of one event.
+ */
+export const SOLO_GROUPS: {
+  audience: DemoAudience
+  title: string
+  blurb: string
+}[] = [
+  {
+    audience: "parents",
+    title: "For parents and players",
+    blurb: "One phone, the week ahead, and the season a kid wants to show people.",
+  },
+  {
+    audience: "clubs",
+    title: "For clubs",
+    blurb: "Your page, your brand, and every dollar the club is owed on one screen.",
+  },
+  {
+    audience: "leagues",
+    title: "For leagues",
+    blurb: "Standings that settle themselves, a bracket that builds, waivers that chase themselves.",
+  },
+]
+
 export interface DemoEntry {
   slug: string
   title: string
@@ -37,6 +67,18 @@ export interface DemoEntry {
    */
   plannedChapters?: string[]
   audiences: DemoAudience[]
+  /**
+   * The gallery shelf this demo lives on. Only solo chapters use it, and only
+   * when the first listed audience is not the one the demo is really for.
+   * Defaults to `audiences[0]`.
+   */
+  primaryAudience?: DemoAudience
+  /**
+   * Chapters in the filmed script, mirrored here so the gallery can show the
+   * count without importing ten scripts into the page. The intro stage still
+   * reads the real chapter titles off the script.
+   */
+  chapterCount: number
   /** A story hands off between surfaces; a chapter stays on one. */
   kind: "story" | "chapter"
   /** How the stage is framed, which is also the thumbnail glyph. */
@@ -62,6 +104,7 @@ export const DEMOS: DemoEntry[] = [
     stage: "split",
     durationLabel: "1 min 35 sec",
     status: "live",
+    chapterCount: 5,
     thumbEyebrow: "Story 1",
   },
   {
@@ -76,6 +119,7 @@ export const DEMOS: DemoEntry[] = [
     stage: "split",
     durationLabel: "1 min 25 sec",
     status: "live",
+    chapterCount: 4,
     thumbEyebrow: "Story 2",
   },
   {
@@ -90,6 +134,7 @@ export const DEMOS: DemoEntry[] = [
     stage: "split",
     durationLabel: "2 min 8 sec",
     status: "live",
+    chapterCount: 4,
     thumbEyebrow: "Story 3",
   },
   {
@@ -105,6 +150,7 @@ export const DEMOS: DemoEntry[] = [
     durationLabel: "2 min 25 sec",
     status: "live",
     featured: true,
+    chapterCount: 5,
     thumbEyebrow: "Story 4",
   },
   {
@@ -119,6 +165,7 @@ export const DEMOS: DemoEntry[] = [
     stage: "desktop",
     durationLabel: "1 min 6 sec",
     status: "live",
+    chapterCount: 3,
     thumbEyebrow: "Chapter 5",
   },
   {
@@ -133,6 +180,7 @@ export const DEMOS: DemoEntry[] = [
     stage: "phone",
     durationLabel: "1 min 1 sec",
     status: "live",
+    chapterCount: 3,
     thumbEyebrow: "Chapter 6",
   },
   {
@@ -147,6 +195,7 @@ export const DEMOS: DemoEntry[] = [
     stage: "phone",
     durationLabel: "1 min 11 sec",
     status: "live",
+    chapterCount: 4,
     thumbEyebrow: "Chapter 7",
   },
   {
@@ -161,6 +210,7 @@ export const DEMOS: DemoEntry[] = [
     stage: "desktop",
     durationLabel: "1 min 18 sec",
     status: "live",
+    chapterCount: 3,
     thumbEyebrow: "Chapter 8",
   },
   {
@@ -175,6 +225,7 @@ export const DEMOS: DemoEntry[] = [
     stage: "desktop",
     durationLabel: "1 min 22 sec",
     status: "live",
+    chapterCount: 3,
     thumbEyebrow: "Chapter 9",
   },
   {
@@ -185,6 +236,10 @@ export const DEMOS: DemoEntry[] = [
     description:
       "A league adds Ontario's concussion code from a template, reads the real text on screen, and the demo stops on the detail that costs leagues a season: it renews yearly, so last year's signature is not an answer. There is no recipient picker, because the roster is the recipient list and the emails go out the moment a team is approved. Then the parent side, on the phone, from the email: the document, her name, who she is signing as, a signature drawn with a finger, and an acknowledgment that names her daughter rather than agreeing to nothing in particular. Her cell on the league's grid turns green while you watch. The last stretch is the part nobody demos: two families still outstanding, both named, and the reminders that go out on their own at seven days and twenty four hours, until a hundred and ten of a hundred and ten are signed before the first whistle.",
     audiences: ["clubs", "parents", "leagues"],
+    /* Everyone touches a waiver, but the league is the one that adds it and
+       the one holding the compliance grid, so the card sits on their shelf. */
+    primaryAudience: "leagues",
+    chapterCount: 3,
     kind: "chapter",
     stage: "split",
     durationLabel: "1 min 14 sec",
@@ -200,4 +255,34 @@ export function getDemo(slug: string): DemoEntry | undefined {
 export function demosForAudience(audience: DemoAudience | "all"): DemoEntry[] {
   if (audience === "all") return DEMOS
   return DEMOS.filter((d) => d.audiences.includes(audience))
+}
+
+/** The shelf a solo card sits on. */
+export function primaryAudienceOf(demo: DemoEntry): DemoAudience {
+  return demo.primaryAudience ?? demo.audiences[0]
+}
+
+/** Every story, in registry order. These get the wide cards up top. */
+export function storyDemos(): DemoEntry[] {
+  return DEMOS.filter((d) => d.kind === "story")
+}
+
+/** The solo chapters that belong to one shelf. */
+export function soloDemosFor(audience: DemoAudience): DemoEntry[] {
+  return DEMOS.filter((d) => d.kind !== "story" && primaryAudienceOf(d) === audience)
+}
+
+/**
+ * Card text for the gallery: whole sentences off the front of the written
+ * description, never a word cut in half. The full paragraph is on the demo's
+ * own page, so the card can stop at a natural break.
+ */
+export function openingSentences(text: string, maxChars: number): string {
+  const parts = text.split(/(?<=\.)\s+/)
+  let out = parts[0] ?? ""
+  for (let i = 1; i < parts.length; i += 1) {
+    if (out.length + 1 + parts[i].length > maxChars) break
+    out = `${out} ${parts[i]}`
+  }
+  return out
 }

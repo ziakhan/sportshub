@@ -20,12 +20,12 @@ import { AUDIENCE_LABELS, DEMOS, type DemoEntry } from "./registry"
 /**
  * The stage: read, then play (owner ruling 2026-08-15).
  *
- * Clicking a demo in the rail no longer drops the viewer into a running
- * recording. It opens an INTRO: what this demo is, who it is for, how long it
- * runs, the sentences that describe what will happen, and the chapters it moves
- * through. One amber Play button starts it. That press is the only thing that
- * mounts the player, which is why the player's scroll-into-view autoplay is
- * gone: a demo runs because somebody asked for it.
+ * Opening a demo no longer drops the viewer into a running recording. It opens
+ * an INTRO: what this demo is, who it is for, how long it runs, the sentences
+ * that describe what will happen, and the chapters it moves through. One amber
+ * Play button starts it. That press is the only thing that mounts the player,
+ * which is why the player's scroll-into-view autoplay is gone: a demo runs
+ * because somebody asked for it.
  *
  * A demo that is not filmed yet gets the same intro, with its planned chapters
  * from the registry and an honest note in place of the button.
@@ -53,7 +53,7 @@ export function DemoStage({ demo }: { demo: DemoEntry }) {
   const playable = demo.status === "live" && Boolean(entry)
   const [playing, setPlaying] = useState(false)
 
-  /* Moving between demos in the rail always lands on that demo's intro. */
+  /* Moving from one demo to another always lands on that demo's intro. */
   useEffect(() => {
     setPlaying(false)
   }, [demo.slug])
@@ -66,13 +66,19 @@ export function DemoStage({ demo }: { demo: DemoEntry }) {
     return (
       // The player keeps its own light chrome (captions, chapter chips,
       // progress), so it sits on a lit panel rather than straight on navy.
-      <div className="rounded-3xl border border-white/12 bg-[#f8f9fb] p-3 shadow-[0_50px_130px_-60px_rgba(0,0,0,0.95)] sm:p-5">
+      // The panel is padded thinly on purpose: with the rail gone this box is
+      // what the stage measures, and its padding comes straight off the scale.
+      <div className="rounded-2xl border border-white/12 bg-[#f8f9fb] p-2.5 shadow-[0_50px_130px_-60px_rgba(0,0,0,0.95)] sm:rounded-3xl sm:p-3.5">
         <DemoPlayer
           script={entry.script}
           role={entry.role}
           roleTone={entry.roleTone}
           autoStart
           onExit={() => setPlaying(false)}
+          /* What actually sits under the stage in this view: the caption bar,
+             the beat stepper and the panel's own bottom padding. The player's
+             default reserves more, for pages that carry other things below. */
+          reserveBelow={132}
         />
       </div>
     )
@@ -104,11 +110,11 @@ function DemoIntro({
 
   return (
     <div className="flex flex-1 items-center justify-center py-2">
-      <div className="relative isolate w-full max-w-[1080px] overflow-hidden rounded-3xl border border-white/12 bg-white/[0.05] px-6 py-8 shadow-[0_40px_120px_-60px_rgba(0,0,0,0.9)] sm:px-10 sm:py-11">
+      <div className="relative isolate w-full max-w-[1180px] overflow-hidden rounded-3xl border border-white/12 bg-white/[0.05] px-6 py-8 shadow-[0_40px_120px_-60px_rgba(0,0,0,0.9)] sm:px-10 sm:py-11">
         {/* House motif: the amber arc, not decoration for its own sake. */}
         <span
           aria-hidden="true"
-          className="pointer-events-none absolute -right-28 -top-32 h-80 w-80 rounded-full border-[10px] border-gold-400/20"
+          className="pointer-events-none absolute -right-20 -top-28 h-64 w-64 rounded-full border-[10px] border-gold-400/15"
         />
         <span
           aria-hidden="true"

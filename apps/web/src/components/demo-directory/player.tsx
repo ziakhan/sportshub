@@ -29,6 +29,7 @@ export function DemoPlayer({
   autoStart = false,
   onExit,
   exitLabel = "Back to intro",
+  reserveBelow,
 }: {
   script: DemoScript
   /** Who is acting, shown on the caption chip. */
@@ -40,6 +41,13 @@ export function DemoPlayer({
   /** Shows a small link back to the intro stage. */
   onExit?: () => void
   exitLabel?: string
+  /**
+   * Height the stage must leave under itself for the caption and the beat
+   * stepper. The default is generous because the player can sit on a page with
+   * other things under it; a full screen player view knows exactly what its own
+   * chrome costs and can hand back the difference as scale.
+   */
+  reserveBelow?: number
 }) {
   const { beats, chapters } = script
   const reduced = usePrefersReducedMotion()
@@ -262,6 +270,7 @@ export function DemoPlayer({
         phone={surfaces.phone}
         url={url}
         stageRef={stageRef}
+        reserveBelow={reserveBelow}
       >
         <AnimatedCursor
           stageRef={stageRef}
