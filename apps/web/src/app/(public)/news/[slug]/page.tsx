@@ -58,7 +58,7 @@ export default async function NewsPostPage({ params }: { params: { slug: string 
   })()
 
   return (
-    <div className="container mx-auto max-w-3xl px-4 py-10 sm:px-6">
+    <div className="container mx-auto max-w-3xl px-4 pb-10 pt-4 sm:px-6 sm:pt-8">
       {post.status === "PUBLISHED" && (
         <JsonLd
           data={newsArticleJsonLd({
@@ -73,10 +73,6 @@ export default async function NewsPostPage({ params }: { params: { slug: string 
           })}
         />
       )}
-      <div className="mb-6">
-        <SmartBack fallback="/news" fallbackLabel="News" className="-ml-1" />
-      </div>
-
       {canManage && (
         <AdminBar
           postId={post.id}
@@ -87,8 +83,12 @@ export default async function NewsPostPage({ params }: { params: { slug: string 
         />
       )}
 
-      <Card className="p-8 sm:p-10">
-        <div className="mb-4 flex flex-wrap items-center gap-2">
+      <Card className="p-5 sm:p-10">
+        {/* One flat header row: back control, kind, date (owner 2026-08-17,
+            "flattened and lowered": the back row and the pill row were
+            stacking into dead space above the title on phones). */}
+        <div className="mb-3 flex flex-wrap items-center gap-x-3 gap-y-2">
+          <SmartBack fallback="/news" fallbackLabel="News" className="-ml-1" />
           {post.kind === "RECAP_AI" && <Badge tone="play">Game Recap</Badge>}
           {post.publishedAt && (
             <span className="text-ink-400 text-sm">
@@ -97,7 +97,7 @@ export default async function NewsPostPage({ params }: { params: { slug: string 
           )}
         </div>
 
-        <h1 className="text-ink-950 mb-6 text-3xl font-bold leading-tight sm:text-4xl">
+        <h1 className="text-ink-950 mb-4 text-3xl font-bold leading-tight sm:text-4xl">
           {post.title}
         </h1>
 
@@ -183,14 +183,23 @@ export default async function NewsPostPage({ params }: { params: { slug: string 
                 href={`/player/${g.potgPlayerId}`}
                 className="border-gold-300 bg-gold-50 text-gold-800 mt-6 flex w-fit items-center gap-2 rounded-full border px-4 py-2 text-sm font-bold hover:bg-gold-100"
               >
-                🏀 Player of the Game: {publicPlayerName(g.potgPlayer)}
+                <svg viewBox="0 0 20 20" aria-hidden="true" className="h-4 w-4">
+                  <circle cx="10" cy="10" r="8" fill="none" stroke="currentColor" strokeWidth="1.8" />
+                  <path
+                    d="M2 10h16M10 2v16M4.2 4.2c3.2 3.2 3.2 8.4 0 11.6M15.8 4.2c-3.2 3.2-3.2 8.4 0 11.6"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.4"
+                  />
+                </svg>
+                Player of the Game: {publicPlayerName(g.potgPlayer)}
               </Link>
             )
           })())}
 
         {post.kind === "RECAP_AI" && (
           <p className="text-ink-400 mt-6 text-xs">
-            Recap generated automatically from the official scoring record.
+            From the official scoring record.
           </p>
         )}
 
