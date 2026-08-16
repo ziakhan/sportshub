@@ -244,21 +244,25 @@ export const DEMOS: DemoEntry[] = [
     slug: "claim-your-club",
     title: "Claim your club and make it yours",
     promise:
-      "Find your club page, claim it with the contact already on file, then give it your colour, your crest and your words.",
+      "A real unclaimed listing found by name, claimed with a code that only ever goes to the contact already on file, corrected on the way in, and turned into the club's own page the same afternoon.",
     description:
-      "It opens in the public directory, where your club is probably already listed: a page built from public league listings, with the city right and nothing else. You watch it get searched up, opened, and claimed, and the claim is the part worth watching. The code goes to the contact already on file, masked on screen, so nobody can type their way into somebody else's club, and the corrections sit next to it because an imported listing is usually a little wrong. Six digits, a fourteen day reservation, and the page unlocks. The last chapter is the branding screen: a colour picked, a crest uploaded, a tagline and a paragraph typed, one save, and the same public page reloading with the club's own mark on the crest, its colour on the baseline stripe, and no claim button left on it.",
+      "It opens on a number most clubs do not know about themselves: over thirteen hundred Canadian clubs are already published in this directory, built from public league listings, and one of them is probably yours. This one is real, and so is everything wrong with it: the province is stuck on the end of the city, the phone number is ten unbroken digits and the website has no scheme, which is what an imported listing actually looks like. You watch it get searched up and opened, and the page has a button on it the club did not put there. The claim is the part worth watching, and it starts before anybody signs up for anything. The code goes to the contact already on file, masked on screen so the page cannot be used to harvest an address either, and the corrections sit right beside it because an imported listing is usually a little wrong. Six digits, thirty minutes, five attempts. Then the careful bit: the club is reserved for fourteen days while the owner decides which account runs it, because ownership binds to a person and not to the inbox that received the code. One press writes five things in one transaction, and if any of them failed none of them happened. The last chapter is the branding screen, and it is not decoration: the product refuses to paint a club's page in the colour it stamped on every imported listing, so picking one is the step that turns the club's colour on at all.",
     audiences: ["clubs"],
     kind: "chapter",
     stage: "desktop",
-    durationLabel: "1 min 6 sec",
+    durationLabel: "1 min 53 sec",
     status: "live",
-    chapterCount: 3,
+    chapterCount: 4,
+    /* No volatile numbers in the bullets: the census counts move with each
+       import, and a bullet that goes stale is a bullet that lies. */
     bullets: [
-      "Your club is probably already listed: find it and open it",
-      "A six digit code goes to the contact on file, nobody hijacks a club",
+      "Your club is probably already listed, built from public league data",
+      "A six digit code, sent only to the contact on file and masked on screen",
+      "Fix what the import got wrong on the way in, applied when the claim completes",
+      "Reserved while you decide which account owns it, because a club binds to a person",
       "Crest, colour and your own words live the same afternoon",
     ],
-    chapterTitles: ["Find your club", "Claim it", "Make it yours"],
+    chapterTitles: ["Find your club", "Prove it", "Reserved for you", "Make it yours"],
     thumbEyebrow: "Chapter 5",
   },
   {
