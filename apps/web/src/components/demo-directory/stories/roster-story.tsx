@@ -225,18 +225,17 @@ export const rosterStory: DemoScript = {
     paced({
       id: "open",
       chapter: "team",
-      caption: "A club building next season starts with nothing on the board.",
+      caption: "The club's team list. The fall shelf is empty.",
       emphasize: "club-teams",
-      callout: "The summer teams are done. The fall roster does not exist yet, and that is the job.",
+      callout: "Teams sit under the season they play in, so the summer ones stay put.",
     }),
     paced({
       id: "new",
       chapter: "team",
-      caption: "One control, on the phone the club actually carries.",
+      caption: "Create team.",
       cursor: "new-team",
       press: true,
       set: { view: "create" },
-      callout: "Making a team takes a picker and a press, not a form somebody has to sit down for.",
     }),
     paced({
       id: "age",
@@ -250,195 +249,192 @@ export const rosterStory: DemoScript = {
     paced({
       id: "suffix",
       chapter: "team",
-      caption: "The club already fields a Grade 10, so the product asks which one this is.",
+      caption: "The club already fields a Grade 10, so this one takes a suffix.",
       cursor: "suffix-field",
       type: { key: "suffixTyped", text: SUFFIX },
       set: { suffix: true },
-      callout: "A second team in the same bracket needs a suffix, and the screen says exactly why.",
+      callout: "The suffix is the only part of the name anybody types.",
     }),
     paced({
       id: "name",
       chapter: "team",
-      caption: "And then the part nobody has to argue about.",
+      caption: "The name is written from the club's short name.",
       emphasize: "name-preview",
-      callout:
-        "Nobody types a team name. The product writes it from the club's short name, so it reads the same everywhere.",
+      callout: "The product writes it, so one team is never spelled two ways.",
     }),
     paced({
       id: "staff",
       chapter: "team",
-      caption: "A coach goes on at the same time.",
+      caption: "A coach goes on with the team.",
       cursor: "staff-field",
       press: true,
       set: { staff: true },
-      callout: "Head coach now, or an email invite that assigns the role the moment it is accepted.",
+      callout: "Or an email invite, and the role lands when it is accepted.",
     }),
     paced({
       id: "create",
       chapter: "team",
-      caption: "Made.",
+      caption: "The team is created.",
       cursor: "create-btn",
       press: true,
       toast: `Team created · ${TEAM}`,
       set: { view: "created" },
-      callout: "One team, one coach, and a roster with nobody on it. That is the honest starting line.",
+      callout: "Now there is something for a tryout to hang off.",
     }),
 
     /* ── 2. Post the tryout ───────────────────────────────────────────── */
     paced({
       id: "tryout-open",
       chapter: "tryout",
-      caption: "Now the club needs players in the gym.",
+      caption: "A tryout for that team.",
       set: { view: "tryout" },
       emphasize: "tryout-form",
-      callout: "The tryout hangs off the team you just made, so everything it collects lands there.",
+      callout: "The tryout is attached to the team, so its signups land there.",
     }),
     paced({
       id: "tryout-where",
       chapter: "tryout",
-      caption: "The gym is picked, not typed.",
+      caption: "The gym comes from the club's venues.",
       cursor: "venue-field",
       press: true,
       set: { venue: true },
-      callout: `${VENUE} is already in the club's venues, so the address comes with it.`,
+      callout: "The address travels with the venue, so nobody retypes it.",
     }),
     paced({
       id: "tryout-when",
       chapter: "tryout",
-      caption: "A date and two hours on the floor.",
+      caption: "Thursday evening, two hours on the floor.",
       cursor: "when-field",
       press: true,
       set: { when: true },
-      callout: "Thursday evening, six thirty to eight thirty, which is when a gym is free.",
+      callout: "The end time comes from the duration rather than a second picker.",
     }),
     paced({
       id: "tryout-fee",
       chapter: "tryout",
-      caption: "And what it costs to walk in.",
+      caption: `${money(TRYOUT_FEE)} to walk in, and ${CAP} places.`,
       cursor: "fee-field",
       type: { key: "feeTyped", text: `${TRYOUT_FEE}` },
       set: { fee: true },
-      callout: `Twenty five dollars and thirty spots. A tryout fee is small on purpose, and it is still money the club has to chase.`,
+      callout: "The cap is on the tryout, so signups stop at thirty without anybody watching.",
     }),
     paced({
       id: "tryout-publish",
       chapter: "tryout",
-      caption: "Published to the marketplace in the same sitting.",
+      caption: "Created and published in the same sitting.",
       cursor: "publish-btn",
       press: true,
       toast: "Tryout created and published",
       set: { view: "tryout-live" },
-      callout: "It is a draft until you say otherwise, and one press puts it in front of families.",
+      callout: "Published means families outside the club can find it too.",
     }),
 
     /* ── 3. A family signs up ─────────────────────────────────────────── */
     paced({
       id: "phone-in",
       chapter: "family",
-      caption: `It reaches ${PARENT}, who has two children at this club.`,
+      caption: `${PARENT} opens the listing on her phone. She has two children at this club.`,
       stage: "split",
       set: { phone: "tryout" },
       emphasize: "p-tryout",
-      callout: "This is her own screen in the app, not a copy of the club's.",
+      callout: "Nothing was sent to her. The tryout is published, so she found it.",
     }),
     paced({
       id: "who",
       chapter: "family",
-      caption: "The first question is the one that stops most sign-up forms.",
+      caption: "The form asks who is playing.",
       emphasize: "who-list",
-      callout: "Who is playing. Her kids are already on the account, so she picks rather than retypes.",
+      callout: "Her children are already on the account, so she picks instead of typing.",
     }),
     paced({
       id: "eligible",
       chapter: "family",
-      caption: "And the product knows which of them this is for.",
+      caption: "She picks Darius.",
       cursor: "kid-darius",
       press: true,
       set: { picked: true },
-      callout: `${SISTER.split(" ")[0]} is flagged outside the age group rather than quietly accepted, and she is still allowed to ask.`,
+      callout: `${SISTER.split(" ")[0]} is flagged outside the age group rather than quietly accepted.`,
     }),
     paced({
       id: "register",
       chapter: "family",
-      caption: "The fee is on the button.",
+      caption: "She registers him, with the fee written on the button.",
       cursor: "register-btn",
       press: true,
       set: { registered: true, phone: "registered" },
-      callout: "Twenty five dollars, said before she presses, so nobody finds out at the door.",
     }),
     paced({
       id: "offline",
       chapter: "family",
-      caption: "And this club takes it in person, which the product says out loud.",
+      caption: "This club takes the fee in person.",
       emphasize: "offline-line",
-      callout:
-        "Cash or e-transfer, arranged with the club. The platform does not pretend it can refund money it never held.",
+      callout: "Card payments are off for this club, so the product says how to pay instead.",
     }),
 
     /* ── 4. The offer, accepted ───────────────────────────────────────── */
     paced({
       id: "signups",
       chapter: "offer",
-      caption: "Tryout night is over, and the club has a list.",
+      caption: "Tryout night is over. Five players signed up.",
+      stage: "desktop",
       set: { view: "signups", phone: "idle" },
       emphasize: "signup-list",
-      callout: "Five players in the gym, every one attached to a guardian who can be written to.",
+      callout: "Each signup carries the guardian who made it, which is who the offer goes to.",
     }),
     paced({
       id: "bulk",
       chapter: "offer",
-      caption: "The offers go out together.",
+      caption: "The offers are composed together.",
       cursor: "bulk-btn",
       press: true,
       set: { view: "compose" },
-      callout: "Compose the package once, tick who gets it, and the club stops writing five of the same email.",
+      callout: "One composition, five separate offers, each one answered on its own.",
     }),
     paced({
       id: "package",
       chapter: "offer",
-      caption: "The package is the whole season written down.",
+      caption: `The season fee, ${money(FEE)}, and the kit that comes with it.`,
       cursor: "fee-input",
       type: { key: "repFeeTyped", text: "3600" },
       set: { repFee: true },
-      callout: "A rep season with the full kit in it, at one number the family can hold you to.",
+      callout: "The kit rides on the offer, so the family can see what the fee covers.",
     }),
     paced({
       id: "auto",
       chapter: "offer",
-      caption: "And then the control this chapter exists for.",
+      caption: "One control writes the payment plan.",
       cursor: "auto-plan",
       press: true,
       set: { plan: true },
-      callout:
-        "One press writes a deposit and three monthly installments, and the screen checks its own arithmetic.",
+      callout: "The dates are the first of the next three months, worked out from the fee.",
     }),
     paced({
       id: "send",
       chapter: "offer",
-      caption: "Sent, with a deadline on it.",
+      caption: `Sent, with ${EXPIRES_DAYS} days to answer.`,
       cursor: "send-btn",
       press: true,
       toast: `5 offers sent · expire in ${EXPIRES_DAYS} days`,
       set: { view: "sent" },
-      callout: "Ten days to answer. An offer with no expiry is how a club loses a roster spot to a maybe.",
+      callout: "When an offer expires the place comes back to the club by itself.",
     }),
     paced({
       id: "arrive",
       chapter: "offer",
-      caption: `On ${PARENT}'s phone it is one screen, not a thread to scroll back through.`,
+      caption: `It lands on ${PARENT}'s phone as one screen.`,
+      stage: "split",
       set: { phone: "offer" },
       emphasize: "offer-card",
-      callout: "The team, the money, the kit and the words the coach wrote, all in one place.",
+      callout: "Offers have their own page in the app rather than living in a message thread.",
     }),
     paced({
       id: "sizes",
       chapter: "offer",
-      caption: "Accepting is where the club stops chasing sizes.",
+      caption: "Accepting collects the sizes.",
       cursor: "size-uniform",
       press: true,
       set: { sizes: true },
-      callout:
-        "Uniform, tracksuit and shoes, asked once, at the only moment a parent is guaranteed to be paying attention.",
+      callout: "The club's kit order comes from these three fields.",
     }),
     paced({
       id: "jersey",
@@ -447,14 +443,15 @@ export const rosterStory: DemoScript = {
       cursor: "pref-1",
       press: true,
       set: { prefs: true },
-      callout: `He wants ${PREFS[0]} again, and two fallbacks, so nobody runs a group chat about numbers.`,
+      callout: "Three choices let the club settle a clash without asking again.",
     }),
     paced({
       id: "plan",
       chapter: "offer",
       caption: "The plan is on her screen before she agrees to it.",
+      set: { phone: "offer-plan" },
       emphasize: "plan-card",
-      callout: `${money(DEPOSIT)} now and three more, dated. Not "we'll work something out".`,
+      callout: "The three later charges are booked now and run on their own dates.",
     }),
     paced({
       id: "accept",
@@ -463,46 +460,46 @@ export const rosterStory: DemoScript = {
       cursor: "accept-btn",
       press: true,
       set: { accepted: true, phone: "accepted" },
-      callout: "One press pays the deposit, books the three charges and puts him on the roster.",
+      callout: "One press pays the deposit, books the three charges and adds him to the roster.",
     }),
 
     /* ── 5. The roster fills ──────────────────────────────────────────── */
     paced({
       id: "roster",
       chapter: "roster",
-      caption: "Which is the screen the whole thing was for.",
+      caption:
+        "The roster, filled. Every line arrived from a family accepting their own offer.",
       stage: "desktop",
       set: { view: "roster", phone: "idle" },
       emphasize: "roster-list",
-      callout: "Ten of ten, and every line arrived by itself as a family accepted.",
     }),
     paced({
       id: "roster-sizes",
       chapter: "roster",
       caption: "The sizes are already on it.",
       emphasize: "row-darius",
-      callout: "Uniform, tracksuit and shoes, straight off the accept. Nobody sent a spreadsheet.",
+      callout: "Nobody typed them here. They came off each accept form.",
     }),
     paced({
       id: "roster-status",
       chapter: "roster",
-      caption: "And the two things a manager actually chases are chips, not memory.",
+      caption: "Two chips a manager chases all season.",
       emphasize: "row-status",
-      callout: "Whether the number is finalised, and whether the waivers are signed.",
+      callout: "Finalized means the jersey number is settled, not that the fee is paid.",
     }),
     paced({
       id: "house",
       chapter: "roster",
-      caption: "The same club runs the other end of the age range too.",
+      caption: "The same club runs a house league at the other end of the age range.",
       set: { view: "programs" },
       emphasize: "house-card",
-      callout: "Eight Saturdays at two hundred and twenty dollars, on the same gym and the same books.",
+      callout: "Rep and house sit on the same books, so the club counts its money once.",
     }),
     paced({
       id: "end",
       chapter: "roster",
       caption:
-        "A team made on a phone, a tryout filled, one offer accepted with sizes, a number and a payment plan, and a roster that finished itself.",
+        "A team created, a tryout posted and filled, five offers composed once, and a roster that arrived with the sizes on it.",
       hold: 4400,
       set: { endCard: true },
     }),
@@ -678,7 +675,7 @@ function TeamsList() {
       <div className="border-ink-200 rounded-2xl border border-dashed bg-white px-4 py-5 text-center">
         <p className="text-ink-900 text-[15px] font-bold">No teams yet</p>
         <p className="text-ink-500 mt-1 text-[14px] font-medium leading-snug">
-          The season starts here.
+          Create your first team to start managing players and scheduling games.
         </p>
       </div>
     </div>
@@ -703,11 +700,13 @@ function CreateTeam({
 }) {
   const name = age ? [SHORT, AGE, suffix ? suffixTyped : ""].filter(Boolean).join(" ") : ""
   return (
-    <div className="space-y-2">
+    <div className={created ? "space-y-1" : "space-y-1.5"}>
       <p className="text-ink-900 text-[17px] font-extrabold">Create New Team</p>
-      <p className="text-ink-500 text-[14px] font-medium leading-snug">
-        Add a team to your club and assign coaching staff
-      </p>
+      {!created && (
+        <p className="text-ink-500 text-[14px] font-medium leading-snug">
+          Add a team to your club and assign coaching staff
+        </p>
+      )}
 
       <Field label="Age Group">
         <Picker id="age-field" filled={age}>
@@ -715,7 +714,7 @@ function CreateTeam({
         </Picker>
       </Field>
 
-      <Field label="Suffix" hint={SUFFIX_HINT}>
+      <Field label="Suffix" hint={created ? undefined : SUFFIX_HINT}>
         <span
           data-demo-target="suffix-field"
           className={cn(
@@ -739,7 +738,8 @@ function CreateTeam({
       <div
         data-demo-target="name-preview"
         className={cn(
-          "rounded-xl border px-3 py-2 transition-colors duration-300 motion-reduce:transition-none",
+          "rounded-xl border px-3 transition-colors duration-300 motion-reduce:transition-none",
+          created ? "py-1" : "py-2",
           name ? "border-court-200 bg-court-50/70" : "border-ink-200 bg-white"
         )}
       >
@@ -938,19 +938,19 @@ function Compose({
     )
   }
   return (
-    <div className="space-y-1.5">
+    <div className="space-y-1">
       <p className="text-ink-900 text-[17px] font-extrabold leading-tight">Send Offers</p>
       <p className="text-ink-500 text-[14px] font-medium leading-snug">
         Compose the packages once; everyone you tick gets the same offer.
       </p>
 
-      <div className="border-ink-200 rounded-xl border bg-white px-3 py-1.5">
+      <div className="border-ink-200 rounded-xl border bg-white px-3 py-1">
         <div className="flex items-end gap-2">
           <Field label="Fee ($)" className="w-[104px] shrink-0">
             <span
               data-demo-target="fee-input"
               className={cn(
-                "border-ink-300 block rounded-lg border bg-white px-2.5 py-1.5 text-[15px] font-semibold tabular-nums",
+                "border-ink-300 block rounded-lg border bg-white px-2.5 py-1 text-[15px] font-semibold tabular-nums",
                 repFee ? "text-ink-900" : "text-ink-400"
               )}
             >
@@ -970,12 +970,12 @@ function Compose({
             <Picker filled>4 installments</Picker>
           </Field>
         </div>
-        <div className="mt-1.5 flex flex-wrap gap-1">
+        <div className="mt-1 flex flex-nowrap gap-0.5">
           {["Uniform", "Tracksuit", "Shoes", "Basketball", "Bag"].map((i) => (
             <span
               key={i}
               className={cn(
-                "rounded-full px-2 py-0.5 text-[14px] font-semibold",
+                "shrink-0 rounded-full px-1 py-0.5 text-[14px] font-semibold",
                 i === "Bag" ? "bg-ink-100 text-ink-500" : "bg-court-50 text-court-700"
               )}
             >
@@ -985,11 +985,9 @@ function Compose({
         </div>
       </div>
 
-      <div className="border-ink-200 rounded-xl border bg-white px-3 py-1.5">
+      <div className="border-ink-200 rounded-xl border bg-white px-3 py-1">
         <div className="flex items-center justify-between gap-2">
-          <span className="text-ink-700 text-[14px] font-bold">
-            Payment plan (deposit + installments)
-          </span>
+          <span className="text-ink-700 text-[14px] font-bold">Payment plan</span>
           <span
             data-demo-target="auto-plan"
             className={cn(
@@ -1001,7 +999,7 @@ function Compose({
           </span>
         </div>
         {plan && (
-          <div className="live-pop mt-1.5 space-y-1">
+          <div className="live-pop mt-1 space-y-0.5">
             <PlanRow label="Deposit" amount={DEPOSIT} due="on accept" />
             {TERMS.map((t) => (
               <PlanRow key={t.label} label={t.label} amount={t.amount} due={t.due} />
@@ -1013,7 +1011,7 @@ function Compose({
         )}
       </div>
 
-      <div className="flex items-center justify-between gap-2">
+      <div className="flex items-center justify-between gap-2 pt-0.5">
         <span className="text-ink-500 text-[14px] font-semibold">
           {SIGNUPS.length} of {SIGNUPS.length} eligible selected
         </span>
@@ -1027,7 +1025,7 @@ function Compose({
 
 function PlanRow({ label, amount, due }: { label: string; amount: number; due: string }) {
   return (
-    <div className="border-ink-100 flex items-center justify-between gap-2 rounded-lg border bg-white px-2.5 py-0.5">
+    <div className="border-ink-100 flex items-center justify-between gap-2 rounded-lg border bg-white px-2.5 py-0">
       <span className="text-ink-800 text-[14px] font-semibold">{label}</span>
       <span className="text-ink-500 ml-auto text-[14px] font-medium">{due}</span>
       <span className="text-ink-900 text-[14px] font-bold tabular-nums">{money(amount)}</span>
@@ -1038,17 +1036,17 @@ function PlanRow({ label, amount, due }: { label: string; amount: number; due: s
 /** `/clubs/[id]/teams/[teamId]/roster`, composed as cards. */
 function RosterBoard({ accepted }: { accepted: boolean }) {
   return (
-    <div className="space-y-2">
+    <div className="space-y-1">
       <div className="flex items-baseline justify-between gap-2">
         <p className="text-ink-900 min-w-0 truncate text-[17px] font-extrabold">Roster</p>
         <Chip tone="court" strong>
           {ROSTER.length} of {ROSTER.length}
         </Chip>
       </div>
-      <p className="text-ink-500 text-[14px] font-medium">
+      <p className="text-ink-500 text-[14px] font-medium leading-tight">
         {TEAM} · {AGE} Boys
       </p>
-      <div data-demo-target="roster-list" className="space-y-1.5">
+      <div data-demo-target="roster-list" className="space-y-1">
         {ROSTER.slice(0, ROSTER_SHOWN).map((p, i) => {
           const mine = p.name === PLAYER
           return (
@@ -1056,7 +1054,7 @@ function RosterBoard({ accepted }: { accepted: boolean }) {
               key={p.name}
               data-demo-target={mine ? "row-darius" : undefined}
               className={cn(
-                "border-ink-200 live-row-in rounded-xl border bg-white px-3 py-1.5",
+                "border-ink-200 live-row-in rounded-xl border bg-white px-3 py-1",
                 mine && accepted && "border-court-200 bg-court-50/60"
               )}
               style={{ animationDelay: `${i * 70}ms` }}
@@ -1074,7 +1072,7 @@ function RosterBoard({ accepted }: { accepted: boolean }) {
                   <StatusChip tone="court">Signed</StatusChip>
                 </span>
               </div>
-              <p className="text-ink-500 mt-0.5 text-[14px] font-medium tabular-nums">
+              <p className="text-ink-500 text-[14px] font-medium leading-tight tabular-nums">
                 Uniform {mine ? UNIFORM : "AM"} · Tracksuit {mine ? TRACKSUIT : "AM"} · Shoes{" "}
                 {mine ? SHOE : "10"}
               </p>
@@ -1115,9 +1113,17 @@ function Programs() {
           </span>
         </p>
       </div>
-      <p className="text-ink-500 px-1 text-[14px] font-medium leading-snug">
-        Two products, one club, one set of books.
-      </p>
+      {/* The tryout is a priced product on the same books, and it is the one
+          this story just posted. `DB` Tryout 1689307c. */}
+      <div className="border-ink-200 rounded-2xl border bg-white px-3.5 py-2.5">
+        <p className="text-ink-900 text-[15px] font-bold leading-snug">{TRYOUT}</p>
+        <p className="text-ink-500 mt-0.5 text-[14px] font-medium leading-snug">
+          {TRYOUT_DAY} · {VENUE} · {money(TRYOUT_FEE)} · {CAP} spots
+        </p>
+        <p className="text-ink-500 mt-1 text-[14px] font-semibold">
+          {SIGNUPS.length} registered
+        </p>
+      </div>
     </div>
   )
 }
@@ -1154,16 +1160,13 @@ function ParentPhone({
         {(view === "tryout" || view === "registered") && (
           <TryoutSignup picked={picked} registered={view === "registered"} />
         )}
-        {(view === "offer" || view === "accepted") && (
-          <OfferAccept sizes={sizes} prefs={prefs} accepted={accepted} />
-        )}
-        {view === "idle" && (
-          <div className="border-ink-200 rounded-2xl border border-dashed bg-white px-4 py-6 text-center">
-            <p className="text-ink-900 text-[15px] font-bold">Nothing waiting</p>
-            <p className="text-ink-500 mt-1 text-[14px] font-medium leading-snug">
-              The club is working. She is not.
-            </p>
-          </div>
+        {(view === "offer" || view === "offer-plan" || view === "accepted") && (
+          <OfferAccept
+            sizes={sizes}
+            prefs={prefs}
+            accepted={accepted}
+            lower={view === "offer-plan"}
+          />
         )}
       </div>
 
@@ -1259,15 +1262,25 @@ function TryoutSignup({ picked, registered }: { picked: boolean; registered: boo
   )
 }
 
-/** `/offers` with `offer-response-form.tsx` under it. */
+/**
+ * `/offers` with `offer-response-form.tsx` under it.
+ *
+ * The real form is longer than a handset, so a guardian scrolls it. The scene
+ * cannot scroll, so the form is composed as its two halves: the offer with the
+ * sizes and numbers on it, then the plan and the accept button under them, with
+ * a one-line summary of what she already answered. Declared in section H of the
+ * numbers sheet.
+ */
 function OfferAccept({
   sizes,
   prefs,
   accepted,
+  lower,
 }: {
   sizes: boolean
   prefs: boolean
   accepted: boolean
+  lower?: boolean
 }) {
   if (accepted) {
     return (
@@ -1313,6 +1326,63 @@ function OfferAccept({
       </div>
     )
   }
+  if (lower) {
+    return (
+      <div className="space-y-2">
+        <p className="text-ink-900 text-[17px] font-extrabold">Accept Offer</p>
+        <div className="border-ink-200 rounded-xl border bg-white px-3 py-1.5">
+          <p className="text-ink-900 text-[15px] font-bold leading-snug">
+            {TEAM} <span className="text-court-700">{money(FEE)}</span>
+          </p>
+          <p className="text-ink-500 mt-0.5 text-[14px] font-medium tabular-nums">
+            Uniform {UNIFORM} · Tracksuit {TRACKSUIT} · Shoes {SHOE} · #{PREFS[0]}, #{PREFS[1]}, #
+            {PREFS[2]}
+          </p>
+        </div>
+
+        <div
+          data-demo-target="plan-card"
+          className="border-play-500 rounded-xl border bg-white px-3 py-2"
+        >
+          <p className="text-ink-900 text-[15px] font-bold">Payment plan</p>
+          <div className="mt-1.5 space-y-1">
+            <div className="border-play-200 bg-play-50/60 flex items-center justify-between gap-2 rounded-lg border px-2.5 py-1">
+              <span className="text-ink-800 text-[14px] font-semibold">Deposit</span>
+              <span className="text-ink-500 ml-auto text-[14px] font-medium">due now</span>
+              <span className="text-ink-900 text-[14px] font-bold tabular-nums">
+                {money(DEPOSIT)}
+              </span>
+            </div>
+            {TERMS.map((t) => (
+              <div
+                key={t.label}
+                className="border-ink-100 flex items-center justify-between gap-2 rounded-lg border bg-white px-2.5 py-1"
+              >
+                <span className="text-ink-800 text-[14px] font-semibold">{t.label}</span>
+                <span className="text-ink-500 ml-auto text-[14px] font-medium">{t.due}, 2026</span>
+                <span className="text-ink-900 text-[14px] font-bold tabular-nums">
+                  {money(t.amount)}
+                </span>
+              </div>
+            ))}
+          </div>
+          <p className="text-ink-400 mt-1.5 text-[14px] font-medium leading-snug">
+            Auto-charged to your card on file.
+          </p>
+        </div>
+
+        <div className="flex items-center justify-between gap-2">
+          <span className="text-ink-700 text-[14px] font-bold tabular-nums">
+            Due now: {money(DEPOSIT)}
+          </span>
+          <Btn id="accept-btn" tone="court" size="sm">
+            Pay {money(DEPOSIT)}.00 &amp; Accept
+          </Btn>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="space-y-2">
       <p className="text-ink-900 text-[17px] font-extrabold">Accept Offer</p>
@@ -1370,27 +1440,15 @@ function OfferAccept({
         </div>
       </div>
 
-      <div
-        data-demo-target="plan-card"
-        className="border-play-500 rounded-xl border bg-white px-3 py-2"
-      >
+      {/* The form keeps going below the fold, which is what the guardian sees
+          before she scrolls. The plan gets its own composition on the next
+          beat, where the whole of it is on screen. */}
+      <div className="border-play-500 rounded-xl border bg-white px-3 py-2">
         <p className="text-ink-900 text-[15px] font-bold">Payment plan</p>
         <p className="text-ink-600 mt-0.5 text-[14px] font-medium leading-snug">
           {money(DEPOSIT)} deposit now, then {money(PER)} on {TERMS[0].due}, {money(PER)} on{" "}
           {TERMS[1].due}, {money(PER)} on {TERMS[2].due}
         </p>
-        <p className="text-ink-400 mt-0.5 text-[14px] font-medium">
-          Auto-charged to your card on file.
-        </p>
-      </div>
-
-      <div className="flex items-center justify-between gap-2">
-        <span className="text-ink-700 text-[14px] font-bold tabular-nums">
-          Due now: {money(DEPOSIT)}
-        </span>
-        <Btn id="accept-btn" tone="court" size="sm">
-          Pay {money(DEPOSIT)}.00 &amp; Accept
-        </Btn>
       </div>
     </div>
   )
@@ -1472,9 +1530,9 @@ function EndCard() {
           Build a team, fill the roster
         </h3>
         <p className="mt-3 text-[15px] leading-relaxed text-white/75">
-          A team made on a phone with a name nobody typed, a tryout published in the same sitting,
-          five offers composed once, and one accept that collected three sizes, three jersey numbers
-          and a {money(DEPOSIT)} deposit with three dated installments behind it.
+          A team created with a name the product wrote, a tryout posted and filled, five offers
+          composed once, and one accept that collected the sizes, the jersey numbers and a{" "}
+          {money(DEPOSIT)} deposit with three dated installments behind it.
         </p>
         <p className="mt-4 text-[14px] font-semibold text-white/50">Next: the money picture</p>
       </div>

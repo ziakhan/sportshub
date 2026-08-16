@@ -113,11 +113,11 @@ export const DEMOS: DemoEntry[] = [
     promise:
       "A club builds next season's team on a phone, posts a tryout, and one accept collects the sizes, the jersey number and a payment plan the club never has to chase.",
     description:
-      "Two phones, and the whole thing happens on them. The left one belongs to a real club with a real problem: the summer teams are done and the fall roster does not exist. A team gets made in a few presses, and the product writes its name rather than letting anybody type one, because a club that types team names ends up with four spellings of the same team. The tryout goes up in the same sitting, with the gym, the evening, the fee and the cap on it. The right phone belongs to a guardian with two children at that club, and the first thing the sign-up asks is which of them is playing: her son is eligible, her daughter is flagged outside the age group rather than quietly accepted. Then the part clubs spend a whole season chasing. Five offers composed once and sent together, with the season fee, the kit and a deadline on each. She opens hers and, on one screen, picks the uniform size, the tracksuit size, the shoe size, three jersey numbers in order, and reads the payment plan before she agrees to it: a deposit now and three dated installments the product worked out itself. One press pays the deposit, books the three charges and puts him on the roster, which fills in behind her with the sizes already on it.",
+      "Two phones, and the whole thing happens on them. The left one belongs to a club whose summer teams are done and whose fall roster does not exist yet. A team gets made in a few presses, and the product writes its name rather than letting anybody type one, because a club that types team names ends up with four spellings of the same team. The tryout goes up in the same sitting, with the gym, the evening, the fee and the cap on it. The right phone belongs to a guardian with two children at that club, and the first thing the sign-up asks is which of them is playing: her son is eligible, her daughter is flagged outside the age group rather than quietly accepted. Then the offers. Five composed once and sent together, with the season fee, the kit and a deadline on each. She opens hers and, on one screen, picks the uniform size, the tracksuit size, the shoe size, three jersey numbers in order, and reads the payment plan before she agrees to it: a deposit now and three dated installments the product worked out itself. One press pays the deposit, books the three charges and puts him on the roster, which fills in behind her with the sizes already on it.",
     audiences: ["clubs", "parents"],
     kind: "story",
     stage: "phone",
-    durationLabel: "2 min 46 sec",
+    durationLabel: "2 min 23 sec",
     status: "live",
     chapterCount: 5,
     /* No volatile numbers in the bullets: fees and counts move with the seed,
@@ -126,7 +126,7 @@ export const DEMOS: DemoEntry[] = [
       "A team made on a phone, with a name the product writes so nobody types four spellings of it",
       "A tryout posted and published in the same sitting, gym, fee and cap included",
       "One package composed once and sent to every player who tried out",
-      "Sizes, tracksuit, shoes and three jersey numbers collected at the only moment a parent is paying attention",
+      "Sizes, tracksuit, shoes and three jersey numbers collected on the accept form",
       "A deposit and three dated installments on her screen before she agrees to anything",
     ],
     chapterTitles: [

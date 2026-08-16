@@ -282,7 +282,7 @@ screen.
 | The club's five screens are PHONE COMPOSITIONS | `/clubs/[id]/teams`, `/clubs/[id]/teams/create`, `/clubs/[id]/tryouts/create`, the tryout signups page with its bulk modal, and the roster board all ship wide today. Each is composed at 390 keeping its real fields, labels and buttons; the roster's ten-column table becomes one card per player carrying the same columns |
 | The parent's two screens are NOT compositions | `/tryouts/[id]` and `/offers` are responsive pages a guardian reaches from the app's own mobile bottom bar. The tab strip drawn under her handset is the real parent bar: Home, Chat, Calendar, **My Kids**, Social (`bottom-tabs.tsx`, the `hasKids` context slot) |
 | The club handset's tab strip says "My Club" | `PRODUCT` `contextTab()` resolves the operator slot to `operatorTabLabel(shape)` for a club owner. Composition, same as the screens it sits under |
-| 5 of 10 roster rows, 5 of 5 signups | The handset screen is 390 by 508 in this stage and the scene never scrolls. The roster carries its true count in the header chip, "10 of 10", and "and 5 more, all finalised" under the list |
+| 5 of 10 roster rows, 5 of 5 signups | The handset screen is 390 by 508 in this stage and the scene never scrolls. The roster carries its true count in the header chip, "10 of 10", and "and 5 more, all finalised" under the list, and the sweep tightened the rows until the fifth row AND that line are both fully on screen |
 | The tryout form drops the venue helper line and folds Max into the date row | Height only: the full-length form ran 88px past the composed box, which the scene-overflow gate caught. Every field it asks for is still on screen |
 | The date reads "Thu, Aug 20" rather than a year | `PRODUCT` the real date pickers and list rows format without the year inside a season |
 | En dashes kept in "6:30 – 8:30 PM" | A time range is an en dash, not an em dash. The house rule bans em-dashes, and there are none in this file or the demo |
@@ -293,12 +293,12 @@ screen.
 
 | Gate | Result |
 |---|---|
-| `scripts/demo/readability-audit.mjs --routes /demos/roster-story` | **0 violations**, minimum stage scale **1.000**, 32 beats, 37 scenes audited |
+| `scripts/demo/readability-audit.mjs --routes /demos/roster-story` | **0 violations**, minimum stage scale **1.000**, 32 beats, 37 scenes audited (sweep re-run 2026-08-16) |
 | Same, `--viewport 390x844 --floor 11 --scope stage` (keyhole) | **0 violations** |
 | Same, `--viewport 390x844 --floor 14 --scope chrome` | **0 violations** |
 | Full playback drive, 32 beats stepped twice plus a 2x autoplay pass | **0 console errors**, **0 page errors** |
 | Chapter jumps | **5 of 5 exact**: beats 1, 8, 13, 18, 28 |
-| Runtime at 1x | **2 min 46 sec** (`data-demo-runtime-ms` = 166340) |
+| Runtime at 1x | **2 min 23 sec** (sweep cut, shorter balloons) |
 | Scene overflow (any node past the composed box) | **0 px**, all 32 beats, both handsets |
 | 390x844 horizontal overflow | **0 px** |
 | `tsc --noEmit` | clean |
