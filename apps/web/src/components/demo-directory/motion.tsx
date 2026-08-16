@@ -33,32 +33,22 @@ export function usePrefersReducedMotion(): boolean {
 /* ── Playback rate ───────────────────────────────────────────────────────── */
 
 /**
- * Playback speed (owner ruling 2026-08-16: "let fast viewers speed up").
+ * Playback rate, now a constant (owner ruling 2026-08-16, feedback round).
  *
- * ONE module-level store, for the same reason the game clock is one store: a
- * demo is a single recording, and the cursor glide, the typing cadence, the
- * beat holds and the game clock all have to agree about how fast it is
- * running. Every timed part of the kit divides its wall-clock milliseconds by
- * this number.
- *
- * The choice survives the session (sessionStorage) so a viewer who set 2x on
- * one demo does not have to set it again on the next.
+ * The 1x / 1.5x / 2x control is GONE from the transport: a demo is paced, and
+ * a viewer who wants to move faster steps with Next rather than watching the
+ * same beats at a speed the pacing was not written for. The rate stays in the
+ * kit as the number every timed part divides by, so the cursor glide, the
+ * typing cadence, the beat holds and the game clock still agree about one
+ * clock. It is simply always 1.
  */
-export const DEMO_RATES = [1, 1.5, 2] as const
-export type DemoRate = (typeof DEMO_RATES)[number]
-
-const RATE_KEY = "sportshub.demo.rate"
-
-let rate: DemoRate = 1
-const rateListeners = new Set<() => void>()
+const rate = 1
 
 /**
  * Demo time, in milliseconds of SCRIPT time.
  *
- * Wall time accumulates into it at the current rate, so a rate change never
- * makes anything reading it jump: the seconds already banked stay banked and
- * only the ones after the change run faster. Consumers that count down (the
- * game clock) read this instead of Date.now().
+ * Consumers that count down (the game clock) read this instead of Date.now(),
+ * so they share the player's clock rather than the wall's.
  */
 let scaled = 0
 let lastWall = 0
@@ -71,44 +61,9 @@ export function demoNow(): number {
   return scaled
 }
 
-export function getDemoRate(): DemoRate {
+/** One clock for the whole kit. Kept as a hook so callers do not change. */
+export function useDemoRate(): number {
   return rate
-}
-
-export function setDemoRate(next: DemoRate): void {
-  if (next === rate) return
-  demoNow() // bank everything elapsed at the old rate first
-  rate = next
-  try {
-    window.sessionStorage.setItem(RATE_KEY, String(next))
-  } catch {
-    /* private browsing: the rate simply does not persist */
-  }
-  rateListeners.forEach((l) => l())
-}
-
-/** Reads the stored rate once the player is on a client. */
-export function restoreDemoRate(): void {
-  try {
-    const stored = Number(window.sessionStorage.getItem(RATE_KEY))
-    const match = DEMO_RATES.find((r) => r === stored)
-    if (match) setDemoRate(match)
-  } catch {
-    /* no storage, no restore */
-  }
-}
-
-export function useDemoRate(): DemoRate {
-  const [value, setValue] = useState<DemoRate>(getDemoRate)
-  useEffect(() => {
-    const listener = () => setValue(getDemoRate())
-    rateListeners.add(listener)
-    listener()
-    return () => {
-      rateListeners.delete(listener)
-    }
-  }, [])
-  return value
 }
 
 /* ── Overlay keyframes ───────────────────────────────────────────────────── */

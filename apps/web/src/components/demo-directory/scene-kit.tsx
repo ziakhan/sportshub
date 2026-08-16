@@ -84,14 +84,14 @@ export function Btn({
   children: ReactNode
   id?: string
   tone?: "primary" | "court" | "quiet" | "ghost"
-  size?: "sm" | "md"
+  size?: "xs" | "sm" | "md"
 }) {
   return (
     <span
       data-demo-target={id}
       className={cn(
         "inline-flex shrink-0 cursor-default items-center justify-center gap-2 rounded-xl font-bold transition-shadow duration-150 data-[demo-press=true]:shadow-inner data-[demo-press=true]:brightness-95 motion-reduce:transition-none",
-        size === "sm" ? "px-3.5 py-1.5 text-[14px]" : "px-4 py-2 text-[15px]",
+        size === "xs" ? "px-2.5 py-0.5 text-[14px]" : size === "sm" ? "px-3.5 py-1.5 text-[14px]" : "px-4 py-2 text-[15px]",
         tone === "primary" && "bg-play-600 text-white shadow-sm data-[demo-hover=true]:bg-play-700",
         tone === "court" && "bg-court-600 text-white shadow-sm data-[demo-hover=true]:bg-court-700",
         tone === "quiet" &&
@@ -128,7 +128,7 @@ export function ConsoleTabs({ active }: { active: string }) {
         <span
           key={t}
           className={cn(
-            "relative py-2.5 text-[15px] font-semibold",
+            "relative py-2 text-[15px] font-semibold",
             t === active ? "text-play-700" : "text-ink-500"
           )}
         >
@@ -166,7 +166,7 @@ export function Panel({
         className
       )}
     >
-      <div className="border-ink-100 flex shrink-0 items-center gap-3 border-b px-4 py-2.5">
+      <div className="border-ink-100 flex shrink-0 items-center gap-3 border-b px-4 py-1.5">
         <span className="bg-play-600 h-4 w-[3px] shrink-0 rounded-full" />
         <h3 className="font-display text-ink-900 text-[17px] font-extrabold uppercase tracking-[0.02em]">
           {title}
@@ -196,13 +196,18 @@ export function Tile({
   return (
     <div
       data-demo-target={id}
-      className={cn("rounded-2xl border px-4 py-3", TONES[tone].replace(/text-\S+/, ""))}
+      className={cn(
+        "flex items-baseline gap-2 rounded-xl border px-3 py-1.5",
+        TONES[tone].replace(/text-\S+/, "")
+      )}
     >
-      <p className="text-ink-500 text-[14px] font-bold uppercase tracking-[0.08em]">{label}</p>
-      <p className="text-ink-900 mt-0.5 text-[28px] font-extrabold leading-none tabular-nums">
+      <p className="text-ink-500 shrink-0 text-[14px] font-bold uppercase tracking-[0.08em]">
+        {label}
+      </p>
+      <p className="text-ink-900 whitespace-nowrap text-[20px] font-extrabold leading-none tabular-nums">
         {value}
       </p>
-      {note && <p className="text-ink-600 mt-1.5 text-[14px] font-medium">{note}</p>}
+      {note && <p className="text-ink-600 ml-auto truncate text-[14px] font-medium">{note}</p>}
     </div>
   )
 }
@@ -258,7 +263,7 @@ export function TeamRow({
     <div
       data-demo-target={id}
       className={cn(
-        "flex items-center gap-3 rounded-xl border px-3.5 py-2 transition-colors duration-300 motion-reduce:transition-none",
+        "flex items-center gap-3 rounded-xl border px-3 py-0.5 transition-colors duration-300 motion-reduce:transition-none",
         status === "APPROVED" ? "border-court-100 bg-court-50/60" : "border-ink-200 bg-white",
         fresh && "live-row-in"
       )}
@@ -443,9 +448,15 @@ export function GymCard({
         )}
         <span className="text-ink-600 ml-auto text-[14px] font-semibold">{courts}</span>
       </div>
+      {/* OWNER LINE (2026-08-16 feedback round). The shipping card says "You own
+          this one. Its games cost you nothing, so it gets used before anything
+          you rent." The owner cut it to seven words. The demo carries his line;
+          the product still carries its own until somebody changes it there, and
+          the gap is written down in
+          `docs/roadmap/product-corrections-from-demo-feedback.md`. */}
       <p className="text-ink-500 mt-0.5 text-[14px] font-medium">
         {home
-          ? "You own this one. Its games cost you nothing, so it gets used before anything you rent."
+          ? "Your home gym. It fills first."
           : "In the pool. You rent it by the court when a weekend needs the space."}
       </p>
       <p className="text-ink-500 mt-0.5 text-[14px] font-medium">{hours}</p>
@@ -518,10 +529,47 @@ export function AskSheet({
 
 /* ── The board (plan step 3) ─────────────────────────────────────────────── */
 
+/**
+ * THE BOARD, and this kit's most faithful mirror (owner ruling 2026-08-16,
+ * feedback round: "the board is the heart of the demo, make it pixel true").
+ *
+ * Every part below is the real `plan/weekend-card.tsx`, `plan/board-view.tsx`
+ * and `plan/plan-ui.tsx`, matched against the 1440 capture in
+ * `gold-standard/real2/s3-board.png`:
+ *
+ *   · the six-dot grip on a gym section, which is what a league drags to move
+ *     a whole building's games to another weekend (`data-testid="section-grip"`,
+ *     title "Move all N grades at {gym}");
+ *   · the Move button and the ⋯ menu on every section;
+ *   · the fraction chip in games, "84/80 games", in the product's own three
+ *     tones (`FRACTION_TONE`);
+ *   · the card tones themselves (`CARD_TONE`): amber for tight, red for over,
+ *     plain white when there is room;
+ *   · "Not planned" rows for the weekends the plan skipped, which is how the
+ *     real board shows an off weekend inside a month.
+ */
+
+/** The product's own six-dot grip, same 10x16 viewBox and same six circles. */
+export function Grip({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 10 16" aria-hidden="true" className={cn("h-3.5 w-2 shrink-0", className)}>
+      {[4, 8, 12].map((cy) => (
+        <g key={cy}>
+          <circle cx="3" cy={cy} r="1.1" fill="currentColor" />
+          <circle cx="7" cy={cy} r="1.1" fill="currentColor" />
+        </g>
+      ))}
+    </svg>
+  )
+}
+
 export interface BoardGym {
   gym: string
   dot: string
+  /** "3/3 courts", the section's own fraction line. */
   courts: string
+  /** "5 free", when the building has more courts than this weekend took. */
+  free?: string
   grades: string[]
   /**
    * Where the booking stands (`plan/plan-ui.tsx` BLOCK_STATUS_WORDS). The home
@@ -530,86 +578,132 @@ export interface BoardGym {
    * booked yet" is the default state of a floater the draw took by itself.
    */
   status?: "assumed"
+  /** The shortfall the auditor found at this gym, as the rail words it. */
+  short?: string
+  /** Target for the hand: the section itself, and its ⋯ trigger. */
+  id?: string
+  menuId?: string
+  /** The ⋯ dropdown, shown open. */
+  menu?: ReactNode
+  /** The section lifts while it is being dragged. */
+  dragging?: boolean
 }
 
-/** One weekend card on the board: date, fraction chip, gym rows, grade chips. */
+/** One weekend card on the board: date, fraction chip, gym sections. */
 export function WeekendCard({
   date,
   fraction,
   tone = "fits",
   gyms,
   id,
-  tight,
 }: {
   date: string
   fraction: string
   tone?: "fits" | "tight" | "over"
   gyms: BoardGym[]
   id?: string
-  tight?: boolean
 }) {
   return (
     <div
       data-demo-target={id}
       className={cn(
-        "rounded-xl border px-2.5 py-2 transition-colors duration-300 motion-reduce:transition-none",
+        "rounded-xl border px-2 py-1 shadow-sm transition-colors duration-300 motion-reduce:transition-none",
         tone === "over"
-          ? "border-hoop-300 bg-hoop-50"
-          : tight
-            ? "border-gold-400 bg-gold-50/70"
-            : "border-ink-200 bg-white"
+          ? "border-hoop-400 bg-hoop-50"
+          : tone === "tight"
+            ? "border-gold-500 bg-gold-50"
+            : "border-ink-300 bg-white"
       )}
     >
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-1.5">
         <span className="text-ink-900 text-[15px] font-bold underline decoration-ink-200 underline-offset-2">
           {date}
+        </span>
+        <span aria-hidden="true" className="text-ink-300 text-[14px]">
+          &rsaquo;
         </span>
         <span
           className={cn(
             "ml-auto rounded-full border px-2 py-0.5 text-[14px] font-bold tabular-nums",
             tone === "over"
-              ? "border-hoop-200 bg-white text-hoop-700"
+              ? "border-hoop-300 bg-hoop-50 text-hoop-800"
               : tone === "tight"
-                ? "border-gold-400 bg-white text-gold-600"
-                : "border-court-200 bg-white text-court-700"
+                ? "border-gold-400 bg-gold-50 text-gold-600"
+                : "border-court-200 bg-court-50 text-court-800"
           )}
         >
           {fraction}
         </span>
       </div>
-      <div className="mt-1.5 space-y-1.5">
+
+      <div className="mt-1 space-y-1">
         {gyms.map((g) => (
           <div
             key={g.gym}
+            data-demo-target={g.id}
             className={cn(
-              "rounded-lg border bg-white px-2 py-1.5",
-              g.status === "assumed" ? "border-gold-400 border-dashed" : "border-ink-100"
+              "relative rounded-lg border bg-white px-1.5 py-1 transition-shadow duration-200 motion-reduce:transition-none",
+              g.status === "assumed" ? "border-dashed border-gold-400" : "border-ink-200",
+              g.dragging && "shadow-[0_18px_40px_-16px_rgba(15,23,42,0.55)] ring-2 ring-court-500"
             )}
+            style={{ borderLeftColor: g.dot, borderLeftWidth: 3 }}
           >
-            <div className="flex flex-wrap items-center gap-1.5">
+            <div className="flex items-center gap-1">
+              <span className="text-ink-300">
+                <Grip />
+              </span>
               <span
                 aria-hidden="true"
                 className="h-2 w-2 shrink-0 rounded-full"
                 style={{ background: g.dot }}
               />
-              <span className="text-ink-800 text-[14px] font-bold">{g.gym}</span>
-              <span className="text-ink-400 ml-auto text-[14px] font-semibold">{g.courts}</span>
-              {g.status === "assumed" && (
-                <span className="border-gold-400 bg-gold-50 text-gold-600 w-full rounded-md border px-1.5 text-[14px] font-bold">
-                  assumed, not booked yet
+              <span className="text-ink-800 truncate text-[14px] font-bold">{g.gym}</span>
+              <span className="ml-auto flex shrink-0 items-center gap-1">
+                <span className="border-play-300 text-play-700 rounded-md border bg-white px-1.5 py-0.5 text-[14px] font-bold">
+                  Move
+                </span>
+                <span
+                  data-demo-target={g.menuId}
+                  className="border-ink-200 text-ink-500 flex h-[22px] w-[22px] items-center justify-center rounded-md border bg-white text-[14px] font-bold leading-none"
+                >
+                  &#8943;
+                </span>
+              </span>
+            </div>
+
+            <div className="mt-0.5 flex flex-wrap items-center gap-x-1.5">
+              <span className="text-ink-500 text-[14px] font-semibold tabular-nums">
+                {g.courts}
+              </span>
+              {g.free && <span className="text-ink-400 text-[14px] font-medium">· {g.free}</span>}
+              {g.short && (
+                <span className="border-gold-400 bg-gold-50 text-gold-600 rounded-md border px-1.5 text-[14px] font-bold">
+                  {g.short}
                 </span>
               )}
             </div>
-            <div className="mt-1 flex flex-wrap gap-1">
+
+            {g.status === "assumed" && (
+              <span className="border-gold-400 bg-gold-50 text-gold-600 mt-0.5 block rounded-md border px-1.5 text-[14px] font-bold">
+                assumed, not booked yet
+              </span>
+            )}
+
+            <div className="mt-0.5 flex flex-wrap gap-1">
               {g.grades.map((gr) => (
                 <span
                   key={gr}
-                  className="border-ink-200 text-ink-700 rounded-md border bg-white px-1.5 py-0.5 text-[14px] font-semibold"
+                  className="border-ink-200 text-ink-700 inline-flex items-center gap-0.5 rounded-md border bg-white px-1 text-[14px] font-semibold"
                 >
+                  <span className="text-ink-300">
+                    <Grip className="h-3 w-1.5" />
+                  </span>
                   {gr}
                 </span>
               ))}
             </div>
+
+            {g.menu}
           </div>
         ))}
       </div>
@@ -617,14 +711,462 @@ export function WeekendCard({
   )
 }
 
+/** A weekend the plan skipped, exactly as the board lists it: "Not planned". */
+export function NotPlanned({ date }: { date: string }) {
+  return (
+    <div className="border-ink-200 flex items-center gap-2 rounded-xl border border-dashed bg-white/60 px-2 py-0.5">
+      <span className="text-ink-400 text-[14px] font-bold">{date}</span>
+      <span className="text-ink-400 ml-auto text-[14px] font-medium">Not planned</span>
+    </div>
+  )
+}
+
 /** The board's session column header: "SESSION 2 · NOV". */
 export function SessionColumn({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <div className="border-ink-200 bg-ink-50/70 min-w-0 rounded-2xl border px-2 py-2">
-      <p className="text-ink-500 mb-1.5 px-1 text-[14px] font-bold uppercase tracking-[0.08em]">
+    <div className="border-ink-200 bg-ink-50/70 flex min-h-0 min-w-0 flex-col overflow-hidden rounded-2xl border px-1.5 py-1.5">
+      <p className="text-ink-500 mb-1 px-1 text-[14px] font-bold uppercase tracking-[0.08em]">
         {title}
       </p>
-      <div className="space-y-1.5">{children}</div>
+      <div className="min-h-0 space-y-1">{children}</div>
+    </div>
+  )
+}
+
+/**
+ * The gym tray over the board: "YOUR GYMS · DRAG ONE ONTO A WEEKEND · TAP ONE
+ * TO SPOTLIGHT IT", each building with its grip, its dot, its courts and how
+ * many weekends it is on.
+ */
+export function GymTray({
+  gyms,
+  id,
+}: {
+  gyms: { name: string; dot: string; courts: string; home?: boolean; weekends: string }[]
+  id?: string
+}) {
+  return (
+    <div
+      data-demo-target={id}
+      className="border-ink-200 flex flex-nowrap items-center gap-2 overflow-hidden rounded-2xl border bg-white px-3 py-1"
+    >
+      <p className="text-ink-500 shrink-0 whitespace-nowrap text-[14px] font-bold uppercase tracking-[0.08em]">
+        Your gyms
+      </p>
+      <div className="flex flex-nowrap gap-1.5 overflow-hidden">
+        {gyms.map((g) => (
+          <span
+            key={g.name}
+            className="border-ink-200 flex shrink-0 items-center gap-1.5 rounded-xl border bg-white px-2 py-1"
+          >
+            <span className="text-ink-300">
+              <Grip />
+            </span>
+            <span
+              aria-hidden="true"
+              className="h-2 w-2 shrink-0 rounded-full"
+              style={{ background: g.dot }}
+            />
+            <span className="text-ink-900 text-[15px] font-bold">{g.name}</span>
+            <span className="text-ink-500 text-[14px] font-medium">{g.courts}</span>
+            {g.home && <Chip tone="court">Home gym</Chip>}
+            <span className="text-ink-400 text-[14px] font-medium">{g.weekends}</span>
+          </span>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+/** The board's HIGHLIGHT row of grade chips. */
+export function HighlightRow({ grades }: { grades: string[] }) {
+  return (
+    <div className="border-ink-200 flex flex-wrap items-center gap-1.5 rounded-2xl border bg-white px-3 py-1.5">
+      <span className="text-ink-500 mr-1 text-[14px] font-bold uppercase tracking-[0.08em]">
+        Highlight
+      </span>
+      {grades.map((g) => (
+        <span
+          key={g}
+          className="border-court-200 text-court-800 rounded-lg border bg-white px-2 py-0.5 text-[14px] font-bold"
+        >
+          {g}
+        </span>
+      ))}
+    </div>
+  )
+}
+
+/**
+ * The ⋯ menu on a gym section (`plan-ui.tsx` `GymMenu`), open on its "Courts
+ * this date" section: the stepper, the "of N courts on the floor" footer, and
+ * the apply button whose label says what the league just did.
+ */
+export function GymMenu({
+  gym,
+  weekend,
+  need,
+  courts,
+  wired,
+  apply,
+  applyId,
+  id,
+}: {
+  gym: string
+  weekend: string
+  need: number
+  courts: number
+  wired: number
+  apply: string
+  applyId?: string
+  id?: string
+}) {
+  return (
+    <div
+      data-demo-target={id}
+      className="border-ink-200 live-pop absolute right-0 top-[26px] z-30 w-[248px] rounded-xl border bg-white px-3 py-2.5 shadow-[0_28px_60px_-24px_rgba(15,23,42,0.6)]"
+    >
+      <p className="text-ink-500 text-[14px] font-bold uppercase tracking-[0.06em]">
+        This gym, this date
+      </p>
+      <p className="text-ink-900 mt-1 text-[15px] font-bold">
+        {gym} on {weekend}
+      </p>
+      <p className="text-ink-500 text-[14px] font-medium">This date only. Nothing else moves.</p>
+
+      <p className="text-ink-900 border-ink-100 mt-2 border-t pt-2 text-[15px] font-bold">
+        Courts this date
+      </p>
+      <p className="text-ink-500 mt-0.5 text-[14px] font-medium leading-snug">
+        The games here need {need} courts. Fewer if the gym could not give them all, more if you
+        rented more of the building.
+      </p>
+      <div className="mt-1.5 flex items-center gap-2">
+        <span className="border-ink-200 text-ink-500 flex h-7 w-7 items-center justify-center rounded-lg border bg-white text-[15px] font-bold">
+          &minus;
+        </span>
+        <span className="text-ink-900 text-[17px] font-extrabold tabular-nums">{courts}</span>
+        <span className="border-play-300 text-play-700 flex h-7 w-7 items-center justify-center rounded-lg border bg-white text-[15px] font-bold">
+          +
+        </span>
+        <span className="text-ink-400 text-[14px] font-medium">of {wired} courts on the floor</span>
+      </div>
+      <span
+        data-demo-target={applyId}
+        className="bg-play-600 mt-2 flex w-full items-center justify-center rounded-lg px-3 py-1.5 text-[14px] font-bold text-white"
+      >
+        {apply}
+      </span>
+    </div>
+  )
+}
+
+/**
+ * The suggestions drawer (`plan/work-rail.tsx`), which is where the board
+ * hands the league the answer: the weekend in trouble in the auditor's own
+ * sentence, then the move that clears it with its two-press apply.
+ */
+export function WorkRail({
+  open,
+  count,
+  about,
+  problem,
+  ideas,
+  footer,
+  id,
+}: {
+  open: boolean
+  /** "all clear", or "1 open". */
+  count: string
+  about: string
+  problem?: { label: string; fraction: string; text: string }
+  ideas?: { headline: string; detail: string; tag: string; id?: string; applied?: boolean }[]
+  footer: string
+  id?: string
+}) {
+  if (!open) {
+    return (
+      <div
+        data-demo-target={id}
+        className="border-ink-200 text-ink-500 flex w-[34px] shrink-0 flex-col items-center justify-center gap-2 rounded-2xl border bg-white py-3"
+      >
+        <span className="bg-gold-400 h-2 w-2 rounded-full" aria-hidden="true" />
+        <span
+          className="text-[14px] font-bold uppercase tracking-[0.1em]"
+          style={{ writingMode: "vertical-rl" }}
+        >
+          What is left
+        </span>
+      </div>
+    )
+  }
+  return (
+    <aside
+      data-demo-target={id}
+      className="border-ink-200 live-pop flex w-[300px] shrink-0 flex-col rounded-2xl border bg-white px-3 py-2.5"
+    >
+      <div className="flex items-center gap-2">
+        <h2 className="text-ink-900 text-[15px] font-extrabold uppercase tracking-[0.06em]">
+          What is left
+        </h2>
+        <span
+          className={cn(
+            "ml-auto rounded-full border px-2 py-0.5 text-[14px] font-bold",
+            count === "all clear"
+              ? "border-court-200 bg-court-50 text-court-800"
+              : "border-gold-400 bg-gold-50 text-gold-600"
+          )}
+        >
+          {count}
+        </span>
+      </div>
+      <p className="text-ink-500 mt-1 text-[14px] font-medium">Ideas for {about}</p>
+
+      {problem && (
+        <div className="border-gold-400 bg-gold-50 mt-2 rounded-xl border px-2.5 py-2">
+          <div className="flex items-center gap-2">
+            <span className="text-ink-900 text-[15px] font-bold">{problem.label}</span>
+            <span className="border-gold-400 text-gold-600 ml-auto rounded-full border bg-white px-2 py-0.5 text-[14px] font-bold tabular-nums">
+              {problem.fraction}
+            </span>
+          </div>
+          <p className="text-ink-700 mt-1 text-[14px] font-medium leading-snug">{problem.text}</p>
+        </div>
+      )}
+
+      <div className="mt-2 space-y-2">
+        {ideas?.map((i) => (
+          <div
+            key={i.headline}
+            data-demo-target={i.id}
+            className={cn(
+              "rounded-xl border px-2.5 py-2 transition-colors duration-300 motion-reduce:transition-none",
+              i.applied ? "border-court-300 bg-court-50" : "border-ink-200 bg-white"
+            )}
+          >
+            <div className="flex items-center gap-2">
+              <span className="text-ink-900 text-[15px] font-bold leading-tight">{i.headline}</span>
+              <span className="border-court-200 bg-court-50 text-court-800 ml-auto shrink-0 rounded-full border px-2 py-0.5 text-[14px] font-bold">
+                {i.tag}
+              </span>
+            </div>
+            <p className="text-ink-600 mt-1 text-[14px] font-medium leading-snug">{i.detail}</p>
+            <span
+              className={cn(
+                "mt-1.5 inline-flex rounded-lg border px-2.5 py-1 text-[14px] font-bold",
+                i.applied
+                  ? "border-court-300 bg-white text-court-800"
+                  : "border-play-300 text-play-700 bg-white"
+              )}
+            >
+              {i.applied ? "Done" : "Move"}
+            </span>
+          </div>
+        ))}
+      </div>
+
+      <p className="text-ink-500 border-ink-100 mt-auto border-t pt-2 text-[14px] font-medium">
+        {footer}
+      </p>
+    </aside>
+  )
+}
+
+/* ── Divisions (Schedule tab) ────────────────────────────────────────────── */
+
+/**
+ * The real division board (`manage/components/division-setup.tsx`): an
+ * Unassigned pool and one column per division, every team a chip a league can
+ * drag anywhere, in either direction.
+ */
+export function DivisionsBoard({
+  columns,
+  id,
+}: {
+  columns: { name: string; dot?: string; teams: string[]; pool?: boolean; id?: string }[]
+  id?: string
+}) {
+  return (
+    <div data-demo-target={id} className="grid grid-cols-5 gap-2">
+      {columns.map((c) => (
+        <div
+          key={c.name}
+          data-demo-target={c.id}
+          className={cn(
+            "min-w-0 rounded-xl border px-2 py-2 transition-colors duration-300 motion-reduce:transition-none",
+            c.pool ? "border-ink-300 border-dashed bg-white" : "border-ink-200 bg-ink-50/70"
+          )}
+        >
+          <div className="flex items-center gap-1.5">
+            {c.dot && (
+              <span
+                aria-hidden="true"
+                className="h-2 w-2 shrink-0 rounded-full"
+                style={{ background: c.dot }}
+              />
+            )}
+            <span className="text-ink-900 truncate text-[14px] font-bold">{c.name}</span>
+            <span className="text-ink-400 ml-auto text-[14px] font-semibold tabular-nums">
+              {c.teams.length}
+            </span>
+          </div>
+          <div className="mt-1.5 space-y-1">
+            {c.teams.map((t) => (
+              <span
+                key={t}
+                className="border-ink-200 text-ink-800 flex items-center gap-1 truncate rounded-lg border bg-white px-1.5 py-1 text-[14px] font-semibold"
+              >
+                <span className="text-ink-300">
+                  <Grip className="h-3 w-1.5" />
+                </span>
+                <span className="truncate">{t}</span>
+              </span>
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+/** The cross-play question, both options in the product's own words. */
+export function CrossPlay({ chosen, id }: { chosen?: "no" | "yes"; id?: string }) {
+  const options = [
+    {
+      key: "no" as const,
+      label: "No, they keep to themselves",
+      hint: "Each division gets its own schedule.",
+    },
+    {
+      key: "yes" as const,
+      label: "Yes, they can mix",
+      hint: "Same-division games lean first; crossing fills the rest (how NPH runs it).",
+    },
+  ]
+  return (
+    <div data-demo-target={id} className="border-ink-200 rounded-2xl border bg-white px-4 py-2.5">
+      <p className="text-ink-900 text-[15px] font-bold">
+        In the regular season, do divisions play each other?
+      </p>
+      <div className="mt-1.5 grid grid-cols-2 gap-2">
+        {options.map((o) => (
+          <span
+            key={o.key}
+            className={cn(
+              "rounded-xl border px-3 py-2 transition-colors duration-300 motion-reduce:transition-none",
+              chosen === o.key
+                ? "border-court-400 bg-court-50"
+                : "border-ink-200 bg-white"
+            )}
+          >
+            <span
+              className={cn(
+                "block text-[15px] font-bold",
+                chosen === o.key ? "text-court-800" : "text-ink-800"
+              )}
+            >
+              {o.label}
+            </span>
+            <span className="text-ink-500 block text-[14px] font-medium leading-snug">{o.hint}</span>
+          </span>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+/* ── Fridays (plan step 2) ───────────────────────────────────────────────── */
+
+/** `gyms-weekends-step.tsx` `friday-declaration`, question and answer verbatim. */
+export function FridayChoice({ value, id }: { value: "No" | "Yes"; id?: string }) {
+  return (
+    <div
+      data-demo-target={id}
+      className="border-ink-200 flex items-center gap-3 rounded-2xl border bg-white px-4 py-2.5"
+    >
+      <span className="min-w-0">
+        <span className="text-ink-900 block text-[15px] font-bold">Can games run on Fridays?</span>
+        <span className="text-ink-500 block text-[14px] font-medium leading-snug">
+          Saturday and Sunday fill first either way. This tells the draw whether Friday evenings may
+          hold games at all.
+        </span>
+      </span>
+      <span className="border-ink-200 ml-auto flex shrink-0 overflow-hidden rounded-lg border bg-white text-[14px] font-bold">
+        {(["No", "Yes"] as const).map((v) => (
+          <span
+            key={v}
+            className={cn("px-3 py-1", v === value ? "bg-play-600 text-white" : "text-ink-500")}
+          >
+            {v}
+          </span>
+        ))}
+      </span>
+    </div>
+  )
+}
+
+/* ── Fairness (Schedule tab) ─────────────────────────────────────────────── */
+
+/**
+ * `manage/components/summary-panel.tsx` `FairnessSummaryTable`, worst first.
+ *
+ * Owner ruling: a fairness claim is only worth showing if the screen PROVES
+ * it, and the proof is maximums, never averages. So the rows here are the
+ * worst four teams in the league by burden, and the zeros are the point.
+ */
+export function FairnessTable({
+  rows,
+  id,
+}: {
+  rows: { team: string; burden: string; games: string; short: string; b2b: string; waits: string; twoGyms: string }[]
+  id?: string
+}) {
+  const cols = ["Team", "Burden", "Games", "Games short", "Back-to-backs", "5hr+ waits", "Same day, 2 gyms"]
+  return (
+    <div data-demo-target={id} className="border-ink-200 overflow-hidden rounded-2xl border bg-white">
+      <div className="border-ink-100 flex items-baseline gap-2 border-b px-4 py-2">
+        <span className="text-ink-900 text-[15px] font-extrabold uppercase tracking-[0.06em]">
+          Fairness by team
+        </span>
+        <span className="text-ink-500 text-[14px] font-medium">
+          Worst first by burden. Click a team to check its full schedule.
+        </span>
+      </div>
+      <table className="w-full">
+        <thead>
+          <tr className="bg-ink-50/70">
+            {cols.map((c, i) => (
+              <th
+                key={c}
+                className={cn(
+                  "text-ink-500 px-3 py-1.5 text-[14px] font-bold",
+                  i === 0 ? "text-left" : "text-right"
+                )}
+              >
+                {c}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((r) => (
+            <tr key={r.team} className="border-ink-100 border-t">
+              <td className="text-ink-900 px-3 py-1.5 text-left text-[15px] font-bold">{r.team}</td>
+              {[r.burden, r.games, r.short, r.b2b, r.waits, r.twoGyms].map((v, i) => (
+                <td
+                  key={i}
+                  className={cn(
+                    "px-3 py-1.5 text-right text-[15px] font-semibold tabular-nums",
+                    v === "0" ? "text-court-700" : "text-ink-700"
+                  )}
+                >
+                  {v}
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   )
 }

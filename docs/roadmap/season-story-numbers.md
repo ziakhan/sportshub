@@ -25,6 +25,45 @@ Three source kinds, and every row names one:
 
 ---
 
+## 0a. FEEDBACK ROUND DELTAS (owner, 2026-08-16, live session, 31 rulings)
+
+The owner drove the cut and reshaped it. Everything below REPLACES the matching
+row further down; sections 0, 0b and A to K still hold for everything not listed
+here. The product gaps this round exposed are in
+`docs/roadmap/product-corrections-from-demo-feedback.md`.
+
+| What | Was | Now | Source |
+|---|---|---|---|
+| Registration state | 27 of 146 in, 3 pending | **144 of 146 in, 4 pending** | `OWNER` ("registration arrives nearly done") |
+| Filter chips | All (146) · Pending (3) · Approved (24) · Rejected (0) | **All (146) · Pending (4) · Approved (141) · Rejected (1)**, then Pending (0) · Approved (145) | `ARITH`, and they add to the `DB` end state 145 approved, 1 rejected |
+| "Waiting on you" | a number beside a different list | **always the count of the pending rows on screen**, one source in `TeamsScreen` | `OWNER` |
+| Rows on the Teams tab | 4 | **13 of the 146**, every club name from `DB` | `OWNER` ("the table looks FULL") |
+| Approvals shown | one, on the submission page | **one on the submission page, the rest inline on the list** | `PRODUCT` `manage/components/teams-tab.tsx`: pending rows carry Approve and Reject |
+| Free entry until the deadline | not shown | **still not shown: the product has no such mode** | source check: `TeamSubmissionStatus` is approved one by one. Recorded as a product gap |
+| Roster lock beat | present | **deleted** | `OWNER` |
+| Weekends | 13 of 19 on | **16 of 23 on: 13 session weekends at 2 or 3 a month, plus 3 finals weekends in March**, 7 off | `OWNER` ("the real NPH rhythm") |
+| Fridays | not shown | **shown and left on No** | `PRODUCT` `plan/gyms-weekends-step.tsx` `friday-declaration`, "Can games run on Fridays?"; `DB` `Season.fridayPolicy` = null |
+| Home gym card line | the product's "You own this one. Its games cost you nothing..." | **"Your home gym. It fills first."** | `OWNER`. A deliberate divergence from shipping copy, logged in the corrections doc |
+| "Courts left empty" panel | on screen | **removed from the demo** | `OWNER`. The product still draws it |
+| Divisions | a static list of 16 | **a chapter: Grade 10's 42 teams into 4 divisions, teams dragged between columns, cross-play chosen** | `PRODUCT` `manage/components/division-setup.tsx`; `DB` Grade 10 = 42 teams. Cross-play "Yes, they can mix" posts `scheduling: "PREFER"` |
+| Season division total | 16 | **16**, unchanged: Grade 10's four are part of that count | `DB` |
+| Board columns | 5 | **4 (Oct to Jan)**, each with its "Not planned" weekends, the gym tray, the HIGHLIGHT row, Move and ⋯ on every gym section, six-dot grips | `PRODUCT` + capture `gold-standard/real2/s3-board.png` |
+| The tension | a commit that FAILS on the Schedule tab | **one weekend booked ONE COURT SHORT, amber on the board** | `OWNER` ("no ambush; the tension lives on the board") |
+| Nov 21 to 22 | 84 games against 80 slots, refused by the auditor | **84/80 games, tight**: The Playground 3 courts holds Gr 8 (9) + Gr 9 (25) + Jr Girls (8) = 42 in 48; Six Park East on 2 courts holds Gr 10's 42 games in 32. **10 short** | `ARITH` on `DB` grade counts, 8 slots a court a day over 2 days |
+| The fix, part 1 | renting a court from an auditor option | **the drawer's own idea, applied by DRAGGING the Six Park block to Nov 28 to 29**: 21st becomes 42/48, 28th becomes 78/80 | `PRODUCT` `plan/work-rail.tsx` idea rows; the problem sentence is `planner-core.ts`: "{weekend} needs {demand} games and has {capacity} slots, {short} short. Extend the hours, add a court, or move a grade to a lighter weekend." |
+| The fix, part 2 | n/a | **a third court at Six Park East on Nov 28 to 29, from the section's ⋯ menu**: 78/96, every weekend fits | `PRODUCT` `plan-ui.tsx` `GymMenu`, "Courts this date", apply button "We rented 3 courts" |
+| What is left to book | 18 court-days · 180 court-hours on a full sheet | **20 court-days · 200 court-hours**, in the rail footer where the product puts it | `ARITH`: rentals are Oct 24 to 25 (2 courts), Nov 28 to 29 (3), Dec 5 to 6 (2), Jan 9 to 10 (3) = 10 court x 2 days = 20 court-days at 10 hours a court-day (8 slots x 75 min) |
+| The four promises | four sentences narrated over a panel | **the product's own fairness table, worst team first**, with maximums and zeros: 0 games short, 0 back-to-backs, 0 five-hour waits, 0 same-day-two-gym days | `PRODUCT` `manage/components/summary-panel.tsx` `FairnessSummaryTable`. **PROVENANCE: the four rows are staged to the engine's own hard rules, not read from a run of this five-column board.** The seeded world's committed schedule ran on a different session mix, so no run of THIS calendar exists to quote |
+| Team-expansion beat | pitched in earlier cuts | **not in this cut**, for the same provenance reason | `OWNER` ("only if you can prove the engine produced it") |
+| Requests | both "no start after noon on Sunday" | **A: "Games every Saturday start no earlier than 12:00" (Ottawa drive in). B: "Games every Sunday finish no later than 17:00" (Gatineau, five hour drive home)** | `OWNER` + `PRODUCT` `describeScheduleRequest` sentence shape |
+| The published list | 4 rows, one game Saturday and one Sunday | **12 rows, all Saturday Nov 28, Grade 10 at Six Park East, every team twice on the same day at the same building**, and no team in adjacent slots | `OWNER` ("same-day pairs: two games, one day, one trip"). `ARITH`: 3 teams a division play 3 games over slots 1, 3 and 5, which is the only 3-team pattern with no back-to-back |
+| The phone | an empty month grid, then a list of games | **the real agenda view**: Jordan's practices on Nov 17, 19 and 24 are there BEFORE the publish, and Saturday's two games fill in around them | `PRODUCT` `app/(platform)/calendar/my-calendar.tsx` agenda view, date rail plus a card whose left edge carries the kind's colour (`var(--brand)` practice, `var(--energy)` game) |
+| Who sees it | "everybody sees the same 730 games" | **every team's calendar is there at once, and everyone sees their own**: parents, coaches, team managers, club owners | `OWNER` |
+| The league logo | not shown | **the real North Pole Hoops mark on every console screen** | `scripts/demo-assets/nph-logo.dataurl.txt`, seeded to `Organization.logoUrl` by `scripts/seed-nph-demo.ts`; decoded to `apps/web/public/demo/nph-logo.png` for the demo |
+| Chapters | 5 | **6**: Teams come in · The buildings · Divisions · The board · Two requests · Publish once | `OWNER` |
+| Runtime | 3 min 32 sec | **3 min 39 sec**, 49 steps | measured from `data-demo-runtime-ms` |
+| Player controls | speed chips, "Beat N of M", "Back to intro" | **gone**: Back, Pause and Next as real buttons, space and the arrow keys, one calm end card | `OWNER` (engine change, all demos) |
+
 ## 0. The two corrections (owner, 2026-08-16, second pass)
 
 ### 0.1 The team fee has no installments

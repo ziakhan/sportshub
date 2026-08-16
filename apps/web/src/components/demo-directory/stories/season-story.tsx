@@ -2,22 +2,23 @@
 
 import type { ReactNode } from "react"
 import {
-  AskSheet,
   Btn,
   Chip,
   ConsoleTabs,
+  CrossPlay,
   Dialog,
-  Finding,
+  DivisionsBoard,
+  FairnessTable,
   FilterRow,
+  FridayChoice,
+  Grip,
   GymCard,
-  Journey,
+  GymMenu,
+  GymTray,
+  NotPlanned,
   Panel,
-  PhoneEmpty,
-  PhoneGame,
-  PhoneMonth,
   PhoneNotice,
   PhoneScreen,
-  Promises,
   RequestRow,
   SessionColumn,
   SimulateResult,
@@ -27,96 +28,61 @@ import {
   Tile,
   WeekendCard,
   WeekendGrid,
+  WorkRail,
 } from "../scene-kit"
+import type { BoardGym } from "../scene-kit"
 import type { DemoBeat, DemoScript } from "../types"
 
 /**
- * Story 3, rebuilt to the gold standard (2026-08-16).
+ * Story 3, rebuilt from the owner's live feedback session (2026-08-16).
  *
- * WHAT CHANGED, AND WHY. The 2026-08-15 cut ran a fictional 30-team league
- * through a mock browser window scaled to about 0.85, which put its 9 to 12px
- * labels on the viewer's screen at 8 to 10px, and it moved so fast that the
- * decisions went by unread. Three owner rulings answer that, and all three are
- * law here:
+ * WHAT THE OWNER WATCHED, AND WHAT HE RULED. He drove the previous cut beat by
+ * beat and gave 31 rulings. The five that reshaped the story:
  *
- *   1. PRESENTATION (scenario audit D2). Scenes are focused working REGIONS
- *      composed at 1160 logical and rendered at scale 1.0. No fake browser
- *      chrome, no site header, one slim context strip. When the phone joins in
- *      the last chapter the desktop region is composed NARROWER rather than
- *      scaled down, and the phone arrives life size. The stage that does this
- *      is `SceneStage`; `scripts/demo/readability-audit.mjs` is the gate.
- *   2. PACING ("slow is the point"). Every beat is stop, explain, act: the
- *      cursor arrives, the balloon says WHY, it holds long enough to read
- *      (computed from its own word count), and only then does the screen move.
- *      When a beat carries a balloon the caption bar goes quiet, so the viewer
- *      is never read to twice.
- *   3. THE REAL LEAGUE. Every number comes from the seeded NPH Showcase League,
- *      the pitch run-sheet or an owner ruling, and every one of them is written
- *      down with its source in `docs/roadmap/season-story-numbers.md`. Nothing
- *      on screen is invented, including the refusal: 84 games against 80 slots
- *      is what the real auditor said on the real world.
+ *   1. THE BOARD IS THE DEMO. Not a screen the story passes through: the heart
+ *      of it. So the board here is drawn from the real capture
+ *      (`gold-standard/real2/s3-board.png`) rather than sketched: the gym tray
+ *      with its six-dot grips, the HIGHLIGHT row, "Not planned" weekends, the
+ *      fraction chips in games, the Move button and the ⋯ menu on every gym
+ *      section, and the right-hand suggestions drawer. The three moments that
+ *      get the screen time are the drawer, the tight-gym adjustment and the
+ *      drag.
+ *   2. NO AMBUSH. The old cut walked to the Schedule tab and let the commit
+ *      FAIL as a surprise. That chapter is gone. The tension lives where a
+ *      league really meets it, on the board: one weekend was booked one court
+ *      short, the board says so in amber, and the fix happens there.
+ *   3. THE REAL CLICK PATH. Teams tab, submission page, plan step 2, divisions,
+ *      the board, the requests panel, publish. Scenes the owner did not
+ *      recognize are deleted: the court-summaries screen, the 13-court-hours
+ *      suggestion panel and the rented-at-Six-Park screen.
+ *   4. REGISTRATION ARRIVES NEARLY DONE. 144 of 146 are in and the league is
+ *      answering the last four: one through the submission page, where the fee
+ *      obligation appears, and the rest from the list, which is what the real
+ *      Teams tab's pending rows offer (`teams-tab.tsx`: "the row keeps only
+ *      triage, badges plus Approve/Reject for pending teams").
+ *   5. PROVE IT OR DROP IT. A claim survives only if the screen shows it. The
+ *      four sentences the old cut narrated over a panel are now the product's
+ *      own fairness table, worst team first, and the published games land as
+ *      same-day pairs because that is the thing being sold: one trip.
  *
- * TWO OWNER REJECTIONS, ANSWERED (2026-08-16, second pass). Both were the
- * same failure: a beat borrowed from an OLD flow instead of the shipping one.
+ * SOURCE CHECKS THIS CUT RESTED ON (all read out of shipping code, and the
+ * misses are written down in `docs/roadmap/product-corrections-from-demo-feedback.md`):
+ *   · Fridays: REAL. `gyms-weekends-step.tsx` `friday-declaration`, "Can games
+ *     run on Fridays?", left on No here.
+ *   · The gym card sentence and the "Courts left empty" panel: the product's
+ *     own prose, and the owner rejected both. The card carries his line here
+ *     and the panel is gone from the demo; the product keeps its text until
+ *     somebody changes it there.
+ *   · Divisions: REAL. `manage/components/division-setup.tsx`, drag between
+ *     columns and the cross-play question, both mirrored.
+ *   · Fairness: REAL. `manage/components/summary-panel.tsx` `FairnessSummaryTable`,
+ *     worst first by burden.
+ *   · Free entry until the deadline: NOT IN THE PRODUCT. Every entry is
+ *     approved one by one, so this demo shows that and the gap is recorded.
+ *   · The league logo: REAL, `scripts/demo-assets/nph-logo.dataurl.txt`, seeded
+ *     onto the North Pole Hoops organization.
  *
- *   DEFECT 1, THE FEE. The first cut put a $987.50 deposit and three
- *   installments under the $3,950 team fee. `computeDefaultPlan`
- *   (`lib/payments/installments.ts`) belongs to the parent-to-club OFFER
- *   flow: its only callers are the offer accept path and the money story.
- *   The league team fee has no installments at all. What really happens is in
- *   `api/seasons/[id]/teams/[teamId]/route.ts`: approving a submission calls
- *   `ensureObligation` ONCE, for the whole fee, dated the season's balance
- *   rule. So this demo shows one obligation, its amount and its date, and
- *   stops there.
- *
- *   DEFECT 2, THE BUILDINGS. The first cut staged an August-1-era ledger of
- *   booked hours: one gym attached, five of six courts booked, more buildings
- *   bought later. That is not the model any more. Owner, verbatim: "The
- *   Burlington playground is their home court. We select a damn home court
- *   then we give you floater gyms and then you don't have to give the booking
- *   of those gyms. We just schedule them and tell you how many you need."
- *   That is exactly what `plan/gyms-weekends-step.tsx` and the board do, and
- *   the seeded season agrees: SeasonVenue has The Playground as `home` and
- *   Six Park East and Haber Recreation Centre in the `pool`. The buildings
- *   chapter is composed on that model now, and it ends on the product's own
- *   ask sheet, which states the hours.
- *
- * TRUTH TO THE PRODUCT. Screen by screen, this mirrors what shipped, and the
- * deviations are written down in the fidelity sheet rather than smuggled:
- *   · the console tab strip (Overview, Clubs, Teams, Plan Your Season,
- *     Schedule, Standings, Playoffs, Referees) and the Teams tab's REGISTERED
- *     TEAMS panel with its All / Pending / Approved / Rejected filters, its
- *     Any payment / Unpaid / Paid row and its APPROVED and PAID chips;
- *   · the team page's Entry fee line, "$3,950.00 · balance due <date> ·
- *     nothing received yet", which is what that panel renders and all it
- *     renders;
- *   · the plan wizard's five steps with their real hints, "When would you like
- *     to run sessions?" with its month-grouped weekend chips, "Courts left
- *     empty", the home-gym and in-the-pool cards with their own sentences, the
- *     optional "Already have dates booked here?" and its skip line;
- *   · the step 3 board with its session columns, its is/of fraction chips, its
- *     per-gym grade chips and the gold "assumed, not booked yet" mark a
- *     floater wears until somebody phones it;
- *   · "What you need to book", the ask sheet, in court-days and court-hours,
- *     month by month;
- *   · the Schedule tab's Plan, Divisions, Generate, Publish strip, "Preview
- *     whole season", "Commit whole season" and "Publish schedule · N new";
- *   · the auditor's own sentence from `lib/scheduler-v2/audit.ts`, finding
- *     `grade-does-not-fit`, with its three options in its own order. It was
- *     re-run against the recomposed weekend to be sure it still refuses, and
- *     that it stops refusing once the court is rented;
- *   · the schedule request row that `describeScheduleRequest` writes, and the
- *     Simulate cost panel with its six delta chips and its "none, everyone else
- *     is unaffected" verdict.
- *
- * WHAT IS DELIBERATELY NOT HERE. The run-sheet pitches a Scenarios button for
- * "distribute by venue". That API exists and returns exactly that card, but no
- * screen calls it yet, so this demo does not draw a scenarios panel it would
- * have to invent, and it does not stage a buy-two-more-buildings beat either:
- * the pool is there from the first screen, and the board's own placement is
- * what proves a grade lands in one building. Push notifications are not
- * claimed anywhere; the phone gets the in-app notice and the calendar
- * subscription, which is what works today.
+ * Every number still carries a line in `docs/roadmap/season-story-numbers.md`.
  */
 
 /* ── Cast, all real ──────────────────────────────────────────────────────── */
@@ -130,150 +96,219 @@ const CTX_SCHEDULE = `${LEAGUE} · ${SEASON} · Schedule`
 const CTX_REQUESTS = `${LEAGUE} · ${SEASON} · Teams · Schedule requests`
 
 const FEE = "$3,950"
-/** Season start (Nov 1 2026) less the balance rule's 14 days. One date, one
- *  obligation: the league team fee has no installment plan. */
+/** Season start (Nov 1 2026) less the balance rule's 14 days. */
 const FEE_DUE = "Oct 18, 2026"
 
-/**
- * The league's buildings, exactly as SeasonVenue holds them for this season:
- * one HOME gym the league owns, and a POOL of floaters it rents by the court
- * when a weekend needs the space. The pool is ranked, and the planner rents
- * from the top of the list first.
- */
-const PLAYGROUND = { name: "The Playground", city: "Burlington", dot: "#16a34a" }
-const SIX_PARK = { name: "Six Park East", city: "Oshawa", dot: "#a855f7" }
-const HABER = { name: "Haber Recreation Centre", city: "Burlington", dot: "#2563eb" }
+/** The league's buildings, as SeasonVenue holds them, in the board's own hues. */
+const PLAYGROUND = { name: "The Playground", short: "Playground", city: "Burlington", dot: "#16a34a" }
+const SIX_PARK = { name: "Six Park East", short: "Six Park", city: "Oshawa", dot: "#a855f7" }
+const HABER = { name: "Haber Recreation Centre", short: "Haber", city: "Burlington", dot: "#2563eb" }
 
-/** The 19 candidate weekends. 13 are on: the official calendar, Oct 24 to Feb 20. */
+/**
+ * THE CALENDAR (owner ruling: "the real NPH rhythm").
+ *
+ * Two or three weekends a month from late October to February, thirteen of
+ * them, then three finals weekends in March. Seven candidate weekends stay
+ * off, and they read off, because a wall of blue tells a league nothing.
+ */
 const WEEKEND_MONTHS = [
   { month: "Oct", weekends: [{ label: "10–11", on: false }, { label: "24–25", on: true }, { label: "31–1", on: true }] },
-  { month: "Nov", weekends: [{ label: "7–8", on: false }, { label: "14–15", on: true }, { label: "21–22", on: true, id: "wk-nov21" }, { label: "28–29", on: true }] },
-  { month: "Dec", weekends: [{ label: "5–6", on: true }, { label: "12–13", on: true }, { label: "19–20", on: false }] },
-  { month: "Jan", weekends: [{ label: "9–10", on: true }, { label: "16–17", on: true }, { label: "23–24", on: true }, { label: "30–31", on: true }] },
-  { month: "Feb", weekends: [{ label: "6–7", on: true }, { label: "13–14", on: true }, { label: "20–21", on: true }] },
-  { month: "Finals", weekends: [{ label: "27–28", on: true }, { label: "Mar 6–7", on: true }, { label: "Mar 13–14", on: true }] },
+  {
+    month: "Nov",
+    weekends: [
+      { label: "7–8", on: false },
+      { label: "14–15", on: true },
+      { label: "21–22", on: true },
+      { label: "28–29", on: true },
+    ],
+  },
+  {
+    month: "Dec",
+    weekends: [
+      { label: "5–6", on: true },
+      { label: "12–13", on: true },
+      { label: "19–20", on: false },
+      { label: "26–27", on: false },
+    ],
+  },
+  {
+    month: "Jan",
+    weekends: [
+      { label: "2–3", on: false },
+      { label: "9–10", on: true },
+      { label: "16–17", on: true },
+      { label: "23–24", on: false },
+      { label: "30–31", on: true },
+    ],
+  },
+  {
+    month: "Feb",
+    weekends: [
+      { label: "6–7", on: true },
+      { label: "13–14", on: true },
+      { label: "20–21", on: true },
+      { label: "27–28", on: false },
+    ],
+  },
+  { month: "Mar", weekends: [{ label: "6–7", on: true }, { label: "13–14", on: true }, { label: "20–21", on: true }] },
 ]
+const WEEKENDS_ON = "16 of 23 weekends on"
 
 /**
- * THE BOARD, on the current hosting model.
+ * THE BOARD.
  *
- * The home gym fills FIRST, at full capacity, before anything is rented, and
- * what spills takes as few rented gyms as it can. The Playground runs three
- * courts, and at 8 slots a court a day over two days that is 48 games a
- * weekend; every grade above that line lands on a floater. A rented section
- * the draw took by itself reads ASSUMED until somebody phones the gym.
+ * A weekend's demand is the sum of the team counts of the grades placed on it
+ * (a grade of N teams playing twice is N games), and its supply is courts x 8
+ * slots a day x 2 days. The Playground is the home gym and fills first; what
+ * spills is rented, and a rental the draw took by itself reads assumed until
+ * somebody phones the gym.
  *
- * Every fraction is the games placed over the slots held, and both sides are
- * arithmetic on the grade counts and the courts: see
- * `docs/roadmap/season-story-numbers.md` section D.
+ * THE ONE PROBLEM: Nov 21 to 22 was booked TWO courts at Six Park East, and
+ * Grade 10's 42 games need three. 84 games against 80 slots, ten of them with
+ * nowhere to go at that gym. See `docs/roadmap/season-story-numbers.md` D.
  */
-const BOARD = [
-  {
-    session: "Session 1 · Oct",
-    date: "Oct 24–25",
-    fraction: "62/80",
-    tone: "fits" as const,
-    gyms: [
-      { ...gym(PLAYGROUND, "3/3 courts"), grades: ["Gr 7 (12)", "Gr 11 (24)"] },
-      { ...gym(SIX_PARK, "2/6 courts"), grades: ["Gr 12 (26)"], status: "assumed" as const },
-    ],
-  },
-  {
-    session: "Session 2 · Nov",
-    date: "Nov 21–22",
-    fraction: "84/80",
-    tone: "over" as const,
-    id: "board-nov21",
-    gyms: [
-      { ...gym(PLAYGROUND, "3/3 courts"), grades: ["Gr 8 (9)", "Gr 9 (25)", "Jr Girls (8)"] },
-      { ...gym(SIX_PARK, "2/6 courts"), grades: ["Gr 10 (42)"] },
-    ],
-  },
-  {
-    session: "Session 3 · Dec",
-    date: "Dec 5–6",
-    fraction: "49/80",
-    tone: "fits" as const,
-    gyms: [
-      { ...gym(PLAYGROUND, "3/3 courts"), grades: ["Gr 9 (25)"] },
-      { ...gym(HABER, "2/6 courts"), grades: ["Gr 11 (24)"], status: "assumed" as const },
-    ],
-  },
-  {
-    session: "Session 4 · Jan",
-    date: "Jan 9–10",
-    fraction: "68/96",
-    tone: "fits" as const,
-    gyms: [
-      { ...gym(PLAYGROUND, "3/3 courts"), grades: ["Gr 12 (26)"] },
-      { ...gym(SIX_PARK, "3/6 courts"), grades: ["Gr 10 (42)"], status: "assumed" as const },
-    ],
-  },
-  {
-    session: "Session 5 · Feb",
-    date: "Feb 6–7",
-    fraction: "45/48",
-    tone: "fits" as const,
-    gyms: [
-      {
-        ...gym(PLAYGROUND, "3/3 courts"),
-        grades: ["Gr 7 (12)", "Gr 9 (25)", "Jr Girls (8)"],
-      },
-    ],
-  },
-]
-
-function gym(v: { name: string; dot: string }, courts: string) {
-  return { gym: v.name, dot: v.dot, courts }
+type Card = {
+  id?: string
+  date: string
+  fraction: string
+  tone: "fits" | "tight" | "over"
+  gyms: BoardGym[]
 }
 
-/**
- * WHAT YOU NEED TO BOOK, before the November court is added. Every row is
- * `courts x days x hours` the way `lib/scheduler/planner-core.ts` computes
- * `hoursNeeded`, over the rentals on the board above. February never leaves
- * the building the league owns, so it has no row.
- */
-const ASK_SEASON = "18 court-days · 180 court-hours"
-const ASK_MONTHS = [
-  { label: "Oct 2026", courtDays: "4 court-days", courtHours: "40 court-hours", weekends: "1 weekend needing rent", chunks: "one weekend of 2 courts" },
-  { label: "Nov 2026", courtDays: "4 court-days", courtHours: "40 court-hours", weekends: "1 weekend needing rent", chunks: "one weekend of 2 courts" },
-  { label: "Dec 2026", courtDays: "4 court-days", courtHours: "40 court-hours", weekends: "1 weekend needing rent", chunks: "one weekend of 2 courts" },
-  { label: "Jan 2027", courtDays: "6 court-days", courtHours: "60 court-hours", weekends: "1 weekend needing rent", chunks: "one weekend of 3 courts" },
+function gym(v: { short: string; dot: string }, courts: string, grades: string[], extra?: Partial<BoardGym>): BoardGym {
+  return { gym: v.short, dot: v.dot, courts, grades, ...extra }
+}
+
+const OCT: Card[] = [
+  {
+    date: "Oct 24–25",
+    fraction: "62/80 games",
+    tone: "fits",
+    gyms: [
+      gym(PLAYGROUND, "3/3 courts", ["Gr 7 (12)", "Gr 11 (24)"]),
+      gym(SIX_PARK, "2/6 courts", ["Gr 12 (26)"], { free: "4 free", status: "assumed" }),
+    ],
+  },
+  {
+    date: "Oct 31–Nov 1",
+    fraction: "33/48 games",
+    tone: "fits",
+    gyms: [gym(PLAYGROUND, "3/3 courts", ["Gr 9 (25)", "Jr Girls (8)"])],
+  },
 ]
 
-/** The seven grades and their divisions, straight off the Schedule tab. */
-const DIVISIONS = [
-  { grade: "Grade 7", teams: 12, divisions: "1 division" },
-  { grade: "Grade 8", teams: 9, divisions: "1 division" },
-  { grade: "Grade 9", teams: 25, divisions: "Division A (13) · B (12)" },
-  { grade: "Grade 10", teams: 42, divisions: "Division A to D" },
-  { grade: "Grade 11", teams: 24, divisions: "Division A (12) · B (12)" },
-  { grade: "Grade 12", teams: 26, divisions: "Division A (13) · B (13)" },
-  { grade: "Junior Girls", teams: 8, divisions: "1 division" },
+const DEC: Card[] = [
+  {
+    date: "Dec 5–6",
+    fraction: "49/80 games",
+    tone: "fits",
+    gyms: [
+      gym(PLAYGROUND, "3/3 courts", ["Gr 9 (25)"]),
+      gym(HABER, "2/6 courts", ["Gr 11 (24)"], { free: "4 free", status: "assumed" }),
+    ],
+  },
+  {
+    date: "Dec 12–13",
+    fraction: "42/48 games",
+    tone: "fits",
+    gyms: [gym(PLAYGROUND, "3/3 courts", ["Gr 10 (42)"])],
+  },
 ]
 
-/**
- * The auditor's sentence, and it is not a paraphrase: `lib/scheduler-v2/audit.ts`
- * was run against this exact weekend (The Playground holding Grade 8, Grade 9
- * and Junior Girls, Grade 10 at Six Park East on a 2-court booking) and
- * returned finding `grade-does-not-fit` with arithmetic
- * `{demand: 42, supply: 32, short: 10}` and these three options in this order.
- * Renting a third court there clears it. The product's own em-dash is a middot
- * here, per the house copy rule.
- */
-const FIT_MESSAGE =
-  "Weekend of Nov 21 to 22 · Grade 10: 42 · 42 games need this gym, but the booking holds 32 (16 + 16 slots by day). Short by 10 games."
-const FIT_OPTIONS = [
-  "Add about 13 court-hours at this gym that weekend.",
-  "Move a grade to a gym with more room that weekend.",
-  "Lower the weekend target from 2 games per team to 1 in Planning.",
+const JAN: Card[] = [
+  {
+    date: "Jan 9–10",
+    fraction: "68/96 games",
+    tone: "fits",
+    gyms: [
+      gym(PLAYGROUND, "3/3 courts", ["Gr 12 (26)"]),
+      gym(SIX_PARK, "3/6 courts", ["Gr 10 (42)"], { free: "3 free", status: "assumed" }),
+    ],
+  },
+  {
+    date: "Jan 16–17",
+    fraction: "45/48 games",
+    tone: "fits",
+    gyms: [gym(PLAYGROUND, "3/3 courts", ["Gr 7 (12)", "Gr 9 (25)", "Jr Girls (8)"])],
+  },
 ]
 
-const PROMISES = [
-  "No team plays two games with no rest between them, all season.",
-  "Nobody waits five hours at a gym for their second game.",
-  "A grade stays in one building on a weekend, so a family drives to one address.",
-  "No court and no team is ever booked twice.",
+/** November, the column the story happens in, in its four states. */
+function november(
+  moved: boolean,
+  court: boolean,
+  dragging: boolean,
+  menu: ReactNode
+): Card[] {
+  const spill = gym(SIX_PARK, court ? "3/6 courts" : "2/6 courts", ["Gr 10 (42)"], {
+    free: court ? "3 free" : "4 free",
+    status: "assumed",
+    short: court ? undefined : "10 short",
+    id: "block-sixpark",
+    menuId: "sixpark-menu",
+    dragging,
+    menu,
+  })
+  return [
+    {
+      id: "card-nov21",
+      date: "Nov 21–22",
+      fraction: moved ? "42/48 games" : "84/80 games",
+      tone: moved ? "fits" : "tight",
+      gyms: [
+        gym(PLAYGROUND, "3/3 courts", ["Gr 8 (9)", "Gr 9 (25)", "Jr Girls (8)"]),
+        ...(moved ? [] : [spill]),
+      ],
+    },
+    {
+      id: "card-nov28",
+      date: "Nov 28–29",
+      fraction: moved ? (court ? "78/96 games" : "78/80 games") : "36/48 games",
+      tone: moved && !court ? "tight" : "fits",
+      gyms: [gym(PLAYGROUND, "3/3 courts", ["Gr 7 (12)", "Gr 11 (24)"]), ...(moved ? [spill] : [])],
+    },
+  ]
+}
+
+/** The rail's own sentence for the weekend in trouble (`planner-core.ts`). */
+const RAIL_PROBLEM = {
+  label: "Nov 21–22",
+  fraction: "84/80",
+  text: "Nov 21–22 needs 84 games and has 80 slots, 4 short. Extend the hours, add a court, or move a grade to a lighter weekend.",
+}
+const RAIL_IDEA = {
+  headline: "Move Six Park East's 42 games",
+  detail: "From Nov 21–22 (84 of 80) to Nov 28–29 (78 of 80 after). Six Park East needs a third court there.",
+  tag: "clears shortage",
+  id: "rail-idea",
+}
+const RAIL_ASK = "What you need to book: 20 court-days · 200 court-hours"
+
+/* ── The teams table ─────────────────────────────────────────────────────── */
+
+type Entry = {
+  club: string
+  division: string
+  status: "APPROVED" | "PENDING" | "REJECTED"
+  payment?: "PAID" | "UNPAID"
+  id?: string
+}
+
+/** Thirteen of the 146, the way the list opens: every club name is the world's. */
+const ENTRIES: Entry[] = [
+  { club: "Royal Crown", division: "Grade 10 Boys · Division B", status: "PENDING", id: "row-royal" },
+  { club: "Burloak Elite", division: "Grade 9 Boys · Division A", status: "PENDING", id: "row-burloak" },
+  { club: "Dragons de Gatineau", division: "Grade 11 Boys · Division A", status: "PENDING", id: "row-dragons" },
+  { club: "MBA", division: "Grade 7 Boys", status: "PENDING", id: "row-mba" },
+  { club: "PDM Basketball", division: "Grade 7 Boys", status: "APPROVED", payment: "PAID" },
+  { club: "City Above Elite", division: "Grade 7 Boys", status: "APPROVED", payment: "PAID" },
+  { club: "M and R Basketball", division: "Grade 7 Boys", status: "APPROVED", payment: "PAID" },
+  { club: "Ottawa Elite", division: "Grade 10 Boys · Division B", status: "APPROVED", payment: "PAID" },
+  { club: "CE23 Academy", division: "Grade 9 Boys · Division A", status: "APPROVED", payment: "PAID" },
+  { club: "MBA", division: "Grade 8 Boys", status: "APPROVED", payment: "PAID" },
+  { club: "HoopHer", division: "Junior Girls", status: "APPROVED", payment: "UNPAID" },
+  { club: "Royal Crown", division: "Grade 12 Boys · Division A", status: "APPROVED", payment: "PAID" },
+  { club: "Barrie Buccaneers", division: "Grade 7 Boys", status: "REJECTED" },
 ]
 
 /** The submitted roster. Fictional players by design: real rosters are minors. */
@@ -292,27 +327,94 @@ const ROSTER = [
   "B. Laurin #9",
 ]
 
-const REQUEST_SENTENCE = "Games every Sunday start no later than 12:00"
+/* ── Divisions ───────────────────────────────────────────────────────────── */
 
-/** Jordan's games, on the 75-minute slot grid inside the booked day. */
-const HER_GAMES = [
-  { day: "Sat 21", title: "vs Ottawa Elite", meta: "10:00 AM · Six Park East, Court 3" },
-  { day: "Sun 22", title: "at City Above Elite", meta: "11:15 AM · Six Park East, Court 1" },
-  { day: "Sat 28", title: "vs CE23 Academy", meta: "1:45 PM · Six Park East, Court 2" },
+const G10_POOL = ["Royal Crown", "Ottawa Elite", "City Above Elite", "PDM Basketball", "MBA"]
+const G10_DIVISIONS = [
+  { name: "Grade 10 · A", dot: "#a855f7", teams: ["Burloak Elite", "CE23 Academy", "M and R"] },
+  { name: "Grade 10 · B", dot: "#16a34a", teams: ["Royal Crown", "Ottawa Elite", "Barrie Bucs"] },
+  { name: "Grade 10 · C", dot: "#2563eb", teams: ["City Above Elite", "HoopHer 10", "PDM"] },
+  { name: "Grade 10 · D", dot: "#b45309", teams: ["MBA", "Dragons", "Six Park Sel."] },
 ]
-const HER_GAME_DAYS = [21, 22, 28, 29]
+
+/* ── Fairness, worst team first ──────────────────────────────────────────── */
+
+const FAIRNESS = [
+  { team: "Dragons de Gatineau", burden: "2", games: "10", short: "0", b2b: "0", waits: "0", twoGyms: "0" },
+  { team: "Barrie Buccaneers", burden: "2", games: "10", short: "0", b2b: "0", waits: "0", twoGyms: "0" },
+  { team: "HoopHer", burden: "1", games: "10", short: "0", b2b: "0", waits: "0", twoGyms: "0" },
+  { team: "Royal Crown", burden: "0", games: "10", short: "0", b2b: "0", waits: "0", twoGyms: "0" },
+]
+
+/* ── Requests ────────────────────────────────────────────────────────────── */
+
+const REQ_OTTAWA = "Games every Saturday start no earlier than 12:00"
+const REQ_GATINEAU = "Games every Sunday finish no later than 17:00"
+
+/* ── The published weekend, and one family's phone ───────────────────────── */
+
+/**
+ * The league's own list, and the thing it proves: every team's two games are
+ * on ONE day, at ONE building. That is the trip a family drives.
+ */
+const PUBLISHED = [
+  ["Sat Nov 28 · 10:00 AM", "Royal Crown vs Ottawa Elite", "Division B · Six Park East, Court 3"],
+  ["Sat Nov 28 · 10:00 AM", "Burloak Elite vs CE23 Academy", "Division A · Six Park East, Court 1"],
+  ["Sat Nov 28 · 10:00 AM", "City Above Elite vs HoopHer 10", "Division C · Six Park East, Court 2"],
+  ["Sat Nov 28 · 11:15 AM", "MBA vs Dragons de Gatineau", "Division D · Six Park East, Court 1"],
+  ["Sat Nov 28 · 12:30 PM", "Barrie Buccaneers vs Royal Crown", "Division B · Six Park East, Court 3"],
+  ["Sat Nov 28 · 12:30 PM", "M and R Basketball vs Burloak Elite", "Division A · Six Park East, Court 1"],
+  ["Sat Nov 28 · 12:30 PM", "PDM Basketball vs City Above Elite", "Division C · Six Park East, Court 2"],
+  ["Sat Nov 28 · 1:45 PM", "Six Park Selects vs MBA", "Division D · Six Park East, Court 2"],
+  ["Sat Nov 28 · 3:00 PM", "Ottawa Elite vs Barrie Buccaneers", "Division B · Six Park East, Court 3"],
+  ["Sat Nov 28 · 3:00 PM", "CE23 Academy vs M and R Basketball", "Division A · Six Park East, Court 1"],
+  ["Sat Nov 28 · 3:00 PM", "HoopHer 10 vs PDM Basketball", "Division C · Six Park East, Court 2"],
+  ["Sat Nov 28 · 4:15 PM", "Dragons de Gatineau vs Six Park Selects", "Division D · Six Park East, Court 3"],
+]
+
+/**
+ * Jordan's week on his mother's phone, in the real agenda the family calendar
+ * draws (`app/(platform)/calendar/my-calendar.tsx` in its agenda view). The
+ * practices are already there before the league publishes anything: the games
+ * fill in AROUND them.
+ */
+type AgendaItem = {
+  day: string
+  weekday: string
+  time: string
+  title: string
+  where: string
+  kind: "practice" | "game"
+}
+const PRACTICES: AgendaItem[] = [
+  { day: "19", weekday: "Thu", time: "7:00 PM", title: "Practice", where: "Royal Crown · Main gym", kind: "practice" },
+  { day: "24", weekday: "Tue", time: "7:00 PM", title: "Practice", where: "Royal Crown · Main gym", kind: "practice" },
+]
+const HER_GAMES: AgendaItem[] = [
+  {
+    day: "28",
+    weekday: "Sat",
+    time: "10:00 AM",
+    title: "vs Ottawa Elite",
+    where: "Six Park East, Court 3",
+    kind: "game",
+  },
+  {
+    day: "28",
+    weekday: "Sat",
+    time: "12:30 PM",
+    title: "at Barrie Buccaneers",
+    where: "Six Park East, Court 3",
+    kind: "game",
+  },
+]
 
 /* ── Pacing ──────────────────────────────────────────────────────────────── */
 
 /**
- * Stop, explain, act (owner ruling 2026-08-16: "slow is the point").
- *
- * A beat's dwell is not a guess. The hand takes CURSOR_ARRIVE_MS to reach its
- * target and the balloon lands with it, so the beat has to hold for the travel,
- * plus long enough to READ the balloon at about 180ms a word with a 900ms
- * buffer for the eye to find it, plus a settle so the action does not fire on
- * the last syllable. A beat with nothing to read still holds long enough to see
- * what moved.
+ * Stop, explain, act. The hand takes its travel time, the balloon lands with
+ * it and holds long enough to read at about 180ms a word, and only then does
+ * the screen move.
  */
 function paced(b: Omit<DemoBeat, "hold"> & { hold?: number }): DemoBeat {
   if (b.hold) return b as DemoBeat
@@ -331,8 +433,9 @@ export const seasonStory: DemoScript = {
   initialStage: "desktop",
   chapters: [
     { id: "entries", title: "Teams come in" },
-    { id: "calendar", title: "The buildings" },
-    { id: "generate", title: "The commit that fails" },
+    { id: "buildings", title: "The buildings" },
+    { id: "divisions", title: "Divisions" },
+    { id: "board", title: "The board" },
     { id: "requests", title: "Two requests" },
     { id: "publish", title: "Publish once" },
   ],
@@ -342,34 +445,26 @@ export const seasonStory: DemoScript = {
     paced({
       id: "open",
       chapter: "entries",
-      caption:
-        "NPH runs 146 teams across 82 clubs. Registration is open and 27 of them are in.",
-      emphasize: "tile-teams",
-      callout: "146 teams is the whole league. This is mid registration, not the end.",
+      caption: "144 of NPH's 146 teams are in, and four entries are waiting on the league.",
+      emphasize: "tile-waiting",
+      callout: "Clubs entered themselves. The league only answers the last few.",
       set: { screen: "teams" },
     }),
     paced({
       id: "pending",
       chapter: "entries",
-      caption: "Three clubs are waiting on the league.",
+      caption: "The league filters down to the four still pending.",
       cursor: "filter-pending",
       press: true,
-      callout: "Three entries are waiting on a decision. Everything else is answered.",
-      set: { filter: "Pending (3)" },
+      set: { filter: "Pending (4)" },
     }),
-    /* PRESS, THEN RESULT (2026-08-16). State is applied at the TOP of a beat,
-       so a beat that both presses a control and sets the state removing that
-       control sends the hand to something already gone, and a phone keyhole
-       pans to nothing. Every press in this story therefore leaves its own
-       state change, and the toast that confirms it, to the beat after it. That
-       is also the order the viewer reads: press, then result. */
     paced({
       id: "open-team",
       chapter: "entries",
       caption: "Royal Crown has entered a Grade 10 team.",
-      cursor: "team-royal",
+      cursor: "row-royal",
       press: true,
-      callout: "One team, one decision. The league approves each team on its own.",
+      callout: "One entry, one decision, and the club is not in until it is made.",
     }),
     paced({
       id: "approve",
@@ -381,17 +476,13 @@ export const seasonStory: DemoScript = {
       callout: "Approving is when the team is really in, and when it owes money.",
       set: { screen: "team" },
     }),
-    /* DEFECT 1, ANSWERED. Approving calls ensureObligation once, for the whole
-       fee, dated by the league's balance rule. One line, and it is the line
-       the real Entry fee panel renders. No deposit, no installments: that
-       engine belongs to the parent-to-club offer flow. */
     paced({
       id: "fee",
       chapter: "entries",
-      caption: `The entry fee appears: ${FEE}, balance due ${FEE_DUE}.`,
+      caption: `${FEE}, balance due ${FEE_DUE}.`,
       emphasize: "fee-panel",
       toast: "Royal Crown approved · Grade 10 Boys, Division B",
-      callout: `The ${FEE} obligation is raised by the approval itself. Nobody types an invoice.`,
+      callout: `The ${FEE} is raised by the approval itself. Nobody types an invoice.`,
       set: { approved: true, fee: true },
     }),
     paced({
@@ -399,290 +490,287 @@ export const seasonStory: DemoScript = {
       chapter: "entries",
       caption: "And what the club is buying: twelve games guaranteed.",
       emphasize: "promise",
-      callout:
-        "Twelve games guaranteed: ten regular season and two playoff. The schedule keeps it.",
+      callout: "Ten regular season and two playoff. The schedule has to keep it.",
       set: { promise: true },
     }),
     paced({
-      id: "money",
+      id: "inline",
       chapter: "entries",
-      caption: "Back on the list, the league can see who has paid.",
+      caption: "The other three are answered from the list.",
       context: CTX_TEAMS,
-      emphasize: "filter-pay",
-      callout: "One row of chips answers who owes the league money, across every team.",
-      set: { screen: "teams", pay: true },
-    }),
-    paced({
-      id: "lock",
-      chapter: "entries",
-      caption: "Rosters lock when registration closes, and changes come to the league.",
-      context: CTX_TEAMS,
-      cursor: "lock-policy",
+      cursor: "approve-burloak",
       press: true,
-      callout: "Once rosters lock, changes arrive here as requests, not quiet swaps.",
-      set: { screen: "teams", filter: "All (146)", lock: true },
+      callout: "A pending row carries the same decision. No page to open.",
+      set: { screen: "teams", filter: "Pending (3)" },
     }),
     paced({
-      id: "closed",
+      id: "cleared",
       chapter: "entries",
-      caption: "Registration closes. 146 teams, 145 approved, one rejected.",
-      emphasize: "tile-teams",
-      callout: "146 teams, all of them known before a single game is drawn.",
-      set: { closed: true },
+      caption: "146 teams, 145 approved, one rejected. Nothing is waiting.",
+      emphasize: "tile-waiting",
+      toast: "3 entries approved",
+      callout: "Every team is known, and every fee is raised, before a game is drawn.",
+      set: { closed: true, filter: "All (146)" },
     }),
 
-    /* ── 2. The buildings ─────────────────────────────────────────────────
-       DEFECT 2, ANSWERED. Owner: "We select a damn home court then we give
-       you floater gyms and then you don't have to give the booking of those
-       gyms. We just schedule them and tell you how many you need." That is
-       the shape of this chapter, and every sentence in it is the shipping
-       screen's own: the home-gym card, the in-the-pool card, the optional
-       bookings control with its skip line, and the ask sheet at the end. */
+    /* ── 2. The buildings ─────────────────────────────────────────────── */
     paced({
       id: "to-plan",
-      chapter: "calendar",
-      caption: "Now the buildings. This is the part every league does in a spreadsheet.",
+      chapter: "buildings",
+      caption: "Step two of planning the season is the buildings.",
       context: CTX_PLAN,
       set: { screen: "plan" },
-      callout: "Five steps: teams, buildings, calendar, publish, schedule. This is buildings.",
       emphasize: "rail-2",
+      callout: "This is the only screen in the season where hours get typed.",
     }),
     paced({
       id: "weekends",
-      chapter: "calendar",
-      caption: "Thirteen session weekends, Oct 24 to Feb 20.",
+      chapter: "buildings",
+      caption: "Two or three weekends a month, then three finals weekends in March.",
       emphasize: "weekend-grid",
-      callout:
-        "Choosing a weekend books nothing. It tells the draw which ones to fill first.",
+      callout: "Choosing a weekend books nothing. It tells the draw which ones to fill.",
+    }),
+    paced({
+      id: "friday",
+      chapter: "buildings",
+      caption: "NPH keeps Fridays clear.",
+      emphasize: "friday",
+      callout: "Leagues that want Friday evenings can have them. This one does not.",
     }),
     paced({
       id: "home",
-      chapter: "calendar",
-      caption: "The home court comes first: The Playground, in Burlington.",
+      chapter: "buildings",
+      caption: "The home court: The Playground, in Burlington.",
       cursor: "gym-home",
       hover: "gym-home",
-      callout:
-        "They own this one. Its games cost them nothing, so every weekend fills it before anything is rented.",
+      callout: "They own this one, so its games cost them nothing.",
     }),
     paced({
       id: "floaters",
-      chapter: "calendar",
+      chapter: "buildings",
       caption: "Then the floaters: Six Park East and Haber, in the pool.",
       emphasize: "gym-pool",
-      callout:
-        "A pool gym is rented by the court, only when a weekend needs the space. The planner rents from the top of this list first.",
+      callout: "A pool gym is rented by the court, only when a weekend needs the space.",
       set: { pool: true },
     }),
     paced({
       id: "no-bookings",
-      chapter: "calendar",
-      caption: "And no, the league does not have to book them.",
+      chapter: "buildings",
+      caption: "And the league does not have to book them first.",
       cursor: "gym-bookings",
       hover: "gym-bookings",
-      callout:
-        "One date is booked at Six Park East. For everything else the planner assumes what it needs and hands back a call list.",
+      callout: "One date is booked. For the rest the planner hands back a call list.",
       set: { skip: true },
     }),
+
+    /* ── 3. Divisions ─────────────────────────────────────────────────── */
+    paced({
+      id: "to-divisions",
+      chapter: "divisions",
+      caption: "Grade 10 came in 42 teams deep.",
+      context: CTX_SCHEDULE,
+      set: { screen: "divisions" },
+      emphasize: "div-head",
+      callout: "Forty two teams in one table is a season nobody can win or read.",
+    }),
+    paced({
+      id: "how-many",
+      chapter: "divisions",
+      caption: "Four divisions, about eleven teams each.",
+      cursor: "div-4",
+      press: true,
+      callout: "How many is the league's call. The product does not pick it.",
+      set: { shape: true },
+    }),
+    paced({
+      id: "deal",
+      chapter: "divisions",
+      caption: "Dealing them out is a starting point, not a verdict.",
+      cursor: "deal",
+      press: true,
+      set: { dealt: true },
+    }),
+    paced({
+      id: "drag-team",
+      chapter: "divisions",
+      caption: "So the league moves teams until the four are even.",
+      cursor: "div-col-b",
+      callout: "Any team, into any division, in either direction.",
+      set: { divMoved: true },
+    }),
+    paced({
+      id: "crossplay",
+      chapter: "divisions",
+      caption: "And says whether the divisions may play each other.",
+      cursor: "cross-yes",
+      press: true,
+      callout: "Divisions that never meet make a thin schedule. These may mix.",
+      set: { cross: true },
+    }),
+    paced({
+      id: "create",
+      chapter: "divisions",
+      caption: "Four divisions, created.",
+      cursor: "create-div",
+      press: true,
+      toast: "Grade 10 · 4 divisions created",
+      set: { created: true },
+    }),
+
+    /* ── 4. The board ─────────────────────────────────────────────────── */
     paced({
       id: "to-board",
-      chapter: "calendar",
-      caption: "Step three draws the calendar.",
-      cursor: "rail-3",
-      press: true,
-      callout: "Step three puts every grade on a weekend and in a building.",
-      set: { screen: "board" },
-    }),
-    paced({
-      id: "board",
-      chapter: "calendar",
-      caption: "The home court fills first. What spills is rented, and marked as assumed.",
-      emphasize: "board-nov21",
-      callout:
-        "Every weekend counts itself: games placed against slots held. One is already red.",
-      set: { drawn: true },
-    }),
-    paced({
-      id: "february",
-      chapter: "calendar",
-      caption: "February never leaves the building they own.",
-      emphasize: "board-feb",
-      callout: "45 games into 48 slots at their own gym. That weekend costs the league nothing.",
-    }),
-    paced({
-      id: "ask",
-      chapter: "calendar",
-      caption: "And the system says what is left to book, in hours.",
-      cursor: "ask-sheet",
-      press: true,
-      callout:
-        "18 court-days, 180 court-hours, month by month. That is the sheet somebody reads down the phone.",
-      set: { ask: true },
-    }),
-
-    /* ── 3. The commit that fails ─────────────────────────────────────── */
-    paced({
-      id: "to-schedule",
-      chapter: "generate",
-      caption: "The plan goes to the scheduler.",
-      context: CTX_SCHEDULE,
-      set: { screen: "schedule" },
-      callout: "Plan and divisions are done. This builds the real schedule.",
-      emphasize: "journey",
-    }),
-    paced({
-      id: "preview",
-      chapter: "generate",
-      caption: "Preview the whole season.",
-      cursor: "preview",
-      press: true,
-      callout: "One press builds all 730 games and checks every one of them.",
-      set: { run: 1 },
-    }),
-    paced({
-      id: "refuse",
-      chapter: "generate",
-      caption: "And it refuses.",
-      emphasize: "finding",
-      holdMs: 2400,
-      callout:
-        "It refuses, and it says why: the weekend, the grades, the arithmetic.",
-      set: { fit: "block" },
-    }),
-    paced({
-      id: "arithmetic",
-      chapter: "generate",
-      caption: "Grade 10 needs 42 games at Six Park East. The booking holds 32.",
-      emphasize: "finding",
-      callout:
-        "The one date they had booked is two courts. Two courts over two days hold 32.",
-    }),
-    paced({
-      id: "options",
-      chapter: "generate",
-      caption: "Three ways out, priced.",
-      cursor: "fix-hours",
-      hover: "fix-hours",
-      callout: "Thirteen more court-hours. That is a phone call with a number in hand.",
-    }),
-    paced({
-      id: "court6",
-      chapter: "generate",
-      caption: "So they rent a third court at Six Park East for that weekend.",
-      cursor: "fix-hours",
-      press: true,
-      toast: "Third court rented at Six Park East · 48 slots that weekend",
-      callout: "Nobody rents thirteen hours. They take the court, and it holds 48.",
-      set: { court6: true },
-    }),
-    paced({
-      id: "preview-2",
-      chapter: "generate",
-      caption: "Preview again.",
-      cursor: "preview",
-      press: true,
-      callout: "Same press, same 730 games, and now nothing is left unplaced.",
-      set: { run: 2, fit: "clear", promises: 0 },
-    }),
-    paced({
-      id: "p1",
-      chapter: "generate",
-      caption: "No back-to-backs, all season.",
-      set: { promises: 1 },
-      hold: 2400,
-    }),
-    paced({
-      id: "p2",
-      chapter: "generate",
-      caption: "No five-hour waits between a team's two games.",
-      set: { promises: 2 },
-      hold: 2400,
-    }),
-    paced({
-      id: "p3",
-      chapter: "generate",
-      caption: "A grade stays in one building on a weekend.",
-      set: { promises: 3 },
-      hold: 2400,
-    }),
-    paced({
-      id: "p4",
-      chapter: "generate",
-      caption: "And nothing is ever booked twice.",
-      set: { promises: 4 },
-      hold: 2600,
-    }),
-    /* The old journey's "distribute by venue" wow, told the way the product
-       really tells it: no scenarios panel (no screen calls that API yet), just
-       the board, where a grade sits in exactly one building on a weekend. */
-    paced({
-      id: "one-address",
-      chapter: "generate",
-      caption: "And on the board, every grade sits in one building that weekend.",
+      chapter: "board",
+      caption: "Step three puts every grade on a weekend and in a building.",
       context: CTX_PLAN,
-      emphasize: "board-nov21",
-      callout: "One grade, one address. A family drives to a gym, not to two.",
-      /* `ask` is still on from chapter 2, and the ask sheet replaces the
-         weekend grid this beat is ringing. Put the board back. */
-      set: { screen: "board", court6: true, ask: false },
+      set: { screen: "board" },
+      emphasize: "board-grid",
+      callout: "The home gym fills first, every weekend. What spills gets rented.",
+    }),
+    paced({
+      id: "tight",
+      chapter: "board",
+      caption: "One weekend is amber.",
+      emphasize: "card-nov21",
+      callout: "Amber is not a failure. The games do not fit the courts booked.",
+    }),
+    paced({
+      id: "rail-open",
+      chapter: "board",
+      caption: "The board keeps its own list of what is left.",
+      cursor: "rail-tab",
+      press: true,
+      set: { rail: true },
+    }),
+    paced({
+      id: "rail-read",
+      chapter: "board",
+      caption: "It names the weekend, the shortfall, and the move that clears it.",
+      emphasize: "rail-idea",
+      holdMs: 2600,
+      callout: "Nobody hunted for this. The board did the arithmetic and wrote the fix.",
+    }),
+    paced({
+      id: "drag-lift",
+      chapter: "board",
+      caption: "So the league takes the whole Six Park block off that weekend.",
+      cursor: "block-sixpark",
+      callout: "One grip, and a building's whole weekend moves together.",
+      set: { dragging: true },
+    }),
+    paced({
+      id: "drag-drop",
+      chapter: "board",
+      caption: "And drops it on the 28th.",
+      cursor: "card-nov28",
+      press: true,
+      callout: "The 21st fits now. The 28th has the games but not the courts.",
+      set: { dragging: false, blockMoved: true },
+    }),
+    paced({
+      id: "menu",
+      chapter: "board",
+      caption: "Six Park East has six courts. This weekend used two.",
+      cursor: "sixpark-menu",
+      press: true,
+      callout: "Renting one more court is a change to one gym on one date.",
+      set: { menu: true },
+    }),
+    paced({
+      id: "court",
+      chapter: "board",
+      caption: "Three courts on the 28th, and only on the 28th.",
+      cursor: "court-apply",
+      press: true,
+      toast: "Six Park East · 3 courts on Nov 28 to 29",
+      set: { menu: false, court: true },
+    }),
+    paced({
+      id: "all-clear",
+      chapter: "board",
+      caption: "Every weekend now fits the gym time this league really has.",
+      emphasize: "math-line",
+      callout: "Two changes, and the calendar under the season is sound.",
+    }),
+    paced({
+      id: "generate",
+      chapter: "board",
+      caption: "The calendar goes to the scheduler.",
+      context: CTX_SCHEDULE,
+      cursor: "generate",
+      press: true,
+      callout: "One press builds all 730 games on the calendar above.",
+      set: { screen: "schedule", run: 1 },
+    }),
+    paced({
+      id: "result",
+      chapter: "board",
+      caption: "730 games, none of them left over.",
+      emphasize: "preview",
+      callout: "It fits because the gym time was made to fit first, not after.",
+    }),
+    paced({
+      id: "fairness",
+      chapter: "board",
+      caption: "And the league reads it worst team first.",
+      emphasize: "fairness",
+      holdMs: 2400,
+      callout: "This is the WORST treated team in the league. The zeros are the point.",
+      set: { fairness: true },
     }),
 
-    /* ── 4. Two requests ──────────────────────────────────────────────── */
+    /* ── 5. Two requests ──────────────────────────────────────────────── */
     paced({
       id: "requests",
       chapter: "requests",
-      caption: "Clubs ask for things. Ottawa Elite asked to be done by noon on Sundays.",
+      caption: "Clubs ask for things, and the asks are about the drive.",
       context: CTX_REQUESTS,
       set: { screen: "requests" },
       emphasize: "req-ottawa",
-      callout: "Ottawa Elite drive home after Sunday's game. No start after noon.",
+      callout: "Ottawa Elite leave home at six. Nothing before noon on Saturday.",
     }),
     paced({
       id: "honored",
       chapter: "requests",
       caption: "The schedule honored it, and the league can see that it did.",
       emphasize: "req-ottawa-note",
-      callout: "Ten of ten games landed inside the window, and the league can see it.",
+      callout: "A promise the league can check is worth more than one it makes.",
     }),
     paced({
       id: "pending-req",
       chapter: "requests",
-      caption: "Dragons de Gatineau have asked for the same thing, and it is still pending.",
+      caption: "Gatineau drive further, and asked to be finished by five on Sunday.",
       cursor: "req-dragons",
       hover: "req-dragons",
-      callout: "The same ask from Gatineau, still waiting. What does approving cost everyone else?",
+      callout: "It is a five hour drive home. What would saying yes cost everyone else?",
     }),
     paced({
       id: "simulate",
       chapter: "requests",
-      caption: "So the league simulates the cost before deciding.",
+      caption: "So the league prices it first.",
       cursor: "simulate",
       press: true,
-      callout: "Simulate runs the season twice, with the request and without, and diffs them.",
+      callout: "Simulate runs the season with the request and without, then diffs them.",
       set: { sim: true },
     }),
     paced({
       id: "cost",
       chapter: "requests",
-      caption: "Nothing. Nobody else moves.",
+      caption: "Nobody else moves.",
       emphasize: "sim-result",
       holdMs: 1600,
-      callout: "Approving costs nobody anything: no back-to-backs, no two-gym days, no unplaced games.",
+      callout: "That is what turns a favour into a decision.",
     }),
     paced({
       id: "approve-req",
       chapter: "requests",
       caption: "The league approves it.",
-      /* The press cannot be shown here: approving replaces the Approve button
-         with the honored line, and the next beat leaves this screen, so a
-         deferred state change would never be seen. The beat rings the answer
-         instead, which is what the caption is about. */
       emphasize: "req-dragons-note",
       toast: "Request approved · Dragons de Gatineau",
-      callout: "Now the answer is a decision with arithmetic behind it, not a favour.",
       set: { reqApproved: true },
     }),
 
-    /* ── 5. Publish once ──────────────────────────────────────────────── */
+    /* ── 6. Publish once ──────────────────────────────────────────────── */
     paced({
       id: "commit",
       chapter: "publish",
@@ -703,19 +791,26 @@ export const seasonStory: DemoScript = {
     paced({
       id: "draft",
       chapter: "publish",
-      caption: "Draft. Visible only to the league, and regenerable as often as it likes.",
+      caption: "A draft the league can rebuild as often as it likes.",
       emphasize: "draft-banner",
       toast: "Saved as a draft · 730 games",
-      callout: "A draft can be rebuilt as often as the league wants.",
       set: { dialog: "", committed: true },
+    }),
+    paced({
+      id: "pairs",
+      chapter: "publish",
+      caption: "Read down the weekend: every team plays twice on one day.",
+      emphasize: "schedule-list",
+      holdMs: 2600,
+      callout: "Two games, one day, one building. That is one drive, not two.",
     }),
     paced({
       id: "phone-in",
       chapter: "publish",
-      caption: "Which is exactly what Jordan's mother sees: a season that has not started.",
+      caption: "On Priya's phone, Jordan's practices are already there.",
       stage: "split",
-      emphasize: "phone-empty",
-      callout: "Priya has the app. Her son's calendar is empty, because nothing is published yet.",
+      emphasize: "phone-cal",
+      callout: "The club's practices have been on this calendar since September.",
     }),
     paced({
       id: "publish",
@@ -723,7 +818,7 @@ export const seasonStory: DemoScript = {
       caption: "One press, once, when the league is ready.",
       cursor: "publish",
       press: true,
-      callout: "The only irreversible press in the story, and the league chooses when.",
+      callout: "The only irreversible press in the story, and the league picks when.",
       set: { dialog: "publish" },
     }),
     paced({
@@ -736,19 +831,26 @@ export const seasonStory: DemoScript = {
     paced({
       id: "notice",
       chapter: "publish",
-      caption: "Every club and family gets one notice, not 730.",
+      caption: "One notice each, pointing at their own team.",
       emphasize: "phone-notice",
       toast: "Schedule published · 730 games are live",
-      callout: "One notice each, pointing at their own team. Not one per game.",
+      callout: "Not one notice per game. One, and it knows which team is theirs.",
       set: { dialog: "", published: true, notice: true },
     }),
     paced({
       id: "cal",
       chapter: "publish",
-      caption: "Her son's calendar fills with the season.",
+      caption: "And the games fill in around the practices.",
       emphasize: "phone-cal",
-      callout: "Ten games, each with its gym and court. No PDF, no group chat.",
-      set: { notice: false, calFilled: true, rows: true },
+      callout: "Both of Saturday's games, at one gym, beside the practices already there.",
+      set: { notice: false, calFilled: true },
+    }),
+    paced({
+      id: "everyone",
+      chapter: "publish",
+      caption: "Every calendar in the league filled at the same moment.",
+      emphasize: "phone-cal",
+      callout: "Parents, coaches, team managers and club owners each see their own.",
     }),
     paced({
       id: "ics",
@@ -756,17 +858,9 @@ export const seasonStory: DemoScript = {
       caption: "And it subscribes to her phone's own calendar.",
       cursor: "ics",
       press: true,
-      callout:
-        "One subscription, and every later change arrives in her phone's calendar too.",
-      set: { ics: true },
-    }),
-    paced({
-      id: "end",
-      chapter: "publish",
-      caption:
-        "146 teams entered and billed, a home court that fills first, a refusal that named the weekend, and one publish.",
+      callout: "One subscription, and every later change follows into it.",
       hold: 5200,
-      set: { endCard: true },
+      set: { ics: true },
     }),
   ],
 
@@ -779,7 +873,6 @@ export const seasonStory: DemoScript = {
     const approved = get("approved", false)
     const committed = get("committed", false)
     const published = get("published", false)
-    const fit = get<string>("fit", "")
 
     const desktop = (
       <div className="relative flex h-full flex-col">
@@ -789,8 +882,6 @@ export const seasonStory: DemoScript = {
               closed={closed}
               approved={approved}
               filter={get<string>("filter", "All (146)")}
-              lock={get("lock", false)}
-              pay={get("pay", false)}
             />
           )}
           {screen === "team" && (
@@ -803,15 +894,28 @@ export const seasonStory: DemoScript = {
           {screen === "plan" && (
             <PlanScreen pool={get("pool", false)} skip={get("skip", false)} />
           )}
+          {screen === "divisions" && (
+            <DivisionsScreen
+              shape={get("shape", false)}
+              dealt={get("dealt", false)}
+              moved={get("divMoved", false)}
+              cross={get("cross", false)}
+              created={get("created", false)}
+            />
+          )}
           {screen === "board" && (
-            <BoardScreen court6={get("court6", false)} ask={get("ask", false)} />
+            <BoardScreen
+              rail={get("rail", false)}
+              dragging={get("dragging", false)}
+              moved={get("blockMoved", false)}
+              court={get("court", false)}
+              menu={get("menu", false)}
+            />
           )}
           {screen === "schedule" && (
             <ScheduleScreen
               run={get("run", 0)}
-              fit={fit}
-              court6={get("court6", false)}
-              promises={get("promises", 0)}
+              fairness={get("fairness", false)}
               committed={committed}
               published={published}
             />
@@ -864,31 +968,21 @@ export const seasonStory: DemoScript = {
         >
           <div className="border-ink-200 rounded-2xl border px-4 py-3">
             <p className="text-ink-900 text-[16px] font-bold">
-              Clubs and families get one notification pointing at their team calendar.
+              Everyone gets one notification pointing at their own team calendar.
             </p>
             <p className="text-ink-600 mt-1 text-[15px]">
-              Not one for each game. The league page, every club page, every team page and every
-              family calendar read the same 730 games from this moment.
+              Parents, coaches, team managers and club owners. The league page, every club page and
+              every team page read these games from this moment.
             </p>
           </div>
         </Dialog>
-
-        {get("endCard", false) && <EndCard />}
       </div>
     )
 
     const phone = (
       <div className="relative h-full">
-        <PhoneScreen
-          title="Jordan Reyes · Grade 10"
-          subtitle="Royal Crown · Priya's family"
-          tab="Calendar"
-        >
-          <CalendarScreen
-            filled={get("calFilled", false)}
-            rows={get("rows", false)}
-            ics={get("ics", false)}
-          />
+        <PhoneScreen title="Jordan Reyes · Grade 10" subtitle="Royal Crown · Priya's family" tab="Calendar">
+          <CalendarScreen filled={get("calFilled", false)} ics={get("ics", false)} />
         </PhoneScreen>
         {get("notice", false) && (
           <PhoneNotice
@@ -906,11 +1000,24 @@ export const seasonStory: DemoScript = {
 
 /* ── Screens ─────────────────────────────────────────────────────────────── */
 
+/**
+ * The console, under the season's own header.
+ *
+ * The crest is the world's real logo: North Pole Hoops' mark, seeded onto the
+ * organization and inherited by every NPH league.
+ */
 function Shell({ tab, children }: { tab: string; children: ReactNode }) {
   return (
     <>
+      <div className="flex items-center gap-2 px-5 pb-1 pt-1.5">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/demo/nph-logo.png" alt="" className="h-7 w-7 shrink-0 rounded-md" />
+        <span className="text-ink-900 text-[17px] font-extrabold">{SEASON}</span>
+        <span className="text-ink-500 text-[15px] font-semibold">{LEAGUE}</span>
+        <StatusChip tone="court">Open for registration</StatusChip>
+      </div>
       <ConsoleTabs active={tab} />
-      <div className="bg-ink-50/70 min-h-0 flex-1 px-5 py-3.5">{children}</div>
+      <div className="bg-ink-50/70 flex min-h-0 flex-1 flex-col px-5 py-2.5">{children}</div>
     </>
   )
 }
@@ -919,111 +1026,87 @@ function TeamsScreen({
   closed,
   approved,
   filter,
-  lock,
-  pay,
 }: {
   closed: boolean
   approved: boolean
   filter: string
-  lock: boolean
-  /** The real Teams tab's SECOND filter row: Any payment / Unpaid / Paid. */
-  pay: boolean
 }) {
-  const rows: {
-    club: string
-    division: string
-    status: "APPROVED" | "PENDING" | "REJECTED"
-    payment?: "PAID" | "UNPAID"
-    id?: string
-  }[] = [
-    {
-      club: "Royal Crown",
-      division: "Grade 10 Boys · Division B",
-      status: approved ? "APPROVED" : "PENDING",
-      payment: approved ? "UNPAID" : undefined,
-      id: "team-royal",
-    },
-    { club: "Dragons de Gatineau", division: "Grade 11 Boys · Division A", status: "PENDING" },
-    { club: "Burloak Elite", division: "Grade 9 Boys · Division A", status: "PENDING" },
-    { club: "Ottawa Elite", division: "Grade 10 Boys · Division B", status: "APPROVED", payment: "PAID" },
-  ]
-  const shown = filter === "Pending (3)" ? rows.filter((r) => r.status === "PENDING") : rows
+  /* The counters and the rows are ONE source: whatever is pending is what the
+     chips count and what "Waiting on you" says. */
+  const rows = ENTRIES.map((r) =>
+    r.status === "PENDING" && (closed || (approved && r.id === "row-royal"))
+      ? { ...r, status: "APPROVED" as const, payment: "UNPAID" as const }
+      : r
+  )
+  const pending = rows.filter((r) => r.status === "PENDING")
+  const shown = filter.startsWith("Pending") ? pending : rows
 
   return (
     <Shell tab="Teams">
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid shrink-0 grid-cols-3 gap-2">
         <Tile
-          id="tile-teams"
           label="Teams entered"
-          value={closed ? "146 of 146" : "27 of 146"}
-          note={closed ? "145 approved · 1 rejected" : "Registration is open"}
+          value={closed ? "146 of 146" : "144 of 146"}
+          note={closed ? "145 approved, 1 rejected" : "Registration open"}
           tone="court"
         />
-        <Tile label="Clubs in" value={closed ? "82" : "19 of 82"} note="Across the whole league" />
+        <Tile label="Clubs in" value="82" note="Every club in" />
         <Tile
+          id="tile-waiting"
           label="Waiting on you"
-          value={closed ? "0" : approved ? "2" : "3"}
-          note="Entries to approve"
-          tone="gold"
+          value={String(pending.length)}
+          note="To approve"
+          tone={pending.length > 0 ? "gold" : "court"}
         />
       </div>
 
       <Panel
         title="Registered teams"
-        className="mt-3"
+        meta="146 teams across 82 clubs"
+        className="mt-2 min-h-0"
         action={
-          /* Both of the real tab's filter rows, kept on ONE line so turning
-             the payment row on never grows the header and pushes the panel
-             below out of the scene region. */
           <div className="flex items-center gap-2">
             <FilterRow
               id="filter-pending"
-              items={
-                closed
-                  ? ["All (146)", "Pending (0)", "Approved (145)", "Rejected (1)"]
-                  : ["All (146)", "Pending (3)", "Approved (24)", "Rejected (0)"]
-              }
+              items={[
+                "All (146)",
+                `Pending (${pending.length})`,
+                `Approved (${145 - pending.length})`,
+                "Rejected (1)",
+              ]}
               active={filter}
             />
-            {pay && (
-              <>
-                <span aria-hidden="true" className="bg-ink-200 h-5 w-px" />
-                <FilterRow
-                  id="filter-pay"
-                  items={
-                    closed
-                      ? ["Any payment", "Unpaid (1)", "Paid (145)"]
-                      : ["Any payment", "Unpaid (3)", "Paid (24)"]
-                  }
-                  active="Any payment"
-                />
-              </>
-            )}
           </div>
         }
       >
-        <div className="space-y-1.5 px-3 py-2.5">
+        <div className="space-y-0.5 px-3 py-1.5">
           {shown.map((r) => (
-            <TeamRow key={r.club + r.division} {...r} action={<Chip tone="neutral">Details</Chip>} />
+            <TeamRow
+              key={r.club + r.division}
+              {...r}
+              action={
+                r.status === "PENDING" ? (
+                  <span className="flex items-center gap-1.5">
+                    <Btn
+                      id={r.id === "row-burloak" ? "approve-burloak" : undefined}
+                      tone="court"
+                      size="xs"
+                    >
+                      Approve
+                    </Btn>
+                    <Btn tone="quiet" size="xs">
+                      Reject
+                    </Btn>
+                    <Chip tone="neutral">Details</Chip>
+                  </span>
+                ) : (
+                  <Chip tone="neutral">Details</Chip>
+                )
+              }
+            />
           ))}
         </div>
       </Panel>
-
-      {lock && (
-        <Panel title="Roster changes" meta="After rosters lock" className="mt-3">
-          <div className="flex items-center gap-2 px-4 py-3">
-            <Btn id="lock-policy" tone="primary" size="sm">
-              Changes need my approval
-            </Btn>
-            <Btn tone="quiet" size="sm">
-              Clubs edit freely until a deadline
-            </Btn>
-            <Btn tone="quiet" size="sm">
-              No changes at all
-            </Btn>
-          </div>
-        </Panel>
-      )}
     </Shell>
   )
 }
@@ -1039,7 +1122,7 @@ function TeamScreen({
 }) {
   return (
     <Shell tab="Teams">
-      <div className="grid grid-cols-[minmax(0,1fr)_400px] gap-3">
+      <div className="grid grid-cols-[minmax(0,1fr)_390px] gap-3">
         <Panel
           title="Royal Crown"
           meta="Grade 10 Boys · Division B"
@@ -1060,14 +1143,9 @@ function TeamScreen({
         >
           <div className="space-y-2.5 px-4 py-3">
             <Row label="Club" value="Royal Crown · Toronto" />
-            <Row label="Roster submitted" value="12 players · locked on close" />
+            <Row label="Roster submitted" value="12 players · 12 of 12 waivers signed" />
             <Row label="Club agreement" value="Signed by Marcus Dwyer, 12 August" />
-            <Row
-              label="Weekend preference"
-              value="One trip: both weekend games on the same day"
-            />
-            {/* The submitted roster with its per-player waiver status, which is
-                what the real submission page shows under the entry details. */}
+            <Row label="Weekend preference" value="One trip: both weekend games on the same day" />
             <div>
               <p className="text-ink-500 mb-1.5 text-[14px] font-bold uppercase tracking-[0.06em]">
                 Submitted roster
@@ -1083,9 +1161,6 @@ function TeamScreen({
                   </span>
                 ))}
               </div>
-              <p className="text-ink-500 mt-1.5 text-[14px] font-medium">
-                12 of 12 waivers signed
-              </p>
             </div>
             {promise && (
               <div
@@ -1095,19 +1170,11 @@ function TeamScreen({
                 <p className="text-court-800 text-[16px] font-bold">
                   12 games guaranteed: 10 regular season + minimum 2 playoff
                 </p>
-                <p className="text-ink-700 mt-0.5 text-[15px]">
-                  The promise every club is sold.
-                </p>
               </div>
             )}
           </div>
         </Panel>
 
-        {/* THE ENTRY FEE PANEL, AND ALL OF IT. The real page renders
-            `money(feeAmount)`, then "· balance due <date>", then either the
-            payments received or "· nothing received yet". One obligation, no
-            plan: `ensureObligation` is called once, for the whole fee, when
-            the submission is approved. */}
         <Panel title="Entry fee" meta={approved ? "Owing" : "On approval"}>
           {fee ? (
             <div data-demo-target="fee-panel" className="live-pop space-y-2.5 px-4 py-3">
@@ -1118,8 +1185,8 @@ function TeamScreen({
                 Balance due {FEE_DUE} · nothing received yet
               </p>
               <p className="text-ink-500 border-ink-100 border-t pt-2 text-[14px] font-medium leading-snug">
-                Raised on approval, owed by the club to the league. The balance date is the
-                league&apos;s own rule: 14 days before the season starts.
+                Owed by the club to the league. The date is this league&apos;s own rule: 14 days
+                before the season starts.
               </p>
               <StatusChip tone="gold">Unpaid</StatusChip>
             </div>
@@ -1144,86 +1211,196 @@ function Row({ label, value }: { label: string; value: string }) {
 }
 
 /**
- * STEP 2, YOUR BUILDINGS, on the current model: one home gym, a ranked pool of
- * floaters under it, and the optional bookings control. The head sentence is
- * the real screen's own.
+ * STEP 2, YOUR BUILDINGS: the weekends, the Friday question, the home gym and
+ * the pool. The "Courts left empty" panel the product draws here is not in this
+ * demo (owner ruling), and the home card carries his sentence.
  */
 function PlanScreen({ pool, skip }: { pool: boolean; skip: boolean }) {
   return (
-    <div className="bg-ink-50/70 flex min-h-0 flex-1 flex-col gap-3 px-5 py-3.5">
+    <div className="bg-ink-50/70 flex min-h-0 flex-1 flex-col gap-2.5 px-5 py-3">
       <StepRail step={2} />
-      <Panel title="When would you like to run sessions?" meta="13 of 19 weekends on">
-        <div className="px-4 py-3">
+      <Panel title="When would you like to run sessions?" meta={WEEKENDS_ON}>
+        <div className="px-4 py-2.5">
           <WeekendGrid id="weekend-grid" months={WEEKEND_MONTHS} />
         </div>
       </Panel>
-      <div className="grid grid-cols-[minmax(0,1fr)_320px] gap-3">
-        <div className="space-y-2">
-          <GymCard
-            id="gym-home"
-            name={PLAYGROUND.name}
-            city={PLAYGROUND.city}
-            courts="3 courts"
-            hours="Available 10:00 to 22:00, the same hours every weekend"
-            home
-          />
-          {pool && (
-            <div data-demo-target="gym-pool" className="space-y-2">
-              <GymCard
-                id="gym-bookings"
-                name={SIX_PARK.name}
-                city={SIX_PARK.city}
-                courts="6 courts"
-                hours="Available 10:00 to 22:00, the same hours every weekend"
-                rank={1}
-                bookings
-                bookingsCount={1}
-                skip={skip ? "No bookings yet? Fine. The planner will assume what it needs and give you a call list." : undefined}
-                fresh
-              />
-              <GymCard
-                name={HABER.name}
-                city={HABER.city}
-                courts="6 courts"
-                hours="Available 10:00 to 22:00, the same hours every weekend"
-                rank={2}
-                bookings
-                fresh
-              />
-            </div>
-          )}
-          <Btn id="add-gym" tone="quiet" size="sm">
-            + Add a gym
-          </Btn>
-        </div>
-        <div
-          data-demo-target="courts-empty"
-          className="border-ink-200 rounded-2xl border bg-white px-4 py-3"
-        >
-          <p className="text-ink-900 text-[15px] font-bold">Courts left empty: 0</p>
-          <p className="text-ink-600 mt-1 text-[14px] font-medium leading-snug">
-            At every gym, every day. Games run long and teams turn up late, so a court held back is
-            a court you still have. Zero plans to the whole building.
-          </p>
-          <p className="text-ink-500 border-ink-100 mt-2 border-t pt-2 text-[14px] font-medium leading-snug">
-            The home gym fills first, at full capacity, before anything is rented.
-          </p>
-        </div>
+      <FridayChoice id="friday" value="No" />
+      <div className="space-y-2">
+        <GymCard
+          id="gym-home"
+          name={PLAYGROUND.name}
+          city={PLAYGROUND.city}
+          courts="3 courts"
+          hours="Available 10:00 to 22:00, the same hours every weekend"
+          home
+        />
+        {pool && (
+          <div data-demo-target="gym-pool" className="space-y-2">
+            <GymCard
+              id="gym-bookings"
+              name={SIX_PARK.name}
+              city={SIX_PARK.city}
+              courts="6 courts"
+              hours="Available 10:00 to 22:00, the same hours every weekend"
+              rank={1}
+              bookings
+              bookingsCount={1}
+              skip={
+                skip
+                  ? "No bookings yet? Fine. The planner will assume what it needs and give you a call list."
+                  : undefined
+              }
+              fresh
+            />
+            <GymCard
+              name={HABER.name}
+              city={HABER.city}
+              courts="6 courts"
+              hours="Available 10:00 to 22:00, the same hours every weekend"
+              rank={2}
+              bookings
+              fresh
+            />
+          </div>
+        )}
       </div>
     </div>
   )
 }
 
-/**
- * Step 3. Two views, and both are the real screen's: BOARD, the five session
- * columns, and STRIP, the compact row-per-weekend the header toggles to. The
- * ask sheet is read on the strip, because on the real screen it lives in the
- * "What is left" rail and the rail takes the room the board columns want.
- */
-function BoardScreen({ court6, ask }: { court6: boolean; ask: boolean }) {
+/** The Schedule tab's division setup, drag board and cross-play question. */
+function DivisionsScreen({
+  shape,
+  dealt,
+  moved,
+  cross,
+  created,
+}: {
+  shape: boolean
+  dealt: boolean
+  moved: boolean
+  cross: boolean
+  created: boolean
+}) {
+  /* The drag: Ottawa Elite starts in D and ends up in B, which is what evens
+     the four out. Before the deal every team sits unassigned. */
+  const columns = [
+    {
+      name: "Unassigned",
+      pool: true,
+      teams: dealt ? [] : G10_POOL,
+    },
+    ...G10_DIVISIONS.map((d, i) => ({
+      name: d.name,
+      dot: d.dot,
+      id: i === 1 ? "div-col-b" : undefined,
+      teams: !dealt
+        ? []
+        : moved && i === 1
+          ? [...d.teams, "City Above Elite"]
+          : moved && i === 2
+            ? d.teams.filter((t) => t !== "City Above Elite")
+            : d.teams,
+    })),
+  ]
+
   return (
-    <div className="bg-ink-50/70 flex min-h-0 flex-1 flex-col gap-2.5 px-5 py-3">
-      <StepRail step={3} />
+    <Shell tab="Schedule">
+      <Panel
+        title="Divisions"
+        meta="Grade 10 · 42 teams"
+        action={
+          created ? (
+            <StatusChip tone="court">4 divisions</StatusChip>
+          ) : (
+            <Btn id="create-div" tone="court" size="sm">
+              Create 4 divisions
+            </Btn>
+          )
+        }
+      >
+        <div className="space-y-2.5 px-4 py-3">
+          <p data-demo-target="div-head" className="text-ink-700 text-[15px] font-semibold">
+            Big grades can run as divisions. Nothing is created unless you set it up.
+          </p>
+
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-ink-900 text-[15px] font-bold">How many divisions?</span>
+            {[2, 3, 4, 5, 6].map((n) => (
+              <span
+                key={n}
+                data-demo-target={n === 4 ? "div-4" : undefined}
+                className={
+                  shape && n === 4
+                    ? "border-court-400 bg-court-50 text-court-800 rounded-lg border px-2.5 py-1 text-[14px] font-bold"
+                    : "border-ink-200 text-ink-600 rounded-lg border bg-white px-2.5 py-1 text-[14px] font-bold"
+                }
+              >
+                {n} · ~{Math.round(42 / n)} each
+              </span>
+            ))}
+            <span className="ml-2 flex items-center gap-1.5">
+              <Btn id="deal" tone="quiet" size="sm">
+                Deal randomly
+              </Btn>
+              <Btn tone="quiet" size="sm">
+                I&apos;ll place them myself
+              </Btn>
+            </span>
+          </div>
+
+          <p className="text-ink-500 text-[14px] font-medium">
+            Drag teams between the pool and the divisions, any direction.
+          </p>
+          <DivisionsBoard columns={columns} />
+
+          <CrossPlay id="cross-yes" chosen={cross ? "yes" : undefined} />
+        </div>
+      </Panel>
+    </Shell>
+  )
+}
+
+/**
+ * STEP 3, YOUR CALENDAR: the board, drawn from the real one.
+ *
+ * The suggestions drawer sits over the last column when it is open, which is
+ * exactly what the real sticky rail does at 1440.
+ */
+function BoardScreen({
+  rail,
+  dragging,
+  moved,
+  court,
+  menu,
+}: {
+  rail: boolean
+  dragging: boolean
+  moved: boolean
+  court: boolean
+  menu: boolean
+}) {
+  const solved = moved && court
+  const nov = november(
+    moved,
+    court,
+    dragging,
+    menu ? (
+      <GymMenu
+        id="sixpark-menu-panel"
+        gym="Six Park East"
+        weekend="Nov 28–29"
+        need={3}
+        courts={3}
+        wired={6}
+        apply="We rented 3 courts"
+        applyId="court-apply"
+      />
+    ) : null
+  )
+
+  return (
+    <div className="bg-ink-50/70 flex min-h-0 flex-1 flex-col gap-1.5 px-5 py-2">
       <div className="flex items-center gap-2.5">
         <div className="shrink-0">
           <p className="text-ink-900 text-[17px] font-extrabold leading-tight">Your calendar</p>
@@ -1235,7 +1412,7 @@ function BoardScreen({ court6, ask }: { court6: boolean; ask: boolean }) {
           <Chip tone="neutral" strong>
             146 teams · 730 games
           </Chip>
-          {court6 ? (
+          {solved ? (
             <Chip tone="court" strong>
               Every weekend fits
             </Chip>
@@ -1246,67 +1423,77 @@ function BoardScreen({ court6, ask }: { court6: boolean; ask: boolean }) {
           )}
         </span>
         <span className="border-ink-200 flex shrink-0 overflow-hidden rounded-lg border bg-white text-[14px] font-bold">
-          <span className={ask ? "text-ink-500 px-2.5 py-1" : "bg-court-600 px-2.5 py-1 text-white"}>
-            Board
-          </span>
-          <span className={ask ? "bg-court-600 px-2.5 py-1 text-white" : "text-ink-500 px-2.5 py-1"}>
-            Strip
-          </span>
+          <span className="bg-court-600 px-2.5 py-1 text-white">Board</span>
+          <span className="text-ink-500 px-2.5 py-1">Strip</span>
         </span>
-        <Btn tone="primary" size="sm">
+        <Btn id="generate" tone="primary" size="sm">
           Use this calendar and generate the schedule
         </Btn>
       </div>
 
-      {ask ? (
-        <>
-          <div className="border-ink-200 flex flex-wrap items-center gap-x-3 gap-y-1 rounded-xl border bg-white px-3.5 py-2">
-            <span className="text-ink-900 text-[15px] font-bold">4 rental blocks</span>
-            <span className="text-ink-500 text-[14px] font-medium">
-              behind this calendar. Every rental has a building.
-            </span>
-            <span className="text-ink-600 ml-auto text-[14px] font-semibold">
-              {BOARD.map((c) => `${c.date} ${c.fraction}`).join("  ·  ")}
-            </span>
-          </div>
-          <AskSheet id="ask-sheet" season={ASK_SEASON} months={ASK_MONTHS} />
-        </>
-      ) : (
-        <div className="grid min-h-0 grid-cols-5 gap-2">
-          {BOARD.map((c) => {
-            const fixed = court6 && c.tone === "over"
-            return (
-              <SessionColumn key={c.session} title={c.session}>
-                <WeekendCard
-                  id={c.id ?? (c.date === "Feb 6–7" ? "board-feb" : undefined)}
-                  date={c.date}
-                  fraction={fixed ? "84/96" : c.fraction}
-                  tone={fixed ? "fits" : c.tone}
-                  gyms={c.gyms.map((g) =>
-                    fixed && g.courts === "2/6 courts" ? { ...g, courts: "3/6 courts" } : g
-                  )}
-                />
-              </SessionColumn>
-            )
-          })}
+      <GymTray
+        gyms={[
+          { name: "The Playground", dot: PLAYGROUND.dot, courts: "3 courts", home: true, weekends: "On 13 weekends" },
+          { name: "Six Park East", dot: SIX_PARK.dot, courts: "6 courts", weekends: "On 3 weekends" },
+          { name: "Haber Recreation Centre", dot: HABER.dot, courts: "6 courts", weekends: "On 1 weekend" },
+        ]}
+      />
+
+      <div className="relative min-h-0 flex-1">
+        <div data-demo-target="board-grid" className="grid h-full grid-cols-4 gap-1.5">
+          <SessionColumn title="Session 1 · Oct">
+            <NotPlanned date="Oct 10–11" />
+            {OCT.map((c) => (
+              <WeekendCard key={c.date} {...c} />
+            ))}
+          </SessionColumn>
+          <SessionColumn title="Session 2 · Nov">
+            {nov.map((c) => (
+              <WeekendCard key={c.date} {...c} />
+            ))}
+          </SessionColumn>
+          <SessionColumn title="Session 3 · Dec">
+            {DEC.map((c) => (
+              <WeekendCard key={c.date} {...c} />
+            ))}
+            <NotPlanned date="Dec 19–20" />
+          </SessionColumn>
+          <SessionColumn title="Session 4 · Jan">
+            <NotPlanned date="Jan 2–3" />
+            {JAN.map((c) => (
+              <WeekendCard key={c.date} {...c} />
+            ))}
+          </SessionColumn>
         </div>
-      )}
+
+        <div className="absolute bottom-0 right-0 top-0 z-20 flex">
+          <WorkRail
+            id="rail-tab"
+            open={rail}
+            count={solved ? "all clear" : "1 open"}
+            about="this calendar"
+            problem={solved ? undefined : RAIL_PROBLEM}
+            ideas={[{ ...RAIL_IDEA, applied: solved }]}
+            footer={RAIL_ASK}
+          />
+        </div>
+      </div>
     </div>
   )
 }
 
+/**
+ * The Schedule tab after the board sent it a calendar: the preview, the
+ * fairness table, the draft banner and the published list.
+ */
 function ScheduleScreen({
   run,
-  fit,
-  court6,
-  promises,
+  fairness,
   committed,
   published,
 }: {
   run: number
-  fit: string
-  court6: boolean
-  promises: number
+  fairness: boolean
   committed: boolean
   published: boolean
 }) {
@@ -1315,24 +1502,17 @@ function ScheduleScreen({
       <Shell tab="Schedule">
         <div
           data-demo-target="draft-banner"
-          className={`rounded-2xl border px-4 py-3 ${
+          className={`rounded-xl border px-4 py-2 ${
             published ? "border-court-300 bg-court-50" : "border-gold-400 bg-gold-50"
           }`}
         >
-          <p
-            className={`text-[17px] font-bold ${published ? "text-court-800" : "text-gold-600"}`}
-          >
+          <p className={`text-[16px] font-bold ${published ? "text-court-800" : "text-gold-600"}`}>
             {published
               ? "730 games are live. Every club and family was notified once."
               : "730 draft games. Visible only to you until you publish."}
           </p>
-          <p className="text-ink-700 mt-1 text-[15px]">
-            {published
-              ? "The league page, every club page, every team page and every family calendar read the same games."
-              : "Review below, regenerate freely, then publish once."}
-          </p>
         </div>
-        <div className="mt-3 flex items-center gap-2">
+        <div className="mt-2 flex items-center gap-2">
           {published ? (
             <Chip tone="court" strong>
               Published
@@ -1343,29 +1523,18 @@ function ScheduleScreen({
             </Btn>
           )}
           <span className="text-ink-500 text-[14px] font-semibold">
-            Showing 4 of 730 games · Nov 21 to 22
+            Showing 12 of 730 games · Grade 10, Saturday Nov 28
           </span>
         </div>
-        <div className="mt-2.5 space-y-1.5">
-          {[
-            /* The four rows sit where the board put their grades that weekend:
-               Grade 10 at the rented gym, Grade 9 and Junior Girls at home. */
-            ["Sat Nov 21 · 10:00 AM", "Grade 10 Boys · Division B", "Royal Crown vs Ottawa Elite", "Six Park East, Court 3"],
-            ["Sat Nov 21 · 11:15 AM", "Grade 9 Boys · Division A", "Burloak Elite vs CE23 Academy", "The Playground, Court 2"],
-            ["Sun Nov 22 · 10:00 AM", "Junior Girls", "CE23 Academy vs HoopHer", "The Playground, Court 1"],
-            ["Sun Nov 22 · 11:15 AM", "Grade 10 Boys · Division B", "Royal Crown at City Above Elite", "Six Park East, Court 1"],
-          ].map(([when, division, teams, venue]) => (
+        <div data-demo-target="schedule-list" className="mt-2 space-y-1">
+          {PUBLISHED.map(([when, teams, meta]) => (
             <div
               key={when + teams}
-              className="border-ink-200 flex items-center gap-3 rounded-xl border bg-white px-3.5 py-2"
+              className="border-ink-200 flex items-center gap-2.5 rounded-lg border bg-white px-3 py-0.5"
             >
-              <span className="text-ink-900 w-[190px] shrink-0 text-[15px] font-bold">{when}</span>
-              <span className="min-w-0 flex-1">
-                <span className="text-ink-900 block truncate text-[15px] font-semibold">{teams}</span>
-                <span className="text-ink-500 block truncate text-[14px] font-medium">
-                  {division} · {venue}
-                </span>
-              </span>
+              <span className="text-ink-900 w-[158px] shrink-0 text-[14px] font-bold">{when}</span>
+              <span className="text-ink-900 shrink-0 text-[15px] font-semibold">{teams}</span>
+              <span className="text-ink-500 ml-auto truncate text-[14px] font-medium">{meta}</span>
               <StatusChip tone={published ? "court" : "gold"}>
                 {published ? "Live" : "Draft"}
               </StatusChip>
@@ -1378,87 +1547,33 @@ function ScheduleScreen({
 
   return (
     <Shell tab="Schedule">
-      <div className="flex items-center gap-3">
-        <span data-demo-target="journey">
-          <Journey at={run > 0 ? 2 : 1} />
-        </span>
-        <span className="text-ink-500 ml-auto text-[14px] font-semibold">
-          Built on plan {SEASON} v3 · change
+      <div className="flex flex-wrap items-center gap-2">
+        <Btn id="commit" tone="court" size="sm">
+          Commit whole season
+        </Btn>
+        <span className="text-ink-500 text-[14px] font-semibold">
+          Built on the calendar from Plan your season, step 3
         </span>
       </div>
 
-      <div className="mt-3 grid grid-cols-[320px_minmax(0,1fr)] gap-3">
-        <Panel title="Divisions" meta="16">
-          <div className="px-3 py-2">
-            {DIVISIONS.map((d) => (
-              <div key={d.grade} className="border-ink-100 flex items-center gap-2 border-b py-1.5 last:border-b-0">
-                <span className="min-w-0 flex-1">
-                  <span className="text-ink-900 block text-[15px] font-bold">{d.grade}</span>
-                  <span className="text-ink-500 block truncate text-[14px] font-medium">
-                    {d.divisions}
-                  </span>
-                </span>
-                <Chip tone="neutral">{d.teams} teams</Chip>
-              </div>
-            ))}
-          </div>
-        </Panel>
-
-        <div className="space-y-2.5">
-          <div className="flex flex-wrap items-center gap-2">
-            <Btn id="preview" size="sm">
-              Preview whole season
-            </Btn>
-            {fit === "clear" && (
-              <Btn id="commit" tone="court" size="sm">
-                Commit whole season
-              </Btn>
-            )}
-            {court6 && (
-              <Chip tone="court" strong>
-                Third court rented at Six Park East · 48 slots on Nov 21 to 22
-              </Chip>
-            )}
-          </div>
-
-          {run === 0 && (
-            <div className="border-play-200 bg-play-50 rounded-2xl border px-4 py-3">
-              <p className="text-ink-900 text-[16px] font-bold">
-                You are about to build the real schedule.
-              </p>
-              <p className="text-ink-700 mt-1 text-[15px] leading-snug">
-                Registration is closed and the team counts are final. You can change divisions and
-                regenerate freely until you publish.
-              </p>
-            </div>
-          )}
-
-          {fit === "block" && (
-            <Finding
-              id="finding"
-              severity="block"
-              title="Grade 10 does not fit at Six Park East that weekend"
-              message={FIT_MESSAGE}
-              options={FIT_OPTIONS}
-              optionId="fix-hours"
-            />
-          )}
-
-          {fit === "clear" && (
-            <>
-              <Finding
-                id="finding"
-                severity="clear"
-                title="Preview: 730 games · 0 unscheduled"
-                message="Every rule held: rest days, rematch spacing, court rotation, weekend preferences. Every weekend is inside the gym time this plan holds."
-              />
-              <Panel title="What the schedule promises" meta="Every team, all season">
-                <Promises items={PROMISES} shown={promises} />
-              </Panel>
-            </>
-          )}
+      {run > 0 && (
+        <div
+          data-demo-target="preview"
+          className="border-court-300 bg-court-50 live-pop mt-2.5 rounded-2xl border px-4 py-2.5"
+        >
+          <p className="text-court-800 text-[16px] font-bold">Preview: 730 games · 0 unscheduled</p>
+          <p className="text-ink-700 mt-0.5 text-[15px]">
+            No trade-offs · every rule held: shares, rest days, rematch spacing, court rotation.
+          </p>
+          <p className="text-ink-500 mt-0.5 text-[14px] font-medium">Slots used: 730 of 848</p>
         </div>
-      </div>
+      )}
+
+      {fairness && (
+        <div className="mt-2.5">
+          <FairnessTable id="fairness" rows={FAIRNESS} />
+        </div>
+      )}
     </Shell>
   )
 }
@@ -1472,16 +1587,16 @@ function RequestsScreen({ sim, approved }: { sim: boolean; approved: boolean }) 
             id="req-ottawa"
             team="Ottawa Elite"
             division="Grade 10 Boys · Division B"
-            sentence={REQUEST_SENTENCE}
+            sentence={REQ_OTTAWA}
             status="APPROVED"
             requester="Andre Belliveau"
-            reason="We drive back to Ottawa the same day"
+            reason="We drive in from Ottawa on Saturday morning"
           >
             <p
               data-demo-target="req-ottawa-note"
               className="border-court-200 bg-white text-court-800 rounded-xl border px-3 py-2 text-[15px] font-semibold"
             >
-              Honored: 10 of 10 Sunday games start before noon.
+              Honored: 10 of 10 Saturday games start at noon or later.
             </p>
           </RequestRow>
 
@@ -1489,17 +1604,17 @@ function RequestsScreen({ sim, approved }: { sim: boolean; approved: boolean }) 
             id="req-dragons"
             team="Dragons de Gatineau"
             division="Grade 11 Boys · Division A"
-            sentence={REQUEST_SENTENCE}
+            sentence={REQ_GATINEAU}
             status={approved ? "APPROVED" : "PENDING"}
             requester="Isabelle Fortin"
-            reason="Same drive, other direction"
+            reason="It is a five hour drive home"
           >
             {approved ? (
               <p
                 data-demo-target="req-dragons-note"
                 className="border-court-200 bg-white text-court-800 live-pop rounded-xl border px-3 py-2 text-[15px] font-semibold"
               >
-                Honored: 10 of 10 Sunday games start before noon. Nobody else moved.
+                Honored: 10 of 10 Sunday games finish before 5:00 PM. Nobody else moved.
               </p>
             ) : (
               <div className="space-y-2">
@@ -1507,7 +1622,7 @@ function RequestsScreen({ sim, approved }: { sim: boolean; approved: boolean }) 
                   <Btn id="simulate" tone="quiet" size="sm">
                     Simulate cost
                   </Btn>
-                  <Btn id="approve-req" tone="court" size="sm">
+                  <Btn tone="court" size="sm">
                     Approve
                   </Btn>
                   <Btn tone="quiet" size="sm">
@@ -1528,77 +1643,71 @@ function RequestsScreen({ sim, approved }: { sim: boolean; approved: boolean }) 
   )
 }
 
-/* ── Phone ───────────────────────────────────────────────────────────────── */
+/* ── Phone: the real family calendar, in its agenda view ─────────────────── */
 
-function CalendarScreen({
-  filled,
-  rows,
-  ics,
-}: {
-  filled: boolean
-  rows: boolean
-  ics: boolean
-}) {
+function CalendarScreen({ filled, ics }: { filled: boolean; ics: boolean }) {
+  /* Practices were always there. The games arrive around them, in date order,
+     which is what publishing really looks like on a family's phone. */
+  const items = filled
+    ? [...PRACTICES, ...HER_GAMES].sort((a, b) => Number(a.day) - Number(b.day))
+    : PRACTICES
+
   return (
-    <div data-demo-target="phone-cal" className="space-y-2">
-      <PhoneMonth month="November 2026" days={HER_GAME_DAYS} filled={filled} />
-      {filled ? (
-        <>
-          <p className="text-ink-500 text-[14px] font-bold uppercase tracking-[0.08em]">
-            Grade 10 Boys · 10 games
+    <div data-demo-target="phone-cal" className="flex h-full flex-col">
+      <p className="text-ink-400 shrink-0 text-[14px] font-bold uppercase tracking-[0.1em]">
+        November 2026
+      </p>
+      <div className="mt-1.5 min-h-0 flex-1 space-y-1.5 overflow-hidden">
+        {items.map((i) => (
+          <AgendaRow key={i.day + i.title} item={i} fresh={filled && i.kind === "game"} />
+        ))}
+      </div>
+      {filled && (
+        <div
+          data-demo-target="ics"
+          className={`mt-1.5 shrink-0 rounded-2xl border px-3 py-2 ${
+            ics ? "border-court-300 bg-court-50" : "border-ink-200 bg-white"
+          }`}
+        >
+          <p className="text-ink-900 text-[15px] font-bold">
+            {ics ? "Subscribed" : "Add to your phone's calendar"}
           </p>
-          {(rows ? HER_GAMES.slice(0, 2) : HER_GAMES.slice(0, 1)).map((g, i) => (
-            <PhoneGame key={g.day} {...g} fresh delay={i * 110} />
-          ))}
-          <div
-            data-demo-target="ics"
-            className={`rounded-2xl border px-3 py-2.5 ${
-              ics ? "border-court-300 bg-court-50" : "border-ink-200 bg-white"
-            }`}
-          >
-            <p className="text-ink-900 text-[15px] font-bold">
-              {ics ? "Subscribed" : "Add to your phone's calendar"}
-            </p>
-            <p className="text-ink-600 mt-0.5 text-[14px] font-medium leading-snug">
-              {ics
-                ? "Every game is in her phone calendar automatically, and changes follow."
-                : "Subscribe once and the season appears beside everything else in her week."}
-            </p>
-          </div>
-        </>
-      ) : (
-        <div data-demo-target="phone-empty">
-          <PhoneEmpty
-            title="Nothing scheduled yet"
-            body={`${LEAGUE} posts the ${SEASON} schedule once it is set. You will get one notification.`}
-          />
+          <p className="text-ink-600 mt-0.5 text-[14px] font-medium leading-snug">
+            {ics
+              ? "Every game is in her own calendar now, and changes follow."
+              : "Subscribe once, and the season follows into her own calendar."}
+          </p>
         </div>
       )}
     </div>
   )
 }
 
-/* ── End card ────────────────────────────────────────────────────────────── */
-
-function EndCard() {
+/**
+ * One agenda row, the way `my-calendar.tsx` draws it: the date rail on the
+ * left, then the item on a card whose left edge carries its kind's colour.
+ * A practice is brand, a game is energy.
+ */
+function AgendaRow({ item, fresh }: { item: AgendaItem; fresh?: boolean }) {
+  const game = item.kind === "game"
   return (
-    <div className="absolute inset-0 z-20 flex items-center justify-center bg-[#0b1628] px-12 text-white">
-      <div className="live-pop max-w-[760px] text-center">
-        <p className="text-gold-400 text-[15px] font-bold uppercase tracking-[0.18em]">
-          Story 3 of 10
-        </p>
-        <h3 className="font-display mt-2 text-[34px] font-extrabold leading-tight">
-          A season, planned to published
-        </h3>
-        <p className="mt-3 text-[17px] leading-relaxed text-white/75">
-          146 teams entered and billed, a refusal that named the weekend and the four grades, a
-          sixth court that fixed it, three buildings so no family drives to one city every weekend,
-          and one publish that filled every calendar.
-        </p>
-        <p className="mt-5 text-[15px] font-semibold text-white/50">
-          Next: game day, both sides at once
-        </p>
-      </div>
+    <div
+      className={`flex gap-2.5 rounded-xl border px-2.5 py-1.5 ${
+        game ? "border-ink-100 bg-energy-soft/60" : "border-ink-100 bg-white"
+      } ${fresh ? "live-row-in" : ""}`}
+      style={{ borderLeft: `4px solid ${game ? "var(--energy, #f24e1e)" : "var(--brand, #4f46e5)"}` }}
+    >
+      <span className="w-[38px] shrink-0 text-center">
+        <span className="text-ink-900 block text-[17px] font-extrabold leading-none tabular-nums">
+          {item.day}
+        </span>
+        <span className="text-ink-400 block text-[14px] font-bold uppercase">{item.weekday}</span>
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="text-ink-700 block text-[14px] font-bold tabular-nums">{item.time}</span>
+        <span className="text-ink-900 block truncate text-[15px] font-bold">{item.title}</span>
+        <span className="text-ink-500 block truncate text-[14px] font-medium">{item.where}</span>
+      </span>
     </div>
   )
 }

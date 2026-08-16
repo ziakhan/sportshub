@@ -80,9 +80,8 @@ export function DemoStage({ demo }: { demo: DemoEntry }) {
           role={entry.role}
           roleTone={entry.roleTone}
           autoStart
-          onExit={() => setPlaying(false)}
           /* What actually sits under the stage in this view: the caption bar,
-             the beat stepper and the panel's own bottom padding. The player's
+             the transport row and the panel's own bottom padding. The player's
              default reserves more, for pages that carry other things below. */
           reserveBelow={132}
         />

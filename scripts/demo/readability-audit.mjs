@@ -226,12 +226,16 @@ async function chapterChips(page) {
 }
 
 async function walkPlayer(page, scenes, route) {
-  const beatCount = await page
-    .locator("text=/^Beat \\d+ of \\d+$/")
-    .first()
-    .textContent()
-    .catch(() => null)
-  const total = beatCount ? Number(beatCount.match(/of (\d+)/)?.[1] ?? 0) : 0
+  /* The visible "Beat N of M" counter is gone (owner ruling 2026-08-16: the
+     word "beat" is not the viewer's word). The player publishes the same
+     number as data, which is what the gate reads. */
+  const total = Number(
+    (await page
+      .locator("[data-demo-beats]")
+      .first()
+      .getAttribute("data-demo-beats")
+      .catch(() => "0")) || 0
+  )
 
   // 1. Every chapter chip, which is the jump path a viewer actually uses.
   const chips = await chapterChips(page)
@@ -246,19 +250,14 @@ async function walkPlayer(page, scenes, route) {
     await page.locator(`button:text-is("${chips[0]}")`).first().click()
     await page.waitForTimeout(700)
   }
-  const next = page.locator('button:has-text("Next beat")').first()
+  const next = page.locator('button[aria-label="Next"]').first()
   for (let i = 0; i < Math.max(0, total - 1); i += 1) {
     if ((await next.count()) === 0) break
-    const visible = await next.isVisible().catch(() => false)
-    if (!visible) break
+    const disabled = await next.isDisabled().catch(() => true)
+    if (disabled) break
     await next.click()
     await page.waitForTimeout(650)
-    const beatLabel = await page
-      .locator("text=/^Beat \\d+ of \\d+$/")
-      .first()
-      .textContent()
-      .catch(() => `beat ${i + 2}`)
-    scenes.push(await auditScene(page, (beatLabel || "").trim(), route))
+    scenes.push(await auditScene(page, `step ${i + 2} of ${total}`, route))
   }
   return total
 }

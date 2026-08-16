@@ -1,5 +1,6 @@
 "use client"
 
+import Link from "next/link"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { cn } from "@/components/ui/cn"
 import { SceneStage, SplitStage } from "./frames"
@@ -7,16 +8,12 @@ import {
   AnimatedCursor,
   BeatCallout,
   CURSOR_ARRIVE_MS,
-  DEMO_RATES,
   DemoOverlayStyles,
   EMPHASIS_HOLD_MS,
   EmphasisRing,
   StepCaption,
-  restoreDemoRate,
-  setDemoRate,
   useDemoRate,
   usePrefersReducedMotion,
-  type DemoRate,
 } from "./motion"
 import type { DemoBeat, DemoScript, StageMode } from "./types"
 
@@ -72,6 +69,13 @@ function activeTarget(beat: DemoBeat | undefined): string | undefined {
 const TOUCH_44 =
   "max-sm:after:absolute max-sm:after:inset-x-0 max-sm:after:top-1/2 max-sm:after:h-11 max-sm:after:-translate-y-1/2 max-sm:after:content-['']"
 
+/** Session flag for the one-time keyboard hint. */
+const HINT_KEY = "sportshub.demo.spacehint"
+
+/** The transport buttons: real buttons, 44px tall, on every screen size. */
+const TRANSPORT =
+  "inline-flex min-h-[44px] items-center justify-center gap-2 rounded-full px-4 text-[14px] font-bold outline-none transition-colors focus-visible:ring-2 focus-visible:ring-court-600 focus-visible:ring-offset-1 disabled:opacity-40 motion-reduce:transition-none"
+
 /**
  * The demo directory player (2026-08-15).
  *
@@ -93,8 +97,6 @@ export function DemoPlayer({
   roleTone = "club",
   className,
   autoStart = false,
-  onExit,
-  exitLabel = "Back to intro",
   reserveBelow,
 }: {
   script: DemoScript
@@ -104,9 +106,6 @@ export function DemoPlayer({
   className?: string
   /** Start playing as soon as the player mounts (the Play press did this). */
   autoStart?: boolean
-  /** Shows a small link back to the intro stage. */
-  onExit?: () => void
-  exitLabel?: string
   /**
    * Height the stage must leave under itself for the caption and the beat
    * stepper. The default is generous because the player can sit on a page with
@@ -119,16 +118,12 @@ export function DemoPlayer({
   const reduced = usePrefersReducedMotion()
   const rate = useDemoRate()
 
-  /* The rate is a session choice, so a viewer who set 2x on the last demo
-     opens this one at 2x. Read on the client, after mount. */
-  useEffect(() => {
-    restoreDemoRate()
-  }, [])
-
   const [index, setIndex] = useState(0)
   const [playing, setPlaying] = useState(autoStart)
   const [elapsed, setElapsed] = useState(0)
   const [done, setDone] = useState(false)
+  /* The keyboard hint is a one-time read, so the session remembers it. */
+  const [hint, setHint] = useState(false)
 
   const rootRef = useRef<HTMLDivElement>(null)
   const stageRef = useRef<HTMLDivElement>(null)
@@ -242,6 +237,58 @@ export function DemoPlayer({
     setPlaying(!reduced)
   }, [reduced])
 
+  /* The hint appears once per session, and pressing the key it teaches is
+     what retires it. */
+  useEffect(() => {
+    try {
+      if (window.sessionStorage.getItem(HINT_KEY)) return
+    } catch {
+      /* private browsing: the hint simply shows again next time */
+    }
+    setHint(true)
+  }, [])
+
+  const retireHint = useCallback(() => {
+    setHint(false)
+    try {
+      window.sessionStorage.setItem(HINT_KEY, "1")
+    } catch {
+      /* nothing to remember it with */
+    }
+  }, [])
+
+  /**
+   * Keyboard transport: space pauses and plays, the arrows step.
+   *
+   * It never fires while somebody is typing (an input, a textarea, a select or
+   * anything contenteditable), and it leaves modified presses alone so browser
+   * shortcuts still work. Space is prevented because otherwise it scrolls the
+   * page, and would fire a focused button a second time.
+   */
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.metaKey || e.ctrlKey || e.altKey) return
+      const el = e.target as HTMLElement | null
+      const tag = el?.tagName
+      if (el?.isContentEditable || tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return
+
+      if (e.key === " " || e.key === "Spacebar") {
+        e.preventDefault()
+        retireHint()
+        if (done) restart()
+        else if (!reduced) setPlaying((p) => !p)
+      } else if (e.key === "ArrowRight") {
+        e.preventDefault()
+        jumpTo(index + 1)
+      } else if (e.key === "ArrowLeft") {
+        e.preventDefault()
+        jumpTo(index - 1)
+      }
+    }
+    window.addEventListener("keydown", onKey)
+    return () => window.removeEventListener("keydown", onKey)
+  }, [done, reduced, restart, jumpTo, index, retireHint])
+
   const chapterOf = (i: number) => beats[i]?.chapter
   const activeChapter = chapterOf(index)
   const beatKey = `${index}-${beat?.id ?? ""}`
@@ -331,110 +378,33 @@ export function DemoPlayer({
     >
       <DemoOverlayStyles />
 
-      {/* Controls. One row on a computer, exactly as before; on a phone the
-          chapter chips take a scrolling row of their own and every control
-          carries a 44px touch target that costs the bar no height. */}
-      <div className="mb-2 flex flex-wrap items-center gap-x-2 gap-y-2.5 sm:mb-3">
-        {onExit && (
-          <button
-            type="button"
-            onClick={onExit}
-            aria-label={exitLabel}
-            className={cn(
-              "text-ink-400 hover:text-ink-800 relative inline-flex items-center gap-1 text-[14px] font-semibold transition-colors",
-              TOUCH_44
-            )}
-          >
-            <svg
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2.4"
-              aria-hidden="true"
-              className="h-3 w-3"
+      {/* Chapter jumps. The transport itself lives under the stage now, with
+          the progress bar between them, so the top of the player is nothing
+          but a way to skip to a part of the story.
+          The phone padding is not decoration: a sideways scroller CLIPS in
+          both axes, so without it the 44px touch overlay on each chip would
+          be cut back to the chip's own 29px. */}
+      <div className="mb-2 flex w-full min-w-0 flex-nowrap items-center gap-1.5 overflow-x-auto py-2 sm:mb-3 sm:flex-wrap sm:overflow-x-visible sm:py-0">
+        {chapters.map((c, ci) => {
+          const first = beats.findIndex((b) => b.chapter === c.id)
+          const active = c.id === activeChapter
+          return (
+            <button
+              key={c.id}
+              type="button"
+              onClick={() => jumpTo(first)}
+              className={cn(
+                "relative shrink-0 rounded-full px-3 py-1 text-[14px] font-semibold transition-colors",
+                TOUCH_44,
+                active
+                  ? "bg-court-50 text-court-700 ring-court-200 ring-1 ring-inset"
+                  : "text-ink-500 hover:bg-ink-100 bg-white"
+              )}
             >
-              <path d="M14 6l-6 6 6 6" />
-            </svg>
-            <span className="hidden sm:inline">{exitLabel}</span>
-          </button>
-        )}
-        <button
-          type="button"
-          onClick={() => {
-            if (done) restart()
-            else setPlaying((p) => !p)
-          }}
-          disabled={reduced}
-          className={cn(
-            "relative inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-[14px] font-bold transition-colors",
-            TOUCH_44,
-            reduced
-              ? "bg-ink-100 text-ink-400"
-              : playing
-                ? "bg-court-600 text-white"
-                : "bg-ink-900 text-white"
-          )}
-        >
-          {done ? (
-            "Watch again"
-          ) : playing ? (
-            <>
-              <svg viewBox="0 0 24 24" className="h-3 w-3 fill-current">
-                <rect x="6" y="5" width="4" height="14" rx="1" />
-                <rect x="14" y="5" width="4" height="14" rx="1" />
-              </svg>
-              Pause
-            </>
-          ) : (
-            <>
-              <svg viewBox="0 0 24 24" className="h-3 w-3 fill-current">
-                <path d="M8 5v14l11-7z" />
-              </svg>
-              Play
-            </>
-          )}
-        </button>
-
-        {/* Order-last puts the chips under the transport on a phone, where they
-            scroll sideways instead of stacking four rows of chrome over the
-            stage. A computer keeps them inline and wrapping, as before.
-            The phone padding is not decoration: a sideways scroller CLIPS in
-            both axes, so without it the 44px touch overlay on each chip would
-            be cut back to the chip's own 29px. */}
-        <div className="order-last flex w-full min-w-0 flex-nowrap items-center gap-1.5 overflow-x-auto py-2 sm:order-none sm:w-auto sm:flex-wrap sm:overflow-x-visible sm:py-0">
-          {chapters.map((c, ci) => {
-            const first = beats.findIndex((b) => b.chapter === c.id)
-            const active = c.id === activeChapter
-            return (
-              <button
-                key={c.id}
-                type="button"
-                onClick={() => jumpTo(first)}
-                className={cn(
-                  "relative shrink-0 rounded-full px-3 py-1 text-[14px] font-semibold transition-colors",
-                  TOUCH_44,
-                  active
-                    ? "bg-court-50 text-court-700 ring-court-200 ring-1 ring-inset"
-                    : "text-ink-500 hover:bg-ink-100 bg-white"
-                )}
-              >
-                {ci + 1}. {c.title}
-              </button>
-            )
-          })}
-        </div>
-
-        <div className="ml-auto flex items-center gap-2 sm:gap-3">
-          <SpeedControl rate={rate} onChange={setDemoRate} disabled={reduced} />
-          <span className="text-ink-400 text-[14px] font-semibold tabular-nums">
-            <span className="sm:hidden">
-              {index + 1}/{beats.length}
-            </span>
-            <span className="hidden sm:inline">
-              Beat {index + 1} of {beats.length}
-            </span>
-          </span>
-        </div>
+              {ci + 1}. {c.title}
+            </button>
+          )
+        })}
       </div>
 
       {/* Progress */}
@@ -511,129 +481,118 @@ export function DemoPlayer({
         </StepCaption>
       </div>
 
-      {/* Manual stepping. The only way through in reduced motion. The line
-          between the two buttons is a nicety, and a phone spends its width on
-          the buttons instead. */}
-      <div className="mt-2 flex items-center justify-between gap-3 sm:mt-3">
-        <button
-          type="button"
-          onClick={() => jumpTo(index - 1)}
-          className={cn(
-            "text-ink-400 hover:text-ink-700 relative text-[14px] font-semibold",
-            TOUCH_44,
-            index === 0 && "invisible"
-          )}
-        >
-          Back a beat
-        </button>
-        <p className="text-ink-400 hidden text-[14px] font-medium sm:block">
-          {reduced
-            ? "Motion is reduced on this device, so each beat shows its finished screen."
-            : "Jump to any chapter above. Nothing here needs an account."}
-        </p>
-        <button
-          type="button"
-          onClick={() => jumpTo(index + 1)}
-          className={cn(
-            "text-ink-600 hover:text-ink-900 relative text-[14px] font-semibold",
-            TOUCH_44,
-            index >= beats.length - 1 && "invisible"
-          )}
-        >
-          Next beat
-        </button>
-      </div>
-    </div>
-  )
-}
-
-/* ── Speed ───────────────────────────────────────────────────────────────── */
-
-/**
- * Playback speed (owner ruling 2026-08-16: "let fast viewers speed up").
- *
- * A real radio group, not three buttons that look like one: one tab stop for
- * the whole control, arrow keys and Home / End move between the speeds, and
- * the chosen speed carries `aria-checked`. The chips are visually compact
- * because they sit in a row of compact chips, so each one carries a 44px
- * touch target as an invisible overlay rather than by growing the bar.
- *
- * The gold active state is the same amber the Play button uses, on ink text
- * that clears contrast comfortably. White-on-glass chips would disappear here:
- * this control bar is light.
- */
-function SpeedControl({
-  rate,
-  onChange,
-  disabled,
-}: {
-  rate: DemoRate
-  onChange: (rate: DemoRate) => void
-  disabled?: boolean
-}) {
-  const refs = useRef<(HTMLButtonElement | null)[]>([])
-  const activeIndex = Math.max(0, DEMO_RATES.indexOf(rate))
-
-  const move = (next: number) => {
-    const i = (next + DEMO_RATES.length) % DEMO_RATES.length
-    onChange(DEMO_RATES[i])
-    refs.current[i]?.focus()
-  }
-
-  return (
-    <div
-      role="radiogroup"
-      aria-label="Playback speed"
-      className={cn(
-        "bg-ink-100 ring-ink-200/70 inline-flex items-center gap-0.5 rounded-full p-0.5 ring-1 ring-inset",
-        disabled && "opacity-50"
-      )}
-    >
-      {DEMO_RATES.map((r, i) => {
-        const active = r === rate
-        return (
+      {/* The transport: Back, Pause and Next, as real buttons with real touch
+          targets, and the same three things the keyboard does. When the story
+          runs out they are replaced by one calm card. */}
+      {done ? (
+        <div className="border-ink-200 mt-3 flex flex-wrap items-center gap-3 rounded-2xl border bg-white px-4 py-3">
+          <p className="text-ink-700 text-[15px] font-semibold">That is the whole story.</p>
+          <div className="ml-auto flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={restart}
+              className={cn(TRANSPORT, "bg-ink-900 text-white hover:bg-ink-800")}
+            >
+              <svg viewBox="0 0 24 24" className="h-3.5 w-3.5 fill-current" aria-hidden="true">
+                <path d="M8 5v14l11-7z" />
+              </svg>
+              Watch again
+            </button>
+            <Link
+              href="/demos"
+              className={cn(TRANSPORT, "border-ink-200 text-ink-700 border bg-white hover:bg-ink-50")}
+            >
+              All demos
+            </Link>
+          </div>
+        </div>
+      ) : (
+        <div className="mt-2 flex items-center gap-2 sm:mt-3">
           <button
-            key={r}
-            ref={(el) => {
-              refs.current[i] = el
-            }}
             type="button"
-            role="radio"
-            aria-checked={active}
-            aria-label={`${r} times speed`}
-            disabled={disabled}
-            tabIndex={i === activeIndex ? 0 : -1}
-            onClick={() => onChange(r)}
-            onKeyDown={(e) => {
-              if (e.key === "ArrowRight" || e.key === "ArrowDown") {
-                e.preventDefault()
-                move(activeIndex + 1)
-              } else if (e.key === "ArrowLeft" || e.key === "ArrowUp") {
-                e.preventDefault()
-                move(activeIndex - 1)
-              } else if (e.key === "Home") {
-                e.preventDefault()
-                move(0)
-              } else if (e.key === "End") {
-                e.preventDefault()
-                move(DEMO_RATES.length - 1)
-              }
+            onClick={() => jumpTo(index - 1)}
+            disabled={index === 0}
+            aria-label="Back"
+            className={cn(TRANSPORT, "border-ink-200 text-ink-700 border bg-white hover:bg-ink-50")}
+          >
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.6"
+              aria-hidden="true"
+              className="h-3.5 w-3.5"
+            >
+              <path d="M14 6l-6 6 6 6" />
+            </svg>
+            Back
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              retireHint()
+              setPlaying((p) => !p)
             }}
+            disabled={reduced}
+            aria-pressed={!playing}
+            aria-label={playing ? "Pause" : "Play"}
             className={cn(
-              // The pseudo element is the touch target: 44px tall, centred on
-              // the chip, invisible, and it does not change the row's height.
-              "relative min-w-[44px] cursor-pointer rounded-full px-2.5 py-1 text-[14px] font-bold tabular-nums transition-colors duration-200",
-              "after:absolute after:inset-x-0 after:top-1/2 after:h-11 after:-translate-y-1/2 after:content-['']",
-              "focus-visible:ring-court-600 outline-none focus-visible:ring-2 focus-visible:ring-offset-1",
-              "motion-reduce:transition-none",
-              active ? "bg-gold-400 text-[#0b1628] shadow-sm" : "text-ink-500 hover:text-ink-800",
-              disabled && "cursor-default"
+              TRANSPORT,
+              reduced ? "bg-ink-100 text-ink-400" : playing ? "bg-court-600 text-white" : "bg-ink-900 text-white"
             )}
           >
-            {r}x
+            {playing ? (
+              <>
+                <svg viewBox="0 0 24 24" className="h-3.5 w-3.5 fill-current" aria-hidden="true">
+                  <rect x="6" y="5" width="4" height="14" rx="1" />
+                  <rect x="14" y="5" width="4" height="14" rx="1" />
+                </svg>
+                Pause
+              </>
+            ) : (
+              <>
+                <svg viewBox="0 0 24 24" className="h-3.5 w-3.5 fill-current" aria-hidden="true">
+                  <path d="M8 5v14l11-7z" />
+                </svg>
+                Play
+              </>
+            )}
           </button>
-        )
-      })}
+
+          <button
+            type="button"
+            onClick={() => jumpTo(index + 1)}
+            disabled={index >= beats.length - 1}
+            aria-label="Next"
+            className={cn(TRANSPORT, "border-ink-200 text-ink-700 border bg-white hover:bg-ink-50")}
+          >
+            Next
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.6"
+              aria-hidden="true"
+              className="h-3.5 w-3.5"
+            >
+              <path d="M10 6l6 6-6 6" />
+            </svg>
+          </button>
+
+          {hint && !reduced && (
+            <span className="border-ink-200 text-ink-500 hidden rounded-full border bg-white px-3 py-1 text-[14px] font-semibold sm:inline">
+              Space to pause
+            </span>
+          )}
+
+          <p className="text-ink-400 ml-auto hidden text-[14px] font-medium sm:block">
+            {reduced
+              ? "Motion is reduced on this device, so each step shows its finished screen."
+              : "Jump to any chapter above. Nothing here needs an account."}
+          </p>
+        </div>
+      )}
     </div>
   )
 }
