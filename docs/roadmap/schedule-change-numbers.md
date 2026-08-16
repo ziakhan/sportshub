@@ -279,3 +279,32 @@ previous time**, at least until the game is played.
 | Scene overflow (any node past the 600 logical box) | **none**, all 22 beats |
 | `tsc --noEmit` | clean |
 | Em-dash sweep | clean. The only dashes in the file are the en dash the product's own `timeRange()` writes |
+
+---
+
+## Sweep, 2026-08-16
+
+**FULL SCREENS, the big one.** The Schedule tab drew **three** games under a "3 of 11" chip while
+the opening balloon said eleven games were already on family calendars, with about 270px of empty
+panel underneath. A list may not claim a scale it does not draw. All **eleven** real games of
+session `5864c08e` are on screen now, in the tab's own sort order, and every one is a `Game` row
+in this database (the eight Saturday games across The Playground and Haber, and the three Sunday
+Grade 10 Girls games). When a row is OPENED the list narrows to that row and its neighbours,
+because the expansion carries six controls and a slot picker and the scene never scrolls; the count
+chip says so, "4 of 11".
+
+**The fan-out card stopped dressing as a screen.** Its context strip said "`LEAGUE` · `SEASON` ·
+Who the change reached", naming a screen nobody can open; the strip is gone for that beat (punch
+item 2 stands). Its "0 phone calls / Nobody relays it" row, which was the demo scoring a point
+rather than stating a fact, is now "0 lists anybody built / The audience is derived from the game,
+per game." Its footer dropped "Referees and the league office are left out on purpose."
+
+**Copy, 19 captions and balloons.** Gone: "So who else just found out?", "and not one phone call",
+"No group chat, no phone tree, no email typed by anybody", "Sunday is a harder call", "One sentence
+stands between the league and calling it off", "the sentence that keeps a family off the road", "A
+family that booked a Saturday keeps its Saturday", "nobody had to be chased". The balloons that
+stayed now carry what the screen does not: that the gym and court travel in the notification, that
+the same row keeps a subscribed calendar from duplicating, that same-day slots are ranked first.
+
+Gate re-run: readability audit **0 violations**, minimum stage scale **1.000**, 22 beats / 25
+scenes, one headless drive with a clean console. Runtime **1 min 36 sec**.

@@ -107,10 +107,16 @@ const CANCEL = {
 }
 
 /**
- * The Schedule tab's game list, three of the eleven games this session holds,
- * every one of them a real row. Three is what fits the scene at scale 1.0 with
- * a row expanded and its alternates open; the count chip carries the product's
- * own "N of M" shape, so the slice is stated on screen rather than hidden.
+ * The Schedule tab's game list: ALL ELEVEN games this session holds, every one
+ * of them a real `Game` row on session 5864c08e, in the order the tab sorts
+ * them (chronological, then venue, then court).
+ *
+ * The 2026-08-16 cut drew three of the eleven under a "3 of 11" chip while the
+ * opening caption said eleven games were already on family calendars. The
+ * sweep's full-screens rule does not allow a list to claim a scale it does not
+ * draw, so the list is the whole weekend now. When a row is OPENED, the list
+ * narrows to that row and its neighbours, because the expansion carries six
+ * controls and a slot picker and the scene never scrolls.
  */
 const ROWS: {
   id?: string
@@ -128,7 +134,63 @@ const ROWS: {
     venue: "The Playground",
     court: "Court 2",
   },
+  {
+    when: "Sat Aug 22 · 9:00 AM",
+    home: "North Toronto Huskies Grade 9",
+    away: "CKATT Basketball Grade 9",
+    venue: "The Playground",
+    court: "Court 3",
+  },
+  {
+    when: "Sat Aug 22 · 9:00 AM",
+    home: "Burlington Force Grade 9",
+    away: "Kings Court Basketball Grade 9",
+    venue: "Haber Recreation Centre",
+    court: "Court 1",
+  },
+  {
+    when: "Sat Aug 22 · 9:00 AM",
+    home: "Oakville Panthers Grade 10",
+    away: "Toronto Lords Grade 10",
+    venue: "Haber Recreation Centre",
+    court: "Court 2",
+  },
+  {
+    when: "Sat Aug 22 · 9:00 AM",
+    home: "Mississauga Monarchs Grade 10",
+    away: "West United Prep Grade 10",
+    venue: "Haber Recreation Centre",
+    court: "Court 3",
+  },
+  {
+    when: "Sat Aug 22 · 9:00 AM",
+    home: "North Toronto Huskies Grade 10",
+    away: "CKATT Basketball Grade 10",
+    venue: "Haber Recreation Centre",
+    court: "Court 4",
+  },
+  {
+    when: "Sat Aug 22 · 10:30 AM",
+    home: "Burlington Force Grade 10",
+    away: "Kings Court Basketball Grade 10",
+    venue: "The Playground",
+    court: "Court 1",
+  },
   { id: "row-cancel", ...CANCEL },
+  {
+    when: "Sun Aug 23 · 9:00 AM",
+    home: "Burlington Force Grade 10 Girls",
+    away: "Oakville Panthers Grade 10 Girls",
+    venue: "The Playground",
+    court: "Court 2",
+  },
+  {
+    when: "Sun Aug 23 · 9:00 AM",
+    home: "North Toronto Huskies Grade 10 Girls",
+    away: "Mississauga Monarchs Grade 10 Girls",
+    venue: "The Playground",
+    court: "Court 3",
+  },
 ]
 
 /**
@@ -182,8 +244,8 @@ const FANOUT = [
   },
   {
     n: "0",
-    label: "phone calls",
-    note: "Nobody relays it. The league changed the game once.",
+    label: "lists anybody built",
+    note: "The audience is derived from the game, per game.",
   },
 ]
 
@@ -251,8 +313,7 @@ export const scheduleChangeStory: DemoScript = {
       chapter: "move",
       caption: `${SESSION} is published, so eleven games are already on every family calendar.`,
       emphasize: "session-strip",
-      callout:
-        "This weekend is published. Every one of these games is already on somebody's calendar.",
+      callout: "Published means these eleven games are already on family calendars.",
     }),
     paced({
       id: "row",
@@ -260,7 +321,7 @@ export const scheduleChangeStory: DemoScript = {
       caption: "Saturday's nine o'clock game at The Playground needs to move.",
       cursor: "row-move",
       press: true,
-      callout: "Every game carries its own controls. Open the one that has to change.",
+      callout: "The controls live on the game, so nothing else on the weekend is touched.",
       set: { open: "move" },
     }),
     paced({
@@ -278,7 +339,7 @@ export const scheduleChangeStory: DemoScript = {
       chapter: "move",
       caption: "Three of them are the same day, so nobody re-plans a weekend.",
       emphasize: "alt-slots",
-      callout: "Same day first. A family that booked a Saturday keeps its Saturday.",
+      callout: "Same-day slots are ranked first, then the closest ones after that.",
     }),
     paced({
       id: "move",
@@ -287,7 +348,7 @@ export const scheduleChangeStory: DemoScript = {
       cursor: "alt-first",
       press: true,
       toast: `Moved · ${MOVED_TO} · ${MOVE.venue}, ${MOVE.court}`,
-      callout: "One press moves the game. That is the entire job the league has to do.",
+      callout: "That press is the whole job. Everything after it is automatic.",
       set: { moved: true, alts: false, open: "" },
     }),
     paced({
@@ -295,8 +356,7 @@ export const scheduleChangeStory: DemoScript = {
       chapter: "move",
       caption: `The row now reads ${MOVED_TO}.`,
       emphasize: "row-move",
-      callout:
-        "No group chat, no phone tree, no email typed by anybody. The next part happens on its own.",
+      callout: "Nothing was written by hand, and the game keeps its court.",
     }),
 
     /* ── 2. Everyone knows ────────────────────────────────────────────── */
@@ -306,14 +366,14 @@ export const scheduleChangeStory: DemoScript = {
       caption: `${PARENT} has two children in this league, and both play this weekend.`,
       stage: "split",
       emphasize: "phone-cal",
-      callout: "Jordan has two kids in this league. His weekend still reads the old time.",
+      callout: "His weekend still reads the old time, because nothing has reached him yet.",
     }),
     paced({
       id: "bell",
       chapter: "knows",
       caption: "The notification lands by itself.",
       emphasize: "phone-notice",
-      callout: "This is the notification the product writes, word for word, with the new gym on it.",
+      callout: "The gym and the court are in the notification, not just the new time.",
       set: { notice: "moved" },
     }),
     paced({
@@ -321,19 +381,19 @@ export const scheduleChangeStory: DemoScript = {
       chapter: "knows",
       caption: "And Saturday's row moves to noon where it stands.",
       emphasize: "sat-row",
-      callout: "Same row, new time. Nothing to reconcile and nothing to delete.",
+      callout: "Same row, new time, so a subscribed phone calendar has nothing to delete.",
       set: { notice: "", calMoved: true },
     }),
     paced({
       id: "who",
       chapter: "knows",
-      caption: "So who else just found out?",
+      caption: "The same change reached everybody attached to that game.",
       /* The strip stops naming a product screen, because this card is not
          one: `getGameAudienceUserIds` runs on the server and no surface in
          the product shows its answer. Punch item 2. */
-      context: `${LEAGUE} · ${SEASON} · Who the change reached`,
+      context: undefined,
       set: { ledger: true, fan: 0 },
-      callout: "Jordan is one of them. The system worked out the rest of the list by itself.",
+      callout: "The list comes off the two rosters and the two clubs, worked out per game.",
       emphasize: "fanout",
     }),
     paced({
@@ -360,7 +420,7 @@ export const scheduleChangeStory: DemoScript = {
     paced({
       id: "fan-4",
       chapter: "knows",
-      caption: "Twenty six people, and not one phone call.",
+      caption: "Twenty six people, from one press.",
       set: { fan: 4 },
       hold: 3000,
     }),
@@ -369,25 +429,24 @@ export const scheduleChangeStory: DemoScript = {
       chapter: "knows",
       caption: "Every one of them by notification and by email, off the same list.",
       emphasize: "fanout-foot",
-      callout:
-        "One audience query feeds the bell and the email, so the two can never disagree.",
+      callout: "One audience query feeds both the bell and the email.",
     }),
 
     /* ── 3. The cancellation ──────────────────────────────────────────── */
     paced({
       id: "sunday",
       chapter: "cancel",
-      caption: "Sunday is a harder call. That game is not being played at all.",
+      caption: "Sunday's game is not being played at all.",
       context: CTX,
       cursor: "row-cancel",
       press: true,
-      callout: "A different weekend problem: this one cannot be moved, it has to come off.",
+      callout: "This one cannot be moved, so it comes off the schedule instead.",
       set: { ledger: false, open: "cancel" },
     }),
     paced({
       id: "cancel-press",
       chapter: "cancel",
-      caption: "One sentence stands between the league and calling it off.",
+      caption: "The confirmation is one sentence.",
       cursor: "cancel-game",
       press: true,
       callout: "A cancelled game stops counting in the table. That is the whole warning.",
@@ -407,7 +466,7 @@ export const scheduleChangeStory: DemoScript = {
       chapter: "cancel",
       caption: "The same fan-out runs again, for the other daughter's team.",
       emphasize: "phone-notice",
-      callout: "Twenty six people again, and a different twenty six: the other team, the other club.",
+      callout: "Twenty six again, and a different twenty six: the other team, the other club.",
       set: { notice: "cancelled" },
     }),
     paced({
@@ -415,23 +474,22 @@ export const scheduleChangeStory: DemoScript = {
       chapter: "cancel",
       caption: "Sunday goes quiet on her calendar, and stays visible.",
       emphasize: "sun-row",
-      callout:
-        "The row is struck through where it sits rather than vanishing, so nobody wonders whether they missed it.",
+      callout: "It is struck through where it sits rather than removed from the list.",
       set: { notice: "", calCancelled: true },
     }),
     paced({
       id: "email-line",
       chapter: "cancel",
-      caption: "And the email says the sentence that keeps a family off the road.",
+      caption: "The email carries the same sentence.",
       emphasize: "email-card",
-      callout: "The one line that matters on a Sunday morning, in the email as well as the app.",
+      callout: "The app and the inbox get the same words, from the same send.",
       set: { emailCard: true },
     }),
     paced({
       id: "end",
       chapter: "cancel",
       caption:
-        "One game moved, one game cancelled, fifty two people told, and nobody had to be chased.",
+        "One game moved, one game cancelled, and fifty two people told from two presses.",
       hold: 5200,
       set: { endCard: true },
     }),
@@ -517,12 +575,21 @@ function ScheduleScreen({
   moved: boolean
   cancelled: boolean
 }) {
+  /* Opened, the list narrows to the row and its neighbours: the expansion
+     carries six controls and a slot picker, and the scene never scrolls. */
+  const openIndex = ROWS.findIndex(
+    (r) => (open === "move" && r.id === "row-move") || (open === "cancel" && r.id === "row-cancel")
+  )
+  const visible =
+    openIndex < 0
+      ? ROWS
+      : ROWS.slice(Math.max(0, openIndex - 2), Math.max(0, openIndex - 2) + 4)
   return (
     <>
       <ConsoleTabs active="Schedule" />
       <div className="bg-ink-50/70 min-h-0 flex-1 px-5 py-3">
         {/* The tab's own scope strip: whole season, or one session. */}
-        <div data-demo-target="session-strip" className="mb-2.5 flex items-center gap-2">
+        <div data-demo-target="session-strip" className="mb-2 flex items-center gap-2">
           <span className="border-ink-200 flex shrink-0 overflow-hidden rounded-lg border bg-white text-[14px] font-bold">
             <span className="text-ink-500 px-2.5 py-1">Whole season</span>
             <span className="bg-play-600 px-2.5 py-1 text-white">{SESSION}</span>
@@ -544,13 +611,13 @@ function ScheduleScreen({
                 <span className="text-ink-600 bg-white px-2.5 py-1">Board</span>
               </span>
               <Chip tone="neutral" strong>
-                3 of 11
+                {visible.length} of {ROWS.length}
               </Chip>
             </span>
           }
         >
-          <div className="space-y-1 px-3 py-2">
-            {ROWS.map((r, i) => (
+          <div className="space-y-0.5 px-3 py-1">
+            {visible.map((r, i) => (
               <GameRow
                 key={`${r.home}-${r.when}`}
                 id={r.id}
@@ -621,7 +688,7 @@ function GameRow({
     >
       {/* The real row is ONE wrapping flex line: time, matchup with a quiet
           "vs", venue and court, then the status badge and the caret. */}
-      <div className="flex w-full items-center justify-between gap-3 px-3.5 py-2">
+      <div className="flex w-full items-center justify-between gap-3 px-3.5 py-0.5">
         <div className="flex flex-1 flex-wrap items-center gap-x-3 gap-y-0.5">
           {/* PUNCH ITEM 3, honoured: a moved row carries NO lasting mark in
               the product, so it carries none here either. The one-shot pop is
@@ -732,13 +799,13 @@ function FanOutLedger({ shown }: { shown: number }) {
       className="flex min-h-0 flex-1 flex-col justify-center bg-[#0b1628] px-10 py-7 text-white"
     >
       <p className="text-gold-400 text-[15px] font-bold uppercase tracking-[0.16em]">
-        Who the system told, automatically
+        Who the change reached
       </p>
       <p className="font-display mt-1.5 text-[38px] font-extrabold leading-none tabular-nums">
         {FANOUT_TOTAL} people
       </p>
       <p className="mt-1.5 text-[16px] font-semibold text-white/70">
-        {MOVE.home} vs {MOVE.away} · two clubs, two rosters, one press
+        {MOVE.home} vs {MOVE.away} · two clubs, two rosters
       </p>
 
       <div className="mt-5 space-y-2">
@@ -768,7 +835,7 @@ function FanOutLedger({ shown }: { shown: number }) {
         className="mt-4 border-t border-white/10 pt-3 text-[15px] font-medium text-white/55"
       >
         One audience list, used twice: the notification in the app and the email to the same
-        people. Referees and the league office are left out on purpose.
+        people.
       </p>
     </div>
   )

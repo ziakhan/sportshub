@@ -199,12 +199,12 @@ export const DEMOS: DemoEntry[] = [
     promise:
       "A league moves one game and cancels another, and every family, coach and club owner on both rosters is told automatically, by notification and by email.",
     description:
-      "It opens on a published weekend, which is the point: eleven games are already on somebody's calendar, so changing one is not a private act. Saturday's nine o'clock game at The Playground has to move, and the league does not pick a time out of the air. It asks for alternates, gets only slots where the court is free and neither team is already playing, and takes noon on the same day. One press, and that is the entire job. Then the demo turns the camera around: a parent with two children in the league gets the notification word for word, and Saturday's row moves to noon where it stands, on the same card, with nothing to reconcile. The moment this demo exists for comes next, the fan-out counted out loud: twenty guardian accounts, four coaches, two club owners, twenty six people told from one press and zero phone calls. Then the harder half. Sunday's game is not being played at all, so it gets cancelled, and the cancellation lands on the same phone: the row is struck through where it sits rather than vanishing, and the email carries the sentence that keeps a family off the road on a Sunday morning.",
+      "It opens on a published weekend, which is the point: eleven games are already on somebody's calendar, so changing one is not a private act. Saturday's nine o'clock game at The Playground has to move, and the league does not pick a time out of the air. It asks for alternates, gets only slots where the court is free and neither team is already playing, and takes noon on the same day. One press, and that is the entire job. Then the demo turns the camera around: a parent with two children in the league gets the notification word for word, and Saturday's row moves to noon where it stands, on the same card, with nothing to reconcile. Then the fan-out, counted out loud: twenty guardian accounts, four coaches, two club owners, twenty six people from one press. Sunday's game is not being played at all, so it gets cancelled, and the cancellation lands on the same phone: the row is struck through where it sits rather than vanishing, and the email carries the same sentence the app does.",
     audiences: ["leagues", "clubs", "parents"],
     primaryAudience: "leagues",
     kind: "chapter",
     stage: "split",
-    durationLabel: "1 min 42 sec",
+    durationLabel: "1 min 36 sec",
     status: "live",
     chapterCount: 3,
     bullets: [
