@@ -15,6 +15,12 @@ import { NewsCard } from "@/components/ui/news-card"
 import { ScoreCard } from "@/components/ui/score-card"
 import { StandingsTable } from "@/components/ui/standings-table"
 import { cn } from "@/components/ui/cn"
+import {
+  BracketLegend,
+  BracketTree,
+  type BracketSection,
+  type BracketSlotKind,
+} from "@/components/bracket"
 import { buildMatchupCover } from "@/lib/content/matchup-cover"
 import { Advance } from "../advance"
 import { DuoFrame } from "../frames"
@@ -937,67 +943,77 @@ export function ScenePlayoffWizard() {
   )
 }
 
-/* Step 31b — The bracket, played through to the final */
+/* Step 31b — The bracket, played through to the final.
+   Drawn by the SAME component the operator playoff plan uses
+   (@/components/bracket), so the public walkthrough and the real product show
+   one bracket, not two lookalikes. */
+const seedOf = (team: string): number | null =>
+  PLAYOFFS.seeds.find((s) => s.team === team)?.seed ?? null
+
+const demoSlot = (team: string, score: number, other: number, from?: string) => ({
+  kind: (from ? "WINNER" : "SEED") as BracketSlotKind,
+  seed: seedOf(team),
+  from: from ?? null,
+  teamName: team,
+  ghostLabel: from ? `Winner of ${from.toUpperCase()}` : `Seed ${seedOf(team) ?? ""}`,
+  score,
+  outcome: (score > other ? "WON" : "LOST") as "WON" | "LOST",
+})
+
+const DEMO_BRACKET: BracketSection = {
+  key: "demo-championship",
+  title: "Championship bracket",
+  blurb: "Winners move right. Later rounds fill in the moment a scoresheet is signed.",
+  kind: "CHAMPIONSHIP",
+  matches: [
+    {
+      id: "g1",
+      code: "G1",
+      round: "Semifinal",
+      tier: 0,
+      whenLabel: PLAYOFFS.semi1.when,
+      status: "FINAL",
+      home: demoSlot(PLAYOFFS.semi1.home, PLAYOFFS.semi1.hs, PLAYOFFS.semi1.as),
+      away: demoSlot(PLAYOFFS.semi1.away, PLAYOFFS.semi1.as, PLAYOFFS.semi1.hs),
+    },
+    {
+      id: "g2",
+      code: "G2",
+      round: "Semifinal",
+      tier: 0,
+      whenLabel: PLAYOFFS.semi2.when,
+      status: "FINAL",
+      home: demoSlot(PLAYOFFS.semi2.home, PLAYOFFS.semi2.hs, PLAYOFFS.semi2.as),
+      away: demoSlot(PLAYOFFS.semi2.away, PLAYOFFS.semi2.as, PLAYOFFS.semi2.hs),
+    },
+    {
+      id: "g3",
+      code: "G3",
+      round: "Final",
+      tier: 1,
+      whenLabel: PLAYOFFS.final.when,
+      status: "FINAL",
+      home: demoSlot(PLAYOFFS.final.home, PLAYOFFS.final.hs, PLAYOFFS.final.as, "g1"),
+      away: demoSlot(PLAYOFFS.final.away, PLAYOFFS.final.as, PLAYOFFS.final.hs, "g2"),
+    },
+  ],
+}
+
 export function SceneBracket() {
-  const games = [
-    { round: "Round 1", g: PLAYOFFS.semi1 },
-    { round: "Round 1", g: PLAYOFFS.semi2 },
-    { round: "Round 2", g: PLAYOFFS.final },
-  ]
   return (
     <div className="px-10 py-8">
       <SeasonHeader status="In Progress" statusTone="play" lifecycle="Mark Completed" />
       <SeasonTabs active="Playoffs" />
       <Panel title="Playoffs" action={<span className="text-ink-400 text-xs">Delete bracket</span>}>
-        <p className="text-ink-500 mb-4 text-sm">
-          4 teams · single games · later rounds appear automatically as results are finalized.
-        </p>
-        <div className="grid grid-cols-2 gap-5">
-          <div className="space-y-3">
-            <p className="text-ink-400 text-xs font-bold uppercase tracking-[0.12em]">Round 1</p>
-            {games.slice(0, 2).map(({ g }) => (
-              <Card key={g.label} size="sm">
-                <div className="flex items-center justify-between">
-                  <p className="text-ink-400 text-xs font-bold">{g.label}</p>
-                  <Badge tone="court">COMPLETED</Badge>
-                </div>
-                <div className="mt-2 space-y-1">
-                  <div className="flex justify-between text-sm">
-                    <span className={cn("font-bold", g.hs > g.as ? "text-ink-950" : "text-ink-500")}>{g.home}</span>
-                    <span className="font-bold tabular-nums">{g.hs}</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span className={cn("font-bold", g.as > g.hs ? "text-ink-950" : "text-ink-500")}>{g.away}</span>
-                    <span className="font-bold tabular-nums">{g.as}</span>
-                  </div>
-                </div>
-                <p className="text-ink-400 mt-2 text-xs">{g.when}</p>
-              </Card>
-            ))}
-          </div>
-          <div className="space-y-3">
-            <p className="text-ink-400 text-xs font-bold uppercase tracking-[0.12em]">Round 2</p>
-            <Advance block>
-              <Card size="sm" className="border-gold-100 bg-highlight-soft">
-                <div className="flex items-center justify-between">
-                  <p className="text-ink-400 text-xs font-bold">{PLAYOFFS.final.label}</p>
-                  <Badge tone="court">COMPLETED</Badge>
-                </div>
-                <div className="mt-2 space-y-1">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-ink-950 font-bold">🏆 {PLAYOFFS.final.home}</span>
-                    <span className="font-bold tabular-nums">{PLAYOFFS.final.hs}</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-ink-500 font-bold">{PLAYOFFS.final.away}</span>
-                    <span className="font-bold tabular-nums">{PLAYOFFS.final.as}</span>
-                  </div>
-                </div>
-                <p className="text-ink-400 mt-2 text-xs">{PLAYOFFS.final.when}</p>
-              </Card>
-            </Advance>
-          </div>
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+          <p className="text-ink-500 text-sm">
+            4 teams, single games. Later rounds appear automatically as results are finalized.
+          </p>
+          <BracketLegend />
         </div>
+        <Advance block>
+          <BracketTree section={DEMO_BRACKET} championLabel={PLAYOFFS.final.home} />
+        </Advance>
       </Panel>
     </div>
   )

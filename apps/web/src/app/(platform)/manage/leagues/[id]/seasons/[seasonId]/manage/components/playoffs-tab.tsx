@@ -1,7 +1,15 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect, useCallback, useMemo } from "react"
 import { Button, PanelHeader, BrandListbox, ChipGroup } from "@/components/ui"
+import {
+  BracketBoard,
+  BracketLegend,
+  sectionizeBracket,
+  type BracketMatch,
+  type BracketSlot,
+  type BracketSlotKind,
+} from "@/components/bracket"
 import { panelClass } from "./types"
 
 /**
@@ -30,201 +38,79 @@ interface Props {
 /* ---------------------- the bracket, drawn properly ---------------------- */
 /* Owner 2026-08-10: "everything kind of converging into the middle instead
    of everything sitting at the top... put their ranking beside their team
-   names... make it a standard." Rows are computed the way every printed
-   bracket is: entry games get consecutive rows, every later game sits at
-   the midpoint of the two games that feed it, and the final lands mid-
-   height. Connectors are one SVG elbow per feed. Consolation games live on
-   their own tab; the 3rd-place game sits under the final. */
+   names... make it a standard." Owner 2026-08-16, the ruling that produced
+   the rebuild: "They're converging on top and there are no lines in between.
+   There's no dark boldness for the teams that are there: winner of this,
+   winner of that, loser of this, loser of that, the consolation."
 
-const ROW_H = 96
-const BOX_W = 220
-const COL_GAP = 48
-const BOX_H = 82
+   The geometry now lives in ONE place — @/components/bracket — shared with
+   every other surface that draws a bracket. This file only translates a plan
+   game into that model. */
 
-function GameBox({ g, style }: { g: any; style?: React.CSSProperties }) {
-  const resolved = g.homeTeamId && g.awayTeamId
-  const seed = (slot: any) =>
-    slot?.type === "SEED" && /^\d+$/.test(String(slot.ref)) ? (
-      <span className="bg-ink-100 text-ink-500 mr-1 inline-block w-6 shrink-0 rounded text-center text-[10px] font-bold">
-        {slot.ref}
-      </span>
-    ) : null
-  return (
-    <div
-      style={style}
-      className={`rounded-xl border px-2.5 py-1.5 text-xs leading-snug shadow-sm ${
-        resolved ? "border-ink-200 bg-white" : "border-ink-100 bg-ink-50"
-      }`}
-    >
-      <p className={`flex items-center truncate ${g.homeTeamId ? "text-ink-900 font-semibold" : "text-ink-400"}`}>
-        {seed(g.home)}
-        <span className="truncate">{g.homeLabel}</span>
-      </p>
-      <p className={`mt-0.5 flex items-center truncate ${g.awayTeamId ? "text-ink-900 font-semibold" : "text-ink-400"}`}>
-        {seed(g.away)}
-        <span className="truncate">{g.awayLabel}</span>
-      </p>
-      <p className="text-ink-400 mt-1 text-[11px]">
-        {new Date(g.startIso).toLocaleString("en-CA", {
-          weekday: "short",
-          month: "short",
-          day: "numeric",
-          hour: "numeric",
-          minute: "2-digit",
-        })}
-      </p>
-    </div>
-  )
+const WHEN = (iso: string): string =>
+  new Date(iso).toLocaleString("en-CA", {
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  })
+
+const SLOT_KINDS: BracketSlotKind[] = ["SEED", "WINNER", "LOSER", "POOL", "BEST2ND", "TEAM"]
+
+/** One side of a planned playoff game. Scores/outcomes are read defensively:
+ *  the plan does not carry them today, and the card shows them the moment it
+ *  does — no rendering change needed here. */
+function planSlot(ref: any, label: string, teamId: string | null, score: unknown, won: unknown): BracketSlot {
+  const kind: BracketSlotKind = SLOT_KINDS.includes(ref?.type) ? ref.type : "SEED"
+  const seedish = kind === "SEED" && /^\d+$/.test(String(ref?.ref ?? ""))
+  return {
+    kind,
+    seed: seedish ? Number(ref.ref) : null,
+    from: kind === "WINNER" || kind === "LOSER" ? String(ref.ref) : null,
+    teamName: teamId ? label : null,
+    ghostLabel: label,
+    score: typeof score === "number" ? score : null,
+    outcome: typeof won === "boolean" ? (won ? "WON" : "LOST") : null,
+  }
 }
 
-function BracketTree({ unit, games }: { unit: string; games: any[] }) {
-  const byId = new Map(games.map((g) => [g.structId, g]))
-  const isCons = (g: any) => /consolation/i.test(g.round)
-  const third = games.find((g) => /3rd place/i.test(g.round)) ?? null
-  const tree = games.filter((g) => !isCons(g) && g !== third)
-  const fed = new Set(
-    tree.flatMap((g) =>
-      [g.home, g.away]
-        .filter((s: any) => s?.type === "WINNER")
-        .map((s: any) => String(s.ref))
-    )
-  )
-  const finals = tree.filter((g) => !fed.has(String(g.structId)))
-  const hasWinnerFlow = tree.some((g) => [g.home, g.away].some((s: any) => s?.type === "WINNER"))
+function planToMatches(games: any[]): BracketMatch[] {
+  return games.map((g) => {
+    const played = typeof g.homeScore === "number" && typeof g.awayScore === "number"
+    return {
+      id: String(g.structId),
+      code: String(g.structId).toUpperCase(),
+      round: String(g.round ?? ""),
+      tier: Number(g.tier ?? 0),
+      whenLabel: g.startIso ? WHEN(g.startIso) : null,
+      status: played ? ("FINAL" as const) : null,
+      home: planSlot(g.home, g.homeLabel, g.homeTeamId ?? null, g.homeScore, played ? g.homeScore > g.awayScore : undefined),
+      away: planSlot(g.away, g.awayLabel, g.awayTeamId ?? null, g.awayScore, played ? g.awayScore > g.homeScore : undefined),
+    }
+  })
+}
 
-  /* Pools/placement units have no winner-flow — a simple round grid reads
-     better than a fake tree. */
-  if (!hasWinnerFlow || finals.length !== 1) {
-    const rounds = [...new Set(games.map((g) => g.round))].sort((a, b) => {
-      const fa = games.filter((g) => g.round === a).map((g) => g.startIso).sort()[0]
-      const fb = games.filter((g) => g.round === b).map((g) => g.startIso).sort()[0]
-      return fa < fb ? -1 : 1
-    })
-    return (
-      <div>
-        <p className="text-ink-900 mb-1.5 text-xs font-bold uppercase tracking-wide">{unit}</p>
-        <div className="overflow-x-auto">
-          <div className="flex items-start gap-3 pb-1">
-            {rounds.map((round) => (
-              <div key={round} className="w-52 shrink-0">
-                <p className="text-ink-500 mb-1 text-[11px] font-semibold">{round}</p>
-                <div className="space-y-1.5">
-                  {games
-                    .filter((g) => g.round === round)
-                    .sort((a, b) => (a.startIso < b.startIso ? -1 : 1))
-                    .map((g) => (
-                      <GameBox key={g.structId} g={g} />
-                    ))}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-    )
-  }
+/** One grade's whole playoff picture: the championship tree, the third-place
+ *  game, and the consolation tree the bottom of the field plays — each its own
+ *  labelled section, all on the same converging geometry. */
+function PlanBracket({ unit, games }: { unit: string; games: any[] }) {
+  const sections = useMemo(() => sectionizeBracket(planToMatches(games)), [games])
+  const champion = useMemo(() => {
+    const final = sections.find((s) => s.kind === "CHAMPIONSHIP")?.matches.find((m) => /^(gold )?final$/i.test(m.round))
+    if (!final) return null
+    const won = [final.home, final.away].find((s) => s.outcome === "WON")
+    return won?.teamName ?? null
+  }, [sections])
 
-  /* Row positions: leaves in bracket order, parents at their feeders' mid. */
-  const pos = new Map<string, number>()
-  let leaf = 0
-  const place = (g: any): number => {
-    if (pos.has(g.structId)) return pos.get(g.structId)!
-    const kids = [g.home, g.away]
-      .filter((sl: any) => sl?.type === "WINNER")
-      .map((sl: any) => byId.get(String(sl.ref)))
-      .filter((k: any) => k && !isCons(k) && k !== third)
-    let p: number
-    if (kids.length === 0) p = leaf++
-    else if (kids.length === 1) p = (place(kids[0]) + leaf++) / 2
-    else p = (place(kids[0]) + place(kids[1])) / 2
-    pos.set(g.structId, p)
-    return p
-  }
-  place(finals[0])
-  for (const g of tree) if (!pos.has(g.structId)) pos.set(g.structId, leaf++)
-
-  const tiers = [...new Set(tree.map((g) => g.tier ?? 0))].sort((a, b) => a - b)
-  const colOf = new Map(tiers.map((t, i) => [t, i]))
-  const roundLabel = (t: number, i: number): string => {
-    const names = tree.filter((g) => (g.tier ?? 0) === t).map((g) => g.round)
-    const name = names.sort()[0] ?? ""
-    return i === 0 ? "Opening round" : name
-  }
-  const rows = Math.max(leaf, 1)
-  const width = tiers.length * (BOX_W + COL_GAP) + BOX_W
-  const height = rows * ROW_H + (third ? BOX_H + 18 : 0)
-  const x = (g: any) => (colOf.get(g.tier ?? 0) ?? 0) * (BOX_W + COL_GAP)
-  const y = (g: any) => (pos.get(g.structId) ?? 0) * ROW_H
-
+  if (sections.length === 0) return null
   return (
     <div>
-      <p className="text-ink-900 mb-1.5 text-xs font-bold uppercase tracking-wide">{unit}</p>
-      <div className="overflow-x-auto pb-1">
-        <div style={{ width, minWidth: width }}>
-          <div className="flex" style={{ gap: COL_GAP }}>
-            {tiers.map((t, i) => (
-              <p key={t} className="text-ink-500 text-[11px] font-semibold" style={{ width: BOX_W }}>
-                {roundLabel(t, i)}
-              </p>
-            ))}
-          </div>
-          <div className="relative mt-1" style={{ height }}>
-            <svg
-              className="pointer-events-none absolute inset-0"
-              width={width}
-              height={height}
-              aria-hidden="true"
-            >
-              {tree.map((g) =>
-                [g.home, g.away]
-                  .filter((sl: any) => sl?.type === "WINNER")
-                  .map((sl: any) => {
-                    const kid = byId.get(String(sl.ref))
-                    if (!kid || isCons(kid) || kid === third) return null
-                    const x1 = x(kid) + BOX_W
-                    const y1 = y(kid) + BOX_H / 2
-                    const x2 = x(g)
-                    const y2 = y(g) + BOX_H / 2
-                    const mid = x1 + COL_GAP / 2
-                    return (
-                      <path
-                        key={`${g.structId}-${sl.ref}`}
-                        d={`M ${x1} ${y1} H ${mid} V ${y2} H ${x2}`}
-                        fill="none"
-                        stroke="#c7cdd8"
-                        strokeWidth="1.5"
-                      />
-                    )
-                  })
-              )}
-            </svg>
-            {tree.map((g) => (
-              <GameBox
-                key={g.structId}
-                g={g}
-                style={{ position: "absolute", left: x(g), top: y(g), width: BOX_W }}
-              />
-            ))}
-            <div
-              style={{
-                position: "absolute",
-                left: x(finals[0]) + BOX_W + COL_GAP,
-                top: y(finals[0]) + BOX_H / 2 - 16,
-                width: BOX_W - 30,
-              }}
-              className="border-gold-300 bg-gold-50 text-gold-800 rounded-xl border px-2.5 py-1.5 text-xs font-bold"
-            >
-              🏆 Champion
-            </div>
-            {third && (
-              <div style={{ position: "absolute", left: x(third), top: y(finals[0]) + BOX_H + 24, width: BOX_W }}>
-                <p className="text-ink-400 mb-0.5 text-[10px] font-semibold uppercase">3rd place</p>
-                <GameBox g={third} />
-              </div>
-            )}
-          </div>
-        </div>
+      <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+        <p className="text-ink-900 text-xs font-bold uppercase tracking-[0.14em]">{unit}</p>
+        <BracketLegend />
       </div>
+      <BracketBoard sections={sections} championLabel={champion} />
     </div>
   )
 }
@@ -235,7 +121,7 @@ function PlayoffPlanSection({ seasonId, seasonStatus }: { seasonId: string; seas
   const [busy, setBusy] = useState(false)
   const [msg, setMsg] = useState<string | null>(null)
   const [errs, setErrs] = useState<string[]>([])
-  const [view, setView] = useState<"bracket" | "consolations" | "schedule">("bracket")
+  const [view, setView] = useState<"bracket" | "schedule">("bracket")
   const [unitTab, setUnitTab] = useState<string | null>(null)
 
   const load = useCallback(async () => {
@@ -352,7 +238,7 @@ function PlayoffPlanSection({ seasonId, seasonStatus }: { seasonId: string; seas
                       setMsg("Pooling saved. Press Plan the playoffs to rebuild the schedule.")
                       await load()
                     }}
-                    className={`px-2.5 py-1 font-semibold ${
+                    className={`focus-visible:ring-play-500/50 px-2.5 py-1 font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset ${
                       gp.pooling === o.v ? "bg-play-600 text-white" : "text-ink-600 bg-white"
                     }`}
                   >
@@ -510,9 +396,10 @@ function PlayoffPlanSection({ seasonId, seasonStatus }: { seasonId: string; seas
         </div>
       )}
 
-      {/* ONE GRADE AT A TIME (owner 2026-08-10): grade tabs on top, the
-          three views below scoped to the chosen grade — never one huge
-          scrolling page. */}
+      {/* ONE GRADE AT A TIME (owner 2026-08-10): grade tabs on top, the views
+          below scoped to the chosen grade — never one huge scrolling page.
+          Consolation is no longer a separate view (owner 2026-08-16): it is a
+          labelled section inside the bracket, drawn on the same tree. */}
       {planGames.length > 0 && (
         <div className="border-ink-100 mt-4 flex flex-wrap gap-1 border-b pb-2">
           {[...new Set(planGames.map((g) => g.divisionId))].sort().map((u) => {
@@ -523,7 +410,7 @@ function PlayoffPlanSection({ seasonId, seasonStatus }: { seasonId: string; seas
                 type="button"
                 onClick={() => setUnitTab(u)}
                 aria-pressed={selected}
-                className={`rounded-lg px-3 py-1.5 text-xs font-bold ${
+                className={`focus-visible:ring-play-500/50 rounded-lg px-3 py-1.5 text-xs font-bold focus-visible:outline-none focus-visible:ring-2 ${
                   selected ? "bg-play-600 text-white" : "text-ink-600 bg-ink-50 hover:bg-ink-100"
                 }`}
               >
@@ -536,24 +423,20 @@ function PlayoffPlanSection({ seasonId, seasonStatus }: { seasonId: string; seas
       {planGames.length > 0 && (
         <div className="mt-3 flex flex-wrap items-center gap-3">
           <div className="border-ink-100 inline-flex overflow-hidden rounded-lg border text-xs">
-            {(["bracket", "consolations", "schedule"] as const).map((v) => (
+            {(["bracket", "schedule"] as const).map((v) => (
               <button
                 key={v}
                 type="button"
                 onClick={() => setView(v)}
                 aria-pressed={view === v}
-                className={`px-3 py-1 font-semibold ${view === v ? "bg-play-600 text-white" : "text-ink-600 bg-white"}`}
+                className={`focus-visible:ring-play-500/50 px-3 py-1 font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset ${
+                  view === v ? "bg-play-600 text-white" : "text-ink-600 bg-white"
+                }`}
               >
-                {v === "bracket" ? "Bracket" : v === "consolations" ? "Consolations" : "Schedule"}
+                {v === "bracket" ? "Bracket" : "Schedule"}
               </button>
             ))}
           </div>
-          {view !== "schedule" && (
-            <p className="text-ink-400 text-[11px]">
-              White = teams decided · gray = waiting on an earlier result · the small number is the
-              seed
-            </p>
-          )}
         </div>
       )}
       {planGames.length > 0 && view === "bracket" && (
@@ -561,29 +444,7 @@ function PlayoffPlanSection({ seasonId, seasonStatus }: { seasonId: string; seas
           {(() => {
             const units = [...new Set(planGames.map((g) => g.divisionId))].sort()
             const u = unitTab && units.includes(unitTab) ? unitTab : units[0]
-            return <BracketTree unit={u} games={planGames.filter((g) => g.divisionId === u)} />
-          })()}
-        </div>
-      )}
-      {planGames.length > 0 && view === "consolations" && (
-        <div className="mt-3">
-          {(() => {
-            const units = [...new Set(planGames.map((g) => g.divisionId))].sort()
-            const u = unitTab && units.includes(unitTab) ? unitTab : units[0]
-            const cons = planGames.filter((g) => g.divisionId === u && /consolation/i.test(g.round))
-            return cons.length === 0 ? (
-              <p className="text-ink-400 text-xs">
-                No consolation games; this bracket sends first-round losers home.
-              </p>
-            ) : (
-              <div className="grid gap-1.5 sm:grid-cols-3 lg:grid-cols-4">
-                {cons
-                  .sort((a, b) => (a.startIso < b.startIso ? -1 : 1))
-                  .map((g) => (
-                    <GameBox key={g.structId} g={g} />
-                  ))}
-              </div>
-            )
+            return <PlanBracket unit={u} games={planGames.filter((g) => g.divisionId === u)} />
           })()}
         </div>
       )}
