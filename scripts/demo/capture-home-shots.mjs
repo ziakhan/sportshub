@@ -23,12 +23,14 @@ const SHOTS = [
     scrollY: 760,
   },
   {
-    // NPH Summer world recap: the Toronto Lords girls, real names, no seed litter.
+    // NPH Summer world recap: the Toronto Lords girls, real names, no seed
+    // litter. Scrolled so the score art and Player of the Game land in frame.
     name: "news-recap-phone",
     url: "http://localhost:3000/news/toronto-lords-grade-10-girls-vs-burlington-force-grade-10-gi-20260805-f44d3c46",
     viewport: { width: 390, height: 844 },
     scale: 2,
     settle: 4000,
+    scrollY: 300,
   },
 ]
 

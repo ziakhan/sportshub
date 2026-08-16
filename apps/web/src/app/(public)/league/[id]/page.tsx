@@ -199,10 +199,15 @@ export default async function PublicLeagueHubPage({ params }: { params: { id: st
   }
 
   return (
-    <div
-      className="container font-barlow mx-auto px-4 py-10 sm:px-6"
-      style={brandStyle(accent)}
-    >
+    /* Never plain white (owner 2026-08-17, looking at a real capture of this
+       page): the standings and score cards now sit on the daylight ground with
+       the ambient grain, the same family as the hero band above them. */
+    <div className="relative isolate min-h-screen bg-[#faf6ee]">
+      <CourtBackdropLayer variant="daylight" floor="planks" intensity="ambient" />
+      <div
+        className="container font-barlow relative z-10 mx-auto px-4 py-10 sm:px-6"
+        style={brandStyle(accent)}
+      >
       {isDemo && (
         <>
           <div className="mb-6 flex flex-wrap items-center gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3">
@@ -648,12 +653,13 @@ export default async function PublicLeagueHubPage({ params }: { params: { id: st
             <div className="bg-court-50 text-court-800 rounded-2xl p-4 text-sm">
               <Badge tone="court" className="mb-2">In season</Badge>
               <p>
-                Games are scored live — tap any final for the full box score and play-by-play, or
+                Games are scored live. Tap any final for the full box score and play-by-play, or
                 follow the league to see it on your homepage.
               </p>
             </div>
           )}
         </div>
+      </div>
       </div>
     </div>
   )
