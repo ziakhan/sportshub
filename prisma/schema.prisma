@@ -311,6 +311,41 @@ model Tenant {
   // off by default so slow fills don't deter families; teams can override.
   showRosterFillDefault Boolean @default(false)
 
+  // Location (2026-08-15). Plain Floats, mirroring Venue — at a few thousand
+  // clubs a bounding-box prefilter + haversine is sub-millisecond, and PostGIS
+  // would have to be installed on four separate databases (local, CI, box,
+  // Neon) before a single query could run. Revisit only at much larger scale.
+  latitude     Float?
+  longitude    Float?
+  placeId      String? // Google Places — also makes re-geocoding idempotent
+  postalCode   String?
+  region       String? // governing-body region label, e.g. "Durham-York"
+  geocodedAt   DateTime?
+  geoSource    String? // "google" | "oba-kml" | "manual"
+  geoPrecision String? // ROOFTOP | APPROXIMATE — most are city centroids
+
+  // Lifecycle (2026-08-15). Imported census clubs are real but not all are
+  // presentable, so visibility is separate from status: a club is public only
+  // once publishedAt is set. Same draft/publish shape as Game.publishedAt.
+  publishedAt  DateTime?
+  reviewedAt   DateTime?
+  reviewedById String?
+
+  // Duplicate resolution. The source of a merge is SOFT-deleted and points at
+  // its survivor — hard deletion would orphan any claim already made against
+  // it. Mirrors Player.absorbedIntoPlayerId.
+  mergedIntoId String?
+  mergedAt     DateTime?
+
+  // Where this record's data came from, for the admin review tool.
+  /// Other names the club is known by, pipe-separated. Many associations have a
+  /// legal name nobody uses and a team brand everybody does - Mississauga Minor
+  /// Basketball is searched for as "Monarchs" - so both must find the club, or
+  /// its owner cannot locate it to claim it.
+  searchAliases String? @db.Text
+  dataSources String? // comma-separated, e.g. "oba-kml,tier3-search"
+  dataNotes   String? @db.Text
+
   // Relationships
   branding              TenantBranding?
   features              TenantFeatures?
@@ -353,6 +388,12 @@ model Tenant {
   // Homepage + public nav filter status IN (ACTIVE, UNCLAIMED) over ~190
   // imported clubs (perf audit 2026-07-06)
   @@index([status])
+  // Public surfaces now also require publishedAt; region/city browse and the
+  // bounding-box prefilter behind "clubs near me" hit the rest.
+  @@index([publishedAt])
+  @@index([region])
+  @@index([latitude, longitude])
+  @@index([mergedIntoId])
 }
 
 enum TenantType {
@@ -4461,4 +4502,23 @@ model RosterReminder {
 
   @@unique([seasonId, teamSubmissionId, window])
   @@index([seasonId])
+}
+
+// Pre-launch notify list (owner 2026-08-17): the landing hero and the demo
+// player's entry ask both feed this. One row per submission, dedup on the
+// normalized contact so a repeat signup refreshes instead of duplicating.
+// No relations on purpose: this exists before accounts do.
+model LaunchSignup {
+  id        String   @id @default(uuid())
+  /// Email address or phone number, normalized (lowercased email, digits-only phone).
+  contact   String   @unique
+  kind      String // "email" | "phone"
+  /// Self-declared identity chip, when picked: Player | Parent | Club | League | Referee | Trainer | Media
+  identity  String?
+  /// Where the ask was answered: "landing" | "demo:<slug>"
+  source    String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([kind])
 }

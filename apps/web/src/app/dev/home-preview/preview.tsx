@@ -20,10 +20,13 @@ import { useEffect, useRef, useState } from "react"
 import Image from "next/image"
 import Link from "next/link"
 import { CourtBackdrop } from "@/components/ui"
+import { NotifyForm } from "@/components/launch/notify-form"
 import { DEMOS, type DemoAudience } from "@/app/demos/registry"
 
-/* Rotating hero slogans, from the approved creative set. Each carries its own
-   accent, the way the product home page colours "All of it." in gold. */
+/* Rotating hero slogans in the owner's priority order (2026-08-17), each with
+   its own accent the way the product home page colours "All of it." in gold.
+   Clickable: arrows and dots move through them, and a manual move stops the
+   auto-advance so a reader is never yanked off a line. */
 const SLOGANS: { key: string; node: React.ReactNode }[] = [
   {
     key: "one-app",
@@ -50,6 +53,14 @@ const SLOGANS: { key: string; node: React.ReactNode }[] = [
     ),
   },
   {
+    key: "watch-live",
+    node: (
+      <>
+        Watch every game <span className="text-live-500">live</span>.
+      </>
+    ),
+  },
+  {
     key: "game-moved",
     node: (
       <>
@@ -58,10 +69,26 @@ const SLOGANS: { key: string; node: React.ReactNode }[] = [
     ),
   },
   {
-    key: "watch-live",
+    key: "payments",
     node: (
       <>
-        Watch every game <span className="text-live-500">live</span>.
+        Payment plans <span className="text-gold-400">run themselves</span>.
+      </>
+    ),
+  },
+  {
+    key: "standings",
+    node: (
+      <>
+        Standings <span className="text-court-400">settle themselves</span>.
+      </>
+    ),
+  },
+  {
+    key: "waivers",
+    node: (
+      <>
+        Waivers <span className="text-play-300">chase themselves</span>.
       </>
     ),
   },
@@ -129,16 +156,21 @@ const CLAIM_ROWS = [
 
 function useSloganRotation(count: number) {
   const [active, setActive] = useState(0)
-  const reduced = useRef(false)
+  const [interacted, setInteracted] = useState(false)
 
   useEffect(() => {
-    reduced.current = window.matchMedia("(prefers-reduced-motion: reduce)").matches
-    if (reduced.current) return
+    if (interacted) return
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return
     const id = window.setInterval(() => setActive((a) => (a + 1) % count), 4200)
     return () => window.clearInterval(id)
-  }, [count])
+  }, [count, interacted])
 
-  return active
+  const goTo = (index: number) => {
+    setInteracted(true)
+    setActive(((index % count) + count) % count)
+  }
+
+  return { active, goTo }
 }
 
 function Wordmark({ dark = false }: { dark?: boolean }) {
@@ -171,9 +203,8 @@ function CheckIcon({ className }: { className?: string }) {
 /* ── Hero ────────────────────────────────────────────────────────────────── */
 
 function Hero() {
-  const active = useSloganRotation(SLOGANS.length)
+  const { active, goTo } = useSloganRotation(SLOGANS.length)
   const [identity, setIdentity] = useState<Identity | null>(null)
-  const [submitted, setSubmitted] = useState(false)
 
   return (
     <CourtBackdrop variant="navy" floor="planks" intensity="immersive" className="min-h-[92vh]">
@@ -201,35 +232,65 @@ function Hero() {
           Launching this fall
         </p>
 
-        <h1 className="mt-7 grid w-full text-balance text-[44px] font-bold leading-[1.05] tracking-tight text-white sm:text-6xl lg:text-7xl">
+        <div className="relative mt-7 w-full">
+          <button
+            type="button"
+            onClick={() => goTo(active - 1)}
+            aria-label="Previous line"
+            className="absolute -left-2 top-1/2 hidden h-11 w-11 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full text-white/45 transition-colors hover:bg-white/10 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-gold-400 sm:flex lg:-left-14"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" className="h-6 w-6">
+              <path d="m15 5-7 7 7 7" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </button>
+          <h1 className="grid w-full text-balance text-[44px] font-bold leading-[1.05] tracking-tight text-white sm:text-6xl lg:text-7xl">
+            {SLOGANS.map((s, i) => (
+              <span
+                key={s.key}
+                aria-hidden={i !== active}
+                className={`col-start-1 row-start-1 transition-opacity ${
+                  i === active
+                    ? "opacity-100 duration-500"
+                    : "pointer-events-none opacity-0 duration-300"
+                }`}
+              >
+                {s.node}
+              </span>
+            ))}
+          </h1>
+          <button
+            type="button"
+            onClick={() => goTo(active + 1)}
+            aria-label="Next line"
+            className="absolute -right-2 top-1/2 hidden h-11 w-11 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full text-white/45 transition-colors hover:bg-white/10 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-gold-400 sm:flex lg:-right-14"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" className="h-6 w-6">
+              <path d="m9 5 7 7-7 7" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </button>
+        </div>
+
+        <div className="mt-5 flex items-center gap-2" role="tablist" aria-label="Slogans">
           {SLOGANS.map((s, i) => (
-            <span
+            <button
               key={s.key}
-              aria-hidden={i !== active}
-              className={`col-start-1 row-start-1 transition-opacity ${
-                i === active
-                  ? "opacity-100 duration-500"
-                  : "pointer-events-none opacity-0 duration-300"
+              type="button"
+              onClick={() => goTo(i)}
+              aria-label={`Line ${i + 1}`}
+              aria-current={i === active}
+              className={`h-2.5 cursor-pointer rounded-full transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-gold-400 ${
+                i === active ? "w-7 bg-gold-400" : "w-2.5 bg-white/25 hover:bg-white/45"
               }`}
-            >
-              {s.node}
-            </span>
+            />
           ))}
-        </h1>
+        </div>
 
         <p className="mt-6 max-w-2xl text-lg leading-relaxed text-white/80">
           The season in one place: registration and payments, schedules, live scoring, standings
           and team chat.
         </p>
 
-        <form
-          id="notify"
-          className="mt-10 w-full max-w-xl"
-          onSubmit={(e) => {
-            e.preventDefault()
-            setSubmitted(true)
-          }}
-        >
+        <div id="notify" className="mt-10 w-full max-w-xl">
           <fieldset>
             <legend className="mb-3 text-[15px] font-semibold text-white/70">
               I&apos;m here as a
@@ -253,35 +314,16 @@ function Hero() {
             </div>
           </fieldset>
 
-          <div className="mt-4 flex flex-col gap-2.5 sm:flex-row">
-            <label className="sr-only" htmlFor="hp-contact">
-              Email or phone number
-            </label>
-            <input
-              id="hp-contact"
-              type="text"
-              autoComplete="email"
-              required
-              placeholder="you@example.com or (416) 555-0134"
-              className="min-w-0 flex-1 rounded-xl border-0 bg-white px-5 py-3.5 text-base text-ink-950 shadow-lg ring-1 ring-white/30 placeholder:text-ink-400 focus:outline-none focus:ring-2 focus:ring-gold-400"
-            />
-            <button
-              type="submit"
-              className="cursor-pointer rounded-xl bg-gold-500 px-7 py-3.5 text-base font-bold text-ink-950 shadow-lg transition-colors hover:bg-gold-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
-            >
-              Keep me posted
-            </button>
-          </div>
+          <NotifyForm
+            source="landing"
+            identity={identity ?? undefined}
+            tone="dark"
+            className="mt-4"
+          />
 
           <p className="mt-3 text-[13px] text-white/55">
             We&apos;ll reach you about the launch and nothing else. Unsubscribe anytime.
           </p>
-
-          {submitted && (
-            <p className="mt-2 rounded-lg bg-white/10 px-4 py-2 text-[14px] text-white/85">
-              This is the preview. Nothing was sent.
-            </p>
-          )}
 
           {identity === "Club" && (
             <p className="mt-3 rounded-lg bg-gold-500/15 px-4 py-2.5 text-[14px] text-gold-100 ring-1 ring-gold-400/30">
@@ -291,7 +333,7 @@ function Hero() {
               </a>
             </p>
           )}
-        </form>
+        </div>
 
         <Link
           href="/demos"
@@ -605,18 +647,29 @@ function ClaimYourClub() {
               For clubs
             </p>
             <h2 className="mt-2 text-4xl font-bold tracking-tight text-ink-950 sm:text-5xl">
-              Your club may already be listed.
+              Claim your club before launch.
             </h2>
             <p className="mt-5 max-w-lg text-lg leading-relaxed text-ink-700">
               We imported 1,325 Canadian club listings so families can find them. If one of them
               is yours, claiming it is free: you get the page, the brand and the tools.
             </p>
-            <Link
-              href="/club"
-              className="mt-8 inline-block cursor-pointer rounded-xl bg-ink-950 px-8 py-4 text-base font-bold text-white transition-colors hover:bg-ink-800"
-            >
-              Find your club
-            </Link>
+            <div className="mt-7 flex flex-wrap items-center gap-3">
+              <Link
+                href="/club"
+                className="inline-block cursor-pointer rounded-xl bg-ink-950 px-8 py-4 text-base font-bold text-white transition-colors hover:bg-ink-800"
+              >
+                Find your club
+              </Link>
+            </div>
+            <p className="mt-7 text-[15px] font-semibold text-ink-950">
+              We&apos;re launching this fall. Be the first to know:
+            </p>
+            <NotifyForm
+              source="landing-claim"
+              identity="Club"
+              buttonLabel="Tell me first"
+              className="mt-3 max-w-lg"
+            />
           </div>
 
           <div className="rounded-2xl bg-white p-6 shadow-xl ring-1 ring-ink-100">
@@ -712,9 +765,9 @@ function PreviewNotes() {
         </p>
         <ul className="mt-4 list-disc space-y-3 pl-5 text-[15px] leading-relaxed text-ink-700">
           <li>
-            <span className="font-semibold">Capture field:</span> takes email or phone, per your
-            call. Which one arrived gets detected at wire time, along with validation and the
-            anti-bot layer.
+            <span className="font-semibold">The capture is live now:</span> every form on this
+            page and the ask inside the demo player store real rows (email or phone, detected
+            server side) with the honeypot and rate limit in front. Nothing else is wired.
           </li>
           <li>
             The screenshots are real captures from the running app. Signup buttons are hidden in
@@ -750,11 +803,11 @@ export function HomePreview() {
         }
       `}</style>
       <Hero />
+      <ClaimYourClub />
       <ReplacesStory />
       <EverybodyConnects />
       <Screenshots />
       <DemoCards />
-      <ClaimYourClub />
       <Footer />
       <PreviewNotes />
     </main>

@@ -6,6 +6,7 @@ import { BrandWordmark } from "@/components/brand/wordmark"
 import { DEMOS, getDemo } from "../registry"
 import { DemoStage } from "../demo-runner"
 import { DemoBackControl } from "./back-control"
+import { DemoSwitcher } from "./demo-switcher"
 
 export function generateStaticParams() {
   return DEMOS.map((d) => ({ slug: d.slug }))
@@ -36,65 +37,63 @@ export default function DemoPlayerPage({ params }: { params: { slug: string } })
   const isStory = demo.kind === "story"
 
   return (
-    <div className="flex h-[100dvh] w-full flex-col overflow-hidden bg-[#0b1628] text-white">
+    /* Light chrome (owner 2026-08-17): the gallery went white and the player
+       follows, so pressing a card no longer drops the viewer into a dark
+       room. The stage panels were already white; only the frame around them
+       changes. */
+    <div className="flex h-[100dvh] w-full flex-col overflow-hidden bg-ink-50 text-ink-950">
       {/* ── Slim bar ────────────────────────────────────────────────────── */}
-      <header className="relative isolate z-20 shrink-0 border-b border-white/10">
-        <CourtBackdropLayer variant="navy" intensity="band" className="opacity-70" />
+      <header className="relative isolate z-20 shrink-0 border-b border-ink-100 bg-white">
+        <CourtBackdropLayer variant="daylight" intensity="band" className="opacity-60" />
 
         <div className="relative z-10 flex items-center gap-3 px-2 py-1.5 sm:px-4">
           <DemoBackControl />
 
           <div className="min-w-0 flex-1">
             <div className="flex min-w-0 items-baseline gap-2.5">
-              <h1 className="truncate text-[15px] font-bold leading-tight tracking-[-0.01em] text-white sm:text-[16px]">
+              <h1 className="truncate text-[15px] font-bold leading-tight tracking-[-0.01em] text-ink-950 sm:text-[16px]">
                 {demo.title}
               </h1>
-              <span className="hidden shrink-0 items-center gap-1.5 text-[14px] font-bold uppercase tracking-[0.12em] text-white/50 sm:inline-flex">
+              <span className="hidden shrink-0 items-center gap-1.5 text-[14px] font-bold uppercase tracking-[0.12em] text-ink-400 sm:inline-flex">
                 <span
                   aria-hidden="true"
                   className={
                     isStory
-                      ? "h-1.5 w-1.5 rounded-full bg-gold-400"
-                      : "h-1.5 w-1.5 rounded-full border border-white/50"
+                      ? "h-1.5 w-1.5 rounded-full bg-gold-500"
+                      : "h-1.5 w-1.5 rounded-full border border-ink-400"
                   }
                 />
                 {isStory ? "Story" : "Chapter"}
               </span>
-              <span className="shrink-0 text-[14px] font-semibold tabular-nums text-white/50">
+              <span className="shrink-0 text-[14px] font-semibold tabular-nums text-ink-400">
                 {demo.durationLabel}
               </span>
             </div>
           </div>
 
+          <DemoSwitcher current={demo.slug} />
+
           {/* The soft ask (owner 2026-08-17): one quiet button, no gate. */}
           <Link
             href="/#notify"
-            className="shrink-0 rounded-lg bg-gold-500 px-3 py-1.5 text-[14px] font-bold text-ink-950 outline-none transition-colors hover:bg-gold-400 focus-visible:ring-2 focus-visible:ring-white/70"
+            className="shrink-0 rounded-lg bg-gold-500 px-3 py-1.5 text-[14px] font-bold text-ink-950 outline-none transition-colors hover:bg-gold-400 focus-visible:ring-2 focus-visible:ring-ink-950/40"
           >
             Get notified
           </Link>
 
           <Link
             href="/"
-            className="hidden shrink-0 items-center rounded-lg px-1 outline-none transition-opacity hover:opacity-80 focus-visible:ring-2 focus-visible:ring-gold-400/70 sm:inline-flex"
+            className="hidden shrink-0 items-center rounded-lg px-1 outline-none transition-opacity hover:opacity-80 focus-visible:ring-2 focus-visible:ring-gold-500/70 sm:inline-flex"
             aria-label="SportsHub One home"
           >
-            <BrandWordmark size="sm" variant="reverse" />
+            <BrandWordmark size="sm" />
           </Link>
         </div>
       </header>
 
       {/* ── Stage ───────────────────────────────────────────────────────── */}
       <main className="relative isolate min-h-0 flex-1 overflow-y-auto">
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute inset-0"
-          style={{
-            backgroundImage:
-              "radial-gradient(120% 85% at 50% 0%, rgba(59,101,178,0.20) 0%, rgba(11,22,40,0) 62%)",
-          }}
-        />
-        <CourtBackdropLayer variant="navy" intensity="ambient" />
+        <CourtBackdropLayer variant="daylight" intensity="ambient" />
 
         {/* Padding is deliberately thin: the player measures this box and scales
             the frames to fill it, so every 100px we do not spend on margin is

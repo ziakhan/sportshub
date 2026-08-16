@@ -3,6 +3,7 @@
 import Link from "next/link"
 import { useEffect, useState } from "react"
 import { cn } from "@/components/ui/cn"
+import { NotifyForm, useAlreadyNotified } from "@/components/launch/notify-form"
 import { DemoPlayer } from "@/components/demo-directory/player"
 import { claimStory } from "@/components/demo-directory/stories/claim-story"
 import { gameDayStory } from "@/components/demo-directory/stories/game-day-story"
@@ -129,15 +130,15 @@ function DemoIntro({
 
   return (
     <div className="flex flex-1 items-center justify-center py-2">
-      <div className="relative isolate w-full max-w-[1000px] overflow-hidden rounded-3xl border border-white/12 bg-white/[0.05] px-7 py-9 shadow-[0_40px_120px_-60px_rgba(0,0,0,0.9)] sm:px-12 sm:py-12">
+      <div className="relative isolate w-full max-w-[1000px] overflow-hidden rounded-3xl border border-ink-100 bg-white px-7 py-9 shadow-xl sm:px-12 sm:py-12">
         {/* House motif: the amber arc, not decoration for its own sake. */}
         <span
           aria-hidden="true"
-          className="pointer-events-none absolute -right-20 -top-28 h-64 w-64 rounded-full border-[10px] border-gold-400/15"
+          className="pointer-events-none absolute -right-20 -top-28 h-64 w-64 rounded-full border-[10px] border-gold-500/10"
         />
         <span
           aria-hidden="true"
-          className="pointer-events-none absolute -bottom-28 -left-24 h-72 w-72 rounded-full bg-play-500/10 blur-3xl"
+          className="pointer-events-none absolute -bottom-28 -left-24 h-72 w-72 rounded-full bg-play-100/70 blur-3xl"
         />
 
         <div className="relative">
@@ -145,37 +146,37 @@ function DemoIntro({
             <span
               className={cn(
                 "inline-flex items-center gap-2 text-[15px] font-bold uppercase tracking-[0.14em]",
-                isStory ? "text-gold-400" : "text-white/60"
+                isStory ? "text-gold-600" : "text-ink-500"
               )}
             >
               <span
                 aria-hidden="true"
                 className={cn(
                   "h-2 w-2 rounded-full",
-                  isStory ? "bg-gold-400" : "border border-white/50"
+                  isStory ? "bg-gold-500" : "border border-ink-400"
                 )}
               />
               {isStory ? "Story" : "Chapter"}
             </span>
-            <span aria-hidden="true" className="h-3.5 w-px bg-white/20" />
-            <span className="text-[15px] font-semibold tabular-nums text-white/60">
+            <span aria-hidden="true" className="h-3.5 w-px bg-ink-200" />
+            <span className="text-[15px] font-semibold tabular-nums text-ink-500">
               {demo.durationLabel}
             </span>
             {demo.audiences.map((a) => (
               <span
                 key={a}
-                className="rounded-full border border-white/15 bg-white/[0.06] px-3 py-1 text-[15px] font-semibold text-white/75"
+                className="rounded-full border border-ink-200 bg-ink-50 px-3 py-1 text-[15px] font-semibold text-ink-600"
               >
                 {AUDIENCE_LABELS[a]}
               </span>
             ))}
           </div>
 
-          <h1 className="font-display mt-4 text-[34px] font-extrabold leading-[1.06] tracking-tight text-white sm:text-[42px]">
+          <h1 className="font-display mt-4 text-[34px] font-extrabold leading-[1.06] tracking-tight text-ink-950 sm:text-[42px]">
             {demo.title}
           </h1>
 
-          <p className="mt-4 max-w-[62ch] text-[18px] font-semibold leading-relaxed text-white/85">
+          <p className="mt-4 max-w-[62ch] text-[18px] font-semibold leading-relaxed text-ink-800">
             {demo.promise}
           </p>
 
@@ -184,19 +185,19 @@ function DemoIntro({
               <li key={b} className="flex items-start gap-3">
                 <span
                   aria-hidden="true"
-                  className="mt-[7px] h-2 w-2 shrink-0 rounded-full bg-gold-400"
+                  className="mt-[7px] h-2 w-2 shrink-0 rounded-full bg-gold-500"
                 />
-                <span className="max-w-[68ch] text-[16px] leading-relaxed text-white/70">{b}</span>
+                <span className="max-w-[68ch] text-[16px] leading-relaxed text-ink-600">{b}</span>
               </li>
             ))}
           </ul>
 
-          <div className="mt-7 border-t border-white/10 pt-5">
-            <p className="text-[15px] font-bold uppercase tracking-[0.14em] text-white/45">
+          <div className="mt-7 border-t border-ink-100 pt-5">
+            <p className="text-[15px] font-bold uppercase tracking-[0.14em] text-ink-400">
               {playable ? "Chapters" : "Planned chapters"}
             </p>
             {chapters.length === 0 ? (
-              <p className="mt-2.5 text-[16px] leading-relaxed text-white/55">
+              <p className="mt-2.5 text-[16px] leading-relaxed text-ink-500">
                 The running order for this one is still being written.
               </p>
             ) : (
@@ -204,7 +205,7 @@ function DemoIntro({
                 {chapters.map((title, i) => (
                   <li key={title} className="flex items-center gap-2.5">
                     {i > 0 && (
-                      <span aria-hidden="true" className="text-[15px] text-white/25">
+                      <span aria-hidden="true" className="text-[15px] text-ink-300">
                         /
                       </span>
                     )}
@@ -212,12 +213,12 @@ function DemoIntro({
                       <span
                         className={cn(
                           "flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[14px] font-bold tabular-nums",
-                          playable ? "bg-gold-400/15 text-gold-400" : "bg-white/[0.07] text-white/45"
+                          playable ? "bg-gold-500/15 text-gold-600" : "bg-ink-100 text-ink-400"
                         )}
                       >
                         {i + 1}
                       </span>
-                      <span className="text-[16px] font-semibold text-white/80">{title}</span>
+                      <span className="text-[16px] font-semibold text-ink-800">{title}</span>
                     </span>
                   </li>
                 ))}
@@ -230,28 +231,28 @@ function DemoIntro({
               <button
                 type="button"
                 onClick={onPlay}
-                className="inline-flex items-center gap-3 rounded-2xl bg-gold-400 px-8 py-4 text-[17px] font-bold text-[#0b1628] outline-none transition-transform duration-200 hover:-translate-y-0.5 focus-visible:ring-2 focus-visible:ring-white/70 motion-reduce:transform-none"
+                className="inline-flex items-center gap-3 rounded-2xl bg-gold-500 px-8 py-4 text-[17px] font-bold text-ink-950 outline-none transition-transform duration-200 hover:-translate-y-0.5 focus-visible:ring-2 focus-visible:ring-ink-950/40 motion-reduce:transform-none"
               >
-                <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[#0b1628]/10">
+                <span className="flex h-7 w-7 items-center justify-center rounded-full bg-ink-950/10">
                   <svg viewBox="0 0 24 24" className="h-4 w-4 fill-current" aria-hidden="true">
                     <path d="M8 5v14l11-7z" />
                   </svg>
                 </span>
                 Play the demo
               </button>
-              <p className="text-[15px] font-medium text-white/50">
+              <p className="text-[15px] font-medium text-ink-500">
                 Pause, step and jump between chapters once it starts. Nothing here needs an account.
               </p>
             </div>
           ) : (
             <div className="mt-8 flex flex-wrap items-center gap-4">
-              <span className="inline-flex items-center gap-2 rounded-2xl border border-white/15 bg-white/[0.06] px-5 py-3.5 text-[16px] font-bold text-white/70">
+              <span className="inline-flex items-center gap-2 rounded-2xl border border-ink-200 bg-ink-50 px-5 py-3.5 text-[16px] font-bold text-ink-600">
                 <svg
                   viewBox="0 0 24 24"
                   fill="none"
                   stroke="currentColor"
                   strokeWidth="2"
-                  className="h-4 w-4 text-gold-400"
+                  className="h-4 w-4 text-gold-600"
                   aria-hidden="true"
                 >
                   <circle cx="12" cy="12" r="9" />
@@ -262,7 +263,7 @@ function DemoIntro({
               {firstLive && (
                 <Link
                   href={`/demos/${firstLive.slug}`}
-                  className="inline-flex items-center gap-2 rounded-2xl bg-gold-400 px-5 py-3.5 text-[16px] font-bold text-[#0b1628] outline-none transition-transform duration-200 hover:-translate-y-0.5 focus-visible:ring-2 focus-visible:ring-white/70 motion-reduce:transform-none"
+                  className="inline-flex items-center gap-2 rounded-2xl bg-gold-500 px-5 py-3.5 text-[16px] font-bold text-ink-950 outline-none transition-transform duration-200 hover:-translate-y-0.5 focus-visible:ring-2 focus-visible:ring-ink-950/40 motion-reduce:transform-none"
                 >
                   <svg viewBox="0 0 24 24" className="h-4 w-4 fill-current" aria-hidden="true">
                     <path d="M8 5v14l11-7z" />
@@ -272,8 +273,31 @@ function DemoIntro({
               )}
             </div>
           )}
+
+          <IntroNotifyAsk slug={demo.slug} />
         </div>
       </div>
+    </div>
+  )
+}
+
+/**
+ * The entry ask (owner 2026-08-17): the demo is never gated, but the person
+ * about to press Play gets one clear invitation. Disappears for anyone
+ * already on the list.
+ */
+function IntroNotifyAsk({ slug }: { slug: string }) {
+  const done = useAlreadyNotified()
+  if (done) return null
+  return (
+    <div className="mt-8 rounded-2xl border border-gold-500/40 bg-gold-50 p-5">
+      <p className="text-[16px] font-bold text-ink-950">
+        We&apos;re launching this fall. Be the first to know:
+      </p>
+      <NotifyForm source={`demo:${slug}`} className="mt-3 max-w-lg" />
+      <p className="text-ink-500 mt-2 text-[13px]">
+        Email or phone, one message when it opens. The demo plays either way.
+      </p>
     </div>
   )
 }

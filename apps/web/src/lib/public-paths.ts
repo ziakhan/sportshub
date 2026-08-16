@@ -133,6 +133,10 @@ const PUBLIC_API_ANY_METHOD_PREFIXES = [
   // Waiver e-signature POST — the emailed token IS the auth (parents sign
   // without an account; the route validates the token itself)
   "/api/waivers/sign",
+  // Pre-launch notify list (owner 2026-08-17): the landing and the demo
+  // player ask signed-out visitors for an email or phone. Honeypot and
+  // per-IP rate limit live in the route.
+  "/api/launch/notify",
   // Feed telemetry POST (recsys S0, business-model-v2.md §11/§16) — signed-out
   // impressions/taps still count (userId null); the route itself resolves an
   // optional session rather than requiring one.
