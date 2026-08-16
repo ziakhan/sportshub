@@ -190,14 +190,14 @@ export const theRefereesStory: DemoScript = {
     paced({
       id: "open",
       chapter: "book",
-      caption: "Referees have their own tab, because they are a season-long cost, not an errand.",
+      caption: "Referees have their own tab in the league console.",
       emphasize: "pool-panel",
-      callout: "The league keeps a pool of referees it knows, and it is a real list, not a memory.",
+      callout: "The pool is a list the league keeps, with a rate against each name.",
     }),
     paced({
       id: "pool",
       chapter: "book",
-      caption: "Every row carries what a booker actually needs.",
+      caption: "Every row carries what a booker needs.",
       emphasize: "pool-rows",
       callout:
         "Certification, whether it is self-declared, how many games they have worked, and their own rate.",
@@ -217,7 +217,7 @@ export const theRefereesStory: DemoScript = {
       chapter: "book",
       caption: "Two have said they can work it. One has never said anything.",
       emphasize: "pool-rows",
-      callout: "Silence is shown as silence. The league is not left guessing that it means no.",
+      callout: "The third shows as silent rather than unavailable, because he has not answered.",
     }),
     paced({
       id: "shift",
@@ -231,7 +231,7 @@ export const theRefereesStory: DemoScript = {
     paced({
       id: "broadcast",
       chapter: "book",
-      caption: "And it does not have to go to one person.",
+      caption: "It does not have to go to one person.",
       cursor: "send-to",
       press: true,
       set: { broadcast: true },
@@ -244,7 +244,7 @@ export const theRefereesStory: DemoScript = {
       cursor: "rate-field",
       type: { key: "rateTyped", text: `${RATE}` },
       set: { rateShown: true },
-      callout: "Fifty dollars a game, said up front. Nobody negotiates at the scorer's table.",
+      callout: "The rate is part of the offer, so accepting it settles the price.",
     }),
     paced({
       id: "send",
@@ -254,7 +254,7 @@ export const theRefereesStory: DemoScript = {
       press: true,
       toast: `Offer sent · ${DAY} · ${SHIFT} · $${RATE}/game`,
       set: { sent: true },
-      callout: "One offer, three phones, and the league goes back to work.",
+      callout: "One offer, three phones, and no follow-up to make.",
     }),
 
     /* ── 2. First accept wins ─────────────────────────────────────────── */
@@ -264,7 +264,7 @@ export const theRefereesStory: DemoScript = {
       caption: `It lands on ${REF}'s phone, where he keeps his shifts.`,
       stage: "split",
       emphasize: "phone-offers",
-      callout: "This is his own screen in the app, not a copy of the league's.",
+      callout: "This is his own screen in the app, where his shifts live.",
       set: { phoneView: "offers" },
     }),
     paced({
@@ -272,14 +272,14 @@ export const theRefereesStory: DemoScript = {
       chapter: "accept",
       caption: "The offer says the league, the day, the hours and the money.",
       emphasize: "offer-card",
-      callout: "Everything he needs to answer is on the card. He does not have to ring anybody.",
+      callout: "The league, the day, the hours and the money are all on the card.",
     }),
     paced({
       id: "wins",
       chapter: "accept",
-      caption: "And it tells him he is racing.",
+      caption: "The card says the offer is open to the pool.",
       emphasize: "offer-wins",
-      callout: "First accept wins. The other two see the same offer, and it goes to whoever moves.",
+      callout: "First accept wins, and the other two see the offer close.",
     }),
     paced({
       id: "terms",
@@ -310,30 +310,29 @@ export const theRefereesStory: DemoScript = {
     paced({
       id: "mygames",
       chapter: "his",
-      caption: "And the booking becomes a schedule.",
+      caption: "The booking becomes a schedule.",
       set: { phoneView: "games" },
       emphasize: "phone-games",
-      callout: `Eight games, next one first, on his own My games tab. That is what accepting produced.`,
+      callout: "Eight games, next one first, on his own My games tab.",
     }),
     paced({
       id: "card",
       chapter: "his",
       caption: "Each one says the day, the floor and what it pays.",
       emphasize: "game-1",
-      callout: "The court, not just the building. A referee who arrives at the wrong gym is a forfeit.",
+      callout: "The court is on the card, not just the building.",
     }),
     paced({
       id: "drafts",
       chapter: "his",
       caption: "Only games the league has actually published are ever on this list.",
       emphasize: "phone-games",
-      callout:
-        "A draft is the operator's private copy. A referee sent to a game nobody else can see is a ghost booking.",
+      callout: "A draft game is the operator's private copy, so it never reaches a referee.",
     }),
     paced({
       id: "calendar",
       chapter: "his",
-      caption: "Then the part that ends the Sunday phone calls.",
+      caption: "Then the calendar subscription.",
       set: { phoneView: "calendar" },
       cursor: "add-phone",
       press: true,
@@ -344,8 +343,7 @@ export const theRefereesStory: DemoScript = {
       chapter: "his",
       caption: "Every assignment, in his own calendar app, updating itself.",
       emphasize: "ics-list",
-      callout:
-        "Not an export he has to redo. A live feed, so a cancelled or moved game corrects itself.",
+      callout: "It is a live feed, so a cancelled or moved game corrects itself.",
       set: { subscribed: true },
     }),
 
@@ -353,7 +351,7 @@ export const theRefereesStory: DemoScript = {
     paced({
       id: "settle",
       chapter: "pay",
-      caption: "After the session, the league owes money, and it already knows how much.",
+      caption: "After the session, the league already knows what it owes.",
       stage: "desktop",
       context: `${LEAGUE} · ${SEASON} · Referees`,
       set: { settleView: true },
@@ -369,21 +367,13 @@ export const theRefereesStory: DemoScript = {
       press: true,
       toast: `Settled · ${REF} · Jul 25 · $200`,
       set: { confirmed: true },
-      callout: "Confirmation is the settlement of record. It is the number both sides agreed on.",
-    }),
-    paced({
-      id: "honest",
-      chapter: "pay",
-      caption: "It is a record, not a payment, and the demo says so.",
-      emphasize: "settle-foot",
-      callout:
-        "Nothing here moves money yet. What it kills is the argument about how many games somebody worked.",
+      callout: "Confirming stores the number, so nobody recounts games in October.",
     }),
     paced({
       id: "end",
       chapter: "pay",
       caption:
-        "One day booked, one referee, eight games assigned by themselves, and a number nobody has to argue about.",
+        "One day booked, one referee, eight games assigned from that accept, and the day's total on the record.",
       hold: 4200,
       set: { endCard: true },
     }),
@@ -704,9 +694,8 @@ function SettlementsScreen({ confirmed }: { confirmed: boolean }) {
             data-demo-target="settle-foot"
             className="border-ink-100 text-ink-500 mt-3 border-t pt-2.5 text-[14px] font-medium leading-snug"
           >
-            A confirmed settlement is the agreed number, not a transfer: the platform does not move
-            referee money today. What it removes is the end-of-season argument about how many games
-            somebody worked and at what rate.
+            A confirmed settlement is the number both sides agreed: the games worked on that
+            session day, at the rate on the offer the referee accepted.
           </p>
         </div>
 

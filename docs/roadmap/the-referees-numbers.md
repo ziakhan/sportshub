@@ -289,3 +289,25 @@ game-day control**, so a scorer can see the day was already booked.
 | `tsc --noEmit` | clean |
 | Em-dash sweep | clean. The only dashes in the file are the en dashes the product's own shift presets and time ranges write |
 | Database writes | **none**. Every derivation ran the product's own arithmetic over read-only queries |
+
+---
+
+## Sweep, 2026-08-16
+
+**The confession beat is out.** The pay chapter ended on a beat captioned "It is a record, not a
+payment, and the demo says so", whose balloon added "Nothing here moves money yet." Under the
+owner's no-confession rule that beat is deleted, and the settlement panel's footer stopped saying
+"the platform does not move referee money today". The footer now states what a confirmed settlement
+IS: the number both sides agreed, the games worked on that session day at the rate on the offer the
+referee accepted. The payout gap stays in this file, which is where the product backlog reads it.
+
+**Copy, 18 captions and balloons.** Gone: "because they are a season-long cost, not an errand", "a
+real list, not a memory", "Nobody negotiates at the scorer's table", "the league goes back to work",
+"And it tells him he is racing", "A referee who arrives at the wrong gym is a forfeit", "a ghost
+booking", "Then the part that ends the Sunday phone calls", "a number nobody has to argue about".
+The registry description lost "the only one nobody has ever shown them software for", "different
+from every scheduling tool", "rather than a fabrication" and "an honest line about what that
+confirmation is and is not".
+
+Gate re-run: readability audit **0 violations**, minimum stage scale **1.000**, 22 beats / 26
+scenes, one headless drive with a clean console. Runtime **1 min 45 sec**.
