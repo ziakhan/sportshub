@@ -103,11 +103,13 @@ const HOME: PhoneTeam = {
   name: "Oakville Panthers Grade 9",
   short: "OP · G9",
   record: "3-6 · Grade 9 Boys",
+  color: "#be123c", // DB: the Panthers' club colour
 }
 const AWAY: PhoneTeam = {
   name: "Toronto Lords Grade 9",
   short: "TL · G9",
   record: "4-6 · Grade 9 Boys",
+  color: "#1e40af", // DB: the Lords' club colour
 }
 
 /** `DB` LeagueReferee + RefereeProfile, summer-ref-mike@sportshub.demo. */

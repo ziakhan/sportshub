@@ -58,6 +58,7 @@ export function BoxScore({
           {(["home", "away"] as const).map((s) => {
             const tid = s === "home" ? game.homeTeamId : game.awayTeamId
             const tname = s === "home" ? game.homeTeamName : game.awayTeamName
+            const tcolor = s === "home" ? model.homeColor : model.awayColor
             const on = side === s
             return (
               <button
@@ -68,13 +69,15 @@ export function BoxScore({
                   on ? "bg-ink-900 text-white shadow-sm" : "text-ink-600 hover:bg-white/70"
                 }`}
               >
-                {/* The score is dropped — it is already large in the hero right
-                    above. The SELECTED state does the identifying: a solid ink
-                    fill, not a club colour (owner ruling 2026-08-14). */}
+                {/* The selected state keeps its solid ink fill; the dot now
+                    carries the club-chosen team colour when there is one
+                    (owner 2026-08-17), so choosing between the two teams
+                    reads by colour as well as by name. */}
                 <span
                   className={`h-2.5 w-2.5 shrink-0 rounded-full ${
-                    on ? "bg-white" : "bg-ink-300"
+                    tcolor ? (on ? "ring-1 ring-white/70" : "") : on ? "bg-white" : "bg-ink-300"
                   }`}
+                  style={tcolor ? { backgroundColor: tcolor } : undefined}
                 />
                 {/* Full name, not an abbreviation — this switcher decides which
                     roster you are looking at, so it must be plain. */}

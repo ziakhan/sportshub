@@ -76,6 +76,23 @@ const SHOTS = [
   { name: "parent-polls-phone", url: "/polls", device: PHONE, auth: true, scrollY: 0 },
   { name: "parent-feed-phone", url: "/feed", device: PHONE, auth: true, scrollY: 0 },
   { name: "parent-notifications-phone", url: "/notifications", device: PHONE, auth: true, scrollY: 0 },
+
+  // The social taste (owner 2026-08-17): the feed's cards and a player's
+  // public season page, Danielle Reyes (#20, the recap's Player of the Game).
+  { name: "social-feed-phone", url: "/feed", device: PHONE, auth: true, scrollY: 500 },
+  { name: "social-feed-deep-phone", url: "/feed", device: PHONE, auth: true, scrollY: 1200 },
+  {
+    name: "social-player-page-phone",
+    url: "/player/729b0d07-e388-464f-bc09-1a4ca3e92448",
+    device: PHONE,
+    scrollY: 120,
+  },
+  {
+    name: "social-player-page-deep-phone",
+    url: "/player/729b0d07-e388-464f-bc09-1a4ca3e92448",
+    device: PHONE,
+    scrollY: 700,
+  },
 ]
 
 const hideLaunchChrome = (page) =>

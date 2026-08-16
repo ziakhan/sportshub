@@ -17,12 +17,17 @@ function CompareRow({
   a,
   displayH,
   displayA,
+  hColor,
+  aColor,
 }: {
   label: string
   h: number
   a: number
   displayH?: string
   displayA?: string
+  /** Club-chosen team colours (owner 2026-08-17); ink fallback when unset. */
+  hColor?: string | null
+  aColor?: string | null
 }) {
   const total = h + a
   const hShare = total === 0 ? 50 : (h / total) * 100
@@ -64,15 +69,23 @@ function CompareRow({
       <div className="mt-2 flex h-3 items-center gap-1">
         <div className="bg-ink-100 flex flex-1 justify-end overflow-hidden rounded-l-full">
           <span
-            className="bg-ink-700 h-3 rounded-l-full transition-all duration-500"
-            style={{ width: `${hShare}%`, opacity: hWins ? 1 : 0.35 }}
+            className={`h-3 rounded-l-full transition-all duration-500 ${hColor ? "" : "bg-ink-700"}`}
+            style={{
+              width: `${hShare}%`,
+              opacity: hWins ? 1 : 0.45,
+              ...(hColor ? { backgroundColor: hColor } : {}),
+            }}
           />
         </div>
         <span className="bg-ink-300 h-3 w-px shrink-0" />
         <div className="bg-ink-100 flex flex-1 overflow-hidden rounded-r-full">
           <span
-            className="bg-ink-700 h-3 rounded-r-full transition-all duration-500"
-            style={{ width: `${100 - hShare}%`, opacity: aWins ? 1 : 0.35 }}
+            className={`h-3 rounded-r-full transition-all duration-500 ${aColor ? "" : "bg-ink-700"}`}
+            style={{
+              width: `${100 - hShare}%`,
+              opacity: aWins ? 1 : 0.45,
+              ...(aColor ? { backgroundColor: aColor } : {}),
+            }}
           />
         </div>
       </div>
@@ -84,12 +97,21 @@ const shooting = (m: number, at: number) =>
   at === 0 ? "0-0" : `${m}-${at} · ${Math.round((m / at) * 100)}%`
 
 export function TeamStatsTab({ model }: { model: GameModel }) {
-  const { game, teamAgg, homeScore, awayScore } = model
+  const { game, teamAgg, homeScore, awayScore, homeColor, awayColor } = model
   const H = teamAgg(game.homeTeamId)
   const A = teamAgg(game.awayTeamId)
   const pct = (m: number, at: number) => (at === 0 ? 0 : m / at)
   const row = (label: string, h: number, a: number, dh?: string, da?: string) => (
-    <CompareRow key={label} label={label} h={h} a={a} displayH={dh} displayA={da} />
+    <CompareRow
+      key={label}
+      label={label}
+      h={h}
+      a={a}
+      displayH={dh}
+      displayA={da}
+      hColor={homeColor}
+      aColor={awayColor}
+    />
   )
 
   return (
@@ -108,6 +130,13 @@ export function TeamStatsTab({ model }: { model: GameModel }) {
             <p className="text-ink-950 truncate text-[14.5px] font-semibold leading-tight">
               {game.homeTeamName}
             </p>
+            {homeColor && (
+              <span
+                aria-hidden="true"
+                className="mt-0.5 block h-[3px] w-10 rounded-full"
+                style={{ backgroundColor: homeColor }}
+              />
+            )}
             <p
               className={`font-condensed text-[24px] font-bold leading-none tracking-[-0.01em] tabular-nums ${
                 homeScore >= awayScore ? "text-ink-950" : "text-ink-400"
@@ -127,6 +156,13 @@ export function TeamStatsTab({ model }: { model: GameModel }) {
             <p className="text-ink-950 truncate text-[14.5px] font-semibold leading-tight">
               {game.awayTeamName}
             </p>
+            {awayColor && (
+              <span
+                aria-hidden="true"
+                className="ml-auto mt-0.5 block h-[3px] w-10 rounded-full"
+                style={{ backgroundColor: awayColor }}
+              />
+            )}
             <p
               className={`font-condensed text-[24px] font-bold leading-none tracking-[-0.01em] tabular-nums ${
                 awayScore >= homeScore ? "text-ink-950" : "text-ink-400"

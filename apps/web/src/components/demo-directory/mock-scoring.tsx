@@ -226,6 +226,8 @@ export interface PhoneTeam {
   /** "TL · G9", the live page's `shortTeam`. */
   short: string
   record: string
+  /** Club-chosen team colour; the comparison bars carry it (owner 2026-08-17). */
+  color?: string
 }
 
 const TARGET = (id?: string) => (id ? { "data-demo-target": id } : {})
@@ -1693,15 +1695,23 @@ export function LiveTeamStats({
               <div className="mt-1.5 flex h-2.5 items-center gap-1">
                 <div className="bg-ink-100 flex flex-1 justify-end overflow-hidden rounded-l-full">
                   <span
-                    className="bg-ink-700 h-2.5 rounded-l-full transition-all duration-500"
-                    style={{ width: `${hShare}%`, opacity: hWins ? 1 : 0.35 }}
+                    className={cn("h-2.5 rounded-l-full transition-all duration-500", !home.color && "bg-ink-700")}
+                    style={{
+                      width: `${hShare}%`,
+                      opacity: hWins ? 1 : 0.45,
+                      ...(home.color ? { backgroundColor: home.color } : {}),
+                    }}
                   />
                 </div>
                 <span className="bg-ink-300 h-2.5 w-px shrink-0" />
                 <div className="bg-ink-100 flex flex-1 overflow-hidden rounded-r-full">
                   <span
-                    className="bg-ink-700 h-2.5 rounded-r-full transition-all duration-500"
-                    style={{ width: `${100 - hShare}%`, opacity: aWins ? 1 : 0.35 }}
+                    className={cn("h-2.5 rounded-r-full transition-all duration-500", !away.color && "bg-ink-700")}
+                    style={{
+                      width: `${100 - hShare}%`,
+                      opacity: aWins ? 1 : 0.45,
+                      ...(away.color ? { backgroundColor: away.color } : {}),
+                    }}
                   />
                 </div>
               </div>

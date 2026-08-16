@@ -20,6 +20,7 @@ const GROUPS: { title: string; prefixes: string[] }[] = [
   { title: "League: standings and leaders", prefixes: ["league-"] },
   { title: "Club page", prefixes: ["club-page"] },
   { title: "The parent's phone, signed in", prefixes: ["parent-"] },
+  { title: "Social: the feed and a player's page", prefixes: ["social-"] },
 ]
 
 function readShots(): string[] {

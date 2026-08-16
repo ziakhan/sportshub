@@ -8,11 +8,11 @@ import type { LeaderEntry, LeaderSection, LivePayload, PlayRow } from "./types"
  * straight lift of the maths that used to sit inline in live-view.tsx: same
  * inputs, same outputs, no behaviour change. Views get `model` and render.
  *
- * No team colours live here any more (owner ruling 2026-08-14). The payload
- * still carries `homeColor` / `awayColor` for other consumers, but this page
- * is a summary surface end to end, so crests, chips and bars are ink-toned and
- * home versus away is told by position and type. Deriving a colour here was
- * what let it leak into eight components at once.
+ * Team colours, the narrow version (owner 2026-08-17, revising his own
+ * 2026-08-14 ruling): crests and chips stay ink-toned, but the two-team
+ * comparison surfaces — the team-stats bars and the box score header — show
+ * each side's chosen colour when the club picked one. The model exposes the
+ * pair for exactly those consumers and nothing else.
  */
 
 export interface GameModel {
@@ -29,6 +29,10 @@ export interface GameModel {
   final: boolean
   homeScore: number
   awayScore: number
+  /** Club-chosen team colours, for the comparison surfaces only (stats bars,
+   *  box score header). Null when the club never picked one. */
+  homeColor: string | null
+  awayColor: string | null
   /** Periods that have actually been played, ascending. */
   periods: number[]
   /** Always four quarters, plus any overtime reached. */
@@ -300,6 +304,8 @@ export function buildModel(data: LivePayload, fold: FoldResult): GameModel {
     final,
     homeScore,
     awayScore,
+    homeColor: game.homeColor ?? null,
+    awayColor: game.awayColor ?? null,
     periods,
     displayPeriods,
     playedPeriods: new Set(periods),

@@ -61,6 +61,22 @@ const SLOGANS: { key: string; node: React.ReactNode }[] = [
     ),
   },
   {
+    key: "potg",
+    node: (
+      <>
+        Full stats, and a <span className="text-gold-400">Player of the Game</span>.
+      </>
+    ),
+  },
+  {
+    key: "plan-season",
+    node: (
+      <>
+        Plan the season. <span className="text-court-400">Schedule it in one click.</span>
+      </>
+    ),
+  },
+  {
     key: "game-moved",
     node: (
       <>
@@ -93,6 +109,22 @@ const SLOGANS: { key: string; node: React.ReactNode }[] = [
     ),
   },
   {
+    key: "chat-calendar",
+    node: (
+      <>
+        Team chat, polls, and <span className="text-hoop-400">one family calendar</span>.
+      </>
+    ),
+  },
+  {
+    key: "discover",
+    node: (
+      <>
+        Discover the <span className="text-gold-400">clubs around you</span>.
+      </>
+    ),
+  },
+  {
     key: "in-the-news",
     node: (
       <>
@@ -118,11 +150,20 @@ const AUDIENCE_LABEL: Record<DemoAudience, string> = {
   leagues: "Leagues",
 }
 
-/* The pile the product replaces, from the approved creatives. */
+/* The pile the product replaces. Named in full (owner 2026-08-17: "I'm gonna
+   name them all"), each one a tool real Canadian clubs run some piece of the
+   season on today. */
 const THE_PILE = [
-  "RAMP or a registration spreadsheet",
-  "TeamSnap or Spond",
-  "A separate scoring app",
+  "TeamSnap",
+  "TeamLinkt",
+  "RAMP",
+  "LeagueApps",
+  "GameChanger",
+  "Exposure Events",
+  "JerseyWatch",
+  "Spond",
+  "SportsEngine",
+  "A registration spreadsheet",
   "E-transfer chasing",
   "Paper gamesheets",
   "Email chains",
@@ -136,6 +177,39 @@ const THE_CHECKLIST = [
   "Standings and playoffs",
   "Referee assignment",
   "Waivers and forms",
+]
+
+/* The comparison table (owner 2026-08-17: "name them all... green check marks
+   and red X's... we have to be very sure"). Verdicts come from
+   docs/research/tool-feature-matrix-2026-07.md, taken conservatively: partial
+   covers paid add-ons, separate products and shallow versions. JerseyWatch
+   and Spond join once the verification round lands. */
+type CompareCell = "y" | "p" | "n" | "-"
+
+const COMPARE_COLUMNS = [
+  "TeamSnap",
+  "TeamLinkt",
+  "RAMP",
+  "SportsEngine",
+  "LeagueApps",
+  "GameChanger",
+  "Exposure Events",
+]
+
+/** cells[0] is always us; the rest follow COMPARE_COLUMNS order. */
+const COMPARE_ROWS: { label: string; cells: CompareCell[] }[] = [
+  { label: "Registration and payments", cells: ["y", "y", "y", "y", "y", "y", "n", "y"] },
+  { label: "Installment payment plans", cells: ["y", "y", "y", "y", "y", "y", "n", "-"] },
+  { label: "Season scheduling with constraints", cells: ["y", "y", "y", "y", "y", "p", "n", "y"] },
+  { label: "Standings and playoff brackets", cells: ["y", "y", "y", "p", "p", "p", "n", "y"] },
+  { label: "Referee assignment and sign-off", cells: ["y", "n", "y", "y", "p", "n", "n", "-"] },
+  { label: "Live play-by-play, basketball", cells: ["y", "p", "p", "p", "p", "n", "y", "p"] },
+  { label: "Full box scores, basketball", cells: ["y", "n", "p", "p", "p", "n", "y", "p"] },
+  { label: "Team chat with polls", cells: ["y", "p", "p", "p", "p", "p", "p", "p"] },
+  { label: "Automatic game recaps and news", cells: ["y", "n", "p", "n", "n", "n", "p", "n"] },
+  { label: "Public player pages with season stats", cells: ["y", "n", "p", "p", "n", "n", "p", "p"] },
+  { label: "Waivers and e-signatures", cells: ["y", "p", "-", "p", "y", "p", "n", "p"] },
+  { label: "Free to start", cells: ["y", "p", "y", "n", "n", "p", "y", "p"] },
 ]
 
 /* The quiet theme: each role does its own share, the app connects them. */
@@ -394,6 +468,106 @@ function ReplacesStory() {
             &ldquo;Complete&rdquo; isn&apos;t a slogan here. It&apos;s a checklist.
           </p>
         </div>
+      </div>
+    </section>
+  )
+}
+
+/* ── The comparison table ────────────────────────────────────────────────── */
+
+function CompareMark({ cell }: { cell: CompareCell }) {
+  if (cell === "y") {
+    return (
+      <span className="mx-auto flex h-6 w-6 items-center justify-center rounded-full bg-court-100">
+        <CheckIcon className="h-3.5 w-3.5 text-court-700" />
+      </span>
+    )
+  }
+  if (cell === "p") {
+    return (
+      <span
+        className="mx-auto flex h-6 w-6 items-center justify-center rounded-full bg-gold-100"
+        title="Partial: a paid add-on, a separate product, or a shallower version"
+      >
+        <span className="h-2.5 w-2.5 rounded-full border-2 border-gold-600" aria-label="Partial" />
+      </span>
+    )
+  }
+  if (cell === "n") {
+    return (
+      <span className="mx-auto flex h-6 w-6 items-center justify-center rounded-full bg-live-50">
+        <svg viewBox="0 0 20 20" fill="none" aria-hidden="true" className="h-3 w-3 text-live-600">
+          <path d="M5 5l10 10M15 5L5 15" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" />
+        </svg>
+      </span>
+    )
+  }
+  return <span className="text-ink-300 mx-auto block text-center text-sm">–</span>
+}
+
+function CompareTable() {
+  return (
+    <section className="border-y border-ink-100 bg-ink-50 py-20 sm:py-24">
+      <div className="mx-auto w-full max-w-6xl px-5">
+        <div className="text-center">
+          <p className="text-[13px] font-bold uppercase tracking-[0.14em] text-court-700">
+            Side by side
+          </p>
+          <h2 className="mt-2 text-4xl font-bold tracking-tight text-ink-950 sm:text-5xl">
+            How we compare.
+          </h2>
+          <p className="mx-auto mt-4 max-w-2xl text-lg leading-relaxed text-ink-600">
+            Based on each platform&apos;s published features, August 2026. A partial mark means a
+            paid add-on, a separate product, or a shallower version.
+          </p>
+        </div>
+
+        <div className="mt-10 overflow-x-auto rounded-2xl bg-white shadow-xl ring-1 ring-ink-100">
+          <table className="w-full min-w-[860px] border-collapse text-left">
+            <thead>
+              <tr className="border-b border-ink-100">
+                <th className="px-5 py-4 text-[14px] font-bold uppercase tracking-[0.1em] text-ink-400">
+                  Feature
+                </th>
+                <th className="bg-gold-50 px-4 py-4 text-center">
+                  <span className="rounded-full bg-ink-950 px-3 py-1 text-[13px] font-bold text-white">
+                    SportsHub One
+                  </span>
+                </th>
+                {COMPARE_COLUMNS.map((name) => (
+                  <th
+                    key={name}
+                    className="px-3 py-4 text-center text-[13px] font-bold text-ink-600"
+                  >
+                    {name}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-ink-50">
+              {COMPARE_ROWS.map((row) => (
+                <tr key={row.label}>
+                  <td className="px-5 py-3.5 text-[15px] font-semibold text-ink-800">
+                    {row.label}
+                  </td>
+                  {row.cells.map((cell, i) => (
+                    <td
+                      key={i}
+                      className={`px-3 py-3.5 text-center ${i === 0 ? "bg-gold-50" : ""}`}
+                    >
+                      <CompareMark cell={cell} />
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        <p className="mt-4 text-center text-[14px] text-ink-500">
+          JerseyWatch and Spond join the table once our verification round finishes. Spot
+          something that changed? Tell us and we&apos;ll fix it.
+        </p>
       </div>
     </section>
   )
@@ -805,6 +979,7 @@ export function HomePreview() {
       <Hero />
       <ClaimYourClub />
       <ReplacesStory />
+      <CompareTable />
       <EverybodyConnects />
       <Screenshots />
       <DemoCards />
