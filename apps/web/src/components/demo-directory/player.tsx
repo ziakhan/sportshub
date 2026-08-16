@@ -48,6 +48,31 @@ function calloutTarget(beat: DemoBeat | undefined): string | undefined {
 }
 
 /**
+ * The element the beat is ACTING on: what the hand is going to, else what the
+ * ring is around, else what the balloon is pointing at.
+ *
+ * A computer shows the whole scene at once and ignores this. A phone cannot, so
+ * the mobile presentations follow it: the keyhole pans it to the middle, and
+ * the handset pair brings the phone it lives in to the front.
+ */
+function activeTarget(beat: DemoBeat | undefined): string | undefined {
+  if (!beat) return undefined
+  return beat.cursor ?? emphasisTarget(beat) ?? beat.hover
+}
+
+/**
+ * A 44px touch target, on a phone, without a 44px control.
+ *
+ * The transport bar is a row of compact chips by design, and growing them for
+ * a finger would push the stage down the screen. So the target is an invisible
+ * pseudo element centred on the chip, and it exists only under `sm`: on a
+ * computer these overlays would sit between two wrapped rows of chapter chips
+ * and quietly steal each other's clicks.
+ */
+const TOUCH_44 =
+  "max-sm:after:absolute max-sm:after:inset-x-0 max-sm:after:top-1/2 max-sm:after:h-11 max-sm:after:-translate-y-1/2 max-sm:after:content-['']"
+
+/**
  * The demo directory player (2026-08-15).
  *
  * Wraps the fixed stage with the controls a scripted product tour needs:
@@ -264,8 +289,18 @@ export function DemoPlayer({
         reduced={reduced}
         delayMs={(beat?.cursor ? CURSOR_ARRIVE_MS : 180) / rate}
       />
+      {/* The toast belongs to the VIEW, not to a target, so on a phone it is
+          centred on the part of the scene the keyhole is showing rather than on
+          the whole composed region. The stage publishes that window as CSS
+          variables; a computer never sets them and gets `inset-x-0`. */}
       {beat?.toast && !reduced && (
-        <div className="pointer-events-none absolute inset-x-0 top-4 z-40 flex justify-center">
+        <div
+          className="pointer-events-none absolute top-4 z-40 flex justify-center"
+          style={{
+            left: "var(--demo-view-left, 0px)",
+            width: "var(--demo-view-w, 100%)",
+          }}
+        >
           <div className="demo-toast bg-ink-950 flex items-center gap-3 rounded-2xl px-5 py-3 text-white shadow-[0_24px_60px_-20px_rgba(15,23,42,0.6)]">
             <span className="bg-court-500 flex h-6 w-6 items-center justify-center rounded-full">
               <svg
@@ -296,13 +331,19 @@ export function DemoPlayer({
     >
       <DemoOverlayStyles />
 
-      {/* Controls */}
-      <div className="mb-3 flex flex-wrap items-center gap-2">
+      {/* Controls. One row on a computer, exactly as before; on a phone the
+          chapter chips take a scrolling row of their own and every control
+          carries a 44px touch target that costs the bar no height. */}
+      <div className="mb-2 flex flex-wrap items-center gap-x-2 gap-y-2.5 sm:mb-3">
         {onExit && (
           <button
             type="button"
             onClick={onExit}
-            className="text-ink-400 hover:text-ink-800 inline-flex items-center gap-1 text-[14px] font-semibold transition-colors"
+            aria-label={exitLabel}
+            className={cn(
+              "text-ink-400 hover:text-ink-800 relative inline-flex items-center gap-1 text-[14px] font-semibold transition-colors",
+              TOUCH_44
+            )}
           >
             <svg
               viewBox="0 0 24 24"
@@ -314,7 +355,7 @@ export function DemoPlayer({
             >
               <path d="M14 6l-6 6 6 6" />
             </svg>
-            {exitLabel}
+            <span className="hidden sm:inline">{exitLabel}</span>
           </button>
         )}
         <button
@@ -325,7 +366,8 @@ export function DemoPlayer({
           }}
           disabled={reduced}
           className={cn(
-            "inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-[14px] font-bold transition-colors",
+            "relative inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-[14px] font-bold transition-colors",
+            TOUCH_44,
             reduced
               ? "bg-ink-100 text-ink-400"
               : playing
@@ -353,7 +395,13 @@ export function DemoPlayer({
           )}
         </button>
 
-        <div className="flex flex-wrap items-center gap-1.5">
+        {/* Order-last puts the chips under the transport on a phone, where they
+            scroll sideways instead of stacking four rows of chrome over the
+            stage. A computer keeps them inline and wrapping, as before.
+            The phone padding is not decoration: a sideways scroller CLIPS in
+            both axes, so without it the 44px touch overlay on each chip would
+            be cut back to the chip's own 29px. */}
+        <div className="order-last flex w-full min-w-0 flex-nowrap items-center gap-1.5 overflow-x-auto py-2 sm:order-none sm:w-auto sm:flex-wrap sm:overflow-x-visible sm:py-0">
           {chapters.map((c, ci) => {
             const first = beats.findIndex((b) => b.chapter === c.id)
             const active = c.id === activeChapter
@@ -363,7 +411,8 @@ export function DemoPlayer({
                 type="button"
                 onClick={() => jumpTo(first)}
                 className={cn(
-                  "rounded-full px-3 py-1 text-[14px] font-semibold transition-colors",
+                  "relative shrink-0 rounded-full px-3 py-1 text-[14px] font-semibold transition-colors",
+                  TOUCH_44,
                   active
                     ? "bg-court-50 text-court-700 ring-court-200 ring-1 ring-inset"
                     : "text-ink-500 hover:bg-ink-100 bg-white"
@@ -375,16 +424,21 @@ export function DemoPlayer({
           })}
         </div>
 
-        <div className="ml-auto flex items-center gap-3">
+        <div className="ml-auto flex items-center gap-2 sm:gap-3">
           <SpeedControl rate={rate} onChange={setDemoRate} disabled={reduced} />
           <span className="text-ink-400 text-[14px] font-semibold tabular-nums">
-            Beat {index + 1} of {beats.length}
+            <span className="sm:hidden">
+              {index + 1}/{beats.length}
+            </span>
+            <span className="hidden sm:inline">
+              Beat {index + 1} of {beats.length}
+            </span>
           </span>
         </div>
       </div>
 
       {/* Progress */}
-      <div className="bg-ink-100 mb-4 h-1 overflow-hidden rounded-full">
+      <div className="bg-ink-100 mb-2.5 h-1 overflow-hidden rounded-full sm:mb-4">
         <div
           className="h-full rounded-full bg-[color:var(--brand,#1a73e8)] transition-[width] duration-150 ease-linear motion-reduce:transition-none"
           style={{ width: `${progress}%` }}
@@ -403,6 +457,12 @@ export function DemoPlayer({
           frameLabels={surfaces.frameLabels}
           stageRef={stageRef}
           reserveBelow={reserveBelow}
+          /* What a phone follows: the keyhole pans it to the middle, the
+             handset pair brings its phone to the front. Ignored on a
+             computer, where the whole scene is already on screen. */
+          focusTarget={activeTarget(beat)}
+          beatKey={beatKey}
+          reduced={reduced}
         >
           {overlays}
         </SceneStage>
@@ -421,13 +481,16 @@ export function DemoPlayer({
         </SplitStage>
       )}
 
-      {/* Small screens show the desktop surface small. Say so rather than
-          panning or zooming around it. A phone-only demo has nothing to
-          apologise for, so it says nothing. */}
+      {/* One line for phones, and what it says depends on what the stage did.
+          A scene keeps its authored size and pans, so the line is an
+          invitation. A framed story still scales its browser window down, so
+          the line is still an apology. A phone-only demo, and the handset pair
+          with its own switcher, have nothing to explain. */}
       {!script.soloPhone && !script.scenePhones && (
-        <p className="text-ink-400 mt-3 text-[11px] font-medium sm:hidden">
-          The desktop screen is scaled down to fit your phone. Turn it sideways, or open
-          this on a laptop, to read every detail.
+        <p className="text-ink-400 mt-2 text-[14px] font-medium sm:hidden">
+          {scene
+            ? "Swipe sideways to look around."
+            : "The desktop screen is scaled down to fit your phone. Turn it sideways, or open this on a laptop, to read every detail."}
         </p>
       )}
 
@@ -435,7 +498,7 @@ export function DemoPlayer({
           itself at the point of action, the bar under the stage stops talking
           over it and shows the chapter alone. Reduced motion keeps the
           sentence, because there the caption IS the narration. */}
-      <div className="mt-4">
+      <div className="mt-2.5 sm:mt-4">
         <StepCaption
           role={role}
           roleTone={roleTone}
@@ -448,32 +511,32 @@ export function DemoPlayer({
         </StepCaption>
       </div>
 
-      {/* Manual stepping. The only way through in reduced motion. */}
-      <div className="mt-3 flex items-center justify-between gap-3">
+      {/* Manual stepping. The only way through in reduced motion. The line
+          between the two buttons is a nicety, and a phone spends its width on
+          the buttons instead. */}
+      <div className="mt-2 flex items-center justify-between gap-3 sm:mt-3">
         <button
           type="button"
           onClick={() => jumpTo(index - 1)}
           className={cn(
-            "text-ink-400 hover:text-ink-700 text-[14px] font-semibold",
+            "text-ink-400 hover:text-ink-700 relative text-[14px] font-semibold",
+            TOUCH_44,
             index === 0 && "invisible"
           )}
         >
           Back a beat
         </button>
-        {reduced ? (
-          <p className="text-ink-400 text-[14px] font-medium">
-            Motion is reduced on this device, so each beat shows its finished screen.
-          </p>
-        ) : (
-          <p className="text-ink-400 text-[14px] font-medium">
-            Jump to any chapter above. Nothing here needs an account.
-          </p>
-        )}
+        <p className="text-ink-400 hidden text-[14px] font-medium sm:block">
+          {reduced
+            ? "Motion is reduced on this device, so each beat shows its finished screen."
+            : "Jump to any chapter above. Nothing here needs an account."}
+        </p>
         <button
           type="button"
           onClick={() => jumpTo(index + 1)}
           className={cn(
-            "text-ink-600 hover:text-ink-900 text-[14px] font-semibold",
+            "text-ink-600 hover:text-ink-900 relative text-[14px] font-semibold",
+            TOUCH_44,
             index >= beats.length - 1 && "invisible"
           )}
         >

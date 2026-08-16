@@ -20,11 +20,20 @@
  *     --out /tmp/readability-before.md
  *
  * Flags:
- *   --routes  comma separated paths (default: the two above)
- *   --out     markdown report path (default: ./readability-report.md)
- *   --floor   minimum effective px (default: 14)
- *   --base    origin (default: http://localhost:3000)
- *   --only    substring: only routes containing it get the player walk
+ *   --routes    comma separated paths (default: the two above)
+ *   --out       markdown report path (default: ./readability-report.md)
+ *   --floor     minimum effective px (default: 14)
+ *   --base      origin (default: http://localhost:3000)
+ *   --viewport  WxH (default 1440x900). 390x844 is the phone gate.
+ *   --scope     all | stage | chrome (default all)
+ *   --walk      true | false (default true): step the player, or audit as loaded
+ *
+ * Two floors, one law (owner 08-16, mobile round). A computer renders a scene
+ * at 1.0 and is gated at 14px. A phone renders the same scene inside the
+ * keyhole at a fixed 0.85, so its floor is 14 x 0.85 = 11px, and the UNSCALED
+ * chrome around it (the intro, the transport, the caption) is still gated at
+ * 14px. `--scope` is what lets each half be measured against its own floor
+ * instead of averaging the two into a number that means nothing.
  */
 
 import { createRequire } from "node:module"
@@ -49,7 +58,14 @@ const ROUTES = arg("routes", "/demos,/demos/season-planned-to-published")
   .map((r) => r.trim())
   .filter(Boolean)
 
-const VIEWPORT = { width: 1440, height: 900 }
+const SCOPE = arg("scope", "all")
+const WALK = arg("walk", "true") !== "false"
+const [VW, VH] = arg("viewport", "1440x900")
+  .split("x")
+  .map((n) => Number(n))
+const VIEWPORT = { width: VW || 1440, height: VH || 900 }
+/** A phone viewport is driven as a phone: touch, and a 2x screen. */
+const MOBILE = VIEWPORT.width < 640
 
 /* ── The in-page measurement ──────────────────────────────────────────────── */
 
@@ -62,9 +78,16 @@ const VIEWPORT = { width: 1440, height: 900 }
  * scaled to 0.85 is an 11.9px label, and that is the disease this gate exists
  * to catch.
  */
-const COLLECT = (floor) => {
+const COLLECT = ({ floor, scope }) => {
   const out = []
   const seen = new Set()
+  /* "stage" is the composed scene, which a phone renders at a fixed scale;
+     "chrome" is everything the player draws around it at 1.0. */
+  const inScope = (el) => {
+    if (scope === "all") return true
+    const inStage = Boolean(el.closest('[data-demo-stage="true"]'))
+    return scope === "stage" ? inStage : !inStage
+  }
 
   const scaleOf = (el) => {
     let s = 1
@@ -117,7 +140,7 @@ const COLLECT = (floor) => {
         n = walker.nextNode()
         continue
       }
-      if (el) {
+      if (el && inScope(el)) {
         const cs = getComputedStyle(el)
         const rect = el.getBoundingClientRect()
         const visible =
@@ -174,7 +197,7 @@ function watchConsole(page, sink) {
 /* ── Scene walking ────────────────────────────────────────────────────────── */
 
 async function auditScene(page, label, url) {
-  const { violations, excluded } = await page.evaluate(COLLECT, FLOOR)
+  const { violations, excluded } = await page.evaluate(COLLECT, { floor: FLOOR, scope: SCOPE })
   const scale = await page.evaluate(STAGE_SCALE)
   return { label, url, violations, excluded, scale }
 }
@@ -244,11 +267,19 @@ async function walkPlayer(page, scenes, route) {
 
 function renderReport(results, errors) {
   const lines = []
-  lines.push(`# Readability audit (${FLOOR}px floor)`)
+  lines.push(`# Readability audit (${FLOOR}px floor, scope ${SCOPE})`)
   lines.push("")
   lines.push(
-    `Viewport ${VIEWPORT.width}x${VIEWPORT.height}, deviceScaleFactor 1. Effective size = computed font-size times every CSS transform scale between the node and the viewport.`
+    `Viewport ${VIEWPORT.width}x${VIEWPORT.height}. Effective size = computed font-size times every CSS transform scale between the node and the viewport.`
   )
+  if (SCOPE !== "all") {
+    lines.push("")
+    lines.push(
+      SCOPE === "stage"
+        ? "Scope: the composed scene inside `[data-demo-stage]` only."
+        : "Scope: the player's own chrome and the intro, everything OUTSIDE `[data-demo-stage]`."
+    )
+  }
   lines.push("")
   lines.push(`Run: ${new Date().toISOString()}`)
   lines.push("")
@@ -334,7 +365,9 @@ async function main() {
   const browser = await chromium.launch()
   const context = await browser.newContext({
     viewport: VIEWPORT,
-    deviceScaleFactor: 1,
+    deviceScaleFactor: MOBILE ? 2 : 1,
+    isMobile: MOBILE,
+    hasTouch: MOBILE,
     reducedMotion: "no-preference",
   })
   const page = await context.newPage()
@@ -351,7 +384,7 @@ async function main() {
     scenes.push(await auditScene(page, "intro", route))
     process.stdout.write(`  intro: ${scenes[0].violations.length} violations\n`)
 
-    const started = await startPlayer(page)
+    const started = WALK && (await startPlayer(page))
     let runtime = null
     if (started) {
       runtime = await page.evaluate(() => {

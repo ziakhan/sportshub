@@ -137,6 +137,16 @@ const OVERLAY_CSS = `
   38% { opacity: 1; }
   100% { opacity: 0.55; }
 }
+/* The phone keyhole scrolls itself to the acting element, so its scrollbar is
+   a 15px bite out of a fixed height box and nothing else. Hidden in every
+   engine, not just the ones with overlay scrollbars. */
+[data-demo-keyhole] {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+[data-demo-keyhole]::-webkit-scrollbar {
+  display: none;
+}
 `
 
 export function DemoOverlayStyles() {
@@ -156,6 +166,16 @@ export interface TargetRect {
   /** The stage box, for keeping overlays inside the panel. */
   stageW: number
   stageH: number
+  /**
+   * The part of the stage the viewer can SEE, in stage coordinates.
+   *
+   * On a computer that is the whole stage. Inside the phone keyhole the stage
+   * is the scrolled content and the window is a 352px slot moving across it, so
+   * an overlay that clamped itself to the stage would be perfectly inside a box
+   * nobody is looking at.
+   */
+  viewLeft: number
+  viewW: number
 }
 
 const same = (a: TargetRect, b: TargetRect) =>
@@ -165,7 +185,9 @@ const same = (a: TargetRect, b: TargetRect) =>
   a.height === b.height &&
   a.radius === b.radius &&
   a.stageW === b.stageW &&
-  a.stageH === b.stageH
+  a.stageH === b.stageH &&
+  a.viewLeft === b.viewLeft &&
+  a.viewW === b.viewW
 
 /**
  * Measures a `data-demo-target` against the stage box.
@@ -192,6 +214,9 @@ export function useTargetRect(
     const stage = stageRef.current
     if (!stage) return
 
+    /** The phone keyhole, when the stage is sitting inside one. */
+    const keyhole = stage.closest<HTMLElement>("[data-demo-keyhole]")
+
     const measure = () => {
       const el = stage.querySelector<HTMLElement>(`[data-demo-target="${target}"]`)
       if (!el) return
@@ -206,17 +231,35 @@ export function useTargetRect(
         radius: Math.min(26, raw),
         stageW: s.width,
         stageH: s.height,
+        viewLeft: keyhole ? keyhole.scrollLeft : 0,
+        viewW: keyhole ? keyhole.clientWidth : s.width,
       }
       setRect((prev) => (prev && same(prev, next) ? prev : next))
     }
 
     measure()
+    /* Two settles, not one. The stage's own slides finish inside 320ms; the
+       phone presentation ALSO swaps handsets under the overlay, and a second
+       look costs nothing because an unchanged box re-renders nothing. */
     const settle = setTimeout(measure, 320)
+    const settle2 = setTimeout(measure, 640)
     const onResize = () => measure()
     window.addEventListener("resize", onResize)
+    /* And once more when the keyhole finishes panning, which is the only thing
+       that moves the window. Debounced to the END of the pan on purpose: a
+       measurement per scroll frame is exactly the jitter this kit bans. */
+    let settle3: ReturnType<typeof setTimeout> | null = null
+    const onScroll = () => {
+      if (settle3) clearTimeout(settle3)
+      settle3 = setTimeout(measure, 120)
+    }
+    keyhole?.addEventListener("scroll", onScroll, { passive: true })
     return () => {
       clearTimeout(settle)
+      clearTimeout(settle2)
+      if (settle3) clearTimeout(settle3)
       window.removeEventListener("resize", onResize)
+      keyhole?.removeEventListener("scroll", onScroll)
     }
   }, [target, beatKey, enabled, stageRef])
 
@@ -467,6 +510,15 @@ const CALLOUT_GAP = 12
 const CALLOUT_MARGIN = 8
 const ARROW = 9
 const INK_100 = "#eeeef1"
+/**
+ * How long the balloon waits for the phone keyhole to finish panning.
+ *
+ * The pan starts 300ms into the beat and a smooth scroll lands inside another
+ * ~350ms, so 420 clears it with room. The balloon then measures against the
+ * window it is actually going to appear in, which is why it never arrives
+ * clipped by the edge of the keyhole and then hops.
+ */
+const KEYHOLE_PAN_WAIT_MS = 420
 
 const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(Math.max(lo, hi), v))
 
@@ -478,10 +530,15 @@ const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(Math.
  * with room nowhere falls back to the roomier half of the stage.
  */
 function placeCallout(rect: TargetRect, size: { w: number; h: number }): CalloutPlacement {
-  const { stageW, stageH } = rect
+  const { stageH } = rect
   const cx = rect.left + rect.width / 2
   const cy = rect.top + rect.height / 2
-  const maxLeft = stageW - CALLOUT_MARGIN - size.w
+  /* Horizontally the balloon belongs to the VISIBLE window, which on a computer
+     is the whole stage and inside the keyhole is the slot the viewer is looking
+     through. Vertically the stage and the window are the same box: nothing
+     scrolls up and down. */
+  const minLeft = rect.viewLeft + CALLOUT_MARGIN
+  const maxLeft = rect.viewLeft + rect.viewW - CALLOUT_MARGIN - size.w
   const maxTop = stageH - CALLOUT_MARGIN - size.h
 
   const below = rect.top + rect.height + CALLOUT_GAP
@@ -492,17 +549,17 @@ function placeCallout(rect: TargetRect, size: { w: number; h: number }): Callout
   let side: CalloutSide
   if (below + size.h <= stageH - CALLOUT_MARGIN) side = "below"
   else if (above >= CALLOUT_MARGIN) side = "above"
-  else if (right + size.w <= stageW - CALLOUT_MARGIN) side = "right"
-  else if (left >= CALLOUT_MARGIN) side = "left"
+  else if (right <= maxLeft) side = "right"
+  else if (left >= minLeft) side = "left"
   else side = cy > stageH / 2 ? "above" : "below"
 
   if (side === "below" || side === "above") {
-    const x = clamp(cx - size.w / 2, CALLOUT_MARGIN, maxLeft)
+    const x = clamp(cx - size.w / 2, minLeft, maxLeft)
     const y = clamp(side === "below" ? below : above, CALLOUT_MARGIN, maxTop)
     return { side, left: x, top: y, arrow: clamp(cx - x, 18, size.w - 18) }
   }
   const y = clamp(cy - size.h / 2, CALLOUT_MARGIN, maxTop)
-  const x = clamp(side === "right" ? right : left, CALLOUT_MARGIN, maxLeft)
+  const x = clamp(side === "right" ? right : left, minLeft, maxLeft)
   return { side, left: x, top: y, arrow: clamp(cy - y, 18, size.h - 18) }
 }
 
@@ -586,15 +643,21 @@ export function BeatCallout({
     setSize((prev) => (prev && prev.w === w && prev.h === h ? prev : { w, h }))
   }, [text, rect])
 
+  /* A panning stage moves the window out from under the balloon, so on a phone
+     the balloon waits for the pan to finish and is then placed against the
+     window it can actually see. On a computer nothing pans and this is zero. */
+  const panWait =
+    live && stageRef.current?.closest("[data-demo-keyhole]") ? KEYHOLE_PAN_WAIT_MS / rate : 0
+
   useEffect(() => {
     if (!live) return
     if (reduced) {
       setArmed(true)
       return
     }
-    const t = setTimeout(() => setArmed(true), Math.max(0, delayMs))
+    const t = setTimeout(() => setArmed(true), Math.max(0, delayMs + panWait))
     return () => clearTimeout(t)
-  }, [live, reduced, delayMs])
+  }, [live, reduced, delayMs, panWait])
 
   if (!live || !rect) return null
   const place = size ? placeCallout(rect, size) : null
@@ -661,7 +724,7 @@ export function StepCaption({
     referee: "bg-gold-50 text-gold-600 ring-gold-100",
   }
   return (
-    <div className="border-ink-100 bg-white/95 flex flex-wrap items-start gap-x-3 gap-y-2 rounded-2xl border px-4 py-3 shadow-[0_10px_30px_-24px_rgba(15,23,42,0.5)]">
+    <div className="border-ink-100 bg-white/95 flex flex-wrap items-start gap-x-3 gap-y-2 rounded-2xl border px-4 py-2.5 shadow-[0_10px_30px_-24px_rgba(15,23,42,0.5)] sm:py-3">
       <span
         className={cn(
           "mt-0.5 inline-flex shrink-0 items-center rounded-full px-2.5 py-1 text-[14px] font-semibold uppercase tracking-[0.1em] ring-1 ring-inset",

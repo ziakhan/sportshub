@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, type ReactNode } from "react"
 import { cn } from "@/components/ui/cn"
+import { useDemoRate } from "./motion"
 import type { StageMode } from "./types"
 
 /**
@@ -425,6 +426,53 @@ export const SCENE_PHONES_W = SCENE_PHONE_FRAME_W * 2 + SCENE_GAP
  */
 export const SCENE_PHONES_BOX_H = 566
 
+/* ── Mobile presentation (owner 08-16: "for the PC and for the mobile") ──── */
+
+/**
+ * The OLD production demo's mobile methodology, restored.
+ *
+ * `flow-demo/frames.tsx` scaled a 1160 logical screen to fit until the fit fell
+ * under 0.55; below that it stopped shrinking and became a KEYHOLE: a fixed,
+ * readable scale inside a horizontally scrollable window, auto scrolled once per
+ * scene so the highlighted control sat in the middle. The owner called that
+ * presentation good and workable on a phone, so it is the law here too, with
+ * three corrections the new engine earns:
+ *
+ *   1. The follow target is the BEAT's active element (the cursor target, else
+ *      the emphasized one, else the callout anchor), not a single hard coded
+ *      `[data-demo-advance]` control.
+ *   2. It scrolls ONCE per beat, after the beat has settled, and a second pass
+ *      only corrects a destination the frames themselves moved.
+ *   3. Reduced motion jumps instead of gliding.
+ *
+ * The scale is 0.85 rather than the old 0.78 for one measurable reason: scene
+ * regions are authored to a 14px floor, and 14 x 0.78 = 10.9px, under the 11px
+ * phone floor the audit gates on. 14 x 0.85 = 11.9px clears it, and 414 logical
+ * of phone frame lands at 352px, which is the whole handset inside a 390px
+ * viewport's keyhole.
+ */
+const SCENE_MIN_FIT = 0.55
+export const SCENE_KEYHOLE_SCALE = 0.85
+/**
+ * The handset pair holds together only while it clears the same phone floor:
+ * 14 x 0.8 = 11.2px. Under that the stage shows ONE handset at a time, near
+ * life size, and follows whichever phone is acting. A computer is nowhere near
+ * this line (a 1440 window fits the pair at 1.0), so desktop never sees it.
+ */
+const PHONES_MIN_FIT = 0.8
+/** How long after a beat starts the keyhole pans, in script milliseconds. */
+const FOLLOW_MS = 300
+/** The correction pass, for beats where the frames themselves moved. */
+const FOLLOW_CORRECT_MS = 760
+/** Under this the view is already centred enough to leave alone. */
+const FOLLOW_SLACK = 8
+/** Margin kept left of a target too wide to centre, so it reads from its start. */
+const FOLLOW_INSET = 12
+/** How far inside the right edge such a target's centre must still land. */
+const FOLLOW_EDGE = 24
+/** The handset swap: fast enough to finish before overlays re measure (320ms). */
+const SWAP_MS = 260
+
 export function SceneStage({
   mode,
   phones,
@@ -434,6 +482,9 @@ export function SceneStage({
   frameLabels,
   stageRef,
   reserveBelow = SCENE_RESERVE_BELOW,
+  focusTarget,
+  beatKey,
+  reduced,
   children,
 }: {
   /** "duo" composes the desktop narrower and brings the phone in beside it. */
@@ -448,10 +499,24 @@ export function SceneStage({
   frameLabels?: { left: string; right: string }
   stageRef: React.RefObject<HTMLDivElement>
   reserveBelow?: number
+  /**
+   * `data-demo-target` of the beat's active element: the cursor's destination,
+   * else the emphasized element, else the callout's anchor. The mobile
+   * presentations follow it; the desktop presentation ignores it, because
+   * everything is already on screen.
+   */
+  focusTarget?: string
+  /** Changes once per beat, which is what makes the follow fire exactly once. */
+  beatKey?: string
+  reduced?: boolean
   children?: ReactNode
 }) {
   const outerRef = useRef<HTMLDivElement>(null)
+  const scrollRef = useRef<HTMLDivElement>(null)
   const [panel, setPanel] = useState({ w: 0, h: 0 })
+  /** Phone pair on a phone: which handset is on screen, 0 left or 1 right. */
+  const [side, setSide] = useState<0 | 1>(0)
+  const rate = useDemoRate()
 
   useEffect(() => {
     const outer = outerRef.current
@@ -480,18 +545,319 @@ export function SceneStage({
 
   const boxW = phones ? SCENE_PHONES_W : SCENE_BOX_W
   const boxH = phones ? SCENE_PHONES_BOX_H : SCENE_BOX_H
+  const fit = panel.w > 0 ? panel.w / boxW : 0
+
+  /* The two mobile presentations. Both are decided by measurement alone, so a
+     computer never takes either branch: a 1440 window fits the wide box at
+     0.96 and the handset pair at 1.0. */
+  const solo = Boolean(phones) && fit > 0 && fit < PHONES_MIN_FIT
+  const keyhole = !phones && fit > 0 && fit < SCENE_MIN_FIT
+  /** The second handset exists on the stage from the beat that brings it in. */
+  const pairLive = Boolean(phone) && mode === "duo"
 
   /* Never above 1: upscaling a composed region would defeat the point of
      composing it. Never below the panel either, in both axes. */
-  const scale = panel.w > 0 ? Math.min(1, panel.w / boxW, (panel.h || boxH) / boxH) : 0
+  const scale = solo
+    ? Math.min(1, panel.w / SCENE_PHONE_FRAME_W)
+    : keyhole
+      ? SCENE_KEYHOLE_SCALE
+      : panel.w > 0
+        ? Math.min(1, fit, (panel.h || boxH) / boxH)
+        : 0
 
   const deskW = mode === "duo" ? SCENE_DUO_W : SCENE_WIDE_W
+
+  /* ── Follow the beat, once ────────────────────────────────────────────── */
+
+  /**
+   * The keyhole pan. It waits for the beat to settle, centres the active
+   * element and then leaves the view alone: the destination is remembered, so
+   * the correction pass is a no op unless the frames themselves moved (the
+   * publish beat, where the region narrows and the phone arrives).
+   */
+  const wantRef = useRef<number | null>(null)
+  useEffect(() => {
+    if (!keyhole || !focusTarget) return
+    const scroller = scrollRef.current
+    const stage = stageRef.current
+    if (!scroller || !stage) return
+    wantRef.current = null
+    let cancelled = false
+
+    const follow = () => {
+      if (cancelled) return
+      const el = stage.querySelector<HTMLElement>(`[data-demo-target="${focusTarget}"]`)
+      if (!el) return
+      const r = el.getBoundingClientRect()
+      const host = scroller.getBoundingClientRect()
+      const here = scroller.scrollLeft + r.left - host.left
+      /* Centred, which is what a control or a chip wants. A target WIDER than
+         the window cannot be centred and read at the same time: centring a
+         paragraph shows the viewer its middle. So a wide one is pulled as far
+         left as it can go while its centre still sits inside the window, which
+         is the rule the follow gate asserts. */
+      const centred = here + r.width / 2 - host.width / 2
+      const fromLeft = Math.max(here - FOLLOW_INSET, centred - host.width / 2 + FOLLOW_EDGE)
+      const want = Math.max(
+        0,
+        Math.min(
+          scroller.scrollWidth - scroller.clientWidth,
+          r.width > host.width ? Math.min(centred, fromLeft) : centred
+        )
+      )
+      if (Math.abs(want - scroller.scrollLeft) < FOLLOW_SLACK) return
+      if (wantRef.current !== null && Math.abs(want - wantRef.current) < FOLLOW_SLACK) return
+      wantRef.current = want
+      scroller.scrollTo({ left: want, behavior: reduced ? "auto" : "smooth" })
+    }
+
+    const t1 = setTimeout(follow, FOLLOW_MS / rate)
+    const t2 = setTimeout(follow, FOLLOW_CORRECT_MS / rate)
+    return () => {
+      cancelled = true
+      clearTimeout(t1)
+      clearTimeout(t2)
+    }
+  }, [keyhole, focusTarget, beatKey, reduced, rate, stageRef])
+
+  /**
+   * The window the viewer can actually see, published as CSS variables on the
+   * stage box. Overlays that belong to the VIEW rather than to a target (the
+   * toast) read them, so a confirmation never lands off screen in the part of
+   * the scene the keyhole is not showing.
+   */
+  useEffect(() => {
+    const scroller = scrollRef.current
+    const stage = stageRef.current
+    if (!keyhole || !scroller || !stage) return
+    let raf = 0
+    const sync = () => {
+      stage.style.setProperty("--demo-view-left", `${Math.round(scroller.scrollLeft)}px`)
+      stage.style.setProperty("--demo-view-w", `${Math.round(scroller.clientWidth)}px`)
+    }
+    const onScroll = () => {
+      cancelAnimationFrame(raf)
+      raf = requestAnimationFrame(sync)
+    }
+    sync()
+    scroller.addEventListener("scroll", onScroll, { passive: true })
+    return () => {
+      cancelAnimationFrame(raf)
+      scroller.removeEventListener("scroll", onScroll)
+      stage.style.removeProperty("--demo-view-left")
+      stage.style.removeProperty("--demo-view-w")
+    }
+  }, [keyhole, stageRef])
+
+  /**
+   * One handset at a time: the stage shows whichever phone the beat is acting
+   * on. The engine reads it off the DOM rather than the script, so a story
+   * never has to restate what its own targets already say.
+   */
+  useEffect(() => {
+    if (!solo) return
+    if (!pairLive) {
+      setSide(0)
+      return
+    }
+    const stage = stageRef.current
+    if (!stage || !focusTarget) return
+    const el = stage.querySelector<HTMLElement>(`[data-demo-target="${focusTarget}"]`)
+    const frame = el?.closest<HTMLElement>("[data-demo-frame]")
+    const which = frame?.dataset.demoFrame
+    if (which === "left") setSide(0)
+    else if (which === "right") setSide(1)
+  }, [solo, pairLive, focusTarget, beatKey, stageRef])
+
+  /* ── The frames ───────────────────────────────────────────────────────── */
+
+  /* One composition, three presentations. Solo pins the left handset to its own
+     column so the track alone decides which one is on screen. */
+  const framesNode = phones ? (
+    <>
+      {/* LEFT handset. Alone on the stage it sits centred; when the
+          second phone joins it slides to its own column, the same
+          move the desktop region makes in duo. */}
+      <div
+        data-demo-frame="left"
+        className="absolute top-0 transition-[left] duration-[450ms] ease-out motion-reduce:transition-none"
+        style={{
+          width: SCENE_PHONE_FRAME_W,
+          left: solo || mode === "duo" ? 0 : (SCENE_PHONES_W - SCENE_PHONE_FRAME_W) / 2,
+        }}
+      >
+        <ScenePhoneFrame short>{desktop}</ScenePhoneFrame>
+        {frameLabels && <FrameLabel>{frameLabels.left}</FrameLabel>}
+      </div>
+      {phone && (
+        <div
+          data-demo-frame="right"
+          className="absolute top-0 transition-all duration-[550ms] ease-out motion-reduce:transition-none"
+          style={{
+            width: SCENE_PHONE_FRAME_W,
+            left: SCENE_PHONE_FRAME_W + SCENE_GAP,
+            opacity: mode === "duo" ? 1 : 0,
+            transform: mode === "duo" ? "translateX(0)" : "translateX(48px)",
+          }}
+        >
+          <ScenePhoneFrame short>{phone}</ScenePhoneFrame>
+          {frameLabels && <FrameLabel>{frameLabels.right}</FrameLabel>}
+        </div>
+      )}
+    </>
+  ) : (
+    <>
+      <div
+        className="border-ink-200/70 absolute top-0 flex flex-col overflow-hidden rounded-2xl border bg-white shadow-[0_24px_60px_-34px_rgba(15,23,42,0.45)] transition-[width,left] duration-[450ms] ease-out motion-reduce:transition-none"
+        style={{
+          width: deskW,
+          left: mode === "duo" ? 0 : (SCENE_BOX_W - SCENE_WIDE_W) / 2,
+          height: SCENE_BOX_H,
+        }}
+      >
+        {context && (
+          <div className="border-ink-100 bg-ink-50 text-ink-600 flex shrink-0 items-center gap-2 border-b px-5 py-2 text-[14px] font-semibold">
+            <span aria-hidden="true" className="bg-court-500 h-2 w-2 shrink-0 rounded-full" />
+            <span className="truncate">{context}</span>
+          </div>
+        )}
+        <div className="relative min-h-0 flex-1 overflow-hidden bg-white">{desktop}</div>
+      </div>
+
+      {phone && (
+        <div
+          className="absolute top-0 transition-all duration-[550ms] ease-out motion-reduce:transition-none"
+          style={{
+            width: SCENE_PHONE_FRAME_W,
+            left: SCENE_DUO_W + SCENE_GAP,
+            opacity: mode === "duo" ? 1 : 0,
+            transform: mode === "duo" ? "translateX(0)" : "translateX(48px)",
+          }}
+        >
+          <ScenePhoneFrame>{phone}</ScenePhoneFrame>
+        </div>
+      )}
+    </>
+  )
+
+  /* ── Presentation 1: the keyhole (phones, single region) ──────────────── */
+
+  if (keyhole) {
+    return (
+      <div ref={outerRef} className="w-full">
+        <div
+          ref={scrollRef}
+          data-demo-keyhole="true"
+          className="w-full overflow-x-auto overflow-y-hidden"
+          style={{ height: boxH * scale }}
+        >
+          {/* The stage box is the SCROLLED content, not the window, so every
+              overlay measures in the same coordinates the frames live in and
+              the hand, the ring and the balloon pan with the scene instead of
+              sliding off it. */}
+          <div
+            ref={stageRef}
+            data-demo-stage="true"
+            data-demo-focus={focusTarget}
+            data-demo-scale={scale.toFixed(3)}
+            className="relative"
+            style={{ width: boxW * scale, height: boxH * scale }}
+          >
+            <div
+              className="absolute left-0 top-0"
+              style={{
+                width: boxW,
+                height: boxH,
+                transform: `scale(${scale})`,
+                transformOrigin: "top left",
+              }}
+            >
+              {framesNode}
+            </div>
+            {children}
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  /* ── Presentation 2: one handset at a time (phones, phone pair) ───────── */
+
+  if (solo) {
+    const phoneW = SCENE_PHONE_FRAME_W * scale
+    const centred = Math.max(0, (panel.w - phoneW) / 2)
+    const offset = side * (SCENE_PHONE_FRAME_W + SCENE_GAP) * scale
+    return (
+      <div ref={outerRef} className="w-full">
+        {/* The other phone stays named even while it is off stage, so the
+            viewer knows the story has two of them and can go and look. The row
+            is there from the first beat, dimmed until the second handset
+            actually joins, because a switcher that appears halfway through
+            would push the stage down the screen mid demo. */}
+        {phone && frameLabels && (
+          <div role="tablist" aria-label="Which phone" className="mb-1.5 flex items-stretch gap-1.5">
+            {[frameLabels.left, frameLabels.right].map((label, i) => {
+              const armed = i === 0 || pairLive
+              return (
+                <button
+                  key={label}
+                  type="button"
+                  role="tab"
+                  aria-selected={side === i}
+                  disabled={!armed}
+                  onClick={() => setSide(i === 1 ? 1 : 0)}
+                  className={cn(
+                    "relative min-w-0 flex-1 truncate rounded-full px-3 py-1.5 text-[14px] font-semibold transition-colors",
+                    "after:absolute after:inset-x-0 after:top-1/2 after:h-11 after:-translate-y-1/2 after:content-['']",
+                    "focus-visible:ring-court-600 outline-none focus-visible:ring-2",
+                    !armed
+                      ? "bg-ink-50 text-ink-300"
+                      : side === i
+                        ? "bg-ink-900 text-white"
+                        : "bg-ink-100 text-ink-500 hover:text-ink-800"
+                  )}
+                >
+                  {label.split(" · ")[0]}
+                </button>
+              )
+            })}
+          </div>
+        )}
+        <div
+          ref={stageRef}
+          data-demo-stage="true"
+          data-demo-focus={focusTarget}
+          data-demo-scale={scale.toFixed(3)}
+          className="relative overflow-hidden"
+          style={{ height: boxH * scale, width: "100%" }}
+        >
+          <div
+            className="absolute left-0 top-0 ease-out motion-reduce:transition-none"
+            style={{
+              width: boxW,
+              height: boxH,
+              transform: `translateX(${centred - offset}px) scale(${scale})`,
+              transformOrigin: "top left",
+              transitionProperty: "transform",
+              transitionDuration: `${SWAP_MS}ms`,
+            }}
+          >
+            {framesNode}
+          </div>
+          {children}
+        </div>
+      </div>
+    )
+  }
+
+  /* ── Presentation 3: the computer, unchanged ──────────────────────────── */
 
   return (
     <div ref={outerRef} className="w-full">
       <div
         ref={stageRef}
         data-demo-stage="true"
+        data-demo-focus={focusTarget}
         data-demo-scale={scale ? scale.toFixed(3) : undefined}
         className="relative mx-auto overflow-hidden"
         style={
@@ -515,73 +881,7 @@ export function SceneStage({
             transformOrigin: "top center",
           }}
         >
-          {phones ? (
-            <>
-              {/* LEFT handset. Alone on the stage it sits centred; when the
-                  second phone joins it slides to its own column, the same
-                  move the desktop region makes in duo. */}
-              <div
-                className="absolute top-0 transition-[left] duration-[450ms] ease-out motion-reduce:transition-none"
-                style={{
-                  width: SCENE_PHONE_FRAME_W,
-                  left: mode === "duo" ? 0 : (SCENE_PHONES_W - SCENE_PHONE_FRAME_W) / 2,
-                }}
-              >
-                <ScenePhoneFrame short>{desktop}</ScenePhoneFrame>
-                {frameLabels && <FrameLabel>{frameLabels.left}</FrameLabel>}
-              </div>
-              {phone && (
-                <div
-                  className="absolute top-0 transition-all duration-[550ms] ease-out motion-reduce:transition-none"
-                  style={{
-                    width: SCENE_PHONE_FRAME_W,
-                    left: SCENE_PHONE_FRAME_W + SCENE_GAP,
-                    opacity: mode === "duo" ? 1 : 0,
-                    transform: mode === "duo" ? "translateX(0)" : "translateX(48px)",
-                  }}
-                >
-                  <ScenePhoneFrame short>{phone}</ScenePhoneFrame>
-                  {frameLabels && <FrameLabel>{frameLabels.right}</FrameLabel>}
-                </div>
-              )}
-            </>
-          ) : (
-            <>
-              <div
-                className="border-ink-200/70 absolute top-0 flex flex-col overflow-hidden rounded-2xl border bg-white shadow-[0_24px_60px_-34px_rgba(15,23,42,0.45)] transition-[width,left] duration-[450ms] ease-out motion-reduce:transition-none"
-                style={{
-                  width: deskW,
-                  left: mode === "duo" ? 0 : (SCENE_BOX_W - SCENE_WIDE_W) / 2,
-                  height: SCENE_BOX_H,
-                }}
-              >
-                {context && (
-                  <div className="border-ink-100 bg-ink-50 text-ink-600 flex shrink-0 items-center gap-2 border-b px-5 py-2 text-[14px] font-semibold">
-                    <span
-                      aria-hidden="true"
-                      className="bg-court-500 h-2 w-2 shrink-0 rounded-full"
-                    />
-                    <span className="truncate">{context}</span>
-                  </div>
-                )}
-                <div className="relative min-h-0 flex-1 overflow-hidden bg-white">{desktop}</div>
-              </div>
-
-              {phone && (
-                <div
-                  className="absolute top-0 transition-all duration-[550ms] ease-out motion-reduce:transition-none"
-                  style={{
-                    width: SCENE_PHONE_FRAME_W,
-                    left: SCENE_DUO_W + SCENE_GAP,
-                    opacity: mode === "duo" ? 1 : 0,
-                    transform: mode === "duo" ? "translateX(0)" : "translateX(48px)",
-                  }}
-                >
-                  <ScenePhoneFrame>{phone}</ScenePhoneFrame>
-                </div>
-              )}
-            </>
-          )}
+          {framesNode}
         </div>
 
         {children}

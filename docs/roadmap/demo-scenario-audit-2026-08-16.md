@@ -86,7 +86,7 @@ Extracted from the homepage flow-demo engine (flow-demo/frames.tsx) and now LAW 
 2. The new engine's mistake, named: full desktop mock incl. chrome at 1120x660, scaled to ~0.85 beside a phone = ~12px text. Banned.
 3. Split scenes: never buy a second frame by shrinking the first. Pair two phones at life size (fits), or sequence frames (the acting surface big), or compose the desktop region narrower. Effective scale floor ~0.92; the 14px readability audit is the hard gate.
 4. Phone frames at life size (390 logical at 1.0).
-5. The old mobile methodology (fixed 0.78 pan scale, auto-scroll to the highlighted control) is the recorded starting point for the LATER phone-presentation round. Parked.
+5. The old mobile methodology (fixed 0.78 pan scale, auto-scroll to the highlighted control) is the recorded starting point for the LATER phone-presentation round. Parked. BUILT 2026-08-16: the keyhole ships at a fixed **0.85**, not the old 0.78, because a scene is authored to a 14px floor and 14 x 0.78 = 10.9px falls under the 11px phone floor while 14 x 0.85 = 11.9px clears it and renders a 414 logical handset at 352px, the full width of a 390px viewport, so the gate is now two floors against one law: `--floor 11 --scope stage` for the panned scene and `--floor 14 --scope chrome` for the unscaled intro and transport, both 0 violations at 390x844.
 
 ## E. The plan for the send (owner wants leagues to get this tomorrow)
 
