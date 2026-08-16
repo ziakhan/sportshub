@@ -396,9 +396,11 @@ export function DemoPlayer({
       {scene ? (
         <SceneStage
           mode={stage === "desktop" ? "wide" : "duo"}
+          phones={script.scenePhones}
           desktop={surfaces.desktop}
           phone={surfaces.phone}
           context={context}
+          frameLabels={surfaces.frameLabels}
           stageRef={stageRef}
           reserveBelow={reserveBelow}
         >
@@ -422,7 +424,7 @@ export function DemoPlayer({
       {/* Small screens show the desktop surface small. Say so rather than
           panning or zooming around it. A phone-only demo has nothing to
           apologise for, so it says nothing. */}
-      {!script.soloPhone && (
+      {!script.soloPhone && !script.scenePhones && (
         <p className="text-ink-400 mt-3 text-[11px] font-medium sm:hidden">
           The desktop screen is scaled down to fit your phone. Turn it sideways, or open
           this on a laptop, to read every detail.

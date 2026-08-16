@@ -1,143 +1,157 @@
 "use client"
 
-import { MockEndCard, MockTopBar } from "../mock-ui"
 import {
   ConsoleActionPad,
+  ConsoleAttendance,
   ConsoleChecklist,
-  ConsoleFinal,
-  ConsoleFloor,
+  ConsoleChips,
   ConsoleHeader,
   ConsoleLineup,
   ConsoleReview,
+  ConsoleScoresheet,
   ConsoleSubsSheet,
-  PhoneBoxScore,
-  PhoneMiniScore,
-  PhoneGameTabs,
-  PhonePlayList,
-  PhonePotgCard,
-  PhoneRecapCard,
-  PhoneScoreHero,
-  PhoneStandings,
-  PhoneTeamStats,
+  LiveBoxScore,
+  LiveHero,
+  LivePlays,
+  LivePotgCard,
+  LiveRecapCard,
+  LiveScoreChip,
+  LiveStandings,
+  LiveTabs,
+  LiveTeamStats,
+  MockEndCard,
+  PhoneBody,
   type MockLine,
   type MockPlayer,
   type PhonePlayRow,
   type PhoneTeam,
   type PulseTone,
 } from "../mock-scoring"
-import type { DemoScript } from "../types"
+import type { DemoBeat, DemoScript } from "../types"
 
 /**
- * Story 4: "Game day, both sides at once" (owner-signed script, 2026-08-15).
+ * "Game day, both phones" (owner ruling 2026-08-16).
  *
  * THE ARGUMENT. A youth game is scored by a parent volunteer on a folding
  * table, and everyone who could not be in the gym finds out the score by text
- * message an hour later. This story puts both ends of that on one stage: the
- * console at the table on the left, the phone of a mother who is still at work
- * on the right, and one game running through both.
+ * message an hour later. This story puts both ends of that on one stage, and
+ * both of them are PHONES: the scorer's phone on the left, the phone of a
+ * father who is not in the building on the right, and one game running through
+ * both.
+ *
+ * THE PHONE RULING, AND THE AUTHORIZATION IT CARRIES. The owner: "I want to
+ * show them the capability of how easy it is to keep the scoring from the
+ * phone... that scorekeeper app should be both mobile", and, for screens the
+ * product composes wide today, "even if it doesn't exist on the phone right
+ * now, can we still fabricate some of those screens on the phones... two big
+ * phone screens side by side". Every screen here is checked against what ships:
+ * the console, the checklist, the attendance roll call and the live page are
+ * REAL phone surfaces; the review screen and the scoresheet are the two
+ * OWNER-AUTHORIZED phone compositions, and both are marked as such in
+ * `docs/roadmap/game-day-numbers.md` §C.
  *
  * THE OWNER'S SYNC LAWS, and where each one lives:
- *   1. ONE CLOCK, BOTH FRAMES. There is a single clock value in scene state and
- *      a single ticker behind it (`useDemoClock`, mock-scoring.tsx). The console
- *      and the phone do not each run a clock that happens to agree: they render
- *      the same number from the same store, so they cannot drift. It ticks
- *      through the play beats and stops dead when the table stops it.
- *   2. THE PHONE FLASHES WHAT CHANGED. Every value on the phone that can move
- *      is wrapped in `Pulse`: green for a made shot or a score going up, red
- *      for a foul, amber for everything else the table does (a substitution, a
- *      period, a correction). The flash is on the element itself, so a score
- *      digit, a linescore cell, a box-score cell and a play row each announce
- *      their own change.
- *   3. THE FULL ACTION SET, MISSES INCLUDED. The pad carries exactly what this
- *      league's console carries: +2, +3, FT ✓, 2 ✗, 3 ✗, FT ✗, REB, AST, FOUL.
- *      Steals and blocks are not on it, because they are not on the table's
- *      console tonight; the phone still renders the real box-score columns, so
- *      what the table cannot record reads as a zero rather than disappearing.
- *   4. SCORE AND QUARTER TRAVEL TOGETHER. The hero carries both, and every
- *      other phone view carries the mini score chip, which is the real page's
- *      own sticky chip with the clock added.
- *   5. ONE PLAY, ONE MOMENT. The play-by-play entry pops in on the same beat
- *      the score flashes, and the assist play carries its attribution the way
- *      the product writes it.
+ *   1. ONE CLOCK, BOTH PHONES. There is a single clock value in scene state and
+ *      a single ticker behind it (`useDemoClock`, mock-scoring.tsx). The two
+ *      handsets do not each run a clock that happens to agree: they render the
+ *      same number from the same store, so they cannot drift. The playback
+ *      drive asserts the two rendered strings are identical on every beat that
+ *      shows both.
+ *   2. THE PARENT'S PHONE FLASHES WHAT CHANGED. Every value that can move is
+ *      wrapped in `Pulse`: green for a made shot or a score, red for a foul,
+ *      amber for everything else the table does. The flash is on the element
+ *      itself, so a score digit, a linescore cell, a box-score cell and a play
+ *      row each announce their own change.
+ *   3. THE FULL ACTION SET, MISSES INCLUDED: +2, +3, FT ✓, 2 ✗, 3 ✗, FT ✗, REB,
+ *      AST, FOUL. That is exactly what a STANDARD stat-depth league's console
+ *      renders, and the NPH Summer League is STANDARD. Steals, blocks and
+ *      turnovers are FULL-depth only, so the phone box score carries them as
+ *      zeros rather than pretending the table recorded them.
+ *   4. SCORE AND QUARTER TRAVEL TOGETHER, on the hero and on the score chip
+ *      every other view keeps.
+ *   5. ONE PLAY, ONE MOMENT. The play-by-play line pops in on the same beat the
+ *      score flashes, and the assist play carries its attribution the way the
+ *      product writes it: "#37 Darius R. scores 2, assisted by #18 Isaiah C."
  *
- * THE STATE MODEL. Everything the two frames show is FOLDED from one event
+ * THE STATE MODEL. Everything both phones show is FOLDED from one event
  * stream, exactly like the product: `EVENTS` is the game, a beat says how many
- * of them have happened, and the fold derives scores, the linescore, both box
- * scores, team fouls, who is on the floor and the play-by-play. That is what
- * makes the undo beat honest: the mistaken three is not deleted, it is VOIDED,
- * and every number that was built on it walks back on its own.
+ * of them have happened, and the fold derives the score, the linescore, both
+ * box scores, team fouls, who is on the floor, the shooting lines and the
+ * play-by-play. That is what makes the undo beat honest: the mistaken three is
+ * not deleted, it is VOIDED, and every number built on it walks back on its
+ * own.
  *
- * TRUTH TO THE PRODUCT. The console mirrors components/scoring/scoring-console
- * .tsx and components/scoring/pre-game-checklist.tsx, down to the wording of
- * the status strip ("Tap an action, then a player"), the dashed "SUBS ⇄ (n on
- * bench)", the red UNDO, the synced pill, and the referee approval block with
- * its Signature / Referee PIN switch. The phone mirrors app/(public)/live/
- * [gameId]: the navy hero with the linescore inside it, the mini score chip,
- * the Game / Team stats / Play-by-play tabs, the box score behind its team
- * switcher, and the play rows with their neutral rail and running score.
+ * EVERY NUMBER DERIVED. The league, the season, the weekend, the game, both
+ * rosters with their real jersey numbers, the referee, the parent, the division
+ * table and the recap sentences are read out of the seeded NPH Summer League,
+ * and the whole staged game is reconciled event by event in
+ * `docs/roadmap/game-day-numbers.md`.
  */
 
-/* ── Cast ────────────────────────────────────────────────────────────────── */
+/* ── Cast, all read out of the seeded world ──────────────────────────────── */
 
-/**
- * The teams as every score surface writes them: the club name on the row and
- * the age group with the record underneath, which is how the live page keeps a
- * long youth team name readable on a phone.
- */
+const LEAGUE = "NPH Summer League"
+const SEASON = "Summer 2026"
+const DIVISION = "Grade 9 Boys · Tier 1"
+const SESSION = "Weekend 11 · Aug 22"
+const VENUE = "The Playground · Court 1"
+const TIPOFF = "Sat Aug 22 · 12:00 PM"
+
+/** `DB` Game 7e467b44, published, SCHEDULED. The game the schedule-change
+ *  demo moved to noon: this is the afternoon it gets played. */
 const HOME: PhoneTeam = {
-  name: "Riverside Ravens",
-  short: "RR · U11",
-  record: "7-2 · U11 Girls Rep",
+  name: "Oakville Panthers Grade 9",
+  short: "OP · G9",
+  record: "3-6 · Grade 9 Boys",
 }
 const AWAY: PhoneTeam = {
-  name: "Lakeshore Lightning",
-  short: "LL · U11",
-  record: "6-3 · U11 Girls Rep",
+  name: "Toronto Lords Grade 9",
+  short: "TL · G9",
+  record: "4-6 · Grade 9 Boys",
 }
-const LEAGUE = "Ontario Community League · 2026 Winter"
-const VENUE = "Riverside CC, Court 2"
-const REFEREE = "Mike Osei"
-const SCOREKEEPER = "Dana Michaels"
+
+/** `DB` LeagueReferee + RefereeProfile, summer-ref-mike@sportshub.demo. */
+const REFEREE = "Mike Ferreira"
+/** `DB` User summer-parent-lords@, guardian of record for Darius Reyes. */
+const PARENT = "Jordan Reyes"
+const SCOREKEEPER = "Priya Anderson"
 
 const HOME_PLAYERS: MockPlayer[] = [
-  { jersey: 23, name: "Amara Bello", short: "Amara B." },
-  { jersey: 7, name: "Maya Rivera", short: "Maya R." },
-  { jersey: 4, name: "Priya Shah", short: "Priya S." },
-  { jersey: 11, name: "Zoe Tremblay", short: "Zoe T." },
-  { jersey: 5, name: "Nia Okafor", short: "Nia O." },
-  { jersey: 9, name: "Hana Kimura", short: "Hana K." },
-  { jersey: 12, name: "Sofia Ricci", short: "Sofia R." },
-  { jersey: 15, name: "Layla Haddad", short: "Layla H." },
+  { jersey: 11, name: "Jayden Anderson", short: "Jayden A." },
+  { jersey: 12, name: "Ravi Baker", short: "Ravi B." },
+  { jersey: 16, name: "Kai Green", short: "Kai G." },
+  { jersey: 29, name: "Daniel Osei", short: "Daniel O." },
+  { jersey: 32, name: "Liam Silva", short: "Liam S." },
+  { jersey: 33, name: "Felix Robinson", short: "Felix R." },
+  { jersey: 34, name: "Kevin Wilson", short: "Kevin W." },
+  { jersey: 35, name: "Yusuf Mensah", short: "Yusuf M." },
+  { jersey: 39, name: "Andre Nguyen", short: "Andre N." },
+  { jersey: 42, name: "Mateo Campbell", short: "Mateo C." },
 ]
 const AWAY_PLAYERS: MockPlayer[] = [
-  { jersey: 10, name: "Jade Whitford", short: "Jade W." },
-  { jersey: 8, name: "Talia Grant", short: "Talia G." },
-  { jersey: 6, name: "Erin Doyle", short: "Erin D." },
-  { jersey: 14, name: "Riya Patel", short: "Riya P." },
-  { jersey: 21, name: "Casey Moreau", short: "Casey M." },
-  { jersey: 3, name: "Ivy Chen", short: "Ivy C." },
-  { jersey: 17, name: "Noor Aziz", short: "Noor A." },
+  { jersey: 4, name: "Daniel Grant", short: "Daniel G." },
+  { jersey: 15, name: "Ethan Lee", short: "Ethan L." },
+  { jersey: 17, name: "Cameron Baptiste", short: "Cameron B." },
+  { jersey: 18, name: "Isaiah Clarke", short: "Isaiah C." },
+  { jersey: 21, name: "Zion Nguyen", short: "Zion N." },
+  { jersey: 28, name: "Ibrahim White", short: "Ibrahim W." },
+  { jersey: 29, name: "Isaiah Boateng", short: "Isaiah B." },
+  { jersey: 34, name: "Cole Campbell", short: "Cole C." },
+  { jersey: 37, name: "Darius Reyes", short: "Darius R." },
+  { jersey: 38, name: "Owen Lee", short: "Owen L." },
 ]
 
-const HOME_STARTERS = [23, 7, 4, 11, 5]
-const AWAY_STARTERS = [10, 8, 6, 14, 21]
+const HOME_STARTERS = [11, 39, 16, 34, 32]
+const AWAY_STARTERS = [37, 28, 18, 29, 34]
+/** Marked at the door: one on each side. */
+const HOME_ABSENT = [29]
+const AWAY_ABSENT = [15]
 
-const URL_SCORE = "/games/ravens-lightning-jan-18/score"
+const URL_SCORE = "/games/7e467b44/score"
 
 /* ── The game, as an event stream ────────────────────────────────────────── */
 
-type Kind =
-  | "PSTART"
-  | "PEND"
-  | "S2"
-  | "S3"
-  | "FT"
-  | "M2"
-  | "M3"
-  | "REB"
-  | "AST"
-  | "FOUL"
-  | "SUB"
+type Kind = "PSTART" | "PEND" | "S2" | "S3" | "FT" | "M2" | "M3" | "MFT" | "REB" | "AST" | "FOUL" | "SUB"
 
 interface Ev {
   k: Kind
@@ -150,142 +164,224 @@ interface Ev {
   off?: boolean
 }
 
-const ev = (k: Kind, side: "home" | "away", j: number, period: number, off?: boolean): Ev => ({
-  k,
-  side,
-  j,
-  period,
-  off,
-})
-const sub = (side: "home" | "away", inJ: number, outJ: number, period: number): Ev => ({
-  k: "SUB",
-  side,
-  in: inJ,
-  out: outJ,
-  period,
-})
+const E: Ev[] = []
+const P = (period: number) => E.push({ k: "PSTART", period })
+const X = (period: number) => E.push({ k: "PEND", period })
+const h = (k: Kind, j: number, period: number, off?: boolean) =>
+  E.push({ k, side: "home", j, period, off })
+const a = (k: Kind, j: number, period: number, off?: boolean) =>
+  E.push({ k, side: "away", j, period, off })
+const sub = (side: "home" | "away", inJ: number, outJ: number, period: number) =>
+  E.push({ k: "SUB", side, in: inJ, out: outJ, period })
 
-/** What the camera watches in the first quarter. */
-const FILMED: Ev[] = [
-  { k: "PSTART", period: 1 }, // 0
-  ev("S2", "home", 23, 1), // 1
-  ev("AST", "home", 7, 1), // 2
-  ev("M3", "home", 23, 1), // 3
-  ev("REB", "home", 11, 1, true), // 4
-  ev("FOUL", "away", 14, 1), // 5
-  sub("home", 9, 5, 1), // 6
-  ev("S2", "away", 10, 1), // 7
-  ev("S3", "home", 23, 1), // 8 — the entry that never happened
-]
+/* Q1 — the nine events the camera watches, then the rest of the quarter. */
+P(1) //                                   0  tip-off
+a("S2", 37, 1) //                         1  Darius, two
+a("AST", 18, 1) //                        2  assisted by Isaiah C.
+a("M3", 37, 1) //                         3  the miss
+a("REB", 28, 1, true) //                  4  offensive board
+h("FOUL", 33, 1) //                       5  the foul, red on the phone
+sub("away", 21, 34, 1) //                 6  the substitution, amber
+h("S2", 11, 1) //                         7  Panthers answer
+a("S3", 37, 1) //                         8  THE WRONG ENTRY, voided by UNDO
 
-/** The rest of the night, scored by the same table off camera. */
-const OFFCAM: Ev[] = [
-  ev("S2", "home", 7, 1),
-  ev("M2", "home", 5, 1),
-  ev("REB", "away", 21, 1),
-  ev("S2", "away", 21, 1),
-  ev("S3", "home", 4, 1),
-  ev("FOUL", "home", 4, 1),
-  ev("S3", "away", 8, 1),
-  ev("S2", "home", 11, 1),
-  ev("M3", "away", 8, 1),
-  ev("REB", "home", 11, 1),
-  ev("S2", "away", 6, 1),
-  ev("FT", "home", 7, 1),
-  ev("FT", "home", 7, 1),
-  ev("FOUL", "away", 6, 1),
-  ev("FT", "away", 14, 1),
-  { k: "PEND", period: 1 },
+a("M2", 28, 1)
+h("REB", 34, 1)
+h("S2", 16, 1)
+h("AST", 11, 1)
+a("S2", 28, 1)
+h("M3", 39, 1)
+a("REB", 18, 1)
+a("S2", 37, 1)
+a("AST", 18, 1)
+h("FOUL", 34, 1)
+a("M2", 18, 1)
+a("REB", 28, 1, true)
+a("S2", 28, 1)
+h("S3", 39, 1)
+a("M3", 37, 1)
+h("REB", 32, 1)
+h("M2", 16, 1)
+h("REB", 11, 1, true)
+h("S2", 11, 1)
+a("M2", 29, 1)
+h("REB", 39, 1)
+h("S2", 34, 1)
+a("FOUL", 21, 1)
+h("FT", 34, 1)
+a("S2", 18, 1)
+h("M2", 16, 1)
+a("REB", 29, 1)
+h("FOUL", 11, 1)
+a("FT", 37, 1)
+a("FT", 37, 1)
+a("S2", 37, 1)
+h("M2", 39, 1)
+a("REB", 18, 1)
+a("M3", 18, 1)
+h("REB", 34, 1)
+h("M3", 11, 1)
+a("REB", 29, 1)
+a("M2", 37, 1)
+a("REB", 28, 1, true)
+h("M2", 34, 1)
+h("REB", 16, 1, true)
+a("M2", 28, 1)
+h("REB", 32, 1)
+X(1)
 
-  { k: "PSTART", period: 2 },
-  sub("home", 12, 11, 2),
-  ev("S3", "away", 8, 2),
-  ev("S2", "home", 23, 2),
-  ev("S2", "away", 10, 2),
-  ev("M2", "home", 12, 2),
-  ev("REB", "home", 23, 2, true),
-  ev("S2", "home", 9, 2),
-  ev("AST", "home", 23, 2),
-  ev("FOUL", "away", 21, 2),
-  ev("S2", "away", 21, 2),
-  ev("S2", "home", 12, 2),
-  ev("M3", "home", 4, 2),
-  ev("REB", "away", 10, 2),
-  ev("S3", "away", 6, 2),
-  ev("FOUL", "home", 5, 2),
-  ev("FT", "home", 4, 2),
-  ev("FT", "home", 4, 2),
-  ev("S2", "away", 14, 2),
-  ev("FOUL", "home", 11, 2),
-  sub("home", 11, 12, 2),
-  { k: "PEND", period: 2 },
+/* Q2 */
+P(2)
+sub("away", 4, 29, 2)
+sub("home", 33, 32, 2)
+a("S3", 28, 2)
+h("S2", 11, 2)
+h("AST", 16, 2)
+a("M3", 37, 2)
+h("REB", 33, 2)
+h("S3", 39, 2)
+a("S2", 37, 2)
+a("AST", 28, 2)
+h("FOUL", 16, 2)
+a("M2", 21, 2)
+a("REB", 4, 2, true)
+a("S2", 21, 2)
+h("M2", 33, 2)
+a("REB", 18, 2)
+h("S2", 16, 2)
+a("FOUL", 18, 2)
+h("FT", 39, 2)
+h("FT", 39, 2)
+a("S2", 28, 2)
+h("M3", 39, 2)
+a("REB", 37, 2)
+a("M2", 4, 2)
+h("REB", 11, 2)
+h("FOUL", 11, 2)
+a("FT", 18, 2)
+a("FT", 18, 2)
+a("S2", 37, 2)
+a("AST", 18, 2)
+h("S2", 11, 2)
+a("FOUL", 21, 2)
+h("MFT", 34, 2)
+a("REB", 18, 2)
+h("M2", 16, 2)
+a("REB", 37, 2)
+a("M3", 21, 2)
+h("REB", 11, 2)
+h("M3", 39, 2)
+h("REB", 33, 2, true)
+a("M2", 18, 2)
+h("REB", 32, 2)
+h("M2", 11, 2)
+a("REB", 4, 2)
+X(2)
 
-  { k: "PSTART", period: 3 },
-  ev("S2", "home", 23, 3),
-  ev("S2", "away", 10, 3),
-  ev("S3", "home", 7, 3),
-  ev("AST", "home", 23, 3),
-  ev("M2", "away", 21, 3),
-  ev("REB", "home", 23, 3),
-  ev("S2", "home", 12, 3),
-  ev("S3", "away", 14, 3),
-  ev("FOUL", "away", 8, 3),
-  ev("S2", "home", 11, 3),
-  ev("M3", "home", 23, 3),
-  ev("REB", "home", 11, 3, true),
-  sub("home", 15, 9, 3),
-  ev("FT", "home", 15, 3),
-  ev("S2", "away", 6, 3),
-  ev("FOUL", "home", 7, 3),
-  ev("S2", "away", 3, 3),
-  sub("home", 9, 15, 3),
-  ev("S2", "home", 9, 3),
-  { k: "PEND", period: 3 },
+/* Q3 */
+P(3)
+sub("home", 32, 33, 3)
+sub("away", 34, 4, 3)
+h("S2", 11, 3)
+a("S2", 37, 3)
+h("S3", 39, 3)
+h("AST", 11, 3)
+a("M2", 28, 3)
+h("REB", 32, 3)
+h("S2", 34, 3)
+a("S3", 18, 3)
+h("FOUL", 39, 3)
+a("FT", 28, 3)
+h("S2", 16, 3)
+a("M3", 37, 3)
+a("REB", 34, 3, true)
+a("S2", 34, 3)
+h("M2", 11, 3)
+a("REB", 18, 3)
+h("FOUL", 11, 3)
+h("M2", 39, 3)
+a("REB", 18, 3)
+a("S2", 37, 3)
+h("S2", 11, 3)
+a("FOUL", 37, 3)
+h("FT", 16, 3)
+h("FT", 16, 3)
+h("M2", 34, 3)
+a("REB", 28, 3)
+a("S2", 28, 3)
+h("FOUL", 34, 3)
+a("MFT", 28, 3)
+h("REB", 39, 3)
+h("M3", 16, 3)
+a("REB", 18, 3)
+a("M2", 34, 3)
+a("REB", 37, 3, true)
+h("M2", 11, 3)
+h("REB", 34, 3, true)
+a("M3", 18, 3)
+h("REB", 32, 3)
+h("M2", 39, 3)
+a("REB", 28, 3)
+X(3)
 
-  { k: "PSTART", period: 4 },
-  ev("S2", "home", 9, 4),
-  ev("S3", "away", 8, 4),
-  ev("FOUL", "away", 14, 4),
-  ev("FT", "home", 9, 4),
-  ev("M2", "away", 21, 4),
-  ev("REB", "home", 23, 4),
-  ev("S2", "home", 11, 4),
-  ev("S2", "away", 10, 4),
-  ev("FOUL", "away", 21, 4),
-  ev("S2", "home", 4, 4),
-  ev("FT", "home", 11, 4),
-  ev("FOUL", "home", 4, 4),
-]
+/* Q4 — off camera until the last minute, then the camera comes back. */
+P(4)
+h("S2", 11, 4)
+a("S2", 28, 4)
+a("AST", 37, 4)
+h("FOUL", 34, 4)
+a("FT", 28, 4)
+a("FT", 28, 4)
+h("S3", 39, 4)
+a("M2", 18, 4)
+h("REB", 11, 4)
+h("S2", 16, 4)
+a("S3", 18, 4)
+a("FOUL", 34, 4)
+h("FT", 11, 4)
+h("M3", 39, 4)
+a("REB", 37, 4)
+a("S2", 37, 4)
+h("S2", 34, 4)
+h("M2", 16, 4)
+a("REB", 28, 4)
+a("S2", 18, 4)
+h("M2", 16, 4)
+a("REB", 34, 4)
+a("M3", 37, 4)
+h("REB", 11, 4)
+h("M2", 11, 4)
+h("REB", 39, 4, true)
+a("M2", 28, 4)
+h("REB", 34, 4)
+h("M3", 39, 4)
+h("REB", 34, 4, true)
+a("S2", 37, 4) //  the basket she watches from the box score
+a("AST", 18, 4)
+h("S2", 39, 4) //  Panthers cut it to two
+a("S2", 37, 4) //  Darius seals it
+X(4)
 
-/** The basket the phone is watching when she is on the box score. */
-const TOUR: Ev[] = [ev("S2", "home", 23, 4), ev("AST", "home", 4, 4)]
-
-/** The last minute, and the buzzer. */
-const CLOSE: Ev[] = [
-  ev("S2", "away", 10, 4),
-  ev("S2", "home", 23, 4),
-  { k: "PEND", period: 4 },
-]
-
-const EVENTS: Ev[] = [...FILMED, ...OFFCAM, ...TOUR, ...CLOSE]
+const EVENTS = E
 
 /** Beat checkpoints, counted rather than typed, so an edit cannot desync them. */
 const AT = {
   tip: 1,
-  amaraTwo: 2,
+  dariusTwo: 2,
   assist: 3,
   miss: 4,
   rebound: 5,
   foul: 6,
   substitution: 7,
-  awayTwo: 8,
+  panthersTwo: 8,
   wrongThree: 9,
   /** The mistaken three, voided rather than deleted. */
   voidIndex: 8,
-  cut: FILMED.length + OFFCAM.length,
-  tour: FILMED.length + OFFCAM.length + TOUR.length,
-  awayLate: FILMED.length + OFFCAM.length + TOUR.length + 1,
-  seal: FILMED.length + OFFCAM.length + TOUR.length + 2,
+  /** Where the camera rejoins: everything before the basket she watches. */
+  cut: EVENTS.length - 5,
+  tour: EVENTS.length - 3,
+  cut2: EVENTS.length - 2,
+  seal: EVENTS.length - 1,
   buzzer: EVENTS.length,
 }
 
@@ -352,7 +448,7 @@ const who = (side: "home" | "away", j: number) => `#${j} ${short(side, j)}`
 const points = (k: Kind) => (k === "S2" ? 2 : k === "S3" ? 3 : k === "FT" ? 1 : 0)
 
 /**
- * Everything both frames render, derived from the first `count` events with
+ * Everything both phones render, derived from the first `count` events with
  * `voided` skipped. Same shape as lib/scoring/fold: the demo does not keep a
  * second copy of the truth anywhere.
  */
@@ -447,6 +543,17 @@ function fold(count: number, voided: number | null): Folded {
         ticker.push(`miss #${e.j}`)
         break
       }
+      case "MFT": {
+        agg.fta += 1
+        rows.push({
+          key,
+          text: `${who(side, e.j as number)} misses a free throw`,
+          score: null,
+          home: side === "home",
+        })
+        ticker.push(`FT miss #${e.j}`)
+        break
+      }
       case "REB": {
         if (line) line.reb += 1
         agg.reb += 1
@@ -513,7 +620,7 @@ function fold(count: number, voided: number | null): Folded {
   state.home = runHome
   state.away = runAway
   state.rows = [...rows].reverse()
-  state.ticker = ticker.slice(-3).reverse()
+  state.ticker = ticker.slice(-2).reverse()
 
   const lastPlay = [...rows].reverse().find((r) => !r.period)
   state.freshKey = lastPlay?.key ?? ""
@@ -531,462 +638,487 @@ function fold(count: number, voided: number | null): Folded {
 /** Quarters the linescore shows: always four, dashes for the unplayed ones. */
 const DISPLAY_PERIODS = [1, 2, 3, 4]
 
-const shootingLine = (m: number, a: number) =>
-  a === 0 ? "0-0" : `${m}-${a} · ${Math.round((m / a) * 100)}%`
+const shootingLine = (m: number, at: number) =>
+  at === 0 ? "0-0" : `${m}-${at} · ${Math.round((m / at) * 100)}%`
+
+/** The final table, derived in `docs/roadmap/game-day-numbers.md` §G. */
+const STANDINGS = [
+  { rank: 1, team: "CKATT Basketball G9", w: 7, l: 2, pct: ".778", gb: "0", strk: "L1" },
+  { rank: 2, team: "West United Prep G9", w: 6, l: 3, pct: ".667", gb: "1", strk: "W1" },
+  { rank: 3, team: "Burlington Force G9", w: 6, l: 4, pct: ".600", gb: "1.5", strk: "W1" },
+  { rank: 4, team: "Toronto Lords G9", w: 5, l: 6, pct: ".455", gb: "3", strk: "W1" },
+  { rank: 5, team: "North Toronto Huskies G9", w: 4, l: 5, pct: ".444", gb: "3", strk: "W3" },
+  { rank: 6, team: "Mississauga Monarchs G9", w: 4, l: 5, pct: ".444", gb: "3", strk: "L1" },
+]
+
+/* ── Pacing ──────────────────────────────────────────────────────────────── */
+
+/**
+ * Stop, explain, act, with room for the game to breathe (owner 2026-08-16).
+ * The hand takes CURSOR_ARRIVE_MS to reach its target and the balloon lands
+ * with it, so a beat holds for the travel, plus long enough to READ the balloon
+ * at about 165ms a word with an 800ms buffer, plus a settle. A beat with no
+ * balloon is one of the fast taps in a scoring burst, and holds only as long as
+ * a tap takes to land.
+ */
+function paced(b: Omit<DemoBeat, "hold"> & { hold?: number }): DemoBeat {
+  if (b.hold) return b as DemoBeat
+  const arrive = b.cursor ? 620 : 220
+  const settle = 420
+  const read = b.callout ? b.callout.trim().split(/\s+/).length * 165 + 800 : 1500
+  return { ...b, hold: Math.round(arrive + read + (b.callout ? settle : 0)) }
+}
 
 /* ── The script ──────────────────────────────────────────────────────────── */
 
 export const gameDayStory: DemoScript = {
+  presentation: "scene",
+  scenePhones: true,
   desktopUrl: URL_SCORE,
   initialStage: "desktop",
   chapters: [
-    { id: "tipoff", title: "Tip-off at the table" },
-    { id: "scoring", title: "Scoring, honestly" },
+    { id: "tipoff", title: "Before tip-off" },
+    { id: "scoring", title: "Two taps a play" },
     { id: "family", title: "What the family sees" },
     { id: "buzzer", title: "The buzzer and the sign-off" },
     { id: "story", title: "The story writes itself" },
   ],
 
   beats: [
-    /* ── 1. Tip-off at the table ──────────────────────────────────────── */
-    {
+    /* ── 1. Before tip-off ────────────────────────────────────────────── */
+    paced({
       id: "checklist",
       chapter: "tipoff",
       caption:
-        "The scorer's table opens the game, and the console asks the two questions that decide whether the record is worth anything.",
-      hold: 3400,
+        "The scorer's table is a phone on a folding table, and it opens the game with two questions.",
+      emphasize: "clock-yes",
+      callout:
+        "Whoever is keeping score opens the game on their own phone. No laptop, no cable, no software.",
       set: { screen: "checklist" },
-    },
-    {
+    }),
+    paced({
       id: "clock-choice",
       chapter: "tipoff",
-      caption:
-        "Somebody is running the clock tonight, so the minutes on this sheet will be real ones.",
-      hold: 2600,
+      caption: "Somebody is running the clock tonight, so the minutes on this sheet will be real.",
       cursor: "clock-yes",
       press: true,
+      callout: "An unoperated clock counts minutes wrongly, so the table says up front whether it has one.",
       set: { clockChoice: true },
-    },
-    {
+    }),
+    paced({
       id: "checklist-go",
       chapter: "tipoff",
       caption: "Attendance first, then the five who start.",
-      hold: 2400,
       cursor: "checklist-go",
       press: true,
-    },
-    {
+      set: { screen: "attendance" },
+    }),
+    paced({
+      id: "roll-call",
+      chapter: "tipoff",
+      caption: "Roll call happens at the door, on the same phone.",
+      emphasize: "roll-call",
+      callout:
+        "Everyone starts present. The table taps whoever did not make it, at the door, in about ten seconds.",
+    }),
+    paced({
+      id: "absent",
+      chapter: "tipoff",
+      caption: "Ethan Lee is not here tonight.",
+      cursor: "att-15",
+      press: true,
+      callout:
+        "An absent player reads ABSENT on the scoresheet and does not count a game played in his season stats.",
+      set: { absent: true },
+    }),
+    paced({
+      id: "to-lineups",
+      chapter: "tipoff",
+      caption: "Nine here, one out.",
+      cursor: "to-lineups",
+      press: true,
+      set: { screen: "lineup" },
+    }),
+    paced({
       id: "starters",
       chapter: "tipoff",
-      caption:
-        "Five and five, confirmed at the table before anybody touches the ball. That is what makes the minutes and who was on the floor mean something later.",
-      hold: 3400,
-      cursor: "start-home-23",
-      hover: "start-home-23",
-      set: { screen: "lineup" },
-    },
-    {
+      caption: "Five and five, confirmed before anybody touches the ball.",
+      emphasize: "start-away-37",
+      callout:
+        "The starting five is what makes minutes and who was on the floor mean something in the box score later.",
+    }),
+    paced({
       id: "start-game",
       chapter: "tipoff",
-      caption: "One press opens the game.",
-      hold: 2600,
+      caption: "One press opens the game, and the clock starts.",
       cursor: "start-game",
-      press: true,
-    },
-    {
-      id: "clock-start",
-      chapter: "tipoff",
-      caption:
-        "The clock starts here. This is the only clock the game has, and every screen watching it reads the same one.",
-      hold: 3400,
-      cursor: "console-clock",
       press: true,
       toast: "Q1 under way",
       set: { screen: "console", evts: AT.tip, clockBase: 600, running: true },
-    },
+    }),
 
-    /* ── 2. Scoring, honestly ─────────────────────────────────────────── */
-    {
+    /* ── 2. Two taps a play ───────────────────────────────────────────── */
+    paced({
       id: "phone-arrives",
       chapter: "scoring",
-      caption:
-        "Amara's mother is still at work. She opens the game from a link, and the clock is already running in her hand.",
-      hold: 3400,
+      caption: `${PARENT} is not in the building. He opens the game from a link.`,
       stage: "split",
+      emphasize: "live-state",
+      callout:
+        "Darius's father is at work. Same game, same clock, in his hand, with nothing to install.",
       set: { phone: "game" },
-    },
-    {
+    }),
+    paced({
       id: "arm-two",
       chapter: "scoring",
       caption: "Tap an action, then a player. Either order works.",
-      hold: 2400,
       cursor: "act-2",
       press: true,
       set: { act: "+2" },
-    },
-    {
-      id: "amara-two",
+    }),
+    paced({
+      id: "darius-two",
       chapter: "scoring",
-      caption:
-        "Two for Amara Bello. Her mother's screen has it before the ball is back in play, and the number that moved is the number that flashes.",
-      hold: 3400,
-      cursor: "floor-home-23",
+      caption: "Two for Darius Reyes, and the number that moved is the number that flashes.",
+      cursor: "floor-away-37",
       press: true,
-      set: { evts: AT.amaraTwo, act: "" },
-    },
-    {
+      callout: "Two taps at the table, and it is on his father's screen before the ball is back in play.",
+      set: { evts: AT.dariusTwo, act: "" },
+    }),
+    paced({
       id: "assist",
       chapter: "scoring",
-      caption:
-        "The console asks who assisted, and the play on the phone says it out loud: scores 2, assisted by number seven.",
-      hold: 3400,
-      cursor: "assist-7",
+      caption: "The console asks who assisted, and the play says it out loud.",
+      cursor: "assist-18",
       press: true,
+      callout: "Scores 2, assisted by number eighteen. The sentence writes itself from the two taps.",
       set: { evts: AT.assist },
-    },
-    {
+    }),
+    paced({
       id: "arm-miss",
       chapter: "scoring",
-      caption:
-        "Misses are recorded too. A sheet that only counts the shots that went in is not a scoresheet.",
-      hold: 2600,
+      caption: "Misses are recorded too.",
       cursor: "act-miss3",
       press: true,
       set: { act: "3 ✗" },
-    },
-    {
+    }),
+    paced({
       id: "miss-three",
       chapter: "scoring",
-      caption:
-        "The attempt lands on the phone as a miss, and it goes straight into the shooting line the team stats read from.",
-      hold: 3200,
-      cursor: "floor-home-23",
+      caption: "The attempt goes on the sheet as a miss.",
+      cursor: "floor-away-37",
       press: true,
+      callout: "A sheet that only counts the shots that went in is not a scoresheet.",
       set: { evts: AT.miss, act: "" },
-    },
-    {
+    }),
+    paced({
       id: "arm-reb",
       chapter: "scoring",
       caption: "The rebound is the next tap.",
-      hold: 2200,
       cursor: "act-reb",
       press: true,
       set: { act: "REB" },
-    },
-    {
+    }),
+    paced({
       id: "rebound",
       chapter: "scoring",
-      caption:
-        "Zoe Tremblay keeps it alive, and the miss and the rebound become one line rather than two.",
-      hold: 3200,
-      cursor: "floor-home-11",
+      caption: "Ibrahim White keeps it alive, and the miss and the board become one line.",
+      cursor: "floor-away-28",
       press: true,
       set: { evts: AT.rebound, act: "" },
-    },
-    {
+    }),
+    paced({
       id: "arm-foul",
       chapter: "scoring",
       caption: "A foul is the same two taps.",
-      hold: 2200,
       cursor: "act-foul",
       press: true,
       set: { act: "FOUL" },
-    },
-    {
+    }),
+    paced({
       id: "foul",
       chapter: "scoring",
-      caption:
-        "Fouls are counted at both ends. The team count moves on the console and the number that moved on the phone turns red.",
-      hold: 3400,
-      cursor: "floor-away-14",
+      caption: "Fouls are counted at both ends, and the phone turns that one red.",
+      cursor: "floor-home-33",
       press: true,
+      callout: "Green means points, red means a foul. He never has to read a word to know what happened.",
       set: { evts: AT.foul, act: "" },
-    },
-    {
+    }),
+    paced({
       id: "subs-open",
       chapter: "scoring",
-      caption: "Substitutions get their own drawer, because a swap is two decisions, not one.",
-      hold: 2600,
-      cursor: "subs-home",
+      caption: "Substitutions get their own drawer, because a swap is two decisions.",
+      cursor: "subs-away",
       press: true,
       set: { sheet: true },
-    },
-    {
+    }),
+    paced({
       id: "sub-out",
       chapter: "scoring",
-      caption: "Who comes out.",
-      hold: 2200,
-      cursor: "sub-out-5",
+      caption: "Who comes off.",
+      cursor: "sub-out-34",
       press: true,
-      set: { subOut: 5 },
-    },
-    {
+      set: { subOut: 34 },
+    }),
+    paced({
       id: "sub-in",
       chapter: "scoring",
-      caption: "Then who goes in.",
-      hold: 2400,
-      cursor: "sub-in-9",
+      caption: "Then who goes on.",
+      cursor: "sub-in-21",
       press: true,
       set: { subOut: 0, staged: true },
-    },
-    {
+    }),
+    paced({
       id: "sub-apply",
       chapter: "scoring",
       caption: "Both halves of the swap go on together.",
-      hold: 2800,
       cursor: "sub-apply",
       press: true,
-      set: { evts: AT.substitution },
-    },
-    {
+      set: { evts: AT.substitution, sheet: false, staged: false },
+    }),
+    paced({
       id: "sub-done",
       chapter: "scoring",
-      caption:
-        "Hana Kimura is on. The floor on the phone follows in amber, which is how the box score knows who was out there.",
-      hold: 3200,
-      set: { sheet: false, staged: false, subOut: 0 },
-    },
-    {
-      id: "arm-away",
+      caption: "Zion Nguyen is on, and the floor follows in amber.",
+      emphasize: "floor-away-21",
+      callout: "Amber is everything else the table does, so a swap never reads as a score.",
+    }),
+    paced({
+      id: "arm-panthers",
       chapter: "scoring",
-      caption: "Lakeshore answer at the other end.",
-      hold: 2200,
+      caption: "Oakville answer at the other end.",
       cursor: "act-2",
       press: true,
       set: { act: "+2" },
-    },
-    {
-      id: "away-two",
+    }),
+    paced({
+      id: "panthers-two",
       chapter: "scoring",
       caption: "Same two taps, and both totals move.",
-      hold: 2800,
-      cursor: "floor-away-10",
+      cursor: "floor-home-11",
       press: true,
-      set: { evts: AT.awayTwo, act: "" },
-    },
-    {
+      set: { evts: AT.panthersTwo, act: "" },
+    }),
+    paced({
       id: "arm-three",
       chapter: "scoring",
       caption: "And now the thing that happens at every scorer's table in the country.",
-      hold: 2400,
       cursor: "act-3",
       press: true,
       set: { act: "+3" },
-    },
-    {
+    }),
+    paced({
       id: "wrong-entry",
       chapter: "scoring",
       caption: "Three points go on for a shot that rimmed out.",
-      hold: 2800,
-      cursor: "floor-home-23",
+      cursor: "floor-away-37",
       press: true,
       set: { evts: AT.wrongThree, act: "" },
-    },
-    {
+    }),
+    paced({
       id: "undo",
       chapter: "scoring",
-      caption:
-        "Mistakes happen. This one is fixed in one tap, and the phone walks the score back rather than carrying a wrong number all night.",
-      hold: 3800,
+      caption: "One tap fixes it, and the phone walks the score back.",
       cursor: "undo",
       press: true,
+      callout:
+        "The entry is voided, not deleted, and every number built on it walks back on its own.",
       set: { voided: AT.voidIndex, tone: "amber" },
-    },
+    }),
 
     /* ── 3. What the family sees ──────────────────────────────────────── */
-    {
+    paced({
       id: "cut",
       chapter: "family",
-      caption:
-        "Three quarters later. Same table, same phone, and every quarter of it is on the scoreboard she is holding.",
-      hold: 3600,
-      stage: "phone",
-      set: { evts: AT.cut, clockBase: 252, running: true, tone: "amber" },
-    },
-    {
-      id: "hero",
-      chapter: "family",
-      caption:
-        "Score and quarter together at the top, the clock still ticking, and the quarter by quarter under it.",
-      hold: 3200,
-      set: { tone: "" },
-    },
-    {
+      caption: "Three quarters later. Same table, same phone, same clock.",
+      emphasize: "linescore",
+      callout:
+        "Every quarter of it is on the scoreboard he is holding, and the dash means a quarter nobody has played yet.",
+      set: { evts: AT.cut, clockBase: 132, running: true, tone: "amber" },
+    }),
+    paced({
       id: "box",
       chapter: "family",
-      caption:
-        "She scrolls past the scoreboard to the box score, and the score comes with her as a chip so she never loses it.",
-      hold: 3200,
+      caption: "He scrolls past the scoreboard to the box score.",
+      cursor: "phone-tab-game",
+      press: true,
       set: { phone: "box" },
-    },
-    {
+    }),
+    paced({
       id: "box-live",
       chapter: "family",
-      caption:
-        "Amara's line moves while she is looking at it: eight points, and the score at the top moves with it.",
-      hold: 3800,
+      caption: "Darius's line moves while he is looking at it.",
+      emphasize: "box-highlight",
+      callout: "Twenty points, and the score at the top of the screen moves with the row.",
       set: { evts: AT.tour },
-    },
-    {
+    }),
+    paced({
       id: "stats",
       chapter: "family",
       caption: "Team stats carry every attempt, not only the ones that went in.",
-      hold: 3200,
       cursor: "phone-tab-stats",
       press: true,
+      callout: "Because the table recorded the misses, the shooting line is a real one.",
       set: { phone: "stats" },
-    },
-    {
+    }),
+    paced({
       id: "plays",
       chapter: "family",
-      caption:
-        "And the play-by-play is the whole night in order, assist attribution and all, the same sentences the table entered.",
-      hold: 3600,
+      caption: "And the play-by-play is the whole night in order.",
       cursor: "phone-tab-plays",
       press: true,
+      callout: "The same sentences the table entered, assist attribution and all, in one list.",
       set: { phone: "plays" },
-    },
-    {
+    }),
+    paced({
       id: "no-account",
       chapter: "family",
-      caption: "No app, no account, no login. Somebody sent her a link.",
+      caption: "No app, no account, no login. Somebody sent him a link.",
       hold: 3000,
-    },
+    }),
 
     /* ── 4. The buzzer and the sign-off ───────────────────────────────── */
-    {
+    paced({
       id: "last-minute",
       chapter: "buzzer",
       caption: "Under a minute, and the table is still the only place these numbers come from.",
-      hold: 3000,
-      stage: "split",
-      set: { phone: "game", clockBase: 38, running: true },
-    },
-    {
-      id: "arm-away-late",
+      cursor: "phone-tab-game",
+      press: true,
+      set: { phone: "game", clockBase: 41, running: true },
+    }),
+    paced({
+      id: "arm-cut",
       chapter: "buzzer",
-      caption: "Lakeshore get one back.",
-      hold: 2200,
+      caption: "Oakville cut it to two.",
       cursor: "act-2",
       press: true,
       set: { act: "+2" },
-    },
-    {
-      id: "away-late",
+    }),
+    paced({
+      id: "panthers-cut",
       chapter: "buzzer",
-      caption: "Three-point game.",
-      hold: 2600,
-      cursor: "floor-away-10",
+      caption: "Two-point game.",
+      cursor: "floor-home-39",
       press: true,
-      set: { evts: AT.awayLate, act: "" },
-    },
-    {
+      set: { evts: AT.cut2, act: "" },
+    }),
+    paced({
       id: "arm-seal",
       chapter: "buzzer",
-      caption: "Ravens answer.",
-      hold: 2200,
+      caption: "The Lords answer.",
       cursor: "act-2",
       press: true,
       set: { act: "+2" },
-    },
-    {
+    }),
+    paced({
       id: "seal",
       chapter: "buzzer",
-      caption: "Amara seals it, and her mother watches it happen from her desk.",
-      hold: 3000,
-      cursor: "floor-home-23",
+      caption: "Darius seals it, and his father watches it happen from his desk.",
+      cursor: "floor-away-37",
       press: true,
       set: { evts: AT.seal, act: "" },
-    },
-    {
+    }),
+    paced({
       id: "buzzer",
       chapter: "buzzer",
-      caption: "The buzzer. The clock stops on both screens at the same zero.",
-      hold: 3000,
+      caption: "The buzzer. Both screens stop on the same zero.",
       cursor: "end-period",
       press: true,
       toast: "Q4 ended",
-      set: { clockBase: 0, running: false },
-    },
-    {
-      id: "period-closed",
-      chapter: "buzzer",
-      caption: "Q4 is closed, and the console offers the last button of the night.",
-      hold: 2800,
-      cursor: "end-game",
-      press: true,
-      set: { evts: AT.buzzer },
-    },
-    {
-      id: "review",
+      set: { clockBase: 0, running: false, evts: AT.buzzer },
+    }),
+    paced({
+      id: "end-game",
       chapter: "buzzer",
       caption: "Nothing is official yet. The table reads the sheet back first.",
-      hold: 2800,
+      cursor: "end-game",
+      press: true,
       set: { screen: "review" },
-    },
-    {
+    }),
+    paced({
+      id: "potg-pick",
+      chapter: "buzzer",
+      caption: "Player of the game comes off the sheet, with the top scorer already suggested.",
+      emphasize: "approval-sign",
+      callout: "Nobody has to remember who had the good night. The sheet already knows.",
+    }),
+    paced({
       id: "sign",
       chapter: "buzzer",
-      caption:
-        "The referee signs at the table, the way he signs the paper one. A PIN is the other way, checked against his own account.",
-      hold: 3600,
+      caption: "The referee signs at the table, the way he signs the paper one.",
       cursor: "sign-pad",
       press: true,
+      callout: "A finger on the glass, exactly where his pen goes on a paper sheet.",
       set: { signed: true, refName: REFEREE },
-    },
-    {
+    }),
+    paced({
+      id: "pin",
+      chapter: "buzzer",
+      caption: "A PIN is the other way, checked against the referee's own account.",
+      cursor: "approval-pin",
+      press: true,
+      callout: "That one is the strong approval: it proves which referee signed, not just that somebody did.",
+      set: { mode: "pin" },
+    }),
+    paced({
       id: "mark-final",
       chapter: "buzzer",
-      caption: "Marked final, and the game on her phone flips with it.",
-      hold: 3600,
+      caption: "Marked final, and the game on his phone flips with it.",
       cursor: "mark-final",
       press: true,
       toast: "Result published",
-      set: { final: true, tone: "green" },
-    },
-    {
-      id: "official",
+      set: { mode: "sign", final: true, tone: "green", phone: "final" },
+    }),
+    paced({
+      id: "scoresheet",
       chapter: "buzzer",
-      caption:
-        "The table is done. The scoresheet is signed, printable, and the same numbers are already public.",
-      hold: 3000,
-      set: { screen: "final" },
-    },
+      caption: "And the paper scoresheet exists, because leagues still need one.",
+      emphasize: "download-pdf",
+      callout:
+        "Foul boxes, quarter marks, the referee's signature and the absences, printed landscape on one page.",
+      set: { screen: "sheet" },
+    }),
+    paced({
+      id: "pdf",
+      chapter: "buzzer",
+      caption: "One tap turns it into the PDF the league files.",
+      cursor: "download-pdf",
+      press: true,
+      toast: "Scoresheet PDF",
+    }),
 
     /* ── 5. The story writes itself ───────────────────────────────────── */
-    {
+    paced({
       id: "recap",
       chapter: "story",
-      caption:
-        "The recap writes itself off the sheet and posts to the team page as a card, minutes after the buzzer.",
-      hold: 3800,
-      stage: "phone",
+      caption: "The recap writes itself off the sheet and posts as a card.",
+      emphasize: "recap",
+      callout: "Minutes after the buzzer, off the same numbers, with nobody typing anything.",
       set: { phone: "feed", recap: true },
-    },
-    {
+    }),
+    paced({
       id: "potg",
       chapter: "story",
-      caption:
-        "Player of the game comes off the same sheet, so nobody has to remember who had the good night.",
-      hold: 3400,
-      set: { potg: true },
-    },
-    {
+      caption: "Player of the game lands with it.",
+      emphasize: "potg",
+      callout: "Twenty two points, four rebounds, one assist, and his father did not miss any of it.",
+      set: { potgCard: true },
+    }),
+    paced({
       id: "standings",
       chapter: "story",
-      caption:
-        "And the standings move, because a result a referee signed is a result the league can count.",
-      hold: 3600,
+      caption: "And the division moves, because a signed result is a result the league can count.",
+      emphasize: "standings",
+      callout: "Toronto Lords go from sixth to fourth on the drive home. Nobody typed a score anywhere.",
       set: { standings: true },
-    },
-    {
+    }),
+    paced({
       id: "end",
       chapter: "story",
-      caption: "Every seat in the gym, and every seat that could not make it.",
+      caption: "One game, scored on a phone, live on another one the whole way.",
       hold: 5200,
-      stage: "split",
       set: { endCard: true },
-    },
+    }),
   ],
 
   /* ── Render ───────────────────────────────────────────────────────────── */
@@ -1012,150 +1144,173 @@ export const gameDayStory: DemoScript = {
 
     const periodLabel = `Q${state.period}`
     const homeBench = HOME_PLAYERS.map((p) => p.jersey).filter(
-      (j) => !state.onFloor.home.includes(j)
+      (j) => !state.onFloor.home.includes(j) && !HOME_ABSENT.includes(j)
     )
     const awayBench = AWAY_PLAYERS.map((p) => p.jersey).filter(
-      (j) => !state.onFloor.away.includes(j)
+      (j) => !state.onFloor.away.includes(j) && !AWAY_ABSENT.includes(j)
     )
 
-    /* ── Desktop: the console ─────────────────────────────────────────── */
+    const amara = state.lines.away[37]
+    const potgLine = `${amara.pts} PTS · ${amara.reb} REB · ${amara.ast} AST`
+
+    /* ── Left phone: the scorer's console ─────────────────────────────── */
 
     const consoleScreen = (
-      <div className="relative flex h-full flex-col">
-        <div className="min-h-0 flex-1 p-3">
-          <ConsoleHeader
-            homeName={HOME.name}
-            awayName={AWAY.name}
-            homeScore={state.home}
-            awayScore={state.away}
-            homeFouls={state.teamFouls.home}
-            awayFouls={state.teamFouls.away}
-            periodLabel={periodLabel}
-            clockBase={clockBase}
-            running={running}
-            reduced={reduced}
-            periodOpen={state.periodOpen}
-            ended={state.period >= 4}
-            ticker={state.ticker}
-            tone={tone}
-          />
-          <div className="mt-2 grid grid-cols-[1fr_2fr_1fr] gap-2">
-            <ConsoleFloor
-              side="home"
-              players={HOME_PLAYERS}
-              onFloor={state.onFloor.home}
-              fouls={state.fouls.home}
-              armed={!!act}
-              benchCount={homeBench.length}
-            />
-            <ConsoleActionPad
-              pending={act || null}
-              // The console asks for the assist right after a made basket and
-              // keeps asking until the table answers or arms the next action,
-              // which is also what keeps the chip on screen for the press.
-              assistFor={
-                !act && (evts === AT.amaraTwo || evts === AT.assist) ? 23 : null
-              }
-              assistOptions={state.onFloor.home.filter((j) => j !== 23)}
-            />
-            <ConsoleFloor
-              side="away"
-              players={AWAY_PLAYERS}
-              onFloor={state.onFloor.away}
-              fouls={state.fouls.away}
-              armed={!!act}
-              benchCount={awayBench.length}
-            />
-          </div>
-        </div>
+      <div className="relative flex h-full flex-col gap-1.5 px-2 py-2">
+        <ConsoleHeader
+          homeName={HOME.short}
+          awayName={AWAY.short}
+          homeScore={state.home}
+          awayScore={state.away}
+          homeFouls={state.teamFouls.home}
+          awayFouls={state.teamFouls.away}
+          periodLabel={periodLabel}
+          clockBase={clockBase}
+          running={running}
+          reduced={reduced}
+          periodOpen={state.periodOpen}
+          ended={state.period >= 4}
+          ticker={state.ticker}
+        />
+        <ConsoleChips
+          side="home"
+          players={HOME_PLAYERS}
+          onFloor={state.onFloor.home}
+          fouls={state.fouls.home}
+          armed={!!act}
+          benchCount={homeBench.length}
+        />
+        <ConsoleChips
+          side="away"
+          players={AWAY_PLAYERS}
+          onFloor={state.onFloor.away}
+          fouls={state.fouls.away}
+          armed={!!act}
+          benchCount={awayBench.length}
+        />
+        <ConsoleActionPad
+          pending={act || null}
+          pendingPlayer={null}
+          // The console asks for the assist right after a made basket and keeps
+          // asking until the table answers or arms the next action, which is
+          // also what keeps the prompt on screen for the press.
+          assistFor={!act && (evts === AT.dariusTwo || evts === AT.assist) ? 37 : null}
+          assistOptions={state.onFloor.away.filter((j) => j !== 37)}
+        />
         {sheet && (
           <ConsoleSubsSheet
-            teamName={HOME.name}
-            onFloor={state.onFloor.home}
-            bench={homeBench}
-            players={HOME_PLAYERS}
+            teamName={AWAY.name}
+            onFloor={state.onFloor.away}
+            bench={awayBench}
+            players={AWAY_PLAYERS}
             out={subOut || null}
-            staged={staged ? [{ out: 5, in: 9 }] : []}
+            staged={staged ? [{ out: 34, in: 21 }] : []}
           />
         )}
       </div>
     )
 
-    const desktop = (
-      <div className="relative flex h-full flex-col">
-        <MockTopBar
-          workspace="Riverside Ravens"
-          tabs={["Dashboard", "Teams", "Schedule", "Scoring"]}
-          activeTab="Scoring"
-        />
+    const sheetRows = AWAY_PLAYERS.map((p) => {
+      const l = state.lines.away[p.jersey]
+      return {
+        jersey: p.jersey,
+        name: p.name,
+        fouls: l.pf,
+        marks: [],
+        reb: l.reb,
+        ast: l.ast,
+        pts: l.pts,
+        absent: AWAY_ABSENT.includes(p.jersey),
+      }
+    })
+
+    const scorer = (
+      <PhoneBody>
         <div key={screen} className="demo-fade-in relative flex min-h-0 flex-1 flex-col">
-          {screen === "lineup" ? (
+          {screen === "attendance" ? (
+            <ConsoleAttendance
+              id="roll-call"
+              teamName={AWAY.name}
+              players={AWAY_PLAYERS}
+              absent={get<boolean>("absent", false) ? AWAY_ABSENT : []}
+            />
+          ) : screen === "lineup" ? (
             <ConsoleLineup
-              homeName={HOME.name}
-              awayName={AWAY.name}
-              league={LEAGUE}
-              venue={VENUE}
-              homePlayers={HOME_PLAYERS.slice(0, 6)}
-              awayPlayers={AWAY_PLAYERS.slice(0, 6)}
-              homeStarters={HOME_STARTERS}
-              awayStarters={AWAY_STARTERS}
+              doneName={HOME.name}
+              doneStarters={HOME_STARTERS}
+              pickName={AWAY.name}
+              players={AWAY_PLAYERS.filter((p) => !AWAY_ABSENT.includes(p.jersey))}
+              starters={AWAY_STARTERS}
+              side="away"
             />
           ) : screen === "review" ? (
             <ConsoleReview
-              homeName={HOME.name}
-              awayName={AWAY.name}
+              homeName={HOME.short}
+              awayName={AWAY.short}
               homeScore={state.home}
               awayScore={state.away}
-              potg="Amara Bello"
-              potgLine={`${state.lines.home[23].pts} pts`}
-              mode="sign"
+              potg="Darius R."
+              potgPoints={amara.pts}
+              potgOptions={[
+                { jersey: 37, short: "Darius R.", pts: state.lines.away[37].pts },
+                { jersey: 39, short: "Andre N.", pts: state.lines.home[39].pts },
+                { jersey: 28, short: "Ibrahim W.", pts: state.lines.away[28].pts },
+              ]}
               signed={get<boolean>("signed", false)}
               refereeName={get<string>("refName", "")}
-              sheets={[
-                { name: HOME.name, players: HOME_PLAYERS, lines: state.lines.home },
-                { name: AWAY.name, players: AWAY_PLAYERS, lines: state.lines.away },
-              ]}
+              mode={get<"sign" | "pin">("mode", "sign")}
             />
-          ) : screen === "final" ? (
-            <ConsoleFinal
+          ) : screen === "sheet" ? (
+            <ConsoleScoresheet
+              league={LEAGUE}
+              season={SEASON}
+              when={TIPOFF}
+              venue={VENUE}
               homeName={HOME.name}
               awayName={AWAY.name}
               homeScore={state.home}
               awayScore={state.away}
+              homeLine={DISPLAY_PERIODS.map((p) => state.periodPts.home[p] ?? 0)}
+              awayLine={DISPLAY_PERIODS.map((p) => state.periodPts.away[p] ?? 0)}
+              rows={sheetRows}
+              potg="Darius Reyes"
               referee={REFEREE}
+              signedAt="Aug 22, 1:34 p.m."
             />
           ) : (
             consoleScreen
           )}
+          {/* The checklist is a modal OVER the console, which is exactly how
+              the product mounts it: `PreGameChecklist` renders above
+              `ScoringConsole` on the same route. */}
           {screen === "checklist" && (
             <ConsoleChecklist
               scorekeeper={SCOREKEEPER}
               referee={REFEREE}
               clockChoice={get<boolean | null>("clockChoice", null)}
+              invite
             />
           )}
         </div>
-
         {endCard && (
           <MockEndCard
             eyebrow="Story 4 of 10"
-            title="Every seat in the gym"
-            line="One game, scored once at the table, arriving live on the phone of everybody who could not be there, and signed off before anybody leaves the building."
-            cta="Browse all demos"
+            title="Both phones"
+            line="One game, kept on a phone at the table, arriving live on the phone of everybody who could not be there."
+            next="Next: everyone in the loop"
           />
         )}
-      </div>
+      </PhoneBody>
     )
 
-    /* ── Phone: the live game page ────────────────────────────────────── */
+    /* ── Right phone: the public live game page ───────────────────────── */
 
     const heroProps = {
-      league: LEAGUE,
+      league: `${LEAGUE} · ${SEASON}`,
       home: HOME,
       away: AWAY,
       homeScore: state.home,
       awayScore: state.away,
-      period: state.period,
       periodLabel,
       clockBase,
       running,
@@ -1166,7 +1321,7 @@ export const gameDayStory: DemoScript = {
       displayPeriods: DISPLAY_PERIODS,
       tone,
     }
-    const miniProps = {
+    const chipProps = {
       home: HOME,
       away: AWAY,
       homeScore: state.home,
@@ -1206,19 +1361,16 @@ export const gameDayStory: DemoScript = {
       { label: "Fouls", h: state.shooting.home.pf, a: state.shooting.away.pf },
     ]
 
-    const amara = state.lines.home[23]
-    const potgLine = `${amara.pts} PTS · ${amara.reb} REB · ${amara.ast} AST`
-
-    const phoneNode = (
-      <div className="flex h-full flex-col bg-[#f6f7f9]">
-        {phone === "game" || phone === "" ? (
+    const watcher = (
+      <PhoneBody>
+        {phone === "game" || phone === "final" || phone === "" ? (
           <>
-            <PhoneScoreHero {...heroProps} />
-            <PhoneGameTabs active="game" />
-            <div className="min-h-0 flex-1 px-2.5">
-              <PhonePlayList
+            <LiveHero {...heroProps} />
+            <LiveTabs active="game" />
+            <div className="min-h-0 flex-1 px-2.5 pt-1.5">
+              <LivePlays
                 title="Latest plays"
-                rows={state.rows.filter((r) => !r.period).slice(0, 5)}
+                rows={state.rows.filter((r) => !r.period).slice(0, 3)}
                 freshKey={state.freshKey}
                 tone={tone}
               />
@@ -1226,72 +1378,62 @@ export const gameDayStory: DemoScript = {
           </>
         ) : phone === "feed" ? (
           <>
-            <PhoneMiniScore {...miniProps} />
+            <LiveScoreChip {...chipProps} />
             <div className="min-h-0 flex-1 space-y-2 px-2.5 py-2.5">
-              <p className="text-ink-500 px-1 text-[10px] font-semibold uppercase tracking-[0.12em]">
-                Riverside Ravens · team page
-              </p>
-              {get<boolean>("recap", false) && (
-                <PhoneRecapCard
-                  club="Riverside Ravens"
-                  kind="Game recap"
-                  title={`Ravens hold on ${state.home}-${state.away} against Lakeshore`}
-                  body={`Amara Bello led the way with ${amara.pts} points, ${amara.reb} rebounds and ${amara.ast} assists, and the Ravens closed the fourth without giving up the lead.`}
+              {get<boolean>("potgCard", false) && (
+                <LivePotgCard name="Darius Reyes" jersey={37} line={potgLine} fresh />
+              )}
+              {get<boolean>("recap", false) && !get<boolean>("standings", false) && (
+                <LiveRecapCard
+                  club="Toronto Lords"
+                  title={`Toronto Lords Grade 9 tops Oakville Panthers Grade 9 ${state.away}–${state.home}`}
+                  body={`Toronto Lords Grade 9 defeated Oakville Panthers Grade 9 ${state.away}–${state.home} on Saturday, August 22 in ${LEAGUE} ${SEASON} action. The teams traded the lead 6 times before Toronto Lords Grade 9 took control late.`}
                   meta="Posted 6 minutes after the final buzzer"
                   fresh
                 />
               )}
-              {get<boolean>("potg", false) && (
-                <PhonePotgCard name="Amara Bello" jersey={23} line={potgLine} fresh />
-              )}
               {get<boolean>("standings", false) && (
-                <PhoneStandings
-                  rows={[
-                    { pos: 1, team: "Scarborough Blues", record: "9-1", pts: 18 },
-                    {
-                      pos: 2,
-                      team: "Riverside Ravens",
-                      record: "8-2",
-                      pts: 16,
-                      you: true,
-                    },
-                    { pos: 3, team: "Lakeshore Lightning", record: "6-4", pts: 12 },
-                    { pos: 4, team: "Etobicoke Eagles", record: "5-5", pts: 10 },
-                  ]}
-                  movedTeam="Riverside Ravens"
-                />
+                <>
+                  <p className="text-ink-500 px-0.5 text-[14px] font-bold uppercase tracking-[0.1em]">
+                    {DIVISION}
+                  </p>
+                  <LiveStandings rows={STANDINGS} movedTeam="Toronto Lords G9" />
+                </>
               )}
             </div>
           </>
         ) : (
           <>
-            <PhoneMiniScore {...miniProps} />
-            <PhoneGameTabs active={phone === "plays" ? "plays" : phone === "stats" ? "stats" : "game"} />
-            <div className="min-h-0 flex-1 px-2.5">
+            <LiveScoreChip {...chipProps} />
+            <LiveTabs active={phone === "plays" ? "plays" : phone === "stats" ? "stats" : "game"} />
+            <div className="min-h-0 flex-1 px-2.5 pt-1.5">
               {phone === "box" && (
-                <PhoneBoxScore
-                  homeName="Riverside Ravens"
-                  awayName="Lakeshore Lightning"
-                  side="home"
-                  players={HOME_PLAYERS}
-                  lines={state.lines.home}
-                  starters={HOME_STARTERS}
-                  onFloor={state.onFloor.home}
+                <LiveBoxScore
+                  homeName={HOME.short}
+                  awayName={AWAY.short}
+                  side="away"
+                  players={AWAY_PLAYERS.filter((p) => !AWAY_ABSENT.includes(p.jersey))}
+                  lines={state.lines.away}
+                  starters={AWAY_STARTERS}
+                  onFloor={state.onFloor.away}
                   tone={tone}
-                  highlight={23}
+                  highlight={37}
+                  live={!final}
                 />
               )}
               {phone === "stats" && (
-                <PhoneTeamStats
+                <LiveTeamStats
                   home={HOME}
                   away={AWAY}
+                  homeScore={state.home}
+                  awayScore={state.away}
                   rows={statRows}
                   tone={tone}
                   pulseLabel="3-pointers"
                 />
               )}
               {phone === "plays" && (
-                <PhonePlayList
+                <LivePlays
                   rows={state.rows.slice(0, 8)}
                   freshKey={state.freshKey}
                   tone={tone}
@@ -1302,9 +1444,19 @@ export const gameDayStory: DemoScript = {
             </div>
           </>
         )}
-      </div>
+      </PhoneBody>
     )
 
-    return { desktop, phone: phoneNode }
+    const leftLabel =
+      screen === "sheet"
+        ? `Scorer's phone · /scoresheet/${"7e467b44"}`
+        : `${SCOREKEEPER}'s phone · ${URL_SCORE}`
+    const rightLabel = `${PARENT}'s phone · /live/7e467b44`
+
+    return {
+      desktop: scorer,
+      phone: watcher,
+      frameLabels: { left: leftLabel, right: rightLabel },
+    }
   },
 }

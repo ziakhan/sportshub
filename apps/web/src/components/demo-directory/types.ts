@@ -129,8 +129,19 @@ export interface DemoScript {
   beats: DemoBeat[]
   /** Layout before any beat sets its own. */
   initialStage: StageMode
-  /** The desktop surface, and the phone surface when the story has one. */
-  render: (ctx: DemoRenderContext) => { desktop: ReactNode; phone?: ReactNode }
+  /**
+   * The desktop surface, and the phone surface when the story has one.
+   *
+   * A `scenePhones` story has no desktop surface at all: the `desktop` slot is
+   * the LEFT handset and `phone` is the right one, and `frameLabels` says whose
+   * each is. The slot names are kept so every script, stage and overlay keeps
+   * one contract.
+   */
+  render: (ctx: DemoRenderContext) => {
+    desktop: ReactNode
+    phone?: ReactNode
+    frameLabels?: { left: string; right: string }
+  }
   /**
    * A demo that only ever happens on a phone. The stage drops the browser
    * window entirely rather than parking a dimmed empty one beside the handset,
@@ -156,6 +167,22 @@ export interface DemoScript {
    *     rather than scaled down, and the phone is life size.
    */
   presentation?: "frames" | "scene"
+  /**
+   * Scene presentation, TWO HANDSETS, no desktop anywhere (owner ruling
+   * 2026-08-16, the game-day rebuild).
+   *
+   * Owner, verbatim: "I want to show them the capability of how easy it is to
+   * keep the scoring from the phone... that scorekeeper app should be both
+   * mobile", and for surfaces that are desktop-first today, "even if it doesn't
+   * exist on the phone right now, can we still fabricate some of those screens
+   * on the phones... two big phone screens side by side".
+   *
+   * The `desktop` slot renders inside the LEFT handset, `phone` inside the
+   * right one, both at 390 logical and scale 1.0. Every phone composition of a
+   * screen the product only ships wide has to be declared, with the
+   * authorization, in the story's numbers sheet.
+   */
+  scenePhones?: boolean
   /** Context strip before any beat sets its own (scene presentation only). */
   context?: string
 }

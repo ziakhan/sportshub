@@ -396,21 +396,56 @@ export const SCENE_BOX_W = SCENE_DUO_W + SCENE_GAP + SCENE_PHONE_FRAME_W
 /** Room under the scene for the context of the player: caption and stepper. */
 const SCENE_RESERVE_BELOW = 150
 
+/* ── Phone beside phone (owner ruling 2026-08-16, game day) ──────────────── */
+
+/**
+ * The owner ruled the game-day demo onto TWO handsets: "I want to show them the
+ * capability of how easy it is to keep the scoring from the phone... that
+ * scorekeeper app should be both mobile", and, for the screens that are
+ * desktop-first today, "even if it doesn't exist on the phone right now, can we
+ * still fabricate some of those screens on the phones... two big phone screens
+ * side by side".
+ *
+ * So the scene grows a third layout: two 390-logical handsets at scale 1.0 with
+ * nothing else on the stage. Their box is NARROWER than the duo box, which is
+ * what buys the pair its life size at a 1440 viewport, and each handset carries
+ * a label strip UNDER it rather than a context bar inside its screen, because a
+ * phone showing a browser chrome line is a phone the product does not have.
+ */
+export const SCENE_PHONES_LABEL_H = 34
+export const SCENE_PHONES_W = SCENE_PHONE_FRAME_W * 2 + SCENE_GAP
+/**
+ * The pair's box is SHORTER than the single-region box, and that is the whole
+ * reason it renders at scale 1.0.
+ *
+ * Measured on the player route at 1440x900: the panel under the controls is
+ * 578px, so a 600 box can only fit by scaling to 0.963, and a 14px label
+ * reaches the viewer at 13.5px. The pair is authored to 566 instead, which
+ * clears 578 with room for a control row that wraps on a narrower window.
+ */
+export const SCENE_PHONES_BOX_H = 566
+
 export function SceneStage({
   mode,
+  phones,
   desktop,
   phone,
   context,
+  frameLabels,
   stageRef,
   reserveBelow = SCENE_RESERVE_BELOW,
   children,
 }: {
   /** "duo" composes the desktop narrower and brings the phone in beside it. */
   mode: "wide" | "duo"
+  /** Both surfaces are handsets: the `desktop` slot renders in the LEFT one. */
+  phones?: boolean
   desktop: ReactNode
   phone?: ReactNode
   /** The slim strip over the region: "NPH Showcase League · Plan". */
   context?: string
+  /** Phone pair only: what each handset is, written under its frame. */
+  frameLabels?: { left: string; right: string }
   stageRef: React.RefObject<HTMLDivElement>
   reserveBelow?: number
   children?: ReactNode
@@ -443,12 +478,12 @@ export function SceneStage({
     }
   }, [reserveBelow])
 
+  const boxW = phones ? SCENE_PHONES_W : SCENE_BOX_W
+  const boxH = phones ? SCENE_PHONES_BOX_H : SCENE_BOX_H
+
   /* Never above 1: upscaling a composed region would defeat the point of
      composing it. Never below the panel either, in both axes. */
-  const scale =
-    panel.w > 0
-      ? Math.min(1, panel.w / SCENE_BOX_W, (panel.h || SCENE_BOX_H) / SCENE_BOX_H)
-      : 0
+  const scale = panel.w > 0 ? Math.min(1, panel.w / boxW, (panel.h || boxH) / boxH) : 0
 
   const deskW = mode === "duo" ? SCENE_DUO_W : SCENE_WIDE_W
 
@@ -461,8 +496,8 @@ export function SceneStage({
         className="relative mx-auto overflow-hidden"
         style={
           scale
-            ? { height: SCENE_BOX_H * scale, width: "100%" }
-            : { aspectRatio: `${SCENE_BOX_W} / ${SCENE_BOX_H}`, width: "100%" }
+            ? { height: boxH * scale, width: "100%" }
+            : { aspectRatio: `${boxW} / ${boxH}`, width: "100%" }
         }
       >
         {/* One fixed box, both layouts inside it. The frames are positioned
@@ -474,44 +509,78 @@ export function SceneStage({
         <div
           className="absolute left-1/2 top-0 origin-top"
           style={{
-            width: SCENE_BOX_W,
-            height: SCENE_BOX_H,
+            width: boxW,
+            height: boxH,
             transform: `translateX(-50%) scale(${scale})`,
             transformOrigin: "top center",
           }}
         >
-          <div
-            className="border-ink-200/70 absolute top-0 flex flex-col overflow-hidden rounded-2xl border bg-white shadow-[0_24px_60px_-34px_rgba(15,23,42,0.45)] transition-[width,left] duration-[450ms] ease-out motion-reduce:transition-none"
-            style={{
-              width: deskW,
-              left: mode === "duo" ? 0 : (SCENE_BOX_W - SCENE_WIDE_W) / 2,
-              height: SCENE_BOX_H,
-            }}
-          >
-            {context && (
-              <div className="border-ink-100 bg-ink-50 text-ink-600 flex shrink-0 items-center gap-2 border-b px-5 py-2 text-[14px] font-semibold">
-                <span
-                  aria-hidden="true"
-                  className="bg-court-500 h-2 w-2 shrink-0 rounded-full"
-                />
-                <span className="truncate">{context}</span>
+          {phones ? (
+            <>
+              {/* LEFT handset. Alone on the stage it sits centred; when the
+                  second phone joins it slides to its own column, the same
+                  move the desktop region makes in duo. */}
+              <div
+                className="absolute top-0 transition-[left] duration-[450ms] ease-out motion-reduce:transition-none"
+                style={{
+                  width: SCENE_PHONE_FRAME_W,
+                  left: mode === "duo" ? 0 : (SCENE_PHONES_W - SCENE_PHONE_FRAME_W) / 2,
+                }}
+              >
+                <ScenePhoneFrame short>{desktop}</ScenePhoneFrame>
+                {frameLabels && <FrameLabel>{frameLabels.left}</FrameLabel>}
               </div>
-            )}
-            <div className="relative min-h-0 flex-1 overflow-hidden bg-white">{desktop}</div>
-          </div>
+              {phone && (
+                <div
+                  className="absolute top-0 transition-all duration-[550ms] ease-out motion-reduce:transition-none"
+                  style={{
+                    width: SCENE_PHONE_FRAME_W,
+                    left: SCENE_PHONE_FRAME_W + SCENE_GAP,
+                    opacity: mode === "duo" ? 1 : 0,
+                    transform: mode === "duo" ? "translateX(0)" : "translateX(48px)",
+                  }}
+                >
+                  <ScenePhoneFrame short>{phone}</ScenePhoneFrame>
+                  {frameLabels && <FrameLabel>{frameLabels.right}</FrameLabel>}
+                </div>
+              )}
+            </>
+          ) : (
+            <>
+              <div
+                className="border-ink-200/70 absolute top-0 flex flex-col overflow-hidden rounded-2xl border bg-white shadow-[0_24px_60px_-34px_rgba(15,23,42,0.45)] transition-[width,left] duration-[450ms] ease-out motion-reduce:transition-none"
+                style={{
+                  width: deskW,
+                  left: mode === "duo" ? 0 : (SCENE_BOX_W - SCENE_WIDE_W) / 2,
+                  height: SCENE_BOX_H,
+                }}
+              >
+                {context && (
+                  <div className="border-ink-100 bg-ink-50 text-ink-600 flex shrink-0 items-center gap-2 border-b px-5 py-2 text-[14px] font-semibold">
+                    <span
+                      aria-hidden="true"
+                      className="bg-court-500 h-2 w-2 shrink-0 rounded-full"
+                    />
+                    <span className="truncate">{context}</span>
+                  </div>
+                )}
+                <div className="relative min-h-0 flex-1 overflow-hidden bg-white">{desktop}</div>
+              </div>
 
-          {phone && (
-            <div
-              className="absolute top-0 transition-all duration-[550ms] ease-out motion-reduce:transition-none"
-              style={{
-                width: SCENE_PHONE_FRAME_W,
-                left: SCENE_DUO_W + SCENE_GAP,
-                opacity: mode === "duo" ? 1 : 0,
-                transform: mode === "duo" ? "translateX(0)" : "translateX(48px)",
-              }}
-            >
-              <ScenePhoneFrame>{phone}</ScenePhoneFrame>
-            </div>
+              {phone && (
+                <div
+                  className="absolute top-0 transition-all duration-[550ms] ease-out motion-reduce:transition-none"
+                  style={{
+                    width: SCENE_PHONE_FRAME_W,
+                    left: SCENE_DUO_W + SCENE_GAP,
+                    opacity: mode === "duo" ? 1 : 0,
+                    transform: mode === "duo" ? "translateX(0)" : "translateX(48px)",
+                  }}
+                >
+                  <ScenePhoneFrame>{phone}</ScenePhoneFrame>
+                </div>
+              )}
+            </>
           )}
         </div>
 
@@ -531,12 +600,22 @@ export function SceneStage({
  * which is the exact failure this presentation exists to prevent. Recorded in
  * the fidelity sheet rather than hidden.
  */
-function ScenePhoneFrame({ children, time = "9:41" }: { children: ReactNode; time?: string }) {
-  const screenH = SCENE_BOX_H - SCENE_PHONE_BEZEL * 2
+function ScenePhoneFrame({
+  children,
+  time = "9:41",
+  /** Pair layout: the frame gives up its last 34px to the label under it. */
+  short,
+}: {
+  children: ReactNode
+  time?: string
+  short?: boolean
+}) {
+  const frameH = short ? SCENE_PHONES_BOX_H - SCENE_PHONES_LABEL_H : SCENE_BOX_H
+  const screenH = frameH - SCENE_PHONE_BEZEL * 2
   return (
     <div
       className="rounded-[46px] bg-[#0b0b0f] p-[12px] shadow-[0_30px_70px_-34px_rgba(15,23,42,0.7)]"
-      style={{ width: SCENE_PHONE_FRAME_W, height: SCENE_BOX_H }}
+      style={{ width: SCENE_PHONE_FRAME_W, height: frameH }}
     >
       <div
         className="relative flex flex-col overflow-hidden rounded-[34px] bg-white"
@@ -573,6 +652,25 @@ function ScenePhoneFrame({ children, time = "9:41" }: { children: ReactNode; tim
         </div>
       </div>
     </div>
+  )
+}
+
+/**
+ * Whose handset this is, written under the frame.
+ *
+ * The single-region scene names its screen in a context strip along the top.
+ * A phone cannot carry that strip without pretending the product ships a
+ * browser bar inside the app, so the pair layout puts the same information on
+ * the bench beside the phone: who is holding it, and the route they are on.
+ */
+function FrameLabel({ children }: { children: ReactNode }) {
+  return (
+    <p
+      className="text-ink-500 flex items-center justify-center gap-2 text-[14px] font-semibold"
+      style={{ height: SCENE_PHONES_LABEL_H }}
+    >
+      {children}
+    </p>
   )
 }
 
