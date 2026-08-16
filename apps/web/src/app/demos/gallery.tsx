@@ -107,7 +107,7 @@ export function DemoGallery() {
 
           <div className="mt-5 flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between lg:gap-10">
             <div className="min-w-0">
-              <p className="text-[12px] font-bold uppercase tracking-[0.2em] text-gold-400">
+              <p className="text-[14px] font-bold uppercase tracking-[0.2em] text-gold-400">
                 See it work
               </p>
               <h1 className="font-display mt-2 text-[32px] font-extrabold leading-[1.05] tracking-tight text-white sm:text-[42px]">
@@ -195,7 +195,7 @@ export function DemoGallery() {
             </div>
           )}
 
-          <p className="mt-12 border-t border-white/10 pt-5 text-[13px] leading-relaxed text-white/40">
+          <p className="mt-12 border-t border-white/10 pt-5 text-[14px] leading-relaxed text-white/40">
             Every demo runs on a sample club and league. Real accounts, rosters and
             payments are never shown, and nothing here needs a sign in.
           </p>
@@ -222,7 +222,7 @@ function ShelfHeading({
         <h2 id={id} className="font-display text-[24px] font-extrabold tracking-tight text-white sm:text-[28px]">
           {title}
         </h2>
-        <span className="text-[12px] font-bold uppercase tracking-[0.16em] text-white/40">
+        <span className="text-[14px] font-bold uppercase tracking-[0.16em] text-white/40">
           {count} {count === 1 ? "demo" : "demos"}
         </span>
       </div>
@@ -277,7 +277,7 @@ function AudiencePills({ demo }: { demo: DemoEntry }) {
         <span
           key={a}
           className={cn(
-            "rounded-full px-2.5 py-1 text-[13px] font-bold uppercase tracking-[0.08em] ring-1",
+            "rounded-full px-2.5 py-1 text-[14px] font-bold uppercase tracking-[0.08em] ring-1",
             PILL_TONE[a]
           )}
         >
@@ -319,13 +319,13 @@ function ChapterTrack({ demo, labels }: { demo: DemoEntry; labels: boolean }) {
       {labels ? (
         <div className="mt-2 hidden gap-1.5 pl-10 pr-12 lg:flex">
           {demo.chapterTitles.map((t) => (
-            <span key={t} className="flex-1 truncate text-[13px] font-medium text-white/50">
+            <span key={t} className="flex-1 truncate text-[14px] font-medium text-white/50">
               {t}
             </span>
           ))}
         </div>
       ) : (
-        <p className="mt-2 pl-10 text-[13px] font-medium text-white/50">
+        <p className="mt-2 pl-10 text-[14px] font-medium text-white/50">
           {demo.chapterCount} chapters, jump to any of them
         </p>
       )}
