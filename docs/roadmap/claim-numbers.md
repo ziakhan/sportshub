@@ -266,3 +266,36 @@ EXPIRED`, and the v2 path never writes `EMAIL_VERIFIED`: the real transitions ar
 | `tsc --noEmit` | clean |
 | Em-dash sweep | clean |
 | Database writes | **none**. The masking functions were run read-only against the club's own row |
+
+---
+
+## Sweep, 2026-08-16
+
+**FULL SCREENS.** The directory drew three club cards before the search and three after, with about
+300px of empty page under each, while the headline said 1,325 listings. The landing state is a page
+of listings now: the first fifteen UNCLAIMED tenants in name order, straight out of the database
+("1 of 1", "17 Basketball Club", "1K Elite", "204 Elite Basketball Club", "306 Heat", "416 United",
+"506 Elevate Basketball" and the rest). The search still narrows to the three Alpha matches.
+
+The customize screen had the same hole under its Brand panel. It now carries the rest of the page
+the product really renders: `club-page-editor.tsx`'s **Page layout** section with its own hint and
+the nine block labels from `lib/club-page/blocks.ts` (About, Announcements, Open programs, Teams,
+Schedule & scores, News & highlights, Reviews, Next game, Contact), Reviews hidden and the rest
+visible.
+
+**Two narrator's paragraphs out of the mocks.** The directory carried "Of the 1,325 published
+listings, 1,003 carry an email the product can send a code to, 94 carry only a phone number, and 228
+carry neither and have to go through a human" (a sourcing note AND a confession, sitting inside a
+product screen). The customize page carried "A colour only counts once a human stood behind it".
+Both gone; the contact-coverage numbers stay in this file, and the colour rule is in the beat's own
+balloon.
+
+**Copy, 20 captions and balloons.** Gone: "Your club is probably already on here, and nobody told
+you", "Opening it is the uncomfortable part", "this is the whole security model, in one sentence",
+"Enough to recognise, not enough to copy", "the step that admits the listing is imported", "Six
+digits, and they do not wait around", "One code, and the club is spoken for", "here is the line that
+matters", "Ownership is a person, not a mailbox", "understand what that press means", "A default
+colour is not a brand", "what a family reads before they call you".
+
+Gate re-run: readability audit **0 violations**, minimum stage scale **1.000**, 22 beats / 26
+scenes, one headless drive with a clean console. Runtime **1 min 45 sec**.

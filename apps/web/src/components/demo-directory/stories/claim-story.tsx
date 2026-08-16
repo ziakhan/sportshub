@@ -68,6 +68,33 @@ const MASKED_PHONE = "64••••9295"
 const UNCLAIMED_TOTAL = 1325
 const WITH_EMAIL = 1003
 const PHONE_ONLY = 94
+
+/**
+ * The page of the directory a visitor lands on before searching. `DB` the
+ * first fifteen UNCLAIMED tenants in name order, exactly as the directory
+ * sorts and renders them.
+ *
+ * The 2026-08-16 cut drew three cards here and three after the search, with
+ * about 300px of empty page under both. A directory that says it holds 1,325
+ * listings shows a page of them.
+ */
+const BROWSE = [
+  { name: "1 of 1", city: "Ontario" },
+  { name: "17 Basketball Club", city: "Richmond Hill" },
+  { name: "17 Ignite", city: "Ontario" },
+  { name: "1K Elite", city: "Ontario" },
+  { name: "2 Way Elite", city: "Ontario" },
+  { name: "204 Elite Basketball Club", city: "Winnipeg" },
+  { name: "22 Wing Fitness & Wellness Centre", city: "Hornell Heights" },
+  { name: "3 Point Basketball", city: "North Vancouver" },
+  { name: "306 Heat", city: "Regina" },
+  { name: "360BTG (Basketball & Soccer)", city: "Oshawa/Whitby/Ajax" },
+  { name: "3D Basketball Academy", city: "North Vancouver" },
+  { name: "416 United", city: "Toronto" },
+  { name: "4th Qtr Basketball", city: "Ontario" },
+  { name: "506 Elevate Basketball", city: "Moncton" },
+  { name: "780 Basketball Club", city: "Edmonton" },
+]
 const NEITHER = 228
 
 /** `PRODUCT` `lib/claims/claim-v2.ts` lines 21 to 23. */
@@ -125,7 +152,7 @@ export const claimStory: DemoScript = {
     paced({
       id: "open",
       chapter: "find",
-      caption: "Your club is probably already on here, and nobody told you.",
+      caption: "The directory already holds a listing for most Canadian clubs.",
       emphasize: "dir-count",
       callout:
         "Over thirteen hundred Canadian clubs are already listed, built from public league data.",
@@ -133,28 +160,28 @@ export const claimStory: DemoScript = {
     paced({
       id: "search",
       chapter: "find",
-      caption: "So the first step is finding yours.",
+      caption: "The first step is finding yours.",
       cursor: "search",
       type: { key: "q", text: "Alpha Elite" },
       set: { searched: true },
-      callout: "Type the name. If it is in the census, it is in the directory.",
+      callout: "The search reads name and city, so either one finds a listing.",
     }),
     paced({
       id: "row",
       chapter: "find",
-      caption: "And the listing tells you what it is.",
+      caption: "The listing is a public page about the club.",
       emphasize: "result",
-      callout: "Open profile. A page about the club, that the club does not run yet.",
+      callout: "It is published and readable now, and nobody at the club runs it.",
     }),
     paced({
       id: "page",
       chapter: "find",
-      caption: "Opening it is the uncomfortable part.",
+      caption: "Opening it shows what an imported listing looks like.",
       cursor: "result",
       press: true,
       set: { view: "page" },
       context: `${CLUB} · public page`,
-      callout: "The city is right, the colour is nobody's, and there is a button on it you did not put there.",
+      callout: "The province is stuck on the end of the city, and the colour is the import default.",
     }),
     paced({
       id: "claim-btn",
@@ -171,31 +198,30 @@ export const claimStory: DemoScript = {
     paced({
       id: "channels",
       chapter: "prove",
-      caption: "And this is the whole security model, in one sentence.",
+      caption: "The claim starts with a code.",
       emphasize: "intro",
-      callout:
-        "The code goes to the contact already on file, so nobody can type their way into somebody else's club.",
+      callout: "It goes to the contact already on file, so the destination is not a choice.",
     }),
     paced({
       id: "masked",
       chapter: "prove",
       caption: "Masked, so the page cannot be used to harvest an address either.",
       emphasize: "channel-email",
-      callout: "Enough to recognise, not enough to copy. You either have that inbox or you do not.",
+      callout: "Enough of the address to recognise, and not enough to write down.",
     }),
     paced({
       id: "corrections",
       chapter: "prove",
-      caption: "Next to it, the step that admits the listing is imported.",
+      caption: "Beside it, the corrections.",
       cursor: "corrections-toggle",
       press: true,
       set: { corrections: true },
-      callout: "An imported listing is usually a little wrong, and this one is wrong in three places.",
+      callout: "Corrections are collected now and applied when the claim completes.",
     }),
     paced({
       id: "fix",
       chapter: "prove",
-      caption: "So you fix them while you are here.",
+      caption: "This listing is wrong in three places.",
       emphasize: "corrections-fields",
       callout: "The province stuck on the city, an unformatted phone, a website with no scheme.",
     }),
@@ -206,12 +232,12 @@ export const claimStory: DemoScript = {
       cursor: "send-code",
       press: true,
       set: { view: "code" },
-      callout: "It goes to the club's own inbox. Not to the person filling this in.",
+      callout: "It goes to the club's own inbox, whoever is filling this in.",
     }),
     paced({
       id: "expiry",
       chapter: "prove",
-      caption: "Six digits, and they do not wait around.",
+      caption: "Six digits, on a clock.",
       emphasize: "code-note",
       callout: "Thirty minutes, five attempts, and then the claim expires and starts again.",
     }),
@@ -222,14 +248,14 @@ export const claimStory: DemoScript = {
       cursor: "code-field",
       type: { key: "code", text: CODE },
       set: { verified: true },
-      callout: "One code, and the club is spoken for.",
+      callout: "The code proves the inbox, which is all it is asked to prove.",
     }),
 
     /* ── 3. Reserved for you ──────────────────────────────────────────── */
     paced({
       id: "reserved",
       chapter: "reserved",
-      caption: "But it is not yours yet, and the product is careful about the difference.",
+      caption: "Verified is not the same as owned.",
       set: { view: "verified" },
       emphasize: "reserved-card",
       callout: "Reserved for fourteen days while you decide what account to run it from.",
@@ -237,10 +263,9 @@ export const claimStory: DemoScript = {
     paced({
       id: "identity",
       chapter: "reserved",
-      caption: "And here is the line that matters.",
+      caption: "The club binds to an account, and the account is a person.",
       emphasize: "identity-line",
-      callout:
-        "The club binds to your account, not to the inbox that got the code. Ownership is a person, not a mailbox.",
+      callout: "The inbox that received the code is not the thing that ends up owning the club.",
     }),
     paced({
       id: "take",
@@ -250,7 +275,7 @@ export const claimStory: DemoScript = {
       press: true,
       set: { view: "owned" },
       toast: `Club claimed · ${CLUB}`,
-      callout: "Create an account or sign in. That is the first time this flow has asked for one.",
+      callout: "Create an account or sign in. This is the first time the flow asks for one.",
     }),
     paced({
       id: "writes",
@@ -265,7 +290,7 @@ export const claimStory: DemoScript = {
     paced({
       id: "customize",
       chapter: "brand",
-      caption: "And now the page is a page you run.",
+      caption: "The page is now a page the club runs.",
       set: { view: "customize" },
       context: `${CLUB} · customize`,
       emphasize: "brand-panel",
@@ -274,12 +299,11 @@ export const claimStory: DemoScript = {
     paced({
       id: "colour",
       chapter: "brand",
-      caption: "Pick a colour, and understand what that press means.",
+      caption: "Pick a colour.",
       cursor: "colour-field",
       press: true,
       set: { colour: true },
-      callout:
-        "Until a human picks one, the product refuses to paint a club's page. A default colour is not a brand.",
+      callout: "The page stays unpainted until somebody picks one, so the import default never ships.",
     }),
     paced({
       id: "words",
@@ -288,7 +312,7 @@ export const claimStory: DemoScript = {
       cursor: "tagline-field",
       type: { key: "tagline", text: TAGLINE },
       set: { words: true },
-      callout: "A tagline and a paragraph, which is what a family reads before they call you.",
+      callout: "A tagline and a paragraph, both on the public page.",
     }),
     paced({
       id: "save",
@@ -298,7 +322,7 @@ export const claimStory: DemoScript = {
       press: true,
       toast: SAVED,
       set: { saved: true },
-      callout: "Live on the public page as soon as it is written.",
+      callout: "It reaches the public page as soon as it is saved.",
     }),
     paced({
       id: "public",
@@ -307,14 +331,13 @@ export const claimStory: DemoScript = {
       set: { view: "page", claimed: true },
       context: `${CLUB} · public page`,
       emphasize: "hero",
-      callout:
-        "Your colour on the stripe, your crest, your words, and no claim button on it any more.",
+      callout: "The claim button is gone, because the club is claimed.",
     }),
     paced({
       id: "end",
       chapter: "brand",
       caption:
-        "A listing you did not make, claimed with a code you did not choose the destination of, corrected on the way in, and turned into your own page the same afternoon.",
+        "A listing the club did not make, claimed with a code sent to the contact on file, corrected on the way in, and turned into the club's own page the same afternoon.",
       hold: 4400,
       set: { endCard: true },
     }),
@@ -384,7 +407,7 @@ function Directory({ q, typing, searched }: { q: string; typing: boolean; search
         {typing && <span className="bg-play-600 ml-0.5 inline-block h-4 w-[2px] align-middle" />}
       </span>
 
-      <div className="mt-4 grid grid-cols-3 gap-3">
+      <div className="mt-4 grid grid-cols-3 gap-x-3 gap-y-2">
         {searched ? (
           <>
             <ClubCard
@@ -398,19 +421,9 @@ function Directory({ q, typing, searched }: { q: string; typing: boolean; search
             <ClubCard name="Alpha Prep" city="Hamilton" unclaimed fresh />
           </>
         ) : (
-          <>
-            <ClubCard name="Toronto Lords" city="Toronto" />
-            <ClubCard name="Burlington Force" city="Burlington" />
-            <ClubCard name="CKATT Basketball" city="Mississauga" />
-          </>
+          BROWSE.map((c) => <ClubCard key={c.name} name={c.name} city={c.city} unclaimed />)
         )}
       </div>
-
-      <p className="text-ink-500 mt-4 text-[15px] font-medium leading-snug">
-        Of the {UNCLAIMED_TOTAL.toLocaleString("en-CA")} published listings, {WITH_EMAIL.toLocaleString("en-CA")}{" "}
-        carry an email the product can send a code to, {PHONE_ONLY} carry only a phone number, and{" "}
-        {NEITHER} carry neither and have to go through a human.
-      </p>
     </div>
   )
 }
@@ -833,6 +846,42 @@ function Customize({
         </div>
       </Panel>
 
+      {/* The rest of the customize page. `PRODUCT` `club-page-editor.tsx`'s
+          "Page layout" section over `LayoutEditor`, with the block labels from
+          `lib/club-page/blocks.ts` and its Main and Rail zones. */}
+      <Panel
+        className="mt-3"
+        title="Page layout"
+        meta="Drag to reorder within a column, move a block between Main and Rail, and toggle what's visible."
+      >
+        <div className="grid grid-cols-3 gap-2 px-5 py-3">
+          {[
+            ["About", true],
+            ["Announcements", true],
+            ["Open programs", true],
+            ["Teams", true],
+            ["Schedule & scores", true],
+            ["News & highlights", true],
+            ["Reviews", false],
+            ["Next game", true],
+            ["Contact", true],
+          ].map(([label, on]) => (
+            <span
+              key={String(label)}
+              className={cn(
+                "flex items-center justify-between gap-2 rounded-xl border px-3 py-1.5 text-[15px] font-semibold",
+                on ? "border-court-200 bg-court-50/50 text-ink-900" : "border-ink-200 bg-white text-ink-400"
+              )}
+            >
+              {label}
+              <span className={cn("text-[14px] font-bold", on ? "text-court-700" : "text-ink-400")}>
+                {on ? "Visible" : "Hidden"}
+              </span>
+            </span>
+          ))}
+        </div>
+      </Panel>
+
       <div className="mt-3 flex items-center gap-3">
         <Btn id="save-btn" tone="court">
           Save changes
@@ -842,10 +891,6 @@ function Customize({
         )}
       </div>
 
-      <p className="text-ink-500 mt-3 text-[15px] font-medium leading-snug">
-        A colour only counts once a human stood behind it: the product refuses to paint a page with
-        the default it stamped on every imported listing.
-      </p>
     </div>
   )
 }
