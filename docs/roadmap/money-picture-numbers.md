@@ -56,7 +56,7 @@ product's arithmetic, over the real rows.
 | 9 to 12 | `row`, `expand`, `offline`, `left` | same page, the row and its expansion | `obligations-table.tsx` lines 120 to 273 |
 | 13 to 14 | `cadence`, `stops` | `GET /api/cron/payment-reminders` | `lib/payments/scheduled.ts` `sendDueReminders` and `sendOverdueReminders` |
 | 15 to 16 | `phone`, `late` | the bell and the family's inbox | `notify()` writes the `Notification`; `sendEmail()` sends the mail; both from `scheduled.ts` |
-| 17 | `honest` | n/a, the honesty card | Section F punch 1 |
+| ~~17~~ | ~~`honest`, the honesty card~~ | **DELETED, sweep 2026-08-16** | See section J |
 | 18 to 20 | `door`, `modal`, `recorded` | `POST /api/obligations/[id]/payments` | `obligations-table.tsx` `RecordPaymentModal` lines 298 to 394; `recordOfflinePayment` in `lib/payments/obligations.ts` lines 255 to 310 |
 | 21 | `tiles-move` | same page | `summarize` recomputes on load |
 | 22 | `waive` | `PATCH /api/obligations/[id]` `{action:"waive"}` | `waiveObligation` in `lib/payments/obligations.ts` lines 312 to 346 |
@@ -238,7 +238,7 @@ persona filming it is the club owner.
 
 | Gate | Result |
 |---|---|
-| `scripts/demo/readability-audit.mjs --routes /demos/money-picture` | **0 violations**, minimum stage scale **1.000**, 23 beats, 28 scenes audited |
+| `scripts/demo/readability-audit.mjs --routes /demos/money-picture` | **0 violations**, minimum stage scale **1.000**, 22 beats, 27 scenes audited (sweep re-run 2026-08-16) |
 | Same, `--viewport 390x844 --floor 11 --scope stage` (keyhole) | **0 violations** |
 | Same, `--viewport 390x844 --floor 14 --scope chrome` | **0 violations** |
 | Full playback drive, 23 beats stepped twice plus a 2x autoplay pass | **0 console errors**, **0 page errors** |
@@ -249,3 +249,38 @@ persona filming it is the club owner.
 | `tsc --noEmit` | clean |
 | Em-dash sweep | clean |
 | Database writes | **none**. The tiles were produced by running the product's own `merchantObligations` and `summarize` read-only |
+
+---
+
+## J. Sweep, 2026-08-16
+
+**The cron confession is out.** Beat 17 (`honest`) and the `cadence-honest` panel under the
+schedule both told the viewer, on camera, that the reminder job is switched off on this machine and
+that "the demo will not pretend otherwise". Under the owner's no-confession rule a demo does not
+stop to say what is not running. Both are deleted. Section F punch 1 above is unchanged and is
+still where the box deploy reads it: **turn the payment crons on**.
+
+Nothing was lost with them. The schedule chapter now runs on the split stage from its first beat,
+so the four windows and the two messages a family really receives are on screen together, and the
+schedule panel gained a fifth real row (a paid or waived obligation drops out of the run on its next
+pass) rather than a paragraph of apology.
+
+**Two more panels lost a narrator's voice.** The price-list screen carried a paragraph explaining
+why one ledger matters, and each price carried a sourcing chip ("in the database" / "rep season
+band") that no product screen would ever draw. The family's phone carried "One function writes both,
+so the bell and the inbox can never disagree." All gone; the sourcing lives in this file, which is
+what this file is for. The panel header no longer prints `lib/payments/scheduled.ts` on screen
+either.
+
+**Screens that were not full.** The obligations table drew four rows under a "30 of 30" header with
+a third of the panel empty; rows were tightened and it now draws five with the count line under
+them, and when the family's row is expanded the two rows beneath it stay on screen instead of the
+panel emptying out. The price list and the schedule both had 190px of dead space at the bottom and
+now fill their panels.
+
+**Copy.** Sixteen captions and balloons rewritten off the copy law. Gone: "on one screen it did not
+have to build", "Including the one nobody else counts", "That is not a reminder problem", "The small
+ones matter most, because they are the ones clubs stop chasing", "not worth an invoice to a human
+being. It is worth one to a machine", "Nobody writes one cheque for a rep season", "And look at how
+they arrived", "the machine quits", "No club owner had to sit down on a Sunday and write it", "the
+one clubs never say out loud".

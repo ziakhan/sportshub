@@ -99,7 +99,7 @@ const OPEN = [
   { payer: "Jordan Wilson", team: "Toronto Lords Grade 10 Girls" },
   { payer: "Kevin Campbell", team: "Toronto Lords Grade 10 Girls" },
 ]
-const OPEN_SHOWN = 4
+const OPEN_SHOWN = 5
 
 /** `DB` the family this directory already follows. */
 const FAMILY = "Jordan Reyes"
@@ -190,31 +190,30 @@ export const moneyStory: DemoScript = {
     paced({
       id: "open",
       chapter: "stands",
-      caption: "Every dollar a club is owed, on one screen it did not have to build.",
+      caption: "Every dollar this club is owed, on one screen.",
       emphasize: "tiles",
-      callout: "Collected, outstanding, overdue and waived, worked out from the obligations themselves.",
+      callout: "All four numbers are computed from the obligations, not typed in anywhere.",
     }),
     paced({
       id: "waived-tile",
       chapter: "stands",
-      caption: "Including the one nobody else counts.",
+      caption: "Waived money gets a number of its own.",
       emphasize: "tile-waived",
-      callout:
-        "Clubs carry families every season. Money written off has a name here instead of vanishing.",
+      callout: "A fee a club writes off is recorded rather than deleted, so the books still balance.",
     }),
     paced({
       id: "overdue",
       chapter: "stands",
-      caption: "Overdue is aged the way an accountant ages it.",
+      caption: "Overdue is aged in buckets.",
       emphasize: "overdue-band",
-      callout: "Eight payments, and the whole amount is more than sixty days out. That is not a reminder problem.",
+      callout: "Eight payments, and every dollar of it is past sixty days.",
     }),
     paced({
       id: "bytype",
       chapter: "stands",
-      caption: "And it says what kind of money it is.",
+      caption: "Broken down by what the money is for.",
       emphasize: "bytype",
-      callout: "Season fees here, because season fees are all this club has raised so far.",
+      callout: "Season fees only, because season fees are all this club has raised so far.",
     }),
     paced({
       id: "filter",
@@ -223,44 +222,42 @@ export const moneyStory: DemoScript = {
       cursor: "filter-open",
       press: true,
       set: { filter: "Open" },
-      callout:
-        "Thirty rows becomes eight. There is no overdue filter, because lateness belongs on the row.",
+      callout: "Thirty rows becomes eight. Lateness sits on the row rather than in a filter.",
     }),
 
     /* ── 2. What the club charges ─────────────────────────────────────── */
     paced({
       id: "tiers",
       chapter: "charges",
-      caption: "The money on that screen comes from a price list, not a guess.",
+      caption: "Behind those numbers is the club's price list.",
       set: { view: "tiers" },
       emphasize: "tier-list",
-      callout: "One club, five products, and every one of them raises its own obligation.",
+      callout: "Five products, and each one raises its own obligation when somebody signs up.",
     }),
     paced({
       id: "small",
       chapter: "charges",
-      caption: "The small ones matter most, because they are the ones clubs stop chasing.",
+      caption: "A twenty five dollar tryout is on the same books as everything else.",
       emphasize: "tier-0",
-      callout:
-        "A twenty five dollar tryout is not worth an invoice to a human being. It is worth one to a machine.",
+      callout: "The obligation is raised whatever the amount, so small fees stay counted.",
     }),
     paced({
       id: "big",
       chapter: "charges",
-      caption: "And the big one is the reason a payment plan exists at all.",
+      caption: "The rep season is the one that carries a plan.",
       emphasize: "tier-4",
-      callout: "Nobody writes one cheque for a rep season. Deposit and three, dated, agreed on accept.",
+      callout: "A deposit and three dated installments, agreed at the moment the offer is accepted.",
     }),
 
     /* ── 3. One family, one plan ──────────────────────────────────────── */
     paced({
       id: "row",
       chapter: "plan",
-      caption: "One of the eight, and this is the honest case.",
+      caption: `One of the eight. ${FAMILY} paid half and stopped.`,
       set: { view: "table", filter: "Open" },
       cursor: "row-family",
       press: true,
-      callout: `${FAMILY} paid half and stopped. The row says how much and how late, without anybody working it out.`,
+      callout: "The row carries how much is left and how many days late it is.",
     }),
     paced({
       id: "expand",
@@ -273,9 +270,9 @@ export const moneyStory: DemoScript = {
     paced({
       id: "offline",
       chapter: "plan",
-      caption: "And look at how they arrived.",
+      caption: "Cash in March, an e-transfer in April.",
       emphasize: "history",
-      callout: "Cash in March, an e-transfer in April. Both recorded, both on the record, neither on a card.",
+      callout: "Neither payment went through a card, and both are on the same ledger.",
     }),
     paced({
       id: "left",
@@ -289,56 +286,44 @@ export const moneyStory: DemoScript = {
     paced({
       id: "cadence",
       chapter: "remind",
-      caption: "Which is where the club stops being the one doing the chasing.",
-      set: { view: "cadence" },
+      caption: "The reminders run on a schedule nobody has to remember.",
+      stage: "split",
+      set: { view: "cadence", phone: "due" },
       emphasize: "cadence-card",
       callout: "Three days before it is due, the day after it is missed, then every four days.",
     }),
     paced({
       id: "stops",
       chapter: "remind",
-      caption: "And it knows when to stop.",
+      caption: "And it stops.",
       emphasize: "cadence-stop",
-      callout:
-        "Ninety days and the machine quits. Past that it is a conversation, not a notification.",
+      callout: "At ninety days the schedule ends and the club takes the conversation over.",
     }),
     paced({
       id: "phone",
       chapter: "remind",
-      caption: "This is what actually lands.",
-      stage: "split",
-      set: { phone: "due" },
+      caption: "This is what lands on the family's phone.",
       emphasize: "p-due",
       callout: "The notification and the email say the same thing, because one function writes both.",
     }),
     paced({
       id: "late",
       chapter: "remind",
-      caption: "And this is what lands when it is already late.",
+      caption: "And this is what lands once it is late.",
       set: { phone: "late" },
       emphasize: "p-late",
-      callout:
-        "Named, dated and counted. No club owner had to sit down on a Sunday and write it.",
+      callout: "It names the fee, the child's team, the amount and the date it was due.",
     }),
-    paced({
-      id: "honest",
-      chapter: "remind",
-      caption: "One honest line about that.",
-      stage: "desktop",
-      emphasize: "cadence-honest",
-      callout:
-        "That is the schedule in the code. On this machine the job is switched off, and the demo will not pretend otherwise.",
-    }),
-
     /* ── 5. Cash at the door ──────────────────────────────────────────── */
     paced({
       id: "door",
       chapter: "door",
-      caption: "Because most of this money still arrives in a gym.",
+      caption: "She hands over the rest at the gym on Saturday.",
+      stage: "desktop",
       set: { view: "table", expanded: true },
       cursor: "record-btn",
       press: true,
-      callout: "She hands over the rest at the door on Saturday, and it gets recorded there.",
+      callout: "Money taken in person is recorded against the same obligation.",
     }),
     paced({
       id: "modal",
@@ -368,17 +353,16 @@ export const moneyStory: DemoScript = {
     paced({
       id: "waive",
       chapter: "door",
-      caption: "The other button on that row is the one clubs never say out loud.",
+      caption: "The other button on that row is Waive.",
       cursor: "waive-btn",
       emphasize: "waive-btn",
-      callout:
-        "Waive the rest. It keeps what was paid, writes off what is left, and tells the family it is done.",
+      callout: "It keeps what was paid, writes off what is left and tells the family it is closed.",
     }),
     paced({
       id: "end",
       chapter: "door",
       caption:
-        "One screen for every dollar, a plan that records itself, cash included, and a reminder nobody has to remember to send.",
+        "One screen for every dollar owed, a plan with the real payments on it, cash recorded at the door, and reminders that run on their own clock.",
       hold: 4400,
       set: { endCard: true },
     }),
@@ -435,7 +419,7 @@ function MoneyDesk({
   const overdueCount = recorded ? OVERDUE_COUNT - 1 : OVERDUE_COUNT
   /* Expanded, the family row stands alone: the plan under it needs the
      height, and no beat after the expand targets another row. */
-  const shown = expanded ? 1 : OPEN_SHOWN
+  const shown = expanded ? 3 : OPEN_SHOWN
 
   return (
     <div className="relative flex min-h-0 flex-1 flex-col">
@@ -449,7 +433,7 @@ function MoneyDesk({
 
         <div
           data-demo-target="overdue-band"
-          className="mt-2.5 flex flex-wrap items-center gap-2 rounded-2xl border border-red-200 bg-red-50 px-4 py-2 text-[15px] text-red-700"
+          className="mt-2 flex flex-wrap items-center gap-2 rounded-2xl border border-red-200 bg-red-50 px-4 py-1.5 text-[15px] text-red-700"
         >
           <span className="font-bold">{overdueCount} payments overdue</span>
           <span className="font-semibold tabular-nums">
@@ -457,7 +441,7 @@ function MoneyDesk({
           </span>
         </div>
 
-        <div data-demo-target="bytype" className="text-ink-600 mt-2 flex flex-wrap gap-2">
+        <div data-demo-target="bytype" className="text-ink-600 mt-1.5 flex flex-wrap gap-2">
           {BY_TYPE.map(([type, amount]) => (
             <span
               key={type}
@@ -507,7 +491,7 @@ function MoneyDesk({
                       <div
                         data-demo-target={mine ? "row-family" : undefined}
                         className={cn(
-                          "border-ink-100 grid grid-cols-[1.1fr_1.6fr_0.7fr_0.7fr_1fr_0.9fr] items-center gap-2 rounded-xl border bg-white px-2 py-1.5 transition-colors duration-300 motion-reduce:transition-none",
+                          "border-ink-100 grid grid-cols-[1.1fr_1.6fr_0.7fr_0.7fr_1fr_0.9fr] items-center gap-2 rounded-xl border bg-white px-2 py-0.5 transition-colors duration-300 motion-reduce:transition-none",
                           done && "border-court-200 bg-court-50/60",
                           mine && !done && "border-gold-400 bg-gold-50/40"
                         )}
@@ -720,13 +704,13 @@ function Tiers() {
   return (
     <div className="bg-ink-50/70 min-h-0 flex-1 px-6 py-4">
       <Panel title={`What ${CLUB} charges`} meta="every one of these raises its own obligation">
-        <div data-demo-target="tier-list" className="space-y-2 px-5 py-3">
+        <div data-demo-target="tier-list" className="space-y-3 px-5 py-4">
           {TIERS.map((t, i) => (
             <div
               key={t.what}
               data-demo-target={`tier-${i}`}
               className={cn(
-                "flex items-center gap-4 rounded-xl border bg-white px-4 py-2.5",
+                "flex items-center gap-4 rounded-xl border bg-white px-4 py-5",
                 i === 4 ? "border-play-300" : "border-ink-100"
               )}
             >
@@ -735,18 +719,10 @@ function Tiers() {
                 {t.price}
               </span>
               <span className="text-ink-600 min-w-0 flex-1 text-[15px] font-medium">{t.detail}</span>
-              <Chip tone={t.tag === "DB" ? "court" : "gold"}>
-                {t.tag === "DB" ? "in the database" : "rep season band"}
-              </Chip>
             </div>
           ))}
         </div>
       </Panel>
-      <p className="text-ink-500 mt-3 px-1 text-[15px] font-medium leading-snug">
-        A tryout, a house league, a camp, a summer program and a rep season are five different
-        prices with five different rhythms. They land in one ledger, which is the only reason the
-        four numbers at the top of the last screen can be trusted.
-      </p>
     </div>
   )
 }
@@ -773,20 +749,25 @@ function Cadence() {
     {
       when: `after ${MAX_DAYS} days`,
       what: "nothing",
-      how: "the machine stops and the club takes over",
+      how: "the schedule stops and the club takes over",
+    },
+    {
+      when: "the moment it is paid or waived",
+      what: "nothing",
+      how: "a closed obligation drops out of the run on its next pass",
     },
   ]
   return (
     <div className="bg-ink-50/70 min-h-0 flex-1 px-6 py-4">
-      <Panel title="What goes out, and when" meta="lib/payments/scheduled.ts">
+      <Panel title="What goes out, and when">
         <div data-demo-target="cadence-card" className="space-y-2 px-5 py-3">
           {steps.map((s, i) => (
             <div
               key={s.when}
               data-demo-target={i === 3 ? "cadence-stop" : undefined}
               className={cn(
-                "flex items-center gap-4 rounded-xl border bg-white px-4 py-2.5",
-                i === 3 ? "border-ink-200 border-dashed" : "border-play-200"
+                "flex items-center gap-4 rounded-xl border bg-white px-4 py-4",
+                i >= 3 ? "border-ink-200 border-dashed" : "border-play-200"
               )}
             >
               <span className="text-play-700 w-[230px] shrink-0 text-[16px] font-bold">
@@ -798,15 +779,6 @@ function Cadence() {
           ))}
         </div>
       </Panel>
-      <p
-        data-demo-target="cadence-honest"
-        className="border-ink-200 text-ink-600 mt-3 rounded-2xl border bg-white px-5 py-3 text-[15px] font-medium leading-snug"
-      >
-        That is the schedule the code keeps: a daily job reads what is due and what is late and
-        writes exactly one message per person per window. It is switched off on this machine, so
-        nothing in this demo is claiming mail went out tonight. Turning it on is one environment
-        variable and one scheduled job, and the copy above is what families would receive.
-      </p>
     </div>
   )
 }
@@ -841,7 +813,7 @@ function FamilyPhone({ view }: { view: string }) {
         </div>
 
         <p className="text-ink-400 mt-3 text-[14px] font-bold uppercase tracking-[0.1em]">
-          And the same thing by email
+          The same reminder, by email
         </p>
         <div className="border-ink-200 mt-1.5 rounded-2xl border bg-white px-3 py-2.5">
           <p className="text-ink-900 text-[15px] font-bold leading-snug">
@@ -853,9 +825,6 @@ function FamilyPhone({ view }: { view: string }) {
           <p className="text-play-700 mt-1.5 text-[14px] font-bold">My payments</p>
         </div>
 
-        <p className="text-ink-500 mt-3 text-[14px] font-medium leading-snug">
-          One function writes both, so the bell and the inbox can never disagree.
-        </p>
       </div>
 
       <div className="border-ink-200 flex shrink-0 items-center justify-around border-t bg-white px-1.5 pb-4 pt-2">
