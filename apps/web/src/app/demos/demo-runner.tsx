@@ -14,6 +14,7 @@ import { rosterStory } from "@/components/demo-directory/stories/roster-story"
 import { scheduleChangeStory } from "@/components/demo-directory/stories/schedule-change-story"
 import { seasonStory } from "@/components/demo-directory/stories/season-story"
 import { teamDropsOutStory } from "@/components/demo-directory/stories/team-drops-out-story"
+import { theRefereesStory } from "@/components/demo-directory/stories/the-referees-story"
 import { waiversStory } from "@/components/demo-directory/stories/waivers-story"
 import { yourWeekStory } from "@/components/demo-directory/stories/your-week-story"
 import type { DemoScript } from "@/components/demo-directory/types"
@@ -50,6 +51,7 @@ const SCRIPTS: Record<
   "standings-to-playoffs": { script: playoffsStory, role: "League", roleTone: "league" },
   waivers: { script: waiversStory, role: "League", roleTone: "league" },
   "team-drops-out": { script: teamDropsOutStory, role: "League", roleTone: "league" },
+  "the-referees": { script: theRefereesStory, role: "League", roleTone: "referee" },
 }
 
 export function DemoStage({ demo }: { demo: DemoEntry }) {

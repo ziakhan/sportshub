@@ -32,7 +32,7 @@ Same two rules as `season-story-numbers.md` and `schedule-change-numbers.md`:
 | `id` | `0f2e947b-67d6-42f6-be50-3e3745f7caee` |
 | `type` | `CLUB_FROM_LEAGUE` |
 | `status` | `PENDING` |
-| `reason` | "Not enough committed players to travel this winter — we have to pull out." |
+| `reason` | "Not enough committed players to travel this winter · we have to pull out." (the row stores an em-dash where the middot is; the house copy rule substitutes it on screen and here) |
 | `submissionId` | `0328b7ec-a10c-41fd-8f70-40688947c9fb`, status `APPROVED` |
 | team / club | **Orillia Lakers** |
 | division | **Grade 10 Boys · Division D** |
@@ -81,7 +81,7 @@ a viewer assume family calendars were disturbed:
 | 11 | `told`, the opponents' notification | the bell, and `/notifications` | `lib/withdrawals/requests.ts` lines 315 to 345, `notifyMany` |
 | 12 | `told-honest`, who is NOT in it | same | the audience is `UserRole` where `tenantId in (opponent tenants)` and `role in (ClubOwner, ClubManager, Trainer)`. Nothing else. Section F punch 1 |
 | 13 to 16 | `schedule`, `count`, `vanguard`, `rest`, the guarantee callout | `/manage/leagues/[id]/seasons/[seasonId]/manage?tab=schedule` | `manage/components/schedule-tab.tsx` lines 679 to 707 (the callout) and lines 392 to 405 (`gapTeams`) |
-| — | the Team check grid under it | same tab | `manage/components/team-check.tsx` lines 88 to 130 |
+| n/a | the Team check grid under it | same tab | `manage/components/team-check.tsx` lines 88 to 130 |
 | 17 | `preview`, "Preview the fix" | `POST /api/seasons/[id]/schedule/preview` with `{fillGapsOnly:true}` | `schedule-tab.tsx` `previewGaps` lines 406 to 423 |
 | 18 | `result`, what the preview returns | same | `api/seasons/[id]/schedule/preview/route.ts` lines 43 to 47 |
 | 19 | `add`, "Add ONLY the missing games" | `POST /api/seasons/[id]/schedule/commit` with `{fillGapsOnly:true}` | `schedule-tab.tsx` `commitGaps` lines 425 to 449 |
@@ -185,12 +185,12 @@ each verified in the shipping code:
 
 1. **The UI asks for it.** `schedule-tab.tsx` `commitGaps` (line 434) posts
    `{ fillGapsOnly: true }`, and the code comment above `gapTeams` (lines 389 to 392)
-   states the intent: *"Fill the gaps ADDS games only — nobody's existing schedule moves."*
+   states the intent: *"Fill the gaps ADDS games only · nobody's existing schedule moves."* (the comment writes an em-dash)
 2. **The route cannot delete.** `api/seasons/[id]/schedule/commit/route.ts` line 76:
    `const replaceExisting = fillGapsOnly ? false : parsed.replaceExisting`. The write
    transaction's `deleteMany` sits inside `if (replaceExisting)`, so with `fillGapsOnly`
    set that branch is **unreachable**. Only `createMany` runs. The zod field carries the
-   same promise in words: *"don't touch ANY existing game — treat the whole current
+   same promise in words: *"don't touch ANY existing game · treat the whole current
    schedule as fixed and only ADD games for teams under their guarantee."*
 3. **The generator cannot collide.** The route loads every current non-cancelled
    `REGULAR`-phase game as `input.existingGames` (lines 110 to 121), and
