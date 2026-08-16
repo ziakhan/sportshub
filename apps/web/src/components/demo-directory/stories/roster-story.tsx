@@ -248,6 +248,9 @@ export const rosterStory: DemoScript = {
       hold: 2100,
       cursor: "field-fee",
       type: { key: "fee", text: "25" },
+      emphasize: true,
+      callout:
+        "The fee is charged at registration, so no volunteer is standing at the door with a cash box on tryout night.",
     },
     {
       id: "publish",
@@ -375,6 +378,9 @@ export const rosterStory: DemoScript = {
       cursor: "chip-uniform-YM",
       press: true,
       set: { uniform: "YM" },
+      emphasize: true,
+      callout:
+        "Sizes are collected here, so nobody chases families in a group chat later.",
     },
     {
       id: "pick-tracksuit",
@@ -474,6 +480,9 @@ export const rosterStory: DemoScript = {
       hold: 3300,
       toast: "Roster complete",
       set: { roster: 10, rosterFrom: 7 },
+      emphasize: "roster-tiles",
+      callout:
+        "Every counter filled itself as families accepted, so the club knows the team is ready without auditing a spreadsheet.",
     },
     {
       id: "end-card",
@@ -754,7 +763,9 @@ function RosterScreen({ count, from }: { count: number; from: number }) {
         }
       />
       <div className="bg-ink-50/60 min-h-0 flex-1 px-6 py-4">
-        <div className="grid grid-cols-4 gap-3">
+        {/* The four counters are one object as far as the script is concerned:
+            the roster-complete beat rings them together. */}
+        <div data-demo-target="roster-tiles" className="grid grid-cols-4 gap-3">
           <MockTile
             compact
             label="Roster"

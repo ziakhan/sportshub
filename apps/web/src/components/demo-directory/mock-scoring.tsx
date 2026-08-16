@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useRef, useState, type ReactNode } from "react"
+import { demoNow } from "./motion"
 import { cn } from "@/components/ui/cn"
 import { Crest } from "@/components/ui/crest"
 import { PlayerMug } from "@/components/ui/player-mug"
@@ -54,10 +55,14 @@ const clock: ClockState = { key: "", base: 0, running: false, startedAt: 0 }
 const listeners = new Set<() => void>()
 let ticker: ReturnType<typeof setInterval> | null = null
 
-/** Seconds the whole demo agrees the period has left. */
+/** Seconds the whole demo agrees the period has left.
+ *
+ *  Measured in DEMO time, not wall time (motion.tsx `demoNow`), so the game
+ *  clock runs down at the speed the viewer chose and a speed change mid period
+ *  never makes it jump. */
 function readClock(): number {
   if (!clock.running) return clock.base
-  const elapsed = Math.floor((Date.now() - clock.startedAt) / 1000)
+  const elapsed = Math.floor((demoNow() - clock.startedAt) / 1000)
   return Math.max(0, clock.base - elapsed)
 }
 
@@ -77,7 +82,7 @@ export function useDemoClock(base: number, running: boolean, reduced: boolean): 
     clock.key = key
     clock.base = base
     clock.running = running
-    clock.startedAt = Date.now()
+    clock.startedAt = demoNow()
   }
 
   const [, force] = useState(0)

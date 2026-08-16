@@ -3,8 +3,49 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { cn } from "@/components/ui/cn"
 import { SplitStage } from "./frames"
-import { AnimatedCursor, StepCaption, usePrefersReducedMotion } from "./motion"
-import type { DemoScript, StageMode } from "./types"
+import {
+  AnimatedCursor,
+  BeatCallout,
+  CURSOR_ARRIVE_MS,
+  DEMO_RATES,
+  DemoOverlayStyles,
+  EMPHASIS_HOLD_MS,
+  EmphasisRing,
+  StepCaption,
+  restoreDemoRate,
+  setDemoRate,
+  useDemoRate,
+  usePrefersReducedMotion,
+  type DemoRate,
+} from "./motion"
+import type { DemoBeat, DemoScript, StageMode } from "./types"
+
+/**
+ * Total dwell for a beat, in SCRIPT milliseconds (before the playback rate).
+ *
+ * One function, used by the scheduler, the progress bar and the chapter
+ * markers alike, so an emphasized beat's extra seconds are part of the
+ * timeline rather than a pause bolted onto autoplay: jumping to a chapter
+ * lands on exactly the beat it always did.
+ */
+function holdOf(beat: DemoBeat | undefined): number {
+  if (!beat) return 2000
+  const extra = beat.holdMs ?? (beat.emphasize ? EMPHASIS_HOLD_MS : 0)
+  return beat.hold + extra
+}
+
+/** The element a beat's ring goes around: the cursor target, or the one the
+ *  beat named when nothing is being clicked. */
+function emphasisTarget(beat: DemoBeat | undefined): string | undefined {
+  if (!beat?.emphasize) return undefined
+  return typeof beat.emphasize === "string" ? beat.emphasize : beat.cursor
+}
+
+/** What a callout points at, in the order a beat means it. */
+function calloutTarget(beat: DemoBeat | undefined): string | undefined {
+  if (!beat?.callout) return undefined
+  return beat.cursor ?? emphasisTarget(beat) ?? beat.hover
+}
 
 /**
  * The demo directory player (2026-08-15).
@@ -51,6 +92,13 @@ export function DemoPlayer({
 }) {
   const { beats, chapters } = script
   const reduced = usePrefersReducedMotion()
+  const rate = useDemoRate()
+
+  /* The rate is a session choice, so a viewer who set 2x on the last demo
+     opens this one at 2x. Read on the client, after mount. */
+  useEffect(() => {
+    restoreDemoRate()
+  }, [])
 
   const [index, setIndex] = useState(0)
   const [playing, setPlaying] = useState(autoStart)
@@ -68,13 +116,14 @@ export function DemoPlayer({
 
   const beat = beats[index]
 
-  /* Cumulative timing, for the progress bar and the chapter markers. */
+  /* Cumulative timing, for the progress bar and the chapter markers. Emphasis
+     dwell is part of the timeline, so the bar tells the truth about it. */
   const { total, starts } = useMemo(() => {
     const s: number[] = []
     let acc = 0
     for (const b of beats) {
       s.push(acc)
-      acc += b.hold
+      acc += holdOf(b)
     }
     return { total: acc, starts: s }
   }, [beats])
@@ -113,7 +162,8 @@ export function DemoPlayer({
     return current
   }, [beats, index, script.desktopUrl])
 
-  /* Autoplay: advance when the beat's hold runs out. */
+  /* Autoplay: advance when the beat's hold runs out. The hold is script time,
+     so the wall-clock wait is that divided by the playback rate. */
   useEffect(() => {
     if (!playing || reduced || done) return
     const t = setTimeout(() => {
@@ -125,21 +175,23 @@ export function DemoPlayer({
         }
         return i + 1
       })
-    }, beat?.hold ?? 2000)
+    }, holdOf(beat) / rate)
     return () => clearTimeout(t)
-  }, [playing, reduced, done, index, beat, beats.length])
+  }, [playing, reduced, done, index, beat, beats.length, rate])
 
-  /* Progress. Coarse on purpose: a bar does not need 60fps. */
+  /* Progress. Coarse on purpose: a bar does not need 60fps. The bar is drawn
+     in script time, so it fills at the same place in the story at every
+     speed and simply gets there sooner. */
   useEffect(() => {
     setElapsed(starts[index] ?? 0)
     if (!playing || reduced) return
     const started = Date.now()
     const id = setInterval(() => {
-      const within = Math.min(Date.now() - started, beat?.hold ?? 0)
+      const within = Math.min((Date.now() - started) * rate, holdOf(beat))
       setElapsed((starts[index] ?? 0) + within)
     }, 120)
     return () => clearInterval(id)
-  }, [index, playing, reduced, starts, beat])
+  }, [index, playing, reduced, starts, beat, rate])
 
   const jumpTo = useCallback(
     (next: number) => {
@@ -157,6 +209,7 @@ export function DemoPlayer({
 
   const chapterOf = (i: number) => beats[i]?.chapter
   const activeChapter = chapterOf(index)
+  const beatKey = `${index}-${beat?.id ?? ""}`
   const progress = total > 0 ? Math.min(100, (elapsed / total) * 100) : 0
 
   const ctx = {
@@ -169,6 +222,8 @@ export function DemoPlayer({
 
   return (
     <div ref={rootRef} className={cn("select-none", className)}>
+      <DemoOverlayStyles />
+
       {/* Controls */}
       <div className="mb-3 flex flex-wrap items-center gap-2">
         {onExit && (
@@ -248,9 +303,12 @@ export function DemoPlayer({
           })}
         </div>
 
-        <span className="text-ink-400 ml-auto text-[11px] font-semibold tabular-nums">
-          Beat {index + 1} of {beats.length}
-        </span>
+        <div className="ml-auto flex items-center gap-3">
+          <SpeedControl rate={rate} onChange={setDemoRate} disabled={reduced} />
+          <span className="text-ink-400 text-[11px] font-semibold tabular-nums">
+            Beat {index + 1} of {beats.length}
+          </span>
+        </div>
       </div>
 
       {/* Progress */}
@@ -277,8 +335,28 @@ export function DemoPlayer({
           target={beat?.cursor}
           hover={beat?.hover}
           press={beat?.press}
-          beatKey={`${index}-${beat?.id ?? ""}`}
+          beatKey={beatKey}
           reduced={reduced}
+        />
+        {/* The ring goes on from the top of the beat, so the eye is already on
+            the right element while the hand is still travelling to it. */}
+        <EmphasisRing
+          key={`ring-${beatKey}`}
+          stageRef={stageRef}
+          target={emphasisTarget(beat)}
+          beatKey={beatKey}
+          reduced={reduced}
+        />
+        {/* The balloon lands WITH the hand. A beat with nothing to click puts
+            it up almost at once, because there is no glide to wait for. */}
+        <BeatCallout
+          key={`callout-${beatKey}`}
+          stageRef={stageRef}
+          text={beat?.callout}
+          target={calloutTarget(beat)}
+          beatKey={beatKey}
+          reduced={reduced}
+          delayMs={(beat?.cursor ? CURSOR_ARRIVE_MS : 180) / rate}
         />
         {beat?.toast && !reduced && (
           <div className="pointer-events-none absolute inset-x-0 top-4 z-40 flex justify-center">
@@ -353,6 +431,97 @@ export function DemoPlayer({
           Next beat
         </button>
       </div>
+    </div>
+  )
+}
+
+/* ── Speed ───────────────────────────────────────────────────────────────── */
+
+/**
+ * Playback speed (owner ruling 2026-08-16: "let fast viewers speed up").
+ *
+ * A real radio group, not three buttons that look like one: one tab stop for
+ * the whole control, arrow keys and Home / End move between the speeds, and
+ * the chosen speed carries `aria-checked`. The chips are visually compact
+ * because they sit in a row of compact chips, so each one carries a 44px
+ * touch target as an invisible overlay rather than by growing the bar.
+ *
+ * The gold active state is the same amber the Play button uses, on ink text
+ * that clears contrast comfortably. White-on-glass chips would disappear here:
+ * this control bar is light.
+ */
+function SpeedControl({
+  rate,
+  onChange,
+  disabled,
+}: {
+  rate: DemoRate
+  onChange: (rate: DemoRate) => void
+  disabled?: boolean
+}) {
+  const refs = useRef<(HTMLButtonElement | null)[]>([])
+  const activeIndex = Math.max(0, DEMO_RATES.indexOf(rate))
+
+  const move = (next: number) => {
+    const i = (next + DEMO_RATES.length) % DEMO_RATES.length
+    onChange(DEMO_RATES[i])
+    refs.current[i]?.focus()
+  }
+
+  return (
+    <div
+      role="radiogroup"
+      aria-label="Playback speed"
+      className={cn(
+        "bg-ink-100 ring-ink-200/70 inline-flex items-center gap-0.5 rounded-full p-0.5 ring-1 ring-inset",
+        disabled && "opacity-50"
+      )}
+    >
+      {DEMO_RATES.map((r, i) => {
+        const active = r === rate
+        return (
+          <button
+            key={r}
+            ref={(el) => {
+              refs.current[i] = el
+            }}
+            type="button"
+            role="radio"
+            aria-checked={active}
+            aria-label={`${r} times speed`}
+            disabled={disabled}
+            tabIndex={i === activeIndex ? 0 : -1}
+            onClick={() => onChange(r)}
+            onKeyDown={(e) => {
+              if (e.key === "ArrowRight" || e.key === "ArrowDown") {
+                e.preventDefault()
+                move(activeIndex + 1)
+              } else if (e.key === "ArrowLeft" || e.key === "ArrowUp") {
+                e.preventDefault()
+                move(activeIndex - 1)
+              } else if (e.key === "Home") {
+                e.preventDefault()
+                move(0)
+              } else if (e.key === "End") {
+                e.preventDefault()
+                move(DEMO_RATES.length - 1)
+              }
+            }}
+            className={cn(
+              // The pseudo element is the touch target: 44px tall, centred on
+              // the chip, invisible, and it does not change the row's height.
+              "relative min-w-[44px] cursor-pointer rounded-full px-2.5 py-1 text-[13px] font-bold tabular-nums transition-colors duration-200",
+              "after:absolute after:inset-x-0 after:top-1/2 after:h-11 after:-translate-y-1/2 after:content-['']",
+              "focus-visible:ring-court-600 outline-none focus-visible:ring-2 focus-visible:ring-offset-1",
+              "motion-reduce:transition-none",
+              active ? "bg-gold-400 text-[#0b1628] shadow-sm" : "text-ink-500 hover:text-ink-800",
+              disabled && "cursor-default"
+            )}
+          >
+            {r}x
+          </button>
+        )
+      })}
     </div>
   )
 }

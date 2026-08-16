@@ -52,6 +52,51 @@ export interface DemoBeat {
   set?: Record<string, unknown>
   /** Confirmation toast that drops over the stage for this beat. */
   toast?: string
+
+  /* ── Pacing and emphasis (owner ruling 2026-08-16) ─────────────────────
+   * "Demos move too fast and viewers miss the detail." Three fields answer
+   * that, and every script may use them. The caption bar under the stage
+   * still narrates the beat; these are the LOCAL layer, at the point of
+   * action.
+   */
+
+  /**
+   * A balloon anchored to the beat's target, saying why this step matters.
+   *
+   * It appears when the cursor ARRIVES (with the press, not during the
+   * glide), holds for the rest of the beat and leaves with it. It is anchored
+   * to the measured target rect, flips below / above / beside by whichever
+   * space is free, never covers the target and never leaves the stage panel.
+   *
+   * Anchor resolution, in order: `cursor`, then a string `emphasize`, then
+   * `hover`. A beat with none of those has nothing to point at, so the
+   * callout is skipped rather than parked in a corner.
+   *
+   * One sentence, present tense, no em-dashes. Say why, not what: the screen
+   * already shows what.
+   */
+  callout?: string
+  /**
+   * Rings the beat's key element with a gold glow that pulses twice and then
+   * settles. `true` rings the cursor target; a string rings that
+   * `data-demo-target` instead, which is how a beat with no cursor (a screen
+   * that changes on its own) still points at the thing that changed.
+   *
+   * Setting it also buys the beat EMPHASIS_HOLD_MS more dwell, so the viewer
+   * gets the extra seconds the owner asked for without every script
+   * re-timing itself.
+   */
+  emphasize?: boolean | string
+  /**
+   * Extra dwell in milliseconds, ADDED to `hold`.
+   *
+   * Defaults to EMPHASIS_HOLD_MS (1200) when `emphasize` is set and 0
+   * otherwise; setting it overrides that default, so `holdMs: 0` on an
+   * emphasized beat keeps the original timing and `holdMs: 2000` on a plain
+   * beat buys dwell without a ring. The progress bar and the chapter markers
+   * both read the same total, so chapter jumps stay exact.
+   */
+  holdMs?: number
 }
 
 export interface DemoRenderContext {

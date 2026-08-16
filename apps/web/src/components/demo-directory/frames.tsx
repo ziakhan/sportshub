@@ -274,6 +274,7 @@ export function SplitStage({
       <div ref={outerRef} className="w-full">
         <div
           ref={stageRef}
+          data-demo-stage="true"
           className="relative mx-auto overflow-hidden"
           style={
             scale
@@ -303,7 +304,7 @@ export function SplitStage({
   if (stacked) {
     return (
       <div ref={outerRef} className="w-full">
-        <div ref={stageRef} className="relative">
+        <div ref={stageRef} data-demo-stage="true" className="relative">
           <ScaledBox width={width} logicalW={DESKTOP_W} logicalH={DESKTOP_H}>
             {desktopNode}
           </ScaledBox>
@@ -331,6 +332,7 @@ export function SplitStage({
     <div ref={outerRef} className="w-full">
       <div
         ref={stageRef}
+        data-demo-stage="true"
         className="relative mx-auto overflow-hidden"
         // Before the first measure the box still reserves its shape, so the
         // stage never jumps into place on load.
