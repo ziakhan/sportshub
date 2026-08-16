@@ -48,3 +48,7 @@ here was fixed in the demo job: this is the product's list.
   message me." in the Lords Grade 9 team chat (seed-nph-demo). Sweep seed strings next reseed.
 - **Seeded event time litter**: "NPH Summer Media Day" sits at 2:54 to 6:54 AM on the family
   calendar. Reseed with a sane time.
+- **Census city normalization**: the tenant `city` column carries litter that the
+  directory chips had to guard against: "Ontario" as a city, "Toronto ON",
+  "Markham ON". Normalize at import (strip trailing province codes, reject
+  province names as cities) and backfill the existing rows. (`scripts/import-clubs.ts`)
