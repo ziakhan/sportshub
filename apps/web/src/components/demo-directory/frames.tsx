@@ -911,14 +911,20 @@ function ScenePhoneFrame({
   short?: boolean
 }) {
   const frameH = short ? SCENE_PHONES_BOX_H - SCENE_PHONES_LABEL_H : SCENE_BOX_H
-  const screenH = frameH - SCENE_PHONE_BEZEL * 2
+  /* Open bottom (owner 2026-08-17): the stage is shorter than a real handset,
+     and the old closed bezel + home bar made the phone read as a squat wrong
+     shape. Now the bezel and the screen run past the stage edge and get
+     cropped by it, the same crop-by-an-edge language the court backdrops use.
+     Width, corner radius and text size never change; the screen fills the
+     frame all the way to the cut. */
+  const screenH = frameH - SCENE_PHONE_BEZEL
   return (
     <div
-      className="rounded-[46px] bg-[#0b0b0f] p-[12px] shadow-[0_30px_70px_-34px_rgba(15,23,42,0.7)]"
+      className="rounded-t-[46px] bg-[#0b0b0f] p-[12px] pb-0 shadow-[0_30px_70px_-34px_rgba(15,23,42,0.7)]"
       style={{ width: SCENE_PHONE_FRAME_W, height: frameH }}
     >
       <div
-        className="relative flex flex-col overflow-hidden rounded-[34px] bg-white"
+        className="relative flex flex-col overflow-hidden rounded-t-[34px] bg-white"
         style={{ width: SCENE_PHONE_W, height: screenH }}
       >
         <div className="text-ink-900 relative z-20 flex shrink-0 items-center justify-between px-6 pb-1 pt-3 text-[14px] font-semibold">
@@ -947,9 +953,6 @@ function ScenePhoneFrame({
           </span>
         </div>
         <div className="relative min-h-0 flex-1 overflow-hidden">{children}</div>
-        <div className="pointer-events-none absolute inset-x-0 bottom-1.5 z-20 flex justify-center">
-          <div className="bg-ink-900/70 h-[4px] w-[110px] rounded-full" />
-        </div>
       </div>
     </div>
   )
