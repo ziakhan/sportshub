@@ -1,11 +1,15 @@
 /**
  * The demo directory registry (owner-approved structure, 2026-08-15).
  *
- * Ten demos: four cross-role STORIES that hand off between a desktop workspace
- * and a family phone on one split stage, and six solo CHAPTERS that stay on one
- * surface. A story is listed under every audience it serves, because the point
- * of a story is that the club side and the parent side are the same event seen
- * from two ends.
+ * Two kinds of demo: cross-role STORIES that hand off between a desktop
+ * workspace and a family phone on one split stage, and solo CHAPTERS that stay
+ * on one surface. A story is listed under every audience it serves, because the
+ * point of a story is that the club side and the parent side are the same event
+ * seen from two ends.
+ *
+ * Nothing outside this file counts the demos: the gallery's headline and its
+ * empty-state button both read `DEMOS.length`, so adding an entry here is the
+ * whole job.
  *
  * This file is the single source of truth for the directory: cards, filters,
  * detail pages and the "what is coming" copy all read it. Adding a demo means
@@ -169,7 +173,7 @@ export const DEMOS: DemoEntry[] = [
     audiences: ["leagues", "clubs"],
     kind: "story",
     stage: "split",
-    durationLabel: "3 min 31 sec",
+    durationLabel: "3 min 32 sec",
     status: "live",
     chapterCount: 5,
     bullets: [
@@ -221,7 +225,7 @@ export const DEMOS: DemoEntry[] = [
     audiences: ["leagues", "clubs", "parents"],
     kind: "story",
     stage: "split",
-    durationLabel: "2 min 56 sec",
+    durationLabel: "2 min 57 sec",
     status: "live",
     featured: true,
     chapterCount: 5,

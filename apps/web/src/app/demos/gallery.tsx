@@ -46,6 +46,36 @@ const FILTERS = [
   { value: "leagues", label: "Leagues" },
 ]
 
+/**
+ * How many walkthroughs there are, in words, counted from the registry rather
+ * than typed. The header said "Ten" for three demos longer than it was true.
+ */
+const COUNT_WORDS = [
+  "no",
+  "one",
+  "two",
+  "three",
+  "four",
+  "five",
+  "six",
+  "seven",
+  "eight",
+  "nine",
+  "ten",
+  "eleven",
+  "twelve",
+  "thirteen",
+  "fourteen",
+  "fifteen",
+  "sixteen",
+  "seventeen",
+  "eighteen",
+  "nineteen",
+  "twenty",
+]
+const countWord = (n: number): string => COUNT_WORDS[n] ?? String(n)
+const sentenceCase = (s: string): string => s.charAt(0).toUpperCase() + s.slice(1)
+
 /** "1 min 35 sec" → "1:35", for the scrubber and eyebrow. */
 function shortDuration(label: string): string {
   const m = /(\d+)\s*min(?:\s*(\d+)\s*sec)?/.exec(label)
@@ -114,8 +144,8 @@ export function DemoGallery() {
                 Product demos
               </h1>
               <p className="mt-2.5 max-w-xl text-[16px] leading-relaxed text-white/70">
-                Ten short walkthroughs of the real screens. Nothing to install, nothing
-                to sign up for.
+                {sentenceCase(countWord(DEMOS.length))} short walkthroughs of the real
+                screens. Nothing to install, nothing to sign up for.
               </p>
             </div>
 
@@ -156,7 +186,7 @@ export function DemoGallery() {
                 }}
                 className="mt-6 inline-flex items-center rounded-xl bg-gold-400 px-5 py-3 text-sm font-bold text-[#0b1628] outline-none transition-transform duration-200 hover:-translate-y-0.5 focus-visible:ring-2 focus-visible:ring-white/70 motion-reduce:transform-none"
               >
-                Show all ten
+                Show all {countWord(DEMOS.length)}
               </button>
             </div>
           ) : (

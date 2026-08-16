@@ -357,25 +357,29 @@ export const seasonStory: DemoScript = {
       callout: "Three entries are waiting on a decision. Everything else is answered.",
       set: { filter: "Pending (3)" },
     }),
+    /* PRESS, THEN RESULT (2026-08-16). State is applied at the TOP of a beat,
+       so a beat that both presses a control and sets the state removing that
+       control sends the hand to something already gone, and a phone keyhole
+       pans to nothing. Every press in this story therefore leaves its own
+       state change, and the toast that confirms it, to the beat after it. That
+       is also the order the viewer reads: press, then result. */
     paced({
       id: "open-team",
       chapter: "entries",
       caption: "Royal Crown has entered a Grade 10 team.",
-      context: CTX_TEAM,
       cursor: "team-royal",
       press: true,
       callout: "One team, one decision. The league approves each team on its own.",
-      set: { screen: "team" },
     }),
     paced({
       id: "approve",
       chapter: "entries",
       caption: "The league approves it.",
+      context: CTX_TEAM,
       cursor: "approve",
       press: true,
-      toast: "Royal Crown approved · Grade 10 Boys, Division B",
       callout: "Approving is when the team is really in, and when it owes money.",
-      set: { approved: true },
+      set: { screen: "team" },
     }),
     /* DEFECT 1, ANSWERED. Approving calls ensureObligation once, for the whole
        fee, dated by the league's balance rule. One line, and it is the line
@@ -386,8 +390,9 @@ export const seasonStory: DemoScript = {
       chapter: "entries",
       caption: `The entry fee appears: ${FEE}, balance due ${FEE_DUE}.`,
       emphasize: "fee-panel",
+      toast: "Royal Crown approved · Grade 10 Boys, Division B",
       callout: `The ${FEE} obligation is raised by the approval itself. Nobody types an invoice.`,
-      set: { fee: true },
+      set: { approved: true, fee: true },
     }),
     paced({
       id: "promise",
@@ -616,7 +621,9 @@ export const seasonStory: DemoScript = {
       context: CTX_PLAN,
       emphasize: "board-nov21",
       callout: "One grade, one address. A family drives to a gym, not to two.",
-      set: { screen: "board", court6: true },
+      /* `ask` is still on from chapter 2, and the ask sheet replaces the
+         weekend grid this beat is ringing. Put the board back. */
+      set: { screen: "board", court6: true, ask: false },
     }),
 
     /* ── 4. Two requests ──────────────────────────────────────────────── */
@@ -665,8 +672,11 @@ export const seasonStory: DemoScript = {
       id: "approve-req",
       chapter: "requests",
       caption: "The league approves it.",
-      cursor: "approve-req",
-      press: true,
+      /* The press cannot be shown here: approving replaces the Approve button
+         with the honored line, and the next beat leaves this screen, so a
+         deferred state change would never be seen. The beat rings the answer
+         instead, which is what the caption is about. */
+      emphasize: "req-dragons-note",
       toast: "Request approved · Dragons de Gatineau",
       callout: "Now the answer is a decision with arithmetic behind it, not a favour.",
       set: { reqApproved: true },
@@ -689,15 +699,15 @@ export const seasonStory: DemoScript = {
       caption: "730 games, saved as a draft.",
       cursor: "confirm-commit",
       press: true,
-      toast: "Saved as a draft · 730 games",
-      set: { dialog: "", committed: true },
     }),
     paced({
       id: "draft",
       chapter: "publish",
       caption: "Draft. Visible only to the league, and regenerable as often as it likes.",
       emphasize: "draft-banner",
+      toast: "Saved as a draft · 730 games",
       callout: "A draft can be rebuilt as often as the league wants.",
+      set: { dialog: "", committed: true },
     }),
     paced({
       id: "phone-in",
@@ -722,15 +732,15 @@ export const seasonStory: DemoScript = {
       caption: "730 games go live.",
       cursor: "confirm-publish",
       press: true,
-      toast: "Schedule published · 730 games are live",
-      set: { dialog: "", published: true, notice: true },
     }),
     paced({
       id: "notice",
       chapter: "publish",
       caption: "Every club and family gets one notice, not 730.",
       emphasize: "phone-notice",
+      toast: "Schedule published · 730 games are live",
       callout: "One notice each, pointing at their own team. Not one per game.",
+      set: { dialog: "", published: true, notice: true },
     }),
     paced({
       id: "cal",

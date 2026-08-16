@@ -202,11 +202,18 @@ differences).
 | 2 | Assist #18 | 0-2 | `#37 Darius R. scores 2, assisted by #18 Isaiah C.` |
 | 3 | #37 misses a three | 0-2 | `#37 Darius R. misses a 3-pointer` |
 | 4 | Offensive board #28 | 0-2 | `... · offensive rebound #28 Ibrahim W.` |
-| 5 | Foul on #33 | 0-2 | `Foul on #33 Felix R.` (red on the phone) |
+| 5 | Foul on #32 | 0-2 | `Foul on #32 Liam S.` (red on the phone) |
 | 6 | Sub: #21 in, #34 out | 0-2 | `Sub: #21 in, #34 out` (amber) |
 | 7 | #11 Jayden Anderson, two | 2-2 | `#11 Jayden A. scores 2` |
 | 8 | #37 credited a THREE, wrongly | 2-5 | `#37 Darius R. scores 3` |
 | 8 | UNDO voids it | **2-2** | the line and the three points both go |
+
+Event 5 fouls **#32 Liam Silva**, not #33 Felix Robinson (2026-08-16). The table
+records a foul by tapping the player's chip, and the chip row only holds the five
+on the floor: #33 starts on the bench and does not come on until Q2, so the beat
+was pointing the hand at a jersey that was never rendered. #32 is a starter, and
+an early foul is also why he comes off for Felix in Q2. Team fouls are unchanged;
+the one point of difference in the box score is the PF column for those two rows.
 
 ### The final numbers
 
@@ -245,8 +252,8 @@ which is the live page's own rule.
 | 11 | Jayden Anderson | 15 | 5 | 2 | 3 |
 | 16 | Kai Green | 10 | 1 | 1 | 1 |
 | 34 | Kevin Wilson | 7 | 5 | 0 | 3 |
-| 32 | Liam Silva | 0 | 5 | 0 | 0 |
-| 33 | Felix Robinson | 0 | 2 | 0 | 1 |
+| 32 | Liam Silva | 0 | 5 | 0 | 1 |
+| 33 | Felix Robinson | 0 | 2 | 0 | 0 |
 | | **TOTAL** | **48** | 21 | 3 | 9 |
 
 Box totals equal the score on both sides: 48 and 54, checked in the fold.

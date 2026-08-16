@@ -180,7 +180,12 @@ a("S2", 37, 1) //                         1  Darius, two
 a("AST", 18, 1) //                        2  assisted by Isaiah C.
 a("M3", 37, 1) //                         3  the miss
 a("REB", 28, 1, true) //                  4  offensive board
-h("FOUL", 33, 1) //                       5  the foul, red on the phone
+/* The foul the camera watches has to be on a player the table can TAP, which
+   means one of the five on the floor. #33 Felix Robinson starts on the bench
+   and only comes on in Q2, so his chip does not exist yet: the beat pointed at
+   a jersey that was never rendered. #32 Liam Silva is a starter, and picking up
+   an early foul is also why he comes off for Felix in Q2. */
+h("FOUL", 32, 1) //                       5  the foul, red on the phone
 sub("away", 21, 34, 1) //                 6  the substitution, amber
 h("S2", 11, 1) //                         7  Panthers answer
 a("S3", 37, 1) //                         8  THE WRONG ENTRY, voided by UNDO
@@ -705,13 +710,17 @@ export const gameDayStory: DemoScript = {
       callout: "An unoperated clock counts minutes wrongly, so the table says up front whether it has one.",
       set: { clockChoice: true },
     }),
+    /* PRESS, THEN RESULT (2026-08-16). State is applied at the TOP of a beat, so
+       a beat that presses a control AND sets the state that removes it sends the
+       hand to something already gone, and a phone keyhole pans to nothing. Every
+       press that changes screens in this story therefore leaves its own state
+       change, and the toast confirming it, to the beat after it. */
     paced({
       id: "checklist-go",
       chapter: "tipoff",
       caption: "Attendance first, then the five who start.",
       cursor: "checklist-go",
       press: true,
-      set: { screen: "attendance" },
     }),
     paced({
       id: "roll-call",
@@ -720,6 +729,7 @@ export const gameDayStory: DemoScript = {
       emphasize: "roll-call",
       callout:
         "Everyone starts present. The table taps whoever did not make it, at the door, in about ten seconds.",
+      set: { screen: "attendance" },
     }),
     paced({
       id: "absent",
@@ -737,7 +747,6 @@ export const gameDayStory: DemoScript = {
       caption: "Nine here, one out.",
       cursor: "to-lineups",
       press: true,
-      set: { screen: "lineup" },
     }),
     paced({
       id: "starters",
@@ -746,6 +755,7 @@ export const gameDayStory: DemoScript = {
       emphasize: "start-away-37",
       callout:
         "The starting five is what makes minutes and who was on the floor mean something in the box score later.",
+      set: { screen: "lineup" },
     }),
     paced({
       id: "start-game",
@@ -753,8 +763,6 @@ export const gameDayStory: DemoScript = {
       caption: "One press opens the game, and the clock starts.",
       cursor: "start-game",
       press: true,
-      toast: "Q1 under way",
-      set: { screen: "console", evts: AT.tip, clockBase: 600, running: true },
     }),
 
     /* ── 2. Two taps a play ───────────────────────────────────────────── */
@@ -766,7 +774,8 @@ export const gameDayStory: DemoScript = {
       emphasize: "live-state",
       callout:
         "Darius's father is at work. Same game, same clock, in his hand, with nothing to install.",
-      set: { phone: "game" },
+      toast: "Q1 under way",
+      set: { phone: "game", screen: "console", evts: AT.tip, clockBase: 600, running: true },
     }),
     paced({
       id: "arm-two",
@@ -839,7 +848,7 @@ export const gameDayStory: DemoScript = {
       id: "foul",
       chapter: "scoring",
       caption: "Fouls are counted at both ends, and the phone turns that one red.",
-      cursor: "floor-home-33",
+      cursor: "floor-home-32",
       press: true,
       callout: "Green means points, red means a foul. He never has to read a word to know what happened.",
       set: { evts: AT.foul, act: "" },
@@ -874,7 +883,6 @@ export const gameDayStory: DemoScript = {
       caption: "Both halves of the swap go on together.",
       cursor: "sub-apply",
       press: true,
-      set: { evts: AT.substitution, sheet: false, staged: false },
     }),
     paced({
       id: "sub-done",
@@ -882,6 +890,7 @@ export const gameDayStory: DemoScript = {
       caption: "Zion Nguyen is on, and the floor follows in amber.",
       emphasize: "floor-away-21",
       callout: "Amber is everything else the table does, so a swap never reads as a score.",
+      set: { evts: AT.substitution, sheet: false, staged: false },
     }),
     paced({
       id: "arm-panthers",
@@ -1022,8 +1031,11 @@ export const gameDayStory: DemoScript = {
       id: "buzzer",
       chapter: "buzzer",
       caption: "The buzzer. Both screens stop on the same zero.",
-      cursor: "end-period",
-      press: true,
+      /* No hand here. The caption is the clock reaching zero, and the period
+         closing is what turns End Q4 into End game, so a press on End Q4 would
+         be a press on a control this beat's own state removes. Ring the clock,
+         which is the thing the sentence is about. */
+      emphasize: "console-clock",
       toast: "Q4 ended",
       set: { clockBase: 0, running: false, evts: AT.buzzer },
     }),
@@ -1033,7 +1045,6 @@ export const gameDayStory: DemoScript = {
       caption: "Nothing is official yet. The table reads the sheet back first.",
       cursor: "end-game",
       press: true,
-      set: { screen: "review" },
     }),
     paced({
       id: "potg-pick",
@@ -1041,6 +1052,7 @@ export const gameDayStory: DemoScript = {
       caption: "Player of the game comes off the sheet, with the top scorer already suggested.",
       emphasize: "approval-sign",
       callout: "Nobody has to remember who had the good night. The sheet already knows.",
+      set: { screen: "review" },
     }),
     paced({
       id: "sign",

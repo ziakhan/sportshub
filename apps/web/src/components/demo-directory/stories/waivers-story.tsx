@@ -329,9 +329,12 @@ export const waiversStory: DemoScript = {
       id: "open",
       chapter: "sign",
       caption: "One tap.",
+      /* PRESS, THEN RESULT (2026-08-16). State lands at the TOP of a beat, so
+         opening the link here would delete the button the hand is still
+         travelling to, and a phone keyhole would pan to nothing. The tap is
+         this beat; the page it opens is the next one. */
       cursor: "mail-cta",
       press: true,
-      set: { phone: "doc" },
       callout: "No app to install and no account to make. The link in the email is the key.",
     }),
     paced({
@@ -339,6 +342,7 @@ export const waiversStory: DemoScript = {
       chapter: "sign",
       caption: "The document is the document.",
       emphasize: "doc-body",
+      set: { phone: "doc" },
       /* The renewal is carried on this beat rather than its own: the header
          line "For Danielle Reyes · renews yearly" sits directly above the ring,
          so the viewer reads both without buying a second beat for it. */
