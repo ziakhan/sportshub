@@ -510,7 +510,14 @@ function placeCallout(rect: TargetRect, size: { w: number; h: number }): Callout
  *  reads as the card's own corner rather than a separate dot. */
 function arrowStyle(place: CalloutPlacement): CSSProperties {
   const half = ARROW / 2 + 0.5
-  const base: CSSProperties = {
+  /* All four widths are always written as LONGHANDS, never as `borderWidth: 0`
+     plus a side. A balloon that flips between beats (below on one, right on
+     the next) re-renders this same node, and React warns, loudly and in the
+     console, when it has to remove a longhand while the shorthand is also
+     set: "don't mix shorthand and non-shorthand properties for the same
+     value". Four explicit numbers cost nothing and keep the playback console
+     clean, which is a release gate for the demo directory. */
+  const sides = (top: number, right: number, bottom: number, left: number): CSSProperties => ({
     position: "absolute",
     width: ARROW,
     height: ARROW,
@@ -518,27 +525,18 @@ function arrowStyle(place: CalloutPlacement): CSSProperties {
     transform: "rotate(45deg)",
     borderStyle: "solid",
     borderColor: INK_100,
-    borderWidth: 0,
-  }
+    borderTopWidth: top,
+    borderRightWidth: right,
+    borderBottomWidth: bottom,
+    borderLeftWidth: left,
+  })
   if (place.side === "below")
-    return { ...base, top: -half, left: place.arrow - ARROW / 2, borderTopWidth: 1, borderLeftWidth: 1 }
+    return { ...sides(1, 0, 0, 1), top: -half, left: place.arrow - ARROW / 2 }
   if (place.side === "above")
-    return {
-      ...base,
-      bottom: -half,
-      left: place.arrow - ARROW / 2,
-      borderBottomWidth: 1,
-      borderRightWidth: 1,
-    }
+    return { ...sides(0, 1, 1, 0), bottom: -half, left: place.arrow - ARROW / 2 }
   if (place.side === "right")
-    return {
-      ...base,
-      left: -half,
-      top: place.arrow - ARROW / 2,
-      borderLeftWidth: 1,
-      borderBottomWidth: 1,
-    }
-  return { ...base, right: -half, top: place.arrow - ARROW / 2, borderTopWidth: 1, borderRightWidth: 1 }
+    return { ...sides(0, 0, 1, 1), left: -half, top: place.arrow - ARROW / 2 }
+  return { ...sides(1, 1, 0, 0), right: -half, top: place.arrow - ARROW / 2 }
 }
 
 /**
