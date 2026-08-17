@@ -879,13 +879,14 @@ const SCREEN_SLIDES: {
 }[] = [
   {
     key: "discover",
+    pinBottom: "/home-preview/tours/tabbar-public.jpg",
     tour: [{ src: "/home-preview/tours/discover.jpg", travel: 1500 }],
     title: (
       <>
         Discover the <span className="text-gold-400">clubs and programs</span> around you.
       </>
     ),
-    caption: "Province by province, with the Greater Toronto area one tap away.",
+    caption: "Tryouts, camps, house leagues and training, near you.",
     src: "/home-preview/shots/discover-clubs-phone.png",
     alt: "The club directory on a phone: province chips with counts, a Greater Toronto row of cities, and club cards below",
     frame: "phone",
@@ -928,6 +929,7 @@ const SCREEN_SLIDES: {
       { src: "/home-preview/tours/chat-1.jpg", travel: 0 },
       { src: "/home-preview/tours/chat-2.jpg", travel: 0 },
       { src: "/home-preview/tours/chat-3.jpg", travel: 0 },
+      { src: "/home-preview/tours/chat-4.jpg", travel: 0 },
     ],
     title: (
       <>
@@ -941,10 +943,11 @@ const SCREEN_SLIDES: {
   },
   {
     key: "game",
+    pinBottom: "/home-preview/tours/tabbar-public.jpg",
     tour: [
-      { src: "/home-preview/tours/game-1-live.jpg", returnTo: 545 },
-      { src: "/home-preview/tours/game-2-stats.jpg", start: 545, travel: 820 },
-      { src: "/home-preview/tours/game-3-pbp.jpg", start: 545, travel: 820 },
+      { src: "/home-preview/tours/game-1-live.jpg", returnTo: 440 },
+      { src: "/home-preview/tours/game-2-stats.jpg", start: 440, travel: 820 },
+      { src: "/home-preview/tours/game-3-pbp.jpg", start: 440, travel: 820 },
     ],
     title: (
       <>
@@ -958,6 +961,7 @@ const SCREEN_SLIDES: {
   },
   {
     key: "recap",
+    pinBottom: "/home-preview/tours/tabbar-public.jpg",
     tour: [{ src: "/home-preview/tours/recap.jpg", travel: 1400 }],
     title: (
       <>
@@ -985,6 +989,7 @@ const SCREEN_SLIDES: {
   },
   {
     key: "player",
+    pinBottom: "/home-preview/tours/tabbar-public.jpg",
     tour: [{ src: "/home-preview/tours/player.jpg" }],
     title: (
       <>
@@ -1105,7 +1110,7 @@ function GuidedShot({
   }, [active, segments])
 
   return (
-    <div ref={frameRef} className="relative h-[610px] w-full overflow-hidden rounded-[1.9rem] bg-white">
+    <div ref={frameRef} className="relative aspect-[390/844] w-full overflow-hidden rounded-[1.9rem] bg-white">
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         ref={imgRef}
@@ -1230,7 +1235,7 @@ function Screenshots() {
                   <div className="mt-5 flex w-full flex-1 items-center justify-center">
                     <SlideImage slide={slide} active={i === active} />
                   </div>
-                  <p className="mt-4 max-w-md text-center text-[15px] leading-relaxed text-white/70">
+                  <p className="mt-4 max-w-lg text-center text-[18px] font-semibold leading-relaxed text-white/90">
                     {slide.caption}
                   </p>
                 </div>
@@ -1456,6 +1461,8 @@ export function HomePreview() {
         @media (prefers-reduced-motion: reduce) {
           .hp-rise { animation: none; }
         }
+        html { scroll-snap-type: y proximity; }
+        main > * { scroll-snap-align: start; }
       `}</style>
       <Hero />
       <Screenshots />

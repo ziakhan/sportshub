@@ -20,7 +20,8 @@ const SHOTS = [
   { name: "game-1-live", url: LIVE_GAME },
   { name: "game-2-stats", url: LIVE_GAME, tapText: "Team stats" },
   { name: "game-3-pbp", url: LIVE_GAME, tapText: "Play-by-play" },
-  { name: "discover", url: "/club" },
+  { name: "discover", url: "/events" },
+  { name: "tabbar-public", url: "/club", barClip: true, barName: "tabbar-public" },
   // The phone's bottom tab bar is captured ONCE (from the live viewport) and
   // pinned by the slide player; it is hidden in the tall captures so it can
   // never scroll away (owner bug report 2026-08-17).
@@ -34,6 +35,7 @@ const SHOTS = [
   { name: "chat-1", url: "/messages", auth: true, followHref: CHAT_HREF, viewport: true },
   { name: "chat-2", url: "/messages", auth: true, followHref: CHAT_HREF, viewport: true, fill: "See everyone Saturday at 2!" },
   { name: "chat-3", url: "/messages", auth: true, followHref: CHAT_HREF, viewport: true, fill: "See everyone Saturday at 2!", send: true },
+  { name: "chat-4", url: "/messages", auth: true, followHref: CHAT_HREF, viewport: true, tapText: "We're in" },
   { name: "recap", url: "/news/toronto-lords-grade-10-girls-vs-burlington-force-grade-10-gi-20260815-4d49de76" },
   { name: "feed", url: "/feed", auth: true, hideTabbar: true },
   { name: "player", url: "/player/8c298c76-8d17-4f78-81d3-37e73f5695b5" },
@@ -115,12 +117,12 @@ for (const shot of SHOTS) {
     }
     await hideChrome(page)
     if (shot.barClip) {
-      await page.screenshot({ path: path.join(OUT, "tabbar.jpg"), type: "jpeg", quality: 82, clip: { x: 0, y: 756, width: 390, height: 88 } })
-      console.log("tabbar: captured")
+      await page.screenshot({ path: path.join(OUT, `${shot.barName ?? "tabbar"}.jpg`), type: "jpeg", quality: 82, clip: { x: 0, y: 756, width: 390, height: 88 } })
+      console.log(`${shot.barName ?? "tabbar"}: captured`)
       await ctx.close()
       continue
     }
-    if (shot.hideTabbar) await hideBottomBar(page)
+    if (!shot.viewport && !shot.barClip) await hideBottomBar(page)
     await page.screenshot({
       path: path.join(OUT, `${shot.name}.jpg`),
       fullPage: !shot.viewport,
