@@ -1257,11 +1257,11 @@ function TypedChat({ active }: { active: boolean }) {
       />
       {phase === "tapping" && (
         <span
-          className="hp-tap absolute left-[30%] top-[51%] z-20 h-9 w-9 rounded-full bg-gold-400/70 ring-2 ring-gold-400"
+          className="hp-tap absolute left-[22%] top-[64%] z-20 h-9 w-9 rounded-full bg-gold-400/70 ring-2 ring-gold-400"
           aria-hidden="true"
         />
       )}
-      {phase !== "final" && (
+      {(phase === "idle" || phase === "tapping" || phase === "voted" || phase === "typing" || phase === "sent") && (
         <>
           <div className="absolute inset-x-0 bottom-[9%] flex h-[8%] items-center gap-2 bg-white px-3">
             <div className="flex h-[76%] min-w-0 flex-1 items-center rounded-full border border-ink-200 bg-white px-3">
@@ -1282,7 +1282,7 @@ function TypedChat({ active }: { active: boolean }) {
             </span>
           </div>
           {phase === "sent" && (
-            <div className="hp-glide absolute bottom-[19%] right-[4%] max-w-[75%] rounded-2xl rounded-br-md bg-play-600 px-3 py-2 shadow-md">
+            <div className="hp-glide absolute bottom-[17.5%] right-[3%] max-w-[75%] rounded-2xl rounded-br-md bg-play-600 px-3 py-2 shadow-md">
               <p className="text-[13px] leading-snug text-white">{MSG}</p>
               <p className="mt-0.5 text-right text-[10px] text-white/70">now</p>
             </div>
@@ -1640,7 +1640,6 @@ const PREVIEW_CSS = `
         @media (prefers-reduced-motion: reduce) {
           .hp-rise { animation: none; }
         }
-        html { scroll-snap-type: y proximity; scroll-behavior: smooth; }
         .hp-xfade { animation: hp-xfade 380ms ease-out both; }
         .hp-caret { animation: hp-caret 900ms steps(2) infinite; }
         @keyframes hp-caret { 50% { opacity: 0; } }
@@ -1649,7 +1648,6 @@ const PREVIEW_CSS = `
         @keyframes hp-tap { 0% { transform: scale(0.4); opacity: 0; } 30% { transform: scale(1); opacity: 1; } 100% { transform: scale(1.5); opacity: 0; } }
         @keyframes hp-bubble { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes hp-xfade { from { opacity: 0; } to { opacity: 1; } }
-        main > * { scroll-snap-align: start; }
       `
 
 function SnapGlide() {
@@ -1668,7 +1666,7 @@ function SnapGlide() {
       const from = window.scrollY
       const dist = target - from
       if (Math.abs(dist) < 8) return
-      const ms = Math.min(1400, 500 + Math.abs(dist) * 1.6)
+      const ms = Math.min(2200, 900 + Math.abs(dist) * 2.4)
       const t0 = performance.now()
       animating = true
       const step = (t: number) => {
@@ -1683,7 +1681,7 @@ function SnapGlide() {
     }
     const settle = () => {
       const vh = window.innerHeight
-      const sections = Array.from(document.querySelectorAll("main > *"))
+      const sections = Array.from(document.querySelectorAll("main > *")).filter((el) => (el as HTMLElement).offsetHeight > 120)
       let best: { top: number; d: number } | null = null
       for (const el of sections) {
         const top = (el as HTMLElement).getBoundingClientRect().top
@@ -1701,15 +1699,20 @@ function SnapGlide() {
       cancel()
       window.clearTimeout(timer)
     }
+    const onWheel = (e: WheelEvent) => {
+      // Trackpad momentum keeps firing tiny deltas after release; only a
+      // deliberate move interrupts the glide.
+      if (Math.abs(e.deltaY) > 14) onUser()
+    }
     window.addEventListener("scroll", onScroll, { passive: true })
-    window.addEventListener("wheel", onUser, { passive: true })
+    window.addEventListener("wheel", onWheel, { passive: true })
     window.addEventListener("touchstart", onUser, { passive: true })
     window.addEventListener("keydown", onUser)
     return () => {
       cancel()
       window.clearTimeout(timer)
       window.removeEventListener("scroll", onScroll)
-      window.removeEventListener("wheel", onUser)
+      window.removeEventListener("wheel", onWheel)
       window.removeEventListener("touchstart", onUser)
       window.removeEventListener("keydown", onUser)
     }
