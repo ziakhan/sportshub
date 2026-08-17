@@ -75,7 +75,7 @@ export function DemoStage({ demo }: { demo: DemoEntry }) {
       // progress), so it sits on a lit panel rather than straight on navy.
       // The panel is padded thinly on purpose: with the rail gone this box is
       // what the stage measures, and its padding comes straight off the scale.
-      <div className="rounded-2xl border border-white/12 bg-[#f8f9fb] p-2.5 shadow-[0_50px_130px_-60px_rgba(0,0,0,0.95)] sm:rounded-3xl sm:p-3.5">
+      <div className="rounded-xl border border-white/12 bg-[#f8f9fb] p-1.5 shadow-[0_50px_130px_-60px_rgba(0,0,0,0.95)] sm:rounded-2xl sm:p-2">
         <DemoPlayer
           script={entry.script}
           role={entry.role}
@@ -84,7 +84,7 @@ export function DemoStage({ demo }: { demo: DemoEntry }) {
           /* What actually sits under the stage in this view: the caption bar,
              the transport row and the panel's own bottom padding. The player's
              default reserves more, for pages that carry other things below. */
-          reserveBelow={132}
+          reserveBelow={116}
         />
       </div>
     )
@@ -129,8 +129,11 @@ function DemoIntro({
   const bullets = demo.bullets.slice(0, 3)
 
   return (
-    <div className="flex flex-1 items-center justify-center py-2">
-      <div className="relative isolate w-full max-w-[1000px] overflow-hidden rounded-3xl border border-ink-100 bg-white px-7 py-9 shadow-xl sm:px-12 sm:py-12">
+    /* A full-blown screen (owner 2026-08-17): the intro fills the stage area
+       edge to edge instead of floating as a card, and the type runs a size
+       up across the board. */
+    <div className="flex flex-1 items-stretch">
+      <div className="relative isolate flex w-full flex-col justify-center overflow-hidden rounded-2xl border border-ink-100 bg-white px-7 py-8 shadow-xl sm:px-14 sm:py-10 lg:px-20">
         {/* House motif: the amber arc, not decoration for its own sake. */}
         <span
           aria-hidden="true"
@@ -172,11 +175,11 @@ function DemoIntro({
             ))}
           </div>
 
-          <h1 className="font-display mt-4 text-[34px] font-extrabold leading-[1.06] tracking-tight text-ink-950 sm:text-[42px]">
+          <h1 className="font-display mt-4 text-[38px] font-extrabold leading-[1.06] tracking-tight text-ink-950 sm:text-[50px]">
             {demo.title}
           </h1>
 
-          <p className="mt-4 max-w-[62ch] text-[18px] font-semibold leading-relaxed text-ink-800">
+          <p className="mt-4 max-w-[68ch] text-[20px] font-semibold leading-relaxed text-ink-800">
             {demo.promise}
           </p>
 
@@ -187,7 +190,7 @@ function DemoIntro({
                   aria-hidden="true"
                   className="mt-[7px] h-2 w-2 shrink-0 rounded-full bg-gold-500"
                 />
-                <span className="max-w-[68ch] text-[16px] leading-relaxed text-ink-600">{b}</span>
+                <span className="max-w-[74ch] text-[17.5px] leading-relaxed text-ink-600">{b}</span>
               </li>
             ))}
           </ul>
@@ -197,7 +200,7 @@ function DemoIntro({
               {playable ? "Chapters" : "Planned chapters"}
             </p>
             {chapters.length === 0 ? (
-              <p className="mt-2.5 text-[16px] leading-relaxed text-ink-500">
+              <p className="mt-2.5 text-[17px] leading-relaxed text-ink-500">
                 The running order for this one is still being written.
               </p>
             ) : (
@@ -218,7 +221,7 @@ function DemoIntro({
                       >
                         {i + 1}
                       </span>
-                      <span className="text-[16px] font-semibold text-ink-800">{title}</span>
+                      <span className="text-[17px] font-semibold text-ink-800">{title}</span>
                     </span>
                   </li>
                 ))}
@@ -295,7 +298,7 @@ function IntroNotifyAsk({ slug }: { slug: string }) {
         We&apos;re launching this fall. Be the first to know:
       </p>
       <NotifyForm source={`demo:${slug}`} className="mt-3 max-w-lg" />
-      <p className="text-ink-500 mt-2 text-[13px]">
+      <p className="text-ink-500 mt-2 text-[14px]">
         Email or phone, one message when it opens. The demo plays either way.
       </p>
     </div>

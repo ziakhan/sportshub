@@ -95,10 +95,11 @@ export default function DemoPlayerPage({ params }: { params: { slug: string } })
       <main className="relative isolate min-h-0 flex-1 overflow-y-auto">
         <CourtBackdropLayer variant="daylight" intensity="ambient" />
 
-        {/* Padding is deliberately thin: the player measures this box and scales
-            the frames to fill it, so every 100px we do not spend on margin is
-            100px of readable product. */}
-        <div className="relative z-10 mx-auto flex min-h-full w-full max-w-[1900px] flex-col px-2 py-2 sm:px-4 sm:py-3 lg:px-5">
+        {/* Full bleed (owner 2026-08-17: "as big as possible"): no width cap,
+            near-zero padding. The player measures this box and scales the
+            frames to fill it, so every pixel not spent on margin is readable
+            product. */}
+        <div className="relative z-10 flex min-h-full w-full flex-col px-1 py-1 sm:px-2 sm:py-1.5">
           <DemoStage demo={demo} />
         </div>
       </main>

@@ -37,22 +37,23 @@ const SPLIT_H = Math.max(DESKTOP_H, PHONE_FRAME_H)
 const STACK_BELOW = 780
 
 /**
- * Fit to panel (owner ruling 2026-08-15: "too zoomed out").
+ * Fit to panel (owner rulings 2026-08-15 "too zoomed out", then 2026-08-17
+ * "as big as possible" — the whole binding axis, no moat).
  *
  * The stage is measured once at mount and again only on resize, then the whole
- * frame group is scaled by a single transform to fill the panel: most of
- * whichever axis binds first, so there is a margin but not a moat. Upscaling to
- * 1.15x is allowed because the frames are laid out in rem and a transform keeps
- * text crisp on a large display. The floor keeps a mid-size window readable.
+ * frame group is scaled by a single transform to fill the panel: ALL of
+ * whichever axis binds first. Upscaling far past 1x is allowed because the
+ * frames are laid out in rem and a transform keeps text crisp on a large
+ * display. The floor keeps a mid-size window readable.
  *
  * This scale NEVER changes during playback. The no-zoom law governs the
  * recording; this is layout, decided before the first beat.
  */
-const FIT_RATIO = 0.96
+const FIT_RATIO = 1
 const MIN_SCALE = 0.5
-const MAX_SCALE = 1.15
+const MAX_SCALE = 2
 /** Room kept for the caption bar and the beat stepper under the stage. */
-const DEFAULT_RESERVE_BELOW = 170
+const DEFAULT_RESERVE_BELOW = 132
 
 function fitToPanel(
   availW: number,
@@ -555,14 +556,17 @@ export function SceneStage({
   /** The second handset exists on the stage from the beat that brings it in. */
   const pairLive = Boolean(phone) && mode === "duo"
 
-  /* Never above 1: upscaling a composed region would defeat the point of
-     composing it. Never below the panel either, in both axes. */
+  /* Upscaling past 1 is ALLOWED on the wide stage (owner 2026-08-17, "as big
+     as possible": the scenes are rem-composed, a transform keeps them crisp,
+     and a big window should be filled, not bordered). Capped at 2 so an
+     ultrawide never turns the stage into a poster. Solo phones stay at life
+     size: a phone on a phone should read like a phone. */
   const scale = solo
     ? Math.min(1, panel.w / SCENE_PHONE_FRAME_W)
     : keyhole
       ? SCENE_KEYHOLE_SCALE
       : panel.w > 0
-        ? Math.min(1, fit, (panel.h || boxH) / boxH)
+        ? Math.min(2, fit, (panel.h || boxH) / boxH)
         : 0
 
   const deskW = mode === "duo" ? SCENE_DUO_W : SCENE_WIDE_W

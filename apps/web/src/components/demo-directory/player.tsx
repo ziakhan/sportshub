@@ -515,7 +515,7 @@ export function DemoPlayer({
           </div>
         </div>
       ) : (
-        <div className="mt-2 flex items-center gap-2 sm:mt-3">
+        <div className="mt-1.5 flex items-center gap-2 sm:mt-2">
           <button
             type="button"
             onClick={() => jumpTo(index - 1)}

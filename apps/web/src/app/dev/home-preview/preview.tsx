@@ -387,7 +387,7 @@ function Hero() {
         </nav>
       </header>
 
-      <div className="hp-rise mx-auto flex w-full max-w-4xl flex-col items-center px-5 pb-24 pt-20 text-center sm:pt-28">
+      <div className="hp-rise mx-auto flex w-full max-w-4xl flex-col items-center px-5 pb-14 pt-12 text-center sm:pt-16">
         <p className="flex items-center gap-3 text-2xl font-bold uppercase tracking-[0.18em] text-gold-400 sm:text-3xl">
           <span className="h-2.5 w-2.5 rounded-full bg-gold-400 motion-safe:animate-pulse" aria-hidden="true" />
           Launching this fall
@@ -511,7 +511,7 @@ function Hero() {
 
 function ReplacesStory() {
   return (
-    <section className="bg-white py-20 sm:py-24">
+    <section className="bg-white py-14 sm:py-16">
       <div className="mx-auto grid w-full max-w-6xl items-start gap-12 px-5 lg:grid-cols-2">
         <div>
           <p className="text-[13px] font-bold uppercase tracking-[0.14em] text-hoop-600">Today</p>
@@ -596,7 +596,7 @@ function CompareMark({ cell }: { cell: CompareCell }) {
 
 function CompareTable() {
   return (
-    <section className="border-y border-ink-100 bg-ink-50 py-20 sm:py-24">
+    <section className="border-y border-ink-100 bg-ink-50 py-14 sm:py-16">
       <div className="mx-auto w-full max-w-6xl px-5">
         <div className="text-center">
           <p className="text-[13px] font-bold uppercase tracking-[0.14em] text-court-700">
@@ -667,7 +667,7 @@ function CompareTable() {
 
 function EverybodyConnects() {
   return (
-    <section className="border-y border-ink-100 bg-ink-50 py-14">
+    <section className="border-y border-ink-100 bg-ink-50 py-10">
       <div className="mx-auto w-full max-w-5xl px-5 text-center">
         <div className="relative mx-auto hidden max-w-4xl items-start justify-between sm:flex">
           <div
@@ -834,7 +834,7 @@ const SCREEN_SLIDES: {
 function SlideImage({ slide }: { slide: (typeof SCREEN_SLIDES)[number] }) {
   if (slide.frame === "phone") {
     return (
-      <div className="w-full max-w-[350px] rounded-[2.4rem] bg-ink-900 p-3 shadow-2xl ring-1 ring-white/10">
+      <div className="w-full max-w-[390px] rounded-[2.4rem] bg-ink-900 p-3 shadow-2xl ring-1 ring-white/10">
         <div className="overflow-hidden rounded-[1.9rem]">
           <Image
             src={slide.src}
@@ -849,7 +849,7 @@ function SlideImage({ slide }: { slide: (typeof SCREEN_SLIDES)[number] }) {
     )
   }
   return (
-    <div className="w-full max-w-3xl overflow-hidden rounded-xl bg-ink-900 shadow-2xl ring-1 ring-white/10">
+    <div className="w-full max-w-[1040px] overflow-hidden rounded-xl bg-ink-900 shadow-2xl ring-1 ring-white/10">
       <div className="flex items-center gap-2 bg-ink-800 px-4 py-2.5">
         <span className="h-2.5 w-2.5 rounded-full bg-white/20" />
         <span className="h-2.5 w-2.5 rounded-full bg-white/20" />
@@ -875,7 +875,7 @@ function Screenshots() {
 
   return (
     <CourtBackdrop variant="navy" floor="planks" intensity="immersive">
-      <div className="mx-auto w-full max-w-6xl px-5 py-20 sm:py-24">
+      <div className="mx-auto w-full max-w-6xl px-5 py-12 sm:py-14">
         <div className="text-center">
           <p className="text-[13px] font-bold uppercase tracking-[0.14em] text-gold-400">
             Straight from the app
@@ -909,15 +909,15 @@ function Screenshots() {
                 <div
                   key={slide.key}
                   aria-hidden={i !== active}
-                  className="flex w-full shrink-0 flex-col items-center px-12 sm:px-16"
+                  className="flex w-full shrink-0 flex-col items-center px-10 sm:px-14"
                 >
                   <h3 className="text-balance text-center text-3xl font-bold leading-tight tracking-tight text-white sm:text-5xl">
                     {slide.title}
                   </h3>
-                  <div className="mt-8 flex w-full flex-1 items-center justify-center">
+                  <div className="mt-5 flex w-full flex-1 items-center justify-center">
                     <SlideImage slide={slide} />
                   </div>
-                  <p className="mt-6 max-w-md text-center text-[15px] leading-relaxed text-white/70">
+                  <p className="mt-4 max-w-md text-center text-[15px] leading-relaxed text-white/70">
                     {slide.caption}
                   </p>
                 </div>
@@ -964,7 +964,7 @@ function DemoCards() {
   )
 
   return (
-    <section className="bg-white py-20 sm:py-24">
+    <section className="bg-white py-14 sm:py-16">
       <div className="mx-auto w-full max-w-6xl px-5">
         <div className="text-center">
           <p className="text-[13px] font-bold uppercase tracking-[0.14em] text-play-600">
@@ -1032,7 +1032,7 @@ function DemoCards() {
 function ClaimYourClub() {
   return (
     <CourtBackdrop variant="daylight" floor="planks" intensity="band">
-      <section id="claim" className="mx-auto w-full max-w-6xl px-5 py-20 sm:py-24">
+      <section id="claim" className="mx-auto w-full max-w-6xl px-5 py-12 sm:py-14">
         <div className="grid items-center gap-12 lg:grid-cols-2">
           <div>
             <p className="text-[13px] font-bold uppercase tracking-[0.14em] text-hoop-600">
