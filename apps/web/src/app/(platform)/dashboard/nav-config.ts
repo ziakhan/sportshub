@@ -202,6 +202,7 @@ export function buildNavSections({
       key: "admin",
       label: "Admin",
       items: [
+        { label: "Launch", href: "/dashboard/admin/launch", icon: "play" },
         { label: "Users", href: "/dashboard/admin/users", icon: "users" },
         { label: "Clubs", href: "/dashboard/admin/clubs", icon: "club" },
         { label: "Leagues", href: "/manage/leagues", icon: "star" },

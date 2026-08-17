@@ -155,13 +155,21 @@ export async function startClaim(input: {
       admins.map((a) => a.userId),
       {
         type: "club_claim",
-        title: "Club Claim — Proof Review Needed",
+        title: "Club Claim: Proof Review Needed",
         message: `"${tenant.name}" has no contact on file; a claimer submitted proof for review.`,
         link: "/dashboard/admin/claims",
         referenceId: claim.id,
         referenceType: "ClubClaim",
       }
     )
+    {
+      const { alertOwnerClaim } = await import("@/lib/owner-alerts")
+      alertOwnerClaim({
+        clubName: tenant.name,
+        method: "PROOF",
+        claimantEmail: input.claimantEmail ?? null,
+      })
+    }
     return { ok: true, claimId: claim.id, status: "PENDING" }
   }
 
@@ -178,7 +186,7 @@ export async function startClaim(input: {
   if (input.channel === "sms" && !smsEnabled()) {
     return {
       ok: false,
-      error: "SMS verification is not available yet — use email or proof",
+      error: "SMS verification is not available yet. Use email or proof.",
       code: "SMS_DISABLED",
       status: 503,
     }
@@ -211,7 +219,7 @@ export async function startClaim(input: {
           <div style="text-align: center; margin: 24px 0;">
             <span style="font-size: 32px; font-weight: bold; letter-spacing: 4px; background: #f5f5f5; padding: 12px 24px; border-radius: 8px;">${code}</span>
           </div>
-          <p>The code expires in ${CODE_TTL_MINUTES} minutes. If you did not expect this, ignore this email — nothing happens without the code.</p>
+          <p>The code expires in ${CODE_TTL_MINUTES} minutes. If you did not expect this, ignore this email. Nothing happens without the code.</p>
         </div>
       `,
       text: `SportsHub claim code for ${tenant.name}: ${code} (expires in ${CODE_TTL_MINUTES} minutes)`,
@@ -223,8 +231,17 @@ export async function startClaim(input: {
     })
     if (!sent.ok) {
       await (prisma as any).clubClaim.delete({ where: { id: claim.id } })
-      return { ok: false, error: "Could not send the SMS — try email", code: sent.code, status: 502 }
+      return { ok: false, error: "Could not send the SMS. Try email.", code: sent.code, status: 502 }
     }
+  }
+
+  {
+    const { alertOwnerClaim } = await import("@/lib/owner-alerts")
+    alertOwnerClaim({
+      clubName: tenant.name,
+      method: input.channel,
+      claimantEmail: input.claimantEmail ?? null,
+    })
   }
 
   return {

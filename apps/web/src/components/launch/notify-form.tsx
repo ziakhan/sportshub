@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { trackEvent } from "@/components/launch/launch-tracker"
 
 /**
  * The launch notify ask (owner 2026-08-17), shared by the landing hero, the
@@ -75,6 +76,10 @@ export function NotifyForm({
         return
       }
       setState("done")
+      trackEvent("signup", window.location.pathname, {
+        identity: identity || "none",
+        source,
+      })
       try {
         window.localStorage.setItem(DONE_KEY, "1")
       } catch {

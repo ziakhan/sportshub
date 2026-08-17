@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next"
+import { LaunchTracker } from "@/components/launch/launch-tracker"
 
 /**
  * Bare layout for the demo surface (owner rulings 2026-08-15).
@@ -27,5 +28,10 @@ export const viewport: Viewport = {
 }
 
 export default function DemosLayout({ children }: { children: React.ReactNode }) {
-  return <>{children}</>
+  return (
+    <>
+      <LaunchTracker />
+      {children}
+    </>
+  )
 }

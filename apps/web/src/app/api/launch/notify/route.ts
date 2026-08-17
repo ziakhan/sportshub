@@ -61,11 +61,24 @@ export async function POST(req: NextRequest) {
   const source =
     typeof body.source === "string" && body.source.length <= 64 ? body.source : "landing"
 
+  const existing = await (prisma as any).launchSignup.findUnique({
+    where: { contact: parsed.contact },
+    select: { id: true },
+  })
+
   await (prisma as any).launchSignup.upsert({
     where: { contact: parsed.contact },
     create: { contact: parsed.contact, kind: parsed.kind, identity, source },
     update: { identity: identity ?? undefined, source },
   })
+
+  // Real-time owner alert, first appearance of a contact only (owner
+  // 2026-08-17). Fire and forget: the visitor's response never waits on it.
+  if (!existing) {
+    const total = await (prisma as any).launchSignup.count()
+    const { alertOwnerSignup } = await import("@/lib/owner-alerts")
+    alertOwnerSignup({ contact: parsed.contact, kind: parsed.kind, identity, source, total })
+  }
 
   return NextResponse.json({ ok: true })
 }

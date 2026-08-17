@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next"
+import { LaunchTracker } from "@/components/launch/launch-tracker"
 
 /**
  * Bare layout for the pre-launch claim flow (owner 2026-08-17): the landing
@@ -18,5 +19,10 @@ export const viewport: Viewport = {
 }
 
 export default function ClaimClubLayout({ children }: { children: React.ReactNode }) {
-  return <>{children}</>
+  return (
+    <>
+      <LaunchTracker />
+      {children}
+    </>
+  )
 }

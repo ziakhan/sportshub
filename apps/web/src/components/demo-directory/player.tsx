@@ -16,6 +16,7 @@ import {
   usePrefersReducedMotion,
 } from "./motion"
 import type { DemoBeat, DemoScript, StageMode } from "./types"
+import { trackEvent } from "@/components/launch/launch-tracker"
 
 /**
  * Total dwell for a beat, in SCRIPT milliseconds (before the playback rate).
@@ -127,6 +128,27 @@ export function DemoPlayer({
 
   const rootRef = useRef<HTMLDivElement>(null)
   const stageRef = useRef<HTMLDivElement>(null)
+
+  /* Watch telemetry (owner 2026-08-17): the beacon learns when a demo is
+     started, which chapters get reached and whether it played to the end.
+     The path IS the demo (/demos/<slug>), so nothing needs threading. */
+  const startedRef = useRef(false)
+  useEffect(() => {
+    if (playing && !startedRef.current) {
+      startedRef.current = true
+      trackEvent("demo", window.location.pathname, { action: "play" })
+    }
+  }, [playing])
+  const trackedChapterRef = useRef<string | undefined>(undefined)
+  useEffect(() => {
+    const chapter = beats[index]?.chapter
+    if (!startedRef.current || !chapter || chapter === trackedChapterRef.current) return
+    trackedChapterRef.current = chapter
+    trackEvent("demo", window.location.pathname, { action: "chapter", chapter })
+  }, [index, beats])
+  useEffect(() => {
+    if (done) trackEvent("demo", window.location.pathname, { action: "done" })
+  }, [done])
 
   /* Reduced motion resolves after the first paint, so an autostarted demo
      stops itself and hands over to the beat stepper. */

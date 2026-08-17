@@ -143,6 +143,9 @@ const PUBLIC_API_ANY_METHOD_PREFIXES = [
   // player ask signed-out visitors for an email or phone. Honeypot and
   // per-IP rate limit live in the route.
   "/api/launch/notify",
+  // Launch-surface visitor beacon (anonymous POSTs from the landing, demos
+  // and claim flow; per-IP rate limit + row-level validation in the route)
+  "/api/track",
   // Feed telemetry POST (recsys S0, business-model-v2.md §11/§16) — signed-out
   // impressions/taps still count (userId null); the route itself resolves an
   // optional session rather than requiring one.

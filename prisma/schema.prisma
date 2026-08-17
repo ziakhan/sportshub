@@ -4508,6 +4508,33 @@ model RosterReminder {
 // player's entry ask both feed this. One row per submission, dedup on the
 // normalized contact so a repeat signup refreshes instead of duplicating.
 // No relations on purpose: this exists before accounts do.
+// Launch-surface visitor telemetry (owner 2026-08-17: "complete visibility
+// on what's happening on the demo"). One row per event from the anonymous
+// beacon on the landing, demo directory, demo player and claim flow. No
+// relations on purpose: visitors exist before accounts do. signedIn marks
+// rows from a session-holding browser (the owner and team, pre-launch) so
+// the dashboard can keep headline numbers to outside visitors.
+model ActivityEvent {
+  id        String   @id @default(uuid())
+  /// Stable per-browser key (localStorage uuid).
+  visitorId String
+  /// Per-visit key (sessionStorage uuid); one journey = one sessionId.
+  sessionId String
+  /// pageview | heartbeat | click | demo | signup
+  kind      String
+  /// Page path for pageview/heartbeat, target for click, demo slug for demo.
+  path      String
+  /// Event detail: referrer/utm on the first pageview, seconds on heartbeat,
+  /// label on click, action/chapter on demo.
+  meta      Json?
+  signedIn  Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([sessionId, createdAt])
+  @@index([kind, createdAt])
+  @@index([createdAt])
+}
+
 model LaunchSignup {
   id        String   @id @default(uuid())
   /// Email address or phone number, normalized (lowercased email, digits-only phone).

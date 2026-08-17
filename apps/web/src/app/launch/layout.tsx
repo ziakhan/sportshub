@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next"
+import { LaunchTracker } from "@/components/launch/launch-tracker"
 
 /**
  * Bare layout for the soft-launch homepage (owner host-split call,
@@ -23,5 +24,10 @@ export const viewport: Viewport = {
 }
 
 export default function LaunchLayout({ children }: { children: React.ReactNode }) {
-  return <>{children}</>
+  return (
+    <>
+      <LaunchTracker />
+      {children}
+    </>
+  )
 }
