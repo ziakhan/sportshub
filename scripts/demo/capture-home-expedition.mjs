@@ -34,6 +34,8 @@ const RECAP =
  */
 const SHOTS = [
   // The live game, every view worth judging.
+  // The main scorecard, top of the page (owner 2026-08-17: "the top view").
+  { name: "game-live-scorecard-phone", url: LIVE_GAME, device: PHONE, scrollY: 105 },
   { name: "game-live-leaders-phone", url: LIVE_GAME, device: PHONE, scrollY: 340 },
   { name: "game-live-leaders-deep-phone", url: LIVE_GAME, device: PHONE, scrollY: 720 },
   { name: "game-live-boxscore-phone", url: LIVE_GAME, device: PHONE, tapText: "Team stats", scrollY: 340 },
@@ -43,6 +45,9 @@ const SHOTS = [
   { name: "news-recap-scrolled-phone", url: RECAP, device: PHONE, scrollY: 430 },
   { name: "news-cards-desktop", url: "/news", device: DESKTOP, scrollY: 260 },
   { name: "news-cards-phone", url: "/news", device: PHONE, scrollY: 200 },
+
+  // Discovery: the club directory with the province and GTA chips.
+  { name: "discover-clubs-phone", url: "/club", device: PHONE, scrollY: 205 },
 
   // The public feed and browse surfaces.
   { name: "home-feed-desktop", url: "/", device: DESKTOP, scrollY: 700 },

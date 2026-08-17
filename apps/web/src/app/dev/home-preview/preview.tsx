@@ -807,15 +807,63 @@ const SCREEN_SLIDES: {
   frame: "phone" | "desktop"
 }[] = [
   {
+    key: "discover",
+    title: (
+      <>
+        Discover the <span className="text-gold-400">clubs and programs</span> around you.
+      </>
+    ),
+    caption: "Province by province, with the Greater Toronto area one tap away.",
+    src: "/home-preview/shots/discover-clubs-phone.png",
+    alt: "The club directory on a phone: province chips with counts, a Greater Toronto row of cities, and club cards below",
+    frame: "phone",
+  },
+  {
+    key: "payments",
+    title: (
+      <>
+        Payment plans <span className="text-gold-400">run themselves</span>.
+      </>
+    ),
+    caption: "A deposit at signup, the rest on their own dates, every one receipted.",
+    src: "/home-preview/shots/parent-payments-phone.png",
+    alt: "A payments page on a phone: a payment plan with deposits and dated installments, each marked paid",
+    frame: "phone",
+  },
+  {
+    key: "week",
+    title: (
+      <>
+        The <span className="text-gold-400">family week</span>, on one phone.
+      </>
+    ),
+    caption: "Practices, games, and the RSVP right on the row.",
+    src: "/home-preview/shots/parent-calendar-phone.png",
+    alt: "A family calendar on a phone: practices and games for two kids with RSVP buttons on each row",
+    frame: "phone",
+  },
+  {
+    key: "chat",
+    title: (
+      <>
+        Team chat, polls, <span className="text-hoop-400">one thread</span>.
+      </>
+    ),
+    caption: "Coaches and parents in one place, and a poll settles Saturday's pizza.",
+    src: "/home-preview/shots/parent-team-chat-phone.png",
+    alt: "A team chat on a phone: coach messages, a carpool note, and a poll with live results",
+    frame: "phone",
+  },
+  {
     key: "game",
     title: (
       <>
         Watch every game <span className="text-live-500">live</span>.
       </>
     ),
-    caption: "The score, the quarters and the game leaders, as it happens.",
-    src: "/home-preview/shots/game-live-leaders-phone.png",
-    alt: "A live game on a phone: the score with quarter totals and the game leaders with jersey portraits",
+    caption: "The scorecard as it happens: the score, the quarters, the venue.",
+    src: "/home-preview/shots/game-live-scorecard-phone.png",
+    alt: "A live game on a phone: the main scorecard with both teams, quarter totals and the venue",
     frame: "phone",
   },
   {
@@ -828,18 +876,6 @@ const SCREEN_SLIDES: {
     caption: "Shooting, rebounds, assists and steals in each team's colours.",
     src: "/home-preview/shots/game-live-boxscore-phone.png",
     alt: "Live team stats on a phone: shooting splits, rebounds, assists, steals and blocks as two-sided bars",
-    frame: "phone",
-  },
-  {
-    key: "pbp",
-    title: (
-      <>
-        Every play, <span className="text-hoop-400">as it happens</span>.
-      </>
-    ),
-    caption: "Makes, misses, rebounds, subs, and the assist, written play by play.",
-    src: "/home-preview/shots/game-live-playbyplay-phone.png",
-    alt: "Play-by-play on a phone: scores with assists, missed shots with rebounds, substitutions and fouls",
     frame: "phone",
   },
   {
@@ -863,7 +899,7 @@ const SCREEN_SLIDES: {
     ),
     caption: "Finals, milestones and Player of the Game cards, made to share.",
     src: "/home-preview/shots/social-feed-phone.png",
-    alt: "A social feed on a phone: a final score card with likes, comments and reposts, and a Player of the Game card with stat leaders",
+    alt: "A social feed on a phone: a final score card with likes, comments and reposts, and a Player of the Game card",
     frame: "phone",
   },
   {
@@ -876,42 +912,6 @@ const SCREEN_SLIDES: {
     caption: "Every player gets a page: season stats, games, and their moments.",
     src: "/home-preview/shots/social-player-page-phone.png",
     alt: "A player's public page on a phone: jersey number 20 mug, Danielle R., Toronto Lords, stat tiles",
-    frame: "phone",
-  },
-  {
-    key: "chat",
-    title: (
-      <>
-        Team chat, polls, <span className="text-hoop-400">one thread</span>.
-      </>
-    ),
-    caption: "Coaches and parents in one place, and a poll settles Saturday's pizza.",
-    src: "/home-preview/shots/parent-team-chat-phone.png",
-    alt: "A team chat on a phone: coach messages, a carpool note, and a poll with live results",
-    frame: "phone",
-  },
-  {
-    key: "week",
-    title: (
-      <>
-        The <span className="text-gold-400">family week</span>, on one phone.
-      </>
-    ),
-    caption: "Practices, games, and the RSVP right on the row.",
-    src: "/home-preview/shots/parent-calendar-phone.png",
-    alt: "A family calendar on a phone: practices and games for two kids with RSVP buttons on each row",
-    frame: "phone",
-  },
-  {
-    key: "payments",
-    title: (
-      <>
-        Payment plans <span className="text-gold-400">run themselves</span>.
-      </>
-    ),
-    caption: "A deposit at signup, the rest on their own dates, every one receipted.",
-    src: "/home-preview/shots/parent-payments-phone.png",
-    alt: "A payments page on a phone: a payment plan with deposits and dated installments, each marked paid",
     frame: "phone",
   },
   {
