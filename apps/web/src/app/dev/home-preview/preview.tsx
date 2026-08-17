@@ -865,7 +865,7 @@ function EverybodyConnects() {
 const SCREEN_SLIDES: {
   key: string
   title: React.ReactNode
-  caption: string
+  caption: React.ReactNode
   src: string
   alt: string
   frame: "phone" | "desktop"
@@ -886,7 +886,11 @@ const SCREEN_SLIDES: {
         Discover the <span className="text-gold-400">clubs and programs</span> around you.
       </>
     ),
-    caption: "Tryouts, camps, house leagues and training, near you.",
+    caption: (
+      <>
+        Tryouts, camps, house leagues and training, <span className="text-gold-400">near you</span>.
+      </>
+    ),
     src: "/home-preview/shots/discover-clubs-phone.png",
     alt: "The club directory on a phone: province chips with counts, a Greater Toronto row of cities, and club cards below",
     frame: "phone",
@@ -900,7 +904,11 @@ const SCREEN_SLIDES: {
         Payment plans <span className="text-gold-400">run themselves</span>.
       </>
     ),
-    caption: "A deposit at signup, the rest on their own dates, every one receipted.",
+    caption: (
+      <>
+        A deposit at signup, the rest <span className="text-gold-400">on their own dates</span>, every one receipted.
+      </>
+    ),
     src: "/home-preview/shots/parent-payments-phone.png",
     alt: "A payments page on a phone: a payment plan with deposits and dated installments, each marked paid",
     frame: "phone",
@@ -917,7 +925,11 @@ const SCREEN_SLIDES: {
         The <span className="text-gold-400">family week</span>, on one phone.
       </>
     ),
-    caption: "Practices, games, and the RSVP right on the row.",
+    caption: (
+      <>
+        Practices, games, and the RSVP <span className="text-gold-400">right on the row</span>.
+      </>
+    ),
     src: "/home-preview/shots/parent-calendar-phone.png",
     alt: "A family calendar on a phone: practices and games for two kids with RSVP buttons on each row",
     frame: "phone",
@@ -936,7 +948,11 @@ const SCREEN_SLIDES: {
         Team chat, polls, <span className="text-hoop-400">one thread</span>.
       </>
     ),
-    caption: "Coaches and parents in one place, and a poll settles Saturday's pizza.",
+    caption: (
+      <>
+        Coaches and parents in one place, and a poll <span className="text-gold-400">settles Saturday&apos;s pizza</span>.
+      </>
+    ),
     src: "/home-preview/shots/parent-team-chat-phone.png",
     alt: "A team chat on a phone: coach messages, a carpool note, and a poll with live results",
     frame: "phone",
@@ -954,7 +970,11 @@ const SCREEN_SLIDES: {
         Watch every game <span className="text-live-500">live</span>.
       </>
     ),
-    caption: "One game, the whole page: the scorecard, the leaders, then Team stats and Play-by-play.",
+    caption: (
+      <>
+        One game, the whole page: the scorecard, the leaders, then <span className="text-gold-400">Team stats and Play-by-play</span>.
+      </>
+    ),
     src: "/home-preview/shots/game-live-scorecard-phone.png",
     alt: "A live game on a phone: the main scorecard with both teams, quarter totals and the venue",
     frame: "phone",
@@ -968,7 +988,11 @@ const SCREEN_SLIDES: {
         Every game gets a <span className="text-gold-400">recap</span>.
       </>
     ),
-    caption: "Written from the official scoring record, with a Player of the Game.",
+    caption: (
+      <>
+        Written from the official scoring record, with a <span className="text-gold-400">Player of the Game</span>.
+      </>
+    ),
     src: "/home-preview/news-recap-phone.png",
     alt: "A game recap article on a phone: Toronto Lords Grade 10 Girls beat Burlington Force 54 to 33",
     frame: "phone",
@@ -982,7 +1006,11 @@ const SCREEN_SLIDES: {
         The season has a <span className="text-play-300">feed</span>.
       </>
     ),
-    caption: "Finals, milestones and Player of the Game cards, made to share.",
+    caption: (
+      <>
+        Finals, milestones and Player of the Game cards, <span className="text-gold-400">made to share</span>.
+      </>
+    ),
     src: "/home-preview/shots/social-feed-phone.png",
     alt: "A social feed on a phone: a final score card with likes, comments and reposts, and a Player of the Game card",
     frame: "phone",
@@ -996,7 +1024,11 @@ const SCREEN_SLIDES: {
         Every player <span className="text-play-300">gets a page</span>.
       </>
     ),
-    caption: "Every player gets a page: season stats, games, and their moments.",
+    caption: (
+      <>
+        Every player gets a page: <span className="text-gold-400">season stats</span>, games, and their moments.
+      </>
+    ),
     src: "/home-preview/shots/social-player-page-phone.png",
     alt: "A player's public page on a phone: jersey number 20 mug, Danielle R., Toronto Lords, stat tiles",
     frame: "phone",
@@ -1008,7 +1040,11 @@ const SCREEN_SLIDES: {
         Standings <span className="text-court-400">settle themselves</span>.
       </>
     ),
-    caption: "Finals go in, the table moves on its own. The league side lives on the big screen.",
+    caption: (
+      <>
+        Finals go in, <span className="text-gold-400">the table moves on its own</span>. The league side lives on the big screen.
+      </>
+    ),
     src: "/home-preview/league-desktop.png",
     alt: "A league page on desktop: final scores and standings tables with records, streaks and games back",
     frame: "desktop",
@@ -1149,9 +1185,9 @@ function GuidedShot({
  * captured state where the message sits in the thread and the poll is voted.
  */
 function TypedChat({ active }: { active: boolean }) {
-  const MSG = "See everyone Saturday at 2!"
+  const MSG = "We'll bring the drinks on Saturday!"
   const [typedCount, setTypedCount] = useState(0)
-  const [phase, setPhase] = useState<"idle" | "typing" | "sent" | "voted">("idle")
+  const [phase, setPhase] = useState<"idle" | "typing" | "sent" | "voting" | "voted">("idle")
 
   useEffect(() => {
     setTypedCount(0)
@@ -1176,7 +1212,10 @@ function TypedChat({ active }: { active: boolean }) {
         await sleep(700)
         if (cancelled) return
         setPhase("sent")
-        await sleep(2400)
+        await sleep(2000)
+        if (cancelled) return
+        setPhase("voting")
+        await sleep(950)
         if (cancelled) return
         setPhase("voted")
         await sleep(3200)
@@ -1200,6 +1239,9 @@ function TypedChat({ active }: { active: boolean }) {
         className="absolute bottom-0 left-0 w-full transition-opacity duration-500"
         style={{ opacity: phase === "voted" ? 1 : 0 }}
       />
+      {phase === "voting" && (
+        <span className="hp-tap absolute left-[30%] top-[51%] z-20 h-9 w-9 rounded-full bg-gold-400/70 ring-2 ring-gold-400" aria-hidden="true" />
+      )}
       {phase !== "voted" && (
         <>
           <div className="absolute inset-x-0 bottom-[9%] flex h-[8%] items-center gap-2 bg-white px-3">
@@ -1317,9 +1359,12 @@ function Screenshots() {
           <p className="text-[13px] font-bold uppercase tracking-[0.14em] text-gold-400">
             Straight from the app
           </p>
-          <h2 className="mt-1 text-3xl font-bold tracking-tight text-white sm:text-4xl">
-            What it looks like. <span className="text-lg font-medium text-white/60">These are screenshots, not mockups.</span>
+          <h2 className="mt-2 text-4xl font-bold tracking-tight text-white sm:text-5xl">
+            What it looks like.
           </h2>
+          <p className="mx-auto mt-2 max-w-xl text-lg text-white/70">
+            These are screenshots, not mockups. Slide through.
+          </p>
         </div>
 
         <div ref={sliderRef} className="relative mt-4 min-h-0 flex-1">
@@ -1345,8 +1390,8 @@ function Screenshots() {
                   aria-hidden={i !== active}
                   className="flex h-full w-full shrink-0 items-center justify-center px-12 sm:px-16"
                 >
-                  <div className="grid h-full w-full max-w-4xl grid-cols-1 content-center items-center gap-5 md:grid-cols-[1fr_auto] md:gap-12">
-                    <div className="text-center md:text-left">
+                  <div className="flex h-full w-full flex-col items-center justify-center gap-4 md:flex-row md:gap-12">
+                    <div className="max-w-md text-center md:text-left">
                       <h3 className="text-balance text-2xl font-bold leading-tight tracking-tight text-white sm:text-4xl lg:text-[44px]">
                         {slide.title}
                       </h3>
@@ -1354,7 +1399,7 @@ function Screenshots() {
                         {slide.caption}
                       </p>
                     </div>
-                    <div className="flex h-[52dvh] max-h-[600px] min-h-[320px] items-center justify-center md:h-[62dvh]">
+                    <div className="flex h-[56dvh] max-h-[860px] min-h-[360px] items-center justify-center md:h-[78dvh]">
                       <SlideImage slide={slide} active={i === active} />
                     </div>
                   </div>
@@ -1577,11 +1622,13 @@ const PREVIEW_CSS = `
         @media (prefers-reduced-motion: reduce) {
           .hp-rise { animation: none; }
         }
-        html { scroll-snap-type: y proximity; }
+        html { scroll-snap-type: y proximity; scroll-behavior: smooth; }
         .hp-xfade { animation: hp-xfade 380ms ease-out both; }
         .hp-caret { animation: hp-caret 900ms steps(2) infinite; }
         @keyframes hp-caret { 50% { opacity: 0; } }
         .hp-bubble { animation: hp-bubble 360ms ease-out both; }
+        .hp-tap { animation: hp-tap 900ms ease-out both; }
+        @keyframes hp-tap { 0% { transform: scale(0.4); opacity: 0; } 30% { transform: scale(1); opacity: 1; } 100% { transform: scale(1.5); opacity: 0; } }
         @keyframes hp-bubble { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes hp-xfade { from { opacity: 0; } to { opacity: 1; } }
         main > * { scroll-snap-align: start; }

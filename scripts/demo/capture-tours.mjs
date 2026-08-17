@@ -33,8 +33,8 @@ const SHOTS = [
   // Chat is a conversation, not a scroll: three viewport frames tell it as
   // typing and sending a real message.
   { name: "chat-1", url: "/messages", auth: true, followHref: CHAT_HREF, viewport: true },
-  { name: "chat-2", url: "/messages", auth: true, followHref: CHAT_HREF, viewport: true, fill: "See everyone Saturday at 2!" },
-  { name: "chat-3", url: "/messages", auth: true, followHref: CHAT_HREF, viewport: true, fill: "See everyone Saturday at 2!", send: true },
+  { name: "chat-2", url: "/messages", auth: true, followHref: CHAT_HREF, viewport: true, fill: "We'll bring the drinks on Saturday!" },
+  { name: "chat-3", url: "/messages", auth: true, followHref: CHAT_HREF, viewport: true, fill: "We'll bring the drinks on Saturday!", send: true },
   { name: "chat-4", url: "/messages", auth: true, followHref: CHAT_HREF, viewport: true, tapText: "We're in" },
   { name: "recap", url: "/news/toronto-lords-grade-10-girls-vs-burlington-force-grade-10-gi-20260815-4d49de76" },
   { name: "feed", url: "/feed", auth: true, hideTabbar: true },
@@ -73,7 +73,7 @@ if (process.env.DATABASE_URL) {
   try {
     const { PrismaClient } = await import("@prisma/client")
     const prisma = new PrismaClient()
-    const gone = await prisma.teamMessage.deleteMany({ where: { body: "See everyone Saturday at 2!" } })
+    const gone = await prisma.teamMessage.deleteMany({ where: { body: { in: ["See everyone Saturday at 2!", "We'll bring the drinks on Saturday!"] } } })
     console.log("stale demo chat messages removed:", gone.count)
     await prisma.$disconnect()
   } catch (e) {
