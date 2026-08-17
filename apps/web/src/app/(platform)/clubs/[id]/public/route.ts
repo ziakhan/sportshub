@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@youthbasketballhub/db"
-import { siteUrl } from "@/lib/site"
 
 export const dynamic = "force-dynamic"
 
@@ -10,5 +9,5 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
     where: { id: params.id },
     select: { slug: true },
   })
-  return NextResponse.redirect(new URL(tenant ? `/club/${tenant.slug}` : "/club", siteUrl()))
+  return NextResponse.redirect(new URL(tenant ? `/club/${tenant.slug}` : "/club", request.url))
 }

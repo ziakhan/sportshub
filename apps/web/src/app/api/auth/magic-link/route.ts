@@ -9,6 +9,7 @@ import { z } from "zod"
 import { normalizedEmailSchema } from "@/lib/validations/email"
 import { createLoginToken } from "@/lib/auth-magic"
 import { appBaseUrl, sendMagicLinkEmail } from "@/lib/email"
+import { isOurHost } from "@/lib/domains"
 import { rateLimit } from "@/lib/rate-limit"
 
 const magicSchema = z.object({
@@ -43,7 +44,15 @@ export async function POST(request: Request) {
     if (!minted) return ok // window exhausted — stay silent
 
     const callback = safeCallbackUrl(parsed.data.callbackUrl)
-    const link = `${appBaseUrl()}/magic-link?token=${encodeURIComponent(minted.token)}${
+    // The emailed link keeps the visitor on the domain they asked from
+    // (owner law 2026-08-17); a host we don't recognize falls back to the
+    // canonical base rather than echoing an attacker-supplied Host header.
+    const reqHost = (request.headers.get("x-forwarded-host") || request.headers.get("host") || "")
+      .split(",")[0]
+      .trim()
+    const proto = reqHost.startsWith("localhost") || reqHost.startsWith("127.") ? "http" : "https"
+    const base = reqHost && isOurHost(reqHost) ? `${proto}://${reqHost}` : appBaseUrl()
+    const link = `${base}/magic-link?token=${encodeURIComponent(minted.token)}${
       callback ? `&callbackUrl=${encodeURIComponent(callback)}` : ""
     }`
 

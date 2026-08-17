@@ -19,16 +19,23 @@ vi.mock("@youthbasketballhub/db", () => ({
     staffInvitation: {
       findMany: vi.fn(),
       updateMany: vi.fn(),
+      // Pre-launch signup gate checks invited emails (owner 2026-08-17)
+      findFirst: vi.fn().mockResolvedValue({ id: "inv-1" }),
     },
     // ...and pending player invitations (gap G3)
     playerInvitation: {
       findMany: vi.fn(),
       updateMany: vi.fn(),
+      findFirst: vi.fn().mockResolvedValue(null),
     },
     // ...and pending family invitations (family-accounts, 2026-07-24)
     familyInvitation: {
       findMany: vi.fn().mockResolvedValue([]),
       updateMany: vi.fn(),
+      findFirst: vi.fn().mockResolvedValue(null),
+    },
+    clubClaim: {
+      findUnique: vi.fn().mockResolvedValue(null),
     },
     tenant: {
       findMany: vi.fn(),
@@ -106,5 +113,58 @@ describe("POST /api/auth/signup", () => {
       error: "An account with this email already exists",
     })
     expect(prisma.user.create).not.toHaveBeenCalled()
+  })
+
+  // Pre-launch gate (owner 2026-08-17): with PUBLIC_SIGNUPS=false, only a
+  // club-claim token or an invited email may mint an account.
+  it("refuses a stranger while signups are closed", async () => {
+    vi.mocked(prisma.user.findFirst).mockResolvedValue(null)
+    vi.mocked((prisma as any).staffInvitation.findFirst).mockResolvedValue(null)
+
+    const response = await POST(
+      new Request("http://localhost:3000/api/auth/signup", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          email: "stranger@example.com",
+          password: "secret123",
+          firstName: "Sam",
+          lastName: "Nobody",
+        }),
+      })
+    )
+
+    expect(response.status).toBe(403)
+    expect(prisma.user.create).not.toHaveBeenCalled()
+  })
+
+  it("lets a verified club claimant through on their completion token", async () => {
+    vi.mocked(prisma.user.findFirst).mockResolvedValue(null)
+    vi.mocked(prisma.user.create).mockResolvedValue({ id: "user-2" } as any)
+    vi.mocked((prisma as any).staffInvitation.findFirst).mockResolvedValue(null)
+    vi.mocked((prisma as any).clubClaim.findUnique).mockResolvedValue({ id: "claim-1" })
+    vi.mocked(prisma.staffInvitation.findMany).mockResolvedValue([])
+    vi.mocked(prisma.playerInvitation.findMany).mockResolvedValue([])
+    vi.mocked(bcrypt.hash).mockResolvedValue("hashed-password" as never)
+
+    const response = await POST(
+      new Request("http://localhost:3000/api/auth/signup", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          email: "claimer@example.com",
+          password: "secret123",
+          firstName: "Casey",
+          lastName: "Claimer",
+          claimToken: "tok-abc",
+        }),
+      })
+    )
+
+    expect(response.status).toBe(200)
+    expect((prisma as any).clubClaim.findUnique).toHaveBeenCalledWith({
+      where: { completionToken: "tok-abc" },
+      select: { id: true },
+    })
   })
 })

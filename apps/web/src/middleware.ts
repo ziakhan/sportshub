@@ -3,7 +3,6 @@ import type { NextRequest } from "next/server"
 import { getToken } from "next-auth/jwt"
 import { isPublicPath } from "@/lib/public-paths"
 import { bearerToken, verifyAccessToken } from "@/lib/native-auth-tokens"
-import { siteUrl } from "@/lib/site"
 import { isOurHost, tenantSlugFromHost, PRIMARY_DOMAIN } from "@/lib/domains"
 
 // Subdomains that serve the platform itself — never treated as club slugs.
@@ -65,10 +64,14 @@ export default async function middleware(req: NextRequest) {
     // 2026-07-25: browsing on a subdomain turned every nav click into a
     // bounce to the club page, flooding history with clubs). 302 on paths so
     // browsers never permanently cache a deep link to the wrong place.
+    // The apex is the subdomain's OWN parent domain (owner law 2026-08-17:
+    // visitors stay on the domain family they entered), never siteUrl().
+    const apex = hostname.split(":")[0].toLowerCase().slice(tenantSlug.length + 1)
+    const apexBase = `${req.nextUrl.protocol}//${apex}`
     if (pathname === "/") {
-      return NextResponse.redirect(new URL(`/club/${tenantSlug}`, siteUrl()), 301)
+      return NextResponse.redirect(new URL(`/club/${tenantSlug}`, apexBase), 301)
     }
-    return NextResponse.redirect(new URL(pathname + req.nextUrl.search, siteUrl()), 302)
+    return NextResponse.redirect(new URL(pathname + req.nextUrl.search, apexBase), 302)
   }
 
   // Soft launch host-split (owner 2026-08-17): the brand apex serves the

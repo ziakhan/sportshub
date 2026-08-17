@@ -94,6 +94,24 @@ export const authOptions: NextAuthOptions = {
   ],
   callbacks: {
     async signIn({ user, account, profile }) {
+      // Pre-launch gate (owner 2026-08-17): SSO for EXISTING accounts only.
+      // A provider identity with no matching user would auto-create an
+      // account, which is signup by another name; send them to the list.
+      if (account?.provider === "google" || account?.provider === "apple") {
+        const { PUBLIC_SIGNUPS } = await import("@/lib/public-flags")
+        if (!PUBLIC_SIGNUPS) {
+          const { prisma } = await import("@youthbasketballhub/db")
+          const email =
+            user.email ?? (profile as { email?: string } | null)?.email ?? null
+          const existing = email
+            ? await prisma.user.findFirst({
+                where: { email: { equals: email, mode: "insensitive" } },
+                select: { id: true },
+              })
+            : null
+          if (!existing) return "/sign-in?error=SignupsClosed"
+        }
+      }
       if (account?.provider === "apple") {
         // profile = Apple's id_token claims. Same rule as Google: only a
         // provider-verified email may attach to an existing account. Apple

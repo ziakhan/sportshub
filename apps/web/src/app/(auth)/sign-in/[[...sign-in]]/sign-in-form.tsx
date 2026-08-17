@@ -19,15 +19,20 @@ const inputClass =
 export function SignInForm({
   googleEnabled,
   appleEnabled,
+  signupsOpen,
 }: {
   googleEnabled: boolean
   appleEnabled: boolean
+  /** Pre-launch: false — the signup link hides and a closed-signups notice
+   * shows when SSO bounced a brand-new identity here. */
+  signupsOpen: boolean
 }) {
   const searchParams = useSearchParams()
   const rawCallback = safeCallbackUrl(searchParams?.get("callbackUrl"))
   // No deep link → role-aware landing: operators → dashboard, parents/players
   // → personalized public homepage (site-ia-plan §8)
   const callbackUrl = rawCallback ?? "/post-login"
+  const signupsClosedBounce = searchParams?.get("error") === "SignupsClosed"
 
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
@@ -197,6 +202,17 @@ export function SignInForm({
               Your games, schedules, and teams are right where you left them.
             </p>
 
+            {signupsClosedBounce && (
+              <div className="border-gold-100 bg-gold-50 text-ink-700 mb-4 rounded-2xl border p-3 text-sm">
+                That Google or Apple account is not on SportsHub yet, and new accounts open
+                at launch. Leave your email on the{" "}
+                <Link href="/" className="text-play-600 font-semibold">
+                  homepage
+                </Link>{" "}
+                and we&apos;ll tell you the day it changes.
+              </div>
+            )}
+
             {error && (
               <div className="mb-4 rounded-2xl border border-red-200 bg-red-50 p-3 text-sm text-red-600">
                 {error}
@@ -208,13 +224,13 @@ export function SignInForm({
                 <div className="space-y-3">
                   {googleEnabled && (
                     <GoogleButton
-                      label="Continue with Google"
+                      label="Log in with Google"
                       onClick={() => void signIn("google", { callbackUrl })}
                     />
                   )}
                   {appleEnabled && (
                     <AppleButton
-                      label="Continue with Apple"
+                      label="Log in with Apple"
                       onClick={() => void signIn("apple", { callbackUrl })}
                     />
                   )}
@@ -287,17 +303,28 @@ export function SignInForm({
             </button>
 
             <p className="text-ink-500 mt-6 text-center text-sm">
-              Don&apos;t have an account?{" "}
-              <Link
-                href={
-                  rawCallback
-                    ? `/sign-up?callbackUrl=${encodeURIComponent(rawCallback)}`
-                    : "/sign-up"
-                }
-                className="text-play-600 hover:text-play-700 font-semibold"
-              >
-                Sign up
-              </Link>
+              {signupsOpen ? (
+                <>
+                  Don&apos;t have an account?{" "}
+                  <Link
+                    href={
+                      rawCallback
+                        ? `/sign-up?callbackUrl=${encodeURIComponent(rawCallback)}`
+                        : "/sign-up"
+                    }
+                    className="text-play-600 hover:text-play-700 font-semibold"
+                  >
+                    Sign up
+                  </Link>
+                </>
+              ) : (
+                <>
+                  New here? Accounts open at launch.{" "}
+                  <Link href="/" className="text-play-600 hover:text-play-700 font-semibold">
+                    Join the list
+                  </Link>
+                </>
+              )}
             </p>
           </>
         )}

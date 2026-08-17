@@ -14,6 +14,9 @@ const signupSchema = z.object({
   firstName: z.string().min(1, "First name is required"),
   lastName: z.string().min(1, "Last name is required"),
   platformMarketingConsent: z.boolean().optional(),
+  /** Club-claim completion token: the one funnel allowed to mint accounts
+   * while public signups are closed (pre-launch, owner 2026-08-17). */
+  claimToken: z.string().max(128).optional(),
 })
 
 export async function POST(request: Request) {
@@ -37,6 +40,31 @@ export async function POST(request: Request) {
         { error: "An account with this email already exists" },
         { status: 409 }
       )
+    }
+
+    const { PUBLIC_SIGNUPS } = await import("@/lib/public-flags")
+    if (!PUBLIC_SIGNUPS) {
+      // Two doors stay open while signups are closed: a verified club-claim
+      // completion token, or an email an insider explicitly invited (staff,
+      // player or family invitation). Everyone else: the list.
+      const emailFilter = { equals: normalizedEmail, mode: "insensitive" as const }
+      const [claim, staffInvite, playerInvite, familyInvite] = await Promise.all([
+        data.claimToken
+          ? (prisma as any).clubClaim.findUnique({
+              where: { completionToken: data.claimToken },
+              select: { id: true },
+            })
+          : null,
+        prisma.staffInvitation.findFirst({ where: { invitedEmail: emailFilter }, select: { id: true } }),
+        (prisma as any).playerInvitation.findFirst({ where: { invitedEmail: emailFilter }, select: { id: true } }),
+        (prisma as any).familyInvitation.findFirst({ where: { invitedEmail: emailFilter }, select: { id: true } }),
+      ])
+      if (!claim && !staffInvite && !playerInvite && !familyInvite) {
+        return NextResponse.json(
+          { error: "We're not open for new accounts yet. Join the list on the homepage and we'll tell you the day that changes." },
+          { status: 403 }
+        )
+      }
     }
 
     const passwordHash = await bcrypt.hash(data.password, 12)

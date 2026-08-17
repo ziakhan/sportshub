@@ -3,12 +3,15 @@ import { cookies } from "next/headers"
 import { getCurrentUser } from "@/lib/auth-helpers"
 import { getCompletionChecklist } from "@/lib/onboarding/checklist"
 import { ONBOARDING_DISMISS_COOKIE } from "@/lib/onboarding/constants"
-import { siteUrl } from "@/lib/site"
 
 export const dynamic = "force-dynamic"
 
 /**
- * Role-aware post-login landing (site-ia-plan §8): operators (club/league
+ * Role-aware post-login landing (site-ia-plan §8). Redirects resolve
+ * against the REQUEST host (owner law 2026-08-17: a visitor stays on the
+ * domain they entered from; siteUrl() here bounced brand-domain sign-ins
+ * onto the test domain).
+ * operators (club/league
  * staff, referees, admins) land in the MANAGE world; parents, players and
  * role-less accounts land on the personalized PUBLIC homepage. Sign-in only
  * defaults here — an explicit callbackUrl (deep link) always wins upstream.
@@ -20,14 +23,14 @@ export const dynamic = "force-dynamic"
  */
 export async function GET(request: NextRequest) {
   const user = await getCurrentUser()
-  if (!user) return NextResponse.redirect(new URL("/sign-in", siteUrl()))
+  if (!user) return NextResponse.redirect(new URL("/sign-in", request.url))
 
   // First-ever sign-in via Google (or any future OAuth) lands here without
   // role selection — adapter-less NextAuth never fires its newUser redirect,
   // and only the password sign-up form routes to /onboarding itself. This is
   // the funnel for everyone else; /onboarding self-guards once complete.
   if (!(user as any).onboardedAt) {
-    return NextResponse.redirect(new URL("/onboarding", siteUrl()))
+    return NextResponse.redirect(new URL("/onboarding", request.url))
   }
 
   // site-ia-plan §5.6.10: owners/managers → dashboard; coaches → their team
@@ -58,9 +61,9 @@ export async function GET(request: NextRequest) {
   if (!dismissed) {
     const checklist = await getCompletionChecklist(user as any)
     if (checklist.applicable && !checklist.complete) {
-      return NextResponse.redirect(new URL("/welcome", siteUrl()))
+      return NextResponse.redirect(new URL("/welcome", request.url))
     }
   }
 
-  return NextResponse.redirect(new URL(landing, siteUrl()))
+  return NextResponse.redirect(new URL(landing, request.url))
 }

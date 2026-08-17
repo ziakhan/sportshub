@@ -21,9 +21,13 @@ const inputClass =
 export function SignUpForm({
   googleEnabled,
   appleEnabled,
+  claimToken,
 }: {
   googleEnabled: boolean
   appleEnabled: boolean
+  /** Club-claim completion token: unlocks signup while public signups are
+   * closed (the API checks it; the form just carries it through). */
+  claimToken?: string | null
 }) {
   const searchParams = useSearchParams()
   const callbackUrl = safeCallbackUrl(searchParams?.get("callbackUrl"))
@@ -60,7 +64,14 @@ export function SignUpForm({
       const res = await fetch("/api/auth/signup", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password, firstName, lastName, platformMarketingConsent }),
+        body: JSON.stringify({
+          email,
+          password,
+          firstName,
+          lastName,
+          platformMarketingConsent,
+          claimToken: claimToken || undefined,
+        }),
       })
 
       const data = await res.json()

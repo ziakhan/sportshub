@@ -1,5 +1,6 @@
 import { Suspense } from "react"
 import { appleWebEnabled } from "@/lib/apple-web-auth"
+import { PUBLIC_SIGNUPS } from "@/lib/public-flags"
 import { SignInForm } from "./sign-in-form"
 
 // Server component so the social buttons render exactly when each provider
@@ -9,7 +10,11 @@ export default function SignInPage() {
   const googleEnabled = !!(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET)
   return (
     <Suspense>
-      <SignInForm googleEnabled={googleEnabled} appleEnabled={appleWebEnabled()} />
+      <SignInForm
+        googleEnabled={googleEnabled}
+        appleEnabled={appleWebEnabled()}
+        signupsOpen={PUBLIC_SIGNUPS}
+      />
     </Suspense>
   )
 }
