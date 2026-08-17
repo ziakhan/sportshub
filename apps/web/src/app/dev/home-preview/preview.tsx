@@ -68,7 +68,7 @@ const SLOGANS: { key: string; node: React.ReactNode; sub: React.ReactNode }[] = 
     ),
     sub: (
       <>
-        Sizes, numbers and payment collected <span className="text-gold-400 font-semibold">the moment a family accepts</span>.
+        Jersey sizes, numbers and payment collected <span className="text-gold-400 font-semibold">the moment a family accepts</span>.
       </>
     ),
   },
@@ -533,7 +533,7 @@ function Hero() {
         <div id="notify" className="mt-10 w-full max-w-xl">
           <fieldset>
             <legend className="mb-3 text-[15px] font-semibold text-white/70">
-              I&apos;m here as a
+              I&apos;m here as a <span className="font-normal text-white/45">(pick one, optional)</span>
             </legend>
             <div className="flex flex-wrap justify-center gap-2">
               {IDENTITIES.map((id) => (
