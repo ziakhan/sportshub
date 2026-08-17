@@ -1702,32 +1702,43 @@ function SnapGlide() {
     let timer = 0
     let raf = 0
     let animating = false
-    const cancel = () => {
-      if (animating) {
-        cancelAnimationFrame(raf)
-        animating = false
-      }
+    let expected = -1
+
+    const stop = () => {
+      animating = false
+      expected = -1
+      cancelAnimationFrame(raf)
     }
+
     const glideTo = (target: number) => {
       const from = window.scrollY
       const dist = target - from
       if (Math.abs(dist) < 8) return
-      const ms = Math.min(2200, 900 + Math.abs(dist) * 2.4)
+      const ms = Math.min(2000, 800 + Math.abs(dist) * 2)
       const t0 = performance.now()
       animating = true
+      expected = from
       const step = (t: number) => {
         if (!animating) return
+        // Takeover detection: if the page is not where the glide put it, a
+        // human moved it. Yield immediately. No event guessing.
+        if (Math.abs(window.scrollY - expected) > 40) return stop()
         const k = Math.min(1, (t - t0) / ms)
         const e = k < 0.5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2
-        window.scrollTo(0, from + dist * e)
+        expected = from + dist * e
+        window.scrollTo(0, expected)
         if (k < 1) raf = requestAnimationFrame(step)
-        else animating = false
+        else stop()
       }
       raf = requestAnimationFrame(step)
     }
+
     const settle = () => {
+      if (animating) return
       const vh = window.innerHeight
-      const sections = Array.from(document.querySelectorAll("main > *")).filter((el) => (el as HTMLElement).offsetHeight > 120)
+      const sections = Array.from(document.querySelectorAll("main > *")).filter(
+        (el) => (el as HTMLElement).offsetHeight > 120
+      )
       let best: { top: number; d: number } | null = null
       for (const el of sections) {
         const top = (el as HTMLElement).getBoundingClientRect().top
@@ -1736,35 +1747,22 @@ function SnapGlide() {
       }
       if (best) glideTo(best.top)
     }
+
     const onScroll = () => {
       if (animating) return
       window.clearTimeout(timer)
-      timer = window.setTimeout(settle, 160)
+      timer = window.setTimeout(settle, 180)
     }
-    const onUser = () => {
-      cancel()
-    }
-    const onWheel = (e: WheelEvent) => {
-      // Only a deliberate move interrupts an in-flight glide. Never touch the
-      // settle timer here: momentum tails were disarming it forever.
-      if (animating && Math.abs(e.deltaY) > 14) cancel()
-    }
+
     window.addEventListener("scroll", onScroll, { passive: true })
-    window.addEventListener("wheel", onWheel, { passive: true })
-    window.addEventListener("touchstart", onUser, { passive: true })
-    window.addEventListener("keydown", onUser)
     return () => {
-      cancel()
+      stop()
       window.clearTimeout(timer)
       window.removeEventListener("scroll", onScroll)
-      window.removeEventListener("wheel", onWheel)
-      window.removeEventListener("touchstart", onUser)
-      window.removeEventListener("keydown", onUser)
     }
   }, [])
   return null
 }
-
 export function HomePreview() {
   return (
     <main className="bg-white">
