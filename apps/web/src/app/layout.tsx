@@ -3,6 +3,7 @@ import Script from "next/script"
 import { Outfit, Work_Sans, Barlow_Condensed, Barlow } from "next/font/google"
 import AuthProvider from "./session-provider"
 import { siteUrl, SITE_NAME, SITE_DESCRIPTION } from "@/lib/site"
+import { PRIMARY_DOMAIN } from "@/lib/domains"
 import { JsonLd, siteGraph } from "@/lib/seo/jsonld"
 import { isSeoIndexingEnabled, getThemePalette } from "@/lib/platform-settings"
 import { paletteCssVars } from "@youthbasketballhub/design-tokens"
@@ -77,22 +78,25 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <AuthProvider>{children}</AuthProvider>
         {/* GA4 — inert until NEXT_PUBLIC_GA_ID is set (build-time env).
             Ads signals/personalization disabled: youth-sports audience
-            (privacy posture per seo-strategy; revisit at US/COPPA entry). */}
+            (privacy posture per seo-strategy; revisit at US/COPPA entry).
+            One build serves every domain, so the loader itself checks the
+            hostname: only the brand domain reports (owner 2026-08-17), and
+            the test domain and localhost stay out of the stats. */}
         {process.env.NEXT_PUBLIC_GA_ID && (
-          <>
-            <Script
-              src={`https://www.googletagmanager.com/gtag/js?id=${process.env.NEXT_PUBLIC_GA_ID}`}
-              strategy="afterInteractive"
-            />
-            <Script id="ga4-init" strategy="afterInteractive">
-              {`window.dataLayer = window.dataLayer || [];
+          <Script id="ga4-init" strategy="afterInteractive">
+            {`if (location.hostname === '${PRIMARY_DOMAIN}' || location.hostname.endsWith('.${PRIMARY_DOMAIN}')) {
+                window.dataLayer = window.dataLayer || [];
                 function gtag(){dataLayer.push(arguments);}
                 gtag('js', new Date());
                 gtag('set', 'allow_google_signals', false);
                 gtag('set', 'allow_ad_personalization_signals', false);
-                gtag('config', '${process.env.NEXT_PUBLIC_GA_ID}');`}
-            </Script>
-          </>
+                gtag('config', '${process.env.NEXT_PUBLIC_GA_ID}');
+                var s = document.createElement('script');
+                s.async = true;
+                s.src = 'https://www.googletagmanager.com/gtag/js?id=${process.env.NEXT_PUBLIC_GA_ID}';
+                document.head.appendChild(s);
+              }`}
+          </Script>
         )}
       </body>
     </html>
