@@ -4,7 +4,7 @@ import { getToken } from "next-auth/jwt"
 import { isPublicPath } from "@/lib/public-paths"
 import { bearerToken, verifyAccessToken } from "@/lib/native-auth-tokens"
 import { siteUrl } from "@/lib/site"
-import { isOurHost, tenantSlugFromHost } from "@/lib/domains"
+import { isOurHost, tenantSlugFromHost, PRIMARY_DOMAIN } from "@/lib/domains"
 
 // Subdomains that serve the platform itself — never treated as club slugs.
 const RESERVED_SUBDOMAINS = new Set([
@@ -69,6 +69,20 @@ export default async function middleware(req: NextRequest) {
       return NextResponse.redirect(new URL(`/club/${tenantSlug}`, siteUrl()), 301)
     }
     return NextResponse.redirect(new URL(pathname + req.nextUrl.search, siteUrl()), 302)
+  }
+
+  // Soft launch host-split (owner 2026-08-17): the brand apex serves the
+  // launch homepage at its root; the test domain keeps the classic homepage
+  // so the two stay comparable side by side. Rewrite, not redirect — the
+  // visitor's URL stays "/".
+  const bareHost = hostname.split(":")[0].toLowerCase()
+  if (
+    pathname === "/" &&
+    (bareHost === PRIMARY_DOMAIN || bareHost === `www.${PRIMARY_DOMAIN}`)
+  ) {
+    const rewriteUrl = req.nextUrl.clone()
+    rewriteUrl.pathname = "/launch"
+    return NextResponse.rewrite(rewriteUrl)
   }
 
   // Custom club domains (Pro tier) — inert until CUSTOM_DOMAINS_ENABLED=1.

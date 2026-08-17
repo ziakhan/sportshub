@@ -1,9 +1,9 @@
 import { HomePreview } from "./preview"
 
 /**
- * Static draft of the pre-launch homepage, for owner approval. Nothing on it is
- * wired: the form does not send, the club search does not search. The real page
- * ships at / once the look is approved.
+ * The owner's iteration surface for the launch homepage. The LIVE page is
+ * /launch (served at "/" on the brand apex by the middleware host rewrite)
+ * and renders this same component — edits here go live on deploy.
  */
 export default function HomePreviewPage() {
   return <HomePreview />

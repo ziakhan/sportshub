@@ -69,6 +69,9 @@ const PUBLIC_PAGE_PREFIXES = [
   // The chrome-free pre-launch claim flow (owner 2026-08-17): same wizard,
   // no site navigation around it
   "/claim-club",
+  // Soft-launch homepage (served at "/" on the brand apex via middleware
+  // rewrite) + its shareable screenshot sheet (owner 2026-08-17)
+  "/launch",
   // Tokenized waiver signing (emailed link, no session — waivers-esign 2026-07-20)
   "/waivers",
   // Public venue directory + detail pages (name, address, map, hours — 2026-07-21)
