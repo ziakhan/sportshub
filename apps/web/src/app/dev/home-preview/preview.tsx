@@ -946,8 +946,8 @@ const SCREEN_SLIDES: {
     pinBottom: "/home-preview/tours/tabbar-public.jpg",
     tour: [
       { src: "/home-preview/tours/game-1-live.jpg", returnTo: 440 },
-      { src: "/home-preview/tours/game-2-stats.jpg", start: 440, travel: 820 },
-      { src: "/home-preview/tours/game-3-pbp.jpg", start: 440, travel: 820 },
+      { src: "/home-preview/tours/game-2-stats.jpg", start: 440, travel: 820, returnTo: 440 },
+      { src: "/home-preview/tours/game-3-pbp.jpg", start: 440, travel: 820, returnTo: 440 },
     ],
     title: (
       <>
@@ -1116,7 +1116,7 @@ function GuidedShot({
   }, [active, segments])
 
   return (
-    <div ref={frameRef} className="relative aspect-[390/844] w-full overflow-hidden rounded-[1.9rem] bg-white">
+    <div ref={frameRef} className="relative aspect-[390/844] h-full w-auto overflow-hidden rounded-[1.9rem] bg-white">
       {prev && (
         // eslint-disable-next-line @next/next/no-img-element
         <img
@@ -1142,6 +1142,96 @@ function GuidedShot({
     </div>
   )
 }
+/**
+ * The chat slide types for real (owner 2026-08-17): the captured thread is
+ * the ground; a drawn composer types the message letter by letter, the sent
+ * bubble rises into the thread, then the frame crossfades to the real
+ * captured state where the message sits in the thread and the poll is voted.
+ */
+function TypedChat({ active }: { active: boolean }) {
+  const MSG = "See everyone Saturday at 2!"
+  const [typedCount, setTypedCount] = useState(0)
+  const [phase, setPhase] = useState<"idle" | "typing" | "sent" | "voted">("idle")
+
+  useEffect(() => {
+    setTypedCount(0)
+    setPhase("idle")
+    if (!active) return
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      setPhase("voted")
+      return
+    }
+    let cancelled = false
+    const sleep = (ms: number) => new Promise<void>((r) => window.setTimeout(r, ms))
+    const run = async () => {
+      while (!cancelled) {
+        setPhase("idle")
+        setTypedCount(0)
+        await sleep(1400)
+        setPhase("typing")
+        for (let i = 1; i <= MSG.length && !cancelled; i++) {
+          setTypedCount(i)
+          await sleep(64)
+        }
+        await sleep(700)
+        if (cancelled) return
+        setPhase("sent")
+        await sleep(2400)
+        if (cancelled) return
+        setPhase("voted")
+        await sleep(3200)
+      }
+    }
+    run()
+    return () => {
+      cancelled = true
+    }
+  }, [active])
+
+  return (
+    <div className="relative aspect-[390/844] h-full w-auto overflow-hidden rounded-[1.9rem] bg-white">
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src="/home-preview/tours/chat-1.jpg" alt="A team chat with a poll" className="absolute bottom-0 left-0 w-full" />
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src="/home-preview/tours/chat-4.jpg"
+        alt=""
+        aria-hidden="true"
+        className="absolute bottom-0 left-0 w-full transition-opacity duration-500"
+        style={{ opacity: phase === "voted" ? 1 : 0 }}
+      />
+      {phase !== "voted" && (
+        <>
+          <div className="absolute inset-x-0 bottom-[9%] flex h-[8%] items-center gap-2 bg-white px-3">
+            <div className="flex h-[76%] min-w-0 flex-1 items-center rounded-full border border-ink-200 bg-white px-3">
+              <span className="truncate text-[13px] text-ink-950">
+                {MSG.slice(0, typedCount)}
+                {phase === "typing" && <span className="hp-caret text-ink-400">|</span>}
+                {phase === "idle" && typedCount === 0 && (
+                  <span className="text-ink-400">Message the team...</span>
+                )}
+              </span>
+            </div>
+            <span
+              className={`rounded-full px-3.5 py-1.5 text-[13px] font-bold text-white transition-colors ${
+                typedCount === MSG.length ? "bg-play-600" : "bg-play-300"
+              }`}
+            >
+              Send
+            </span>
+          </div>
+          {phase === "sent" && (
+            <div className="hp-bubble absolute bottom-[19%] right-[4%] max-w-[70%] rounded-2xl rounded-br-md bg-court-100 px-3 py-2 shadow-md">
+              <p className="text-[13px] leading-snug text-ink-950">{MSG}</p>
+              <p className="mt-0.5 text-right text-[10px] text-ink-400">now</p>
+            </div>
+          )}
+        </>
+      )}
+    </div>
+  )
+}
+
 function SlideImage({
   slide,
   active,
@@ -1149,9 +1239,16 @@ function SlideImage({
   slide: (typeof SCREEN_SLIDES)[number]
   active: boolean
 }) {
+  if (slide.key === "chat") {
+    return (
+      <div className="flex h-full w-auto justify-center rounded-[2.4rem] bg-ink-900 p-3 shadow-2xl ring-1 ring-white/10">
+        <TypedChat active={active} />
+      </div>
+    )
+  }
   if (slide.frame === "phone" && slide.tour) {
     return (
-      <div className="w-full max-w-[310px] rounded-[2.4rem] bg-ink-900 p-3 shadow-2xl ring-1 ring-white/10">
+      <div className="flex h-full w-auto justify-center rounded-[2.4rem] bg-ink-900 p-3 shadow-2xl ring-1 ring-white/10">
         <GuidedShot segments={slide.tour} alt={slide.alt} active={active} pinBottom={slide.pinBottom} />
       </div>
     )
@@ -1208,51 +1305,58 @@ function Screenshots() {
   )
 
   return (
-    <CourtBackdrop variant="navy" floor="planks" intensity="immersive">
-      <div className="mx-auto w-full max-w-6xl px-5 py-12 sm:py-14">
+    <CourtBackdrop
+      variant="navy"
+      floor="planks"
+      intensity="immersive"
+      className="flex min-h-[100dvh] flex-col"
+      contentClassName="flex flex-1 flex-col"
+    >
+      <div className="mx-auto flex min-h-0 w-full max-w-6xl flex-1 flex-col px-5 pb-4 pt-6">
         <div className="text-center">
           <p className="text-[13px] font-bold uppercase tracking-[0.14em] text-gold-400">
             Straight from the app
           </p>
-          <h2 className="mt-2 text-4xl font-bold tracking-tight text-white sm:text-5xl">
-            What it looks like.
+          <h2 className="mt-1 text-3xl font-bold tracking-tight text-white sm:text-4xl">
+            What it looks like. <span className="text-lg font-medium text-white/60">These are screenshots, not mockups.</span>
           </h2>
-          <p className="mx-auto mt-4 max-w-xl text-lg text-white/70">
-            These are screenshots, not mockups. Slide through.
-          </p>
         </div>
 
-        <div ref={sliderRef} className="relative mt-10">
+        <div ref={sliderRef} className="relative mt-4 min-h-0 flex-1">
           <button
             type="button"
             onClick={() => goTo(active - 1)}
             aria-label="Previous screen"
-            className="absolute inset-y-0 left-0 z-20 flex w-10 cursor-pointer items-center justify-center text-white/45 transition-colors hover:bg-white/5 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-gold-400 sm:w-14 lg:w-20"
+            className="absolute inset-y-0 left-0 z-20 flex w-10 cursor-pointer items-center justify-center text-white/45 transition-colors hover:bg-white/5 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-gold-400 sm:w-14"
           >
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" className="h-10 w-10 lg:h-14 lg:w-14">
               <path d="m15 5-7 7 7 7" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           </button>
 
-          <div className="overflow-hidden">
+          <div className="h-full overflow-hidden">
             <div
-              className="flex transition-transform duration-500 ease-out motion-reduce:transition-none"
+              className="flex h-full transition-transform duration-500 ease-out motion-reduce:transition-none"
               style={{ transform: `translateX(-${active * 100}%)` }}
             >
               {SCREEN_SLIDES.map((slide, i) => (
                 <div
                   key={slide.key}
                   aria-hidden={i !== active}
-                  className="flex w-full shrink-0 flex-col items-center px-10 sm:px-14"
+                  className="flex h-full w-full shrink-0 items-center justify-center px-12 sm:px-16"
                 >
-                  <h3 className="text-balance text-center text-3xl font-bold leading-tight tracking-tight text-white sm:text-5xl">
-                    {slide.title}
-                  </h3>
-                  <p className="mt-3 max-w-lg text-center text-[18px] font-semibold leading-relaxed text-white/90">
-                    {slide.caption}
-                  </p>
-                  <div className="mt-5 flex w-full flex-1 items-center justify-center">
-                    <SlideImage slide={slide} active={i === active} />
+                  <div className="grid h-full w-full max-w-4xl grid-cols-1 content-center items-center gap-5 md:grid-cols-[1fr_auto] md:gap-12">
+                    <div className="text-center md:text-left">
+                      <h3 className="text-balance text-2xl font-bold leading-tight tracking-tight text-white sm:text-4xl lg:text-[44px]">
+                        {slide.title}
+                      </h3>
+                      <p className="mx-auto mt-4 max-w-md text-[17px] font-semibold leading-relaxed text-white/90 md:mx-0 sm:text-[19px]">
+                        {slide.caption}
+                      </p>
+                    </div>
+                    <div className="flex h-[52dvh] max-h-[600px] min-h-[320px] items-center justify-center md:h-[62dvh]">
+                      <SlideImage slide={slide} active={i === active} />
+                    </div>
                   </div>
                 </div>
               ))}
@@ -1263,7 +1367,7 @@ function Screenshots() {
             type="button"
             onClick={() => goTo(active + 1)}
             aria-label="Next screen"
-            className="absolute inset-y-0 right-0 z-20 flex w-10 cursor-pointer items-center justify-center text-white/45 transition-colors hover:bg-white/5 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-gold-400 sm:w-14 lg:w-20"
+            className="absolute inset-y-0 right-0 z-20 flex w-10 cursor-pointer items-center justify-center text-white/45 transition-colors hover:bg-white/5 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-gold-400 sm:w-14"
           >
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" className="h-10 w-10 lg:h-14 lg:w-14">
               <path d="m9 5 7 7-7 7" strokeLinecap="round" strokeLinejoin="round" />
@@ -1271,7 +1375,7 @@ function Screenshots() {
           </button>
         </div>
 
-        <div className="mt-8 flex items-center justify-center gap-2" role="tablist" aria-label="Screens">
+        <div className="mt-3 flex shrink-0 items-center justify-center gap-2" role="tablist" aria-label="Screens">
           {SCREEN_SLIDES.map((slide, i) => (
             <button
               key={slide.key}
@@ -1289,7 +1393,6 @@ function Screenshots() {
     </CourtBackdrop>
   )
 }
-
 /* ── Demo cards ──────────────────────────────────────────────────────────── */
 
 function DemoCards() {
@@ -1465,10 +1568,7 @@ function PreviewNotes() {
 
 /* ── Page ────────────────────────────────────────────────────────────────── */
 
-export function HomePreview() {
-  return (
-    <main className="bg-white">
-      <style>{`
+const PREVIEW_CSS = `
         .hp-rise { animation: hp-rise 640ms ease-out both; }
         @keyframes hp-rise {
           from { opacity: 0; transform: translateY(14px); }
@@ -1479,9 +1579,18 @@ export function HomePreview() {
         }
         html { scroll-snap-type: y proximity; }
         .hp-xfade { animation: hp-xfade 380ms ease-out both; }
+        .hp-caret { animation: hp-caret 900ms steps(2) infinite; }
+        @keyframes hp-caret { 50% { opacity: 0; } }
+        .hp-bubble { animation: hp-bubble 360ms ease-out both; }
+        @keyframes hp-bubble { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes hp-xfade { from { opacity: 0; } to { opacity: 1; } }
         main > * { scroll-snap-align: start; }
-      `}</style>
+      `
+
+export function HomePreview() {
+  return (
+    <main className="bg-white">
+      <style dangerouslySetInnerHTML={{ __html: PREVIEW_CSS }} />
       <Hero />
       <Screenshots />
       <ClaimYourClub />
