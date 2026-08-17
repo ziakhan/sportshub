@@ -463,7 +463,7 @@ async function Journeys({
     return (
       <Card>
         <div className="mb-4 flex flex-wrap items-baseline gap-x-4 gap-y-1">
-          <h2 className="text-ink-900 text-base font-semibold">One visitor's journey</h2>
+          <h2 className="text-ink-900 text-base font-semibold">One visitor&apos;s journey</h2>
           <span className="text-ink-500 text-sm">
             {format(new Date(events[0].createdAt), "MMM d, h:mm a")} · {fmtDuration(seconds)} active
             {events[0].signedIn ? " · signed in (team)" : ""}
