@@ -21,6 +21,7 @@ import Image from "next/image"
 import Link from "next/link"
 import { CourtBackdrop } from "@/components/ui"
 import { NotifyForm } from "@/components/launch/notify-form"
+import { BrandWordmark } from "@/components/brand/wordmark"
 import { DEMOS, type DemoAudience } from "@/app/demos/registry"
 
 /* Rotating hero slogans in the owner's priority order (2026-08-17), each with
@@ -407,24 +408,12 @@ function useSloganRotation(count: number) {
  *  box with rounded corners, at whatever text size it sits in. */
 function OneBox() {
   return (
-    <span className="rounded-[0.3em] bg-hoop-500 px-[0.28em] py-[0.05em] leading-none text-white">
+    <span className="inline-block rounded-[0.22em] bg-hoop-500 px-[0.24em] align-baseline text-[0.82em] leading-[1.15] text-white">
       One
     </span>
   )
 }
 
-function Wordmark({ dark = false }: { dark?: boolean }) {
-  return (
-    <span className="inline-flex items-baseline gap-1.5">
-      <span className={`text-xl font-bold tracking-tight ${dark ? "text-ink-950" : "text-white"}`}>
-        SportsHub
-      </span>
-      <span className="rounded bg-gold-500 px-1.5 py-0.5 text-[11px] font-bold uppercase tracking-wider text-ink-950">
-        One
-      </span>
-    </span>
-  )
-}
 
 function CheckIcon({ className }: { className?: string }) {
   return (
@@ -449,7 +438,7 @@ function Hero() {
   return (
     <CourtBackdrop variant="navy" floor="planks" intensity="immersive" className="flex min-h-[100dvh] flex-col" contentClassName="flex flex-1 flex-col">
       <header className="mx-auto flex w-full max-w-6xl items-center justify-between px-5 pt-6">
-        <Wordmark />
+        <BrandWordmark size="xl" variant="reverse" />
         <nav className="flex items-center gap-6">
           <Link
             href="/demos"
@@ -1179,7 +1168,7 @@ function Footer() {
     <footer className="bg-ink-950 py-14">
       <div className="mx-auto flex w-full max-w-6xl flex-col items-center gap-8 px-5 text-center">
         <div>
-          <Wordmark />
+          <BrandWordmark size="xl" variant="reverse" />
           <p className="mt-3 text-base text-white/60">Youth basketball. All of it. <OneBox /> app.</p>
         </div>
         <nav className="flex flex-wrap items-center justify-center gap-x-7 gap-y-3 text-[15px] font-semibold text-white/70">
