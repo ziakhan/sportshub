@@ -31,7 +31,7 @@ import { DEMOS, type DemoAudience } from "@/app/demos/registry"
    (tryouts, payments), the organize block (calendar, moves), the game block
    (live, stats, news), then the league block. Each line carries a support
    sentence naming what is automatic or instant about it. */
-const SLOGANS: { key: string; node: React.ReactNode; sub: string }[] = [
+const SLOGANS: { key: string; node: React.ReactNode; sub: React.ReactNode }[] = [
   {
     key: "one-app",
     node: (
@@ -39,7 +39,11 @@ const SLOGANS: { key: string; node: React.ReactNode; sub: string }[] = [
         Youth basketball. <span className="text-gold-400">All of it.</span> One app.
       </>
     ),
-    sub: "Registration to final buzzer, one login.",
+    sub: (
+      <>
+        Registration to final buzzer, <span className="text-gold-400 font-semibold">one login</span>.
+      </>
+    ),
   },
   {
     key: "discover",
@@ -48,7 +52,11 @@ const SLOGANS: { key: string; node: React.ReactNode; sub: string }[] = [
         Discover the <span className="text-gold-400">clubs and programs</span> around you.
       </>
     ),
-    sub: "1,325 Canadian clubs already listed, with their programs and cities.",
+    sub: (
+      <>
+        1,325 Canadian clubs <span className="text-gold-400 font-semibold">already listed</span>, with their programs and cities.
+      </>
+    ),
   },
   {
     key: "rosters",
@@ -57,7 +65,11 @@ const SLOGANS: { key: string; node: React.ReactNode; sub: string }[] = [
         Tryouts become <span className="text-gold-400">signed, paid rosters</span>.
       </>
     ),
-    sub: "Sizes, jersey numbers and payment collected the moment a family accepts.",
+    sub: (
+      <>
+        Sizes, numbers and payment collected <span className="text-gold-400 font-semibold">the moment a family accepts</span>.
+      </>
+    ),
   },
   {
     key: "payments",
@@ -66,7 +78,11 @@ const SLOGANS: { key: string; node: React.ReactNode; sub: string }[] = [
         Payment plans <span className="text-gold-400">run themselves</span>.
       </>
     ),
-    sub: "The deposit at signup, the installments on their own dates, automatically.",
+    sub: (
+      <>
+        The deposit at signup, the installments <span className="text-gold-400 font-semibold">on their own dates, automatically</span>.
+      </>
+    ),
   },
   {
     key: "chat-calendar",
@@ -75,7 +91,11 @@ const SLOGANS: { key: string; node: React.ReactNode; sub: string }[] = [
         Team chat, polls, and <span className="text-hoop-400">one family calendar</span>.
       </>
     ),
-    sub: "Both kids, every practice and game, one phone.",
+    sub: (
+      <>
+        Both kids, every practice and game, <span className="text-gold-400 font-semibold">one phone</span>.
+      </>
+    ),
   },
   {
     key: "game-moved",
@@ -84,7 +104,11 @@ const SLOGANS: { key: string; node: React.ReactNode; sub: string }[] = [
         <span className="text-hoop-400">Game moved?</span> Everyone already knows.
       </>
     ),
-    sub: "Every calendar and every phone updates instantly. Nobody makes calls.",
+    sub: (
+      <>
+        Every calendar and phone updates <span className="text-gold-400 font-semibold">instantly</span>. Nobody makes calls.
+      </>
+    ),
   },
   {
     key: "watch-live",
@@ -93,7 +117,11 @@ const SLOGANS: { key: string; node: React.ReactNode; sub: string }[] = [
         Watch every game <span className="text-live-500">live</span>.
       </>
     ),
-    sub: "Score, box score, play by play. No refresh, it just moves.",
+    sub: (
+      <>
+        Score, box score, play by play. <span className="text-gold-400 font-semibold">No refresh, it just moves</span>.
+      </>
+    ),
   },
   {
     key: "potg",
@@ -102,7 +130,11 @@ const SLOGANS: { key: string; node: React.ReactNode; sub: string }[] = [
         Full stats, and a <span className="text-gold-400">Player of the Game</span>.
       </>
     ),
-    sub: "Every tap at the scorer's table folds into the box score instantly.",
+    sub: (
+      <>
+        Every tap at the scorer&apos;s table folds into the box score <span className="text-gold-400 font-semibold">instantly</span>.
+      </>
+    ),
   },
   {
     key: "in-the-news",
@@ -111,7 +143,11 @@ const SLOGANS: { key: string; node: React.ReactNode; sub: string }[] = [
         <span className="text-play-300">Your name</span> in the news.
       </>
     ),
-    sub: "Recaps write themselves from the official scoring record.",
+    sub: (
+      <>
+        Recaps <span className="text-gold-400 font-semibold">write themselves</span> from the official scoring record.
+      </>
+    ),
   },
   {
     key: "plan-season",
@@ -120,7 +156,11 @@ const SLOGANS: { key: string; node: React.ReactNode; sub: string }[] = [
         Plan the season. <span className="text-court-400">Schedule it in one click.</span>
       </>
     ),
-    sub: "A whole season of games generated in seconds, conflicts already handled.",
+    sub: (
+      <>
+        A whole season generated <span className="text-gold-400 font-semibold">in seconds</span>, conflicts already handled.
+      </>
+    ),
   },
   {
     key: "already-built",
@@ -129,7 +169,11 @@ const SLOGANS: { key: string; node: React.ReactNode; sub: string }[] = [
         Registration to final buzzer, <span className="text-court-400">already built</span>.
       </>
     ),
-    sub: "Team entry, approvals, rosters and fees, ready the day you sign in.",
+    sub: (
+      <>
+        Team entry, approvals, rosters and fees, <span className="text-gold-400 font-semibold">ready the day you sign in</span>.
+      </>
+    ),
   },
   {
     key: "standings",
@@ -138,7 +182,11 @@ const SLOGANS: { key: string; node: React.ReactNode; sub: string }[] = [
         Standings <span className="text-court-400">settle themselves</span>.
       </>
     ),
-    sub: "Updated the moment a final goes in, tiebreakers included.",
+    sub: (
+      <>
+        Updated <span className="text-gold-400 font-semibold">the moment a final goes in</span>, tiebreakers included.
+      </>
+    ),
   },
   {
     key: "waivers",
@@ -147,7 +195,11 @@ const SLOGANS: { key: string; node: React.ReactNode; sub: string }[] = [
         Waivers <span className="text-play-300">chase themselves</span>.
       </>
     ),
-    sub: "Reminders go out automatically until every signature is in.",
+    sub: (
+      <>
+        Reminders go out <span className="text-gold-400 font-semibold">automatically</span> until every signature is in.
+      </>
+    ),
   },
 ]
 
@@ -404,7 +456,7 @@ function Hero() {
         </nav>
       </header>
 
-      <div className="hp-rise mx-auto flex w-full max-w-4xl flex-1 flex-col items-center justify-center px-5 py-10 text-center">
+      <div className="hp-rise mx-auto flex w-full max-w-6xl flex-1 flex-col items-center justify-center px-5 py-10 text-center">
         <p className="flex items-center gap-3 text-2xl font-bold uppercase tracking-[0.18em] text-gold-400 sm:text-3xl">
           <span className="h-2.5 w-2.5 rounded-full bg-gold-400 motion-safe:animate-pulse" aria-hidden="true" />
           Launching this fall
@@ -463,7 +515,7 @@ function Hero() {
           ))}
         </div>
 
-        <p className="mt-6 grid w-full max-w-3xl text-xl leading-relaxed text-white/80">
+        <p className="mt-7 grid w-full max-w-4xl text-[22px] font-medium leading-relaxed text-white/95 sm:text-[26px]">
           {SLOGANS.map((s, i) => (
             <span
               key={s.key}
