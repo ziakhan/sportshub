@@ -45,10 +45,17 @@ export default function SignUpPage({
             Accounts open at launch.
           </h1>
           <p className="text-ink-500 mb-6 text-center text-sm">
-            We&apos;re not taking signups yet. Leave your email or phone number on the
-            homepage and you&apos;ll get one message the day the doors open.
+            We&apos;re not taking signups yet. Already have an account? Log in below.
+            New here? Leave your email or phone number on the homepage and you&apos;ll
+            get one message the day the doors open.
           </p>
           <div className="space-y-3">
+            <Link
+              href="/sign-in"
+              className="bg-play-600 hover:bg-play-700 block w-full rounded-full px-6 py-3 text-center text-sm font-bold text-white"
+            >
+              Log in
+            </Link>
             <Link
               href="/"
               className="bg-gold-500 hover:bg-gold-600 text-ink-950 block w-full rounded-full px-6 py-3 text-center text-sm font-bold"
@@ -62,12 +69,6 @@ export default function SignUpPage({
               Watch the demos meanwhile
             </Link>
           </div>
-          <p className="text-ink-400 mt-6 text-center text-xs">
-            Already have an account?{" "}
-            <Link href="/sign-in" className="text-play-600 font-semibold">
-              Log in
-            </Link>
-          </p>
         </div>
       </div>
     )
