@@ -1187,44 +1187,45 @@ function GuidedShot({
 function TypedChat({ active }: { active: boolean }) {
   const MSG = "We'll bring the drinks on Saturday!"
   const [typedCount, setTypedCount] = useState(0)
-  const [phase, setPhase] = useState<
-    "idle" | "tapping" | "voted" | "typing" | "sent" | "final"
-  >("idle")
+  const [voted, setVoted] = useState(false)
+  const [tapping, setTapping] = useState(false)
+  const [sentVisible, setSentVisible] = useState(false)
 
   useEffect(() => {
     setTypedCount(0)
-    setPhase("idle")
+    setVoted(false)
+    setTapping(false)
+    setSentVisible(false)
     if (!active) return
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      setPhase("final")
+      setVoted(true)
+      setSentVisible(true)
       return
     }
     let cancelled = false
     const sleep = (ms: number) => new Promise<void>((r) => window.setTimeout(r, ms))
     const run = async () => {
       while (!cancelled) {
-        setPhase("idle")
+        setVoted(false)
+        setSentVisible(false)
         setTypedCount(0)
-        await sleep(1500)
-        if (cancelled) return
-        setPhase("tapping")
-        await sleep(950)
-        if (cancelled) return
-        setPhase("voted")
         await sleep(1600)
         if (cancelled) return
-        setPhase("typing")
+        setTapping(true)
+        await sleep(650)
+        if (cancelled) return
+        setTapping(false)
+        setVoted(true)
+        await sleep(1700)
         for (let i = 1; i <= MSG.length && !cancelled; i++) {
           setTypedCount(i)
-          await sleep(64)
+          await sleep(62)
         }
-        await sleep(700)
+        await sleep(650)
         if (cancelled) return
-        setPhase("sent")
-        await sleep(1900)
-        if (cancelled) return
-        setPhase("final")
-        await sleep(3200)
+        setSentVisible(true)
+        setTypedCount(0)
+        await sleep(3600)
       }
     }
     run()
@@ -1233,62 +1234,107 @@ function TypedChat({ active }: { active: boolean }) {
     }
   }, [active])
 
-  const baseSrc =
-    phase === "idle" || phase === "tapping"
-      ? "/home-preview/tours/chat-1.jpg"
-      : "/home-preview/tours/chat-v1.jpg"
+  const typing = typedCount > 0
 
   return (
-    <div className="relative aspect-[390/844] h-full w-auto overflow-hidden rounded-[1.9rem] bg-white">
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        key={baseSrc}
-        src={baseSrc}
-        alt="A team chat with a poll"
-        className="hp-xfade absolute bottom-0 left-0 w-full"
-      />
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        src="/home-preview/tours/chat-final.jpg"
-        alt=""
-        aria-hidden="true"
-        className="absolute bottom-0 left-0 w-full transition-opacity duration-500"
-        style={{ opacity: phase === "final" ? 1 : 0 }}
-      />
-      {phase === "tapping" && (
-        <span
-          className="hp-tap absolute left-[22%] top-[64%] z-20 h-9 w-9 rounded-full bg-gold-400/70 ring-2 ring-gold-400"
-          aria-hidden="true"
-        />
-      )}
-      {(phase === "idle" || phase === "tapping" || phase === "voted" || phase === "typing" || phase === "sent") && (
-        <>
-          <div className="absolute inset-x-0 bottom-[9%] flex h-[8%] items-center gap-2 bg-white px-3">
-            <div className="flex h-[76%] min-w-0 flex-1 items-center rounded-full border border-ink-200 bg-white px-3">
-              <span className="truncate text-[13px] text-ink-950">
-                {MSG.slice(0, typedCount)}
-                {phase === "typing" && <span className="hp-caret text-ink-400">|</span>}
-                {typedCount === 0 && phase !== "typing" && (
-                  <span className="text-ink-400">Message the team...</span>
-                )}
-              </span>
-            </div>
-            <span
-              className={`rounded-full px-3.5 py-1.5 text-[13px] font-bold text-white transition-colors ${
-                typedCount === MSG.length ? "bg-play-600" : "bg-play-300"
-              }`}
-            >
-              Send
-            </span>
-          </div>
-          {phase === "sent" && (
-            <div className="hp-glide absolute bottom-[17.5%] right-[3%] max-w-[75%] rounded-2xl rounded-br-md bg-play-600 px-3 py-2 shadow-md">
-              <p className="text-[13px] leading-snug text-white">{MSG}</p>
-              <p className="mt-0.5 text-right text-[10px] text-white/70">now</p>
-            </div>
+    <div className="relative flex aspect-[390/844] h-full w-auto flex-col overflow-hidden rounded-[1.9rem] bg-[#f4f5f7] text-left">
+      {/* Mirrors the real chat screen: same names, times and chrome as the
+          live capture, so it reads as the product, not a mock. */}
+      <div className="flex shrink-0 items-center justify-between bg-white px-4 pb-1 pt-3">
+        <span className="text-[15px] font-extrabold tracking-tight">
+          <span className="text-ink-950">Sports</span>
+          <span className="text-play-600">Hub</span>
+          <span className="relative -top-1 ml-0.5 rounded bg-hoop-500 px-1 text-[7px] font-extrabold text-white">ONE</span>
+        </span>
+        <span className="flex items-center gap-2.5">
+          <span className="relative">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-4.5 w-4.5 h-[18px] w-[18px] text-ink-700"><path d="M6 8a6 6 0 1 1 12 0c0 7 3 7 3 9H3c0-2 3-2 3-9" strokeLinecap="round" strokeLinejoin="round"/><path d="M10 21a2 2 0 0 0 4 0" strokeLinecap="round"/></svg>
+            <span className="absolute -right-0.5 -top-0.5 h-1.5 w-1.5 rounded-full bg-live-500" />
+          </span>
+          <span className="flex h-7 w-7 items-center justify-center rounded-full bg-play-600 text-[11px] font-bold text-white">JR</span>
+        </span>
+      </div>
+      <div className="shrink-0 bg-[#f4f5f7] px-4 pb-2 pt-1.5">
+        <p className="text-[17px] font-extrabold tracking-tight text-ink-950">Toronto Lords Grade 9</p>
+        <p className="text-[11.5px] text-ink-500">Toronto Lords &bull; Team chat</p>
+        <p className="mt-1.5 flex items-center gap-2.5 text-[11px] font-semibold text-ink-700">
+          <span className="rounded-full border border-ink-200 bg-white px-2.5 py-0.5">Polls</span>
+          <span className="text-ink-500">&lsaquo; Team Page</span>
+        </p>
+      </div>
+      <div className="mx-2 flex items-center justify-between rounded-t-xl bg-white px-3 py-1.5 text-[10.5px] font-semibold text-ink-700">
+        <span>14 members</span>
+        <span className="text-ink-500">Show ▾   Mute</span>
+      </div>
+      <div className="mx-2 flex min-h-0 flex-1 flex-col justify-end gap-2 bg-white px-2.5 pb-2 pt-2">
+        <p className="mx-auto rounded-full bg-court-50 px-2.5 py-0.5 text-center text-[9.5px] font-semibold text-ink-500">Saturday, Aug 15</p>
+        <div className="max-w-[88%] rounded-2xl rounded-bl-md bg-court-100 px-3 py-2">
+          <p className="text-[10.5px] font-bold text-ink-800">Carlos Diallo <span className="font-normal text-ink-500">&middot; Ibrahim&apos;s parent</span></p>
+          <p className="text-[12.5px] leading-snug text-ink-950">What court are we on for the 9am?</p>
+          <p className="mt-0.5 text-right text-[9px] text-ink-400">2:20 PM</p>
+        </div>
+        <p className="mx-auto rounded-full bg-court-50 px-2.5 py-0.5 text-center text-[9.5px] font-semibold text-ink-500">Yesterday</p>
+        <div className="max-w-[88%] rounded-2xl rounded-bl-md bg-court-100 px-3 py-2">
+          <p className="text-[10.5px] font-bold text-ink-800">Chris Hassan <span className="ml-0.5 rounded bg-play-100 px-1 text-[8.5px] font-bold text-play-700">STAFF</span></p>
+          <p className="text-[12.5px] leading-snug text-ink-950">Court 2 at the Playground. See you there.</p>
+          <p className="mt-0.5 text-right text-[9px] text-ink-400">6:13 AM</p>
+        </div>
+        <div className="relative max-w-[94%] rounded-2xl border border-ink-100 bg-white px-3 py-2.5 shadow-sm">
+          {tapping && (
+            <span className="hp-tap absolute left-[22%] top-[48%] z-20 h-8 w-8 rounded-full bg-gold-400/70 ring-2 ring-gold-400" aria-hidden="true" />
           )}
-        </>
-      )}
+          <p className="text-[10.5px] font-bold text-ink-800">Chris Hassan <span className="ml-0.5 rounded bg-play-100 px-1 text-[8.5px] font-bold text-play-700">STAFF</span></p>
+          <p className="mt-0.5 flex items-center gap-1.5 text-[12.5px] font-bold text-ink-950">
+            <svg viewBox="0 0 24 24" className="h-3.5 w-3.5 fill-live-500" aria-hidden="true"><rect x="4" y="12" width="4" height="8" rx="1"/><rect x="10" y="7" width="4" height="13" rx="1"/><rect x="16" y="10" width="4" height="10" rx="1"/></svg>
+            Pizza after Saturday&apos;s game?
+          </p>
+          <div className={`mt-1.5 flex items-center justify-between rounded-lg px-2.5 py-1.5 text-[12px] transition-colors duration-300 ${voted ? "bg-play-50 font-bold text-play-700 ring-1 ring-play-300" : "bg-ink-50 font-semibold text-ink-800"}`}>
+            <span>We&apos;re in{voted ? " \u2713" : ""}</span>
+            <span className="tabular-nums text-ink-500">{voted ? "7 \u00b7 88%" : "6 \u00b7 86%"}</span>
+          </div>
+          <div className="mt-1 flex items-center justify-between rounded-lg bg-ink-50 px-2.5 py-1.5 text-[12px] font-semibold text-ink-800">
+            <span>Can&apos;t make it</span>
+            <span className="tabular-nums text-ink-500">{voted ? "1 \u00b7 12%" : "1 \u00b7 14%"}</span>
+          </div>
+          <div className="mt-1 flex items-center justify-between">
+            <p className="text-[10px] text-ink-400">{voted ? "8 votes \u00b7 you voted" : "7 votes \u00b7 tap to vote"}</p>
+            <p className="text-[9px] text-ink-400">6:06 PM</p>
+          </div>
+        </div>
+        {sentVisible && (
+          <div className="hp-glide max-w-[85%] self-end rounded-2xl rounded-br-md bg-play-600 px-3 py-2 shadow-md">
+            <p className="text-[12.5px] leading-snug text-white">{MSG}</p>
+            <p className="mt-0.5 text-right text-[9px] text-white/70">now</p>
+          </div>
+        )}
+      </div>
+      <div className="mx-2 flex shrink-0 items-center gap-2 rounded-b-xl bg-white px-2.5 py-2">
+        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-ink-200">
+          <svg viewBox="0 0 24 24" className="h-4 w-4" aria-hidden="true"><rect x="4" y="11" width="4" height="9" rx="1" className="fill-live-500"/><rect x="10" y="5" width="4" height="15" rx="1" className="fill-court-500"/><rect x="16" y="8" width="4" height="12" rx="1" className="fill-play-500"/></svg>
+        </span>
+        <div className="flex h-9 min-w-0 flex-1 items-center rounded-full border border-ink-200 bg-white px-3">
+          <span className="truncate text-[12.5px] text-ink-950">
+            {MSG.slice(0, typedCount)}
+            {typing && <span className="hp-caret text-ink-400">|</span>}
+            {!typing && <span className="text-ink-400">Message the team...</span>}
+          </span>
+        </div>
+        <span className={`rounded-full px-3.5 py-2 text-[12.5px] font-bold text-white transition-colors ${typedCount === MSG.length ? "bg-play-600" : "bg-play-300"}`}>Send</span>
+      </div>
+      <div className="flex shrink-0 items-start justify-around border-t border-ink-100 bg-white px-2 pb-2.5 pt-1.5">
+        {[
+          ["Home", "M3 11l9-8 9 8M5 9v11h14V9"],
+          ["Chat", "M4 5h16v11H8l-4 4z"],
+          ["Calendar", "M4 6h16v14H4zM4 10h16M8 3v5M16 3v5"],
+          ["My Kids", "M9 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM17 9a2.5 2.5 0 1 0 0-5M2 20c0-4 3-6 7-6s7 2 7 6M16 14c3 0 6 1.5 6 5"],
+          ["Social", "M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM3 12h18M12 3c3 3 3 15 0 18"],
+        ].map(([label, d]) => (
+          <span key={label as string} className={`flex flex-col items-center gap-0.5 text-[8.5px] font-semibold ${label === "Chat" ? "text-hoop-600" : "text-ink-500"}`}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-[17px] w-[17px]"><path d={d as string} strokeLinecap="round" strokeLinejoin="round"/></svg>
+            {label}
+          </span>
+        ))}
+      </div>
     </div>
   )
 }
@@ -1697,12 +1743,11 @@ function SnapGlide() {
     }
     const onUser = () => {
       cancel()
-      window.clearTimeout(timer)
     }
     const onWheel = (e: WheelEvent) => {
-      // Trackpad momentum keeps firing tiny deltas after release; only a
-      // deliberate move interrupts the glide.
-      if (Math.abs(e.deltaY) > 14) onUser()
+      // Only a deliberate move interrupts an in-flight glide. Never touch the
+      // settle timer here: momentum tails were disarming it forever.
+      if (animating && Math.abs(e.deltaY) > 14) cancel()
     }
     window.addEventListener("scroll", onScroll, { passive: true })
     window.addEventListener("wheel", onWheel, { passive: true })
