@@ -72,12 +72,15 @@ export async function POST(req: NextRequest) {
     update: { identity: identity ?? undefined, source },
   })
 
-  // Real-time owner alert, first appearance of a contact only (owner
-  // 2026-08-17). Fire and forget: the visitor's response never waits on it.
+  // First appearance of a contact: alert the owner in real time AND welcome
+  // the signup (branded email now; SMS once Twilio credentials exist). Both
+  // fire and forget: the visitor's response never waits on them.
   if (!existing) {
     const total = await (prisma as any).launchSignup.count()
     const { alertOwnerSignup } = await import("@/lib/owner-alerts")
     alertOwnerSignup({ contact: parsed.contact, kind: parsed.kind, identity, source, total })
+    const { sendLaunchWelcome } = await import("@/lib/launch-welcome")
+    sendLaunchWelcome({ contact: parsed.contact, kind: parsed.kind })
   }
 
   return NextResponse.json({ ok: true })

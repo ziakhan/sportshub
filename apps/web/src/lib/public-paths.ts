@@ -122,6 +122,9 @@ const PUBLIC_API_READ_PREFIXES = [
   // Trainer 1-on-1 open-slot grid (GET only) — shown on the public trainer
   // page; booking/profile/availability mutations stay session-guarded.
   "/api/trainers",
+  // Launch-list one-click opt-out (GET from the welcome email; HMAC token
+  // in the link is the auth)
+  "/api/launch/unsubscribe",
 ] as const
 
 /** API namespaces public for ALL methods (NextAuth flows + signup are POSTs;

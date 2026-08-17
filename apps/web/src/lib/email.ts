@@ -90,9 +90,12 @@ interface SendEmailOptions {
   subject: string
   html: string
   text?: string
+  /** Where a human's reply should land (e.g. support@); FROM stays the
+   * DKIM-aligned transactional sender. */
+  replyTo?: string
 }
 
-export async function sendEmail({ to, subject, html, text }: SendEmailOptions) {
+export async function sendEmail({ to, subject, html, text, replyTo }: SendEmailOptions) {
   // QA-403 (owner 2026-07-24): EVERY transactional send gets an EmailLog row
   // — "did the email go out?" must be a lookup, not a mystery. Logging is
   // best-effort and never fails or delays the send result.
@@ -103,6 +106,7 @@ export async function sendEmail({ to, subject, html, text }: SendEmailOptions) {
       subject,
       html,
       text: text || html.replace(/<[^>]*>/g, ""),
+      ...(replyTo ? { replyTo } : {}),
     })
     logEmail(to, subject, "SENT", null)
     return result
