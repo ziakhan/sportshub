@@ -36,7 +36,7 @@ const SLOGANS: { key: string; node: React.ReactNode; sub: React.ReactNode }[] = 
     key: "one-app",
     node: (
       <>
-        Youth basketball. <span className="text-gold-400">All of it.</span> One app.
+        Youth basketball. <span className="text-gold-400">All of it.</span> <OneBox /> app.
       </>
     ),
     sub: (
@@ -62,7 +62,7 @@ const SLOGANS: { key: string; node: React.ReactNode; sub: React.ReactNode }[] = 
     key: "rosters",
     node: (
       <>
-        Tryouts become <span className="text-gold-400">signed, paid rosters</span>.
+        Tryouts become <span className="text-court-400">signed, paid rosters</span>.
       </>
     ),
     sub: (
@@ -88,7 +88,7 @@ const SLOGANS: { key: string; node: React.ReactNode; sub: React.ReactNode }[] = 
     key: "chat-calendar",
     node: (
       <>
-        Team chat, polls, and <span className="text-hoop-400">one family calendar</span>.
+        Team chat, polls, and <span className="text-play-300">one family calendar</span>.
       </>
     ),
     sub: (
@@ -166,7 +166,7 @@ const SLOGANS: { key: string; node: React.ReactNode; sub: React.ReactNode }[] = 
     key: "already-built",
     node: (
       <>
-        Registration to final buzzer, <span className="text-court-400">already built</span>.
+        Registration to final buzzer, <span className="text-gold-400">already built</span>.
       </>
     ),
     sub: (
@@ -332,7 +332,7 @@ function ClaimSearch() {
   }, [q])
 
   return (
-    <div className="rounded-2xl bg-white p-6 shadow-xl ring-1 ring-ink-100">
+    <div className="min-w-0 rounded-2xl bg-white p-6 shadow-xl ring-1 ring-ink-100">
       <label htmlFor="hp-club-search" className="sr-only">
         Search clubs
       </label>
@@ -401,6 +401,16 @@ function useSloganRotation(count: number) {
   }
 
   return { active, goTo }
+}
+
+/** "One" drawn like the logo badge (owner 2026-08-17): the wordmark's orange
+ *  box with rounded corners, at whatever text size it sits in. */
+function OneBox() {
+  return (
+    <span className="rounded-[0.3em] bg-hoop-500 px-[0.28em] py-[0.05em] leading-none text-white">
+      One
+    </span>
+  )
 }
 
 function Wordmark({ dark = false }: { dark?: boolean }) {
@@ -601,7 +611,7 @@ function ReplacesStory() {
         <div>
           <p className="text-[13px] font-bold uppercase tracking-[0.14em] text-hoop-600">Today</p>
           <h2 className="mt-2 text-4xl font-bold tracking-tight text-ink-950 sm:text-5xl">
-            One app replaces the pile.
+            <OneBox /> app replaces the pile.
           </h2>
           <p className="mt-5 max-w-lg text-lg leading-relaxed text-ink-600">
             Most seasons run on a stack of tools that were never built to talk to each other.
@@ -623,7 +633,7 @@ function ReplacesStory() {
 
         <div className="rounded-2xl bg-ink-950 p-8 shadow-xl sm:p-10">
           <div className="flex items-center justify-between">
-            <h3 className="text-2xl font-bold text-white">One app</h3>
+            <h3 className="text-2xl font-bold text-white"><OneBox /> app</h3>
             <span className="rounded-full bg-gold-500 px-3 py-1 text-[13px] font-bold uppercase tracking-wide text-ink-950">
               All of it
             </span>
@@ -670,7 +680,7 @@ function CompareMark({ cell }: { cell: CompareCell }) {
     // glance without shouting, and people who know can still see it.
     return (
       <span
-        className="mx-auto block h-[3px] w-5 rounded-full bg-live-600"
+        className="mx-auto block h-[5px] w-7 rounded-full bg-live-500"
         role="img"
         aria-label="Not offered"
       />
@@ -680,8 +690,10 @@ function CompareMark({ cell }: { cell: CompareCell }) {
 }
 
 function CompareTable() {
+  /* Mobile drops the table (owner 2026-08-17): ten columns cannot read on a
+     phone, and the pile section above already carries the replaces message. */
   return (
-    <section className="border-y border-ink-100 bg-ink-50 py-14 sm:py-16">
+    <section className="hidden border-y border-ink-100 bg-ink-50 py-14 sm:py-16 md:block">
       <div className="mx-auto w-full max-w-6xl px-5">
         <div className="text-center">
           <p className="text-[13px] font-bold uppercase tracking-[0.14em] text-court-700">
@@ -1130,8 +1142,8 @@ function ClaimYourClub() {
   return (
     <CourtBackdrop variant="daylight" floor="planks" intensity="band">
       <section id="claim" className="mx-auto w-full max-w-6xl px-5 py-12 sm:py-14">
-        <div className="grid items-center gap-12 lg:grid-cols-2">
-          <div>
+        <div className="grid grid-cols-1 items-center gap-12 lg:grid-cols-2">
+          <div className="min-w-0">
             <p className="text-[13px] font-bold uppercase tracking-[0.14em] text-hoop-600">
               For clubs
             </p>
@@ -1168,7 +1180,7 @@ function Footer() {
       <div className="mx-auto flex w-full max-w-6xl flex-col items-center gap-8 px-5 text-center">
         <div>
           <Wordmark />
-          <p className="mt-3 text-base text-white/60">Youth basketball. All of it. One app.</p>
+          <p className="mt-3 text-base text-white/60">Youth basketball. All of it. <OneBox /> app.</p>
         </div>
         <nav className="flex flex-wrap items-center justify-center gap-x-7 gap-y-3 text-[15px] font-semibold text-white/70">
           <Link href="/demos" className="transition-colors hover:text-white">

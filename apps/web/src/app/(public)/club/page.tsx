@@ -9,6 +9,7 @@ import {
   type DirectoryClub,
 } from "@/lib/queries/directory-clubs"
 import { PUBLIC_REVIEWS } from "@/lib/public-flags"
+import { ClubFilterSelects } from "./filter-selects"
 import { Crest, PageBand, StarRating } from "@/components/ui"
 import { FollowButton } from "@/components/follow-button"
 import { ClubSearch } from "../club-search"
@@ -18,7 +19,7 @@ export const dynamic = "force-dynamic"
 export const metadata = {
   title: "Find a Youth Basketball Club Near You",
   alternates: { canonical: "/club" },
-  description: "Discover youth basketball clubs near you, rated by real families.",
+  description: "Discover youth basketball clubs and programs near you, province by province.",
 }
 
 function ClubCard({
@@ -64,8 +65,8 @@ function ClubCard({
         )}
         <span className="text-ink-500 block truncate text-xs">
           {[club.city, club.state].filter(Boolean).join(", ") || "Ontario"}
-          {club._count.teams > 0 && ` · ${club._count.teams} teams`}
-          {club._count.tryouts > 0 && ` · ${club._count.tryouts} tryouts`}
+          {club._count.teams > 0 && ` · ${club._count.teams} ${club._count.teams === 1 ? "team" : "teams"}`}
+          {club._count.tryouts > 0 && ` · ${club._count.tryouts} ${club._count.tryouts === 1 ? "tryout" : "tryouts"}`}
         </span>
       </span>
       {club.status === "UNCLAIMED" && (
@@ -222,7 +223,16 @@ export default async function ClubDirectoryPage({
             one row with Ontario pinned first, then the cities of the scoped
             province with the GTA pinned on its own row. Never mixed. */}
         <div className="mt-6 space-y-3">
-          <div className="flex flex-wrap items-center justify-center gap-2">
+          <ClubFilterSelects
+            provinces={provinces.map(([code, count]) => [
+              code,
+              `${PROVINCE_NAMES[code] ?? code} (${count})`,
+            ])}
+            cities={scopedCities.map((g) => g.city)}
+            prov={prov}
+            city={city}
+          />
+          <div className="hidden flex-wrap items-center justify-center gap-2 sm:flex">
             <span className="text-ink-500 text-[12px] font-bold uppercase tracking-[0.14em]">
               Province
             </span>
@@ -244,7 +254,7 @@ export default async function ClubDirectoryPage({
           </div>
 
           {gtaCities.length > 0 && (
-            <div className="flex flex-wrap items-center justify-center gap-2">
+            <div className="hidden flex-wrap items-center justify-center gap-2 sm:flex">
               <span className="text-ink-500 text-[12px] font-bold uppercase tracking-[0.14em]">
                 Greater Toronto
               </span>
@@ -264,7 +274,7 @@ export default async function ClubDirectoryPage({
           )}
 
           {restCities.length > 0 && (
-            <div className="flex flex-wrap items-center justify-center gap-2">
+            <div className="hidden flex-wrap items-center justify-center gap-2 sm:flex">
               <span className="text-ink-500 text-[12px] font-bold uppercase tracking-[0.14em]">
                 {scope === "ON" ? "More Ontario" : (PROVINCE_NAMES[scope] ?? scope)}
               </span>
