@@ -29,6 +29,22 @@ import { DEMOS, type DemoAudience } from "@/app/demos/registry"
    auto-advance so a reader is never yanked off a line. */
 const SLOGANS: { key: string; node: React.ReactNode }[] = [
   {
+    key: "one-app",
+    node: (
+      <>
+        Youth basketball. <span className="text-gold-400">All of it.</span> One app.
+      </>
+    ),
+  },
+  {
+    key: "discover",
+    node: (
+      <>
+        Discover the <span className="text-gold-400">clubs and programs</span> around you.
+      </>
+    ),
+  },
+  {
     key: "watch-live",
     node: (
       <>
@@ -77,6 +93,14 @@ const SLOGANS: { key: string; node: React.ReactNode }[] = [
     ),
   },
   {
+    key: "rosters",
+    node: (
+      <>
+        Tryouts become <span className="text-gold-400">signed, paid rosters</span>.
+      </>
+    ),
+  },
+  {
     key: "plan-season",
     node: (
       <>
@@ -105,30 +129,6 @@ const SLOGANS: { key: string; node: React.ReactNode }[] = [
     node: (
       <>
         Waivers <span className="text-play-300">chase themselves</span>.
-      </>
-    ),
-  },
-  {
-    key: "rosters",
-    node: (
-      <>
-        Tryouts become <span className="text-gold-400">signed, paid rosters</span>.
-      </>
-    ),
-  },
-  {
-    key: "discover",
-    node: (
-      <>
-        Discover the <span className="text-gold-400">clubs around you</span>.
-      </>
-    ),
-  },
-  {
-    key: "one-app",
-    node: (
-      <>
-        Youth basketball. <span className="text-gold-400">All of it.</span> One app.
       </>
     ),
   },
@@ -727,13 +727,25 @@ const SCREEN_SLIDES: {
   frame: "phone" | "desktop"
 }[] = [
   {
-    key: "live",
+    key: "game",
     title: (
       <>
         Watch every game <span className="text-live-500">live</span>.
       </>
     ),
-    caption: "Full team stats in each team's colours, no refresh, it just moves.",
+    caption: "The score, the quarters and the game leaders, as it happens.",
+    src: "/home-preview/shots/game-live-leaders-phone.png",
+    alt: "A live game on a phone: the score with quarter totals and the game leaders with jersey portraits",
+    frame: "phone",
+  },
+  {
+    key: "stats",
+    title: (
+      <>
+        Full team stats, <span className="text-gold-400">side by side</span>.
+      </>
+    ),
+    caption: "Shooting, rebounds, assists and steals in each team's colours.",
     src: "/home-preview/shots/game-live-boxscore-phone.png",
     alt: "Live team stats on a phone: shooting splits, rebounds, assists, steals and blocks as two-sided bars",
     frame: "phone",
@@ -747,7 +759,7 @@ const SCREEN_SLIDES: {
     ),
     caption: "Makes, misses, rebounds, subs, and the assist, written play by play.",
     src: "/home-preview/shots/game-live-playbyplay-phone.png",
-    alt: "Play-by-play on a phone: scores with assists, missed shots with rebounds, substitutions and fouls, each with the running score",
+    alt: "Play-by-play on a phone: scores with assists, missed shots with rebounds, substitutions and fouls",
     frame: "phone",
   },
   {
@@ -759,7 +771,19 @@ const SCREEN_SLIDES: {
     ),
     caption: "Written from the official scoring record, with a Player of the Game.",
     src: "/home-preview/news-recap-phone.png",
-    alt: "A game recap article on a phone: Toronto Lords Grade 10 Girls beat Burlington Force 54 to 33, Player of the Game named",
+    alt: "A game recap article on a phone: Toronto Lords Grade 10 Girls beat Burlington Force 54 to 33",
+    frame: "phone",
+  },
+  {
+    key: "feed",
+    title: (
+      <>
+        The season has a <span className="text-play-300">feed</span>.
+      </>
+    ),
+    caption: "Finals, milestones and Player of the Game cards, made to share.",
+    src: "/home-preview/shots/social-feed-phone.png",
+    alt: "A social feed on a phone: a final score card with likes, comments and reposts, and a Player of the Game card with stat leaders",
     frame: "phone",
   },
   {
@@ -771,19 +795,7 @@ const SCREEN_SLIDES: {
     ),
     caption: "Every player gets a page: season stats, games, and their moments.",
     src: "/home-preview/shots/social-player-page-phone.png",
-    alt: "A player's public page on a phone: jersey number 20 mug, Danielle R., Toronto Lords, points and rebounds per game tiles",
-    frame: "phone",
-  },
-  {
-    key: "week",
-    title: (
-      <>
-        The <span className="text-gold-400">family week</span>, on one phone.
-      </>
-    ),
-    caption: "Practices, games, and the RSVP right on the row.",
-    src: "/home-preview/shots/parent-calendar-phone.png",
-    alt: "A family calendar on a phone: practices and games for two kids with Going, Maybe and Can't go buttons on each row",
+    alt: "A player's public page on a phone: jersey number 20 mug, Danielle R., Toronto Lords, stat tiles",
     frame: "phone",
   },
   {
@@ -795,7 +807,19 @@ const SCREEN_SLIDES: {
     ),
     caption: "Coaches and parents in one place, and a poll settles Saturday's pizza.",
     src: "/home-preview/shots/parent-team-chat-phone.png",
-    alt: "A team chat on a phone: coach messages, a carpool note from a parent, and a poll with live results",
+    alt: "A team chat on a phone: coach messages, a carpool note, and a poll with live results",
+    frame: "phone",
+  },
+  {
+    key: "week",
+    title: (
+      <>
+        The <span className="text-gold-400">family week</span>, on one phone.
+      </>
+    ),
+    caption: "Practices, games, and the RSVP right on the row.",
+    src: "/home-preview/shots/parent-calendar-phone.png",
+    alt: "A family calendar on a phone: practices and games for two kids with RSVP buttons on each row",
     frame: "phone",
   },
   {
@@ -817,21 +841,9 @@ const SCREEN_SLIDES: {
         Standings <span className="text-court-400">settle themselves</span>.
       </>
     ),
-    caption: "Finals go in, the table moves on its own.",
+    caption: "Finals go in, the table moves on its own. The league side lives on the big screen.",
     src: "/home-preview/league-desktop.png",
     alt: "A league page on desktop: final scores and standings tables with records, streaks and games back",
-    frame: "desktop",
-  },
-  {
-    key: "news",
-    title: (
-      <>
-        Finals become <span className="text-play-300">news</span>.
-      </>
-    ),
-    caption: "Recap cards and player milestones, written on their own.",
-    src: "/home-preview/shots/news-cards-desktop.png",
-    alt: "A news grid on desktop: game recap cards with team crests and scores, milestone cards and a club announcement",
     frame: "desktop",
   },
 ]

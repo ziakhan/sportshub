@@ -52,3 +52,6 @@ here was fixed in the demo job: this is the product's list.
   directory chips had to guard against: "Ontario" as a city, "Toronto ON",
   "Markham ON". Normalize at import (strip trailing province codes, reject
   province names as cities) and backfill the existing rows. (`scripts/import-clubs.ts`)
+- **POTG share-card art uses a basketball emoji** in the "Player of the Game" chip
+  (visible in feed score cards). Same rule as the recap chip fix: hand-drawn SVG
+  ball, no emoji-as-icon. (social share card generator)
