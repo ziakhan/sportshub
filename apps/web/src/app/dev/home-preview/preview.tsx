@@ -1187,14 +1187,16 @@ function GuidedShot({
 function TypedChat({ active }: { active: boolean }) {
   const MSG = "We'll bring the drinks on Saturday!"
   const [typedCount, setTypedCount] = useState(0)
-  const [phase, setPhase] = useState<"idle" | "typing" | "sent" | "voting" | "voted">("idle")
+  const [phase, setPhase] = useState<
+    "idle" | "tapping" | "voted" | "typing" | "sent" | "final"
+  >("idle")
 
   useEffect(() => {
     setTypedCount(0)
     setPhase("idle")
     if (!active) return
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      setPhase("voted")
+      setPhase("final")
       return
     }
     let cancelled = false
@@ -1203,7 +1205,14 @@ function TypedChat({ active }: { active: boolean }) {
       while (!cancelled) {
         setPhase("idle")
         setTypedCount(0)
-        await sleep(1400)
+        await sleep(1500)
+        if (cancelled) return
+        setPhase("tapping")
+        await sleep(950)
+        if (cancelled) return
+        setPhase("voted")
+        await sleep(1600)
+        if (cancelled) return
         setPhase("typing")
         for (let i = 1; i <= MSG.length && !cancelled; i++) {
           setTypedCount(i)
@@ -1212,12 +1221,9 @@ function TypedChat({ active }: { active: boolean }) {
         await sleep(700)
         if (cancelled) return
         setPhase("sent")
-        await sleep(2000)
+        await sleep(1900)
         if (cancelled) return
-        setPhase("voting")
-        await sleep(950)
-        if (cancelled) return
-        setPhase("voted")
+        setPhase("final")
         await sleep(3200)
       }
     }
@@ -1227,29 +1233,42 @@ function TypedChat({ active }: { active: boolean }) {
     }
   }, [active])
 
+  const baseSrc =
+    phase === "idle" || phase === "tapping"
+      ? "/home-preview/tours/chat-1.jpg"
+      : "/home-preview/tours/chat-v1.jpg"
+
   return (
     <div className="relative aspect-[390/844] h-full w-auto overflow-hidden rounded-[1.9rem] bg-white">
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src="/home-preview/tours/chat-1.jpg" alt="A team chat with a poll" className="absolute bottom-0 left-0 w-full" />
+      <img
+        key={baseSrc}
+        src={baseSrc}
+        alt="A team chat with a poll"
+        className="hp-xfade absolute bottom-0 left-0 w-full"
+      />
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
-        src="/home-preview/tours/chat-4.jpg"
+        src="/home-preview/tours/chat-final.jpg"
         alt=""
         aria-hidden="true"
         className="absolute bottom-0 left-0 w-full transition-opacity duration-500"
-        style={{ opacity: phase === "voted" ? 1 : 0 }}
+        style={{ opacity: phase === "final" ? 1 : 0 }}
       />
-      {phase === "voting" && (
-        <span className="hp-tap absolute left-[30%] top-[51%] z-20 h-9 w-9 rounded-full bg-gold-400/70 ring-2 ring-gold-400" aria-hidden="true" />
+      {phase === "tapping" && (
+        <span
+          className="hp-tap absolute left-[30%] top-[51%] z-20 h-9 w-9 rounded-full bg-gold-400/70 ring-2 ring-gold-400"
+          aria-hidden="true"
+        />
       )}
-      {phase !== "voted" && (
+      {phase !== "final" && (
         <>
           <div className="absolute inset-x-0 bottom-[9%] flex h-[8%] items-center gap-2 bg-white px-3">
             <div className="flex h-[76%] min-w-0 flex-1 items-center rounded-full border border-ink-200 bg-white px-3">
               <span className="truncate text-[13px] text-ink-950">
                 {MSG.slice(0, typedCount)}
                 {phase === "typing" && <span className="hp-caret text-ink-400">|</span>}
-                {phase === "idle" && typedCount === 0 && (
+                {typedCount === 0 && phase !== "typing" && (
                   <span className="text-ink-400">Message the team...</span>
                 )}
               </span>
@@ -1263,9 +1282,9 @@ function TypedChat({ active }: { active: boolean }) {
             </span>
           </div>
           {phase === "sent" && (
-            <div className="hp-bubble absolute bottom-[19%] right-[4%] max-w-[70%] rounded-2xl rounded-br-md bg-court-100 px-3 py-2 shadow-md">
-              <p className="text-[13px] leading-snug text-ink-950">{MSG}</p>
-              <p className="mt-0.5 text-right text-[10px] text-ink-400">now</p>
+            <div className="hp-glide absolute bottom-[19%] right-[4%] max-w-[75%] rounded-2xl rounded-br-md bg-play-600 px-3 py-2 shadow-md">
+              <p className="text-[13px] leading-snug text-white">{MSG}</p>
+              <p className="mt-0.5 text-right text-[10px] text-white/70">now</p>
             </div>
           )}
         </>
@@ -1273,7 +1292,6 @@ function TypedChat({ active }: { active: boolean }) {
     </div>
   )
 }
-
 function SlideImage({
   slide,
   active,
@@ -1634,10 +1652,76 @@ const PREVIEW_CSS = `
         main > * { scroll-snap-align: start; }
       `
 
+function SnapGlide() {
+  useEffect(() => {
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return
+    let timer = 0
+    let raf = 0
+    let animating = false
+    const cancel = () => {
+      if (animating) {
+        cancelAnimationFrame(raf)
+        animating = false
+      }
+    }
+    const glideTo = (target: number) => {
+      const from = window.scrollY
+      const dist = target - from
+      if (Math.abs(dist) < 8) return
+      const ms = Math.min(1400, 500 + Math.abs(dist) * 1.6)
+      const t0 = performance.now()
+      animating = true
+      const step = (t: number) => {
+        if (!animating) return
+        const k = Math.min(1, (t - t0) / ms)
+        const e = k < 0.5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2
+        window.scrollTo(0, from + dist * e)
+        if (k < 1) raf = requestAnimationFrame(step)
+        else animating = false
+      }
+      raf = requestAnimationFrame(step)
+    }
+    const settle = () => {
+      const vh = window.innerHeight
+      const sections = Array.from(document.querySelectorAll("main > *"))
+      let best: { top: number; d: number } | null = null
+      for (const el of sections) {
+        const top = (el as HTMLElement).getBoundingClientRect().top
+        const d = Math.abs(top)
+        if (d < vh * 0.35 && d > 8 && (!best || d < best.d)) best = { top: window.scrollY + top, d }
+      }
+      if (best) glideTo(best.top)
+    }
+    const onScroll = () => {
+      if (animating) return
+      window.clearTimeout(timer)
+      timer = window.setTimeout(settle, 160)
+    }
+    const onUser = () => {
+      cancel()
+      window.clearTimeout(timer)
+    }
+    window.addEventListener("scroll", onScroll, { passive: true })
+    window.addEventListener("wheel", onUser, { passive: true })
+    window.addEventListener("touchstart", onUser, { passive: true })
+    window.addEventListener("keydown", onUser)
+    return () => {
+      cancel()
+      window.clearTimeout(timer)
+      window.removeEventListener("scroll", onScroll)
+      window.removeEventListener("wheel", onUser)
+      window.removeEventListener("touchstart", onUser)
+      window.removeEventListener("keydown", onUser)
+    }
+  }, [])
+  return null
+}
+
 export function HomePreview() {
   return (
     <main className="bg-white">
       <style dangerouslySetInnerHTML={{ __html: PREVIEW_CSS }} />
+      <SnapGlide />
       <Hero />
       <Screenshots />
       <ClaimYourClub />
