@@ -29,30 +29,6 @@ import { DEMOS, type DemoAudience } from "@/app/demos/registry"
    auto-advance so a reader is never yanked off a line. */
 const SLOGANS: { key: string; node: React.ReactNode }[] = [
   {
-    key: "one-app",
-    node: (
-      <>
-        Youth basketball. <span className="text-gold-400">All of it.</span> One app.
-      </>
-    ),
-  },
-  {
-    key: "already-built",
-    node: (
-      <>
-        Registration to final buzzer, <span className="text-court-400">already built</span>.
-      </>
-    ),
-  },
-  {
-    key: "rosters",
-    node: (
-      <>
-        Tryouts become <span className="text-gold-400">signed, paid rosters</span>.
-      </>
-    ),
-  },
-  {
     key: "watch-live",
     node: (
       <>
@@ -69,10 +45,10 @@ const SLOGANS: { key: string; node: React.ReactNode }[] = [
     ),
   },
   {
-    key: "plan-season",
+    key: "in-the-news",
     node: (
       <>
-        Plan the season. <span className="text-court-400">Schedule it in one click.</span>
+        <span className="text-play-300">Your name</span> in the news.
       </>
     ),
   },
@@ -85,10 +61,34 @@ const SLOGANS: { key: string; node: React.ReactNode }[] = [
     ),
   },
   {
+    key: "chat-calendar",
+    node: (
+      <>
+        Team chat, polls, and <span className="text-hoop-400">one family calendar</span>.
+      </>
+    ),
+  },
+  {
     key: "payments",
     node: (
       <>
         Payment plans <span className="text-gold-400">run themselves</span>.
+      </>
+    ),
+  },
+  {
+    key: "plan-season",
+    node: (
+      <>
+        Plan the season. <span className="text-court-400">Schedule it in one click.</span>
+      </>
+    ),
+  },
+  {
+    key: "already-built",
+    node: (
+      <>
+        Registration to final buzzer, <span className="text-court-400">already built</span>.
       </>
     ),
   },
@@ -109,10 +109,10 @@ const SLOGANS: { key: string; node: React.ReactNode }[] = [
     ),
   },
   {
-    key: "chat-calendar",
+    key: "rosters",
     node: (
       <>
-        Team chat, polls, and <span className="text-hoop-400">one family calendar</span>.
+        Tryouts become <span className="text-gold-400">signed, paid rosters</span>.
       </>
     ),
   },
@@ -125,10 +125,10 @@ const SLOGANS: { key: string; node: React.ReactNode }[] = [
     ),
   },
   {
-    key: "in-the-news",
+    key: "one-app",
     node: (
       <>
-        <span className="text-play-300">Your name</span> in the news.
+        Youth basketball. <span className="text-gold-400">All of it.</span> One app.
       </>
     ),
   },
@@ -368,7 +368,7 @@ function Hero() {
   const [identity, setIdentity] = useState<Identity | null>(null)
 
   return (
-    <CourtBackdrop variant="navy" floor="planks" intensity="immersive" className="min-h-[92vh]">
+    <CourtBackdrop variant="navy" floor="planks" intensity="immersive" className="flex min-h-[100dvh] flex-col" contentClassName="flex flex-1 flex-col">
       <header className="mx-auto flex w-full max-w-6xl items-center justify-between px-5 pt-6">
         <Wordmark />
         <nav className="flex items-center gap-6">
@@ -387,7 +387,7 @@ function Hero() {
         </nav>
       </header>
 
-      <div className="hp-rise mx-auto flex w-full max-w-4xl flex-col items-center px-5 pb-14 pt-12 text-center sm:pt-16">
+      <div className="hp-rise mx-auto flex w-full max-w-4xl flex-1 flex-col items-center justify-center px-5 py-10 text-center">
         <p className="flex items-center gap-3 text-2xl font-bold uppercase tracking-[0.18em] text-gold-400 sm:text-3xl">
           <span className="h-2.5 w-2.5 rounded-full bg-gold-400 motion-safe:animate-pulse" aria-hidden="true" />
           Launching this fall
@@ -498,9 +498,14 @@ function Hero() {
 
         <Link
           href="/demos"
-          className="mt-9 text-[15px] font-semibold text-white/70 underline decoration-white/30 underline-offset-4 transition-colors hover:text-white"
+          className="mt-9 inline-flex cursor-pointer items-center gap-3 rounded-2xl border-2 border-white/25 bg-white/10 px-10 py-4 text-xl font-bold text-white transition-colors hover:border-white/40 hover:bg-white/15 focus:outline-none focus-visible:ring-2 focus-visible:ring-gold-400"
         >
-          Or watch it work right now
+          <span className="flex h-8 w-8 items-center justify-center rounded-full bg-gold-500">
+            <svg viewBox="0 0 24 24" className="ml-0.5 h-4 w-4 fill-ink-950" aria-hidden="true">
+              <path d="M8 5v14l11-7z" />
+            </svg>
+          </span>
+          Watch the demo now
         </Link>
       </div>
     </CourtBackdrop>
@@ -1145,11 +1150,11 @@ export function HomePreview() {
         }
       `}</style>
       <Hero />
+      <Screenshots />
       <ClaimYourClub />
       <ReplacesStory />
       <CompareTable />
       <EverybodyConnects />
-      <Screenshots />
       <DemoCards />
       <Footer />
       <PreviewNotes />
