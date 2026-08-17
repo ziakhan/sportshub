@@ -119,7 +119,7 @@ interface ClubCfg {
 }
 
 const CLUBS: ClubCfg[] = [
-  { key: "lords", name: "Toronto Lords", slug: "toronto-lords-basketball", city: "Toronto", color: "#1d4ed8", grades: [8, 9, 11], featured: true, elite: true, spring: "recruiting" },
+  { key: "lords", name: "Toronto Lords", slug: "toronto-lords", city: "Toronto", color: "#1d4ed8", grades: [8, 9, 11], featured: true, elite: true, spring: "recruiting" },
   { key: "huskies", name: "North Toronto Huskies", slug: "north-toronto-huskies", create: true, city: "Toronto", color: "#7c3aed", grades: [10, 11], spring: "recruiting" },
   { key: "lions", name: "North York Lions", slug: "north-york-lions", city: "North York", color: "#b45309", grades: [9, 10] },
   { key: "cityabove", name: "City Above Elite", slug: "city-above-elite", city: "Toronto", color: "#0f766e", grades: [8, 10] },
@@ -127,10 +127,10 @@ const CLUBS: ClubCfg[] = [
   { key: "crown", name: "Royal Crown", slug: "royal-crown-school", city: "Scarborough", color: "#9333ea", grades: [9, 10], spring: "recruiting" },
   { key: "uchenna", name: "Uchenna Academy", slug: "uchenna-academy", create: true, city: "Toronto", color: "#dc2626", grades: [11] },
   { key: "kings", name: "Kings Court", slug: "kings-court-academy", city: "Hamilton", color: "#ca8a04", grades: [8, 9] },
-  { key: "west", name: "West United Prep", slug: "west-united", city: "Mississauga", color: "#0891b2", grades: [10, 11], spring: "submitted" },
-  { key: "force", name: "Burlington Force", slug: "burlington-force-elite", city: "Burlington", color: "#16a34a", grades: [8, 9, 10], featured: true, elite: true, spring: "submitted" },
+  { key: "west", name: "West United Prep", slug: "west-united-prep", city: "Mississauga", color: "#0891b2", grades: [10, 11], spring: "submitted" },
+  { key: "force", name: "Burlington Force", slug: "burlington-basketball", city: "Burlington", color: "#16a34a", grades: [8, 9, 10], featured: true, elite: true, spring: "submitted" },
   { key: "burloak", name: "Burloak Elite", slug: "burloak-elite", city: "Burlington", color: "#ea580c", grades: [8, 9], spring: "recruiting" },
-  { key: "monarchs", name: "Mississauga Monarchs", slug: "monarchs-basketball-rep-aau", city: "Mississauga", color: "#4f46e5", grades: [8, 9], spring: "submitted" },
+  { key: "monarchs", name: "Mississauga Monarchs", slug: "mississauga-minor-basketball-association", city: "Mississauga", color: "#4f46e5", grades: [8, 9], spring: "submitted" },
   { key: "panthers", name: "Oakville Panthers", slug: "oakville-panthers", create: true, city: "Oakville", color: "#be123c", grades: [9, 10], spring: "recruiting" },
   { key: "ckatt", name: "CKATT Basketball", slug: "ckatt-cooksville", city: "Mississauga", color: "#374151", grades: [8, 11] },
   { key: "pdm", name: "PDM Basketball", slug: "pdm-basketball", city: "Oakville", color: "#059669", grades: [8, 11] },
@@ -806,8 +806,20 @@ async function seed() {
     for (const grade of club.grades) {
       const g = GRADES[grade]
       const teamName = `${club.name} Grade ${grade}`
-      const team = await p.team.create({
-        data: { tenantId: row.id, name: teamName, ageGroup: `Grade ${grade}`, gender: "MALE", season: WINTER_SEASON, description: MARKER },
+      // Upsert, not create: since the consolidation the demo adopts census
+      // tenants that other seed worlds (summer) also put teams on, so the
+      // same club+grade+season can already exist. Same team, same identity.
+      const team = await p.team.upsert({
+        where: {
+          tenantId_name_ageGroup_season: {
+            tenantId: row.id,
+            name: teamName,
+            ageGroup: `Grade ${grade}`,
+            season: WINTER_SEASON,
+          },
+        },
+        update: { description: MARKER },
+        create: { tenantId: row.id, name: teamName, ageGroup: `Grade ${grade}`, gender: "MALE", season: WINTER_SEASON, description: MARKER },
         select: { id: true },
       })
       // Head coach = the chat admin by default

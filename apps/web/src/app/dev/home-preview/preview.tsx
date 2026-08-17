@@ -385,14 +385,53 @@ function ClaimSearch() {
   )
 }
 
-function useSloganRotation(count: number) {
+/** Arrow keys drive whichever carousel is on screen, no focus needed. */
+function useArrowNav(
+  ref: React.RefObject<HTMLDivElement | null>,
+  onPrev: () => void,
+  onNext: () => void
+) {
+  const latest = useRef({ onPrev, onNext })
+  latest.current = { onPrev, onNext }
+  useEffect(() => {
+    const el = ref.current
+    if (!el) return
+    let active = false
+    const io = new IntersectionObserver(
+      ([e]) => {
+        active = e.isIntersecting && e.intersectionRatio > 0.4
+      },
+      { threshold: [0, 0.4, 1] }
+    )
+    io.observe(el)
+    const onKey = (e: KeyboardEvent) => {
+      if (!active) return
+      const t = e.target as HTMLElement | null
+      if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.isContentEditable)) return
+      if (e.key === "ArrowLeft") {
+        e.preventDefault()
+        latest.current.onPrev()
+      } else if (e.key === "ArrowRight") {
+        e.preventDefault()
+        latest.current.onNext()
+      }
+    }
+    window.addEventListener("keydown", onKey)
+    return () => {
+      io.disconnect()
+      window.removeEventListener("keydown", onKey)
+    }
+  }, [ref])
+}
+
+function useSloganRotation(count: number, intervalMs = 4200) {
   const [active, setActive] = useState(0)
   const [interacted, setInteracted] = useState(false)
 
   useEffect(() => {
     if (interacted) return
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return
-    const id = window.setInterval(() => setActive((a) => (a + 1) % count), 4200)
+    const id = window.setInterval(() => setActive((a) => (a + 1) % count), intervalMs)
     return () => window.clearInterval(id)
   }, [count, interacted])
 
@@ -434,6 +473,13 @@ function CheckIcon({ className }: { className?: string }) {
 function Hero() {
   const { active, goTo } = useSloganRotation(SLOGANS.length)
   const [identity, setIdentity] = useState<Identity | null>(null)
+  const [identityWarn, setIdentityWarn] = useState(false)
+  const heroRef = useRef<HTMLDivElement>(null)
+  useArrowNav(
+    heroRef,
+    () => goTo(active - 1),
+    () => goTo(active + 1)
+  )
 
   return (
     <CourtBackdrop variant="navy" floor="planks" intensity="immersive" className="flex min-h-[100dvh] flex-col" contentClassName="flex flex-1 flex-col">
@@ -455,23 +501,15 @@ function Hero() {
         </nav>
       </header>
 
-      <div className="hp-rise mx-auto flex w-full max-w-6xl flex-1 flex-col items-center justify-center px-5 py-10 text-center">
+      <div ref={heroRef}
+        className="hp-rise relative mx-auto flex w-full max-w-6xl flex-1 flex-col items-center justify-center px-5 py-10 text-center">
         <p className="flex items-center gap-3 text-2xl font-bold uppercase tracking-[0.18em] text-gold-400 sm:text-3xl">
           <span className="h-2.5 w-2.5 rounded-full bg-gold-400 motion-safe:animate-pulse" aria-hidden="true" />
           Launching this fall
         </p>
 
         <div className="relative mt-7 w-full">
-          <button
-            type="button"
-            onClick={() => goTo(active - 1)}
-            aria-label="Previous line"
-            className="absolute -left-2 top-1/2 hidden h-11 w-11 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full text-white/45 transition-colors hover:bg-white/10 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-gold-400 sm:flex lg:-left-14"
-          >
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" className="h-6 w-6">
-              <path d="m15 5-7 7 7 7" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          </button>
+
           <h1 className="grid w-full text-balance text-[44px] font-bold leading-[1.05] tracking-tight text-white sm:text-6xl lg:text-7xl">
             {SLOGANS.map((s, i) => (
               <span
@@ -487,16 +525,7 @@ function Hero() {
               </span>
             ))}
           </h1>
-          <button
-            type="button"
-            onClick={() => goTo(active + 1)}
-            aria-label="Next line"
-            className="absolute -right-2 top-1/2 hidden h-11 w-11 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full text-white/45 transition-colors hover:bg-white/10 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-gold-400 sm:flex lg:-right-14"
-          >
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" className="h-6 w-6">
-              <path d="m9 5 7 7-7 7" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          </button>
+
         </div>
 
         <div className="mt-5 flex items-center gap-2" role="tablist" aria-label="Slogans">
@@ -531,9 +560,13 @@ function Hero() {
         </p>
 
         <div id="notify" className="mt-10 w-full max-w-xl">
-          <fieldset>
-            <legend className="mb-3 text-[15px] font-semibold text-white/70">
-              I&apos;m here as a <span className="font-normal text-white/45">(pick one, optional)</span>
+          <fieldset
+            className={`rounded-2xl p-3 transition-all ${
+              identityWarn && !identity ? "bg-gold-500/10 ring-2 ring-gold-400" : ""
+            }`}
+          >
+            <legend className="mb-3 w-full text-center text-[15px] font-semibold text-white/70">
+              I&apos;m here as a <span className="font-normal text-white/45">(pick one)</span>
             </legend>
             <div className="flex flex-wrap justify-center gap-2">
               {IDENTITIES.map((id) => (
@@ -541,7 +574,10 @@ function Hero() {
                   key={id}
                   type="button"
                   aria-pressed={identity === id}
-                  onClick={() => setIdentity(identity === id ? null : id)}
+                  onClick={() => {
+                    setIdentity(identity === id ? null : id)
+                    setIdentityWarn(false)
+                  }}
                   className={`cursor-pointer rounded-full px-4 py-2 text-[15px] font-semibold transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-gold-400 ${
                     identity === id
                       ? "bg-gold-500 text-ink-950"
@@ -559,6 +595,8 @@ function Hero() {
             identity={identity ?? undefined}
             tone="dark"
             className="mt-4"
+            blocked={!identity}
+            onBlocked={() => setIdentityWarn(true)}
           />
 
           <p className="mt-3 text-[13px] text-white/55">
@@ -806,9 +844,13 @@ const SCREEN_SLIDES: {
   src: string
   alt: string
   frame: "phone" | "desktop"
+  /** Full-page captures the slide slow-scrolls through; multiple entries
+   *  play as tab switches (owner 2026-08-17: scrolling built in). */
+  tour?: string[]
 }[] = [
   {
     key: "discover",
+    tour: ["/home-preview/tours/discover.jpg"],
     title: (
       <>
         Discover the <span className="text-gold-400">clubs and programs</span> around you.
@@ -821,6 +863,7 @@ const SCREEN_SLIDES: {
   },
   {
     key: "payments",
+    tour: ["/home-preview/tours/payments.jpg"],
     title: (
       <>
         Payment plans <span className="text-gold-400">run themselves</span>.
@@ -833,6 +876,7 @@ const SCREEN_SLIDES: {
   },
   {
     key: "week",
+    tour: ["/home-preview/tours/calendar.jpg"],
     title: (
       <>
         The <span className="text-gold-400">family week</span>, on one phone.
@@ -845,6 +889,7 @@ const SCREEN_SLIDES: {
   },
   {
     key: "chat",
+    tour: ["/home-preview/tours/chat.jpg"],
     title: (
       <>
         Team chat, polls, <span className="text-hoop-400">one thread</span>.
@@ -857,30 +902,20 @@ const SCREEN_SLIDES: {
   },
   {
     key: "game",
+    tour: ["/home-preview/tours/game-1-live.jpg", "/home-preview/tours/game-2-stats.jpg", "/home-preview/tours/game-3-pbp.jpg"],
     title: (
       <>
         Watch every game <span className="text-live-500">live</span>.
       </>
     ),
-    caption: "The scorecard as it happens: the score, the quarters, the venue.",
+    caption: "One game, the whole page: the scorecard, the leaders, then Team stats and Play-by-play.",
     src: "/home-preview/shots/game-live-scorecard-phone.png",
     alt: "A live game on a phone: the main scorecard with both teams, quarter totals and the venue",
     frame: "phone",
   },
   {
-    key: "stats",
-    title: (
-      <>
-        Full team stats, <span className="text-gold-400">side by side</span>.
-      </>
-    ),
-    caption: "Shooting, rebounds, assists and steals in each team's colours.",
-    src: "/home-preview/shots/game-live-boxscore-phone.png",
-    alt: "Live team stats on a phone: shooting splits, rebounds, assists, steals and blocks as two-sided bars",
-    frame: "phone",
-  },
-  {
     key: "recap",
+    tour: ["/home-preview/tours/recap.jpg"],
     title: (
       <>
         Every game gets a <span className="text-gold-400">recap</span>.
@@ -893,6 +928,7 @@ const SCREEN_SLIDES: {
   },
   {
     key: "feed",
+    tour: ["/home-preview/tours/feed.jpg"],
     title: (
       <>
         The season has a <span className="text-play-300">feed</span>.
@@ -905,6 +941,7 @@ const SCREEN_SLIDES: {
   },
   {
     key: "player",
+    tour: ["/home-preview/tours/player.jpg"],
     title: (
       <>
         <span className="text-play-300">Your name</span> in the news.
@@ -929,7 +966,116 @@ const SCREEN_SLIDES: {
   },
 ]
 
-function SlideImage({ slide }: { slide: (typeof SCREEN_SLIDES)[number] }) {
+const sleepMs = (ms: number) => new Promise<void>((r) => window.setTimeout(r, ms))
+
+/**
+ * The scrolling screenshot (owner 2026-08-17): starts at the top of a real
+ * full-page capture, slow-scrolls with pauses (pause, roll, pause), returns
+ * to the top, then switches to the next segment the way tapping a tab would.
+ * Runs only while its slide is active; reduced motion shows the top, still.
+ */
+function GuidedShot({
+  segments,
+  alt,
+  active,
+}: {
+  segments: string[]
+  alt: string
+  active: boolean
+}) {
+  const [seg, setSeg] = useState(0)
+  const [y, setY] = useState(0)
+  const imgRef = useRef<HTMLImageElement>(null)
+  const frameRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    setSeg(0)
+    setY(0)
+    if (!active) return
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return
+    let cancelled = false
+
+    const tween = (from: number, to: number, ms: number) =>
+      new Promise<void>((resolve) => {
+        const t0 = performance.now()
+        const step = (t: number) => {
+          if (cancelled) return resolve()
+          const k = Math.min(1, (t - t0) / ms)
+          const e = k < 0.5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2
+          setY(from + (to - from) * e)
+          if (k < 1) requestAnimationFrame(step)
+          else resolve()
+        }
+        requestAnimationFrame(step)
+      })
+
+    const run = async () => {
+      while (!cancelled) {
+        for (let i = 0; i < segments.length && !cancelled; i++) {
+          setSeg(i)
+          setY(0)
+          await sleepMs(700)
+          const img = imgRef.current
+          const frame = frameRef.current
+          const max = img && frame ? Math.max(0, img.clientHeight - frame.clientHeight) : 0
+          await sleepMs(1500)
+          if (max > 0) {
+            const mid = Math.min(max, max * 0.5)
+            await tween(0, mid, 1400 + mid)
+            await sleepMs(1300)
+            if (max - mid > 40) {
+              await tween(mid, max, 1200 + (max - mid))
+              await sleepMs(1300)
+            }
+            await tween(max, 0, 900)
+            await sleepMs(900)
+          } else {
+            await sleepMs(2200)
+          }
+        }
+      }
+    }
+    run()
+    return () => {
+      cancelled = true
+    }
+  }, [active, segments])
+
+  return (
+    <div
+      ref={frameRef}
+      className="h-[560px] w-full overflow-hidden rounded-[1.9rem] bg-white"
+    >
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        ref={imgRef}
+        src={segments[seg]}
+        alt={alt}
+        className="w-full"
+        style={{ transform: `translateY(-${y}px)` }}
+      />
+    </div>
+  )
+}
+
+function SlideImage({
+  slide,
+  active,
+}: {
+  slide: (typeof SCREEN_SLIDES)[number]
+  active: boolean
+}) {
+  if (slide.frame === "phone" && slide.tour) {
+    return (
+      <div className="w-full max-w-[350px] rounded-[2.4rem] bg-ink-900 p-3 shadow-2xl ring-1 ring-white/10">
+        <GuidedShot segments={slide.tour} alt={slide.alt} active={active} />
+      </div>
+    )
+  }
+  return <SlideImageStatic slide={slide} />
+}
+
+function SlideImageStatic({ slide }: { slide: (typeof SCREEN_SLIDES)[number] }) {
   if (slide.frame === "phone") {
     return (
       <div className="w-full max-w-[390px] rounded-[2.4rem] bg-ink-900 p-3 shadow-2xl ring-1 ring-white/10">
@@ -969,7 +1115,13 @@ function SlideImage({ slide }: { slide: (typeof SCREEN_SLIDES)[number] }) {
 }
 
 function Screenshots() {
-  const { active, goTo } = useSloganRotation(SCREEN_SLIDES.length)
+  const { active, goTo } = useSloganRotation(SCREEN_SLIDES.length, 30000)
+  const sliderRef = useRef<HTMLDivElement>(null)
+  useArrowNav(
+    sliderRef,
+    () => goTo(active - 1),
+    () => goTo(active + 1)
+  )
 
   return (
     <CourtBackdrop variant="navy" floor="planks" intensity="immersive">
@@ -986,14 +1138,14 @@ function Screenshots() {
           </p>
         </div>
 
-        <div className="relative mt-10">
+        <div ref={sliderRef} className="relative mt-10">
           <button
             type="button"
             onClick={() => goTo(active - 1)}
             aria-label="Previous screen"
-            className="absolute left-0 top-1/2 z-20 flex h-12 w-12 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full bg-white/10 text-white/70 ring-1 ring-white/15 transition-colors hover:bg-white/20 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-gold-400 sm:left-2"
+            className="absolute inset-y-0 left-0 z-20 flex w-10 cursor-pointer items-center justify-center text-white/45 transition-colors hover:bg-white/5 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-gold-400 sm:w-14 lg:w-20"
           >
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" className="h-6 w-6">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" className="h-10 w-10 lg:h-14 lg:w-14">
               <path d="m15 5-7 7 7 7" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           </button>
@@ -1013,7 +1165,7 @@ function Screenshots() {
                     {slide.title}
                   </h3>
                   <div className="mt-5 flex w-full flex-1 items-center justify-center">
-                    <SlideImage slide={slide} />
+                    <SlideImage slide={slide} active={i === active} />
                   </div>
                   <p className="mt-4 max-w-md text-center text-[15px] leading-relaxed text-white/70">
                     {slide.caption}
@@ -1027,9 +1179,9 @@ function Screenshots() {
             type="button"
             onClick={() => goTo(active + 1)}
             aria-label="Next screen"
-            className="absolute right-0 top-1/2 z-20 flex h-12 w-12 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full bg-white/10 text-white/70 ring-1 ring-white/15 transition-colors hover:bg-white/20 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-gold-400 sm:right-2"
+            className="absolute inset-y-0 right-0 z-20 flex w-10 cursor-pointer items-center justify-center text-white/45 transition-colors hover:bg-white/5 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-gold-400 sm:w-14 lg:w-20"
           >
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" className="h-6 w-6">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" className="h-10 w-10 lg:h-14 lg:w-14">
               <path d="m9 5 7 7-7 7" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           </button>

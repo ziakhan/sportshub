@@ -75,56 +75,56 @@ interface ClubCfg {
  *  them: add an owner, brand them, and fill the empty description. */
 const CLUBS: ClubCfg[] = [
   {
-    key: "lords", slug: "nphj-toronto-lords", name: "Toronto Lords", short: "Lords",
+    key: "lords", slug: "toronto-lords", name: "Toronto Lords", short: "Lords",
     city: "Toronto", color: "#1d4ed8", accent: "#f59e0b", featured: true, girls: true,
     tagline: "Develop. Compete. Represent.",
     description:
       "Toronto Lords Basketball has run grade-based club teams out of the west end since 2014. Two practices a week, a full summer and fall schedule, and coaches who know every kid on the bench by name. Boys and girls, Grade 7 through Grade 12.",
   },
   {
-    key: "force", slug: "nphj-burlington-force", name: "Burlington Force", short: "Force",
+    key: "force", slug: "burlington-basketball", name: "Burlington Force", short: "Force",
     city: "Burlington", color: "#16a34a", accent: "#facc15", featured: true, girls: true,
     tagline: "Halton's home for club basketball.",
     description:
       "Burlington Force is a Halton Region club program built around long-term athlete development. We field summer and fall/winter teams, run a March Break camp, and put every game on the scoresheet so families can follow the season from anywhere.",
   },
   {
-    key: "huskies", slug: "nphj-north-toronto-huskies", name: "North Toronto Huskies", short: "Huskies",
+    key: "huskies", slug: "north-toronto-huskies", name: "North Toronto Huskies", short: "Huskies",
     city: "Toronto", color: "#7c3aed", accent: "#c4b5fd", girls: true,
     tagline: "One club, one standard.",
     description:
       "The Huskies are a midtown Toronto club with a development-first philosophy: everyone plays, everyone gets coached. Our summer squads feed directly into the fall/winter program.",
   },
   {
-    key: "monarchs", slug: "nphj-mississauga-monarchs", name: "Mississauga Monarchs", short: "Monarchs",
+    key: "monarchs", slug: "mississauga-minor-basketball-association", name: "Mississauga Monarchs", short: "Monarchs",
     city: "Mississauga", color: "#4f46e5", accent: "#a5b4fc", girls: true,
     tagline: "Built in Mississauga.",
     description:
       "Mississauga Monarchs run boys and girls club teams across the Peel Region, with summer league entries at every grade and a weekly skills night open to non-roster players.",
   },
   {
-    key: "panthers", slug: "nphj-oakville-panthers", name: "Oakville Panthers", short: "Panthers",
+    key: "panthers", slug: "oakville-panthers", name: "Oakville Panthers", short: "Panthers",
     city: "Oakville", color: "#be123c", accent: "#fda4af", girls: true,
     tagline: "Play hard. Play smart. Play together.",
     description:
       "Oakville Panthers is a family-run club that keeps rosters small on purpose, ten to twelve players so everyone gets minutes. Summer league, fall/winter league, and a four-week summer camp.",
   },
   {
-    key: "west", slug: "nphj-west-united-prep", name: "West United Prep", short: "West United",
+    key: "west", slug: "west-united-prep", name: "West United Prep", short: "West United",
     city: "Mississauga", color: "#0891b2", accent: "#67e8f9", girls: true,
     tagline: "A prep pathway in the west end.",
     description:
       "West United Prep combines a club program with a prep-track training block. Our summer teams train three mornings a week at the Playground and play weekends in the NPH Summer League.",
   },
   {
-    key: "ckatt", slug: "nphj-ckatt-basketball", name: "CKATT Basketball", short: "CKATT",
+    key: "ckatt", slug: "ckatt-cooksville", name: "CKATT Basketball", short: "CKATT",
     city: "Mississauga", color: "#374151", accent: "#9ca3af",
     tagline: "Cooksville's club since 2011.",
     description:
       "CKATT Basketball started as a Cooksville house league and now runs full club teams. We keep fees low, we publish everything, and we have never cancelled a season.",
   },
   {
-    key: "kings", slug: "nphj-kings-court-basketball", name: "Kings Court Basketball", short: "Kings Court",
+    key: "kings", slug: "kings-court-academy", name: "Kings Court Basketball", short: "Kings Court",
     city: "Hamilton", color: "#ca8a04", accent: "#fde68a",
     tagline: "Hamilton hoops, done right.",
     description:
@@ -792,6 +792,12 @@ async function seed() {
       const suffix = d.gender === "FEMALE" ? " Girls" : ""
       const teamName = `${cfg.name} ${d.ageGroup}${suffix}`
       const teamId = randomUUID()
+      // A leftover team with this identity is a dead world's remains
+      // (post-consolidation shared tenants): clear it, then create fresh so
+      // the generated id threads through the rest of the build.
+      await p.team.deleteMany({
+        where: { tenantId: row.id, name: teamName, ageGroup: d.ageGroup, season: seasonLabel },
+      })
       await p.team.create({
         data: {
           id: teamId, tenantId: row.id, name: teamName, ageGroup: d.ageGroup,

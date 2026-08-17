@@ -31,6 +31,8 @@ export function NotifyForm({
   tone = "light",
   buttonLabel = "Keep me posted",
   className,
+  blocked = false,
+  onBlocked,
 }: {
   /** Recorded with the row: "landing" | "landing-claim" | "demo:<slug>" */
   source: string
@@ -39,6 +41,10 @@ export function NotifyForm({
   tone?: "light" | "dark"
   buttonLabel?: string
   className?: string
+  /** The hero requires an identity pick (owner 2026-08-17): when true,
+   *  submit stops with a message and the caller highlights its picker. */
+  blocked?: boolean
+  onBlocked?: () => void
 }) {
   const [contact, setContact] = useState("")
   const [website, setWebsite] = useState("")
@@ -48,6 +54,12 @@ export function NotifyForm({
   async function submit(e: React.FormEvent) {
     e.preventDefault()
     if (state === "sending") return
+    if (blocked) {
+      setError("Pick who you are first, then send.")
+      setState("error")
+      onBlocked?.()
+      return
+    }
     setState("sending")
     setError("")
     try {

@@ -18,10 +18,10 @@ const PARENT = "summer-parent-lords@sportshub.demo"
 const PHONE = { viewport: { width: 390, height: 844 }, deviceScaleFactor: 2 }
 const DESKTOP = { viewport: { width: 1440, height: 900 }, deviceScaleFactor: 2 }
 
-const LIVE_GAME = "/live/856c8e4f-740c-4565-8657-f016223e413d"
+const LIVE_GAME = "/live/96ae0a97-2476-4b4a-b5f1-864b75c29091"
 const EOS_LEAGUE = "/league/860f7c32-65be-45c4-8d4f-84fea6c5d296"
 const RECAP =
-  "/news/toronto-lords-grade-10-girls-vs-burlington-force-grade-10-gi-20260805-f44d3c46"
+  "/news/toronto-lords-grade-10-girls-vs-burlington-force-grade-10-gi-20260815-4d49de76"
 
 /**
  * name         output file name
@@ -88,13 +88,13 @@ const SHOTS = [
   { name: "social-feed-deep-phone", url: "/feed", device: PHONE, auth: true, scrollY: 1200 },
   {
     name: "social-player-page-phone",
-    url: "/player/729b0d07-e388-464f-bc09-1a4ca3e92448",
+    url: "/player/8c298c76-8d17-4f78-81d3-37e73f5695b5",
     device: PHONE,
     scrollY: 120,
   },
   {
     name: "social-player-page-deep-phone",
-    url: "/player/729b0d07-e388-464f-bc09-1a4ca3e92448",
+    url: "/player/8c298c76-8d17-4f78-81d3-37e73f5695b5",
     device: PHONE,
     scrollY: 700,
   },

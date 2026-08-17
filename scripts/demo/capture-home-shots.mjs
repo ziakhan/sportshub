@@ -8,7 +8,7 @@ fs.mkdirSync(OUT, { recursive: true })
 const SHOTS = [
   {
     name: "live-game-phone",
-    url: "http://localhost:3000/live/856c8e4f-740c-4565-8657-f016223e413d",
+    url: "http://localhost:3000/live/96ae0a97-2476-4b4a-b5f1-864b75c29091",
     viewport: { width: 390, height: 844 },
     scale: 2,
     settle: 4000,
@@ -26,7 +26,7 @@ const SHOTS = [
     // NPH Summer world recap: the Toronto Lords girls, real names, no seed
     // litter. Scrolled so the score art and Player of the Game land in frame.
     name: "news-recap-phone",
-    url: "http://localhost:3000/news/toronto-lords-grade-10-girls-vs-burlington-force-grade-10-gi-20260805-f44d3c46",
+    url: "http://localhost:3000/news/toronto-lords-grade-10-girls-vs-burlington-force-grade-10-gi-20260815-4d49de76",
     viewport: { width: 390, height: 844 },
     scale: 2,
     settle: 4000,
