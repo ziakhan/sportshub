@@ -873,11 +873,13 @@ const SCREEN_SLIDES: {
    *  play as tab switches. start/travel are px in the capture's 390-wide
    *  space; start "end" opens at the bottom (the chat slide shows the phone
    *  menus first and drifts up). One-way scrolls, no return. */
-  tour?: { src: string; start?: number | "end"; travel?: number }[]
+  tour?: { src: string; start?: number | "end"; travel?: number; returnTo?: number }[]
+  /** The phone's bottom tab bar, pinned by the player (never scrolls away). */
+  pinBottom?: string
 }[] = [
   {
     key: "discover",
-    tour: [{ src: "/home-preview/tours/discover.jpg" }],
+    tour: [{ src: "/home-preview/tours/discover.jpg", travel: 1500 }],
     title: (
       <>
         Discover the <span className="text-gold-400">clubs and programs</span> around you.
@@ -890,6 +892,7 @@ const SCREEN_SLIDES: {
   },
   {
     key: "payments",
+    pinBottom: "/home-preview/tours/tabbar.jpg",
     tour: [{ src: "/home-preview/tours/payments.jpg" }],
     title: (
       <>
@@ -903,7 +906,11 @@ const SCREEN_SLIDES: {
   },
   {
     key: "week",
-    tour: [{ src: "/home-preview/tours/calendar.jpg" }],
+    pinBottom: "/home-preview/tours/tabbar.jpg",
+    tour: [
+      { src: "/home-preview/tours/calendar-1.jpg", travel: 900 },
+      { src: "/home-preview/tours/calendar-2.jpg", travel: 600 },
+    ],
     title: (
       <>
         The <span className="text-gold-400">family week</span>, on one phone.
@@ -916,7 +923,12 @@ const SCREEN_SLIDES: {
   },
   {
     key: "chat",
-    tour: [{ src: "/home-preview/tours/chat.jpg", start: "end", travel: -520 }],
+    pinBottom: "/home-preview/tours/tabbar.jpg",
+    tour: [
+      { src: "/home-preview/tours/chat-1.jpg", travel: 0 },
+      { src: "/home-preview/tours/chat-2.jpg", travel: 0 },
+      { src: "/home-preview/tours/chat-3.jpg", travel: 0 },
+    ],
     title: (
       <>
         Team chat, polls, <span className="text-hoop-400">one thread</span>.
@@ -930,7 +942,7 @@ const SCREEN_SLIDES: {
   {
     key: "game",
     tour: [
-      { src: "/home-preview/tours/game-1-live.jpg" },
+      { src: "/home-preview/tours/game-1-live.jpg", returnTo: 545 },
       { src: "/home-preview/tours/game-2-stats.jpg", start: 545, travel: 820 },
       { src: "/home-preview/tours/game-3-pbp.jpg", start: 545, travel: 820 },
     ],
@@ -946,7 +958,7 @@ const SCREEN_SLIDES: {
   },
   {
     key: "recap",
-    tour: [{ src: "/home-preview/tours/recap.jpg" }],
+    tour: [{ src: "/home-preview/tours/recap.jpg", travel: 1400 }],
     title: (
       <>
         Every game gets a <span className="text-gold-400">recap</span>.
@@ -959,6 +971,7 @@ const SCREEN_SLIDES: {
   },
   {
     key: "feed",
+    pinBottom: "/home-preview/tours/tabbar.jpg",
     tour: [{ src: "/home-preview/tours/feed.jpg" }],
     title: (
       <>
@@ -975,7 +988,7 @@ const SCREEN_SLIDES: {
     tour: [{ src: "/home-preview/tours/player.jpg" }],
     title: (
       <>
-        <span className="text-play-300">Your name</span> in the news.
+        Every player <span className="text-play-300">gets a page</span>.
       </>
     ),
     caption: "Every player gets a page: season stats, games, and their moments.",
@@ -1009,10 +1022,12 @@ function GuidedShot({
   segments,
   alt,
   active,
+  pinBottom,
 }: {
-  segments: { src: string; start?: number | "end"; travel?: number }[]
+  segments: { src: string; start?: number | "end"; travel?: number; returnTo?: number }[]
   alt: string
   active: boolean
+  pinBottom?: string
 }) {
   const [seg, setSeg] = useState(0)
   const [y, setY] = useState(0)
@@ -1069,6 +1084,13 @@ function GuidedShot({
             await tween(startY, target, Math.max(1800, dist * 6.2))
           }
           await sleepMs(2000)
+          if (conf.returnTo !== undefined && !cancelled) {
+            // Ride back up to where the next tap happens, so the click is
+            // seen before the screen changes (owner 2026-08-17).
+            const backTo = Math.min(max, conf.returnTo * ratio)
+            await tween(target, backTo, Math.max(1400, Math.abs(target - backTo) * 3))
+            await sleepMs(1400)
+          }
           if (!cancelled && (i < segments.length - 1 || segments.length > 1 || true)) {
             setFaded(true)
             await sleepMs(320)
@@ -1083,7 +1105,7 @@ function GuidedShot({
   }, [active, segments])
 
   return (
-    <div ref={frameRef} className="h-[560px] w-full overflow-hidden rounded-[1.9rem] bg-white">
+    <div ref={frameRef} className="relative h-[610px] w-full overflow-hidden rounded-[1.9rem] bg-white">
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         ref={imgRef}
@@ -1092,6 +1114,10 @@ function GuidedShot({
         className="w-full transition-opacity duration-300"
         style={{ transform: `translateY(-${y}px)`, opacity: faded ? 0 : 1 }}
       />
+      {pinBottom && (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={pinBottom} alt="" aria-hidden="true" className="absolute bottom-0 left-0 w-full" />
+      )}
     </div>
   )
 }
@@ -1104,8 +1130,8 @@ function SlideImage({
 }) {
   if (slide.frame === "phone" && slide.tour) {
     return (
-      <div className="w-full max-w-[350px] rounded-[2.4rem] bg-ink-900 p-3 shadow-2xl ring-1 ring-white/10">
-        <GuidedShot segments={slide.tour} alt={slide.alt} active={active} />
+      <div className="w-full max-w-[310px] rounded-[2.4rem] bg-ink-900 p-3 shadow-2xl ring-1 ring-white/10">
+        <GuidedShot segments={slide.tour} alt={slide.alt} active={active} pinBottom={slide.pinBottom} />
       </div>
     )
   }

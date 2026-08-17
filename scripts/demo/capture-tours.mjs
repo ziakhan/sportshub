@@ -15,16 +15,27 @@ const PHONE = { viewport: { width: 390, height: 844 }, deviceScaleFactor: 2 }
 
 const LIVE_GAME = "/live/96ae0a97-2476-4b4a-b5f1-864b75c29091"
 
+const CHAT_HREF = /\/teams\/[^/]+\/chat/
 const SHOTS = [
   { name: "game-1-live", url: LIVE_GAME },
   { name: "game-2-stats", url: LIVE_GAME, tapText: "Team stats" },
   { name: "game-3-pbp", url: LIVE_GAME, tapText: "Play-by-play" },
   { name: "discover", url: "/club" },
-  { name: "payments", url: "/payments", auth: true },
-  { name: "calendar", url: "/calendar", auth: true },
-  { name: "chat", url: "/messages", auth: true, followHref: /\/teams\/[^/]+\/chat/ },
+  // The phone's bottom tab bar is captured ONCE (from the live viewport) and
+  // pinned by the slide player; it is hidden in the tall captures so it can
+  // never scroll away (owner bug report 2026-08-17).
+  { name: "tabbar", url: "/calendar", auth: true, barClip: true },
+  { name: "payments", url: "/payments", auth: true, hideTabbar: true },
+  { name: "calendar-1", url: "/calendar", auth: true, hideTabbar: true },
+  // The kid filter in action: tap one child's lens, events filter.
+  { name: "calendar-2", url: "/calendar", auth: true, hideTabbar: true, tapText: "Danielle" },
+  // Chat is a conversation, not a scroll: three viewport frames tell it as
+  // typing and sending a real message.
+  { name: "chat-1", url: "/messages", auth: true, followHref: CHAT_HREF, viewport: true },
+  { name: "chat-2", url: "/messages", auth: true, followHref: CHAT_HREF, viewport: true, fill: "See everyone Saturday at 2!" },
+  { name: "chat-3", url: "/messages", auth: true, followHref: CHAT_HREF, viewport: true, fill: "See everyone Saturday at 2!", send: true },
   { name: "recap", url: "/news/toronto-lords-grade-10-girls-vs-burlington-force-grade-10-gi-20260815-4d49de76" },
-  { name: "feed", url: "/feed", auth: true },
+  { name: "feed", url: "/feed", auth: true, hideTabbar: true },
   { name: "player", url: "/player/8c298c76-8d17-4f78-81d3-37e73f5695b5" },
 ]
 
@@ -37,6 +48,22 @@ const hideChrome = (page) =>
     // The tour scrolls to the page's end; the site footer is not the pitch
     // (owner 2026-08-17), so it leaves the frame entirely.
     document.querySelectorAll("footer").forEach((el) => (el.style.display = "none"))
+    // Sticky bars duplicate in stitched full-page captures ("double screen"):
+    // pin them in place for the shot.
+    document.querySelectorAll("*").forEach((el) => {
+      if (getComputedStyle(el).position === "sticky") el.style.position = "static"
+    })
+  })
+
+const hideBottomBar = (page) =>
+  page.evaluate(() => {
+    const vh = window.innerHeight
+    document.querySelectorAll("nav, div").forEach((el) => {
+      const cs = getComputedStyle(el)
+      if (cs.position !== "fixed") return
+      const r = el.getBoundingClientRect()
+      if (r.bottom >= vh - 4 && r.height > 30 && r.height < 140) el.style.display = "none"
+    })
   })
 
 const browser = await chromium.launch()
@@ -77,8 +104,29 @@ for (const shot of SHOTS) {
       await page.getByText(shot.tapText, { exact: true }).first().click({ timeout: 8000 }).catch(() => {})
       await page.waitForTimeout(1500)
     }
+    if (shot.fill) {
+      const box = page.locator('input[placeholder*="Message"], textarea[placeholder*="Message"]').first()
+      await box.fill(shot.fill).catch(() => console.log(`${shot.name}: composer miss`))
+      await page.waitForTimeout(600)
+    }
+    if (shot.send) {
+      await page.getByText("Send", { exact: true }).first().click({ timeout: 6000 }).catch(() => console.log(`${shot.name}: send miss`))
+      await page.waitForTimeout(2500)
+    }
     await hideChrome(page)
-    await page.screenshot({ path: path.join(OUT, `${shot.name}.jpg`), fullPage: true, type: "jpeg", quality: 78 })
+    if (shot.barClip) {
+      await page.screenshot({ path: path.join(OUT, "tabbar.jpg"), type: "jpeg", quality: 82, clip: { x: 0, y: 756, width: 390, height: 88 } })
+      console.log("tabbar: captured")
+      await ctx.close()
+      continue
+    }
+    if (shot.hideTabbar) await hideBottomBar(page)
+    await page.screenshot({
+      path: path.join(OUT, `${shot.name}.jpg`),
+      fullPage: !shot.viewport,
+      type: "jpeg",
+      quality: 78,
+    })
     console.log(`${shot.name}: captured`)
   } catch (e) {
     console.log(`${shot.name}: FAILED ${String(e).slice(0, 100)}`)
