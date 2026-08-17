@@ -1036,13 +1036,15 @@ function GuidedShot({
 }) {
   const [seg, setSeg] = useState(0)
   const [y, setY] = useState(0)
-  const [faded, setFaded] = useState(false)
+  const yRef = useRef(0)
+  const [prev, setPrev] = useState<{ src: string; y: number } | null>(null)
   const imgRef = useRef<HTMLImageElement>(null)
   const frameRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     setSeg(0)
     setY(0)
+    setPrev(null)
     if (!active) return
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return
     let cancelled = false
@@ -1054,7 +1056,9 @@ function GuidedShot({
           if (cancelled) return resolve()
           const k = Math.min(1, (t - t0) / ms)
           const e = k < 0.5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2
-          setY(from + (to - from) * e)
+          const v = from + (to - from) * e
+          yRef.current = v
+          setY(v)
           if (k < 1) requestAnimationFrame(step)
           else resolve()
         }
@@ -1065,6 +1069,7 @@ function GuidedShot({
       while (!cancelled) {
         for (let i = 0; i < segments.length && !cancelled; i++) {
           const conf = segments[i]
+          setPrev((p) => p)
           setSeg(i)
           await sleepMs(650)
           const img = imgRef.current
@@ -1078,8 +1083,9 @@ function GuidedShot({
           const startY =
             conf.start === "end" ? max : Math.min(max, (conf.start ?? 0) * ratio)
           setY(startY)
-          setFaded(false)
-          await sleepMs(1700)
+          await sleepMs(450)
+          setPrev(null)
+          await sleepMs(1250)
           const travel =
             conf.travel !== undefined ? conf.travel * ratio : max - startY
           const target = Math.max(0, Math.min(max, startY + travel))
@@ -1096,9 +1102,9 @@ function GuidedShot({
             await tween(target, backTo, Math.max(1400, Math.abs(target - backTo) * 3))
             await sleepMs(1400)
           }
-          if (!cancelled && (i < segments.length - 1 || segments.length > 1 || true)) {
-            setFaded(true)
-            await sleepMs(320)
+          if (!cancelled) {
+            // Hand this frame to the crossfade layer before the next mounts.
+            setPrev({ src: conf.src, y: yRef.current })
           }
         }
       }
@@ -1111,13 +1117,23 @@ function GuidedShot({
 
   return (
     <div ref={frameRef} className="relative aspect-[390/844] w-full overflow-hidden rounded-[1.9rem] bg-white">
+      {prev && (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={prev.src}
+          alt=""
+          aria-hidden="true"
+          className="absolute left-0 top-0 w-full"
+          style={{ transform: `translateY(-${prev.y}px)` }}
+        />
+      )}
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         ref={imgRef}
         src={segments[seg].src}
         alt={alt}
-        className="w-full transition-opacity duration-300"
-        style={{ transform: `translateY(-${y}px)`, opacity: faded ? 0 : 1 }}
+        className="hp-xfade relative w-full"
+        style={{ transform: `translateY(-${y}px)` }}
       />
       {pinBottom && (
         // eslint-disable-next-line @next/next/no-img-element
@@ -1232,12 +1248,12 @@ function Screenshots() {
                   <h3 className="text-balance text-center text-3xl font-bold leading-tight tracking-tight text-white sm:text-5xl">
                     {slide.title}
                   </h3>
+                  <p className="mt-3 max-w-lg text-center text-[18px] font-semibold leading-relaxed text-white/90">
+                    {slide.caption}
+                  </p>
                   <div className="mt-5 flex w-full flex-1 items-center justify-center">
                     <SlideImage slide={slide} active={i === active} />
                   </div>
-                  <p className="mt-4 max-w-lg text-center text-[18px] font-semibold leading-relaxed text-white/90">
-                    {slide.caption}
-                  </p>
                 </div>
               ))}
             </div>
@@ -1462,6 +1478,8 @@ export function HomePreview() {
           .hp-rise { animation: none; }
         }
         html { scroll-snap-type: y proximity; }
+        .hp-xfade { animation: hp-xfade 380ms ease-out both; }
+        @keyframes hp-xfade { from { opacity: 0; } to { opacity: 1; } }
         main > * { scroll-snap-align: start; }
       `}</style>
       <Hero />

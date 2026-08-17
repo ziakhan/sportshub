@@ -68,6 +68,21 @@ const hideBottomBar = (page) =>
     })
   })
 
+// The typed demo message must exist exactly once: clear prior runs' copies.
+if (process.env.DATABASE_URL) {
+  try {
+    const { PrismaClient } = await import("@prisma/client")
+    const prisma = new PrismaClient()
+    const gone = await prisma.teamMessage.deleteMany({ where: { body: "See everyone Saturday at 2!" } })
+    console.log("stale demo chat messages removed:", gone.count)
+    await prisma.$disconnect()
+  } catch (e) {
+    console.log("chat cleanup skipped:", String(e).slice(0, 60))
+  }
+} else {
+  console.log("chat cleanup skipped: no DATABASE_URL")
+}
+
 const browser = await chromium.launch()
 const storageState = await ensureSession(PARENT).catch(() => null)
 
