@@ -273,17 +273,17 @@ const COMPARE_COLUMNS = [
 /** cells[0] is always us; the rest follow COMPARE_COLUMNS order. */
 const COMPARE_ROWS: { label: string; cells: CompareCell[] }[] = [
   { label: "Registration and payments", cells: ["y", "y", "y", "y", "y", "y", "n", "y", "y", "y"] },
-  { label: "Installment payment plans", cells: ["y", "y", "y", "y", "y", "y", "n", "p", "y", "y"] },
-  { label: "Season scheduling with constraints", cells: ["y", "y", "y", "y", "y", "p", "n", "y", "y", "n"] },
-  { label: "Standings and playoff brackets", cells: ["y", "y", "y", "y", "p", "y", "p", "y", "p", "n"] },
-  { label: "Referee assignment and sign-off", cells: ["y", "p", "y", "y", "p", "p", "n", "p", "n", "n"] },
-  { label: "Live scoring with full box scores, basketball", cells: ["y", "p", "p", "y", "p", "n", "y", "p", "n", "n"] },
-  { label: "Team chat with polls", cells: ["y", "y", "y", "y", "p", "p", "p", "p", "p", "y"] },
-  { label: "Family calendar with RSVP", cells: ["y", "y", "y", "y", "y", "y", "y", "n", "p", "y"] },
-  { label: "Waivers and e-signatures", cells: ["y", "p", "y", "y", "y", "y", "n", "y", "y", "y"] },
-  { label: "Automatic game recaps and news", cells: ["y", "n", "p", "n", "n", "n", "p", "n", "n", "n"] },
-  { label: "Public player pages with season stats", cells: ["y", "n", "p", "p", "n", "n", "p", "p", "-", "-"] },
-  { label: "Public club and league pages", cells: ["y", "y", "y", "y", "y", "p", "n", "p", "y", "y"] },
+  { label: "Payment plans", cells: ["y", "y", "y", "y", "y", "y", "n", "p", "y", "y"] },
+  { label: "Auto scheduling", cells: ["y", "y", "y", "y", "y", "p", "n", "y", "y", "n"] },
+  { label: "Standings and playoffs", cells: ["y", "y", "y", "y", "p", "y", "p", "y", "p", "n"] },
+  { label: "Referee assignment", cells: ["y", "p", "y", "y", "p", "p", "n", "p", "n", "n"] },
+  { label: "Live scoring and box scores", cells: ["y", "p", "p", "y", "p", "n", "y", "p", "n", "n"] },
+  { label: "Chat and polls", cells: ["y", "y", "y", "y", "p", "p", "p", "p", "p", "y"] },
+  { label: "Family calendar", cells: ["y", "y", "y", "y", "y", "y", "y", "n", "p", "y"] },
+  { label: "Waivers", cells: ["y", "p", "y", "y", "y", "y", "n", "y", "y", "y"] },
+  { label: "Auto game recaps", cells: ["y", "n", "p", "n", "n", "n", "p", "n", "n", "n"] },
+  { label: "Player pages", cells: ["y", "n", "p", "p", "n", "n", "p", "p", "-", "-"] },
+  { label: "Club and league pages", cells: ["y", "y", "y", "y", "y", "p", "n", "p", "y", "y"] },
   { label: "Free to start", cells: ["y", "p", "y", "n", "n", "p", "y", "p", "p", "y"] },
 ]
 
@@ -508,6 +508,27 @@ function Hero() {
           Launching this fall
         </p>
 
+        <button
+          type="button"
+          onClick={() => goTo(active - 1)}
+          aria-label="Previous line"
+          className="absolute inset-y-0 left-0 z-20 flex w-10 cursor-pointer items-center justify-center text-white/40 transition-colors hover:bg-white/5 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-gold-400 sm:w-14 lg:w-16"
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" className="h-9 w-9 lg:h-12 lg:w-12">
+            <path d="m15 5-7 7 7 7" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </button>
+        <button
+          type="button"
+          onClick={() => goTo(active + 1)}
+          aria-label="Next line"
+          className="absolute inset-y-0 right-0 z-20 flex w-10 cursor-pointer items-center justify-center text-white/40 transition-colors hover:bg-white/5 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-gold-400 sm:w-14 lg:w-16"
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" className="h-9 w-9 lg:h-12 lg:w-12">
+            <path d="m9 5 7 7-7 7" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </button>
+
         <div className="relative mt-7 w-full">
 
           <h1 className="grid w-full text-balance text-[44px] font-bold leading-[1.05] tracking-tight text-white sm:text-6xl lg:text-7xl">
@@ -560,14 +581,18 @@ function Hero() {
         </p>
 
         <div id="notify" className="mt-10 w-full max-w-xl">
-          <fieldset
-            className={`rounded-2xl p-3 transition-all ${
-              identityWarn && !identity ? "bg-gold-500/10 ring-2 ring-gold-400" : ""
-            }`}
-          >
+          <fieldset className="relative">
             <legend className="mb-3 w-full text-center text-[15px] font-semibold text-white/70">
               I&apos;m here as a <span className="font-normal text-white/45">(pick one)</span>
             </legend>
+            {identityWarn && !identity && (
+              <span className="absolute -top-2 left-1/2 z-20 flex -translate-x-1/2 -translate-y-full flex-col items-center">
+                <span className="whitespace-nowrap rounded-xl bg-gold-500 px-3.5 py-1.5 text-[14px] font-bold text-ink-950 shadow-lg">
+                  Please select one.
+                </span>
+                <span className="h-0 w-0 border-x-8 border-t-8 border-x-transparent border-t-gold-500" />
+              </span>
+            )}
             <div className="flex flex-wrap justify-center gap-2">
               {IDENTITIES.map((id) => (
                 <button
@@ -707,7 +732,7 @@ function CompareMark({ cell }: { cell: CompareCell }) {
     // glance without shouting, and people who know can still see it.
     return (
       <span
-        className="mx-auto block h-[5px] w-7 rounded-full bg-live-500"
+        className="mx-auto block h-[7px] w-10 rounded-full bg-live-500 shadow-[0_0_0_1px_rgba(239,68,68,0.35)]"
         role="img"
         aria-label="Not offered"
       />
@@ -743,7 +768,7 @@ function CompareTable() {
                   Feature
                 </th>
                 <th className="bg-gold-50 px-4 py-4 text-center">
-                  <span className="rounded-full bg-ink-950 px-3 py-1 text-[13px] font-bold text-white">
+                  <span className="whitespace-nowrap rounded-full bg-ink-950 px-3 py-1 text-[13px] font-bold text-white">
                     SportsHub One
                   </span>
                 </th>
@@ -760,7 +785,7 @@ function CompareTable() {
             <tbody className="divide-y divide-ink-50">
               {COMPARE_ROWS.map((row) => (
                 <tr key={row.label}>
-                  <td className="px-5 py-3.5 text-[15px] font-semibold text-ink-800">
+                  <td className="whitespace-nowrap px-5 py-3.5 text-[16px] font-semibold text-ink-800">
                     {row.label}
                   </td>
                   {row.cells.map((cell, i) => (
@@ -845,12 +870,14 @@ const SCREEN_SLIDES: {
   alt: string
   frame: "phone" | "desktop"
   /** Full-page captures the slide slow-scrolls through; multiple entries
-   *  play as tab switches (owner 2026-08-17: scrolling built in). */
-  tour?: string[]
+   *  play as tab switches. start/travel are px in the capture's 390-wide
+   *  space; start "end" opens at the bottom (the chat slide shows the phone
+   *  menus first and drifts up). One-way scrolls, no return. */
+  tour?: { src: string; start?: number | "end"; travel?: number }[]
 }[] = [
   {
     key: "discover",
-    tour: ["/home-preview/tours/discover.jpg"],
+    tour: [{ src: "/home-preview/tours/discover.jpg" }],
     title: (
       <>
         Discover the <span className="text-gold-400">clubs and programs</span> around you.
@@ -863,7 +890,7 @@ const SCREEN_SLIDES: {
   },
   {
     key: "payments",
-    tour: ["/home-preview/tours/payments.jpg"],
+    tour: [{ src: "/home-preview/tours/payments.jpg" }],
     title: (
       <>
         Payment plans <span className="text-gold-400">run themselves</span>.
@@ -876,7 +903,7 @@ const SCREEN_SLIDES: {
   },
   {
     key: "week",
-    tour: ["/home-preview/tours/calendar.jpg"],
+    tour: [{ src: "/home-preview/tours/calendar.jpg" }],
     title: (
       <>
         The <span className="text-gold-400">family week</span>, on one phone.
@@ -889,7 +916,7 @@ const SCREEN_SLIDES: {
   },
   {
     key: "chat",
-    tour: ["/home-preview/tours/chat.jpg"],
+    tour: [{ src: "/home-preview/tours/chat.jpg", start: "end", travel: -520 }],
     title: (
       <>
         Team chat, polls, <span className="text-hoop-400">one thread</span>.
@@ -902,7 +929,11 @@ const SCREEN_SLIDES: {
   },
   {
     key: "game",
-    tour: ["/home-preview/tours/game-1-live.jpg", "/home-preview/tours/game-2-stats.jpg", "/home-preview/tours/game-3-pbp.jpg"],
+    tour: [
+      { src: "/home-preview/tours/game-1-live.jpg" },
+      { src: "/home-preview/tours/game-2-stats.jpg", start: 545, travel: 820 },
+      { src: "/home-preview/tours/game-3-pbp.jpg", start: 545, travel: 820 },
+    ],
     title: (
       <>
         Watch every game <span className="text-live-500">live</span>.
@@ -915,7 +946,7 @@ const SCREEN_SLIDES: {
   },
   {
     key: "recap",
-    tour: ["/home-preview/tours/recap.jpg"],
+    tour: [{ src: "/home-preview/tours/recap.jpg" }],
     title: (
       <>
         Every game gets a <span className="text-gold-400">recap</span>.
@@ -928,7 +959,7 @@ const SCREEN_SLIDES: {
   },
   {
     key: "feed",
-    tour: ["/home-preview/tours/feed.jpg"],
+    tour: [{ src: "/home-preview/tours/feed.jpg" }],
     title: (
       <>
         The season has a <span className="text-play-300">feed</span>.
@@ -941,7 +972,7 @@ const SCREEN_SLIDES: {
   },
   {
     key: "player",
-    tour: ["/home-preview/tours/player.jpg"],
+    tour: [{ src: "/home-preview/tours/player.jpg" }],
     title: (
       <>
         <span className="text-play-300">Your name</span> in the news.
@@ -979,12 +1010,13 @@ function GuidedShot({
   alt,
   active,
 }: {
-  segments: string[]
+  segments: { src: string; start?: number | "end"; travel?: number }[]
   alt: string
   active: boolean
 }) {
   const [seg, setSeg] = useState(0)
   const [y, setY] = useState(0)
+  const [faded, setFaded] = useState(false)
   const imgRef = useRef<HTMLImageElement>(null)
   const frameRef = useRef<HTMLDivElement>(null)
 
@@ -1012,25 +1044,34 @@ function GuidedShot({
     const run = async () => {
       while (!cancelled) {
         for (let i = 0; i < segments.length && !cancelled; i++) {
+          const conf = segments[i]
           setSeg(i)
-          setY(0)
-          await sleepMs(700)
+          await sleepMs(650)
           const img = imgRef.current
           const frame = frameRef.current
-          const max = img && frame ? Math.max(0, img.clientHeight - frame.clientHeight) : 0
-          await sleepMs(1500)
-          if (max > 0) {
-            const mid = Math.min(max, max * 0.5)
-            await tween(0, mid, 1400 + mid)
-            await sleepMs(1300)
-            if (max - mid > 40) {
-              await tween(mid, max, 1200 + (max - mid))
-              await sleepMs(1300)
-            }
-            await tween(max, 0, 900)
-            await sleepMs(900)
-          } else {
-            await sleepMs(2200)
+          if (!img || !frame) {
+            await sleepMs(1500)
+            continue
+          }
+          const ratio = img.clientWidth / 390
+          const max = Math.max(0, img.clientHeight - frame.clientHeight)
+          const startY =
+            conf.start === "end" ? max : Math.min(max, (conf.start ?? 0) * ratio)
+          setY(startY)
+          setFaded(false)
+          await sleepMs(1700)
+          const travel =
+            conf.travel !== undefined ? conf.travel * ratio : max - startY
+          const target = Math.max(0, Math.min(max, startY + travel))
+          const dist = Math.abs(target - startY)
+          if (dist > 24) {
+            // Slow roll (owner: "slow scrolls, pause"): ~160px/s, one way.
+            await tween(startY, target, Math.max(1800, dist * 6.2))
+          }
+          await sleepMs(2000)
+          if (!cancelled && (i < segments.length - 1 || segments.length > 1 || true)) {
+            setFaded(true)
+            await sleepMs(320)
           }
         }
       }
@@ -1042,22 +1083,18 @@ function GuidedShot({
   }, [active, segments])
 
   return (
-    <div
-      ref={frameRef}
-      className="h-[560px] w-full overflow-hidden rounded-[1.9rem] bg-white"
-    >
+    <div ref={frameRef} className="h-[560px] w-full overflow-hidden rounded-[1.9rem] bg-white">
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         ref={imgRef}
-        src={segments[seg]}
+        src={segments[seg].src}
         alt={alt}
-        className="w-full"
-        style={{ transform: `translateY(-${y}px)` }}
+        className="w-full transition-opacity duration-300"
+        style={{ transform: `translateY(-${y}px)`, opacity: faded ? 0 : 1 }}
       />
     </div>
   )
 }
-
 function SlideImage({
   slide,
   active,

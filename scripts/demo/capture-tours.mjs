@@ -34,6 +34,9 @@ const hideChrome = (page) =>
       const t = (el.textContent || "").trim()
       if (t === "Start Free" || t.toUpperCase().includes("TRY THE DEMO")) el.style.visibility = "hidden"
     })
+    // The tour scrolls to the page's end; the site footer is not the pitch
+    // (owner 2026-08-17), so it leaves the frame entirely.
+    document.querySelectorAll("footer").forEach((el) => (el.style.display = "none"))
   })
 
 const browser = await chromium.launch()
