@@ -28,6 +28,10 @@ vi.mock("@/lib/auth-helpers", () => ({
 // be mocked or the render throws PrismaClientInitializationError.
 vi.mock("@youthbasketballhub/db", () => ({
   prisma: {
+    // Impersonation banner looks up the real user's onboarding state.
+    user: { findUnique: vi.fn(async () => ({ onboardedAt: new Date() })) },
+    // Demo-mode kill switch lookup (lib/demo/demo-mode).
+    platformSettings: { findUnique: vi.fn(async () => ({ demoModeEnabled: false })) },
     team: { findMany: vi.fn(async () => []) },
     tryout: { groupBy: vi.fn(async () => []) },
     organization: { findMany: vi.fn(async () => []) },

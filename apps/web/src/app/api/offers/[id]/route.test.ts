@@ -9,6 +9,10 @@ vi.mock("@/lib/auth-helpers", () => ({
 
 vi.mock("@youthbasketballhub/db", () => ({
   prisma: {
+    // Family money-gate context (2026-08-13): adult respondent, no minor gate.
+    player: {
+      findFirst: vi.fn().mockResolvedValue(null),
+    },
     // Inline waiver gate (2026-07-20): accept checks required PARENT waivers
     waiverDocument: {
       findMany: vi.fn().mockResolvedValue([]),

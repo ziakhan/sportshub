@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server"
-import { getServerSession } from "next-auth"
 import { prisma } from "@youthbasketballhub/db"
-import { authOptions } from "@/lib/auth"
+import { getSessionUserId } from "@/lib/auth-helpers"
 import { isDemoModeEnabled } from "@/lib/demo/demo-mode"
 import {
   DEMO_VIEW_COOKIE,
@@ -24,8 +23,8 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "The demo is not available right now." }, { status: 404 })
   }
 
-  const session = await getServerSession(authOptions)
-  if (!session?.user?.id) {
+  const userId = await getSessionUserId()
+  if (!userId) {
     return NextResponse.json(
       { error: "Create a free account to try the demo.", signupRequired: true },
       { status: 401 }

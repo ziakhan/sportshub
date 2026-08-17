@@ -55,3 +55,10 @@ here was fixed in the demo job: this is the product's list.
 - **POTG share-card art uses a basketball emoji** in the "Player of the Game" chip
   (visible in feed score cards). Same rule as the recap chip fix: hand-drawn SVG
   ball, no emoji-as-icon. (social share card generator)
+- **Platform-wide em-dash sweep (signed-in surfaces)**: the checkpoint copy sweep
+  found hundreds of em-dash lines across (platform) pages (settings, offers,
+  referee requests, communications...). Public/launch surfaces are clean; the
+  signed-in sweep needs one dedicated pass with contextual rewording, not regex.
+- **Pre-existing test defect**: POST /api/seasons/[id]/submit "submits successfully"
+  fails with a nested ZodError (divisions-v3-era validation drift inside
+  submitTeamToSeason); the route-level schema matches. Needs its own fix.
