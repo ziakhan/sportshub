@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation"
 import { format } from "date-fns"
 import { formatCurrency } from "@/lib/countries"
 import { Badge, Crest, StarRating } from "@/components/ui"
+import { PUBLIC_REVIEWS } from "@/lib/public-flags"
 import type { EventItem } from "./page"
 
 type EventType = "all" | "tryouts" | "house-leagues" | "camps" | "training" | "tournaments"
@@ -230,7 +231,7 @@ export function EventsBrowser({
                         <span className="text-ink-800 block truncate text-[13px] font-bold">
                           {event.clubName}
                         </span>
-                        {event.clubRating != null && (
+                        {PUBLIC_REVIEWS && event.clubRating != null && (
                           <StarRating rating={event.clubRating} count={event.clubReviewCount} />
                         )}
                       </span>

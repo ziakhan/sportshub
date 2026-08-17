@@ -226,12 +226,94 @@ const PARTS = [
   { role: "Parents", does: "just open the app" },
 ]
 
-/* Real unclaimed listings from the directory, for the search mock. */
-const CLAIM_ROWS = [
-  { name: "Mississauga Minor Basketball Association", where: "Mississauga, ON" },
-  { name: "Norfolk Youth Basketball Association", where: "Simcoe, ON" },
-  { name: "Vanguard North", where: "Vaughan, ON" },
-]
+type ClaimHit = {
+  id: string
+  name: string
+  city: string | null
+  state: string | null
+  status: string
+}
+
+/**
+ * The claim search is real (owner 2026-08-17): results come from the public
+ * clubs API and each unclaimed row links straight into the claim flow for
+ * that club. No detour through the directory or a details page.
+ */
+function ClaimSearch() {
+  const [q, setQ] = useState("")
+  const [hits, setHits] = useState<ClaimHit[]>([])
+  const [searched, setSearched] = useState(false)
+
+  useEffect(() => {
+    const query = q.trim()
+    const handle = window.setTimeout(async () => {
+      try {
+        const res = await fetch(
+          `/api/clubs/public?limit=${query ? 6 : 3}${query ? `&q=${encodeURIComponent(query)}` : ""}`
+        )
+        if (!res.ok) return
+        const data = await res.json()
+        setHits(data.clubs ?? [])
+        setSearched(!!query)
+      } catch {
+        /* quiet: the card keeps its last results */
+      }
+    }, 250)
+    return () => window.clearTimeout(handle)
+  }, [q])
+
+  return (
+    <div className="rounded-2xl bg-white p-6 shadow-xl ring-1 ring-ink-100">
+      <label htmlFor="hp-club-search" className="sr-only">
+        Search clubs
+      </label>
+      <div className="flex items-center gap-3 rounded-xl bg-ink-50 px-4 py-3.5 ring-1 ring-ink-200 focus-within:ring-2 focus-within:ring-gold-500/60">
+        <svg viewBox="0 0 20 20" fill="none" aria-hidden="true" className="h-5 w-5 shrink-0 text-ink-400">
+          <circle cx="9" cy="9" r="6" stroke="currentColor" strokeWidth="2" />
+          <path d="M13.5 13.5L18 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+        </svg>
+        <input
+          id="hp-club-search"
+          type="text"
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
+          placeholder="Search your club&apos;s name or city"
+          className="min-w-0 flex-1 border-0 bg-transparent text-base text-ink-950 placeholder:text-ink-400 focus:outline-none"
+        />
+      </div>
+      <ul className="mt-3 divide-y divide-ink-100">
+        {hits.map((row) => (
+          <li key={row.id} className="flex items-center justify-between gap-4 px-2 py-3.5">
+            <div className="min-w-0">
+              <p className="truncate text-[15px] font-semibold text-ink-950">{row.name}</p>
+              <p className="text-[13px] text-ink-500">
+                {[row.city, row.state].filter(Boolean).join(", ")}
+              </p>
+            </div>
+            {row.status === "UNCLAIMED" ? (
+              <Link
+                href={`/claim/${row.id}`}
+                className="shrink-0 cursor-pointer rounded-full bg-gold-500 px-3.5 py-1.5 text-[13px] font-bold text-ink-950 transition-colors hover:bg-gold-400"
+              >
+                Claim it
+              </Link>
+            ) : (
+              <span className="shrink-0 rounded-full bg-ink-100 px-3 py-1 text-[12px] font-semibold uppercase tracking-wide text-ink-500">
+                Claimed
+              </span>
+            )}
+          </li>
+        ))}
+        {hits.length === 0 && searched && (
+          <li className="px-2 py-3 text-[14px] text-ink-500">
+            No listing matched. Leave your email or phone and we&apos;ll help you get set up.
+          </li>
+        )}
+        {!searched && <li className="px-2 py-3 text-[13px] text-ink-400">and 1,322 more</li>}
+      </ul>
+    </div>
+  )
+}
 
 function useSloganRotation(count: number) {
   const [active, setActive] = useState(0)
@@ -620,24 +702,113 @@ function EverybodyConnects() {
 
 /* ── Real screenshots ────────────────────────────────────────────────────── */
 
-function PhoneFrame({
-  src,
-  alt,
-  caption,
-  className,
-}: {
+/**
+ * The screen slides (owner 2026-08-17): one screen at a time, big, with a
+ * hero-style title over each, sliding left and right. Logical order: the
+ * week, the game, the standings, the recap, the chat, the news, the player.
+ */
+const SCREEN_SLIDES: {
+  key: string
+  title: React.ReactNode
+  caption: string
   src: string
   alt: string
-  caption: string
-  className?: string
-}) {
-  return (
-    <figure className={`flex w-full max-w-[280px] flex-col items-center gap-4 ${className ?? ""}`}>
-      <div className="w-full rounded-[2.2rem] bg-ink-900 p-2.5 shadow-2xl ring-1 ring-white/10">
-        <div className="overflow-hidden rounded-[1.7rem]">
+  frame: "phone" | "desktop"
+}[] = [
+  {
+    key: "week",
+    title: (
+      <>
+        The <span className="text-gold-400">family week</span>, on one phone.
+      </>
+    ),
+    caption: "Practices, games, and the RSVP right on the row.",
+    src: "/home-preview/shots/parent-calendar-phone.png",
+    alt: "A family calendar on a phone: practices and games for two kids with Going, Maybe and Can't go buttons on each row",
+    frame: "phone",
+  },
+  {
+    key: "live",
+    title: (
+      <>
+        Watch every game <span className="text-live-500">live</span>.
+      </>
+    ),
+    caption: "Full team stats in each team's colours, no refresh, it just moves.",
+    src: "/home-preview/shots/game-live-boxscore-phone.png",
+    alt: "Live team stats on a phone: shooting splits, rebounds, assists, steals and blocks as two-sided bars",
+    frame: "phone",
+  },
+  {
+    key: "standings",
+    title: (
+      <>
+        Standings <span className="text-court-400">settle themselves</span>.
+      </>
+    ),
+    caption: "Finals go in, the table moves on its own.",
+    src: "/home-preview/league-desktop.png",
+    alt: "A league page on desktop: final scores and standings tables with records, streaks and games back",
+    frame: "desktop",
+  },
+  {
+    key: "recap",
+    title: (
+      <>
+        Every game gets a <span className="text-gold-400">recap</span>.
+      </>
+    ),
+    caption: "Written from the official scoring record, with a Player of the Game.",
+    src: "/home-preview/news-recap-phone.png",
+    alt: "A game recap article on a phone: Toronto Lords Grade 10 Girls beat Burlington Force 54 to 33, Player of the Game named",
+    frame: "phone",
+  },
+  {
+    key: "chat",
+    title: (
+      <>
+        Team chat, polls, <span className="text-hoop-400">one thread</span>.
+      </>
+    ),
+    caption: "Coaches and parents in one place, and a poll settles Saturday's pizza.",
+    src: "/home-preview/shots/parent-team-chat-phone.png",
+    alt: "A team chat on a phone: coach messages, a carpool note from a parent, and a poll with live results",
+    frame: "phone",
+  },
+  {
+    key: "news",
+    title: (
+      <>
+        Finals become <span className="text-play-300">news</span>.
+      </>
+    ),
+    caption: "Recap cards and player milestones, written on their own.",
+    src: "/home-preview/shots/news-cards-desktop.png",
+    alt: "A news grid on desktop: game recap cards with team crests and scores, milestone cards and a club announcement",
+    frame: "desktop",
+  },
+  {
+    key: "player",
+    title: (
+      <>
+        <span className="text-play-300">Your name</span> in the news.
+      </>
+    ),
+    caption: "Every player gets a page: season stats, games, and their moments.",
+    src: "/home-preview/shots/social-player-page-phone.png",
+    alt: "A player's public page on a phone: jersey number 20 mug, Danielle R., Toronto Lords, points and rebounds per game tiles",
+    frame: "phone",
+  },
+]
+
+function SlideImage({ slide }: { slide: (typeof SCREEN_SLIDES)[number] }) {
+  if (slide.frame === "phone") {
+    return (
+      <div className="w-full max-w-[350px] rounded-[2.4rem] bg-ink-900 p-3 shadow-2xl ring-1 ring-white/10">
+        <div className="overflow-hidden rounded-[1.9rem]">
           <Image
-            src={src}
-            alt={alt}
+            src={slide.src}
+            alt={slide.alt}
             width={390}
             height={844}
             loading="eager"
@@ -645,44 +816,35 @@ function PhoneFrame({
           />
         </div>
       </div>
-      <figcaption className="max-w-[260px] text-center text-[14px] leading-relaxed text-white/70">
-        {caption}
-      </figcaption>
-    </figure>
-  )
-}
-
-function BrowserFrame({ src, alt, caption }: { src: string; alt: string; caption: string }) {
+    )
+  }
   return (
-    <figure className="flex w-full max-w-2xl flex-col gap-4">
-      <div className="overflow-hidden rounded-xl bg-ink-900 shadow-2xl ring-1 ring-white/10">
-        <div className="flex items-center gap-2 bg-ink-800 px-4 py-2.5">
-          <span className="h-2.5 w-2.5 rounded-full bg-white/20" />
-          <span className="h-2.5 w-2.5 rounded-full bg-white/20" />
-          <span className="h-2.5 w-2.5 rounded-full bg-white/20" />
-          <span className="ml-3 rounded-md bg-ink-950/60 px-3 py-1 text-[12px] text-white/50">
-            ysportshub.com
-          </span>
-        </div>
-        <Image
-          src={src}
-          alt={alt}
-          width={1440}
-          height={900}
-          loading="eager"
-          className="h-auto w-full"
-        />
+    <div className="w-full max-w-3xl overflow-hidden rounded-xl bg-ink-900 shadow-2xl ring-1 ring-white/10">
+      <div className="flex items-center gap-2 bg-ink-800 px-4 py-2.5">
+        <span className="h-2.5 w-2.5 rounded-full bg-white/20" />
+        <span className="h-2.5 w-2.5 rounded-full bg-white/20" />
+        <span className="h-2.5 w-2.5 rounded-full bg-white/20" />
+        <span className="ml-3 rounded-md bg-ink-950/60 px-3 py-1 text-[12px] text-white/50">
+          ysportshub.com
+        </span>
       </div>
-      <figcaption className="text-center text-[14px] leading-relaxed text-white/70">
-        {caption}
-      </figcaption>
-    </figure>
+      <Image
+        src={slide.src}
+        alt={slide.alt}
+        width={1440}
+        height={900}
+        loading="eager"
+        className="h-auto w-full"
+      />
+    </div>
   )
 }
 
 function Screenshots() {
+  const { active, goTo } = useSloganRotation(SCREEN_SLIDES.length)
+
   return (
-    <CourtBackdrop variant="ink" floor="planks" intensity="immersive">
+    <CourtBackdrop variant="navy" floor="planks" intensity="immersive">
       <div className="mx-auto w-full max-w-6xl px-5 py-20 sm:py-24">
         <div className="text-center">
           <p className="text-[13px] font-bold uppercase tracking-[0.14em] text-gold-400">
@@ -692,52 +854,72 @@ function Screenshots() {
             What it looks like.
           </h2>
           <p className="mx-auto mt-4 max-w-xl text-lg text-white/70">
-            These are screenshots, not mockups.
+            These are screenshots, not mockups. Slide through.
           </p>
         </div>
 
-        <div className="mt-14 flex flex-col items-center gap-10 lg:flex-row lg:items-start lg:justify-center">
-          <PhoneFrame
-            src="/home-preview/shots/parent-calendar-phone.png"
-            alt="A family calendar on a phone: practices and games for two kids with Going, Maybe and Can't go buttons on each row"
-            caption="The family week. Practices, games, and the RSVP right on the row."
-            className="lg:mt-10"
-          />
+        <div className="relative mt-10">
+          <button
+            type="button"
+            onClick={() => goTo(active - 1)}
+            aria-label="Previous screen"
+            className="absolute left-0 top-1/2 z-20 flex h-12 w-12 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full bg-white/10 text-white/70 ring-1 ring-white/15 transition-colors hover:bg-white/20 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-gold-400 sm:left-2"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" className="h-6 w-6">
+              <path d="m15 5-7 7 7 7" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </button>
 
-          <BrowserFrame
-            src="/home-preview/shots/news-cards-desktop.png"
-            alt="A news grid on desktop: game recap cards with team crests and scores, milestone cards and a club announcement"
-            caption="Finals become recaps and milestone cards on their own."
-          />
+          <div className="overflow-hidden">
+            <div
+              className="flex transition-transform duration-500 ease-out motion-reduce:transition-none"
+              style={{ transform: `translateX(-${active * 100}%)` }}
+            >
+              {SCREEN_SLIDES.map((slide, i) => (
+                <div
+                  key={slide.key}
+                  aria-hidden={i !== active}
+                  className="flex w-full shrink-0 flex-col items-center px-12 sm:px-16"
+                >
+                  <h3 className="text-balance text-center text-3xl font-bold leading-tight tracking-tight text-white sm:text-5xl">
+                    {slide.title}
+                  </h3>
+                  <div className="mt-8 flex w-full flex-1 items-center justify-center">
+                    <SlideImage slide={slide} />
+                  </div>
+                  <p className="mt-6 max-w-md text-center text-[15px] leading-relaxed text-white/70">
+                    {slide.caption}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
 
-          <PhoneFrame
-            src="/home-preview/shots/parent-team-chat-phone.png"
-            alt="A team chat on a phone: coach messages, a carpool note from a parent, and a poll with live results"
-            caption="Team chat with polls. One thread, every parent."
-            className="lg:mt-10"
-          />
+          <button
+            type="button"
+            onClick={() => goTo(active + 1)}
+            aria-label="Next screen"
+            className="absolute right-0 top-1/2 z-20 flex h-12 w-12 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full bg-white/10 text-white/70 ring-1 ring-white/15 transition-colors hover:bg-white/20 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-gold-400 sm:right-2"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" className="h-6 w-6">
+              <path d="m9 5 7 7-7 7" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </button>
         </div>
 
-        <div className="mt-12 flex flex-col items-center gap-10 lg:flex-row lg:items-start lg:justify-center">
-          <PhoneFrame
-            src="/home-preview/shots/game-live-boxscore-phone.png"
-            alt="Live team stats on a phone: field goals, three pointers, free throws, rebounds, assists, steals and blocks as bars"
-            caption="A live game on a parent's phone. Full team stats, no refresh, it just moves."
-            className="lg:mt-10"
-          />
-
-          <BrowserFrame
-            src="/home-preview/league-desktop.png"
-            alt="A league page on desktop: final scores and standings tables with records, streaks and games back"
-            caption="Standings settle themselves as finals come in."
-          />
-
-          <PhoneFrame
-            src="/home-preview/news-recap-phone.png"
-            alt="A game recap article on a phone: Toronto Lords Grade 10 Girls beat Burlington Force 54 to 33, Player of the Game named"
-            caption="Every game gets a recap. Your name in the news."
-            className="lg:mt-10"
-          />
+        <div className="mt-8 flex items-center justify-center gap-2" role="tablist" aria-label="Screens">
+          {SCREEN_SLIDES.map((slide, i) => (
+            <button
+              key={slide.key}
+              type="button"
+              onClick={() => goTo(i)}
+              aria-label={`Screen ${i + 1}`}
+              aria-current={i === active}
+              className={`h-2.5 cursor-pointer rounded-full transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-gold-400 ${
+                i === active ? "w-7 bg-gold-400" : "w-2.5 bg-white/25 hover:bg-white/45"
+              }`}
+            />
+          ))}
         </div>
       </div>
     </CourtBackdrop>
@@ -833,14 +1015,6 @@ function ClaimYourClub() {
               We imported 1,325 Canadian club listings so families can find them. If one of them
               is yours, claiming it is free: you get the page, the brand and the tools.
             </p>
-            <div className="mt-7 flex flex-wrap items-center gap-3">
-              <Link
-                href="/club"
-                className="inline-block cursor-pointer rounded-xl bg-ink-950 px-8 py-4 text-base font-bold text-white transition-colors hover:bg-ink-800"
-              >
-                Find your club
-              </Link>
-            </div>
             <p className="mt-7 text-[15px] font-semibold text-ink-950">
               We&apos;re launching this fall. Be the first to know:
             </p>
@@ -852,49 +1026,7 @@ function ClaimYourClub() {
             />
           </div>
 
-          <div className="rounded-2xl bg-white p-6 shadow-xl ring-1 ring-ink-100">
-            <label htmlFor="hp-club-search" className="sr-only">
-              Search clubs
-            </label>
-            <div className="flex items-center gap-3 rounded-xl bg-ink-50 px-4 py-3.5 ring-1 ring-ink-200">
-              <svg viewBox="0 0 20 20" fill="none" aria-hidden="true" className="h-5 w-5 text-ink-400">
-                <circle cx="9" cy="9" r="6" stroke="currentColor" strokeWidth="2" />
-                <path d="M13.5 13.5L18 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-              </svg>
-              <input
-                id="hp-club-search"
-                type="text"
-                readOnly
-                value="basketball association"
-                className="min-w-0 flex-1 border-0 bg-transparent text-base text-ink-950 focus:outline-none"
-              />
-            </div>
-            <ul className="mt-3 divide-y divide-ink-100">
-              {CLAIM_ROWS.map((row, i) => (
-                <li
-                  key={row.name}
-                  className={`flex items-center justify-between gap-4 px-2 py-3.5 ${
-                    i === 0 ? "rounded-lg bg-gold-50" : ""
-                  }`}
-                >
-                  <div className="min-w-0">
-                    <p className="truncate text-[15px] font-semibold text-ink-950">{row.name}</p>
-                    <p className="text-[13px] text-ink-500">{row.where}</p>
-                  </div>
-                  {i === 0 ? (
-                    <span className="shrink-0 rounded-full bg-gold-500 px-3.5 py-1.5 text-[13px] font-bold text-ink-950">
-                      Claim it
-                    </span>
-                  ) : (
-                    <span className="shrink-0 rounded-full bg-ink-100 px-3 py-1 text-[12px] font-semibold uppercase tracking-wide text-ink-500">
-                      Unclaimed
-                    </span>
-                  )}
-                </li>
-              ))}
-              <li className="px-2 py-3 text-[13px] text-ink-400">and 1,322 more</li>
-            </ul>
-          </div>
+          <ClaimSearch />
         </div>
       </section>
     </CourtBackdrop>
@@ -958,8 +1090,8 @@ function PreviewNotes() {
             The browser frame shows ysportshub.com and swaps to whatever domain you pick.
           </li>
           <li>
-            Nothing is wired: the form does not send, the search does not search, the claim chip
-            does not claim.
+            Everything on this page is wired now: the forms store real rows, the claim search
+            hits the live directory, and Claim it opens the real claim flow.
           </li>
         </ul>
       </div>

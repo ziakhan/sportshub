@@ -50,7 +50,7 @@ export async function generateMetadata({ params }: { params: { slug: string } })
     description:
       (tenant.branding as any)?.tagline ||
       tenant.description ||
-      `${tenant.name} youth basketball club${place ? ` in ${place}` : ""} — teams, tryouts, camps, schedules and reviews.`,
+      `${tenant.name} youth basketball club${place ? ` in ${place}` : ""}: teams, tryouts, camps and schedules.`,
     alternates: { canonical: `/club/${params.slug}` },
   }
 }

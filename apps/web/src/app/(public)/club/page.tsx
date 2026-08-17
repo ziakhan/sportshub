@@ -8,6 +8,7 @@ import {
   PUBLIC_CLUB_WHERE,
   type DirectoryClub,
 } from "@/lib/queries/directory-clubs"
+import { PUBLIC_REVIEWS } from "@/lib/public-flags"
 import { Crest, PageBand, StarRating } from "@/components/ui"
 import { FollowButton } from "@/components/follow-button"
 import { ClubSearch } from "../club-search"
@@ -56,7 +57,7 @@ function ClubCard({
             </span>
           )}
         </span>
-        {rating && (
+        {PUBLIC_REVIEWS && rating && (
           <span className="block">
             <StarRating rating={rating.average} count={rating.count} />
           </span>
@@ -213,7 +214,7 @@ export default async function ClubDirectoryPage({
         align="center"
         eyebrow="Clubs"
         title="Find a Basketball Club"
-        description="Clubs near you, rated by real families. Search by name or city, or browse below."
+        description="Clubs near you. Search by name or city, or browse below."
       >
         <ClubSearch />
 

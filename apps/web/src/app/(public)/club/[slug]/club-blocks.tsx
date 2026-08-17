@@ -4,6 +4,7 @@ import { format } from "date-fns"
 import { Card, StarRating } from "@/components/ui"
 import { formatCurrency } from "@/lib/countries"
 import { ReviewForm, FlagReviewButton, type OwnReview } from "./review-form"
+import { PUBLIC_REVIEWS } from "@/lib/public-flags"
 import { OneOnOneBooking } from "@/components/training/one-on-one-booking"
 
 export interface ClubPageData {
@@ -76,7 +77,7 @@ export function hasBlockContent(key: string, d: ClubPageData): boolean {
     case "news":
       return d.news.length > 0
     case "reviews":
-      return true
+      return PUBLIC_REVIEWS
     case "nextgame":
       return d.upcomingGames.length > 0
     case "contact":
@@ -146,7 +147,7 @@ function renderBlock(key: string, variant: Variant, d: ClubPageData) {
     case "news":
       return <NewsBlock d={d} />
     case "reviews":
-      return <ReviewsBlock d={d} />
+      return PUBLIC_REVIEWS ? <ReviewsBlock d={d} /> : null
     case "nextgame":
       return <NextGameBlock d={d} />
     case "contact":
