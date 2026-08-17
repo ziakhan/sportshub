@@ -15,7 +15,7 @@ const transporter = nodemailer.createTransport({
     : undefined,
 })
 
-const FROM = process.env.SMTP_FROM || senderEmail("noreply")
+const FROM = process.env.SMTP_FROM || `SportsHubOne <${senderEmail("no-reply")}>`
 
 /**
  * Canonical base URL for links inside emails. Two env vars were used

@@ -20,11 +20,13 @@ export const APP_DOMAINS: string[] = (process.env.NEXT_PUBLIC_APP_DOMAINS ?? "sp
   .filter(Boolean)
 
 /**
- * The domain email is actually sent from (SPF/DKIM live on ysportshub.com —
- * box file §Email). Keep separate from PRIMARY_DOMAIN: brand and deliverability
- * are different concerns.
+ * The domain email is actually sent from. Since 2026-08-17 the brand domain
+ * carries its own OCI SPF + DKIM (selector sh1-2026), so sending and brand
+ * are finally the same domain (owner ruling: all mail from sportshubone.com,
+ * display name "SportsHubOne"). ysportshub.com keeps its records as a
+ * fallback sender. NOTE: the OCI approved sender is "no-reply@" (hyphen).
  */
-export const EMAIL_DOMAIN = "ysportshub.com"
+export const EMAIL_DOMAIN = "sportshubone.com"
 
 /** Hostname (optionally with port) → bare lowercase domain. */
 function bare(host: string): string {
