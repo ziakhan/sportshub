@@ -66,6 +66,9 @@ const PUBLIC_PAGE_PREFIXES = [
   // Anonymous club-claim wizard + completion landing (owner 2026-07-18:
   // claim-first, account-at-end — no session until the token is redeemed)
   "/claim",
+  // The chrome-free pre-launch claim flow (owner 2026-08-17): same wizard,
+  // no site navigation around it
+  "/claim-club",
   // Tokenized waiver signing (emailed link, no session — waivers-esign 2026-07-20)
   "/waivers",
   // Public venue directory + detail pages (name, address, map, hours — 2026-07-21)

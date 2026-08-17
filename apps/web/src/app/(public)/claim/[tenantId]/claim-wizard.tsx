@@ -155,7 +155,7 @@ export function ClaimWizard({ tenantId }: { tenantId: string }) {
       {step === "options" && (
         <div className="mt-6 space-y-4">
           <p className="text-ink-600 text-sm">
-            To prove you run this club, we send a code to the contact info already on file — no
+            To prove you run this club, we send a code to the contact info already on file. No
             account needed yet.
           </p>
           <div className="space-y-2">
@@ -176,7 +176,7 @@ export function ClaimWizard({ tenantId }: { tenantId: string }) {
                     ? `Email a code to ${c.hint}`
                     : c.channel === "sms"
                       ? `Text a code to ${c.hint}`
-                      : "I can't access those — submit proof instead"}
+                      : "I can't access those, submit proof instead"}
                 </span>
                 {c.channel === "proof" && (
                   <span className="text-ink-500 mt-0.5 block text-xs">
@@ -283,7 +283,7 @@ export function ClaimWizard({ tenantId }: { tenantId: string }) {
           <Badge tone="success">Verified</Badge>
           <p className="text-ink-600 text-sm">
             {options.name} is reserved for you for 14 days. Create an account (any email works)
-            or sign in — the club binds to <em>your account</em>, not the inbox that got the
+            or sign in: the club binds to <em>your account</em>, not the inbox that got the
             code.
           </p>
           <Link
@@ -300,7 +300,7 @@ export function ClaimWizard({ tenantId }: { tenantId: string }) {
         <div className="mt-6 space-y-3 text-center">
           <Badge tone="play">Submitted</Badge>
           <p className="text-ink-600 text-sm">
-            An admin will review your proof — you&apos;ll hear back at{" "}
+            An admin will review your proof. You&apos;ll hear back at{" "}
             <strong>{claimantEmail}</strong>. If approved, that email gets a link to take
             ownership.
           </p>

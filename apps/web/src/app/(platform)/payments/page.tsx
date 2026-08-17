@@ -65,7 +65,7 @@ export default async function MyPaymentsPage() {
         <p className="text-ink-500 mt-1 text-sm">
           {open.length === 0
             ? "You're all settled up."
-            : `${open.length} open item${open.length > 1 ? "s" : ""} — ${formatCurrency(owing, currency)} outstanding.`}
+            : `${open.length} open item${open.length > 1 ? "s" : ""}, ${formatCurrency(owing, currency)} outstanding.`}
         </p>
       </Card>
 

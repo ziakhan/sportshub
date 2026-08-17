@@ -4,7 +4,7 @@ import { ClaimWizard } from "./claim-wizard"
 export const dynamic = "force-dynamic"
 
 export const metadata: Metadata = {
-  title: "Claim your club — SportsHub",
+  title: "Claim your club | SportsHub",
   robots: { index: false },
 }
 

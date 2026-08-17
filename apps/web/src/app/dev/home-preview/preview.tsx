@@ -292,7 +292,7 @@ function ClaimSearch() {
             </div>
             {row.status === "UNCLAIMED" ? (
               <Link
-                href={`/claim/${row.id}`}
+                href={`/claim-club/${row.id}`}
                 className="shrink-0 cursor-pointer rounded-full bg-gold-500 px-3.5 py-1.5 text-[13px] font-bold text-ink-950 transition-colors hover:bg-gold-400"
               >
                 Claim it
@@ -581,12 +581,14 @@ function CompareMark({ cell }: { cell: CompareCell }) {
     )
   }
   if (cell === "n") {
+    // A clear red line (owner 2026-08-17): reads as "not offered" at a
+    // glance without shouting, and people who know can still see it.
     return (
-      <span className="mx-auto flex h-6 w-6 items-center justify-center rounded-full bg-live-50">
-        <svg viewBox="0 0 20 20" fill="none" aria-hidden="true" className="h-3 w-3 text-live-600">
-          <path d="M5 5l10 10M15 5L5 15" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" />
-        </svg>
-      </span>
+      <span
+        className="mx-auto block h-[3px] w-5 rounded-full bg-live-600"
+        role="img"
+        aria-label="Not offered"
+      />
     )
   }
   return <span className="text-ink-300 mx-auto block text-center text-sm">–</span>
@@ -704,8 +706,12 @@ function EverybodyConnects() {
 
 /**
  * The screen slides (owner 2026-08-17): one screen at a time, big, with a
- * hero-style title over each, sliding left and right. Logical order: the
- * week, the game, the standings, the recap, the chat, the news, the player.
+ * hero-style title over each, sliding left and right.
+ *
+ * Priority order, owner's logic: the claim band and the comparison table
+ * above already speak to clubs and leagues, so the slides lead with what
+ * families and kids see (the live game, the plays, the recap, the kid's
+ * page), then the week-to-week utility, then the league surfaces.
  */
 const SCREEN_SLIDES: {
   key: string
@@ -715,18 +721,6 @@ const SCREEN_SLIDES: {
   alt: string
   frame: "phone" | "desktop"
 }[] = [
-  {
-    key: "week",
-    title: (
-      <>
-        The <span className="text-gold-400">family week</span>, on one phone.
-      </>
-    ),
-    caption: "Practices, games, and the RSVP right on the row.",
-    src: "/home-preview/shots/parent-calendar-phone.png",
-    alt: "A family calendar on a phone: practices and games for two kids with Going, Maybe and Can't go buttons on each row",
-    frame: "phone",
-  },
   {
     key: "live",
     title: (
@@ -740,16 +734,16 @@ const SCREEN_SLIDES: {
     frame: "phone",
   },
   {
-    key: "standings",
+    key: "pbp",
     title: (
       <>
-        Standings <span className="text-court-400">settle themselves</span>.
+        Every play, <span className="text-hoop-400">as it happens</span>.
       </>
     ),
-    caption: "Finals go in, the table moves on its own.",
-    src: "/home-preview/league-desktop.png",
-    alt: "A league page on desktop: final scores and standings tables with records, streaks and games back",
-    frame: "desktop",
+    caption: "Makes, misses, rebounds, subs, and the assist, written play by play.",
+    src: "/home-preview/shots/game-live-playbyplay-phone.png",
+    alt: "Play-by-play on a phone: scores with assists, missed shots with rebounds, substitutions and fouls, each with the running score",
+    frame: "phone",
   },
   {
     key: "recap",
@@ -761,6 +755,30 @@ const SCREEN_SLIDES: {
     caption: "Written from the official scoring record, with a Player of the Game.",
     src: "/home-preview/news-recap-phone.png",
     alt: "A game recap article on a phone: Toronto Lords Grade 10 Girls beat Burlington Force 54 to 33, Player of the Game named",
+    frame: "phone",
+  },
+  {
+    key: "player",
+    title: (
+      <>
+        <span className="text-play-300">Your name</span> in the news.
+      </>
+    ),
+    caption: "Every player gets a page: season stats, games, and their moments.",
+    src: "/home-preview/shots/social-player-page-phone.png",
+    alt: "A player's public page on a phone: jersey number 20 mug, Danielle R., Toronto Lords, points and rebounds per game tiles",
+    frame: "phone",
+  },
+  {
+    key: "week",
+    title: (
+      <>
+        The <span className="text-gold-400">family week</span>, on one phone.
+      </>
+    ),
+    caption: "Practices, games, and the RSVP right on the row.",
+    src: "/home-preview/shots/parent-calendar-phone.png",
+    alt: "A family calendar on a phone: practices and games for two kids with Going, Maybe and Can't go buttons on each row",
     frame: "phone",
   },
   {
@@ -776,6 +794,30 @@ const SCREEN_SLIDES: {
     frame: "phone",
   },
   {
+    key: "payments",
+    title: (
+      <>
+        Payment plans <span className="text-gold-400">run themselves</span>.
+      </>
+    ),
+    caption: "A deposit at signup, the rest on their own dates, every one receipted.",
+    src: "/home-preview/shots/parent-payments-phone.png",
+    alt: "A payments page on a phone: a payment plan with deposits and dated installments, each marked paid",
+    frame: "phone",
+  },
+  {
+    key: "standings",
+    title: (
+      <>
+        Standings <span className="text-court-400">settle themselves</span>.
+      </>
+    ),
+    caption: "Finals go in, the table moves on its own.",
+    src: "/home-preview/league-desktop.png",
+    alt: "A league page on desktop: final scores and standings tables with records, streaks and games back",
+    frame: "desktop",
+  },
+  {
     key: "news",
     title: (
       <>
@@ -786,18 +828,6 @@ const SCREEN_SLIDES: {
     src: "/home-preview/shots/news-cards-desktop.png",
     alt: "A news grid on desktop: game recap cards with team crests and scores, milestone cards and a club announcement",
     frame: "desktop",
-  },
-  {
-    key: "player",
-    title: (
-      <>
-        <span className="text-play-300">Your name</span> in the news.
-      </>
-    ),
-    caption: "Every player gets a page: season stats, games, and their moments.",
-    src: "/home-preview/shots/social-player-page-phone.png",
-    alt: "A player's public page on a phone: jersey number 20 mug, Danielle R., Toronto Lords, points and rebounds per game tiles",
-    frame: "phone",
   },
 ]
 

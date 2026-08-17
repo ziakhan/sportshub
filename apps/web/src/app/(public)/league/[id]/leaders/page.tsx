@@ -50,7 +50,7 @@ export default async function LeagueLeadersPage({ params }: { params: { id: stri
       {leaders.categories.length === 0 ? (
         <Card className="p-12 text-center">
           <p className="text-ink-500">
-            No completed games with player stats yet — leaders appear as soon as games are scored.
+            No completed games with player stats yet. Leaders appear as soon as games are scored.
           </p>
         </Card>
       ) : (
