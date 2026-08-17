@@ -80,7 +80,7 @@ export async function POST(req: NextRequest) {
     const { alertOwnerSignup } = await import("@/lib/owner-alerts")
     alertOwnerSignup({ contact: parsed.contact, kind: parsed.kind, identity, source, total })
     const { sendLaunchWelcome } = await import("@/lib/launch-welcome")
-    sendLaunchWelcome({ contact: parsed.contact, kind: parsed.kind })
+    sendLaunchWelcome({ contact: parsed.contact, kind: parsed.kind, identity })
   }
 
   return NextResponse.json({ ok: true })
