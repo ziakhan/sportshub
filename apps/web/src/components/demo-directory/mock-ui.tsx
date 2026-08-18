@@ -2493,3 +2493,147 @@ export function MockEndCard({
     </div>
   )
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * REAL-SCREEN MOCKS — the realism standard (owner 2026-08-19).
+ *
+ * THE RULES (apply to every new or upgraded mock):
+ *  R1 The source of truth is the REAL component's markup. Copy its classes
+ *     literally and cite the file. Never invent a box where the product has
+ *     an opinion.
+ *  R2 Differentiation carries meaning. A calendar entry is not a notification:
+ *     calendar cards carry the kind's color on a bold left edge
+ *     (game=energy, practice=brand, event=highlight) exactly like
+ *     calendar/my-calendar.tsx; notifications carry read-state
+ *     (unread = play tint + border) exactly like notifications/page.tsx.
+ *  R3 Real content only: demo-world names, believable times, real venues.
+ *  R4 Full-phone framing; the camera zooms to the acted element and pulls
+ *     back. Never crop a phone in half.
+ * ═══════════════════════════════════════════════════════════════════════ */
+
+/** Calendar entry, mirrored 1:1 from calendar/my-calendar.tsx (KIND_CARD /
+ *  KIND_EDGE / card render). */
+export function MockCalendarEvent({
+  kind,
+  time,
+  title,
+  detail,
+  place,
+  live = false,
+  cancelled = false,
+  rsvp,
+  kidDot,
+  emphasize,
+}: {
+  kind: "game" | "practice" | "event"
+  time: string
+  title: string
+  detail?: string
+  place?: string
+  live?: boolean
+  cancelled?: boolean
+  /** "going" | "maybe" | "no" | undefined (no RSVP row) */
+  rsvp?: "going" | "maybe" | "no"
+  /** Which kid, as the lens dot color class (e.g. "bg-play-500"). */
+  kidDot?: string
+  emphasize?: string
+}) {
+  const card =
+    kind === "game"
+      ? "bg-energy-soft/60 border-ink-100"
+      : kind === "event"
+        ? "bg-highlight-soft/60 border-ink-100"
+        : "bg-white border-ink-100"
+  const edge =
+    kind === "game" ? "var(--energy)" : kind === "event" ? "var(--highlight)" : "var(--brand)"
+  return (
+    <div
+      data-demo-target={emphasize}
+      className={`flex gap-3 rounded-xl border border-l-4 px-4 py-3 ${card} ${cancelled ? "opacity-60" : ""}`}
+      style={{ borderLeftColor: edge }}
+    >
+      <div className="min-w-0 flex-1">
+        <p className="text-ink-950 text-[16px] font-extrabold tabular-nums">
+          <span className={cancelled ? "line-through" : ""}>{time}</span>
+          {live && (
+            <span className="ml-2 rounded-full bg-red-600 px-2 py-0.5 align-[2px] text-[10px] font-bold uppercase text-white">
+              Live
+            </span>
+          )}
+          {cancelled && (
+            <span className="ml-2 rounded-full bg-red-50 px-2 py-0.5 align-[2px] text-[10px] font-bold uppercase text-red-600">
+              Cancelled
+            </span>
+          )}
+        </p>
+        <p className="text-ink-900 mt-0.5 text-[15px] font-bold">
+          {kidDot && (
+            <span className={`mr-1.5 inline-block h-2 w-2 rounded-full align-[1px] ${kidDot}`} />
+          )}
+          {title}
+          {detail && <span className="text-ink-500 ml-2 text-[13px] font-semibold">{detail}</span>}
+        </p>
+        {place && <p className="text-ink-600 mt-0.5 text-[13px]">{place}</p>}
+        {rsvp && (
+          <div className="mt-2 flex items-center gap-1.5">
+            {(
+              [
+                ["going", "✓ Going"],
+                ["maybe", "? Maybe"],
+                ["no", "✗ Can't go"],
+              ] as const
+            ).map(([key, label]) => (
+              <span
+                key={key}
+                className={`rounded-full border px-2.5 py-1 text-xs font-semibold ${
+                  rsvp === key
+                    ? "border-court-600 bg-court-600 text-white"
+                    : "border-ink-200 bg-white text-ink-500"
+                }`}
+              >
+                {label}
+              </span>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
+/** Notification row, mirrored 1:1 from notifications/page.tsx. */
+export function MockNotificationRow({
+  title,
+  message,
+  time,
+  unread = false,
+  emphasize,
+}: {
+  title: string
+  message: string
+  time: string
+  unread?: boolean
+  emphasize?: string
+}) {
+  return (
+    <div
+      data-demo-target={emphasize}
+      className={`shadow-soft rounded-2xl border bg-white p-4 ${
+        unread ? "border-play-200 bg-play-50/30" : "border-ink-100"
+      }`}
+    >
+      <div className="flex items-start gap-2">
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2">
+            <h3 className={`text-sm font-semibold ${unread ? "text-ink-900" : "text-ink-700"}`}>
+              {title}
+            </h3>
+            {unread && <span className="bg-play-500 h-2 w-2 shrink-0 rounded-full" />}
+          </div>
+          <p className="text-ink-600 mt-0.5 text-sm leading-relaxed">{message}</p>
+          <p className="text-ink-400 mt-1.5 text-xs">{time}</p>
+        </div>
+      </div>
+    </div>
+  )
+}
