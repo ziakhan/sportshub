@@ -1,6 +1,6 @@
 "use client"
 
-import { useRef, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { signIn } from "next-auth/react"
 import { useSearchParams } from "next/navigation"
 import Link from "next/link"
@@ -34,13 +34,20 @@ export function SignInForm({
   const callbackUrl = rawCallback ?? "/post-login"
   const signupsClosedBounce = searchParams?.get("error") === "SignupsClosed"
 
-  // Owner 2026-08-17 (final): pre-launch, the SSO buttons stay VISIBLE (the
-  // feature should be seen) but a click answers with the launch note on
-  // EVERY domain — never a multi-step OAuth trip that ends in rejection.
-  // At launch PUBLIC_SIGNUPS=true makes the buttons live, nothing else moves.
+  // Owner 2026-08-17 (final): pre-launch the SSO buttons stay VISIBLE on the
+  // brand domain but a click answers with the launch note — never a
+  // multi-step OAuth trip that ends in rejection. The TEST domain (and
+  // localhost) keeps fully working SSO for the team; auth.ts waives the
+  // server gate there too. At launch PUBLIC_SIGNUPS=true opens every host.
+  const [ssoLive, setSsoLive] = useState(signupsOpen)
   const [ssoBlockedNote, setSsoBlockedNote] = useState(false)
+  useEffect(() => {
+    if (signupsOpen) return
+    const h = window.location.hostname
+    setSsoLive(h === "ysportshub.com" || h.endsWith(".ysportshub.com") || h === "localhost")
+  }, [signupsOpen])
   const ssoClick = (provider: "google" | "apple") => {
-    if (!signupsOpen) {
+    if (!ssoLive) {
       setSsoBlockedNote(true)
       return
     }

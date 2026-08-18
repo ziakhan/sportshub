@@ -97,9 +97,22 @@ export const authOptions: NextAuthOptions = {
       // Pre-launch gate (owner 2026-08-17): SSO for EXISTING accounts only.
       // A provider identity with no matching user would auto-create an
       // account, which is signup by another name; send them to the list.
+      // The TEST domain (and localhost) is the team's playground and is
+      // waived: SSO works fully there, brand domain stays gated.
       if (account?.provider === "google" || account?.provider === "apple") {
         const { PUBLIC_SIGNUPS } = await import("@/lib/public-flags")
-        if (!PUBLIC_SIGNUPS) {
+        let onTestDomain = false
+        try {
+          const { headers } = await import("next/headers")
+          const h = (headers().get("x-forwarded-host") ?? headers().get("host") ?? "")
+            .split(",")[0]
+            .trim()
+          onTestDomain =
+            h === "ysportshub.com" || h.endsWith(".ysportshub.com") || h.startsWith("localhost")
+        } catch {
+          // outside a request scope (tests, scripts): keep the gate on
+        }
+        if (!PUBLIC_SIGNUPS && !onTestDomain) {
           const { prisma } = await import("@youthbasketballhub/db")
           const email =
             user.email ?? (profile as { email?: string } | null)?.email ?? null
