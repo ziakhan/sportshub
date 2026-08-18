@@ -491,6 +491,12 @@ function CheckIcon({ className }: { className?: string }) {
 
 function Hero() {
   const { active, goTo } = useSloganRotation(SLOGANS.length)
+  const [dir, setDir] = useState<"next" | "prev">("next")
+  const [heroSwiped, setHeroSwiped] = useState(false)
+  const go = (i: number) => {
+    setDir(i >= active ? "next" : "prev")
+    goTo(i)
+  }
   const heroRef = useRef<HTMLDivElement>(null)
   useArrowNav(
     heroRef,
@@ -498,8 +504,9 @@ function Hero() {
     () => goTo(active + 1)
   )
   const heroSwipe = useSwipeNav(
-    () => goTo(active - 1),
-    () => goTo(active + 1)
+    () => go(active - 1),
+    () => go(active + 1),
+    () => setHeroSwiped(true)
   )
 
   return (
@@ -559,7 +566,7 @@ function Hero() {
                 aria-hidden={i !== active}
                 className={`col-start-1 row-start-1 transition-opacity ${
                   i === active
-                    ? "opacity-100 duration-500"
+                    ? `opacity-100 duration-500 ${dir === "next" ? "hp-in-next" : "hp-in-prev"}`
                     : "pointer-events-none opacity-0 duration-300"
                 }`}
               >
@@ -592,7 +599,7 @@ function Hero() {
               aria-hidden={i !== active}
               className={`col-start-1 row-start-1 transition-opacity ${
                 i === active
-                  ? "opacity-100 duration-500"
+                  ? `opacity-100 duration-500 ${dir === "next" ? "hp-in-next" : "hp-in-prev"}`
                   : "pointer-events-none opacity-0 duration-300"
               }`}
             >
@@ -601,7 +608,12 @@ function Hero() {
           ))}
         </p>
 
-        <div className="mt-4 flex items-center gap-2 md:hidden" role="tablist" aria-label="Slogans">
+        <div className="relative mt-4 flex items-center gap-2 md:hidden" role="tablist" aria-label="Slogans">
+          {!heroSwiped && (
+            <span className="pointer-events-none absolute left-full ml-3 whitespace-nowrap rounded-full bg-white/15 px-2.5 py-0.5 text-[11px] font-semibold text-white/80 motion-safe:animate-pulse">
+              Swipe
+            </span>
+          )}
           {SLOGANS.map((s, i) => (
             <button
               key={s.key}
@@ -667,7 +679,7 @@ function ReplacesStory() {
             {THE_PILE.map((item) => (
               <li
                 key={item}
-                className="rounded-full bg-ink-100 px-4 py-2 text-[15px] font-medium text-ink-600 line-through decoration-ink-400/60 max-md:px-2.5 max-md:py-1 max-md:text-[12px]"
+                className="rounded-full bg-ink-100 px-4 py-2 text-[15px] font-medium text-ink-600 line-through decoration-live-500 decoration-2 max-md:px-2.5 max-md:py-1 max-md:text-[12px]"
               >
                 {item}
               </li>
@@ -1686,9 +1698,6 @@ const PREVIEW_CSS = `
         @media (prefers-reduced-motion: reduce) {
           .hp-rise { animation: none; }
         }
-        html { scroll-snap-type: y proximity; }
-        main > style { display: none; }
-        main > * { scroll-snap-align: start; }
         .hp-xfade { animation: hp-xfade 380ms ease-out both; }
         .hp-caret { animation: hp-caret 900ms steps(2) infinite; }
         @keyframes hp-caret { 50% { opacity: 0; } }
@@ -1697,6 +1706,14 @@ const PREVIEW_CSS = `
         @keyframes hp-tap { 0% { transform: scale(0.4); opacity: 0; } 30% { transform: scale(1); opacity: 1; } 100% { transform: scale(1.5); opacity: 0; } }
         @keyframes hp-bubble { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes hp-xfade { from { opacity: 0; } to { opacity: 1; } }
+        /* Hero swipe feedback (owner 2026-08-18): on phones the incoming
+           slogan slides in from the side you swiped toward. */
+        @media (max-width: 767px) {
+          .hp-in-next { animation: hp-in-next 360ms ease-out both; }
+          .hp-in-prev { animation: hp-in-prev 360ms ease-out both; }
+          @keyframes hp-in-next { from { transform: translateX(36px); } to { transform: translateX(0); } }
+          @keyframes hp-in-prev { from { transform: translateX(-36px); } to { transform: translateX(0); } }
+        }
         /* Mobile design pass (owner 2026-08-18): the court art is desktop
            drama; phones get flat grounds and a clear section rhythm. */
         @media (max-width: 767px) {
