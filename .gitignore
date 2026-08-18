@@ -78,3 +78,11 @@ demo-clips/
 # unlisted share bundles uploaded straight to the box (not in git)
 apps/web/public/x/
 .tooling/
+
+# Playwright storageState captures (hold next-auth session tokens)
+sessions/
+
+# Python bytecode from research scripts
+scripts/research/__pycache__/
+**/__pycache__/
+*.pyc
