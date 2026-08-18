@@ -62,6 +62,16 @@ export interface ClubProfileData {
       tagline: string | null
       socials: unknown
       pageLayout: unknown
+      // Club Page Studio (2026-08-18). The query uses include: { branding: true },
+      // so these arrive at runtime already; this only teaches the type about them.
+      theme: string | null
+      accentKey: string | null
+      headerStyle: string | null
+      intensity: string | null
+      shape: string | null
+      density: string | null
+      bannerFocalX: number | null
+      bannerFocalY: number | null
     } | null
   }
   teams: ClubProfileTeam[]
@@ -358,6 +368,17 @@ export async function getClubProfile(
             tagline: branding.tagline ?? null,
             socials: branding.socials ?? null,
             pageLayout: branding.pageLayout ?? null,
+            // Club Page Studio (2026-08-18). Nulls are fine: resolveTheme() falls
+            // back field by field, and a club that only ever set a primaryColor
+            // keeps it rather than snapping to the default accent.
+            theme: (branding as any).theme ?? null,
+            accentKey: (branding as any).accentKey ?? null,
+            headerStyle: (branding as any).headerStyle ?? null,
+            intensity: (branding as any).intensity ?? null,
+            shape: (branding as any).shape ?? null,
+            density: (branding as any).density ?? null,
+            bannerFocalX: (branding as any).bannerFocalX ?? null,
+            bannerFocalY: (branding as any).bannerFocalY ?? null,
           }
         : null,
     },

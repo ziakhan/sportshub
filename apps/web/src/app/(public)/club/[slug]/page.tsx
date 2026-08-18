@@ -9,6 +9,7 @@ import { FollowButton } from "@/components/follow-button"
 import { CourtBackdropLayer, SmartBack } from "@/components/ui"
 import { resolveLayout, zoneBlocks } from "@/lib/club-page/blocks"
 import { brandStyle, chosenBrandColor, NEUTRAL_BRAND } from "@/lib/club-page/brand"
+import { resolveTheme, themeStyle } from "@/lib/club-page/theme"
 import { ClubBlock, hasBlockContent, type ClubPageData } from "./club-blocks"
 import { ClubSubNav } from "./club-subnav"
 import { JsonLd, clubJsonLd } from "@/lib/seo/jsonld"
@@ -123,6 +124,14 @@ export default async function ClubProfilePage({ params }: { params: { slug: stri
   // unclaimed listings should have looked like from the start.
   const primary = chosenBrandColor({ status: club.status, primaryColor: branding?.primaryColor })
   const accent = primary ?? NEUTRAL_BRAND
+  // Club Page Studio (owner 2026-08-18). The theme owns surface, type and
+  // neutrals; the club's accent is its one free choice. A club that never opened
+  // the studio resolves to the default theme with its existing primaryColor, so
+  // this changes nothing for the 1,392 imported listings until someone edits.
+  const look = resolveTheme({
+    ...(branding as any),
+    primaryColor: primary ?? undefined,
+  })
   const data: ClubPageData = {
     club,
     currency: club.currency,
@@ -182,7 +191,7 @@ export default async function ClubProfilePage({ params }: { params: { slug: stri
   }))?.isDemo
 
   return (
-    <div className="font-barlow [scroll-behavior:smooth]" style={brandStyle(accent)}>
+    <div className="font-barlow [scroll-behavior:smooth]" style={themeStyle(look)}>
       {clubIsDemo && (
         <div className="flex flex-wrap items-center gap-3 border-b border-amber-200 bg-amber-50 px-4 py-2.5 sm:px-6">
           <DemoBadge long />

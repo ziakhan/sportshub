@@ -135,6 +135,38 @@ After the schema push (#2), still run the OfferTemplate backfill SQL (#1) — th
 
 ---
 
+---
+
+## ⛔ 42. Club Page Studio schema — MUST db push BEFORE the next box deploy
+
+**Linked code change:** `TenantBranding` gains `theme`, `accentKey`, `headerStyle`, `intensity`, `shape`, `density`, `bannerFocalX`, `bannerFocalY`, and **drops `customCss`**.
+
+**Why before deploy — this one breaks the site, not just a feature.** `getClubProfile()` uses `include: { branding: true }`, so Prisma selects every column the client knows about. Deploying the new code against a database that still has the old shape makes every club page return **500** with `column TenantBranding.<x> does not exist`. This is not theoretical: it happened locally on 2026-08-18 the moment the column was dropped under a running server, and `/club/<slug>` 500'd until the client was regenerated.
+
+`customCss` was removed on the owner's instruction ("you can delete everything"). It had **zero reads** anywhere in the codebase, and CSS on a page that renders other people's data is an exfiltration vector, since `background-image: url()` can carry values off-site.
+
+### Step 1 — Inspect
+
+```sql
+SELECT column_name FROM information_schema.columns
+WHERE table_name = 'TenantBranding'
+ORDER BY column_name;
+```
+
+### Step 2 — Apply (additive columns + one drop)
+
+Run `prisma db push` against the box, then **regenerate the client and restart the service**. A push alone is not enough: a long-lived node process keeps the old client in memory and keeps selecting the dropped column.
+
+### Step 3 — Nothing to backfill
+
+Every new column has a default (`theme` = `home-court`, `accentKey` = `royal`, focal points = 50). `resolveTheme()` also falls back field by field and honours an existing `primaryColor` when no `accentKey` is stored, so the 1,392 imported listings render exactly as they do today until someone opens the studio.
+
+### Verification
+
+`/club/<slug>` returns 200 and the page ships `--club-bg`, `--club-panel`, `--club-ink`, `--club-radius` alongside the existing `--brand*` variables.
+
+**Status:** ⛔ NOT APPLIED to box or Neon. Local only.
+
 <!-- Future entries below. Each entry: linked code change → why-before-deploy → step-by-step commands → verification → status flip ✅ when applied. -->
 
 

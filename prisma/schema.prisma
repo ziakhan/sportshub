@@ -425,7 +425,27 @@ model TenantBranding {
   secondaryColor String  @default("#34a853")
   accentColor    String  @default("#fbbc04")
   fontFamily     String  @default("Inter")
-  customCss      String? @db.Text
+
+  // Club Page Studio (owner 2026-08-18). A club picks a LOOK, never a layout
+  // language: every value below is one of a curated set whose contrast we have
+  // already checked, so a volunteer coach cannot produce an unreadable page.
+  // `theme` owns surface, type and neutrals; `accentKey` is the club's one free
+  // choice and carries an on-light and an on-dark value so the same pick stays
+  // legible on every theme.
+  theme       String @default("home-court")
+  accentKey   String @default("royal")
+  headerStyle String @default("banner") // banner | split | immersive | crest | plain
+  intensity   String @default("balanced") // subtle | balanced | bold
+  shape       String @default("soft") // sharp | soft | round
+  density     String @default("normal") // airy | normal | tight
+
+  // Owner 2026-08-18: "make it flexible so people don't have to create custom
+  // content and somehow fit an image or stretch it, crop it." We never state a
+  // required size. Any aspect is accepted and the club marks the part that
+  // matters; this focal point drives object-fit cover at every breakpoint, so
+  // nothing is ever stretched. Percentages of the natural image, not of a crop.
+  bannerFocalX Int @default(50)
+  bannerFocalY Int @default(50)
 
   // Customizable public page ("your website"): brand + layout.
   // Images stored as compressed data URLs (@db.Text) — no external blob infra.
