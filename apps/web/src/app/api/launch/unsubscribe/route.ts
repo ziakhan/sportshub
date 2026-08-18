@@ -2,6 +2,7 @@ import crypto from "crypto"
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@youthbasketballhub/db"
 import { launchUnsubToken } from "@/lib/launch-welcome"
+import { publicOrigin } from "@/lib/request-origin"
 
 export const dynamic = "force-dynamic"
 
@@ -29,5 +30,5 @@ export async function GET(req: NextRequest) {
   }
 
   await (prisma as any).launchSignup.deleteMany({ where: { contact } })
-  return NextResponse.redirect(new URL("/unsubscribed", req.url))
+  return NextResponse.redirect(new URL("/unsubscribed", publicOrigin(req)))
 }

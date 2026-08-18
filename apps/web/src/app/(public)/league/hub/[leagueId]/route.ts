@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@youthbasketballhub/db"
+import { publicOrigin } from "@/lib/request-origin"
 
 export const dynamic = "force-dynamic"
 
@@ -12,5 +13,5 @@ export async function GET(request: NextRequest, { params }: { params: { leagueId
     orderBy: { createdAt: "desc" },
     select: { id: true },
   })
-  return NextResponse.redirect(new URL(season ? `/league/${season.id}` : "/leagues", request.url))
+  return NextResponse.redirect(new URL(season ? `/league/${season.id}` : "/leagues", publicOrigin(request)))
 }
