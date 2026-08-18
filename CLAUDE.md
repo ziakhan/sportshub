@@ -39,6 +39,16 @@
 5. **Gemini image gen (nano banana): deliberately NOT integrated.** Higgsfield covers generation. Revisit only if surgical photo-editing/character-consistency needs appear; wiring is a GEMINI_API_KEY + small script, no connector required.
 6. Discipline on all generated art: one illustration style per surface family (never mixed), compress finals (WebP), no emoji-as-icons, product screenshots stay real screenshots.
 
+## 🔀 PARALLEL SESSION LAW (owner, 2026-08-18 — PERMANENT)
+**More than one Claude session runs in this repo at once. They share one working tree, one git index and one `.next`.** Every rule below exists because on 2026-08-18 a finished feature — the club review console, its integration test, four verification scripts, the rewritten importer and the 1,516-row census — was found sitting UNTRACKED for three days, through **110 commits and 3 production deploys**. Neither session did anything wrong: each correctly scoped `git add` to its own paths. Nobody owned the close-out.
+- **A session commits its own work before it ends.** Not optional, and the single rule that would have prevented all of it. A WIP commit you amend later is fine. Uncommitted work at session end is the only way work gets orphaned.
+- **Orphan sweep before EVERY push and EVERY deploy**: `npm run check:orphans`. This gate failed three times running on 08-17. Untracked files pass tsc, tests and the local build, then are simply absent from what ships.
+- **Never `git add -A` when another session may be live.** Stage explicit paths. `git add -A` is what nearly committed `sessions/*.json`, which carries a live `next-auth.session-token`.
+- **Whoever deploys checks whose commits they are shipping**: `git log <last-deployed-sha>..HEAD`. Confirm any commit you did not write is meant to go out. A deploy ships the other session's committed work whether you looked or not.
+- **One session owns the box at a time** — deploys, DB writes, imports, migrations. Two sessions racing `deploy.sh` or an import script is far worse than any orphaning.
+- **Prefer a worktree when both sessions write code**: `git worktree add ../sportshub-<topic> -b wip/<topic>`, then symlink `node_modules`. Separate `git status` and separate `.next`, which also removes the shared-build corruption listed under Known Issues.
+- **Deploy verification is three-way**: local HEAD, `origin/master` and the box must be the SAME full SHA. Compare full hashes, never abbreviations of different lengths.
+
 ## Tech Stack
 - **Monorepo**: Turborepo with `apps/web` (Next.js 14 App Router) and `packages/` (db, ui, auth, payments, config)
 - **Auth**: NextAuth.js v4 with Credentials provider (email/password, bcrypt, JWT sessions)
