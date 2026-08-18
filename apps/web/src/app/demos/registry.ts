@@ -280,7 +280,7 @@ export const DEMOS: DemoEntry[] = [
     audiences: ["parents"],
     kind: "chapter",
     stage: "phone",
-    durationLabel: "1 min 31 sec",
+    durationLabel: "55 sec",
     status: "live",
     chapterCount: 5,
     /* No volatile numbers in the bullets: the week moves with the seed. */

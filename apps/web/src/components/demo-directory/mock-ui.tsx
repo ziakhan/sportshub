@@ -2509,6 +2509,12 @@ export function MockEndCard({
  *  R3 Real content only: demo-world names, believable times, real venues.
  *  R4 Full-phone framing; the camera zooms to the acted element and pulls
  *     back. Never crop a phone in half.
+ *  R5 Human pace (owner 2026-08-19): actions chain like a person doing them.
+ *     No multi-second waits between a click and the next; long holds only
+ *     where tension or a balloon earns them.
+ *  R6 Balloons are rare. A callout exists only to say what the screen
+ *     cannot show (the invisible consequence, the why). Never narrate the
+ *     visible, and never park a balloon over the thing being demonstrated.
  * ═══════════════════════════════════════════════════════════════════════ */
 
 /** Calendar entry, mirrored 1:1 from calendar/my-calendar.tsx (KIND_CARD /

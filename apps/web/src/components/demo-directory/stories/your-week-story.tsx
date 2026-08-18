@@ -193,9 +193,11 @@ const money = (n: number) => `$${n.toFixed(2)}`
 
 function paced(b: Omit<DemoBeat, "hold"> & { hold?: number }): DemoBeat {
   if (b.hold) return b as DemoBeat
-  const arrive = b.cursor ? 620 : 220
-  const settle = 500
-  const read = b.callout ? b.callout.trim().split(/\s+/).length * 180 + 900 : 2400
+  /* Human pace (owner 2026-08-19): people click, then click again. Long
+     reads only where a balloon earns one. */
+  const arrive = b.cursor ? 620 : 180
+  const settle = 400
+  const read = b.callout ? b.callout.trim().split(/\s+/).length * 140 + 700 : 1200
   return { ...b, hold: Math.round(arrive + read + (b.callout ? settle : 0)) }
 }
 
@@ -235,7 +237,6 @@ export const yourWeekStory: DemoScript = {
       chapter: "week",
       caption: "Every line carries the gym and the team.",
       emphasize: "row-tue",
-      callout: "The gym is on the row because it changes more often than the time.",
     }),
     paced({
       id: "cancelled",
@@ -251,7 +252,6 @@ export const yourWeekStory: DemoScript = {
       chapter: "answer",
       caption: "Saturday needs an answer, and it is asked on the row itself.",
       emphasize: "rsvp",
-      callout: "Three buttons on the row, so answering costs no navigation.",
     }),
     paced({
       id: "going",
@@ -267,7 +267,6 @@ export const yourWeekStory: DemoScript = {
       chapter: "answer",
       caption: "When two of her children are on the same event, each gets their own row of buttons.",
       emphasize: "rsvp",
-      callout: "The answer is per child, so one press cannot cover both.",
     }),
 
     /* ── 3. Where the gym is ──────────────────────────────────────────── */
@@ -278,7 +277,6 @@ export const yourWeekStory: DemoScript = {
       cursor: "row-sat",
       press: true,
       set: { view: "popover" },
-      callout: "Tapping a row opens its details rather than jumping straight out of the week.",
     }),
     paced({
       id: "gamepage",
@@ -296,7 +294,6 @@ export const yourWeekStory: DemoScript = {
       cursor: "venue-link",
       press: true,
       set: { view: "venue" },
-      callout: "The venue page is where the street address lives.",
     }),
     paced({
       id: "directions",
@@ -305,7 +302,6 @@ export const yourWeekStory: DemoScript = {
       cursor: "directions",
       press: true,
       set: { directions: true },
-      callout: "Three taps from the week to the map, and every one of them exists today.",
     }),
 
     /* ── 4. Plans change ──────────────────────────────────────────────── */
@@ -339,7 +335,6 @@ export const yourWeekStory: DemoScript = {
       caption: "Two things are owed this week, and both arrive on their own surface.",
       set: { view: "home" },
       emphasize: "band",
-      callout: "The fee is a card on her home screen, counted rather than itemised.",
     }),
     paced({
       id: "pay",
@@ -348,7 +343,6 @@ export const yourWeekStory: DemoScript = {
       cursor: "band-card",
       press: true,
       set: { view: "payments" },
-      callout: `The deposit and the first installment are in. Two of ${money(PER)} are not.`,
     }),
     paced({
       id: "waiver-notif",
@@ -356,7 +350,6 @@ export const yourWeekStory: DemoScript = {
       caption: "The waiver arrives as a push of its own.",
       set: { view: "waiver" },
       emphasize: "w-notif",
-      callout: `It names ${DAUGHTER}, names the document, and says she cannot play until it is signed.`,
     }),
     paced({
       id: "sign",
@@ -365,7 +358,6 @@ export const yourWeekStory: DemoScript = {
       cursor: "w-open",
       press: true,
       set: { view: "sign" },
-      callout: "The link opens the document itself. No app to install, no password to find.",
     }),
     paced({
       id: "end",
