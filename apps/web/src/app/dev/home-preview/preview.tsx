@@ -17,6 +17,7 @@
  */
 
 import { useEffect, useRef, useState } from "react"
+import { createPortal } from "react-dom"
 import Image from "next/image"
 import Link from "next/link"
 import { CourtBackdrop } from "@/components/ui"
@@ -530,7 +531,7 @@ function Hero() {
       </header>
 
       <div ref={heroRef} {...heroSwipe}
-        className="hp-rise relative mx-auto flex w-full max-w-6xl flex-1 flex-col items-center justify-center px-5 py-10 text-center">
+        className="hp-rise relative mx-auto flex w-full max-w-6xl flex-1 flex-col items-center justify-center px-5 py-10 text-center [touch-action:pan-y]">
         <p className="flex items-center justify-center gap-3 text-2xl font-bold uppercase tracking-[0.18em] text-gold-400 max-md:text-lg sm:text-3xl">
           <span className="h-2.5 w-2.5 rounded-full bg-gold-400 max-md:hidden motion-safe:animate-pulse" aria-hidden="true" />
           Launching this fall
@@ -1503,11 +1504,24 @@ function SlideZoom({
   useEffect(() => {
     setManual(false)
   }, [index])
+  /* Real scroll lock: iOS ignores overflow:hidden on body, so the page is
+     frozen with position:fixed at its current offset and restored on close. */
   useEffect(() => {
-    const prev = document.body.style.overflow
-    document.body.style.overflow = "hidden"
+    const y = window.scrollY
+    const b = document.body.style
+    const prev = { position: b.position, top: b.top, left: b.left, right: b.right, width: b.width }
+    b.position = "fixed"
+    b.top = `-${y}px`
+    b.left = "0"
+    b.right = "0"
+    b.width = "100%"
     return () => {
-      document.body.style.overflow = prev
+      b.position = prev.position
+      b.top = prev.top
+      b.left = prev.left
+      b.right = prev.right
+      b.width = prev.width
+      window.scrollTo(0, y)
     }
   }, [])
   useEffect(() => {
@@ -1531,27 +1545,32 @@ function SlideZoom({
       if (!canTakeover || manual || !touchRef.current) return
       const dx = Math.abs(e.touches[0].clientX - touchRef.current.x)
       const dy = Math.abs(e.touches[0].clientY - touchRef.current.y)
-      if (dy > 12 && dy > dx) {
+      if (dy > 20 && dy > dx * 1.3) {
         setManual(true)
         setHint(false)
       }
     },
   }
 
-  return (
-    <div className="fixed inset-0 z-[90] flex flex-col bg-ink-950/95" {...swipe}>
+  if (typeof document === "undefined") return null
+  return createPortal(
+    <div
+      className="fixed inset-0 z-[90] flex flex-col bg-ink-950 [touch-action:pan-y]"
+      {...(manual ? {} : swipe)}
+    >
       <button
         type="button"
         onClick={onClose}
         aria-label="Close full screen"
-        className="fixed right-4 top-4 z-[95] flex h-11 w-11 cursor-pointer items-center justify-center rounded-full bg-white/15 text-white ring-1 ring-white/40"
+        className="fixed right-4 z-[95] flex h-11 w-11 cursor-pointer items-center justify-center rounded-full bg-white/15 text-white ring-1 ring-white/40"
+        style={{ top: "max(1rem, env(safe-area-inset-top))" }}
       >
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" className="h-5 w-5">
           <path d="M6 6l12 12M18 6L6 18" strokeLinecap="round" />
         </svg>
       </button>
 
-      <div className="flex min-h-0 flex-1 items-center justify-center px-3 pb-2 pt-14" {...stageTouch}>
+      <div className="flex min-h-0 flex-1 items-center justify-center px-3 pb-2" style={{ paddingTop: "max(3.5rem, calc(env(safe-area-inset-top) + 2.75rem))" }} {...stageTouch}>
         {slide.key === "chat" ? (
           <ChatPhone active fit={{ h: 0.78, w: 0.94 }} />
         ) : slide.tour ? (
@@ -1578,7 +1597,7 @@ function SlideZoom({
         </p>
       )}
 
-      <div className="flex shrink-0 items-center justify-center gap-2 pb-5" role="tablist" aria-label="Screens">
+      <div className="flex shrink-0 items-center justify-center gap-2" style={{ paddingBottom: "max(1.25rem, env(safe-area-inset-bottom))" }} role="tablist" aria-label="Screens">
         {SCREEN_SLIDES.map((sl, i) => (
           <button
             key={sl.key}
@@ -1592,7 +1611,8 @@ function SlideZoom({
           />
         ))}
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }
 
@@ -1658,7 +1678,7 @@ function Screenshots() {
             </svg>
           </button>
 
-          <div className="h-full overflow-hidden" {...slideSwipe}>
+          <div className="h-full overflow-hidden [touch-action:pan-y]" {...slideSwipe}>
             {!swiped && (
               <span className="pointer-events-none absolute bottom-2 right-3 z-30 rounded-full bg-ink-950/70 px-3 py-1 text-[12px] font-semibold text-white motion-safe:animate-pulse md:hidden">
                 Swipe
@@ -1921,6 +1941,7 @@ const PREVIEW_CSS = `
         @keyframes hp-tap { 0% { transform: scale(0.4); opacity: 0; } 30% { transform: scale(1); opacity: 1; } 100% { transform: scale(1.5); opacity: 0; } }
         @keyframes hp-bubble { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes hp-xfade { from { opacity: 0; } to { opacity: 1; } }
+        html, body { overscroll-behavior-x: none; }
         /* Hero swipe feedback (owner 2026-08-18): on phones the incoming
            slogan slides in from the side you swiped toward. */
         @media (max-width: 767px) {
