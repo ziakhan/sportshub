@@ -36,6 +36,22 @@ const socialsSchema = z
   })
   .partial()
 
+/**
+ * Studio values are validated against the curated sets, never accepted as free
+ * strings. That constraint IS the feature: a club can only ever store a look we
+ * have already checked for contrast, so an unreadable page is unreachable.
+ */
+const lookSchema = {
+  theme: z.enum(["home-court", "hardwood", "night-game", "varsity", "clean-sheet", "community"]).nullable().optional(),
+  accentKey: z.enum(["royal", "red", "gold", "green", "orange", "purple", "teal", "maroon", "sky", "slate"]).nullable().optional(),
+  headerStyle: z.enum(["banner", "split", "immersive", "crest", "plain"]).nullable().optional(),
+  intensity: z.enum(["subtle", "balanced", "bold"]).nullable().optional(),
+  shape: z.enum(["sharp", "soft", "round"]).nullable().optional(),
+  density: z.enum(["airy", "normal", "tight"]).nullable().optional(),
+  bannerFocalX: z.number().int().min(0).max(100).nullable().optional(),
+  bannerFocalY: z.number().int().min(0).max(100).nullable().optional(),
+}
+
 const blockSchema = z.object({
   key: z.string().max(40),
   zone: z.enum(["main", "rail"]),
@@ -45,6 +61,7 @@ const blockSchema = z.object({
 })
 
 const patchSchema = z.object({
+  ...lookSchema,
   // Tenant fields
   name: z.string().min(1).max(120).optional(),
   // Derived team naming (league-ia-redesign §4): the prefix of every
@@ -103,6 +120,15 @@ const BRANDING_KEYS = [
   "tagline",
   "socials",
   "pageLayout",
+  // Club Page Studio (2026-08-18)
+  "theme",
+  "accentKey",
+  "headerStyle",
+  "intensity",
+  "shape",
+  "density",
+  "bannerFocalX",
+  "bannerFocalY",
 ] as const
 
 /**

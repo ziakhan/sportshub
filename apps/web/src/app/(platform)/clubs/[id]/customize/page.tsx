@@ -3,6 +3,7 @@ import { notFound } from "next/navigation"
 import Link from "next/link"
 import { getCurrentUser } from "@/lib/auth-helpers"
 import { ClubPageEditor } from "./club-page-editor"
+import { LookEditor } from "./look-editor"
 
 export const dynamic = "force-dynamic"
 
@@ -69,6 +70,27 @@ export default async function CustomizeClubPage({ params }: { params: { id: stri
           View public page ↗
         </Link>
       </div>
+
+      {/* Club Page Studio (owner 2026-08-18). The look comes first because it is
+          what a club actually wants to change, and it is the only part with a
+          live preview. Details and sections follow underneath. */}
+      <section className="border-ink-100 rounded-2xl border bg-white p-5 sm:p-6">
+        <LookEditor
+          clubId={params.id}
+          clubName={club.name}
+          hasBanner={!!b?.bannerUrl}
+          initial={{
+            theme: b?.theme ?? null,
+            accentKey: b?.accentKey ?? null,
+            headerStyle: b?.headerStyle ?? null,
+            intensity: b?.intensity ?? null,
+            shape: b?.shape ?? null,
+            density: b?.density ?? null,
+            bannerFocalX: b?.bannerFocalX ?? null,
+            bannerFocalY: b?.bannerFocalY ?? null,
+          }}
+        />
+      </section>
 
       <ClubPageEditor
         clubId={params.id}
