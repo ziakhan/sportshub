@@ -689,6 +689,9 @@ function ReplacesStory() {
           <p className="mt-7 text-lg font-semibold text-ink-950 max-md:mt-3 max-md:text-[15px] max-md:font-medium max-md:text-ink-600">
             They each do a piece. Nobody does the whole thing.
           </p>
+          <p className="mt-3 text-[12px] text-ink-400">
+            All product names are trademarks of their respective owners.
+          </p>
         </div>
 
         <div className="rounded-2xl bg-ink-950 p-8 shadow-xl max-md:p-5 sm:p-10">
