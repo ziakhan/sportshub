@@ -679,7 +679,7 @@ function ReplacesStory() {
             {THE_PILE.map((item) => (
               <li
                 key={item}
-                className="rounded-full bg-ink-100 px-4 py-2 text-[15px] font-medium text-ink-600 line-through decoration-live-500 decoration-2 max-md:px-2.5 max-md:py-1 max-md:text-[12px]"
+                className="rounded-full bg-ink-100 px-4 py-2 text-[15px] font-medium text-ink-600 line-through decoration-live-500/60 decoration-2 max-md:px-2.5 max-md:py-1 max-md:text-[12px]"
               >
                 {item}
               </li>
