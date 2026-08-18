@@ -1338,28 +1338,142 @@ function TypedChat({ active }: { active: boolean }) {
     </div>
   )
 }
+/** The drawn chat rendered at its 390x844 design size, then scaled as one
+ *  unit to whatever box it gets — the layout never compresses (owner
+ *  2026-08-18: the mock was squishing on phones). */
+function ChatPhone({
+  active,
+  fit,
+}: {
+  active: boolean
+  /** Fractions of the viewport the phone may fill (height, width). */
+  fit?: { h: number; w: number }
+}) {
+  const [scale, setScale] = useState(0)
+  useEffect(() => {
+    const compute = () => {
+      const mobile = window.matchMedia("(max-width: 767px)").matches
+      const maxH = window.innerHeight * (fit?.h ?? (mobile ? 0.56 : 0.72))
+      const maxW = window.innerWidth * (fit?.w ?? (mobile ? 0.86 : 0.4))
+      setScale(Math.min(maxH / 868, maxW / 414, 1))
+    }
+    compute()
+    window.addEventListener("resize", compute)
+    return () => window.removeEventListener("resize", compute)
+  }, [fit])
+  if (scale <= 0) return null
+  return (
+    <div style={{ width: 414 * scale, height: 868 * scale }}>
+      <div
+        className="rounded-[2.4rem] bg-ink-900 p-3 shadow-2xl ring-1 ring-white/10"
+        style={{ width: 414, height: 868, transform: `scale(${scale})`, transformOrigin: "top left" }}
+      >
+        <TypedChat active={active} />
+      </div>
+    </div>
+  )
+}
+
+function ZoomBadge({ onZoom }: { onZoom: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={(e) => {
+        e.stopPropagation()
+        onZoom()
+      }}
+      aria-label="View full screen"
+      className="absolute bottom-3 right-3 z-10 flex h-10 w-10 cursor-pointer items-center justify-center rounded-full bg-ink-950/75 text-white ring-1 ring-white/40 md:hidden"
+    >
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="h-5 w-5">
+        <path d="M9 3H3v6M15 3h6v6M9 21H3v-6M15 21h6v-6" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    </button>
+  )
+}
+
 function SlideImage({
   slide,
   active,
+  onZoom,
 }: {
   slide: (typeof SCREEN_SLIDES)[number]
   active: boolean
+  onZoom: () => void
 }) {
   if (slide.key === "chat") {
     return (
-      <div className="flex h-full w-auto justify-center rounded-[2.4rem] bg-ink-900 p-3 shadow-2xl ring-1 ring-white/10">
-        <TypedChat active={active} />
+      <div className="relative cursor-zoom-in" onClick={onZoom}>
+        <ChatPhone active={active} />
+        <ZoomBadge onZoom={onZoom} />
       </div>
     )
   }
   if (slide.frame === "phone" && slide.tour) {
     return (
-      <div className="flex h-full w-auto justify-center rounded-[2.4rem] bg-ink-900 p-3 shadow-2xl ring-1 ring-white/10">
+      <div
+        className="relative flex h-full w-auto cursor-zoom-in justify-center rounded-[2.4rem] bg-ink-900 p-3 shadow-2xl ring-1 ring-white/10"
+        onClick={onZoom}
+      >
         <GuidedShot segments={slide.tour} alt={slide.alt} active={active} pinBottom={slide.pinBottom} />
+        <ZoomBadge onZoom={onZoom} />
       </div>
     )
   }
-  return <SlideImageStatic slide={slide} />
+  return (
+    <div className="relative h-full w-full cursor-zoom-in" onClick={onZoom}>
+      <SlideImageStatic slide={slide} />
+      <ZoomBadge onZoom={onZoom} />
+    </div>
+  )
+}
+
+/** Full-screen reader (owner 2026-08-18: the captures are too small to read
+ *  on a phone). Everything else disappears; the capture scrolls freely at
+ *  full width; the X brings the page back. */
+function SlideZoom({
+  slide,
+  onClose,
+}: {
+  slide: (typeof SCREEN_SLIDES)[number]
+  onClose: () => void
+}) {
+  useEffect(() => {
+    const prev = document.body.style.overflow
+    document.body.style.overflow = "hidden"
+    return () => {
+      document.body.style.overflow = prev
+    }
+  }, [])
+  return (
+    <div
+      className="fixed inset-0 z-[90] overflow-y-auto overscroll-contain bg-ink-950/95"
+      onClick={onClose}
+    >
+      <button
+        type="button"
+        onClick={onClose}
+        aria-label="Close full screen"
+        className="fixed right-4 top-4 z-[95] flex h-11 w-11 cursor-pointer items-center justify-center rounded-full bg-white/15 text-white ring-1 ring-white/40"
+      >
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" className="h-5 w-5">
+          <path d="M6 6l12 12M18 6L6 18" strokeLinecap="round" />
+        </svg>
+      </button>
+      <div className="mx-auto max-w-[440px] px-3 pb-16 pt-14" onClick={(e) => e.stopPropagation()}>
+        {slide.key === "chat" ? (
+          <div className="flex justify-center">
+            <ChatPhone active fit={{ h: 0.8, w: 0.94 }} />
+          </div>
+        ) : (
+          (slide.tour ?? [{ src: slide.src as string }]).map((seg) => (
+            /* eslint-disable-next-line @next/next/no-img-element */
+            <img key={seg.src} src={seg.src} alt={slide.alt ?? ""} className="mb-3 w-full rounded-2xl" />
+          ))
+        )}
+      </div>
+    </div>
+  )
 }
 
 function SlideImageStatic({ slide }: { slide: (typeof SCREEN_SLIDES)[number] }) {
@@ -1425,6 +1539,7 @@ function Screenshots() {
     () => goTo(active + 1),
     () => setSwiped(true)
   )
+  const [zoom, setZoom] = useState<(typeof SCREEN_SLIDES)[number] | null>(null)
 
   return (
     <CourtBackdrop
@@ -1488,7 +1603,7 @@ function Screenshots() {
                       </p>
                     </div>
                     <div className="flex h-[60dvh] max-h-[860px] min-h-[360px] items-center justify-center md:h-[78dvh]">
-                      <SlideImage slide={slide} active={i === active} />
+                      <SlideImage slide={slide} active={i === active} onZoom={() => setZoom(slide)} />
                     </div>
                   </div>
                 </div>
@@ -1523,6 +1638,7 @@ function Screenshots() {
           ))}
         </div>
       </div>
+      {zoom && <SlideZoom slide={zoom} onClose={() => setZoom(null)} />}
     </CourtBackdrop>
   )
 }
