@@ -271,17 +271,19 @@ const COMPARE_COLUMNS = [
 
 /** cells[0] is always us; the rest follow COMPARE_COLUMNS order. */
 const COMPARE_ROWS: { label: string; cells: CompareCell[] }[] = [
+  /* Our white space leads (owner 2026-08-19): the reader meets the two rows
+     nobody else fills before the wall of shared greens. */
+  { label: "Auto game recaps", cells: ["y", "n", "p", "n", "n", "n", "p", "n", "n", "n"] },
+  { label: "Player pages", cells: ["y", "n", "p", "p", "n", "n", "p", "p", "-", "-"] },
+  { label: "Live scoring and box scores", cells: ["y", "p", "p", "y", "p", "n", "y", "p", "n", "n"] },
   { label: "Registration and payments", cells: ["y", "y", "y", "y", "y", "y", "n", "y", "y", "y"] },
   { label: "Payment plans", cells: ["y", "y", "y", "y", "y", "y", "n", "p", "y", "y"] },
   { label: "Auto scheduling", cells: ["y", "y", "y", "y", "y", "p", "n", "y", "y", "n"] },
   { label: "Standings and playoffs", cells: ["y", "y", "y", "y", "p", "y", "p", "y", "p", "n"] },
   { label: "Referee assignment", cells: ["y", "p", "y", "y", "p", "p", "n", "p", "n", "n"] },
-  { label: "Live scoring and box scores", cells: ["y", "p", "p", "y", "p", "n", "y", "p", "n", "n"] },
   { label: "Chat and polls", cells: ["y", "y", "y", "y", "p", "p", "p", "p", "p", "y"] },
   { label: "Family calendar", cells: ["y", "y", "y", "y", "y", "y", "y", "n", "p", "y"] },
   { label: "Waivers", cells: ["y", "p", "y", "y", "y", "y", "n", "y", "y", "y"] },
-  { label: "Auto game recaps", cells: ["y", "n", "p", "n", "n", "n", "p", "n", "n", "n"] },
-  { label: "Player pages", cells: ["y", "n", "p", "p", "n", "n", "p", "p", "-", "-"] },
   { label: "Club and league pages", cells: ["y", "y", "y", "y", "y", "p", "n", "p", "y", "y"] },
   { label: "Free to start", cells: ["y", "p", "y", "n", "n", "p", "y", "p", "p", "y"] },
 ]
@@ -829,6 +831,18 @@ function CompareTable() {
               ))}
             </tbody>
           </table>
+        </div>
+
+        <div className="mx-auto mt-8 max-w-3xl rounded-2xl bg-ink-950 px-8 py-6 text-center shadow-xl">
+          <p className="text-[15px] font-bold uppercase tracking-[0.14em] text-gold-400">
+            The checklist isn&apos;t the point
+          </p>
+          <p className="mt-2.5 text-[17px] leading-relaxed text-white/90">
+            Every row above runs on one login and one database. A family signs up once, the
+            club&apos;s roster fills itself, the league&apos;s schedule lands on every phone, and one
+            scored game writes the recap, the player pages and the standings by itself. No
+            exports, no re-typing, no second app.
+          </p>
         </div>
 
         <p className="mt-4 text-center text-[14px] text-ink-500">
