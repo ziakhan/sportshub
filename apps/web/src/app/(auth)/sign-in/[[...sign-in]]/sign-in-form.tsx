@@ -1,6 +1,6 @@
 "use client"
 
-import { useRef, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { signIn } from "next-auth/react"
 import { useSearchParams } from "next/navigation"
 import Link from "next/link"
@@ -33,6 +33,26 @@ export function SignInForm({
   // → personalized public homepage (site-ia-plan §8)
   const callbackUrl = rawCallback ?? "/post-login"
   const signupsClosedBounce = searchParams?.get("error") === "SignupsClosed"
+
+  // Owner 2026-08-17: pre-launch, the SSO buttons stay VISIBLE (the feature
+  // should be seen) but clicking them on the brand domain answers with a
+  // message instead of a three-step OAuth trip that ends in rejection. The
+  // test domain keeps live SSO for the team; at launch PUBLIC_SIGNUPS=true
+  // makes every host live with no further change.
+  const [ssoLive, setSsoLive] = useState(signupsOpen)
+  const [ssoBlockedNote, setSsoBlockedNote] = useState(false)
+  useEffect(() => {
+    if (signupsOpen) return
+    const h = window.location.hostname
+    setSsoLive(h === "ysportshub.com" || h.endsWith(".ysportshub.com") || h === "localhost")
+  }, [signupsOpen])
+  const ssoClick = (provider: "google" | "apple") => {
+    if (!ssoLive) {
+      setSsoBlockedNote(true)
+      return
+    }
+    void signIn(provider, { callbackUrl })
+  }
 
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
@@ -202,6 +222,17 @@ export function SignInForm({
               Your games, schedules, and teams are right where you left them.
             </p>
 
+            {ssoBlockedNote && !signupsClosedBounce && (
+              <div className="border-gold-100 bg-gold-50 text-ink-700 mb-4 rounded-2xl border p-3 text-sm">
+                Google and Apple sign-in opens at launch. If you have an account, use your
+                email below. New here?{" "}
+                <Link href="/" className="text-play-600 font-semibold">
+                  Join the list
+                </Link>{" "}
+                and we&apos;ll tell you the day the doors open.
+              </div>
+            )}
+
             {signupsClosedBounce && (
               <div className="border-gold-100 bg-gold-50 text-ink-700 mb-4 rounded-2xl border p-3 text-sm">
                 That Google or Apple account is not on SportsHub yet, and new accounts open
@@ -223,16 +254,10 @@ export function SignInForm({
               <>
                 <div className="space-y-3">
                   {googleEnabled && (
-                    <GoogleButton
-                      label="Log in with Google"
-                      onClick={() => void signIn("google", { callbackUrl })}
-                    />
+                    <GoogleButton label="Log in with Google" onClick={() => ssoClick("google")} />
                   )}
                   {appleEnabled && (
-                    <AppleButton
-                      label="Log in with Apple"
-                      onClick={() => void signIn("apple", { callbackUrl })}
-                    />
+                    <AppleButton label="Log in with Apple" onClick={() => ssoClick("apple")} />
                   )}
                 </div>
                 <div className="my-5 flex items-center gap-3">
