@@ -277,12 +277,20 @@ export const yourWeekStory: DemoScript = {
     }),
 
     /* ── 3. Where the gym is ──────────────────────────────────────────── */
+    /* Engine law (roster conversion, 2026-08-19): `set` applies at beat
+       START, so a press that also swaps the screen deletes its own target.
+       Every press below is its own beat; the landing is the next one. */
     paced({
       id: "tap",
       chapter: "gym",
       caption: "The street address is not on the row. This is the path to it.",
       cursor: "row-sat",
       press: true,
+    }),
+    paced({
+      id: "tap-land",
+      chapter: "gym",
+      caption: "The game's own card, with the answer she gave still on it.",
       set: { view: "popover" },
     }),
     paced({
@@ -291,7 +299,13 @@ export const yourWeekStory: DemoScript = {
       caption: "From there, the game page.",
       cursor: "open-game",
       press: true,
+    }),
+    paced({
+      id: "gamepage-land",
+      chapter: "gym",
+      caption: "The game page, before tip-off.",
       set: { view: "game" },
+      emphasize: "game-hero",
       callout: "The same page goes live when the game starts, so she can watch from here.",
     }),
     paced({
@@ -300,14 +314,24 @@ export const yourWeekStory: DemoScript = {
       caption: "The gym name is a link.",
       cursor: "venue-link",
       press: true,
+    }),
+    paced({
+      id: "venue-land",
+      chapter: "gym",
+      caption: "The venue page: address, map, courts.",
       set: { view: "venue" },
     }),
     paced({
       id: "directions",
       chapter: "gym",
-      caption: "Directions, in the maps app she already uses.",
+      caption: "One tap for directions.",
       cursor: "directions",
       press: true,
+    }),
+    paced({
+      id: "directions-land",
+      chapter: "gym",
+      caption: "The maps app she already uses.",
       set: { directions: true },
       hold: 2600,
     }),
@@ -350,12 +374,12 @@ export const yourWeekStory: DemoScript = {
       caption: "Opening it shows the plan behind the number.",
       cursor: "band-card",
       press: true,
-      set: { view: "payments" },
     }),
     paced({
       id: "plan",
       chapter: "owed",
       caption: "Half paid, two installments open. The same page her card pays from.",
+      set: { view: "payments" },
       emphasize: "pay-plan",
     }),
     paced({
@@ -371,6 +395,11 @@ export const yourWeekStory: DemoScript = {
       caption: "Tapping it opens the signing page.",
       cursor: "w-open",
       press: true,
+    }),
+    paced({
+      id: "sign-land",
+      chapter: "owed",
+      caption: "The whole document, and what it needs from her.",
       set: { view: "sign", banner: false },
     }),
     paced({
@@ -392,12 +421,12 @@ export const yourWeekStory: DemoScript = {
       caption: "Sign and submit.",
       cursor: "sign-submit",
       press: true,
-      set: { signed: true },
     }),
     paced({
       id: "signed",
       chapter: "owed",
       caption: "Recorded, timestamped, on file with the league before the weekend.",
+      set: { signed: true },
       hold: 3000,
     }),
     paced({
@@ -700,7 +729,7 @@ function RosterRow({ n, name, gp, ppg, rpg }: { n: number; name: string; gp: num
 function GamePage() {
   return (
     <div className="flex h-full flex-col">
-      <div className="shrink-0 px-3 pb-3 pt-2.5 text-white" style={STAGE_BG}>
+      <div data-demo-target="game-hero" className="shrink-0 px-3 pb-3 pt-2.5 text-white" style={STAGE_BG}>
         <p className="text-center text-[10.5px] font-semibold uppercase tracking-[0.16em] text-white/55">
           <span className="text-gold-400">{LEAGUE}</span> · Summer 2026
         </p>
