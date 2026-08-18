@@ -1,6 +1,6 @@
 import crypto from "crypto"
 import { sendEmail, escapeHtml } from "@/lib/email"
-import { sendSms, smsEnabled } from "@/lib/sms"
+import { sendSms, smsEnabled, toE164 } from "@/lib/sms"
 import { PRIMARY_DOMAIN, brandEmail } from "@/lib/domains"
 
 /**
@@ -154,7 +154,7 @@ export function sendLaunchWelcome(input: { contact: string; kind: string; identi
   }
   if (input.kind === "phone" && smsEnabled()) {
     sendSms({
-      to: input.contact.startsWith("+") ? input.contact : `+${input.contact}`,
+      to: toE164(input.contact),
       body: `SportsHub One: you're on the launch list. One text when we open this fall. The demos: ${BRAND_URL}/demos Reply STOP to opt out.`,
     }).catch((e) => console.error("Launch welcome SMS failed:", e))
   }

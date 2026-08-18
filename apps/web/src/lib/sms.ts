@@ -8,6 +8,19 @@
  * (talks to Twilio's REST API directly — no SDK dependency)
  */
 
+/**
+ * Digits-as-stored -> E.164 for North America. The launch list stores bare
+ * digits ("4165082317"); a naive "+" prefix made that a European number and
+ * Twilio 21211'd it (owner's own signup, 2026-08-18).
+ */
+export function toE164(digitsOrE164: string): string {
+  if (digitsOrE164.startsWith("+")) return digitsOrE164
+  const d = digitsOrE164.replace(/\D/g, "")
+  if (d.length === 10) return `+1${d}`
+  if (d.length === 11 && d.startsWith("1")) return `+${d}`
+  return `+${d}`
+}
+
 export function smsEnabled(): boolean {
   return !!(
     process.env.TWILIO_ACCOUNT_SID &&
