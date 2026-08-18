@@ -224,12 +224,10 @@ export function SignInForm({
 
             {ssoBlockedNote && !signupsClosedBounce && (
               <div className="border-gold-100 bg-gold-50 text-ink-700 mb-4 rounded-2xl border p-3 text-sm">
-                Google and Apple sign-in opens at launch. If you have an account, use your
-                email below. New here?{" "}
-                <Link href="/" className="text-play-600 font-semibold">
+                Google and Apple sign-in opens at launch.{" "}
+                <Link href="/" className="text-play-600 font-semibold underline">
                   Join the list
-                </Link>{" "}
-                and we&apos;ll tell you the day the doors open.
+                </Link>
               </div>
             )}
 
