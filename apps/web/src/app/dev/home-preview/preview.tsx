@@ -280,10 +280,10 @@ const COMPARE_ROWS: { label: string; cells: CompareCell[] }[] = [
   { label: "Payment plans", cells: ["y", "y", "y", "y", "y", "y", "n", "p", "y", "y"] },
   { label: "Auto scheduling", cells: ["y", "y", "y", "y", "y", "p", "n", "y", "y", "n"] },
   { label: "Standings and playoffs", cells: ["y", "y", "y", "y", "p", "y", "p", "y", "p", "n"] },
-  { label: "Referee assignment", cells: ["y", "p", "y", "y", "p", "p", "n", "p", "n", "n"] },
+  { label: "Referee assignment", cells: ["y", "p", "p", "y", "p", "p", "n", "p", "n", "n"] },
   { label: "Chat and polls", cells: ["y", "y", "y", "y", "p", "p", "p", "p", "p", "y"] },
-  { label: "Family calendar", cells: ["y", "y", "y", "y", "y", "y", "y", "n", "p", "y"] },
-  { label: "Waivers", cells: ["y", "p", "y", "y", "y", "y", "n", "y", "y", "y"] },
+  { label: "Family calendar", cells: ["y", "y", "p", "y", "y", "y", "y", "n", "p", "y"] },
+  { label: "Waivers", cells: ["y", "p", "p", "y", "y", "y", "n", "y", "y", "y"] },
   { label: "Club and league pages", cells: ["y", "y", "y", "y", "y", "p", "n", "p", "y", "y"] },
   { label: "Free to start", cells: ["y", "p", "y", "n", "n", "p", "y", "p", "p", "y"] },
 ]
