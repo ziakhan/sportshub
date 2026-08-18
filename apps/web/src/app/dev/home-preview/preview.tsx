@@ -38,12 +38,12 @@ const SLOGANS: { key: string; node: React.ReactNode; sub: React.ReactNode }[] = 
     key: "one-app",
     node: (
       <>
-        Youth basketball. <span className="text-play-400 md:text-gold-400">All of it.</span> <OneBox /> app.
+        Youth basketball. <span className="text-play-400">All of it.</span> <OneBox /> app.
       </>
     ),
     sub: (
       <>
-        Registration to final buzzer, <span className="text-play-400 md:text-gold-400 font-semibold">one login</span>.
+        Registration to final buzzer, <span className="text-play-400 font-semibold">one login</span>.
       </>
     ),
   },
@@ -51,12 +51,12 @@ const SLOGANS: { key: string; node: React.ReactNode; sub: React.ReactNode }[] = 
     key: "discover",
     node: (
       <>
-        Discover the <span className="text-play-400 md:text-gold-400">clubs and programs</span> around you.
+        Discover the <span className="text-court-400">clubs and programs</span> around you.
       </>
     ),
     sub: (
       <>
-        1,325 Canadian clubs <span className="text-play-400 md:text-gold-400 font-semibold">already listed</span>, with their programs and cities.
+        1,325 Canadian clubs <span className="text-court-400 font-semibold">already listed</span>, with their programs and cities.
       </>
     ),
   },
@@ -64,12 +64,12 @@ const SLOGANS: { key: string; node: React.ReactNode; sub: React.ReactNode }[] = 
     key: "rosters",
     node: (
       <>
-        Tryouts become <span className="text-court-400">signed, paid rosters</span>.
+        Tryouts become <span className="text-hoop-400">signed, paid rosters</span>.
       </>
     ),
     sub: (
       <>
-        Jersey sizes, numbers and payment collected <span className="text-play-400 md:text-gold-400 font-semibold">the moment a family accepts</span>.
+        Jersey sizes, numbers and payment collected <span className="text-hoop-400 font-semibold">the moment a family accepts</span>.
       </>
     ),
   },
@@ -77,12 +77,12 @@ const SLOGANS: { key: string; node: React.ReactNode; sub: React.ReactNode }[] = 
     key: "payments",
     node: (
       <>
-        Payment plans <span className="text-play-400 md:text-gold-400">run themselves</span>.
+        Payment plans <span className="text-play-400">run themselves</span>.
       </>
     ),
     sub: (
       <>
-        The deposit at signup, the installments <span className="text-play-400 md:text-gold-400 font-semibold">on their own dates, automatically</span>.
+        The deposit at signup, the installments <span className="text-play-400 font-semibold">on their own dates, automatically</span>.
       </>
     ),
   },
@@ -90,12 +90,12 @@ const SLOGANS: { key: string; node: React.ReactNode; sub: React.ReactNode }[] = 
     key: "chat-calendar",
     node: (
       <>
-        Team chat, polls, and <span className="text-play-300">one family calendar</span>.
+        Team chat, polls, and <span className="text-court-400">one family calendar</span>.
       </>
     ),
     sub: (
       <>
-        Both kids, every practice and game, <span className="text-play-400 md:text-gold-400 font-semibold">one phone</span>.
+        Both kids, every practice and game, <span className="text-court-400 font-semibold">one phone</span>.
       </>
     ),
   },
@@ -108,7 +108,7 @@ const SLOGANS: { key: string; node: React.ReactNode; sub: React.ReactNode }[] = 
     ),
     sub: (
       <>
-        Every calendar and phone updates <span className="text-play-400 md:text-gold-400 font-semibold">instantly</span>. Nobody makes calls.
+        Every calendar and phone updates <span className="text-hoop-400 font-semibold">instantly</span>. Nobody makes calls.
       </>
     ),
   },
@@ -116,12 +116,12 @@ const SLOGANS: { key: string; node: React.ReactNode; sub: React.ReactNode }[] = 
     key: "watch-live",
     node: (
       <>
-        Watch every game <span className="text-live-500">live</span>.
+        Watch every game <span className="text-play-400">live</span>.
       </>
     ),
     sub: (
       <>
-        Score, box score, play by play. <span className="text-play-400 md:text-gold-400 font-semibold">No refresh, it just moves</span>.
+        Score, box score, play by play. <span className="text-play-400 font-semibold">No refresh, it just moves</span>.
       </>
     ),
   },
@@ -129,12 +129,12 @@ const SLOGANS: { key: string; node: React.ReactNode; sub: React.ReactNode }[] = 
     key: "potg",
     node: (
       <>
-        Full stats, and a <span className="text-play-400 md:text-gold-400">Player of the Game</span>.
+        Full stats, and a <span className="text-court-400">Player of the Game</span>.
       </>
     ),
     sub: (
       <>
-        Every tap at the scorer&apos;s table folds into the box score <span className="text-play-400 md:text-gold-400 font-semibold">instantly</span>.
+        Every tap at the scorer&apos;s table folds into the box score <span className="text-court-400 font-semibold">instantly</span>.
       </>
     ),
   },
@@ -142,12 +142,12 @@ const SLOGANS: { key: string; node: React.ReactNode; sub: React.ReactNode }[] = 
     key: "in-the-news",
     node: (
       <>
-        <span className="text-play-300">Your name</span> in the news.
+        <span className="text-hoop-400">Your name</span> in the news.
       </>
     ),
     sub: (
       <>
-        Recaps <span className="text-play-400 md:text-gold-400 font-semibold">write themselves</span> from the official scoring record.
+        Recaps <span className="text-hoop-400 font-semibold">write themselves</span> from the official scoring record.
       </>
     ),
   },
@@ -155,12 +155,12 @@ const SLOGANS: { key: string; node: React.ReactNode; sub: React.ReactNode }[] = 
     key: "plan-season",
     node: (
       <>
-        Plan the season. <span className="text-court-400">Schedule it in one click.</span>
+        Plan the season. <span className="text-play-400">Schedule it in one click.</span>
       </>
     ),
     sub: (
       <>
-        A whole season generated <span className="text-play-400 md:text-gold-400 font-semibold">in seconds</span>, conflicts already handled.
+        A whole season generated <span className="text-play-400 font-semibold">in seconds</span>, conflicts already handled.
       </>
     ),
   },
@@ -168,12 +168,12 @@ const SLOGANS: { key: string; node: React.ReactNode; sub: React.ReactNode }[] = 
     key: "already-built",
     node: (
       <>
-        Registration to final buzzer, <span className="text-play-400 md:text-gold-400">already built</span>.
+        Registration to final buzzer, <span className="text-court-400">already built</span>.
       </>
     ),
     sub: (
       <>
-        Team entry, approvals, rosters and fees, <span className="text-play-400 md:text-gold-400 font-semibold">ready the day you sign in</span>.
+        Team entry, approvals, rosters and fees, <span className="text-court-400 font-semibold">ready the day you sign in</span>.
       </>
     ),
   },
@@ -181,12 +181,12 @@ const SLOGANS: { key: string; node: React.ReactNode; sub: React.ReactNode }[] = 
     key: "standings",
     node: (
       <>
-        Standings <span className="text-court-400">settle themselves</span>.
+        Standings <span className="text-hoop-400">settle themselves</span>.
       </>
     ),
     sub: (
       <>
-        Updated <span className="text-play-400 md:text-gold-400 font-semibold">the moment a final goes in</span>, tiebreakers included.
+        Updated <span className="text-hoop-400 font-semibold">the moment a final goes in</span>, tiebreakers included.
       </>
     ),
   },
@@ -194,12 +194,12 @@ const SLOGANS: { key: string; node: React.ReactNode; sub: React.ReactNode }[] = 
     key: "waivers",
     node: (
       <>
-        Waivers <span className="text-play-300">chase themselves</span>.
+        Waivers <span className="text-court-400">chase themselves</span>.
       </>
     ),
     sub: (
       <>
-        Reminders go out <span className="text-play-400 md:text-gold-400 font-semibold">automatically</span> until every signature is in.
+        Reminders go out <span className="text-court-400 font-semibold">automatically</span> until every signature is in.
       </>
     ),
   },
@@ -501,8 +501,8 @@ function Hero() {
   const heroRef = useRef<HTMLDivElement>(null)
   useArrowNav(
     heroRef,
-    () => goTo(active - 1),
-    () => goTo(active + 1)
+    () => go(active - 1),
+    () => go(active + 1)
   )
   const heroSwipe = useSwipeNav(
     () => go(active - 1),
@@ -539,7 +539,7 @@ function Hero() {
 
         <button
           type="button"
-          onClick={() => goTo(active - 1)}
+          onClick={() => go(active - 1)}
           aria-label="Previous line"
           className="absolute inset-y-0 left-0 z-20 hidden md:flex w-10 cursor-pointer items-center justify-center text-white/40 transition-colors hover:bg-white/5 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-gold-400 sm:w-14 lg:w-16"
         >
@@ -549,7 +549,7 @@ function Hero() {
         </button>
         <button
           type="button"
-          onClick={() => goTo(active + 1)}
+          onClick={() => go(active + 1)}
           aria-label="Next line"
           className="absolute inset-y-0 right-0 z-20 hidden md:flex w-10 cursor-pointer items-center justify-center text-white/40 transition-colors hover:bg-white/5 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-gold-400 sm:w-14 lg:w-16"
         >
@@ -583,7 +583,7 @@ function Hero() {
             <button
               key={s.key}
               type="button"
-              onClick={() => goTo(i)}
+              onClick={() => go(i)}
               aria-label={`Line ${i + 1}`}
               aria-current={i === active}
               className={`h-2.5 cursor-pointer rounded-full transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-gold-400 ${
@@ -619,7 +619,7 @@ function Hero() {
             <button
               key={s.key}
               type="button"
-              onClick={() => goTo(i)}
+              onClick={() => go(i)}
               aria-label={`Line ${i + 1}`}
               aria-current={i === active}
               className={`h-2 cursor-pointer rounded-full transition-all ${
@@ -884,12 +884,12 @@ const SCREEN_SLIDES: {
     tour: [{ src: "/home-preview/tours/discover.jpg", travel: 1500 }],
     title: (
       <>
-        Discover the <span className="md:text-gold-400">clubs and programs</span> around you.
+        Discover the <span>clubs and programs</span> around you.
       </>
     ),
     caption: (
       <>
-        Tryouts, camps, house leagues and training, <span className="md:text-gold-400">near you</span>.
+        Tryouts, camps, house leagues and training, <span>near you</span>.
       </>
     ),
     src: "/home-preview/shots/discover-clubs-phone.png",
@@ -902,12 +902,12 @@ const SCREEN_SLIDES: {
     tour: [{ src: "/home-preview/tours/payments.jpg" }],
     title: (
       <>
-        Payment plans <span className="md:text-gold-400">run themselves</span>.
+        Payment plans <span>run themselves</span>.
       </>
     ),
     caption: (
       <>
-        A deposit at signup, the rest <span className="md:text-gold-400">on their own dates</span>, every one receipted.
+        A deposit at signup, the rest <span>on their own dates</span>, every one receipted.
       </>
     ),
     src: "/home-preview/shots/parent-payments-phone.png",
@@ -923,12 +923,12 @@ const SCREEN_SLIDES: {
     ],
     title: (
       <>
-        The <span className="md:text-gold-400">family week</span>, on one phone.
+        The <span>family week</span>, on one phone.
       </>
     ),
     caption: (
       <>
-        Practices, games, and the RSVP <span className="md:text-gold-400">right on the row</span>.
+        Practices, games, and the RSVP <span>right on the row</span>.
       </>
     ),
     src: "/home-preview/shots/parent-calendar-phone.png",
@@ -951,7 +951,7 @@ const SCREEN_SLIDES: {
     ),
     caption: (
       <>
-        Coaches and parents in one place, and a poll <span className="md:text-gold-400">settles Saturday&apos;s pizza</span>.
+        Coaches and parents in one place, and a poll <span>settles Saturday&apos;s pizza</span>.
       </>
     ),
     src: "/home-preview/shots/parent-team-chat-phone.png",
@@ -973,7 +973,7 @@ const SCREEN_SLIDES: {
     ),
     caption: (
       <>
-        One game, the whole page: the scorecard, the leaders, then <span className="md:text-gold-400">Team stats and Play-by-play</span>.
+        One game, the whole page: the scorecard, the leaders, then <span>Team stats and Play-by-play</span>.
       </>
     ),
     src: "/home-preview/shots/game-live-scorecard-phone.png",
@@ -986,12 +986,12 @@ const SCREEN_SLIDES: {
     tour: [{ src: "/home-preview/tours/recap.jpg", travel: 1400 }],
     title: (
       <>
-        Every game gets a <span className="md:text-gold-400">recap</span>.
+        Every game gets a <span>recap</span>.
       </>
     ),
     caption: (
       <>
-        Written from the official scoring record, with a <span className="md:text-gold-400">Player of the Game</span>.
+        Written from the official scoring record, with a <span>Player of the Game</span>.
       </>
     ),
     src: "/home-preview/news-recap-phone.png",
@@ -1009,7 +1009,7 @@ const SCREEN_SLIDES: {
     ),
     caption: (
       <>
-        Finals, milestones and Player of the Game cards, <span className="md:text-gold-400">made to share</span>.
+        Finals, milestones and Player of the Game cards, <span>made to share</span>.
       </>
     ),
     src: "/home-preview/shots/social-feed-phone.png",
@@ -1027,7 +1027,7 @@ const SCREEN_SLIDES: {
     ),
     caption: (
       <>
-        Every player gets a page: <span className="md:text-gold-400">season stats</span>, games, and their moments.
+        Every player gets a page: <span>season stats</span>, games, and their moments.
       </>
     ),
     src: "/home-preview/shots/social-player-page-phone.png",
@@ -1043,7 +1043,7 @@ const SCREEN_SLIDES: {
     ),
     caption: (
       <>
-        Finals go in, <span className="md:text-gold-400">the table moves on its own</span>. The league side lives on the big screen.
+        Finals go in, <span>the table moves on its own</span>. The league side lives on the big screen.
       </>
     ),
     src: "/home-preview/league-desktop.png",
@@ -1620,13 +1620,13 @@ function Screenshots() {
     >
       <div className="mx-auto flex min-h-0 w-full max-w-6xl flex-1 flex-col px-5 pb-4 pt-6">
         <div className="text-center">
-          <p className="text-[13px] font-bold uppercase tracking-[0.14em] text-gold-400 max-md:text-gold-600">
+          <p className="text-[13px] font-bold uppercase tracking-[0.14em] text-gold-600">
             Straight from the app
           </p>
-          <h2 className="mt-2 text-4xl font-bold tracking-tight text-white max-md:text-ink-950 sm:text-5xl">
+          <h2 className="mt-2 text-4xl font-bold tracking-tight text-ink-950 sm:text-5xl">
             What it looks like.
           </h2>
-          <p className="mx-auto mt-2 max-w-xl text-lg text-white/70 max-md:hidden">
+          <p className="mx-auto mt-2 max-w-xl text-lg text-ink-500 max-md:hidden">
             These are screenshots, not mockups. Slide through.
           </p>
           <p className="mx-auto mt-1 max-w-xl text-[15px] text-ink-500 md:hidden">
@@ -1639,7 +1639,7 @@ function Screenshots() {
             type="button"
             onClick={() => goTo(active - 1)}
             aria-label="Previous screen"
-            className="absolute inset-y-0 left-0 z-20 hidden md:flex w-10 cursor-pointer items-center justify-center text-white/45 transition-colors hover:bg-white/5 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-gold-400 sm:w-14"
+            className="absolute inset-y-0 left-0 z-20 hidden md:flex w-10 cursor-pointer items-center justify-center text-ink-300 transition-colors hover:bg-ink-950/5 hover:text-ink-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-gold-400 sm:w-14"
           >
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" className="h-10 w-10 lg:h-14 lg:w-14">
               <path d="m15 5-7 7 7 7" strokeLinecap="round" strokeLinejoin="round" />
@@ -1664,10 +1664,10 @@ function Screenshots() {
                 >
                   <div className="flex h-full w-full flex-col items-center justify-center gap-4 md:flex-row md:gap-12">
                     <div className="max-w-md text-center md:text-left">
-                      <h3 className="text-balance text-2xl font-bold leading-tight tracking-tight text-white max-md:text-ink-950 sm:text-4xl lg:text-[44px]">
+                      <h3 className="text-balance text-2xl font-bold leading-tight tracking-tight text-ink-950 sm:text-4xl lg:text-[44px]">
                         {slide.title}
                       </h3>
-                      <p className="mx-auto mt-4 max-w-md text-[17px] font-semibold leading-relaxed text-white/90 max-md:mt-1.5 max-md:line-clamp-1 max-md:text-[15px] max-md:font-normal max-md:text-ink-600 md:mx-0 sm:text-[19px]">
+                      <p className="mx-auto mt-4 max-w-md text-[17px] font-semibold leading-relaxed text-ink-600 max-md:mt-1.5 max-md:line-clamp-1 max-md:text-[15px] max-md:font-normal md:mx-0 sm:text-[19px]">
                         {slide.caption}
                       </p>
                     </div>
@@ -1696,7 +1696,7 @@ function Screenshots() {
             type="button"
             onClick={() => goTo(active + 1)}
             aria-label="Next screen"
-            className="absolute inset-y-0 right-0 z-20 hidden md:flex w-10 cursor-pointer items-center justify-center text-white/45 transition-colors hover:bg-white/5 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-gold-400 sm:w-14"
+            className="absolute inset-y-0 right-0 z-20 hidden md:flex w-10 cursor-pointer items-center justify-center text-ink-300 transition-colors hover:bg-ink-950/5 hover:text-ink-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-gold-400 sm:w-14"
           >
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" className="h-10 w-10 lg:h-14 lg:w-14">
               <path d="m9 5 7 7-7 7" strokeLinecap="round" strokeLinejoin="round" />
@@ -1713,7 +1713,7 @@ function Screenshots() {
               aria-label={`Screen ${i + 1}`}
               aria-current={i === active}
               className={`h-2.5 cursor-pointer rounded-full transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-gold-400 ${
-                i === active ? "w-7 bg-gold-500" : "w-2.5 bg-white/25 max-md:bg-ink-200 hover:bg-white/45"
+                i === active ? "w-7 bg-gold-500" : "w-2.5 bg-ink-200 hover:bg-ink-300"
               }`}
             />
           ))}
@@ -1912,20 +1912,18 @@ const PREVIEW_CSS = `
         html, body { overscroll-behavior-x: none; }
         /* Hero swipe feedback (owner 2026-08-18): on phones the incoming
            slogan slides in from the side you swiped toward. */
-        @media (max-width: 767px) {
-          .hp-in-next { animation: hp-in-next 360ms ease-out both; }
-          .hp-in-prev { animation: hp-in-prev 360ms ease-out both; }
-          @keyframes hp-in-next { from { transform: translateX(36px); } to { transform: translateX(0); } }
-          @keyframes hp-in-prev { from { transform: translateX(-36px); } to { transform: translateX(0); } }
-        }
+        .hp-in-next { animation: hp-in-next 360ms ease-out both; }
+        .hp-in-prev { animation: hp-in-prev 360ms ease-out both; }
+        @keyframes hp-in-next { from { transform: translateX(36px); } to { transform: translateX(0); } }
+        @keyframes hp-in-prev { from { transform: translateX(-36px); } to { transform: translateX(0); } }
         /* Mobile design pass (owner 2026-08-18): the court art is desktop
            drama; phones get flat grounds and a clear section rhythm. */
         @media (max-width: 767px) {
           .hp-flat-navy > div[aria-hidden="true"] { display: none; }
           .hp-flat-navy { background-color: #0b1628; }
-          .hp-flat-white > div[aria-hidden="true"] { display: none; }
-          .hp-flat-white { background-color: #ffffff; }
         }
+        .hp-flat-white > div[aria-hidden="true"] { display: none; }
+        .hp-flat-white { background-color: #ffffff; }
       `
 
 export function HomePreview() {
