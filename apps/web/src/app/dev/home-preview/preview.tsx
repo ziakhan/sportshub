@@ -723,8 +723,8 @@ function ReplacesStory() {
 function CompareMark({ cell }: { cell: CompareCell }) {
   if (cell === "y") {
     return (
-      <span className="mx-auto flex h-6 w-6 items-center justify-center rounded-full bg-court-100">
-        <CheckIcon className="h-3.5 w-3.5 text-court-700" />
+      <span className="mx-auto flex h-6 w-6 items-center justify-center rounded-full bg-court-500">
+        <CheckIcon className="h-3.5 w-3.5 text-white" />
       </span>
     )
   }
@@ -734,7 +734,7 @@ function CompareMark({ cell }: { cell: CompareCell }) {
         className="mx-auto flex h-6 w-6 items-center justify-center rounded-full bg-gold-100"
         title="Partial: a paid add-on, a separate product, or a shallower version"
       >
-        <span className="h-2.5 w-2.5 rounded-full border-2 border-gold-600" aria-label="Partial" />
+        <span className="h-3 w-3 rounded-full bg-gold-500 [clip-path:inset(0_50%_0_0)] ring-2 ring-gold-500 ring-inset" aria-label="Partial" />
       </span>
     )
   }
@@ -743,7 +743,7 @@ function CompareMark({ cell }: { cell: CompareCell }) {
     // glance without shouting, and people who know can still see it.
     return (
       <span
-        className="mx-auto block h-[7px] w-10 rounded-full bg-live-500 shadow-[0_0_0_1px_rgba(239,68,68,0.35)]"
+        className="mx-auto block h-[4px] w-5 rounded-full bg-live-500/80"
         role="img"
         aria-label="Not offered"
       />
@@ -771,39 +771,54 @@ function CompareTable() {
           </p>
         </div>
 
-        <div className="mt-10 overflow-x-auto rounded-2xl bg-white shadow-xl ring-1 ring-ink-100">
-          <table className="w-full min-w-[1080px] border-collapse text-left">
+        <div className="mx-auto mt-6 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-[14px] text-ink-600">
+          <span className="flex items-center gap-2">
+            <span className="flex h-5 w-5 items-center justify-center rounded-full bg-court-500">
+              <CheckIcon className="h-3 w-3 text-white" />
+            </span>
+            Included
+          </span>
+          <span className="flex items-center gap-2">
+            <span className="flex h-5 w-5 items-center justify-center rounded-full bg-gold-100">
+              <span className="h-2.5 w-2.5 rounded-full bg-gold-500 [clip-path:inset(0_50%_0_0)] ring-2 ring-gold-500 ring-inset" />
+            </span>
+            Partial: paid add-on or shallower
+          </span>
+          <span className="flex items-center gap-2">
+            <span className="block h-[4px] w-5 rounded-full bg-live-500/80" />
+            Not offered
+          </span>
+        </div>
+
+        <div className="mt-6 overflow-hidden rounded-2xl bg-white shadow-xl ring-1 ring-ink-100">
+          <table className="w-full border-collapse text-left">
             <thead>
-              <tr className="border-b border-ink-100">
-                <th className="px-5 py-4 text-[14px] font-bold uppercase tracking-[0.1em] text-ink-400">
+              <tr>
+                <th className="w-[220px] px-5 pb-3 pt-4 align-bottom text-[13px] font-bold uppercase tracking-[0.1em] text-ink-400">
                   Feature
                 </th>
-                <th className="bg-gold-50 px-4 py-4 text-center">
-                  <span className="whitespace-nowrap rounded-full bg-ink-950 px-3 py-1 text-[13px] font-bold text-white">
+                <th className="h-[120px] bg-gold-50 px-1 pb-3 align-bottom">
+                  <div className="mx-auto w-fit -rotate-45 whitespace-nowrap rounded-full bg-gold-500 px-3 py-1 text-[13px] font-bold text-ink-950">
                     SportsHub One
-                  </span>
+                  </div>
                 </th>
                 {COMPARE_COLUMNS.map((name) => (
-                  <th
-                    key={name}
-                    className="px-3 py-4 text-center text-[13px] font-bold text-ink-600"
-                  >
-                    {name}
+                  <th key={name} className="h-[120px] px-1 pb-3 align-bottom">
+                    <div className="mx-auto w-fit -rotate-45 whitespace-nowrap text-[13px] font-semibold text-ink-500">
+                      {name}
+                    </div>
                   </th>
                 ))}
               </tr>
             </thead>
-            <tbody className="divide-y divide-ink-50">
-              {COMPARE_ROWS.map((row) => (
-                <tr key={row.label}>
-                  <td className="whitespace-nowrap px-5 py-3.5 text-[16px] font-semibold text-ink-800">
+            <tbody>
+              {COMPARE_ROWS.map((row, ri) => (
+                <tr key={row.label} className={ri % 2 === 0 ? "bg-ink-50/50" : "bg-white"}>
+                  <td className="whitespace-nowrap px-5 py-2.5 text-[15px] font-medium text-ink-700">
                     {row.label}
                   </td>
                   {row.cells.map((cell, i) => (
-                    <td
-                      key={i}
-                      className={`px-3 py-3.5 text-center ${i === 0 ? "bg-gold-50" : ""}`}
-                    >
+                    <td key={i} className={`px-1 py-2.5 text-center ${i === 0 ? "bg-gold-50" : ""}`}>
                       <CompareMark cell={cell} />
                     </td>
                   ))}
@@ -817,6 +832,7 @@ function CompareTable() {
           Checked against each platform&apos;s published feature and pricing pages, August 2026.
           SportsEngine&apos;s live scoring product excludes basketball; its basketball stats are
           manual entry. Spot something that changed? Tell us and we&apos;ll fix it.
+          All product names are trademarks of their respective owners.
         </p>
       </div>
     </section>
