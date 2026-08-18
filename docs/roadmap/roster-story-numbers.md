@@ -304,3 +304,63 @@ screen.
 | `tsc --noEmit` | clean |
 | Em-dash sweep | clean |
 | Database writes | **none**. Every derivation ran over read-only queries, and the plan was produced by running the product's own functions |
+
+---
+
+## J. The 2026-08-19 realism conversion (mock-ui.tsx R1–R8)
+
+The 08-16 cut was written to the scene kit. This one is written to the REAL
+components, screen by screen, on the owner's ruling that every remaining demo
+is held to R1–R8. What changed, and what it changed to:
+
+| Screen | Was (08-16) | Is now, and its source |
+|---|---|---|
+| Club team list | List rows with a "10 players" chip | `clubs/[id]/teams/page.tsx`: brand-bar condensed h2 with its count, the TeamsFilter row, team CARDS with the league chip and the four-tile stat grid (Players / Record / Tryouts / Offers) |
+| Create team | One text field for the suffix | `teams/create/page.tsx`: the real suffix CHIPS (`TEAM_NAME_SUFFIXES`) plus "Custom…", which is the only way a season-shaped suffix gets typed, the dashed name preview, and both halves of Staff Assignment (assign + invite by email). Ends on the page's own "Team Created!" card |
+| Create tryout | Compressed field stack | `tryouts/create/page.tsx`: SmartBack, condensed h2, the three `PanelHeader` sections, the age/gender Badges the team fills in, the ink-50 draft note, the real three-button footer. Ends on the page's own created card |
+| Tryout signups | Invented rows + a "Send Offers" button | The page's OWN phone shape (`sm:hidden` card list): player, guardian under it, `Badge tone={toneForStatus()}` gold lower-case "pending", the row chevron, inside the rounded-[28px] panel with its band `PanelHeader` |
+| Send offers | A summarised composer | `bulk-offer-button.tsx` + `offer-composer.tsx`: the black/50 modal, the scrollable recipient box, "5 of 5 eligible selected", the Option 1 card with Fee / Installments / Practices and the five item checkboxes, the "Payment plan (deposit + installments)" tick that autofills through `autofillPlan`, the `#N amount + due date` rows, the live `PlanSum` line, the Expires-in chips. Ends on the modal's own "5 offers sent" result |
+| Parent, before the tryout | Nothing (an empty handset) | `/events` (`events-browser.tsx`): the filter pills and the program card with its stage-gradient cover, crest watermark, type pill, by-type lead line, crest row and hoop-600 condensed fee. The published tryout DROPS IN at the top, which is what "published to the marketplace" means |
+| Parent, the listing | A summarised card | `/tryouts/[id]`: the brand band, the Open badge, condensed h1, InfoTiles, then `program-signup-form.tsx` with "Who's playing?", the KidRow chips and the fee on the button. Registering swaps only the sidebar card for the form's own green "Registered!" panel, exactly as the real page does |
+| Parent, the offer | Two invented compositions | `/offers`: Offers eyebrow chip, condensed "My offers", gold-bar "Pending (1)", the play-200 card with the condensed fee, the play-50 "What's included" chips, the ink-50 italic message, Accept / Decline; then `offer-response-form.tsx` in the court-50 panel, filmed in its two scroll positions |
+| Parent, after accepting | An invented "On the roster" panel | The REAL end state: the offer moves into "Past Offers (1)" as an ACCEPTED court-tinted row carrying `Uniform: YL \| Tracksuit: AM \| Shoes: 9 \| Jersey prefs: #37, #1, #7` |
+| Roster | Cards with a number chip | `roster/page.tsx`: the condensed "{team} - Roster", the collapsed `roster-manager.tsx` bar, and the real table (ink-50 uppercase head, `PlayerMug` per row, size cells, `Badge tone="court"` Finalized) |
+| The offer arriving | Nothing | R8: the notification `lib/offers/create-offer.ts` really sends ("New Team Offer", `{club} has sent an offer for {player} to join {team}.`), as an iOS-style banner with the approved app icon |
+| Club "Programs" screen | Rep team + house league + tryout | **Cut.** There is no such page in the product; it was the one invented screen in the story. The house league keeps its place in the money-picture demo |
+
+### Balloons
+
+Twenty-four callouts became eleven. A callout now exists only where the screen
+cannot say the thing: why Grade 10, why the product writes the name, what the
+cap does, what publishing means, why the offline sentence exists, what one
+composition sends, what happens when nobody answers, why three jersey numbers,
+when the later charges run, what one press does, where the sizes came from, and
+what Finalized does not mean. Everything else moved into the caption bar.
+
+### Engine law learned in this drive
+
+**A beat's `set` is applied the moment the beat starts, so a beat must never
+remove its OWN cursor target.** Every press that replaces the screen (create,
+publish, register, send, tap the push, accept) presses on one beat and lands on
+the next. Before the fix the cursor drifted to nothing, the balloon was skipped
+because it had no anchor, AND the caption bar was silenced by the one-voice
+rule, so those beats narrated nothing at all. The pattern predates this story
+and is worth checking in the other converted demos.
+
+### Long forms are filmed in two scroll positions
+
+Create-team (naming, then staffing with the buttons), create-tryout (details
+and schedule, then schedule and money with the buttons), the compose modal, and
+the accept form. A phone scrolls these; squeezing them was what pushed the
+Register button and the Create Team button under the tab bar in the first pass.
+
+### Gates, this cut
+
+| Gate | Result |
+|---|---|
+| `tsc --noEmit` | clean |
+| `drive-demo-beats.mjs roster-story` | 41 beats, every frame read; no overflow, no unanchored cursor, no flow ending before its real end state |
+| `readability-audit.mjs --scope chrome` | **0 violations**, minimum stage scale 1.15 |
+| `readability-audit.mjs --scope stage` (14px floor) | 2,356 violations, all of them the real product's own handset type (8 to 13px checkboxes, eyebrows, table heads, badges). The exemplar `your-week` fails the same gate with 216. **The 14px stage floor and the realism standard are now in conflict** and the owner has to rule: R1 says copy the real component's classes, and a real phone screen is 10 to 13px type. Nothing here is smaller than the product it mirrors |
+| Runtime at 1x | **1 min 46 sec** (was 2 min 23 sec) |
+| Database writes | **none** |

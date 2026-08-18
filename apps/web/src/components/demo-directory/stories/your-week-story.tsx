@@ -971,18 +971,41 @@ function Payments() {
 
 /* ── The push, the signing, the receipt ──────────────────────────────────── */
 
-/** The app icon on the banner: navy tile, gold ball. Hand-authored SVG. */
-function AppIcon({ className }: { className?: string }) {
+/** The APPROVED app icon (public/brand/icon-n3.svg), inlined verbatim —
+ *  never a redrawn stand-in (owner 2026-08-19). */
+export function AppIcon({ className }: { className?: string }) {
   return (
-    <svg viewBox="0 0 36 36" className={className} aria-hidden="true">
-      <rect width="36" height="36" rx="8.5" fill="#0b1628" />
-      <circle cx="18" cy="18" r="9" fill="#f59e0b" />
-      <path
-        d="M9 18h18M18 9v18M11.6 11.6c3.4 3 9.4 3 12.8 0M11.6 24.4c3.4-3 9.4-3 12.8 0"
-        stroke="#0b1628"
-        strokeWidth="1.4"
-        fill="none"
-      />
+    <svg viewBox="0 0 64 64" className={className} aria-hidden="true">
+      <defs>
+        <linearGradient id="yw-app-bg" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stopColor="#1e2d4d" />
+          <stop offset="1" stopColor="#0b1628" />
+        </linearGradient>
+      </defs>
+      <rect width="64" height="64" rx="14" fill="url(#yw-app-bg)" />
+      <text
+        x="29"
+        y="47"
+        fontFamily="-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif"
+        fontWeight="800"
+        fontSize="40"
+        fill="#ffffff"
+        textAnchor="middle"
+      >
+        S
+      </text>
+      <rect x="41" y="7" width="17" height="17" rx="4" fill="#f24e1e" />
+      <text
+        x="49.5"
+        y="20.5"
+        fontFamily="-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif"
+        fontWeight="800"
+        fontSize="13"
+        fill="#ffffff"
+        textAnchor="middle"
+      >
+        1
+      </text>
     </svg>
   )
 }

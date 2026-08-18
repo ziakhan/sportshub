@@ -2525,7 +2525,10 @@ export function MockEndCard({
  *     (globals.css .demo-banner-in) and tapping it navigates; directions
  *     open a maps-app takeover. OS chrome is drawn as chrome, and never
  *     invents product UI (your-week-story.tsx PushBanner / MapsTakeover
- *     are the exemplars).
+ *     are the exemplars). The app icon on any banner is the APPROVED
+ *     square mark, public/brand/icon-n3.svg, inlined verbatim (import
+ *     { AppIcon } from stories/your-week-story) — never a redrawn logo
+ *     (owner 2026-08-19).
  * ═══════════════════════════════════════════════════════════════════════ */
 
 /** Calendar entry, mirrored 1:1 from calendar/my-calendar.tsx (KIND_CARD /
