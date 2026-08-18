@@ -1066,6 +1066,7 @@ function GuidedShot({
   active,
   pinBottom,
   manual = false,
+  fill = false,
 }: {
   segments: { src: string; start?: number | "end"; travel?: number; returnTo?: number }[]
   alt: string
@@ -1074,6 +1075,8 @@ function GuidedShot({
   /** One-way handoff (owner 2026-08-18): true stops the choreography and
    *  hands the frame to native scrolling at the current position. */
   manual?: boolean
+  /** Full-screen mode: width-driven, no aspect cap, no rounded corners. */
+  fill?: boolean
 }) {
   const [seg, setSeg] = useState(0)
   const [y, setY] = useState(0)
@@ -1164,9 +1167,9 @@ function GuidedShot({
   return (
     <div
       ref={frameRef}
-      className={`relative aspect-[390/844] h-full w-auto rounded-[1.9rem] bg-white ${
-        manual ? "overflow-y-auto overscroll-contain" : "overflow-hidden"
-      }`}
+      className={`relative bg-white ${
+        fill ? "h-full w-full" : "aspect-[390/844] h-full w-auto rounded-[1.9rem]"
+      } ${manual ? "overflow-y-auto overscroll-contain" : "overflow-hidden"}`}
     >
       {!manual && prev && (
         // eslint-disable-next-line @next/next/no-img-element
@@ -1562,31 +1565,32 @@ function SlideZoom({
         type="button"
         onClick={onClose}
         aria-label="Close full screen"
-        className="fixed right-4 z-[95] flex h-11 w-11 cursor-pointer items-center justify-center rounded-full bg-white/15 text-white ring-1 ring-white/40"
-        style={{ top: "max(1rem, env(safe-area-inset-top))" }}
+        className="fixed right-3 z-[95] flex h-11 w-11 cursor-pointer items-center justify-center rounded-full bg-ink-950/35 text-white backdrop-blur-sm"
+        style={{ top: "max(0.75rem, env(safe-area-inset-top))" }}
       >
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" className="h-5 w-5">
           <path d="M6 6l12 12M18 6L6 18" strokeLinecap="round" />
         </svg>
       </button>
 
-      <div className="flex min-h-0 flex-1 items-center justify-center px-3 pb-2" style={{ paddingTop: "max(3.5rem, calc(env(safe-area-inset-top) + 2.75rem))" }} {...stageTouch}>
+      <div className="min-h-0 flex-1" {...stageTouch}>
         {slide.key === "chat" ? (
-          <ChatPhone active fit={{ h: 0.78, w: 0.94 }} />
-        ) : slide.tour ? (
-          <div className="flex h-full max-h-[82dvh] justify-center rounded-[2.4rem] bg-ink-900 p-2.5 shadow-2xl ring-1 ring-white/10">
-            <GuidedShot
-              segments={slide.tour}
-              alt={slide.alt}
-              active
-              manual={manual}
-              pinBottom={manual ? undefined : slide.pinBottom}
-            />
+          <div className="flex h-full items-center justify-center">
+            <ChatPhone active fit={{ h: 0.96, w: 1 }} />
           </div>
+        ) : slide.tour ? (
+          <GuidedShot
+            segments={slide.tour}
+            alt={slide.alt}
+            active
+            manual={manual}
+            fill
+            pinBottom={manual ? undefined : slide.pinBottom}
+          />
         ) : (
-          <div className="max-h-[82dvh] w-full overflow-y-auto overscroll-contain rounded-2xl">
+          <div className="h-full w-full overflow-y-auto overscroll-contain bg-white">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={slide.src as string} alt={slide.alt ?? ""} className="w-full rounded-2xl" />
+            <img src={slide.src as string} alt={slide.alt ?? ""} className="w-full" />
           </div>
         )}
       </div>
@@ -1597,7 +1601,7 @@ function SlideZoom({
         </p>
       )}
 
-      <div className="flex shrink-0 items-center justify-center gap-2" style={{ paddingBottom: "max(1.25rem, env(safe-area-inset-bottom))" }} role="tablist" aria-label="Screens">
+      <div className="pointer-events-none absolute inset-x-0 z-[95] flex items-center justify-center gap-2" style={{ bottom: "max(0.9rem, env(safe-area-inset-bottom))" }} role="tablist" aria-label="Screens">
         {SCREEN_SLIDES.map((sl, i) => (
           <button
             key={sl.key}
@@ -1605,8 +1609,8 @@ function SlideZoom({
             onClick={() => onNav(i)}
             aria-label={`Screen ${i + 1}`}
             aria-current={i === index}
-            className={`h-2.5 cursor-pointer rounded-full transition-all ${
-              i === index ? "w-7 bg-gold-400" : "w-2.5 bg-white/30"
+            className={`pointer-events-auto h-2.5 cursor-pointer rounded-full shadow-[0_0_6px_rgba(0,0,0,0.55)] transition-all ${
+              i === index ? "w-7 bg-gold-400" : "w-2.5 bg-white/50"
             }`}
           />
         ))}
