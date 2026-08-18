@@ -62,13 +62,21 @@ export default async function CustomizeClubPage({ params }: { params: { id: stri
             Brand it, add your info, and arrange the sections. Changes go live when you save.
           </p>
         </div>
-        <Link
-          href={`/club/${club.slug}`}
-          target="_blank"
-          className="border-ink-200 text-ink-700 hover:bg-ink-50 shrink-0 rounded-xl border px-4 py-2 text-sm font-semibold transition"
-        >
-          View public page ↗
-        </Link>
+        <div className="flex shrink-0 flex-wrap gap-2">
+          <Link
+            href={`/clubs/${params.id}/customize/live`}
+            className="rounded-xl bg-navy-900 px-4 py-2 text-sm font-bold text-white transition hover:opacity-90"
+          >
+            Edit the page itself
+          </Link>
+          <Link
+            href={`/club/${club.slug}`}
+            target="_blank"
+            className="border-ink-200 text-ink-700 hover:bg-ink-50 rounded-xl border px-4 py-2 text-sm font-semibold transition"
+          >
+            View public page ↗
+          </Link>
+        </div>
       </div>
 
       {/* Club Page Studio (owner 2026-08-18). The look comes first because it is
