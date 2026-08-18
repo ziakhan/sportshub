@@ -1,0 +1,84 @@
+/*
+ * Club page theming (owner 2026-08-18).
+ *
+ * The blocks were authored for a light surface: hardcoded `text-ink-950`,
+ * `border-ink-100`, white `Card`s. Three of the six themes have a dark ground, so
+ * simply painting the page dark would leave block headings unreadable.
+ *
+ * Rather than rewrite every block, the theme is applied through ONE scoping class
+ * on the page wrapper. Inside it, the ink and surface utilities are re-pointed at
+ * the club's theme variables. Outside it, nothing changes, so `Card`, `ink-*` and
+ * the shared components behave exactly as they do everywhere else on the site.
+ *
+ * A CSS Module, not globals.css, deliberately: globals.css is being edited by a
+ * parallel session and this needs no global surface area.
+ */
+
+.themed {
+  background: var(--club-bg);
+  color: var(--club-ink);
+  font-family: var(--club-body-font);
+}
+
+/* Surfaces. `Card` and any hand-rolled white panel become the theme's panel. */
+.themed :global(.bg-white),
+.themed :global([class*="bg-white"]) {
+  background-color: var(--club-panel) !important;
+}
+
+/* Ink. The block system uses the ink-* ramp for every text weight; map the dark
+   end to the theme's body ink and the light end to its muted ink so hierarchy
+   survives the swap instead of flattening. */
+.themed :global(.text-ink-950),
+.themed :global(.text-ink-900),
+.themed :global(.text-ink-800) {
+  color: var(--club-ink) !important;
+}
+
+.themed :global(.text-ink-700),
+.themed :global(.text-ink-600),
+.themed :global(.text-ink-500),
+.themed :global(.text-ink-400),
+.themed :global(.text-ink-300) {
+  color: var(--club-muted) !important;
+}
+
+/* Hairlines. */
+.themed :global(.border-ink-100),
+.themed :global(.border-ink-200),
+.themed :global(.border-ink-50) {
+  border-color: var(--club-border) !important;
+}
+
+/* Corner language, applied to the block shells only. Buttons, chips and pills
+   keep their own radii so the control kit stays recognisable. */
+.themed :global(.rounded-2xl),
+.themed :global(.rounded-3xl),
+.themed :global(.rounded-\[28px\]) {
+  border-radius: var(--club-radius);
+}
+
+/* Headings carry the theme's voice. */
+.themed :global(.font-condensed) {
+  font-family: var(--club-heading-font);
+  text-transform: var(--club-heading-case);
+  letter-spacing: var(--club-heading-tracking);
+}
+
+/* Density: the gap between blocks in each column. */
+.themed .mainZone {
+  gap: calc(var(--club-gap) * 2.2);
+}
+
+.themed .railZone {
+  gap: calc(var(--club-gap) * 1.4);
+}
+
+/* The banner honours the club's focal point at every breakpoint, so any aspect
+   ratio crops around the part they marked and nothing is ever stretched. */
+.banner {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: var(--club-focal, 50% 50%);
+}

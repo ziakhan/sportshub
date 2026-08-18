@@ -10,6 +10,7 @@ import { CourtBackdropLayer, SmartBack } from "@/components/ui"
 import { resolveLayout, zoneBlocks } from "@/lib/club-page/blocks"
 import { brandStyle, chosenBrandColor, NEUTRAL_BRAND } from "@/lib/club-page/brand"
 import { resolveTheme, themeStyle } from "@/lib/club-page/theme"
+import clubTheme from "./club-theme.module.css"
 import { ClubBlock, hasBlockContent, type ClubPageData } from "./club-blocks"
 import { ClubSubNav } from "./club-subnav"
 import { JsonLd, clubJsonLd } from "@/lib/seo/jsonld"
@@ -191,7 +192,7 @@ export default async function ClubProfilePage({ params }: { params: { slug: stri
   }))?.isDemo
 
   return (
-    <div className="font-barlow [scroll-behavior:smooth]" style={themeStyle(look)}>
+    <div className={`font-barlow [scroll-behavior:smooth] ${clubTheme.themed}`} style={themeStyle(look)}>
       {clubIsDemo && (
         <div className="flex flex-wrap items-center gap-3 border-b border-amber-200 bg-amber-50 px-4 py-2.5 sm:px-6">
           <DemoBadge long />
@@ -374,13 +375,13 @@ export default async function ClubProfilePage({ params }: { params: { slug: stri
 
         <div className="grid grid-cols-1 gap-8 lg:grid-cols-3 lg:gap-10">
           {/* Main zone */}
-          <div className="space-y-10 lg:col-span-2 lg:space-y-12">
+          <div className={`flex flex-col lg:col-span-2 ${clubTheme.mainZone}`}>
             {mainCfg.map((b) => (
               <ClubBlock key={b.key} blockKey={b.key} variant="main" data={data} />
             ))}
           </div>
           {/* Rail zone */}
-          <div className="space-y-6">
+          <div className={`flex flex-col ${clubTheme.railZone}`}>
             {railCfg.map((b) => (
               <div key={b.key} className={b.pinMobile ? "hidden lg:block" : undefined}>
                 <ClubBlock blockKey={b.key} variant="rail" data={data} />
