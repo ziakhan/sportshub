@@ -1,0 +1,1107 @@
+{
+  "investigated_at": "2026-08-14",
+  "sources": [
+    {
+      "name": "OBA Registered Teams",
+      "url": "https://basketball.on.ca/competitions/registered-teams/",
+      "render_method": "playwright",
+      "access": "dead",
+      "clubs_found": 0,
+      "clubs": [],
+      "notes": "Rendered in real Chromium (Playwright). The page shell loads (Club/Age Group/Gender filter form + disabled 'Search' button), but the underlying data source is a third-party JSONP API at https://registration.sportsavvy.com/OBA/components/com_sportsavvy/lib/AJAXHandlerPublic.php?cmd=clubs which is BROKEN at the TLS layer: every HTTPS connection (curl, node fetch, openssl s_client, and Chromium itself) gets rejected mid-handshake with 'tlsv1 unrecognized name' / net::ERR_SSL_UNRECOGNIZED_NAME_ALERT -- the server rejects its own hostname as SNI, tried with and without SNI, same result. Plain HTTP to the same host returns a WAF-style 403 'Request forbidden by administrative rules'. Confirmed this is a genuine server-side outage/misconfiguration on OBA's third-party registration vendor (sportsavvy.com), not a bot-challenge or CAPTCHA -- a real browser hits the identical failure. The club dropdown (id=oukey) never populates beyond '[All]' and the Search button stays permanently disabled, so the team table can never render client-side either, confirming this matches the 'nothing to static fetch' symptom reported. No other sportsavvy hostname is referenced anywhere in the page HTML. Recommend re-checking this source periodically in case OBA/sportsavvy fixes their cert; not worth further bypass attempts since it's not a deliberate block."
+    },
+    {
+      "name": "Jr. NBA Canada - Find Your Program (Ontario)",
+      "url": "https://www.jrnba.ca/the-program/find-your-program",
+      "render_method": "playwright",
+      "access": "public",
+      "clubs_found": 40,
+      "clubs": [
+        {
+          "name": "21 Basketball Academy",
+          "city": "Barrie",
+          "league": "Jr. NBA/Jr. WNBA Canada",
+          "evidence_url": "https://jr-nba.webflow.io/programs/21-basketball-academy-fall"
+        },
+        {
+          "name": "22 Wing Fitness & Wellness Centre",
+          "city": "Hornell Heights",
+          "league": "Jr. NBA/Jr. WNBA Canada",
+          "evidence_url": "https://jr-nba.webflow.io/programs/22-wing-fitness-wellness-centre-fall"
+        },
+        {
+          "name": "Above the 6",
+          "city": "King City",
+          "league": "Jr. NBA/Jr. WNBA Canada",
+          "evidence_url": "https://jr-nba.webflow.io/programs/above-the-6-fall"
+        },
+        {
+          "name": "Aspire For Higher",
+          "city": "Brampton",
+          "league": "Jr. NBA/Jr. WNBA Canada",
+          "evidence_url": "https://jr-nba.webflow.io/programs/aspire-for-higher-fall"
+        },
+        {
+          "name": "Barrie Royals Basketball Club",
+          "city": "Barrie",
+          "league": "Jr. NBA/Jr. WNBA Canada",
+          "evidence_url": "https://jr-nba.webflow.io/programs/barrie-royals-basketball-club-fall"
+        },
+        {
+          "name": "Basketball Basics Inc",
+          "city": "Ajax",
+          "league": "Jr. NBA/Jr. WNBA Canada",
+          "evidence_url": "https://jr-nba.webflow.io/programs/basketball-basics-inc-fall"
+        },
+        {
+          "name": "Big Country Basketball",
+          "city": "Breslau",
+          "league": "Jr. NBA/Jr. WNBA Canada",
+          "evidence_url": "https://jr-nba.webflow.io/programs/big-country-basketball-fall"
+        },
+        {
+          "name": "Burlington Basketball",
+          "city": "Burlington",
+          "league": "Jr. NBA/Jr. WNBA Canada",
+          "evidence_url": "https://jr-nba.webflow.io/programs/burlington-basketball-fall"
+        },
+        {
+          "name": "Dovercourt Recreation Association",
+          "city": "Ottawa",
+          "league": "Jr. NBA/Jr. WNBA Canada",
+          "evidence_url": "https://jr-nba.webflow.io/programs/dovercourt-recreation-association-fall"
+        },
+        {
+          "name": "Elevation Athletics Association",
+          "city": "Newmarket",
+          "league": "Jr. NBA/Jr. WNBA Canada",
+          "evidence_url": "https://jr-nba.webflow.io/programs/elevation-athletics-association-fall"
+        },
+        {
+          "name": "Junior Ball-Stars",
+          "city": "Waterloo",
+          "league": "Jr. NBA/Jr. WNBA Canada",
+          "evidence_url": "https://jr-nba.webflow.io/programs/junior-ball-stars-fall"
+        },
+        {
+          "name": "Kitchener Waterloo Girls Basketball Association",
+          "city": "Waterloo",
+          "league": "Jr. NBA/Jr. WNBA Canada",
+          "evidence_url": "https://jr-nba.webflow.io/programs/kitchener-waterloo-girls-basketball-association-fall"
+        },
+        {
+          "name": "Legacy Hoops Youth Academy",
+          "city": "Mississauga",
+          "league": "Jr. NBA/Jr. WNBA Canada",
+          "evidence_url": "https://jr-nba.webflow.io/programs/legacy-hoops-youth-academy-fall"
+        },
+        {
+          "name": "Little Dribblers",
+          "city": "Brampton",
+          "league": "Jr. NBA/Jr. WNBA Canada",
+          "evidence_url": "https://jr-nba.webflow.io/programs/little-dribblers-fall"
+        },
+        {
+          "name": "MCBC Jr. NBA",
+          "city": "Mississauga",
+          "league": "Jr. NBA/Jr. WNBA Canada",
+          "evidence_url": "https://jr-nba.webflow.io/programs/mcbc-jr-nba-fall"
+        },
+        {
+          "name": "Miles Nadal Jewish Community Centre",
+          "city": "Toronto",
+          "league": "Jr. NBA/Jr. WNBA Canada",
+          "evidence_url": "https://jr-nba.webflow.io/programs/miles-nadal-jewish-community-centre"
+        },
+        {
+          "name": "Milton Stags Basketball",
+          "city": "Milton",
+          "league": "Jr. NBA/Jr. WNBA Canada",
+          "evidence_url": "https://jr-nba.webflow.io/programs/milton-stags-basketball-fall"
+        },
+        {
+          "name": "Municipality of Powassan",
+          "city": "Powassan",
+          "league": "Jr. NBA/Jr. WNBA Canada",
+          "evidence_url": "https://jr-nba.webflow.io/programs/municipality-of-powassan"
+        },
+        {
+          "name": "Next Level Basketball",
+          "city": "Barrie",
+          "league": "Jr. NBA/Jr. WNBA Canada",
+          "evidence_url": "https://jr-nba.webflow.io/programs/next-level-basketball-fall"
+        },
+        {
+          "name": "Niagara Basketball Academy",
+          "city": "Niagara",
+          "league": "Jr. NBA/Jr. WNBA Canada",
+          "evidence_url": "https://jr-nba.webflow.io/programs/niagara-basketball-academy-fall"
+        },
+        {
+          "name": "Norfolk Youth Basketball Association",
+          "city": "Waterford",
+          "league": "Jr. NBA/Jr. WNBA Canada",
+          "evidence_url": "https://jr-nba.webflow.io/programs/norfolk-youth-basketball-association-fall"
+        },
+        {
+          "name": "North Ballers Corp",
+          "city": "Mississauga",
+          "league": "Jr. NBA/Jr. WNBA Canada",
+          "evidence_url": "https://jr-nba.webflow.io/programs/north-ballers-corp-fall"
+        },
+        {
+          "name": "Ontario Racquet Club",
+          "city": "Mississauga",
+          "league": "Jr. NBA/Jr. WNBA Canada",
+          "evidence_url": "https://jr-nba.webflow.io/programs/ontario-racquet-club-fall"
+        },
+        {
+          "name": "Over Seas Basketball Association Location 1 (Entire Year)",
+          "city": "Markham",
+          "league": "Jr. NBA/Jr. WNBA Canada",
+          "evidence_url": "https://jr-nba.webflow.io/programs/over-seas-basketball-association-location-1-entire-year"
+        },
+        {
+          "name": "Over Seas Basketball Association Location 2 (Entire Year)",
+          "city": "Markham",
+          "league": "Jr. NBA/Jr. WNBA Canada",
+          "evidence_url": "https://jr-nba.webflow.io/programs/over-seas-basketball-association-location-2-entire-year"
+        },
+        {
+          "name": "Peneteng Midland Basketball Association",
+          "city": "Midlan",
+          "league": "Jr. NBA/Jr. WNBA Canada",
+          "evidence_url": "https://jr-nba.webflow.io/programs/peneteng-midland-basketball-association-fall"
+        },
+        {
+          "name": "Port Colborne Youth Basketball",
+          "city": "Port Colborne",
+          "league": "Jr. NBA/Jr. WNBA Canada",
+          "evidence_url": "https://jr-nba.webflow.io/programs/port-colborne-youth-basketball-fall"
+        },
+        {
+          "name": "Reach Performance Basketball",
+          "city": "Etobicoke",
+          "league": "Jr. NBA/Jr. WNBA Canada",
+          "evidence_url": "https://jr-nba.webflow.io/programs/reach-performance-basketball-fall"
+        },
+        {
+          "name": "Rexdale Basketball Association",
+          "city": "Rexdale",
+          "league": "Jr. NBA/Jr. WNBA Canada",
+          "evidence_url": "https://jr-nba.webflow.io/programs/rexdale-basketball-association-fall"
+        },
+        {
+          "name": "The Rise Centre",
+          "city": "Brantford",
+          "league": "Jr. NBA/Jr. WNBA Canada",
+          "evidence_url": "https://jr-nba.webflow.io/programs/the-rise-centre-fall"
+        },
+        {
+          "name": "Toronto Athletic Camps",
+          "city": "North York",
+          "league": "Jr. NBA/Jr. WNBA Canada",
+          "evidence_url": "https://jr-nba.webflow.io/programs/toronto-athletic-camps-fall"
+        },
+        {
+          "name": "Toronto Lord Basketball Association",
+          "city": "Toronto",
+          "league": "Jr. NBA/Jr. WNBA Canada",
+          "evidence_url": "https://jr-nba.webflow.io/programs/toronto-lord-basketball-association-fall"
+        },
+        {
+          "name": "Town of Oakvile",
+          "city": "Oakvile",
+          "league": "Jr. NBA/Jr. WNBA Canada",
+          "evidence_url": "https://jr-nba.webflow.io/programs/town-of-oakvile-fall"
+        },
+        {
+          "name": "Trent Athletics Centre",
+          "city": "Peterborough",
+          "league": "Jr. NBA/Jr. WNBA Canada",
+          "evidence_url": "https://jr-nba.webflow.io/programs/trent-athletics-centre-fall"
+        },
+        {
+          "name": "Valley Hoopstar",
+          "city": "Deep River",
+          "league": "Jr. NBA/Jr. WNBA Canada",
+          "evidence_url": "https://jr-nba.webflow.io/programs/valley-hoopstar-fall"
+        },
+        {
+          "name": "Vaughan Basketball",
+          "city": "Vaughan",
+          "league": "Jr. NBA/Jr. WNBA Canada",
+          "evidence_url": "https://jr-nba.webflow.io/programs/vaughan-basketball-fall"
+        },
+        {
+          "name": "Windsor Valiants",
+          "city": "Windsor",
+          "league": "Jr. NBA/Jr. WNBA Canada",
+          "evidence_url": "https://jr-nba.webflow.io/programs/windsor-valiants-falll"
+        },
+        {
+          "name": "YMCA of Eastern Ontario Brockville",
+          "city": "Brockville",
+          "league": "Jr. NBA/Jr. WNBA Canada",
+          "evidence_url": "https://jr-nba.webflow.io/programs/ymca-of-eastern-ontario-brockville-fall"
+        },
+        {
+          "name": "YMCA of Eastern Ontario Kingston",
+          "city": "Kingston",
+          "league": "Jr. NBA/Jr. WNBA Canada",
+          "evidence_url": "https://jr-nba.webflow.io/programs/ymca-of-eastern-ontario-kingston-fall"
+        },
+        {
+          "name": "YMCA of Timmins",
+          "city": "Timmins",
+          "league": "Jr. NBA/Jr. WNBA Canada",
+          "evidence_url": "https://jr-nba.webflow.io/programs/ymca-of-timmins-fall"
+        }
+      ],
+      "notes": "The page itself renders a Storepoint.co store-locator widget (a third-party map/list finder embed) that shows 'No featured clubs were found in your area' by default because it geofilters on the visiting IP -- it is NOT a login/CAPTCHA gate, just a proximity-search default. The widget's underlying data file is a public, unauthenticated JSON API: https://api.storepoint.co/v1/15d5b06c3617f5/locations (map/account id 15d5b06c3617f5, found embedded in https://cdn.storepoint.co/api/v1/js/15d5b06c3617f5.js which also self-reports STPT_LOC_COUNT=144). A single unauthenticated GET returns all 144 Canada-wide Jr. NBA/Jr. WNBA host-program locations in one response, no pagination, no auth headers needed -- same trick class as the Google My Maps KML export used for OBA's Find-a-Club page. Filtered to the 84 records whose streetaddress is in Ontario, then deduplicated by stripping '(Fall/Winter/Summer/Spring)' season suffixes from the location name (each host runs the same program in multiple seasons, appearing as separate near-duplicate location records with the same address/email) -> 40 unique Ontario host organizations. IMPORTANT CAVEAT: several records carry visible 2019-2020 program dates in their `description` field (e.g. 'Oct 7 - Dec 6, 2019'), so this looks like a locations dataset that has not been fully refreshed since then; treat as 'Jr. NBA-affiliated host orgs on file', not confirmed currently-active programs, and expect some closures/renames since 2020 (e.g. a few entries have obvious address typos like 'Oakvilletario', 'Midlan' for Midland -- vendor data quality issue, not our parsing). All entries are program HOSTS (community centres, YMCAs, existing clubs, municipalities) running a licensed Jr. NBA program, not standalone new clubs -- flagging as a parent-program (Jr. NBA Canada) -> local host-org relationship. Two Toronto Region orgs (Over Seas Basketball Association) run two separate physical locations under one org. Full raw parse saved to docs/research/raw/ontario-research-jrnba-parsed.json."
+    },
+    {
+      "name": "EOBA Competitive Season (via TeamSnap Tournaments)",
+      "url": "https://eobahoops.com/2025-26-competitive-season",
+      "render_method": "playwright + direct API",
+      "access": "public",
+      "clubs_found": 31,
+      "clubs": [
+        {
+          "name": "Brockville Blazers",
+          "city": "Brockville",
+          "league": "EOBA Competitive Season 2025-26",
+          "evidence_url": "https://tournaments-api.teamsnap.com/public/events/45924/participants",
+          "notes": "Confirmed both by EOBA's own club-rep list (eobahoops.com/about, rep Taryn Vickery) and literal TeamSnap team names ('Brockville Blazers', 'Brockville Blazers U10/U13G/U14B/U14G/U19G', 'Brockville - Hughes/Sherstone')."
+        },
+        {
+          "name": "Ottawa Shooting Stars",
+          "city": "Ottawa",
+          "league": "EOBA Competitive Season 2025-26",
+          "evidence_url": "https://eobahoops.com/about",
+          "notes": "Named directly on EOBA's official club-rep list (rep Chris Grubb). The 'OSS' prefix seen on ~24 TeamSnap competitive teams (OSS - Antoun, OSS - Beaton, OSS Selects, etc.) is very likely this club (initials match exactly) but that is INFERRED, not verbatim-confirmed -- no team is literally named 'Shooting Stars' in the TeamSnap data. A prior census pass had merged this with OSBA as one entry ('Ottawa South Basketball Association (OSBA/OSS)'); this run's evidence suggests OSS and OSBA are two separate EOBA member clubs (see OSBA entry) and that merge should be revisited."
+        },
+        {
+          "name": "Nepean Blue Devils",
+          "city": "Nepean (Ottawa)",
+          "league": "EOBA Competitive Season 2025-26",
+          "evidence_url": "https://tournaments-api.teamsnap.com/public/events/45924/participants",
+          "notes": "Confirmed literally as a TeamSnap team name ('Nepean Blue Devils', 'Nepean Blue Devils U14 - Gallant') plus many 'Nepean - <coach>' teams and EOBA rep list (Brenda Highmore)."
+        },
+        {
+          "name": "Cornwall Lions",
+          "city": "Cornwall",
+          "league": "EOBA Competitive Season 2025-26",
+          "evidence_url": "https://tournaments-api.teamsnap.com/public/events/45924/participants",
+          "notes": "EOBA rep list has plain 'Cornwall' (Perley Lewis); TeamSnap team names spell out the full club brand: 'U12 Cornwall Lions - Bharti', 'U14 Cornwall Lions - Hickey', 'U16 Cornwall Lions - Casselman', 'U19 Cornwall Lions - Andre/Duff'."
+        },
+        {
+          "name": "Upper Valley Basketball Association",
+          "city": "Upper Ottawa Valley (Renfrew County)",
+          "league": "EOBA Competitive Season 2025-26",
+          "evidence_url": "https://tournaments-api.teamsnap.com/public/events/45924/participants",
+          "notes": "Team brand 'River Dogs'. Confirmed literally: 'Upper Valley Basketball Association River Dogs', 'UVBA River Dogs', 'Upper Valley River Dogs', plain 'River Dogs'. EOBA rep: Deryk Ryan."
+        },
+        {
+          "name": "Kingston Impact",
+          "city": "Kingston",
+          "league": "EOBA Competitive Season 2025-26",
+          "evidence_url": "https://tournaments-api.teamsnap.com/public/events/45924/participants",
+          "notes": "Confirmed literally ('Kingston Impact U11/U12/U14/U16', 'Kingston Impact - McMillan', 'U13 Kingston Impact - Hunter') plus already known from prior independent research (kingstonimpact.ca). EOBA rep: Suche James."
+        },
+        {
+          "name": "Boys and Girls Club of Ottawa (BGCO)",
+          "city": "Ottawa",
+          "league": "EOBA Competitive Season 2025-26",
+          "evidence_url": "https://tournaments-api.teamsnap.com/public/events/45924/participants",
+          "notes": "EOBA rep list gives only the abbreviation 'BGCO' (rep Kian Nejad); full-name expansion to 'Boys and Girls Club of Ottawa' is INFERRED from the initials, not verbatim-confirmed anywhere. Team brand 'Thunderbolts' appears literally: 'BGC Thunderbolts', 'BGC Thunderbolts (Moved)'."
+        },
+        {
+          "name": "PRBC",
+          "city": "unconfirmed (possibly Prescott-Russell area)",
+          "league": "EOBA Competitive Season 2025-26",
+          "evidence_url": "https://eobahoops.com/about",
+          "notes": "EOBA rep list names only the abbreviation 'PRBC' (rep Murray Shoup) -- EOBA never spells out the full name itself. A prior census pass guessed 'Prescott-Russell Basketball Club' but that remains an unconfirmed guess, not verified on any club-owned page. TeamSnap teams: 'PRBC', 'PRBC (Moved to AA)', 'PRBC - Lavergne', 'PRBC - Woods'."
+        },
+        {
+          "name": "Gloucester Cumberland Basketball Association (GCBA)",
+          "city": "Gloucester-Cumberland (Ottawa)",
+          "league": "EOBA Competitive Season 2025-26",
+          "evidence_url": "https://tournaments-api.teamsnap.com/public/events/45924/participants",
+          "notes": "Team brand 'Wolverines'. Confirmed via independent prior research (gcba.ca) plus many literal TeamSnap teams: 'GCBA Wolverines', 'GCBA Wolverines U11B/U12G/U14B/U16B/U16G/U17G/U19G', 'GCBA - Dimbongi/Harper/Linseman', 'GCBA Selects'. EOBA rep: Richard Provencher."
+        },
+        {
+          "name": "WOBA",
+          "city": "West Ottawa",
+          "league": "EOBA Competitive Season 2025-26",
+          "evidence_url": "https://tournaments-api.teamsnap.com/public/events/45924/participants",
+          "notes": "EOBA rep list names only the abbreviation 'WOBA' (rep Dan Case), never spelled out by EOBA itself. Team brand appears to be 'West Ottawa Hornets', which shows up as literal separate team names too ('WEST OTTAWA HORNETS', 'West Ottawa Hornets', 'West Ottawa Hornets (Moved)', 'U14 West Ottawa Hornets'), alongside 'WOBA - Kiesewalter/Milosek/Navarro/Peeters/Siolek' and 'WOBA U17'. 'West Ottawa Basketball Association' is a plausible full-name expansion but is INFERRED from initials, not verbatim-confirmed."
+        },
+        {
+          "name": "OSBA (Ottawa South Basketball Association)",
+          "city": "Ottawa South",
+          "league": "EOBA Competitive Season 2025-26",
+          "evidence_url": "https://tournaments-api.teamsnap.com/public/events/45924/participants",
+          "notes": "EOBA rep list names only 'OSBA' (rep Geoff Crampton). Full name 'Ottawa South Basketball Association' comes from independent prior research (ottawasouthbasketball.ca), not from EOBA's own materials. TeamSnap teams: 'OSBA - Cornell/Cournoyer/Dotten/Fraser/Harvey/Jan/Kacew/Kelly/McLaren/Migicovsky/Mills/Tolmie' (12 teams) -- see Ottawa Shooting Stars entry re: possible prior conflation with the separate 'OSS' abbreviation."
+        },
+        {
+          "name": "ONL",
+          "city": "unconfirmed",
+          "league": "EOBA Competitive Season 2025-26",
+          "evidence_url": "https://tournaments-api.teamsnap.com/public/events/45924/participants",
+          "notes": "EOBA rep list names only 'ONL' (rep Ratko Kovacina), never expanded. Large club by team count: 'ONL - Ahinful/El-Sidani/Misic/Pierre' plus 'ONL U10 Boys - Porter', 'ONL U11 Boys - Shideh', 'ONL U11 Girls - Nguyen', 'ONL U12 Boys AA - Adamov', 'ONL U12 Girls - Dey', 'ONL U13 AAA Girls - Fleming', 'ONL U13AA Girls - Kirk-Brez', 'ONL U14 Boys AAA - Kanji', 'ONL U14 Boys Ferguson/Kilfoyl', 'ONL U14 Girls - Dobbin', 'ONL U16 Boys AAA - Clarke', 'ONL U16 Girls - Haig' (14 teams). Full name genuinely unconfirmed -- not invented."
+        },
+        {
+          "name": "Kemptville",
+          "city": "Kemptville",
+          "league": "EOBA Competitive Season 2025-26",
+          "evidence_url": "https://tournaments-api.teamsnap.com/public/events/45924/participants",
+          "notes": "Team brand 'Warriors Elite' ('Kemptville Warriors Elite'), plus 'Kemptville', 'Kemptville (Moved to A)', 'Kemptville - Wink'. EOBA rep: Dennis Brookson."
+        },
+        {
+          "name": "County Clippers",
+          "city": "unconfirmed (Eli Carlone, rep)",
+          "league": "EOBA Competitive Season 2025-26",
+          "evidence_url": "https://tournaments-api.teamsnap.com/public/events/45924/participants",
+          "notes": "EOBA rep list names only 'Clippers'; TeamSnap spells out the fuller brand 'County Clippers' literally. Exact home city/county not confirmed by any source seen (possibly Quinte/Prince Edward County area given the 'County' branding, but that is speculation, not confirmed)."
+        },
+        {
+          "name": "Naismith Basketball Association",
+          "city": "unconfirmed (possibly Almonte/Lanark area)",
+          "league": "EOBA Competitive Season 2025-26",
+          "evidence_url": "https://tournaments-api.teamsnap.com/public/events/45924/participants",
+          "notes": "EOBA rep list names only 'Naismith' (rep Trever Hill). TeamSnap teams: 'Naismith', 'Naismith (Moved to AA)', 'Naismith - Barr/Hill/McGinnis/Semenchuk', 'Naismith Selects'. Location remains unconfirmed (a prior census pass guessed Almonte/Lanark based on the James Naismith connection to that area, but this is not verified)."
+        },
+        {
+          "name": "Belleville Spirits",
+          "city": "Belleville",
+          "league": "EOBA Competitive Season 2025-26",
+          "evidence_url": "https://tournaments-api.teamsnap.com/public/events/45924/participants",
+          "notes": "UPGRADE over prior census, which only had the bare unconfirmed name 'Belleville'. TeamSnap literally names the full club brand: 'Belleville Spirits', 'Belleville Spirits - Bassett-Spiere', plus 'Belleville - DeVries/Michell', 'Belleville - de Vries (Moved to AAA)', 'Belleville (Moved to AA)'. EOBA rep: Geordie Michell."
+        },
+        {
+          "name": "Intore Canada Basketball Academy (ICBA)",
+          "city": "Gatineau, QC / Ottawa (cross-border)",
+          "league": "EOBA Competitive Season 2025-26",
+          "evidence_url": "https://en.icbateam.com/",
+          "notes": "Full name already confirmed in prior independent research (en.icbateam.com, federal corporate registry). Not on EOBA's 16-name rep list but present as a competitive-season club: 'ICBA', 'ICBA (Moved to AA)', 'ICBA - Goulet/Okoumba', 'ICBA U10 Boys - Hevey', 'ICBA U11 Boys - Goulet', 'ICBA U13 Boys - Cisse'."
+        },
+        {
+          "name": "Kanata Selects",
+          "city": "Kanata (Ottawa)",
+          "league": "EOBA Competitive Season 2025-26",
+          "evidence_url": "https://tournaments-api.teamsnap.com/public/events/45924/participants",
+          "notes": "NEW club not present in prior census. Parent org name inferred as a Kanata-area basketball association (place name 'Kanata' = Ottawa's west-end community); TeamSnap brand is 'Kanata Selects' -- 'Kanata Selects - Donohue/Gilroy/Mosgrove/Naish/Premachuk/Robin', plus 'Kanata - Lei/Mahomed' (8 teams, one of the larger clubs in the dataset)."
+        },
+        {
+          "name": "Dragons de Gatineau",
+          "city": "Gatineau, QC (cross-border)",
+          "league": "EOBA Competitive Season 2025-26",
+          "evidence_url": "https://tournaments-api.teamsnap.com/public/events/45924/participants",
+          "notes": "NEW French-named Quebec-side club, not in prior census. Teams: 'Dragons de Gatineau U12M', 'Dragons de Gatineau U13M', 'U12F Dragons de Gatineau', 'U13F Dragons de Gatineau'."
+        },
+        {
+          "name": "Arsenal Nouvelles Frontieres",
+          "city": "Gatineau/Outaouais, QC (cross-border, inferred)",
+          "league": "EOBA Competitive Season 2025-26",
+          "evidence_url": "https://tournaments-api.teamsnap.com/public/events/45924/participants",
+          "notes": "NEW club, single team literally named 'Arsenal Nouvelles Fronti\u00e8res' -- French name suggests Outaouais/Gatineau side of the river, same as Dragons de Gatineau and Phenix, but this is inferred from the name only, not independently verified."
+        },
+        {
+          "name": "Phenix",
+          "city": "Gatineau/Outaouais, QC (cross-border, inferred)",
+          "league": "EOBA Competitive Season 2025-26",
+          "evidence_url": "https://tournaments-api.teamsnap.com/public/events/45924/participants",
+          "notes": "NEW French-named club. Teams: 'Phenix (Moved to A)', 'Phenix - Lalonde', 'Phenix Cadet D1' (accented as 'Ph\u00e9nix' in the raw team-name string)."
+        },
+        {
+          "name": "FO3",
+          "city": "unconfirmed",
+          "league": "EOBA Competitive Season 2025-26",
+          "evidence_url": "https://tournaments-api.teamsnap.com/public/events/45924/participants",
+          "notes": "NEW abbreviation, full name and city genuinely unconfirmed. Teams: 'FO3 U12', 'FO3 U13', 'FO3 U15 2025-2026'."
+        },
+        {
+          "name": "KIBC",
+          "city": "unconfirmed (possibly Kanata area)",
+          "league": "EOBA Competitive Season 2025-26",
+          "evidence_url": "https://tournaments-api.teamsnap.com/public/events/45924/participants",
+          "notes": "NEW abbreviation, single team 'KIBC U14 boys Fisher Dowker'. Full name unconfirmed -- NOT the same bucket as 'Kanata Selects' since both abbreviations appear as distinct prefixes in the same dataset; any connection is speculative only."
+        },
+        {
+          "name": "Ottawa Elite",
+          "city": "Ottawa",
+          "league": "EOBA Competitive Season 2025-26",
+          "evidence_url": "https://tournaments-api.teamsnap.com/public/events/45924/participants",
+          "notes": "NEW club, not in prior census or EOBA's rep list. Teams: 'Ottawa Elite Semerjian', 'Ottawa Elite U13 boys'."
+        },
+        {
+          "name": "Rising Stars",
+          "city": "unconfirmed",
+          "league": "EOBA Competitive Season 2025-26",
+          "evidence_url": "https://tournaments-api.teamsnap.com/public/events/45924/participants",
+          "notes": "NEW, city/full org name unconfirmed. Teams: 'Rising Stars - Al Hussaini/Cooper/Cressman/Lairson' (4 teams)."
+        },
+        {
+          "name": "Rockets",
+          "city": "unconfirmed",
+          "league": "EOBA Competitive Season 2025-26",
+          "evidence_url": "https://tournaments-api.teamsnap.com/public/events/45924/participants",
+          "notes": "NEW, parent club name and city unconfirmed -- 'Rockets' may itself be a partial/branded name. Teams: 'Rockets U10 Boys', 'Rockets U16 Boys', 'Rockets U19 Boys'."
+        },
+        {
+          "name": "Capital X-Men",
+          "city": "Ottawa (Capital region, inferred)",
+          "league": "EOBA Competitive Season 2025-26",
+          "evidence_url": "https://tournaments-api.teamsnap.com/public/events/45924/participants",
+          "notes": "NEW. Teams: 'Capital X-Men', 'X-Men'. 'Capital' commonly refers to the Ottawa/National Capital Region in this dataset's other venue naming, but that connection is inferred, not confirmed."
+        },
+        {
+          "name": "Arnprior",
+          "city": "Arnprior",
+          "league": "EOBA Competitive Season 2025-26",
+          "evidence_url": "https://tournaments-api.teamsnap.com/public/events/45924/participants",
+          "notes": "NEW. Single team literally named 'Arnprior' (a town in Renfrew County); unclear if there is a distinctly branded club name beyond the town name."
+        },
+        {
+          "name": "Overcomers",
+          "city": "unconfirmed",
+          "league": "EOBA Competitive Season 2025-26",
+          "evidence_url": "https://tournaments-api.teamsnap.com/public/events/45924/participants",
+          "notes": "NEW, single team 'Overcomers'; could plausibly be a faith-based or house/rec program rather than a full multi-team club -- flagged as uncertain."
+        },
+        {
+          "name": "NBD G-Elite",
+          "city": "unconfirmed",
+          "league": "EOBA Competitive Season 2025-26",
+          "evidence_url": "https://tournaments-api.teamsnap.com/public/events/45924/participants",
+          "notes": "NEW, single team 'U19 NBD G-Elite - Bains'. 'G-Elite' is Ontario Basketball's own girls-elite program branding (seen separately on basketball.on.ca's nav), so this team may represent an OBA G-Elite program team fielded through an 'NBD'-abbreviated club rather than a standalone EOBA member club -- flagged as uncertain, not a confirmed club."
+        },
+        {
+          "name": "Mini-Espoirs",
+          "city": "Gatineau/Outaouais, QC (cross-border, inferred)",
+          "league": "EOBA Competitive Season 2025-26",
+          "evidence_url": "https://tournaments-api.teamsnap.com/public/events/45924/participants",
+          "notes": "NEW. 'Espoirs' (French for 'hopefuls/prospects') is a common Quebec youth-basketball program term; teams 'Mini-Espoirs F' and 'Mini-espoirs M - Hensley' are likely a feeder/mini program tied to one of the Gatineau-side clubs (Dragons de Gatineau / Phenix) rather than an independent club -- flagged as a program, not confirmed as its own club."
+        }
+      ],
+      "notes": "eobahoops.com (WordPress) itself only publishes a partial 16-name club-representative list on /about (unchanged from prior census). The actual competitive-season standings/rosters live on a TeamSnap Tournaments micro-site linked from eobahoops.com/2025-26-competitive-season: https://events.teamsnap.com/events/45924/results/division. That page IS JS-rendered (an empty 'select a division' shell client-side) but is NOT gated -- rendering it in Playwright surfaced its backing REST API at https://tournaments-api.teamsnap.com/public/events/45924/... . Direct curl to that API gets a Cloudflare 403 UNLESS an Origin: https://events.teamsnap.com and matching Referer header are sent (no cookies/auth/session needed) -- once those two headers are set, plain curl gets a clean 200 with full JSON, no browser required for repeat pulls. Pulled /divisions (33 divisions), /venues (venue list), and critically /participants?lastUpdate=0&updatesOnly=1 (270 rows, one per team-in-division, each with a nested team.name) for the full 2025-26 Eastern Ontario Competitive Season roster. Team names on TeamSnap are inconsistently formatted -- sometimes 'ClubAbbrev - CoachLastName' (e.g. 'OSS - Antoun'), sometimes 'Full Club Brand U## Group - Coach' (e.g. 'Brockville Blazers U14 Boys - Tierney'), sometimes just a bare club/brand token. Deduplicated the 270 team rows down to the ~31 club/brand buckets above by grouping on the shared prefix token; cross-referenced every abbreviation against EOBA's own /about rep list (16 named clubs) and against this repo's existing docs/research/consolidated/clubs-consolidated.csv (independent prior research) wherever possible. Notable finding: this run's evidence indicates 'OSS' and 'OSBA' are likely TWO SEPARATE EOBA member clubs (Ottawa Shooting Stars vs. Ottawa South Basketball Association), whereas a prior census entry had merged them into one club record -- flagged for re-verification, not silently corrected. About half the clubs above (Kanata Selects, Dragons de Gatineau, Arsenal Nouvelles Frontieres, Phenix, FO3, KIBC, Ottawa Elite, Rising Stars, Rockets, Capital X-Men, Arnprior, Overcomers, NBD G-Elite, Mini-Espoirs, plus ICBA which was already independently known) are NOT on EOBA's own /about page at all and were not in the prior 16-club count -- bringing the total distinct club/brand buckets observed to roughly 31, close to EOBA's stated '30 member clubs, spanning from Belleville to Gatineau'. Some of the smaller one-team buckets (Overcomers, NBD G-Elite, Rockets, Arnprior, Capital X-Men) may be single associate/guest teams rather than full standalone clubs -- flagged as uncertain rather than asserted. No login, CAPTCHA, or bot-challenge was bypassed; this is a public read-only sports-league results API."
+    },
+    {
+      "name": "Hoop City Basketball League (Spring/Summer 2026)",
+      "url": "https://www.tourneymachine.com/R180786",
+      "render_method": "playwright",
+      "access": "public",
+      "clubs_found": 32,
+      "clubs": [
+        {
+          "name": "YAAACE",
+          "city": "Toronto (unconfirmed exact home gym)",
+          "league": "Hoop City Basketball Spring/Summer League 2026",
+          "evidence_url": "https://www.tourneymachine.com/Public/Results/Division.aspx?IDTournament=h2026050420140144611ffbead9d704f&IDDivision=h202605042014014475d82cfbbd1f848",
+          "notes": "Cross-confirmed: same club already appears in the separate OBA Find-a-Club KML export (Toronto Region). Fields teams at U10/U11/U14 in this league."
+        },
+        {
+          "name": "Iconic",
+          "city": "unconfirmed",
+          "league": "Hoop City Basketball Spring/Summer League 2026",
+          "evidence_url": "https://www.tourneymachine.com/Public/Results/Division.aspx?IDTournament=h2026050420140144611ffbead9d704f&IDDivision=h202605042014014475d82cfbbd1f848",
+          "notes": "Teams at U10/U13/U14. Full org name (e.g. 'Iconic Basketball Academy') not confirmed, only the short brand 'Iconic' appears."
+        },
+        {
+          "name": "HG Elite",
+          "city": "unconfirmed",
+          "league": "Hoop City Basketball Spring/Summer League 2026",
+          "evidence_url": "https://www.tourneymachine.com/Public/Results/Division.aspx?IDTournament=h2026050420140144611ffbead9d704f&IDDivision=h202605042014014475d82cfbbd1f848",
+          "notes": "Teams at U10/U11."
+        },
+        {
+          "name": "GBA",
+          "city": "unconfirmed",
+          "league": "Hoop City Basketball Spring/Summer League 2026",
+          "evidence_url": "https://www.tourneymachine.com/Public/Results/Division.aspx?IDTournament=h2026050420140144611ffbead9d704f&IDDivision=h2026050420265458173b5630c76694d",
+          "notes": "By far the largest single club/brand in this league: fields a separate 'GBA <coach first name>' team in nearly every age division (Felix, Richard/Tricia, Ken, Teran/Teran B/Teran Blue, Junior/Ryan, Arthur, Mina, Wayne, David, Henry, Justin, Mark, Jaime, Clive -- 14+ teams U10 through U16). Full name behind the 'GBA' abbreviation is NOT confirmed anywhere in this data or on tourneymachine.com -- not invented; flagged as the single highest-value follow-up (likely one of the GTA's largest grassroots programs by team count)."
+        },
+        {
+          "name": "Oakville Anchors",
+          "city": "Oakville",
+          "league": "Hoop City Basketball Spring/Summer League 2026",
+          "evidence_url": "https://www.tourneymachine.com/Public/Results/Division.aspx?IDTournament=h2026050420140144611ffbead9d704f&IDDivision=h202605042014014475d82cfbbd1f848",
+          "notes": "U10 team; city inferred directly from the club's own name."
+        },
+        {
+          "name": "DCBA",
+          "city": "unconfirmed",
+          "league": "Hoop City Basketball Spring/Summer League 2026",
+          "evidence_url": "https://www.tourneymachine.com/Public/Results/Division.aspx?IDTournament=h2026050420140144611ffbead9d704f&IDDivision=h20260504201401447c2c1c1ac773c47",
+          "notes": "Single U11 team. Abbreviation not expanded anywhere seen (possibly 'Durham Christian Basketball Academy' -- unverified guess, not asserted)."
+        },
+        {
+          "name": "Breakthrough",
+          "city": "unconfirmed",
+          "league": "Hoop City Basketball Spring/Summer League 2026",
+          "evidence_url": "https://www.tourneymachine.com/Public/Results/Division.aspx?IDTournament=h2026050420140144611ffbead9d704f&IDDivision=h20260504201401447c2c1c1ac773c47",
+          "notes": "Teams at U11/U12/U14, likely 'Breakthrough Elite/Basketball' abbreviated -- full name not confirmed."
+        },
+        {
+          "name": "Dream Chaserzzz Academy",
+          "city": "unconfirmed",
+          "league": "Hoop City Basketball Spring/Summer League 2026",
+          "evidence_url": "https://www.tourneymachine.com/Public/Results/Division.aspx?IDTournament=h2026050420140144611ffbead9d704f&IDDivision=h2026050420265458173b5630c76694d",
+          "notes": "Teams at U12/U14/U16, sometimes listed as bare 'Dream Chaserzzz' and sometimes 'Dream Chaserzzz Academy' -- same club."
+        },
+        {
+          "name": "Top Tier",
+          "city": "unconfirmed",
+          "league": "Hoop City Basketball Spring/Summer League 2026",
+          "evidence_url": "https://www.tourneymachine.com/Public/Results/Division.aspx?IDTournament=h2026050420140144611ffbead9d704f&IDDivision=h2026050420265458173b5630c76694d",
+          "notes": "Teams at U12/U13."
+        },
+        {
+          "name": "Union Elite",
+          "city": "unconfirmed",
+          "league": "Hoop City Basketball Spring/Summer League 2026",
+          "evidence_url": "https://www.tourneymachine.com/Public/Results/Division.aspx?IDTournament=h2026050420140144611ffbead9d704f&IDDivision=h2026050420265458173b5630c76694d",
+          "notes": "Teams at U12/U13."
+        },
+        {
+          "name": "Red Dot",
+          "city": "unconfirmed",
+          "league": "Hoop City Basketball Spring/Summer League 2026",
+          "evidence_url": "https://www.tourneymachine.com/Public/Results/Division.aspx?IDTournament=h2026050420140144611ffbead9d704f&IDDivision=h2026050420265458173b5630c76694d",
+          "notes": "U12 team only."
+        },
+        {
+          "name": "ACABA Elite",
+          "city": "unconfirmed",
+          "league": "Hoop City Basketball Spring/Summer League 2026",
+          "evidence_url": "https://www.tourneymachine.com/Public/Results/Division.aspx?IDTournament=h2026050420140144611ffbead9d704f&IDDivision=h20260504202722623476147c4478545",
+          "notes": "U13 team only; abbreviation not expanded anywhere seen -- not invented."
+        },
+        {
+          "name": "Canada Elite",
+          "city": "Toronto (Milton, per prior OBA KML record)",
+          "league": "Hoop City Basketball Spring/Summer League 2026",
+          "evidence_url": "https://www.tourneymachine.com/Public/Results/Division.aspx?IDTournament=h2026050420140144611ffbead9d704f&IDDivision=h20260504202722623476147c4478545",
+          "notes": "Fields a team branded 'Canada Elite Black' (U13) -- 'Black' is almost certainly an internal team-color designation within a larger club, same club already known from the OBA Find-a-Club KML export (Toronto Region, canelite.ca)."
+        },
+        {
+          "name": "Disturbance Elite",
+          "city": "unconfirmed",
+          "league": "Hoop City Basketball Spring/Summer League 2026",
+          "evidence_url": "https://www.tourneymachine.com/Public/Results/Division.aspx?IDTournament=h2026050420140144611ffbead9d704f&IDDivision=h20260504202722623476147c4478545",
+          "notes": "Teams at U13 and a combined 'U13/14' division."
+        },
+        {
+          "name": "Royal City",
+          "city": "Guelph (inferred -- Guelph's nickname is 'The Royal City')",
+          "league": "Hoop City Basketball Spring/Summer League 2026",
+          "evidence_url": "https://www.tourneymachine.com/Public/Results/Division.aspx?IDTournament=h2026050420140144611ffbead9d704f&IDDivision=h20260504202722623476147c4478545",
+          "notes": "U13 team; city inference from the nickname is plausible but not independently verified."
+        },
+        {
+          "name": "V3 Basketball",
+          "city": "unconfirmed",
+          "league": "Hoop City Basketball Spring/Summer League 2026",
+          "evidence_url": "https://www.tourneymachine.com/Public/Results/Division.aspx?IDTournament=h2026050420140144611ffbead9d704f&IDDivision=h20260504202722623476147c4478545",
+          "notes": "CONFIRMS one of the task's 3 previously-known Hoop City clubs. Teams at U13 (bare 'V3'), U15, and U16."
+        },
+        {
+          "name": "Ball4Life",
+          "city": "unconfirmed",
+          "league": "Hoop City Basketball Spring/Summer League 2026",
+          "evidence_url": "https://www.tourneymachine.com/Public/Results/Division.aspx?IDTournament=h2026050420140144611ffbead9d704f&IDDivision=h20260504202749080773e76e4521443",
+          "notes": "U14 team only."
+        },
+        {
+          "name": "Brother Pack",
+          "city": "unconfirmed",
+          "league": "Hoop City Basketball Spring/Summer League 2026",
+          "evidence_url": "https://www.tourneymachine.com/Public/Results/Division.aspx?IDTournament=h2026050420140144611ffbead9d704f&IDDivision=h20260504202749080773e76e4521443",
+          "notes": "U14 team only."
+        },
+        {
+          "name": "City Above Elite",
+          "city": "unconfirmed",
+          "league": "Hoop City Basketball Spring/Summer League 2026",
+          "evidence_url": "https://www.tourneymachine.com/Public/Results/Division.aspx?IDTournament=h2026050420140144611ffbead9d704f&IDDivision=h20260504202749080773e76e4521443",
+          "notes": "U14 team only."
+        },
+        {
+          "name": "K9",
+          "city": "unconfirmed",
+          "league": "Hoop City Basketball Spring/Summer League 2026",
+          "evidence_url": "https://www.tourneymachine.com/Public/Results/Division.aspx?IDTournament=h2026050420140144611ffbead9d704f&IDDivision=h20260504202749080773e76e4521443",
+          "notes": "U14 team only."
+        },
+        {
+          "name": "Next Man Up",
+          "city": "unconfirmed",
+          "league": "Hoop City Basketball Spring/Summer League 2026",
+          "evidence_url": "https://www.tourneymachine.com/Public/Results/Division.aspx?IDTournament=h2026050420140144611ffbead9d704f&IDDivision=h20260504202749080773e76e4521443",
+          "notes": "Teams at U14 and U16."
+        },
+        {
+          "name": "Nexus Wolves",
+          "city": "unconfirmed",
+          "league": "Hoop City Basketball Spring/Summer League 2026",
+          "evidence_url": "https://www.tourneymachine.com/Public/Results/Division.aspx?IDTournament=h2026050420140144611ffbead9d704f&IDDivision=h20260504202749080773e76e4521443",
+          "notes": "Teams at U14, U15, U16, plus a combined 'U15/16' division."
+        },
+        {
+          "name": "Tru Balance",
+          "city": "unconfirmed",
+          "league": "Hoop City Basketball Spring/Summer League 2026",
+          "evidence_url": "https://www.tourneymachine.com/Public/Results/Division.aspx?IDTournament=h2026050420140144611ffbead9d704f&IDDivision=h20260504202749080773e76e4521443",
+          "notes": "U14 team only."
+        },
+        {
+          "name": "Hounds Elite",
+          "city": "unconfirmed",
+          "league": "Hoop City Basketball Spring/Summer League 2026",
+          "evidence_url": "https://www.tourneymachine.com/Public/Results/Division.aspx?IDTournament=h2026050420140144611ffbead9d704f&IDDivision=h20260504202749080773e76e4521443",
+          "notes": "Teams at U14 (listed both as 'Hounds Elite' and 'HoundsElite', same club) and U16."
+        },
+        {
+          "name": "B-Elite",
+          "city": "unconfirmed",
+          "league": "Hoop City Basketball Spring/Summer League 2026",
+          "evidence_url": "https://www.tourneymachine.com/Public/Results/Division.aspx?IDTournament=h2026050420140144611ffbead9d704f&IDDivision=h20260504202814994b8c4103221484a",
+          "notes": "U15 team only."
+        },
+        {
+          "name": "Gators Elite",
+          "city": "unconfirmed",
+          "league": "Hoop City Basketball Spring/Summer League 2026",
+          "evidence_url": "https://www.tourneymachine.com/Public/Results/Division.aspx?IDTournament=h2026050420140144611ffbead9d704f&IDDivision=h20260504202814994b8c4103221484a",
+          "notes": "CONFIRMS one of the task's 3 previously-known Hoop City clubs ('Gators'). Teams at U15 and U16."
+        },
+        {
+          "name": "Jaxx City Elite",
+          "city": "unconfirmed",
+          "league": "Hoop City Basketball Spring/Summer League 2026",
+          "evidence_url": "https://www.tourneymachine.com/Public/Results/Division.aspx?IDTournament=h2026050420140144611ffbead9d704f&IDDivision=h20260504202814994b8c4103221484a",
+          "notes": "U15 team only."
+        },
+        {
+          "name": "RWI",
+          "city": "unconfirmed",
+          "league": "Hoop City Basketball Spring/Summer League 2026",
+          "evidence_url": "https://www.tourneymachine.com/Public/Results/Division.aspx?IDTournament=h2026050420140144611ffbead9d704f&IDDivision=h20260504202814994b8c4103221484a",
+          "notes": "U15 team only, abbreviation not expanded anywhere seen."
+        },
+        {
+          "name": "Time 2 Hoop",
+          "city": "unconfirmed",
+          "league": "Hoop City Basketball Spring/Summer League 2026",
+          "evidence_url": "https://www.tourneymachine.com/Public/Results/Division.aspx?IDTournament=h2026050420140144611ffbead9d704f&IDDivision=h20260504202814994b8c4103221484a",
+          "notes": "U15 team only."
+        },
+        {
+          "name": "Up North United",
+          "city": "unconfirmed (name suggests Northern Ontario / cottage-country origin)",
+          "league": "Hoop City Basketball Spring/Summer League 2026",
+          "evidence_url": "https://www.tourneymachine.com/Public/Results/Division.aspx?IDTournament=h2026050420140144611ffbead9d704f&IDDivision=h20260504202814994b8c4103221484a",
+          "notes": "Teams at U15 and U16."
+        },
+        {
+          "name": "Downtown Finest",
+          "city": "Toronto",
+          "league": "Hoop City Basketball Spring/Summer League 2026",
+          "evidence_url": "https://www.tourneymachine.com/Public/Results/Division.aspx?IDTournament=h2026050420140144611ffbead9d704f&IDDivision=h202605042029054889c06eabe2d2a48",
+          "notes": "Cross-confirmed: this is the same club as 'Downtown's Finest' already found in the OBA Find-a-Club KML (Toronto Region, downtownsfinest.ca). U16 team."
+        },
+        {
+          "name": "Retro Elite",
+          "city": "unconfirmed",
+          "league": "Hoop City Basketball Spring/Summer League 2026",
+          "evidence_url": "https://www.tourneymachine.com/Public/Results/Division.aspx?IDTournament=h2026050420140144611ffbead9d704f&IDDivision=h202605042029054889c06eabe2d2a48",
+          "notes": "U16 team only."
+        }
+      ],
+      "notes": "The bare R180786 short-link redirects to a SportsEngine/TourneyMachine tournament page (Tournament.aspx?IDTournament=h2026050420140144611ffbead9d704f) which DID return a 403/hang to the scripted fetch mentioned in the task, but rendered fine in Playwright with a real desktop User-Agent string set explicitly (default Playwright UA without a UA override was the likely trigger for the earlier block/timeout -- no login, CAPTCHA, or bot-challenge was ever shown; it just needed a normal browser fingerprint and domcontentloaded instead of networkidle, since the page keeps background ad/analytics connections open indefinitely which makes networkidle time out). The tournament root lists 16 division pages (U10 Boys through U16 Boys plus 8 'Championship Weekend' cross-pool divisions). Each division page server-renders a pool-standings table and a schedule with full team names in plain text/HTML -- no separate API call needed, no auth. Visited all 16 division URLs directly and extracted the standings-table team names, yielding 81 team-in-division rows collapsing to 31 distinct club/brand names (excluding 'TBA'/'TBA 1'/'TBA 2' placeholder slots for teams not yet finalized). This upgrades the task's baseline of 3 known clubs (Gators, V3 Basketball, P13 Academy) substantially -- confirmed 'Gators' as 'Gators Elite' and 'V3 Basketball' as active, but did NOT find 'P13 Academy' registered in this particular 2026 spring/summer season (it may play in a different season/division, or not be currently active here -- flagged, not assumed gone). Three clubs cross-confirm against the separate OBA Find-a-Club Google-My-Maps KML export from a different task in this same sweep: YAAACE, Canada Elite, and Downtown Finest/Downtown's Finest -- good corroboration that both sources are capturing real, currently-active Toronto-area clubs. The standout finding is 'GBA', which fields 14+ separately-coached teams across nearly every age division (by far the largest single program in this league by team count) -- its full name is not spelled out anywhere on tourneymachine.com and was not invented; flagged as the top follow-up target. Separately, hoopcitybasketball.leagueapps.com (the org's own LeagueApps front door) rendered fine too but is just a near-empty shell ('Hoop City Basketball League / LeagueApps / Log In / Home / Leagues & Tournaments' -- 72 characters of text) with no club/team data of its own; all real data lives on the TourneyMachine side. All venues are in the GTA/Durham Region (Etobicoke, Ajax, Whitby, Brampton, Unionville, Caledon, Markham, Thornhill, Oshawa) but these are game-venue addresses, not confirmed club home cities, so per-club city was only filled in where independently inferable (e.g. 'Oakville Anchors' from its own name) or already known from prior research -- everything else is honestly marked unconfirmed rather than guessed."
+    },
+    {
+      "name": "TCBL (Toronto Community Basketball League) / J17 Basketball",
+      "url": "https://www.tcbl.ca/ and https://j17basketball.com/",
+      "render_method": "playwright + direct API",
+      "access": "public",
+      "clubs_found": 1,
+      "clubs": [
+        {
+          "name": "J17 Basketball",
+          "city": "Markham (190 Allstate Pkwy #102, Markham, ON L3R 6H3)",
+          "league": "OBL (Ontario Basketball League) + 'Coalition League'",
+          "evidence_url": "https://j17basketball.com/rep-teams"
+        }
+      ],
+      "notes": "IMPORTANT SCOPE CORRECTION vs. the task's framing: tcbl.ca ('TCBL') is NOT a youth league with a 'J17 Basketball' youth arm in the sense of a multi-club youth directory. Rendered tcbl.ca fully (React app, no gate) -- its own /teams page and backing API (api.tcbl.ca/api/v1/settings/leagueslist) show TCBL is an ADULT recreational pickup/rec basketball league organized into day-of-week leagues (Monday/Tuesday/Wednesday/Thursday/Friday/Saturday/Sunday League, e.g. '2026 Summer Sunday League', 19 skill tiers, 244+ active teams, 3000+ registered players) with joke/pun team names (Malvern, Frieza Force, Sandhurst, 'sexy red's shooters', Osama Bin Pablo, The Hurt Locker, Ankle Broken, Benjeezy B EZ, Fam Goes Ham, Kimchi Adobo, poke, POCKET ROCKETS, etc.) -- these are casual adult rec teams, not youth basketball clubs, and are out of scope for a youth club/team census. Confirmed via the leagueslist API that there is no separate 'J17 Kids' league object anywhere in TCBL's own system. The nav item labelled 'J17 Kids' on tcbl.ca is simply an outbound link to a separate site, https://j17basketball.com/ -- and that site's own footer reads '(c) Toronto Community Basketball League. All Rights Reserved.', confirming J17 Basketball IS operated by the same parent org as TCBL, just under separate branding for the youth side. However, j17basketball.com is a SINGLE basketball facility/club (a training academy in Markham with its own house leagues and 'REP TEAMS'), not a multi-club directory or youth league standings page -- there is no public list of opposing clubs/teams to extract, only J17's own age-group divisions (U9, U10, U11, U12, U13, U14, U15, U17) and program tiers (Little Ballers 5-7, Junior Development 8-10, Skill Builders 11-13, Elite Prep 14-17). J17's rep teams play in 'OBL (Ontario Basketball League)' and a 'Coalition League', plus Ontario Cup or Provincial Championship depending on level -- these are the only cross-references to other real Ontario youth leagues found on the page. No login, CAPTCHA, or bot-challenge encountered on either site; both are plain public marketing/rec-league sites that simply needed real browser rendering (React SPA) rather than a static fetch."
+    },
+    {
+      "name": "Canada Hoops Circuit (Ontario / Central-ON Summit + Nationals)",
+      "url": "https://canadahoopscircuit.ca",
+      "render_method": "playwright",
+      "access": "partial",
+      "clubs_found": 6,
+      "clubs": [
+        {
+          "name": "F.O.R.M. Basketball Academy",
+          "city": "British Columbia (Windsor, ON connection via founder's coaching role)",
+          "league": "Canada Hoops Circuit",
+          "evidence_url": "https://canadahoopscircuit.ca/nationals",
+          "notes": "Founder/CEO Paul Ekeocha is CHC's Chairman of the Board and Regional Director for BC; F.O.R.M. is one of four co-hosts of the CHC Nationals (with CanElite-4QT, Windsor Suns Elite Basketball, ACE Basketball)."
+        },
+        {
+          "name": "CanElite-4QT",
+          "city": "Atlantic Canada (ATL region host)",
+          "league": "Canada Hoops Circuit",
+          "evidence_url": "https://canadahoopscircuit.ca/central-on-hoops-summit",
+          "notes": "Hosted the 2025 ON Hoops Summit (Toronto, ON, April 25-27 2025) despite being the 'ATL' (Atlantic) regional affiliate -- also a co-host of CHC Nationals. Named directly by CHC's own site, not invented."
+        },
+        {
+          "name": "Windsor Suns Elite Basketball",
+          "city": "Windsor",
+          "league": "Canada Hoops Circuit",
+          "evidence_url": "https://canadahoopscircuit.ca/central-on-hoops-summit",
+          "notes": "Hosted the ON Hoops Summit in 2023 and 2024; also a co-host of CHC Nationals."
+        },
+        {
+          "name": "Jr. Lancers Basketball",
+          "city": "Windsor (University of Windsor connection)",
+          "league": "Canada Hoops Circuit",
+          "evidence_url": "https://canadahoopscircuit.ca/central-on-hoops-summit",
+          "notes": "Hosted the ON Hoops Summit in 2022 (predecessor host before Windsor Suns Elite took over)."
+        },
+        {
+          "name": "ACE Basketball",
+          "city": "unconfirmed",
+          "league": "Canada Hoops Circuit",
+          "evidence_url": "https://canadahoopscircuit.ca/nationals",
+          "notes": "Named as one of four co-hosts of CHC Nationals; no city/region given on the site."
+        },
+        {
+          "name": "Golden Ticket Basketball Club",
+          "city": "Saskatchewan (Regina, per 2025 Midwest Summit location)",
+          "league": "Canada Hoops Circuit",
+          "evidence_url": "https://canadahoopscircuit.ca/central-mdwt-hoops-summit",
+          "notes": "Co-hosts the Midwest Hoops Summit (Manitoba/Saskatchewan region); 2025 edition held in Regina, SK."
+        }
+      ],
+      "notes": "canadahoopscircuit.ca rendered fully in Playwright, no gate on the site itself (WordPress/Elementor site, no login/CAPTCHA). Visited the homepage plus every regional summit page (/central-on-hoops-summit = Ontario, /central-mdwt-hoops-summit = Midwest/Prairies, /western-ab-hoops-summit, /western-bc-hoops-summit not needed for this task, /nationals, /board-of-governors, /the-circuit-times). This confirms the operators named in the task (F.O.R.M., CanElite-4QT, Windsor Suns, ACE Basketball) plus one more not in the task list: Golden Ticket Basketball Club (Midwest Summit) and Jr. Lancers Basketball (2022 ON Hoops Summit predecessor host). IMPORTANT LIMITATION: the CHC website itself does NOT publish participating-team rosters or standings for any Summit or Nationals event -- it only has format/division info (Silver U15, Gold U16/U17, Platinum U19, 8 team slots per division per gender) and host-club/sponsor names. The site explicitly states: '2023 and previous years participating teams, standings, all-stars and more can be found on our Instagram page: @canadahoopscircuit'. Checked https://www.instagram.com/canadahoopscircuit/ in Playwright: the profile header (2,498 followers, bio, story-highlight titles like '2026 Nationals', '2025 ON HOOPS', '2024 ATL Hoops') is publicly visible, but Instagram hides the actual post grid (where team names/rosters/standings graphics would be) behind a 'Log In / Sign Up' wall for unauthenticated sessions -- 'Show more posts from canadahoopscircuit' does not expand without an account. This is a genuine login gate, not bypassed per instructions. So: Ontario Hoops Summit team rosters (the actual competing club teams, not the host/operator clubs) are NOT publicly reachable through any avenue tried -- only the six operator/host clubs above were confirmed. 'Toronto Nationals' in the task brief appears to refer to the 2025 CHC National Championships being HELD IN Toronto, ON (July 17-20, 2025), not a team literally named 'Toronto Nationals' -- no such team name was found anywhere on the site."
+    },
+    {
+      "name": "Kingdom Summer League (Toronto)",
+      "url": "https://www.instagram.com/kingdomsummerleague/",
+      "render_method": "playwright + web search",
+      "access": "not_found",
+      "clubs_found": 0,
+      "clubs": [],
+      "notes": "Could not locate a genuine Toronto-based 'Kingdom Summer League' distinct from the Columbus, Ohio league the task explicitly says to exclude -- in fact the exact handle the task gives (Instagram @kingdomsummerleague, 14K followers) IS the Columbus, Ohio league: rendered it plus its linked Threads (threads.com/@kingdomsummerleague) and Facebook (facebook.com/kingdomsummerleague) pages in Playwright, and all three show the same Columbus-area content -- Bruce Thornton (Ohio State Buckeyes all-time scoring leader) as a Kingdom alum, a '3rd annual Kingdom Classic' game night at 'Northside Christian' featuring 'Canal Winchester vs Westland' and 'Columbus Academy vs Northland' (all Columbus, OH-area schools), and 'Committed To My Craft' as 2022/2023/2024 champions. No login wall blocked this -- the profile/page headers and recent public posts are visible without an account; there simply is no Toronto content on this handle. Domain probes for kingdomsummerleague.com and kingdomsummerleague.ca both returned DNS NXDOMAIN (no site exists). Tried 7 plausible alternate Instagram handles for a Toronto-specific account (kingdomsummerleagueto, kingdomleagueto, kingdomsummerleaguetoronto, torontokingdomleague, kingdomhoopsto, kingdomleague_to, thekingdomleague) -- none exist or resolve to an unrelated org (thekingdomleague = a Scottish amateur football association in Fife). Web search for 'Kingdom Summer League Toronto basketball' surfaces only the Columbus, OH league and unrelated 'Kingdom' branded orgs (Kingdom Hoops in the US, Kingdom Sports Center/Kingdom Indoor Sports in Franklin OH, Kingdom Life Basketball Club on the East Coast Basketball League, Kingdom Basketball Club/Dream Big Sports Club). CONCLUSION: either the real Toronto Kingdom Summer League has no public web/social footprint indexable by search engines (plausible for a small local rec/pro-am league), or it goes by a handle/name not guessed here -- reporting as genuinely not found rather than substituting the Columbus league's data, per the task's explicit instruction to exclude it. No login, CAPTCHA, or bot-challenge was encountered or bypassed; this is an honest dead end, not a gate."
+    },
+    {
+      "name": "Toronto Big League",
+      "url": "https://torontobigleague.ca",
+      "render_method": "playwright",
+      "access": "public",
+      "clubs_found": 42,
+      "clubs": [
+        {
+          "name": "Royal Crown",
+          "city": "unconfirmed",
+          "league": "Toronto Big League (JR Prep, SR Prep, JR Rep, SR Rep)",
+          "evidence_url": "https://torontobigleague.ca/standings",
+          "notes": "The single most active program in this league -- fields a team in all FOUR divisions (JR Prep, SR Prep, JR Rep, SR Rep)."
+        },
+        {
+          "name": "Project Excellence",
+          "city": "unconfirmed",
+          "league": "Toronto Big League (all 4 divisions)",
+          "evidence_url": "https://torontobigleague.ca/standings",
+          "notes": "Fields 'Purple' and 'White' teams across all four divisions -- also one of the largest programs in the league by team count (8 total team-entries)."
+        },
+        {
+          "name": "MC Elite",
+          "city": "unconfirmed",
+          "league": "Toronto Big League (JR Prep, SR Prep)",
+          "evidence_url": "https://torontobigleague.ca/standings",
+          "notes": "Bare 'MC Elite' in JR Prep; 'MC Elite Black' and 'MC Elite White' in SR Prep -- same club, colour-coded squads."
+        },
+        {
+          "name": "HQ Prep",
+          "city": "unconfirmed",
+          "league": "Toronto Big League (JR Prep)",
+          "evidence_url": "https://torontobigleague.ca/standings",
+          "notes": "Fields Black/White/Grey teams -- one club, three squads."
+        },
+        {
+          "name": "Top Tier",
+          "city": "unconfirmed",
+          "league": "Toronto Big League (JR Prep)",
+          "evidence_url": "https://torontobigleague.ca/standings",
+          "notes": "Team name 'Top Tier - John' (coach-suffixed, standard pattern seen across other leagues in this sweep)."
+        },
+        {
+          "name": "DHO Prep",
+          "city": "unconfirmed",
+          "league": "Toronto Big League (JR Prep)",
+          "evidence_url": "https://torontobigleague.ca/standings",
+          "notes": ""
+        },
+        {
+          "name": "CODE",
+          "city": "unconfirmed",
+          "league": "Toronto Big League (JR Prep, SR Prep)",
+          "evidence_url": "https://torontobigleague.ca/standings",
+          "notes": "'CODE JV' in JR Prep and 'CODE International' in SR Prep -- likely the same club fielding a developmental and an international-recruit-focused squad."
+        },
+        {
+          "name": "Tru Balance",
+          "city": "unconfirmed",
+          "league": "Toronto Big League (JR Prep, SR Prep)",
+          "evidence_url": "https://torontobigleague.ca/standings",
+          "notes": "'Tru Balance Hoops' (JR Prep) and bare 'Tru Balance' (SR Prep). CROSS-CONFIRMED: same club fields a 'Tru Balance' team in the Hoop City Basketball League (U14) found earlier in this sweep -- real, multi-league-active GTA club."
+        },
+        {
+          "name": "West United",
+          "city": "unconfirmed",
+          "league": "Toronto Big League (JR Prep, SR Prep)",
+          "evidence_url": "https://torontobigleague.ca/standings",
+          "notes": "'West United' (JR Prep) and 'West United Prep' (SR Prep) -- same club."
+        },
+        {
+          "name": "St Judes",
+          "city": "unconfirmed (likely parish/school-affiliated, name suggests a Catholic parish/school team)",
+          "league": "Toronto Big League (JR Prep, SR Prep, JR Rep)",
+          "evidence_url": "https://torontobigleague.ca/standings",
+          "notes": ""
+        },
+        {
+          "name": "CALI Prep",
+          "city": "unconfirmed",
+          "league": "Toronto Big League (SR Prep)",
+          "evidence_url": "https://torontobigleague.ca/standings",
+          "notes": "This is the exact club the task's own instructions used as a worked example (\"'Cali Prep Red' is a team of club 'CALI Prep Academy'\") -- found here as bare 'CALI Prep', confirming this club is real and currently active in this league."
+        },
+        {
+          "name": "Brockville Blazers",
+          "city": "Brockville",
+          "league": "Toronto Big League (SR Prep)",
+          "evidence_url": "https://torontobigleague.ca/standings",
+          "notes": "CROSS-CONFIRMED against the EOBA source found earlier in this same sweep -- same club (Brockville, Eastern Ontario) also travels to play in this Toronto-based prep league, consistent with Toronto Big League's stated mission to serve 'athletes across Ontario', not just the GTA."
+        },
+        {
+          "name": "Victory Prep",
+          "city": "unconfirmed",
+          "league": "Toronto Big League (SR Prep)",
+          "evidence_url": "https://torontobigleague.ca/standings",
+          "notes": ""
+        },
+        {
+          "name": "Tall Pines Academy",
+          "city": "unconfirmed",
+          "league": "Toronto Big League (SR Prep)",
+          "evidence_url": "https://torontobigleague.ca/standings",
+          "notes": "Team listed as 'Tall Pines Academy Varsity'."
+        },
+        {
+          "name": "MBA",
+          "city": "unconfirmed",
+          "league": "Toronto Big League (SR Prep)",
+          "evidence_url": "https://torontobigleague.ca/standings",
+          "notes": "Abbreviation not expanded anywhere seen -- not invented (possibly 'Mississauga Basketball Academy' but that is an unverified guess)."
+        },
+        {
+          "name": "Wiggins Elite",
+          "city": "GTA (Vaughan/Thornhill area, unconfirmed)",
+          "league": "Toronto Big League (SR Prep)",
+          "evidence_url": "https://torontobigleague.ca/standings",
+          "notes": "Name suggests a connection to the well-known Wiggins basketball family (Andrew/Nick Wiggins, from the Vaughan/Thornhill area), but this is not independently verified here -- flagged as plausible, not confirmed."
+        },
+        {
+          "name": "Kainos Basketball Academy",
+          "city": "unconfirmed",
+          "league": "Toronto Big League (SR Prep)",
+          "evidence_url": "https://torontobigleague.ca/standings",
+          "notes": ""
+        },
+        {
+          "name": "Quantum Sports Academy",
+          "city": "unconfirmed",
+          "league": "Toronto Big League (SR Prep)",
+          "evidence_url": "https://torontobigleague.ca/standings",
+          "notes": ""
+        },
+        {
+          "name": "V3 Basketball",
+          "city": "unconfirmed",
+          "league": "Toronto Big League (SR Prep)",
+          "evidence_url": "https://torontobigleague.ca/standings",
+          "notes": "Listed as 'V3 Regional' -- CROSS-CONFIRMED against Hoop City Basketball League (V3 Basketball, one of that task's 3 previously-known clubs), also found active here."
+        },
+        {
+          "name": "CBA Elite",
+          "city": "unconfirmed",
+          "league": "Toronto Big League (JR Rep)",
+          "evidence_url": "https://torontobigleague.ca/standings",
+          "notes": "Abbreviation not expanded. A plausible but UNVERIFIED match: 'Canadian Basketball Academy' (canadianbballacademy.com, Toronto Region) appears in the separate OBA Find-a-Club KML export found earlier in this sweep, whose initials would match 'CBA' -- flagged as a guess, not asserted."
+        },
+        {
+          "name": "Time 2 Hoop",
+          "city": "unconfirmed",
+          "league": "Toronto Big League (JR Rep)",
+          "evidence_url": "https://torontobigleague.ca/standings",
+          "notes": "CROSS-CONFIRMED against Hoop City Basketball League (U15 - Time 2 Hoop), found earlier in this sweep -- real, multi-league-active club."
+        },
+        {
+          "name": "DC United",
+          "city": "unconfirmed",
+          "league": "Toronto Big League (JR Rep)",
+          "evidence_url": "https://torontobigleague.ca/standings",
+          "notes": "Listed as 'DC United - Ben' (coach-suffixed)."
+        },
+        {
+          "name": "Jaxx City Elite",
+          "city": "unconfirmed",
+          "league": "Toronto Big League (JR Rep)",
+          "evidence_url": "https://torontobigleague.ca/standings",
+          "notes": "CROSS-CONFIRMED against Hoop City Basketball League (U15 - Jaxx City Elite), found earlier in this sweep."
+        },
+        {
+          "name": "Eastern Academy",
+          "city": "unconfirmed",
+          "league": "Toronto Big League (JR Rep)",
+          "evidence_url": "https://torontobigleague.ca/standings",
+          "notes": ""
+        },
+        {
+          "name": "East York Basketball",
+          "city": "Toronto (East York)",
+          "league": "Toronto Big League (JR Rep)",
+          "evidence_url": "https://torontobigleague.ca/standings",
+          "notes": "Listed as bare 'East York'. Matches the independently-known club East York Basketball (eastyorkbasketball.com) surfaced via web search earlier in this task -- reasonably confident match given the distinctive place name."
+        },
+        {
+          "name": "JCC Warriors",
+          "city": "unconfirmed (JCC likely = a Jewish Community Centre branch)",
+          "league": "Toronto Big League (JR Rep)",
+          "evidence_url": "https://torontobigleague.ca/standings",
+          "notes": "Not independently verified which JCC; a different JCC (Miles Nadal Jewish Community Centre) appeared in the Jr. NBA Canada source earlier in this sweep, but there is no evidence these are the same branch."
+        },
+        {
+          "name": "FCNS",
+          "city": "unconfirmed",
+          "league": "Toronto Big League (JR Rep)",
+          "evidence_url": "https://torontobigleague.ca/standings",
+          "notes": "Abbreviation not expanded anywhere seen."
+        },
+        {
+          "name": "M&R",
+          "city": "unconfirmed",
+          "league": "Toronto Big League (JR Rep)",
+          "evidence_url": "https://torontobigleague.ca/standings",
+          "notes": "Very short/cryptic team name, likely a small independent or family-run team; not expanded anywhere."
+        },
+        {
+          "name": "JKT Elite",
+          "city": "unconfirmed",
+          "league": "Toronto Big League (JR Rep)",
+          "evidence_url": "https://torontobigleague.ca/standings",
+          "notes": ""
+        },
+        {
+          "name": "OBC",
+          "city": "unconfirmed",
+          "league": "Toronto Big League (JR Rep, SR Rep)",
+          "evidence_url": "https://torontobigleague.ca/standings",
+          "notes": "Large program by team count: 'OBC Leger U16', 'OBC Leger U15' (JR Rep), 'OBC Future U18', 'OBC Antoun U18', 'OBC Hamouche U18' (SR Rep) -- 5 teams, coach-suffixed like GBA (Hoop City) and GCBA/ONL (EOBA) elsewhere in this sweep. Full name not expanded anywhere seen -- not invented."
+        },
+        {
+          "name": "Team Natty",
+          "city": "unconfirmed",
+          "league": "Toronto Big League (JR Rep)",
+          "evidence_url": "https://torontobigleague.ca/standings",
+          "notes": "Possibly named for a specific player rather than a club brand -- unconfirmed."
+        },
+        {
+          "name": "York Region Academy",
+          "city": "York Region",
+          "league": "Toronto Big League (JR Rep)",
+          "evidence_url": "https://torontobigleague.ca/standings",
+          "notes": ""
+        },
+        {
+          "name": "TNT",
+          "city": "unconfirmed",
+          "league": "Toronto Big League (SR Rep)",
+          "evidence_url": "https://torontobigleague.ca/standings",
+          "notes": "Abbreviation not expanded anywhere seen."
+        },
+        {
+          "name": "LOBA",
+          "city": "unconfirmed",
+          "league": "Toronto Big League (SR Rep)",
+          "evidence_url": "https://torontobigleague.ca/standings",
+          "notes": "Abbreviation not expanded anywhere seen."
+        },
+        {
+          "name": "TNP",
+          "city": "unconfirmed",
+          "league": "Toronto Big League (SR Rep)",
+          "evidence_url": "https://torontobigleague.ca/standings",
+          "notes": "Abbreviation not expanded anywhere seen."
+        },
+        {
+          "name": "Eastern Earthquakes",
+          "city": "unconfirmed (Eastern Ontario, inferred from name)",
+          "league": "Toronto Big League (SR Rep)",
+          "evidence_url": "https://torontobigleague.ca/standings",
+          "notes": ""
+        },
+        {
+          "name": "Ottawa Herd Valley",
+          "city": "Ottawa Valley area (inferred from name)",
+          "league": "Toronto Big League (SR Rep)",
+          "evidence_url": "https://torontobigleague.ca/standings",
+          "notes": "Raw team-name string as displayed; possibly a combination of an 'Ottawa Herd' brand and an 'Upper Ottawa Valley' regional descriptor, but not independently confirmed."
+        },
+        {
+          "name": "No Look Dime",
+          "city": "unconfirmed",
+          "league": "Toronto Big League (SR Rep)",
+          "evidence_url": "https://torontobigleague.ca/standings",
+          "notes": ""
+        },
+        {
+          "name": "Malvern Alliance",
+          "city": "Toronto (Malvern, Scarborough)",
+          "league": "Toronto Big League (SR Rep)",
+          "evidence_url": "https://torontobigleague.ca/standings",
+          "notes": "'Malvern' is a Scarborough/Toronto neighbourhood and is also the #1-ranked team by points-per-game on the separate TCBL adult Sunday League found earlier in this sweep -- plausibly the same community basketball brand fielding both an adult rec team and this youth/prep 'Malvern Alliance' squad, though not independently confirmed as identical."
+        },
+        {
+          "name": "Team Seven",
+          "city": "unconfirmed",
+          "league": "Toronto Big League (SR Rep)",
+          "evidence_url": "https://torontobigleague.ca/standings",
+          "notes": ""
+        },
+        {
+          "name": "Who's Next Elite",
+          "city": "unconfirmed",
+          "league": "Toronto Big League (SR Rep)",
+          "evidence_url": "https://torontobigleague.ca/standings",
+          "notes": ""
+        },
+        {
+          "name": "Toronto Wolves",
+          "city": "Toronto",
+          "league": "Toronto Big League (SR Rep)",
+          "evidence_url": "https://torontobigleague.ca/standings",
+          "notes": ""
+        }
+      ],
+      "notes": "MAJOR STATUS CHANGE vs. the task's baseline: torontobigleague.ca is now fully alive and public (previously reported as refusing all connections) -- rendered cleanly in Playwright with a real desktop User-Agent, 200 status, no login/CAPTCHA/bot-challenge anywhere. It's a Vaadin (Java web-framework) single-page app: the root domain shows a splash screen ('WELCOME TO THE BIG LEAGUE / ENTER'), clicking through goes to /home (marketing + 'TBL PREP' pricing: $780/session, 4 games, Adidas Team Pack for early registrants, adidasbasketball-affiliated per its Instagram bio 'EST 2023'). Critically, /standings and /schedule are directly and PUBLICLY reachable without going through /home or logging in (only /home/standings and /home/schedule redirect to a login page -- the bare /standings and /schedule routes do not). The standings page has two top-level tabs (Prep, Rep) each with two sub-tabs (JR/SR), i.e. 4 full divisions, all with live W-L-PF-PA-WPCT tables and full team names -- extracted all 4, dedup'd to 42 distinct club/brand names. The separate basketball.exposureevents.com/221944 link from the task IS confirmed dead (currently a plain 404 'PAGE NOT FOUND' on Exposure Events' own site, consistent with the task's '410 Gone' report -- this integration appears permanently retired in favour of the league's own Vaadin site). Toronto Big League's own About Us page states its mission is 'advancing the landscape of basketball for athletes across Ontario' (not just Toronto), which matches the standings data showing teams as far as Brockville and Ottawa alongside GTA clubs. Strong cross-referencing against other sources in this sweep: Brockville Blazers (EOBA), V3 Basketball/'V3 Regional' + Time 2 Hoop + Jaxx City Elite + Tru Balance (all also in Hoop City Basketball League), CALI Prep (the exact club the TASK ITSELF used as its worked example of club-vs-team naming), and a plausible link between 'Malvern Alliance' here and 'Malvern' (the #1 team on the separate adult TCBL Sunday League). Several large multi-team programs use the same coach-suffix pattern seen elsewhere in this sweep (one club fielding several age/tier squads named after the coach): 'OBC' (5 teams: Leger U16/U15, Future/Antoun/Hamouche U18), 'Project Excellence' (Purple/White across all 4 divisions), 'HQ Prep' (Black/White/Grey), 'MC Elite' (bare/Black/White). A handful of short/cryptic team names (MBA, TNT, LOBA, TNP, FCNS, M&R, JKT Elite, Team Natty) have no expansion available anywhere on the site and are reported as-is rather than guessed."
+    }
+  ],
+  "summary": "Investigated 8 JS-rendered Ontario basketball club/team sources with a real Playwright Chromium browser (no login/CAPTCHA bypassed anywhere). Total club/team-brand records extracted across all sources: 152.\n\n1. OBA Registered Teams (basketball.on.ca/competitions/registered-teams/): DEAD, not gated -- the page's own third-party data vendor (registration.sportsavvy.com) is broken at the TLS layer (server rejects its own hostname as SNI) even for a full real browser; confirmed with curl, node fetch, openssl s_client, and Chromium all failing identically. 0 clubs.\n2. Jr. NBA Canada find-your-program: PUBLIC. The page's 'no results' message is just an IP-geofilter default, not a gate -- its Storepoint.co widget has a public unauthenticated JSON API returning all 144 Canada-wide host locations in one call. 40 unique Ontario host organizations after de-duplicating season variants, though several records carry visible 2019-2020 program dates so treat as 'on file', not confirmed currently active.\n3. EOBA (via TeamSnap Tournaments, events.teamsnap.com/events/45924): PUBLIC once an Origin+Referer header pair is sent to the backing tournaments-api.teamsnap.com API (Cloudflare 403s without them, 200s with them -- no cookies/auth needed). 31 clubs vs. the 16 previously known, including a likely correction (OSS and OSBA are probably two separate clubs, not one as previously merged) and an upgrade (bare 'Belleville' -> 'Belleville Spirits').\n4. Hoop City Basketball League (tourneymachine.com/R180786): PUBLIC -- the earlier 403/hang was just a missing desktop User-Agent + networkidle timing out on persistent ad connections, not a real block. 32 clubs vs. the 3 previously known (confirmed Gators->'Gators Elite' and V3 Basketball active; did not find 'P13 Academy' this season). Standout: 'GBA' fields 14+ coach-named teams, by far the largest program, full name unconfirmed.\n5. TCBL / J17 Basketball: SCOPE CORRECTION -- tcbl.ca is an ADULT rec pickup league (day-of-week leagues, pun team names), confirmed via its own API there is no separate 'J17 Kids' league object. J17 Basketball (j17basketball.com) is a single Markham-based club/facility with its own rep teams (U9-U17), not a multi-club directory -- 1 club record.\n6. Canada Hoops Circuit: PARTIAL. Site itself is fully public and confirms 6 operator/host clubs (F.O.R.M., CanElite-4QT, Windsor Suns Elite, Jr. Lancers, ACE Basketball, Golden Ticket Basketball Club), but the site explicitly states actual participating-team rosters/standings only exist on Instagram (@canadahoopscircuit), where the post grid is genuinely login-gated (profile header is public, posts are not) -- not bypassed. 'Toronto Nationals' in the task brief = the Nationals event location, not a team name; no such team found.\n7. Kingdom Summer League (Toronto): NOT FOUND. The exact handle given (@kingdomsummerleague on Instagram/Threads/Facebook, all rendered without a login wall) is confirmed to be the Columbus, Ohio league the task said to exclude (Bruce Thornton/Ohio State content, Canal Winchester vs Westland, Columbus-area schools). kingdomsummerleague.com/.ca don't resolve (DNS NXDOMAIN); 7 plausible alternate Instagram handles and multiple web searches found no distinct Toronto league. Reported honestly as not found rather than substituting the wrong league's data. 0 clubs.\n8. Toronto Big League (torontobigleague.ca): PUBLIC and now fully alive (task's baseline said it refused all connections) -- a Vaadin SPA whose /standings route is directly public (no login) across 4 divisions (JR/SR Prep, JR/SR Rep). 42 distinct clubs, several cross-confirmed against other sources in this sweep (Brockville Blazers vs. EOBA; V3/Time 2 Hoop/Jaxx City Elite/Tru Balance vs. Hoop City League; CALI Prep -- the exact club the task itself used as its worked naming example). The old basketball.exposureevents.com/221944 link is confirmed dead (plain 404 today).\n\nCross-source corroboration is a notable secondary finding: several clubs (V3 Basketball, Time 2 Hoop, Jaxx City Elite, Tru Balance, Brockville Blazers, YAAACE, Canada Elite, Downtown Finest/Downtown's Finest) independently show up in 2 or more of these otherwise-unrelated league sources, giving good confidence these are real, currently-active Ontario clubs rather than one-off registrations.\n\nGenuinely dead or gated (reported honestly, not bypassed): OBA Registered Teams (broken vendor TLS, not a bot block), Canada Hoops Circuit's Instagram post grid (real login wall), Kingdom Summer League Toronto (no findable web presence distinct from the unrelated Columbus league)."
+}

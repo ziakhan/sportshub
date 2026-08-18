@@ -1,0 +1,4866 @@
+[
+ {
+  "key": "pdm basketball",
+  "name": "PDM Basketball",
+  "teams": 25,
+  "divs": [
+   "U10 Boys",
+   "U11 Boys",
+   "U12 Boys",
+   "U13 Boys",
+   "U13 Girls",
+   "U14 Boys",
+   "U14 Girls",
+   "U16 Boys",
+   "U16 Girls",
+   "U17 Boys",
+   "U17 Girls",
+   "U19 Women"
+  ],
+  "region": "Toronto Region",
+  "lat": 43.8069636,
+  "lon": -79.2750655
+ },
+ {
+  "key": "ey eagles",
+  "name": "EY Eagles",
+  "teams": 25,
+  "divs": [
+   "U10 Boys",
+   "U10 Girls",
+   "U11 Boys",
+   "U11 Girls",
+   "U12 Boys",
+   "U12 Girls",
+   "U13 Boys",
+   "U13 Girls",
+   "U14 Boys",
+   "U14 Girls",
+   "U16 Boys",
+   "U16 Girls",
+   "U17 Boys",
+   "U19 Women",
+   "U9 Boys"
+  ],
+  "region": "Toronto Region",
+  "lat": 43.6015295,
+  "lon": -79.5021554
+ },
+ {
+  "key": "nt huskies",
+  "name": "NT Huskies",
+  "teams": 22,
+  "divs": [
+   "U10 Girls",
+   "U11 Boys",
+   "U11 Girls",
+   "U12 Boys",
+   "U12 Girls",
+   "U13 Boys",
+   "U13 Girls",
+   "U14 Boys",
+   "U14 Girls",
+   "U16 Boys",
+   "U16 Girls",
+   "U17 Boys",
+   "U19 Men",
+   "U19 Women",
+   "U9 Boys"
+  ],
+  "region": "Hamilton-Niagara",
+  "lat": 43.0632605,
+  "lon": -79.9528799
+ },
+ {
+  "key": "cambridge basketball",
+  "name": "Cambridge Basketball",
+  "teams": 19,
+  "divs": [
+   "U10 Boys",
+   "U10 Girls",
+   "U11 Boys",
+   "U12 Boys",
+   "U12 Girls",
+   "U13 Boys",
+   "U13 Girls",
+   "U14 Boys",
+   "U14 Girls",
+   "U16 Boys",
+   "U17 Boys",
+   "U19 Men",
+   "U9 Boys",
+   "U16 Girls",
+   "U17 Girls"
+  ],
+  "region": "Toronto Region",
+  "lat": 43.8069636,
+  "lon": -79.2750655
+ },
+ {
+  "key": "burlington force",
+  "name": "Burlington Force",
+  "teams": 15,
+  "divs": [
+   "U10 Boys",
+   "U11 Boys",
+   "U12 Boys",
+   "U13 Boys",
+   "U13 Girls",
+   "U14 Boys",
+   "U14 Girls",
+   "U16 Boys",
+   "U17 Boys",
+   "U9 Boys"
+  ],
+  "lat": 43.3676672,
+  "lon": -79.8268651,
+  "city": "Burlington",
+  "region": "Peel-Halton",
+  "via": "cityname"
+ },
+ {
+  "key": "17 ignite",
+  "name": "17 IGNITE",
+  "teams": 14,
+  "divs": [
+   "U10 Boys",
+   "U11 Boys",
+   "U12 Boys",
+   "U13 Boys",
+   "U14 Boys",
+   "U9 Boys"
+  ],
+  "city": "",
+  "region": "",
+  "lat": 0,
+  "lon": 0
+ },
+ {
+  "key": "thornhill thunder",
+  "name": "Thornhill Thunder",
+  "teams": 14,
+  "divs": [
+   "U11 Boys",
+   "U12 Boys",
+   "U13 Boys",
+   "U14 Boys",
+   "U16 Boys",
+   "U16 Girls",
+   "U17 Boys",
+   "U17 Girls"
+  ],
+  "lat": 43.8172743,
+  "lon": -79.4241465,
+  "city": "Thornhill",
+  "region": "Durham-York",
+  "via": "cityname"
+ },
+ {
+  "key": "blitz",
+  "name": "Blitz",
+  "teams": 15,
+  "divs": [
+   "U10 Boys",
+   "U11 Boys",
+   "U12 Boys",
+   "U13 Boys",
+   "U13 Girls",
+   "U14 Girls",
+   "U16 Girls",
+   "U17 Boys",
+   "U19 Men"
+  ],
+  "region": "Hamilton-Niagara",
+  "lat": 43.1832693,
+  "lon": -79.9842847
+ },
+ {
+  "key": "eurostep",
+  "name": "Eurostep",
+  "teams": 13,
+  "divs": [
+   "U11 Boys",
+   "U12 Boys",
+   "U12 Girls",
+   "U13 Boys",
+   "U14 Boys",
+   "U14 Girls",
+   "U16 Boys",
+   "U17 Boys",
+   "U19 Men"
+  ],
+  "region": "Toronto Region",
+  "lat": 43.6146316,
+  "lon": -79.5166072
+ },
+ {
+  "key": "guelph knights",
+  "name": "Guelph Knights",
+  "teams": 13,
+  "divs": [
+   "U11 Boys",
+   "U12 Boys",
+   "U12 Girls",
+   "U13 Boys",
+   "U13 Girls",
+   "U14 Boys",
+   "U16 Boys",
+   "U17 Boys"
+  ],
+  "region": "Kitchener-Waterloo",
+  "lat": 43.5596243,
+  "lon": -80.2339612
+ },
+ {
+  "key": "cw celtics",
+  "name": "CW Celtics",
+  "teams": 12,
+  "divs": [
+   "U11 Boys",
+   "U12 Boys",
+   "U12 Girls",
+   "U13 Boys",
+   "U13 Girls",
+   "U14 Boys",
+   "U14 Girls",
+   "U16 Boys",
+   "U17 Boys",
+   "U17 Girls",
+   "U19 Men",
+   "U19 Women"
+  ],
+  "region": "Kitchener-Waterloo",
+  "lat": 43.5857399,
+  "lon": -80.3769999
+ },
+ {
+  "key": "london ramblers",
+  "name": "London Ramblers",
+  "teams": 13,
+  "divs": [
+   "U10 Boys",
+   "U10 Girls",
+   "U11 Boys",
+   "U11 Girls",
+   "U12 Boys",
+   "U12 Girls",
+   "U13 Boys",
+   "U14 Girls",
+   "U16 Girls",
+   "U17 Boys",
+   "U19 Women",
+   "U16 Boys"
+  ],
+  "region": "West Region",
+  "lat": 43.0474141,
+  "lon": -81.2563574
+ },
+ {
+  "key": "chatham kent wildcats",
+  "name": "Chatham Kent Wildcats",
+  "teams": 11,
+  "divs": [
+   "U10 Girls",
+   "U11 Boys",
+   "U11 Girls",
+   "U12 Boys",
+   "U12 Girls",
+   "U13 Boys",
+   "U13 Girls",
+   "U14 Girls",
+   "U16 Boys",
+   "U16 Girls",
+   "U17 Boys"
+  ],
+  "region": "West Region",
+  "lat": 42.4062578,
+  "lon": -82.1756121
+ },
+ {
+  "key": "oxford attack",
+  "name": "Oxford Attack",
+  "teams": 11,
+  "divs": [
+   "U11 Boys",
+   "U12 Boys",
+   "U12 Girls",
+   "U13 Boys",
+   "U14 Boys",
+   "U14 Girls",
+   "U16 Boys",
+   "U16 Girls",
+   "U17 Boys",
+   "U19 Men"
+  ],
+  "region": "West Region",
+  "lat": 43.1163868,
+  "lon": -80.7375519
+ },
+ {
+  "key": "st thomas shock",
+  "name": "St. Thomas Shock",
+  "teams": 11,
+  "divs": [
+   "U10 Boys",
+   "U11 Boys",
+   "U12 Boys",
+   "U12 Girls",
+   "U13 Boys",
+   "U14 Boys",
+   "U14 Girls",
+   "U16 Boys",
+   "U17 Boys",
+   "U19 Women"
+  ],
+  "region": "West Region",
+  "lat": 42.753594,
+  "lon": -81.1936689
+ },
+ {
+  "key": "jcc warriors",
+  "name": "JCC Warriors",
+  "teams": 22,
+  "divs": [
+   "U10 Boys",
+   "U11 Boys",
+   "U12 Boys",
+   "U12 Girls",
+   "U13 Boys",
+   "U13 Girls",
+   "U14 Girls",
+   "U16 Boys",
+   "U14 Boys"
+  ],
+  "region": "Toronto Region",
+  "lat": 43.7631527,
+  "lon": -79.4420738
+ },
+ {
+  "key": "mississauga monarchs",
+  "name": "Mississauga Monarchs",
+  "teams": 11,
+  "divs": [
+   "U11 Boys",
+   "U12 Boys",
+   "U12 Girls",
+   "U13 Boys",
+   "U13 Girls",
+   "U14 Boys",
+   "U14 Girls",
+   "U16 Girls"
+  ],
+  "city": "Mississauga",
+  "region": "",
+  "lat": 43.618218,
+  "lon": -79.670582,
+  "via": "cityname"
+ },
+ {
+  "key": "belleville spirits",
+  "name": "Belleville Spirits",
+  "teams": 13,
+  "divs": [
+   "U11 Boys",
+   "U12 Girls",
+   "U13 Girls",
+   "U14 Boys",
+   "U16 Boys",
+   "U16 Girls",
+   "U17 Boys",
+   "U12 Boys",
+   "U13 Boys",
+   "U19 Women"
+  ],
+  "region": "Capital-Kingston",
+  "lat": 44.1744093,
+  "lon": -77.3613343
+ },
+ {
+  "key": "scnyb",
+  "name": "SCNYB",
+  "teams": 9,
+  "divs": [
+   "U10 Boys",
+   "U11 Boys",
+   "U11 Girls",
+   "U12 Boys",
+   "U13 Boys",
+   "U14 Boys",
+   "U16 Boys"
+  ]
+ },
+ {
+  "key": "bay spartans",
+  "name": "North Bay Spartans",
+  "teams": 9,
+  "divs": [
+   "U10 Boys",
+   "U12 Boys",
+   "U13 Girls",
+   "U14 Boys",
+   "U16 Boys",
+   "U16 Girls",
+   "U17 Boys",
+   "U17 Girls",
+   "U19 Men"
+  ],
+  "region": "North Region",
+  "lat": 46.3279495,
+  "lon": -79.4845612
+ },
+ {
+  "key": "orillia lakers",
+  "name": "Orillia Lakers",
+  "teams": 10,
+  "divs": [
+   "U10 Boys",
+   "U11 Girls",
+   "U13 Boys",
+   "U14 Boys",
+   "U14 Girls",
+   "U17 Girls",
+   "U19 Men",
+   "U13 Girls"
+  ],
+  "city": "Orillia",
+  "region": "North Region",
+  "lat": 44.6098223,
+  "lon": -79.4185449,
+  "via": "cityname"
+ },
+ {
+  "key": "etobicoke thunder",
+  "name": "Etobicoke Thunder",
+  "teams": 8,
+  "divs": [
+   "U10 Girls",
+   "U11 Girls",
+   "U12 Girls",
+   "U13 Boys",
+   "U13 Girls",
+   "U16 Girls",
+   "U17 Boys",
+   "U19 Men"
+  ],
+  "lat": 43.65554,
+  "lon": -79.56535,
+  "city": "Etobicoke",
+  "region": "Toronto Region",
+  "via": "cityname"
+ },
+ {
+  "key": "brian owusu",
+  "name": "Brian Owusu Academy",
+  "teams": 8,
+  "divs": [
+   "U11 Boys",
+   "U12 Boys",
+   "U13 Boys",
+   "U14 Boys",
+   "U9 Boys"
+  ],
+  "city": "",
+  "region": "",
+  "lat": 0,
+  "lon": 0
+ },
+ {
+  "key": "hof hustle",
+  "name": "HOF HUSTLE",
+  "teams": 8,
+  "divs": [
+   "U11 Boys",
+   "U11 Girls",
+   "U13 Boys",
+   "U13 Girls",
+   "U14 Boys"
+  ]
+ },
+ {
+  "key": "oakville venom",
+  "name": "Oakville Venom",
+  "teams": 8,
+  "divs": [
+   "U10 Boys",
+   "U11 Boys",
+   "U12 Boys",
+   "U13 Boys",
+   "U14 Boys",
+   "U16 Boys",
+   "U19 Men"
+  ],
+  "city": "Oakville",
+  "region": "Halton",
+  "lat": 43.48279,
+  "lon": -79.6954609,
+  "via": "cityname"
+ },
+ {
+  "key": "yaaace",
+  "name": "YAAACE",
+  "teams": 7,
+  "divs": [
+   "U10 Boys",
+   "U11 Boys",
+   "U12 Boys",
+   "U12 Girls",
+   "U13 Boys",
+   "U14 Boys",
+   "U9 Boys"
+  ],
+  "region": "Toronto Region",
+  "lat": 43.757693,
+  "lon": -79.5272359
+ },
+ {
+  "key": "iem newmarket",
+  "name": "IEM Newmarket",
+  "teams": 7,
+  "divs": [
+   "U10 Boys",
+   "U11 Girls",
+   "U13 Girls",
+   "U14 Boys",
+   "U16 Boys",
+   "U17 Boys",
+   "U19 Men"
+  ],
+  "lat": 44.0537861,
+  "lon": -79.458962,
+  "city": "Newmarket",
+  "region": "Durham-York",
+  "via": "cityname"
+ },
+ {
+  "key": "orangeville bears",
+  "name": "Orangeville Bears",
+  "teams": 7,
+  "divs": [
+   "U10 Boys",
+   "U12 Boys",
+   "U12 Girls",
+   "U13 Boys",
+   "U14 Boys",
+   "U17 Boys",
+   "U19 Men"
+  ],
+  "city": "Orangeville",
+  "region": "Dufferin",
+  "lat": 43.9224717,
+  "lon": -80.1131091,
+  "via": "cityname"
+ },
+ {
+  "key": "brantford cyo hawks",
+  "name": "Brantford CYO Hawks",
+  "teams": 9,
+  "divs": [
+   "U10 Boys",
+   "U11 Boys",
+   "U12 Boys",
+   "U13 Boys",
+   "U14 Boys",
+   "U16 Boys",
+   "U17 Boys",
+   "U19 Men"
+  ],
+  "region": "Kitchener-Waterloo",
+  "lat": 43.1607399,
+  "lon": -80.2873787
+ },
+ {
+  "key": "oakville vytis",
+  "name": "Oakville Vytis",
+  "teams": 7,
+  "divs": [
+   "U10 Girls",
+   "U11 Girls",
+   "U12 Girls",
+   "U13 Girls",
+   "U14 Girls",
+   "U19 Women"
+  ],
+  "region": "Peel-Halton",
+  "lat": 43.449276,
+  "lon": -79.7003705
+ },
+ {
+  "key": "dundas dynamo",
+  "name": "Dundas Dynamo",
+  "teams": 7,
+  "divs": [
+   "U10 Girls",
+   "U12 Girls",
+   "U14 Girls",
+   "U16 Boys",
+   "U17 Girls",
+   "U19 Men"
+  ],
+  "region": "Hamilton-Niagara",
+  "lat": 43.276937,
+  "lon": -79.9367806
+ },
+ {
+  "key": "game6 lions",
+  "name": "Game6 Lions",
+  "teams": 7,
+  "divs": [
+   "U11 Boys",
+   "U12 Boys",
+   "U14 Boys",
+   "U14 Girls",
+   "U16 Boys"
+  ]
+ },
+ {
+  "key": "barrie royals",
+  "name": "Barrie Royals",
+  "teams": 9,
+  "divs": [
+   "U11 Girls",
+   "U12 Boys",
+   "U12 Girls",
+   "U16 Girls",
+   "U19 Men",
+   "U10 Girls",
+   "U11 Boys"
+  ],
+  "region": "North Region",
+  "lat": 44.3625934,
+  "lon": -79.6398594
+ },
+ {
+  "key": "golden eagles",
+  "name": "Golden Eagles",
+  "teams": 7,
+  "divs": [
+   "U12 Boys",
+   "U12 Girls",
+   "U13 Boys",
+   "U14 Boys",
+   "U14 Girls",
+   "U16 Boys",
+   "U17 Boys"
+  ],
+  "region": "Toronto Region",
+  "lat": 43.6015295,
+  "lon": -79.5021554
+ },
+ {
+  "key": "milton stags",
+  "name": "MILTON STAGS RED",
+  "teams": 13,
+  "divs": [
+   "U10 Boys",
+   "U11 Boys",
+   "U12 Boys",
+   "U13 Boys",
+   "U14 Boys",
+   "U16 Boys",
+   "U11 Girls",
+   "U12 Girls",
+   "U13 Girls",
+   "U16 Girls"
+  ],
+  "region": "Peel-Halton",
+  "lat": 43.4744509,
+  "lon": -79.876533
+ },
+ {
+  "key": "new horizon heat",
+  "name": "New Horizon Heat",
+  "teams": 7,
+  "divs": [
+   "U10 Boys",
+   "U11 Girls",
+   "U12 Girls",
+   "U13 Boys",
+   "U13 Girls",
+   "U14 Boys",
+   "U12 Boys"
+  ]
+ },
+ {
+  "key": "grassroots",
+  "name": "Grassroots Elite RED",
+  "teams": 11,
+  "divs": [
+   "U10 Boys",
+   "U11 Boys",
+   "U12 Boys",
+   "U13 Boys",
+   "U14 Boys",
+   "U9 Boys",
+   "U16 Boys"
+  ],
+  "region": "Toronto Region",
+  "lat": 43.7596586,
+  "lon": -79.5105305
+ },
+ {
+  "key": "jump basketball",
+  "name": "Jump Basketball",
+  "teams": 9,
+  "divs": [
+   "U10 Boys",
+   "U11 Boys",
+   "U12 Boys",
+   "U13 Girls",
+   "U14 Boys",
+   "U16 Boys",
+   "U13 Boys",
+   "U17 Boys"
+  ],
+  "region": "Toronto Region",
+  "lat": 43.8069636,
+  "lon": -79.2750655
+ },
+ {
+  "key": "st catharines cyo rebels",
+  "name": "St Catharines CYO Rebels",
+  "teams": 6,
+  "divs": [
+   "U10 Boys",
+   "U12 Boys",
+   "U13 Boys",
+   "U13 Girls",
+   "U14 Boys",
+   "U16 Boys"
+  ],
+  "region": "Hamilton-Niagara",
+  "lat": 43.1783397,
+  "lon": -79.0673302
+ },
+ {
+  "key": "niagara falls basketball association",
+  "name": "Niagara Falls Basketball Association",
+  "teams": 6,
+  "divs": [
+   "U10 Boys",
+   "U11 Boys",
+   "U12 Boys",
+   "U16 Boys",
+   "U17 Boys",
+   "U19 Men"
+  ],
+  "region": "Toronto Region",
+  "lat": 43.8069636,
+  "lon": -79.2750655
+ },
+ {
+  "key": "midland waves",
+  "name": "Midland Waves",
+  "teams": 8,
+  "divs": [
+   "U10 Boys",
+   "U11 Girls",
+   "U12 Boys",
+   "U14 Girls",
+   "U16 Girls",
+   "U17 Boys",
+   "U14 Boys"
+  ],
+  "city": "Midlan",
+  "region": "",
+  "lat": 44.74972409999999,
+  "lon": -79.88884469999999,
+  "via": "cityname"
+ },
+ {
+  "key": "hamilton transway",
+  "name": "Hamilton Transway",
+  "teams": 6,
+  "divs": [
+   "U10 Girls",
+   "U11 Girls",
+   "U12 Girls",
+   "U13 Girls",
+   "U19 Women"
+  ],
+  "region": "Hamilton-Niagara",
+  "lat": 43.2507229,
+  "lon": -79.8726462
+ },
+ {
+  "key": "elevation athletics",
+  "name": "Elevation Athletics",
+  "teams": 7,
+  "divs": [
+   "U12 Boys",
+   "U13 Boys",
+   "U14 Boys",
+   "U16 Boys",
+   "U19 Women",
+   "U10 Girls"
+  ],
+  "region": "Durham-York",
+  "lat": 44.0537861,
+  "lon": -79.458962
+ },
+ {
+  "key": "muskoka breakers",
+  "name": "South Muskoka Breakers",
+  "teams": 6,
+  "divs": [
+   "U12 Boys",
+   "U13 Boys",
+   "U14 Boys",
+   "U16 Boys",
+   "U17 Boys",
+   "U19 Men"
+  ],
+  "region": "North Region",
+  "lat": 45.0389565,
+  "lon": -79.3078787
+ },
+ {
+  "key": "huntsville hurricanes",
+  "name": "Huntsville Hurricanes",
+  "teams": 6,
+  "divs": [
+   "U12 Boys",
+   "U14 Boys",
+   "U14 Girls",
+   "U16 Boys",
+   "U16 Girls",
+   "U19 Women"
+  ],
+  "region": "North Region",
+  "lat": 45.3269323,
+  "lon": -79.2167539
+ },
+ {
+  "key": "the performance group",
+  "name": "The Performance Group",
+  "teams": 7,
+  "divs": [
+   "U10 Boys",
+   "U11 Boys",
+   "U13 Boys",
+   "U14 Boys",
+   "U12 Boys"
+  ],
+  "region": "Peel-Halton",
+  "lat": 43.7315479,
+  "lon": -79.7624177
+ },
+ {
+  "key": "wildhawk",
+  "name": "Wildhawk",
+  "teams": 5,
+  "divs": [
+   "U10 Boys",
+   "U11 Boys",
+   "U12 Boys",
+   "U13 Boys",
+   "U14 Boys"
+  ],
+  "region": "Kitchener-Waterloo",
+  "lat": 43.4530876,
+  "lon": -80.5533069
+ },
+ {
+  "key": "stratford revolution",
+  "name": "Stratford Revolution",
+  "teams": 5,
+  "divs": [
+   "U10 Boys",
+   "U12 Boys",
+   "U16 Boys",
+   "U17 Boys",
+   "U19 Men"
+  ],
+  "region": "West Region",
+  "lat": 43.3706708,
+  "lon": -80.9792504
+ },
+ {
+  "key": "top tier",
+  "name": "Top Tier",
+  "teams": 5,
+  "divs": [
+   "U11 Boys",
+   "U12 Boys",
+   "U13 Boys",
+   "U14 Boys",
+   "U16 Boys"
+  ],
+  "region": "Toronto Region",
+  "lat": 43.5918754,
+  "lon": -79.5306614
+ },
+ {
+  "key": "nepean",
+  "name": "Nepean",
+  "teams": 5,
+  "divs": [
+   "U11 Boys",
+   "U12 Boys",
+   "U13 Boys",
+   "U13 Girls",
+   "U16 Girls"
+  ],
+  "region": "Capital-Kingston",
+  "lat": 45.2847264,
+  "lon": -75.7564617
+ },
+ {
+  "key": "lasalle guardians",
+  "name": "LaSalle Guardians",
+  "teams": 5,
+  "divs": [
+   "U11 Boys",
+   "U13 Boys",
+   "U14 Boys",
+   "U16 Boys"
+  ]
+ },
+ {
+  "key": "maple basketball",
+  "name": "Maple Basketball",
+  "teams": 5,
+  "divs": [
+   "U11 Boys",
+   "U12 Boys",
+   "U13 Boys",
+   "U9 Boys"
+  ],
+  "region": "Toronto Region",
+  "lat": 43.8069636,
+  "lon": -79.2750655
+ },
+ {
+  "key": "huron lakers",
+  "name": "Huron Lakers",
+  "teams": 5,
+  "divs": [
+   "U11 Girls",
+   "U12 Boys",
+   "U13 Boys",
+   "U13 Girls",
+   "U14 Girls"
+  ],
+  "region": "West Region",
+  "lat": 42.9705644,
+  "lon": -82.4077643
+ },
+ {
+  "key": "kingston impact",
+  "name": "Kingston Impact",
+  "teams": 11,
+  "divs": [
+   "U12 Boys",
+   "U16 Boys",
+   "U16 Girls",
+   "U19 Men",
+   "U11 Boys",
+   "U11 Girls",
+   "U12 Girls",
+   "U17 Boys",
+   "U19 Women"
+  ],
+  "region": "Capital-Kingston",
+  "lat": 44.2529897,
+  "lon": -76.550255
+ },
+ {
+  "key": "burloak",
+  "name": "Burloak Elite",
+  "teams": 4,
+  "divs": [
+   "U10 Boys",
+   "U12 Boys",
+   "U14 Boys",
+   "U16 Girls"
+  ],
+  "region": "Peel-Halton",
+  "lat": 43.3627013,
+  "lon": -79.7953518
+ },
+ {
+  "key": "etobicoke thunder 1",
+  "name": "Etobicoke Thunder 1",
+  "teams": 4,
+  "divs": [
+   "U10 Boys",
+   "U11 Boys",
+   "U14 Boys",
+   "U16 Boys"
+  ],
+  "lat": 43.65554,
+  "lon": -79.56535,
+  "city": "Etobicoke",
+  "region": "Toronto Region",
+  "via": "cityname"
+ },
+ {
+  "key": "etobicoke thunder 2",
+  "name": "Etobicoke Thunder 2",
+  "teams": 4,
+  "divs": [
+   "U10 Boys",
+   "U11 Boys",
+   "U12 Boys",
+   "U14 Boys"
+  ],
+  "lat": 43.65554,
+  "lon": -79.56535,
+  "city": "Etobicoke",
+  "region": "Toronto Region",
+  "via": "cityname"
+ },
+ {
+  "key": "york lions",
+  "name": "North York Lions",
+  "teams": 4,
+  "divs": [
+   "U11 Boys",
+   "U13 Boys",
+   "U14 Boys"
+  ],
+  "city": "North York",
+  "region": "Toronto",
+  "lat": 43.7995365,
+  "lon": -79.3554441,
+  "via": "cityname"
+ },
+ {
+  "key": "union next man up",
+  "name": "Union Next Man Up",
+  "teams": 4,
+  "divs": [
+   "U12 Boys",
+   "U13 Boys",
+   "U14 Boys",
+   "U16 Boys"
+  ],
+  "city": "",
+  "region": "",
+  "lat": 0,
+  "lon": 0
+ },
+ {
+  "key": "momentum",
+  "name": "Momentum Orange",
+  "teams": 6,
+  "divs": [
+   "U12 Boys",
+   "U13 Boys",
+   "U14 Boys",
+   "U16 Boys"
+  ],
+  "region": "Toronto Region",
+  "lat": 43.7233471,
+  "lon": -79.3799928
+ },
+ {
+  "key": "lindsay wildcats",
+  "name": "Lindsay Wildcats",
+  "teams": 4,
+  "divs": [
+   "U12 Boys",
+   "U14 Boys",
+   "U16 Boys",
+   "U17 Boys"
+  ],
+  "region": "Durham-York",
+  "lat": 44.3530682,
+  "lon": -78.738543
+ },
+ {
+  "key": "next generation basketball club",
+  "name": "Next Generation Basketball Club",
+  "teams": 6,
+  "divs": [
+   "U12 Boys",
+   "U14 Girls",
+   "U16 Boys",
+   "U19 Men",
+   "U14 Boys",
+   "U17 Boys"
+  ],
+  "region": "Toronto Region",
+  "lat": 43.8069636,
+  "lon": -79.2750655
+ },
+ {
+  "key": "kwgba phoenix",
+  "name": "KWGBA Phoenix",
+  "teams": 9,
+  "divs": [
+   "U13 Girls",
+   "U14 Girls",
+   "U16 Girls",
+   "U19 Women",
+   "U10 Girls",
+   "U12 Girls",
+   "U11 Girls"
+  ]
+ },
+ {
+  "key": "grimsby grizzlies",
+  "name": "Grimsby Grizzlies",
+  "teams": 4,
+  "divs": [
+   "U14 Girls",
+   "U16 Boys",
+   "U17 Boys",
+   "U19 Women"
+  ],
+  "lat": 43.188086,
+  "lon": -79.5448014,
+  "city": "Grimsby",
+  "region": "Hamilton-Niagara",
+  "via": "cityname"
+ },
+ {
+  "key": "ref",
+  "name": "#REF!",
+  "teams": 4,
+  "divs": [
+   "U16 Boys",
+   "U17 Boys",
+   "U19 Men",
+   "U9 Boys"
+  ]
+ },
+ {
+  "key": "london medal",
+  "name": "London Gold Medal",
+  "teams": 5,
+  "divs": [
+   "U16 Boys",
+   "U16 Girls",
+   "U17 Boys",
+   "U19 Men"
+  ],
+  "city": "London",
+  "region": "West Region",
+  "lat": 43.0279031,
+  "lon": -81.2592827,
+  "via": "cityname"
+ },
+ {
+  "key": "the collective",
+  "name": "The Collective Elite",
+  "teams": 5,
+  "divs": [
+   "U10 Boys",
+   "U11 Boys",
+   "U13 Boys",
+   "U14 Boys"
+  ],
+  "region": "Peel-Halton",
+  "lat": 43.7623276,
+  "lon": -79.8345764
+ },
+ {
+  "key": "deep basketball club",
+  "name": "DEEP Basketball Club",
+  "teams": 3,
+  "divs": [
+   "U10 Boys",
+   "U12 Boys",
+   "U13 Boys"
+  ],
+  "region": "Toronto Region",
+  "lat": 43.8069636,
+  "lon": -79.2750655
+ },
+ {
+  "key": "ball905",
+  "name": "BALL905",
+  "teams": 4,
+  "divs": [
+   "U10 Boys",
+   "U13 Boys",
+   "U14 Boys",
+   "U16 Boys"
+  ],
+  "city": "",
+  "region": "GTA",
+  "lat": 0,
+  "lon": 0
+ },
+ {
+  "key": "hoopstars",
+  "name": "HOOPSTARS",
+  "teams": 3,
+  "divs": [
+   "U11 Boys",
+   "U13 Boys",
+   "U19 Women"
+  ],
+  "region": "Durham-York",
+  "lat": 43.8798621,
+  "lon": -79.250451
+ },
+ {
+  "key": "brantford cyo",
+  "name": "Brantford CYO",
+  "teams": 10,
+  "divs": [
+   "U11 Girls",
+   "U12 Girls",
+   "U19 Women",
+   "U10 Girls",
+   "U13 Girls",
+   "U14 Girls",
+   "U17 Girls"
+  ],
+  "region": "Kitchener-Waterloo",
+  "lat": 43.1607399,
+  "lon": -80.2873787
+ },
+ {
+  "key": "iem aurora",
+  "name": "IEM Aurora",
+  "teams": 3,
+  "divs": [
+   "U12 Boys",
+   "U13 Boys",
+   "U16 Boys"
+  ],
+  "lat": 44.0219043,
+  "lon": -79.4172576,
+  "city": "Aurora",
+  "region": "Durham-York",
+  "via": "cityname"
+ },
+ {
+  "key": "guelph gryphons",
+  "name": "Guelph Gryphons",
+  "teams": 8,
+  "divs": [
+   "U12 Boys",
+   "U16 Boys",
+   "U16 Girls",
+   "U10 Girls",
+   "U11 Girls",
+   "U12 Girls",
+   "U13 Girls",
+   "U14 Boys"
+  ],
+  "lat": 43.5596243,
+  "lon": -80.2339612,
+  "city": "Guelph",
+  "region": "Kitchener-Waterloo",
+  "via": "cityname"
+ },
+ {
+  "key": "hoopzone knights s",
+  "name": "Hoopzone Knights 's",
+  "teams": 3,
+  "divs": [
+   "U12 Boys",
+   "U13 Boys",
+   "U14 Boys"
+  ],
+  "region": "Toronto Region",
+  "lat": 43.7931602,
+  "lon": -79.4192221
+ },
+ {
+  "key": "durham rising suns",
+  "name": "Durham Rising Suns",
+  "teams": 3,
+  "divs": [
+   "U13 Boys",
+   "U14 Boys"
+  ],
+  "region": "Capital-Kingston",
+  "lat": 43.8975446,
+  "lon": -78.9429329
+ },
+ {
+  "key": "toronto lords",
+  "name": "Toronto Lords Academy",
+  "teams": 7,
+  "divs": [
+   "U13 Boys",
+   "U14 Girls",
+   "U16 Girls",
+   "U17 Boys",
+   "U19 Men",
+   "U13 Girls"
+  ],
+  "region": "Toronto Region",
+  "lat": 43.6441973,
+  "lon": -79.4042754
+ },
+ {
+  "key": "napanee hawks",
+  "name": "Napanee Hawks",
+  "teams": 3,
+  "divs": [
+   "U13 Boys",
+   "U16 Boys",
+   "U17 Boys"
+  ]
+ },
+ {
+  "key": "mumba",
+  "name": "MUMBA ELITE",
+  "teams": 25,
+  "divs": [
+   "U13 Girls",
+   "U16 Girls",
+   "U9 Boys",
+   "U10 Boys",
+   "U14 Boys",
+   "U12 Boys",
+   "U17 Boys",
+   "U13 Boys",
+   "U11 Boys",
+   "U11 Girls",
+   "U12 Girls",
+   "U14 Girls",
+   "U16 Boys",
+   "U19 Men"
+  ]
+ },
+ {
+  "key": "owen sound",
+  "name": "Owen Sound",
+  "teams": 3,
+  "divs": [
+   "U13 Girls",
+   "U16 Boys",
+   "U17 Girls"
+  ],
+  "region": "North Region",
+  "lat": 44.5625465,
+  "lon": -80.9499743
+ },
+ {
+  "key": "rsb association",
+  "name": "RSB Association",
+  "teams": 3,
+  "divs": [
+   "U14 Boys",
+   "U16 Boys"
+  ],
+  "region": "Peel-Halton",
+  "lat": 43.7192939,
+  "lon": -79.7170258
+ },
+ {
+  "key": "parry sound stingers",
+  "name": "Parry Sound Stingers",
+  "teams": 3,
+  "divs": [
+   "U14 Girls",
+   "U17 Girls",
+   "U19 Men"
+  ],
+  "region": "North Region",
+  "lat": 45.3607015,
+  "lon": -79.8891956
+ },
+ {
+  "key": "onlx",
+  "name": "ONLX",
+  "teams": 3,
+  "divs": [
+   "U16 Boys",
+   "U17 Boys",
+   "U19 Men"
+  ]
+ },
+ {
+  "key": "lambton lions",
+  "name": "Lambton Lions",
+  "teams": 3,
+  "divs": [
+   "U16 Boys",
+   "U16 Girls",
+   "U17 Boys"
+  ]
+ },
+ {
+  "key": "tcbl dragons",
+  "name": "TCBL Dragons - coach Navid",
+  "teams": 5,
+  "divs": [
+   "U10 Boys",
+   "U12 Boys",
+   "U11 Boys"
+  ],
+  "region": "Durham-York",
+  "lat": 43.9281811,
+  "lon": -78.6996098
+ },
+ {
+  "key": "hamilton celtics",
+  "name": "Hamilton Celtics",
+  "teams": 5,
+  "divs": [
+   "U10 Boys",
+   "U14 Boys",
+   "U12 Boys",
+   "U12 Girls",
+   "U16 Boys"
+  ],
+  "region": "Hamilton-Niagara",
+  "lat": 43.1978186,
+  "lon": -79.7958772
+ },
+ {
+  "key": "advantage titans",
+  "name": "Advantage Titans",
+  "teams": 2,
+  "divs": [
+   "U10 Boys",
+   "U12 Girls"
+  ],
+  "region": "Durham-York",
+  "lat": 43.8760863,
+  "lon": -79.0300733
+ },
+ {
+  "key": "pelham panthers",
+  "name": "Pelham Panthers - Team Dudley",
+  "teams": 21,
+  "divs": [
+   "U10 Boys",
+   "U13 Girls",
+   "U11 Boys",
+   "U13 Boys",
+   "U14 Girls",
+   "U17 Boys",
+   "U10 Girls",
+   "U12 Boys",
+   "U12 Girls",
+   "U14 Boys",
+   "U16 Boys",
+   "U16 Girls",
+   "U17 Girls",
+   "U19 Men",
+   "U19 Women"
+  ],
+  "region": "Hamilton-Niagara",
+  "lat": 43.0824327,
+  "lon": -79.2803499
+ },
+ {
+  "key": "gba teran",
+  "name": "GBA Teran",
+  "teams": 2,
+  "divs": [
+   "U11 Boys",
+   "U14 Boys"
+  ]
+ },
+ {
+  "key": "dc storm",
+  "name": "DC Storm",
+  "teams": 4,
+  "divs": [
+   "U11 Boys",
+   "U13 Boys",
+   "U14 Boys"
+  ]
+ },
+ {
+  "key": "toronto lords johnson",
+  "name": "Toronto Lords Johnson",
+  "teams": 2,
+  "divs": [
+   "U11 Boys",
+   "U14 Boys"
+  ],
+  "region": "Toronto Region",
+  "lat": 43.6441973,
+  "lon": -79.4042754
+ },
+ {
+  "key": "orillia",
+  "name": "Orillia",
+  "teams": 2,
+  "divs": [
+   "U11 Boys",
+   "U16 Boys"
+  ],
+  "region": "North Region",
+  "lat": 44.6098223,
+  "lon": -79.4185449
+ },
+ {
+  "key": "peterborough power palmer",
+  "name": "Peterborough Power Palmer",
+  "teams": 2,
+  "divs": [
+   "U11 Boys",
+   "U16 Boys"
+  ],
+  "lat": 44.3021376,
+  "lon": -78.3198987,
+  "city": "Peterborough",
+  "region": "Durham-York",
+  "via": "cityname"
+ },
+ {
+  "key": "burloak allen",
+  "name": "Burloak Elite Allen",
+  "teams": 2,
+  "divs": [
+   "U11 Girls",
+   "U14 Boys"
+  ],
+  "city": "Burlington/Oakville",
+  "region": "Halton",
+  "lat": 0,
+  "lon": 0
+ },
+ {
+  "key": "london 86ers",
+  "name": "London 86ers",
+  "teams": 3,
+  "divs": [
+   "U11 Girls",
+   "U16 Girls",
+   "U17 Girls"
+  ],
+  "region": "West Region",
+  "lat": 43.0279031,
+  "lon": -81.2592827
+ },
+ {
+  "key": "union bam",
+  "name": "Union Elite Bam",
+  "teams": 2,
+  "divs": [
+   "U12 Boys",
+   "U13 Boys"
+  ]
+ },
+ {
+  "key": "brampton warriors",
+  "name": "Brampton Warriors U12B",
+  "teams": 14,
+  "divs": [
+   "U12 Boys",
+   "U14 Boys",
+   "U14 Girls",
+   "U10 Boys",
+   "U11 Boys",
+   "U11 Girls",
+   "U13 Boys",
+   "U13 Girls",
+   "U16 Boys",
+   "U17 Girls",
+   "U19 Women"
+  ],
+  "lat": 43.7396585,
+  "lon": -79.8394783,
+  "city": "Brampton",
+  "region": "Peel-Halton",
+  "via": "cityname"
+ },
+ {
+  "key": "brooklin btso",
+  "name": "Brooklin BTSO Elite",
+  "teams": 2,
+  "divs": [
+   "U12 Boys"
+  ]
+ },
+ {
+  "key": "rising suns kings",
+  "name": "RISING SUNS KINGS",
+  "teams": 2,
+  "divs": [
+   "U12 Boys",
+   "U16 Boys"
+  ],
+  "city": "",
+  "region": "GTA",
+  "lat": 0,
+  "lon": 0
+ },
+ {
+  "key": "toronto nets",
+  "name": "Toronto Nets",
+  "teams": 2,
+  "divs": [
+   "U12 Boys",
+   "U14 Boys"
+  ],
+  "lat": 43.6728452,
+  "lon": -79.4969934,
+  "city": "Toronto",
+  "region": "Toronto Region",
+  "via": "cityname"
+ },
+ {
+  "key": "ballmatics",
+  "name": "Ballmatics",
+  "teams": 2,
+  "divs": [
+   "U12 Boys",
+   "U14 Boys"
+  ],
+  "region": "Toronto Region",
+  "lat": 43.6700592,
+  "lon": -79.4319512
+ },
+ {
+  "key": "peterborough power handa",
+  "name": "Peterborough Power Handa",
+  "teams": 2,
+  "divs": [
+   "U12 Boys",
+   "U17 Boys"
+  ],
+  "lat": 44.3021376,
+  "lon": -78.3198987,
+  "city": "Peterborough",
+  "region": "Durham-York",
+  "via": "cityname"
+ },
+ {
+  "key": "b1ce london",
+  "name": "B1CE London",
+  "teams": 2,
+  "divs": [
+   "U12 Girls",
+   "U14 Girls"
+  ],
+  "city": "London",
+  "region": "West Region",
+  "lat": 43.0279031,
+  "lon": -81.2592827,
+  "via": "cityname"
+ },
+ {
+  "key": "b1ce",
+  "name": "B1CE",
+  "teams": 2,
+  "divs": [
+   "U12 Girls",
+   "U13 Girls"
+  ],
+  "city": "London ON",
+  "region": "",
+  "lat": 0,
+  "lon": 0
+ },
+ {
+  "key": "riverside falcons",
+  "name": "Riverside Falcons",
+  "teams": 2,
+  "divs": [
+   "U13 Boys",
+   "U14 Boys"
+  ],
+  "region": "West Region",
+  "lat": 42.306228,
+  "lon": -82.9624217
+ },
+ {
+  "key": "dc bulldogs",
+  "name": "DC Bulldogs",
+  "teams": 2,
+  "divs": [
+   "U13 Boys",
+   "U14 Boys"
+  ],
+  "city": "Durham",
+  "region": "",
+  "lat": 0,
+  "lon": 0
+ },
+ {
+  "key": "truth",
+  "name": "Truth-Brothers Keepers",
+  "teams": 2,
+  "divs": [
+   "U13 Boys",
+   "U14 Girls"
+  ],
+  "city": "",
+  "region": "",
+  "lat": 0,
+  "lon": 0
+ },
+ {
+  "key": "port colborne hornets",
+  "name": "Port Colborne Hornets",
+  "teams": 2,
+  "divs": [
+   "U13 Boys",
+   "U14 Boys"
+  ],
+  "lat": 42.8862816,
+  "lon": -79.2598051,
+  "city": "Port Colborne",
+  "region": "Hamilton-Niagara",
+  "via": "cityname"
+ },
+ {
+  "key": "kw viper quigley",
+  "name": "KW Viper Quigley",
+  "teams": 2,
+  "divs": [
+   "U13 Boys",
+   "U16 Boys"
+  ]
+ },
+ {
+  "key": "oshawa commanders",
+  "name": "Oshawa Commanders",
+  "teams": 2,
+  "divs": [
+   "U13 Boys",
+   "U9 Boys"
+  ],
+  "lat": 43.8586329,
+  "lon": -78.8828473,
+  "city": "Oshawa",
+  "region": "Durham-York",
+  "via": "cityname"
+ },
+ {
+  "key": "gta mavericks",
+  "name": "GTA Mavericks- Reid",
+  "teams": 3,
+  "divs": [
+   "U13 Boys",
+   "U14 Boys"
+  ],
+  "region": "Durham-York",
+  "lat": 43.8493915,
+  "lon": -79.494643
+ },
+ {
+  "key": "malton sting",
+  "name": "Malton Sting",
+  "teams": 2,
+  "divs": [
+   "U13 Boys",
+   "U16 Girls"
+  ],
+  "region": "Peel-Halton",
+  "lat": 43.7161148,
+  "lon": -79.6445965
+ },
+ {
+  "key": "uewb",
+  "name": "UEWB",
+  "teams": 2,
+  "divs": [
+   "U13 Boys",
+   "U19 Women"
+  ],
+  "city": "",
+  "region": "GTA",
+  "lat": 0,
+  "lon": 0
+ },
+ {
+  "key": "prince edward county clippers",
+  "name": "Prince Edward County Clippers",
+  "teams": 2,
+  "divs": [
+   "U13 Boys",
+   "U17 Boys"
+  ],
+  "region": "Capital-Kingston",
+  "lat": 43.9232403,
+  "lon": -77.1273034
+ },
+ {
+  "key": "mba",
+  "name": "MBA",
+  "teams": 2,
+  "divs": [
+   "U13 Girls",
+   "U14 Girls"
+  ],
+  "city": "",
+  "region": "GTA",
+  "lat": 0,
+  "lon": 0
+ },
+ {
+  "key": "nrba crazy catz",
+  "name": "NRBA Crazy Catz",
+  "teams": 2,
+  "divs": [
+   "U13 Girls",
+   "U19 Women"
+  ],
+  "city": "Niagara ON",
+  "region": "",
+  "lat": 0,
+  "lon": 0
+ },
+ {
+  "key": "cooksville ckatt",
+  "name": "Cooksville CKATT",
+  "teams": 2,
+  "divs": [
+   "U14 Boys",
+   "U16 Boys"
+  ],
+  "region": "Peel-Halton",
+  "lat": 43.6515107,
+  "lon": -79.7696928
+ },
+ {
+  "key": "union marv",
+  "name": "Union Elite Marv",
+  "teams": 2,
+  "divs": [
+   "U14 Boys",
+   "U16 Boys"
+  ]
+ },
+ {
+  "key": "iem gwillimbury",
+  "name": "IEM East Gwillimbury",
+  "teams": 2,
+  "divs": [
+   "U14 Boys",
+   "U17 Boys"
+  ],
+  "city": "East Gwillimbury",
+  "region": "",
+  "lat": 0,
+  "lon": 0
+ },
+ {
+  "key": "iem king city",
+  "name": "IEM King City",
+  "teams": 2,
+  "divs": [
+   "U14 Boys",
+   "U14 Girls"
+  ],
+  "city": "King City",
+  "region": "",
+  "lat": 43.955266,
+  "lon": -79.519119,
+  "via": "cityname"
+ },
+ {
+  "key": "niagara falls raiders",
+  "name": "Niagara Falls Red Raiders",
+  "teams": 3,
+  "divs": [
+   "U14 Boys",
+   "U14 Girls",
+   "U13 Boys"
+  ],
+  "region": "Hamilton-Niagara",
+  "lat": 43.122191,
+  "lon": -79.1029844
+ },
+ {
+  "key": "sba mcpherson db",
+  "name": "SBA Team McPherson DB",
+  "teams": 2,
+  "divs": [
+   "U14 Boys",
+   "U14 Girls"
+  ]
+ },
+ {
+  "key": "bwt rebels",
+  "name": "BWT Rebels",
+  "teams": 2,
+  "divs": [
+   "U14 Boys",
+   "U16 Boys"
+  ]
+ },
+ {
+  "key": "simcoe sonics",
+  "name": "South Simcoe Sonics",
+  "teams": 2,
+  "divs": [
+   "U14 Boys",
+   "U16 Boys"
+  ],
+  "lat": 44.3903652,
+  "lon": -79.6910866,
+  "city": "Simcoe",
+  "region": "Kitchener-Waterloo",
+  "via": "cityname"
+ },
+ {
+  "key": "nrba mad dogz",
+  "name": "NRBA Blue Mad Dogz",
+  "teams": 3,
+  "divs": [
+   "U14 Boys",
+   "U17 Boys",
+   "U16 Boys"
+  ],
+  "city": "Niagara ON",
+  "region": "",
+  "lat": 0,
+  "lon": 0
+ },
+ {
+  "key": "burloak nate",
+  "name": "Burloak Elite Nate",
+  "teams": 2,
+  "divs": [
+   "U14 Boys",
+   "U17 Boys"
+  ],
+  "city": "Burlington/Oakville",
+  "region": "Halton",
+  "lat": 0,
+  "lon": 0
+ },
+ {
+  "key": "dc chameleons",
+  "name": "DC Chameleons",
+  "teams": 2,
+  "divs": [
+   "U14 Girls",
+   "U16 Girls"
+  ]
+ },
+ {
+  "key": "button primary",
+  "name": ".button.primary-button:active",
+  "teams": 4,
+  "divs": [
+   "U15 Boys",
+   "U15 Girls"
+  ]
+ },
+ {
+  "key": "login",
+  "name": ".login",
+  "teams": 2,
+  "divs": [
+   "U15 Boys",
+   "U15 Girls"
+  ]
+ },
+ {
+  "key": "request",
+  "name": ".request-storage-access",
+  "teams": 2,
+  "divs": [
+   "U15 Boys",
+   "U15 Girls"
+  ]
+ },
+ {
+  "key": "document",
+  "name": ".document-root.show-login-page .login",
+  "teams": 4,
+  "divs": [
+   "U15 Boys",
+   "U15 Girls"
+  ]
+ },
+ {
+  "key": "roboto",
+  "name": "Roboto",
+  "teams": 2,
+  "divs": [
+   "U15 Boys",
+   "U15 Girls"
+  ]
+ },
+ {
+  "key": "not in iframe",
+  "name": "not_in_iframe",
+  "teams": 2,
+  "divs": [
+   "U15 Boys",
+   "U15 Girls"
+  ]
+ },
+ {
+  "key": "copyright the closure library authors",
+  "name": "Copyright The Closure Library Authors.",
+  "teams": 2,
+  "divs": [
+   "U15 Boys",
+   "U15 Girls"
+  ]
+ },
+ {
+  "key": "spdx",
+  "name": "SPDX-License-Identifier: Apache-2.0",
+  "teams": 2,
+  "divs": [
+   "U15 Boys",
+   "U15 Girls"
+  ]
+ },
+ {
+  "key": "copyright google llc",
+  "name": "Copyright Google LLC",
+  "teams": 2,
+  "divs": [
+   "U15 Boys",
+   "U15 Girls"
+  ]
+ },
+ {
+  "key": "window location href",
+  "name": "window.location.href",
+  "teams": 2,
+  "divs": [
+   "U15 Boys",
+   "U15 Girls"
+  ]
+ },
+ {
+  "key": "login counter",
+  "name": "login_counter",
+  "teams": 2,
+  "divs": [
+   "U15 Boys",
+   "U15 Girls"
+  ]
+ },
+ {
+  "key": "popupwindow",
+  "name": "popupWindow",
+  "teams": 2,
+  "divs": [
+   "U15 Boys",
+   "U15 Girls"
+  ]
+ },
+ {
+  "key": "secure",
+  "name": "__Secure-1PAPISID",
+  "teams": 2,
+  "divs": [
+   "U15 Boys",
+   "U15 Girls"
+  ]
+ },
+ {
+  "key": "kw viper brown",
+  "name": "KW Viper Brown",
+  "teams": 2,
+  "divs": [
+   "U16 Boys",
+   "U19 Women"
+  ]
+ },
+ {
+  "key": "vaughan panthers",
+  "name": "Vaughan Panthers - Coach Chris",
+  "teams": 10,
+  "divs": [
+   "U16 Boys",
+   "U19 Men",
+   "U11 Boys",
+   "U12 Boys",
+   "U13 Boys",
+   "U14 Boys",
+   "U14 Girls",
+   "U16 Girls",
+   "U17 Boys"
+  ],
+  "city": "Vaughan",
+  "region": "York",
+  "lat": 43.8493915,
+  "lon": -79.494643,
+  "via": "cityname"
+ },
+ {
+  "key": "ball905 mississauga",
+  "name": "BALL905 Mississauga",
+  "teams": 2,
+  "divs": [
+   "U16 Boys",
+   "U17 Boys"
+  ],
+  "city": "Mississauga",
+  "region": "GTA",
+  "lat": 43.618218,
+  "lon": -79.670582,
+  "via": "cityname"
+ },
+ {
+  "key": "orangeville hawks",
+  "name": "Orangeville Hawks",
+  "teams": 2,
+  "divs": [
+   "U16 Boys",
+   "U17 Boys"
+  ],
+  "region": "Peel-Halton",
+  "lat": 43.9224717,
+  "lon": -80.1131091
+ },
+ {
+  "key": "gyba",
+  "name": "GYBA",
+  "teams": 2,
+  "divs": [
+   "U16 Boys",
+   "U17 Boys"
+  ]
+ },
+ {
+  "key": "ball905 brampton",
+  "name": "BALL905 Brampton",
+  "teams": 2,
+  "divs": [
+   "U16 Boys",
+   "U17 Boys"
+  ],
+  "city": "Brampton",
+  "region": "GTA",
+  "lat": 43.7396585,
+  "lon": -79.8394783,
+  "via": "cityname"
+ },
+ {
+  "key": "ball905 halton hills",
+  "name": "BALL905 Halton Hills",
+  "teams": 2,
+  "divs": [
+   "U16 Boys",
+   "U19 Men"
+  ],
+  "city": "",
+  "region": "GTA",
+  "lat": 0,
+  "lon": 0
+ },
+ {
+  "key": "thunder bay wolves",
+  "name": "Thunder Bay Wolves",
+  "teams": 2,
+  "divs": [
+   "U16 Girls",
+   "U19 Women"
+  ],
+  "region": "North Region",
+  "lat": 48.3808951,
+  "lon": -89.2476823
+ },
+ {
+  "key": "ottawa hornets",
+  "name": "West Ottawa Hornets",
+  "teams": 2,
+  "divs": [
+   "U17 Boys",
+   "U19 Women"
+  ],
+  "region": "Capital-Kingston",
+  "lat": 45.3873533,
+  "lon": -75.7342243
+ },
+ {
+  "key": "rising suns jake",
+  "name": "RISING SUNS JAKE",
+  "teams": 2,
+  "divs": [
+   "U17 Boys",
+   "U9 Boys"
+  ]
+ },
+ {
+  "key": "inter",
+  "name": "Inter-City Saints Navy",
+  "teams": 5,
+  "divs": [
+   "U10 Boys",
+   "U16 Girls",
+   "U19 Women"
+  ],
+  "region": "Peel-Halton",
+  "lat": 43.6710952,
+  "lon": -79.8172426
+ },
+ {
+  "key": "sba",
+  "name": "SBA- Team Wade",
+  "teams": 1,
+  "divs": [
+   "U10 Boys"
+  ]
+ },
+ {
+  "key": "kw vipers",
+  "name": "KW Vipers",
+  "teams": 1,
+  "divs": [
+   "U10 Boys"
+  ]
+ },
+ {
+  "key": "sweet morgan",
+  "name": "Sweet/Morgan",
+  "teams": 1,
+  "divs": [
+   "U10 Boys"
+  ]
+ },
+ {
+  "key": "ttt",
+  "name": "TTT U10 Boys",
+  "teams": 19,
+  "divs": [
+   "U10 Boys",
+   "U10 Girls",
+   "U11 Boys",
+   "U11 Girls",
+   "U12 Boys",
+   "U12 Girls",
+   "U13 Boys",
+   "U13 Girls",
+   "U14 Boys",
+   "U14 Girls",
+   "U16 Boys",
+   "U17 Boys",
+   "U17 Girls",
+   "U19 Men",
+   "U19 Women"
+  ]
+ },
+ {
+  "key": "york appiah phillips",
+  "name": "North York Appiah/Phillips",
+  "teams": 1,
+  "divs": [
+   "U10 Boys"
+  ],
+  "lat": 43.7995365,
+  "lon": -79.3554441,
+  "city": "North York",
+  "region": "Toronto Region",
+  "via": "cityname"
+ },
+ {
+  "key": "gba ken felix",
+  "name": "GBA Ken/Felix",
+  "teams": 1,
+  "divs": [
+   "U10 Boys"
+  ]
+ },
+ {
+  "key": "co",
+  "name": "Co-Ed Port Colborne Hornets",
+  "teams": 1,
+  "divs": [
+   "U10 Boys"
+  ],
+  "lat": 42.8862816,
+  "lon": -79.2598051,
+  "city": "Port Colborne",
+  "region": "Hamilton-Niagara",
+  "via": "cityname"
+ },
+ {
+  "key": "ancaster magic offord",
+  "name": "Ancaster Magic Offord",
+  "teams": 1,
+  "divs": [
+   "U10 Boys"
+  ]
+ },
+ {
+  "key": "ynba avengers pelly",
+  "name": "YNBA Avengers U10B Pelly",
+  "teams": 1,
+  "divs": [
+   "U10 Boys"
+  ]
+ },
+ {
+  "key": "rising suns bryan",
+  "name": "RISING SUNS BRYAN",
+  "teams": 1,
+  "divs": [
+   "U10 Boys"
+  ]
+ },
+ {
+  "key": "peterborough power marshall",
+  "name": "Peterborough Power Marshall",
+  "teams": 1,
+  "divs": [
+   "U10 Boys"
+  ],
+  "lat": 44.3021376,
+  "lon": -78.3198987,
+  "city": "Peterborough",
+  "region": "Durham-York",
+  "via": "cityname"
+ },
+ {
+  "key": "trailblazers",
+  "name": "U10B Trailblazers",
+  "teams": 9,
+  "divs": [
+   "U10 Boys",
+   "U12 Boys",
+   "U12 Girls",
+   "U13 Boys",
+   "U13 Girls",
+   "U14 Boys",
+   "U16 Boys",
+   "U17 Boys",
+   "U17 Girls"
+  ],
+  "region": "North Region",
+  "lat": 44.5029416,
+  "lon": -80.2212387
+ },
+ {
+  "key": "gyba hermann",
+  "name": "GYBA Hermann",
+  "teams": 1,
+  "divs": [
+   "U10 Boys"
+  ]
+ },
+ {
+  "key": "gyba lindsay",
+  "name": "GYBA Lindsay",
+  "teams": 1,
+  "divs": [
+   "U10 Boys"
+  ],
+  "lat": 44.3530682,
+  "lon": -78.738543,
+  "city": "Lindsay",
+  "region": "Durham-York",
+  "via": "cityname"
+ },
+ {
+  "key": "sba beltijar",
+  "name": "SBA Team Beltijar",
+  "teams": 1,
+  "divs": [
+   "U10 Girls"
+  ]
+ },
+ {
+  "key": "toronto lords waito",
+  "name": "Toronto Lords Waito",
+  "teams": 1,
+  "divs": [
+   "U11 Boys"
+  ],
+  "region": "Toronto Region",
+  "lat": 43.6441973,
+  "lon": -79.4042754
+ },
+ {
+  "key": "dc bulldogs thomas",
+  "name": "DC Bulldogs Thomas",
+  "teams": 1,
+  "divs": [
+   "U11 Boys"
+  ]
+ },
+ {
+  "key": "union",
+  "name": "Union Elite",
+  "teams": 1,
+  "divs": [
+   "U11 Boys"
+  ],
+  "region": "Peel-Halton",
+  "lat": 43.8571475,
+  "lon": -79.0585029
+ },
+ {
+  "key": "sba lalog",
+  "name": "SBA Team Lalog",
+  "teams": 1,
+  "divs": [
+   "U11 Boys"
+  ]
+ },
+ {
+  "key": "sba piracha",
+  "name": "SBA Team Piracha",
+  "teams": 1,
+  "divs": [
+   "U11 Boys"
+  ]
+ },
+ {
+  "key": "dc bulldogs smith",
+  "name": "DC Bulldogs Smith",
+  "teams": 1,
+  "divs": [
+   "U11 Boys"
+  ]
+ },
+ {
+  "key": "st clair saints",
+  "name": "St. Clair . Saints",
+  "teams": 1,
+  "divs": [
+   "U11 Boys"
+  ]
+ },
+ {
+  "key": "rising suns girrard",
+  "name": "RISING SUNS GIRRARD",
+  "teams": 1,
+  "divs": [
+   "U11 Boys"
+  ]
+ },
+ {
+  "key": "ancaster magic",
+  "name": "ANCASTER MAGIC",
+  "teams": 2,
+  "divs": [
+   "U11 Boys",
+   "U17 Boys"
+  ],
+  "city": "Ancaster",
+  "region": "Hamilton",
+  "lat": 0,
+  "lon": 0
+ },
+ {
+  "key": "skillz",
+  "name": "Skillz",
+  "teams": 1,
+  "divs": [
+   "U11 Boys"
+  ],
+  "region": "Durham-York",
+  "lat": 43.8637074,
+  "lon": -79.5536706
+ },
+ {
+  "key": "kw viper smith",
+  "name": "KW Viper Smith",
+  "teams": 1,
+  "divs": [
+   "U11 Boys"
+  ]
+ },
+ {
+  "key": "burloak james",
+  "name": "Burloak Elite James",
+  "teams": 1,
+  "divs": [
+   "U11 Boys"
+  ],
+  "city": "Burlington/Oakville",
+  "region": "Halton",
+  "lat": 0,
+  "lon": 0
+ },
+ {
+  "key": "ynba avengers meschino",
+  "name": "YNBA Avengers U11B Meschino",
+  "teams": 1,
+  "divs": [
+   "U11 Boys"
+  ]
+ },
+ {
+  "key": "durham crossover",
+  "name": "Durham Crossover- Abe",
+  "teams": 2,
+  "divs": [
+   "U11 Boys",
+   "U14 Boys"
+  ],
+  "region": "Durham-York",
+  "lat": 43.8508553,
+  "lon": -79.0203732
+ },
+ {
+  "key": "dk",
+  "name": "DK U11 Boys",
+  "teams": 4,
+  "divs": [
+   "U11 Boys",
+   "U12 Boys",
+   "U13 Boys",
+   "U14 Boys"
+  ]
+ },
+ {
+  "key": "gba justin phil",
+  "name": "GBA Justin/Phil",
+  "teams": 1,
+  "divs": [
+   "U11 Boys"
+  ]
+ },
+ {
+  "key": "collingwood trailblazers",
+  "name": "U11B Collingwood Trailblazers",
+  "teams": 3,
+  "divs": [
+   "U11 Boys",
+   "U11 Girls",
+   "U14 Girls"
+  ],
+  "region": "North Region",
+  "lat": 44.5029416,
+  "lon": -80.2212387
+ },
+ {
+  "key": "gba alan",
+  "name": "GBA Alan",
+  "teams": 1,
+  "divs": [
+   "U11 Boys"
+  ]
+ },
+ {
+  "key": "ynba avengers decaria",
+  "name": "YNBA Avengers U11B DeCaria",
+  "teams": 1,
+  "divs": [
+   "U11 Boys"
+  ]
+ },
+ {
+  "key": "yssk gendi",
+  "name": "YSSK Gendi",
+  "teams": 1,
+  "divs": [
+   "U11 Boys"
+  ]
+ },
+ {
+  "key": "sba ferreira",
+  "name": "SBA Team Ferreira",
+  "teams": 1,
+  "divs": [
+   "U11 Girls"
+  ]
+ },
+ {
+  "key": "ynba avengers paine",
+  "name": "YNBA Avengers U11G Paine",
+  "teams": 1,
+  "divs": [
+   "U11 Girls"
+  ]
+ },
+ {
+  "key": "toronto lords cross",
+  "name": "Toronto Lords Cross",
+  "teams": 1,
+  "divs": [
+   "U11 Girls"
+  ],
+  "region": "Toronto Region",
+  "lat": 43.6441973,
+  "lon": -79.4042754
+ },
+ {
+  "key": "tecumseh saint clair beach basketball",
+  "name": "Tecumseh Saint Clair Beach Basketball",
+  "teams": 1,
+  "divs": [
+   "U11 Girls"
+  ],
+  "region": "Toronto Region",
+  "lat": 43.8069636,
+  "lon": -79.2750655
+ },
+ {
+  "key": "kw vipers randell",
+  "name": "Kw Vipers Randell",
+  "teams": 1,
+  "divs": [
+   "U12 Boys"
+  ]
+ },
+ {
+  "key": "sba salvi",
+  "name": "SBA Team Salvi",
+  "teams": 1,
+  "divs": [
+   "U12 Boys"
+  ]
+ },
+ {
+  "key": "u12a new horizon heat",
+  "name": "U12A New Horizon Heat",
+  "teams": 1,
+  "divs": [
+   "U12 Boys"
+  ]
+ },
+ {
+  "key": "uplay",
+  "name": "UPlay",
+  "teams": 2,
+  "divs": [
+   "U12 Boys",
+   "U13 Boys"
+  ],
+  "city": "Ontario-wide",
+  "region": "Ontario",
+  "lat": 0,
+  "lon": 0
+ },
+ {
+  "key": "triple balance",
+  "name": "Triple Balance",
+  "teams": 1,
+  "divs": [
+   "U12 Boys"
+  ],
+  "region": "Toronto Region",
+  "lat": 43.821965,
+  "lon": -79.2151548
+ },
+ {
+  "key": "falcons united",
+  "name": "Falcons United",
+  "teams": 1,
+  "divs": [
+   "U12 Boys"
+  ],
+  "city": "",
+  "region": "",
+  "lat": 0,
+  "lon": 0
+ },
+ {
+  "key": "ancaster magic levely",
+  "name": "Ancaster Magic Levely",
+  "teams": 1,
+  "divs": [
+   "U12 Boys"
+  ]
+ },
+ {
+  "key": "union warren",
+  "name": "Union Elite Warren",
+  "teams": 1,
+  "divs": [
+   "U12 Boys"
+  ]
+ },
+ {
+  "key": "rising suns jay",
+  "name": "RISING SUNS JAY",
+  "teams": 1,
+  "divs": [
+   "U12 Boys"
+  ]
+ },
+ {
+  "key": "toronto nustep ballers",
+  "name": "Toronto NuStep Ballers",
+  "teams": 1,
+  "divs": [
+   "U12 Boys"
+  ],
+  "city": "Toronto",
+  "region": "Toronto Region",
+  "lat": 43.6728452,
+  "lon": -79.4969934,
+  "via": "cityname"
+ },
+ {
+  "key": "motion kings gladman",
+  "name": "Motion Kings Gladman",
+  "teams": 1,
+  "divs": [
+   "U12 Boys"
+  ],
+  "city": "",
+  "region": "GTA",
+  "lat": 0,
+  "lon": 0
+ },
+ {
+  "key": "kw vipers howison",
+  "name": "Kw Vipers Howison",
+  "teams": 1,
+  "divs": [
+   "U12 Boys"
+  ]
+ },
+ {
+  "key": "burloak gaige",
+  "name": "Burloak Elite Gaige",
+  "teams": 1,
+  "divs": [
+   "U12 Boys"
+  ],
+  "city": "Burlington/Oakville",
+  "region": "Halton",
+  "lat": 0,
+  "lon": 0
+ },
+ {
+  "key": "ynba avengers cade",
+  "name": "YNBA Avengers U12B Cade",
+  "teams": 1,
+  "divs": [
+   "U12 Boys"
+  ]
+ },
+ {
+  "key": "gba brian",
+  "name": "GBA /Brian",
+  "teams": 1,
+  "divs": [
+   "U12 Boys"
+  ]
+ },
+ {
+  "key": "burloak mike",
+  "name": "Burloak Elite Mike",
+  "teams": 1,
+  "divs": [
+   "U12 Boys"
+  ],
+  "city": "Burlington/Oakville",
+  "region": "Halton",
+  "lat": 0,
+  "lon": 0
+ },
+ {
+  "key": "fo3",
+  "name": "FO3 U12 Boys",
+  "teams": 2,
+  "divs": [
+   "U12 Boys",
+   "U13 Boys"
+  ],
+  "city": "",
+  "region": "",
+  "lat": 0,
+  "lon": 0
+ },
+ {
+  "key": "etobicoke thunder 1 seeley",
+  "name": "Etobicoke Thunder 1 Seeley",
+  "teams": 1,
+  "divs": [
+   "U12 Boys"
+  ],
+  "lat": 43.65554,
+  "lon": -79.56535,
+  "city": "Etobicoke",
+  "region": "Toronto Region",
+  "via": "cityname"
+ },
+ {
+  "key": "ynba avengers martin",
+  "name": "YNBA Avengers U12B Martin",
+  "teams": 2,
+  "divs": [
+   "U12 Boys",
+   "U14 Boys"
+  ]
+ },
+ {
+  "key": "breakthrough bandits",
+  "name": "Breakthrough Bandits",
+  "teams": 1,
+  "divs": [
+   "U12 Boys"
+  ],
+  "city": "",
+  "region": "",
+  "lat": 0,
+  "lon": 0
+ },
+ {
+  "key": "rising suns undftd",
+  "name": "RISING SUNS UNDFTD",
+  "teams": 1,
+  "divs": [
+   "U12 Boys"
+  ]
+ },
+ {
+  "key": "medal",
+  "name": "Gold Medal- Morrison",
+  "teams": 2,
+  "divs": [
+   "U12 Boys",
+   "U16 Boys"
+  ],
+  "region": "West Region",
+  "lat": 42.9498623,
+  "lon": -81.3014069
+ },
+ {
+  "key": "gba ryan",
+  "name": "GBA Ryan/",
+  "teams": 1,
+  "divs": [
+   "U12 Boys"
+  ]
+ },
+ {
+  "key": "sba wright db",
+  "name": "SBA Team Wright DB",
+  "teams": 1,
+  "divs": [
+   "U12 Boys"
+  ]
+ },
+ {
+  "key": "joookooo",
+  "name": "JOOOKOOO - Ontario Elite",
+  "teams": 1,
+  "divs": [
+   "U12 Boys"
+  ],
+  "region": "Durham-York",
+  "lat": 43.9284467,
+  "lon": -78.7044828
+ },
+ {
+  "key": "peterborough power keating",
+  "name": "Peterborough Power Keating",
+  "teams": 1,
+  "divs": [
+   "U12 Boys"
+  ],
+  "lat": 44.3021376,
+  "lon": -78.3198987,
+  "city": "Peterborough",
+  "region": "Durham-York",
+  "via": "cityname"
+ },
+ {
+  "key": "sba chris",
+  "name": "SBA Team Chris",
+  "teams": 1,
+  "divs": [
+   "U12 Girls"
+  ]
+ },
+ {
+  "key": "burloak jenn",
+  "name": "Burloak Elite Jenn",
+  "teams": 1,
+  "divs": [
+   "U12 Girls"
+  ],
+  "city": "Burlington/Oakville",
+  "region": "Halton",
+  "lat": 0,
+  "lon": 0
+ },
+ {
+  "key": "ynba avengers garvin",
+  "name": "YNBA Avengers U12G Garvin",
+  "teams": 1,
+  "divs": [
+   "U12 Girls"
+  ]
+ },
+ {
+  "key": "gba",
+  "name": "GBA- Best",
+  "teams": 8,
+  "divs": [
+   "U12 Girls",
+   "U14 Boys",
+   "U14 Girls"
+  ]
+ },
+ {
+  "key": "london 86ers santandrea",
+  "name": "London 86ers Santandrea",
+  "teams": 1,
+  "divs": [
+   "U12 Girls"
+  ],
+  "region": "West Region",
+  "lat": 43.0279031,
+  "lon": -81.2592827
+ },
+ {
+  "key": "sudbury storm",
+  "name": "Sudbury Storm - Coach Jamie -26",
+  "teams": 10,
+  "divs": [
+   "U12 Girls",
+   "U13 Boys",
+   "U14 Boys",
+   "U14 Girls",
+   "U16 Boys",
+   "U16 Girls",
+   "U17 Boys",
+   "U19 Men"
+  ],
+  "lat": 46.4917317,
+  "lon": -80.993029,
+  "city": "Sudbury",
+  "region": "North Region",
+  "via": "cityname"
+ },
+ {
+  "key": "peterborough power ellis",
+  "name": "Peterborough Power Ellis",
+  "teams": 1,
+  "divs": [
+   "U12 Girls"
+  ],
+  "lat": 44.3021376,
+  "lon": -78.3198987,
+  "city": "Peterborough",
+  "region": "Durham-York",
+  "via": "cityname"
+ },
+ {
+  "key": "ynba avengers watson",
+  "name": "YNBA Avengers U12G Watson",
+  "teams": 1,
+  "divs": [
+   "U12 Girls"
+  ]
+ },
+ {
+  "key": "grimsby",
+  "name": "Grimsby",
+  "teams": 1,
+  "divs": [
+   "U12 Girls"
+  ],
+  "region": "Hamilton-Niagara",
+  "lat": 43.188086,
+  "lon": -79.5448014
+ },
+ {
+  "key": "sba hanif",
+  "name": "SBA Premier Team Hanif Blue",
+  "teams": 1,
+  "divs": [
+   "U13 Boys"
+  ]
+ },
+ {
+  "key": "onl",
+  "name": "ONL - El Sidani",
+  "teams": 5,
+  "divs": [
+   "U13 Boys",
+   "U13 Girls",
+   "U14 Boys",
+   "U17 Boys"
+  ],
+  "city": "unconfirmed abbreviation",
+  "region": "",
+  "lat": 0,
+  "lon": 0
+ },
+ {
+  "key": "cooksville n o f",
+  "name": "Cooksville N.O.F",
+  "teams": 1,
+  "divs": [
+   "U13 Boys"
+  ],
+  "region": "Peel-Halton",
+  "lat": 43.6515107,
+  "lon": -79.7696928
+ },
+ {
+  "key": "union norm",
+  "name": "Union Elite Norm",
+  "teams": 1,
+  "divs": [
+   "U13 Boys"
+  ]
+ },
+ {
+  "key": "burloak chris",
+  "name": "Burloak Elite Chris",
+  "teams": 1,
+  "divs": [
+   "U13 Boys"
+  ],
+  "city": "Burlington/Oakville",
+  "region": "Halton",
+  "lat": 0,
+  "lon": 0
+ },
+ {
+  "key": "union ivan",
+  "name": "Union Elite Ivan",
+  "teams": 1,
+  "divs": [
+   "U13 Boys"
+  ]
+ },
+ {
+  "key": "union sigmund",
+  "name": "Union Elite Sigmund",
+  "teams": 1,
+  "divs": [
+   "U13 Boys"
+  ]
+ },
+ {
+  "key": "barrie royals quach",
+  "name": "Barrie Royals Quach",
+  "teams": 1,
+  "divs": [
+   "U13 Boys"
+  ],
+  "region": "North Region",
+  "lat": 44.3625934,
+  "lon": -79.6398594
+ },
+ {
+  "key": "ancaster magic moore",
+  "name": "Ancaster Magic Moore",
+  "teams": 1,
+  "divs": [
+   "U13 Boys"
+  ]
+ },
+ {
+  "key": "sba maragh",
+  "name": "SBA Premier Team Maragh White",
+  "teams": 1,
+  "divs": [
+   "U13 Boys"
+  ]
+ },
+ {
+  "key": "breakdown",
+  "name": "BREAKDOWN",
+  "teams": 2,
+  "divs": [
+   "U13 Boys",
+   "U14 Boys"
+  ],
+  "region": "Peel-Halton",
+  "lat": 43.6842625,
+  "lon": -79.7986795
+ },
+ {
+  "key": "ynba avengers chen",
+  "name": "YNBA Avengers U13B Chen",
+  "teams": 1,
+  "divs": [
+   "U13 Boys"
+  ]
+ },
+ {
+  "key": "kingston impact hunter",
+  "name": "Kingston Impact Hunter",
+  "teams": 1,
+  "divs": [
+   "U13 Boys"
+  ],
+  "region": "Capital-Kingston",
+  "lat": 44.2529897,
+  "lon": -76.550255
+ },
+ {
+  "key": "gillingham gagn",
+  "name": "Gillingham & Gagné",
+  "teams": 1,
+  "divs": [
+   "U13 Boys"
+  ]
+ },
+ {
+  "key": "peterborough power wade",
+  "name": "Peterborough Power Wade",
+  "teams": 1,
+  "divs": [
+   "U13 Boys"
+  ],
+  "lat": 44.3021376,
+  "lon": -78.3198987,
+  "city": "Peterborough",
+  "region": "Durham-York",
+  "via": "cityname"
+ },
+ {
+  "key": "iem richmond hill",
+  "name": "IEM Richmond Hill",
+  "teams": 1,
+  "divs": [
+   "U13 Boys"
+  ]
+ },
+ {
+  "key": "gba wayne",
+  "name": "GBA Wayne",
+  "teams": 1,
+  "divs": [
+   "U13 Boys"
+  ]
+ },
+ {
+  "key": "medal murray",
+  "name": "Gold Medal Murray",
+  "teams": 1,
+  "divs": [
+   "U13 Boys"
+  ]
+ },
+ {
+  "key": "toronto lords moyo",
+  "name": "Toronto Lords Rep Moyo",
+  "teams": 1,
+  "divs": [
+   "U13 Boys"
+  ],
+  "region": "Toronto Region",
+  "lat": 43.6441973,
+  "lon": -79.4042754
+ },
+ {
+  "key": "gba saran",
+  "name": "GBA Saran",
+  "teams": 1,
+  "divs": [
+   "U13 Boys"
+  ]
+ },
+ {
+  "key": "burloak ay",
+  "name": "Burloak Elite AY",
+  "teams": 1,
+  "divs": [
+   "U13 Boys"
+  ],
+  "region": "Peel-Halton",
+  "lat": 43.3627013,
+  "lon": -79.7953518
+ },
+ {
+  "key": "sba patterson db",
+  "name": "SBA Team Patterson DB",
+  "teams": 1,
+  "divs": [
+   "U13 Boys"
+  ]
+ },
+ {
+  "key": "v3 basketball association",
+  "name": "V3 Basketball Association",
+  "teams": 1,
+  "divs": [
+   "U13 Boys"
+  ],
+  "region": "Toronto Region",
+  "lat": 43.65554,
+  "lon": -79.56535
+ },
+ {
+  "key": "game6 sports",
+  "name": "Game6 Sports",
+  "teams": 1,
+  "divs": [
+   "U13 Boys"
+  ],
+  "region": "Durham-York",
+  "lat": 43.8301804,
+  "lon": -79.4025121
+ },
+ {
+  "key": "gba arthur",
+  "name": "GBA Arthur",
+  "teams": 1,
+  "divs": [
+   "U13 Boys"
+  ]
+ },
+ {
+  "key": "yssk ziorli",
+  "name": "YSSK Ziorli",
+  "teams": 1,
+  "divs": [
+   "U13 Boys"
+  ]
+ },
+ {
+  "key": "peterborough power hess",
+  "name": "Peterborough Power Hess",
+  "teams": 1,
+  "divs": [
+   "U13 Boys"
+  ],
+  "lat": 44.3021376,
+  "lon": -78.3198987,
+  "city": "Peterborough",
+  "region": "Durham-York",
+  "via": "cityname"
+ },
+ {
+  "key": "barrie royals mccracken",
+  "name": "Barrie Royals McCracken",
+  "teams": 1,
+  "divs": [
+   "U13 Boys"
+  ],
+  "region": "North Region",
+  "lat": 44.3625934,
+  "lon": -79.6398594
+ },
+ {
+  "key": "ancaster magic pathammavong",
+  "name": "Ancaster Magic Pathammavong",
+  "teams": 1,
+  "divs": [
+   "U13 Boys"
+  ]
+ },
+ {
+  "key": "gladiators onika",
+  "name": "GLADIATORS ONIKA",
+  "teams": 1,
+  "divs": [
+   "U13 Boys"
+  ]
+ },
+ {
+  "key": "yssk ma",
+  "name": "YSSK Ma",
+  "teams": 1,
+  "divs": [
+   "U13 Boys"
+  ]
+ },
+ {
+  "key": "vcb",
+  "name": "VCB U13- Peter",
+  "teams": 1,
+  "divs": [
+   "U13 Girls"
+  ]
+ },
+ {
+  "key": "ottawa",
+  "name": "Ottawa South",
+  "teams": 1,
+  "divs": [
+   "U13 Girls"
+  ],
+  "region": "Capital-Kingston",
+  "lat": 45.3873533,
+  "lon": -75.7342243
+ },
+ {
+  "key": "ynba avengers perlmutter",
+  "name": "YNBA Avengers U13G Perlmutter",
+  "teams": 1,
+  "divs": [
+   "U13 Girls"
+  ]
+ },
+ {
+  "key": "oss rising stars",
+  "name": "OSS Rising Stars - Cooper/Cressman",
+  "teams": 3,
+  "divs": [
+   "U13 Girls",
+   "U16 Boys",
+   "U17 Boys"
+  ],
+  "city": "",
+  "region": "",
+  "lat": 0,
+  "lon": 0
+ },
+ {
+  "key": "gba ranger",
+  "name": "GBA Ranger",
+  "teams": 1,
+  "divs": [
+   "U13 Girls"
+  ]
+ },
+ {
+  "key": "kingston impact caverly",
+  "name": "Kingston Impact Caverly",
+  "teams": 1,
+  "divs": [
+   "U13 Girls"
+  ],
+  "region": "Capital-Kingston",
+  "lat": 44.2529897,
+  "lon": -76.550255
+ },
+ {
+  "key": "barrie royals zyla",
+  "name": "Barrie Royals Zyla",
+  "teams": 1,
+  "divs": [
+   "U13 Girls"
+  ],
+  "region": "North Region",
+  "lat": 44.3625934,
+  "lon": -79.6398594
+ },
+ {
+  "key": "sba riche",
+  "name": "SBA Team Riche",
+  "teams": 1,
+  "divs": [
+   "U13 Girls"
+  ]
+ },
+ {
+  "key": "ynba avengers lambie",
+  "name": "YNBA Avengers U13G Lambie",
+  "teams": 1,
+  "divs": [
+   "U13 Girls"
+  ]
+ },
+ {
+  "key": "prince edward clippers",
+  "name": "Prince Edward Clippers",
+  "teams": 1,
+  "divs": [
+   "U13 Girls"
+  ],
+  "region": "Capital-Kingston",
+  "lat": 43.9232403,
+  "lon": -77.1273034
+ },
+ {
+  "key": "york lions ergas",
+  "name": "North York Lions Ergas",
+  "teams": 1,
+  "divs": [
+   "U13 Girls"
+  ],
+  "city": "North York",
+  "region": "Toronto",
+  "lat": 43.7995365,
+  "lon": -79.3554441,
+  "via": "cityname"
+ },
+ {
+  "key": "london 86ers findlay",
+  "name": "London 86ers Findlay",
+  "teams": 1,
+  "divs": [
+   "U13 Girls"
+  ],
+  "region": "West Region",
+  "lat": 43.0279031,
+  "lon": -81.2592827
+ },
+ {
+  "key": "peterborough power fitzgerald",
+  "name": "Peterborough Power Fitzgerald",
+  "teams": 1,
+  "divs": [
+   "U13 Girls"
+  ],
+  "lat": 44.3021376,
+  "lon": -78.3198987,
+  "city": "Peterborough",
+  "region": "Durham-York",
+  "via": "cityname"
+ },
+ {
+  "key": "vaughan city basketball",
+  "name": "Vaughan City basketball",
+  "teams": 1,
+  "divs": [
+   "U13 Girls"
+  ],
+  "region": "Toronto Region",
+  "lat": 43.8069636,
+  "lon": -79.2750655
+ },
+ {
+  "key": "tcbl phoenix",
+  "name": "TCBL Phoenix",
+  "teams": 1,
+  "divs": [
+   "U13 Girls"
+  ]
+ },
+ {
+  "key": "sba miller",
+  "name": "SBA Premier Team Miller",
+  "teams": 1,
+  "divs": [
+   "U14 Boys"
+  ]
+ },
+ {
+  "key": "rising suns phenom",
+  "name": "RISING SUNS PHENOM",
+  "teams": 1,
+  "divs": [
+   "U14 Boys"
+  ]
+ },
+ {
+  "key": "kw viper mannarelli",
+  "name": "KW Viper Mannarelli",
+  "teams": 1,
+  "divs": [
+   "U14 Boys"
+  ]
+ },
+ {
+  "key": "soldiers",
+  "name": "SOLDIERS",
+  "teams": 1,
+  "divs": [
+   "U14 Boys"
+  ]
+ },
+ {
+  "key": "barrie royals messecar",
+  "name": "Barrie Royals Messecar",
+  "teams": 1,
+  "divs": [
+   "U14 Boys"
+  ],
+  "region": "North Region",
+  "lat": 44.3625934,
+  "lon": -79.6398594
+ },
+ {
+  "key": "breakdown ian",
+  "name": "Team Breakdown IAN",
+  "teams": 1,
+  "divs": [
+   "U14 Boys"
+  ]
+ },
+ {
+  "key": "kingston impact mcmillan",
+  "name": "Kingston Impact McMillan",
+  "teams": 1,
+  "divs": [
+   "U14 Boys"
+  ],
+  "region": "Capital-Kingston",
+  "lat": 44.2529897,
+  "lon": -76.550255
+ },
+ {
+  "key": "union nate",
+  "name": "Union Elite Nate",
+  "teams": 1,
+  "divs": [
+   "U14 Boys"
+  ]
+ },
+ {
+  "key": "blessed sacrament jackets",
+  "name": "Blessed Sacrament Yellow Jackets- Guibao",
+  "teams": 2,
+  "divs": [
+   "U14 Boys"
+  ],
+  "region": "Hamilton-Niagara",
+  "lat": 43.2284688,
+  "lon": -79.8398503
+ },
+ {
+  "key": "btso",
+  "name": "BTSO Elite",
+  "teams": 1,
+  "divs": [
+   "U14 Boys"
+  ]
+ },
+ {
+  "key": "sba mckenna",
+  "name": "SBA Team McKenna",
+  "teams": 1,
+  "divs": [
+   "U14 Boys"
+  ]
+ },
+ {
+  "key": "ancaster magic hall",
+  "name": "Ancaster Magic Hall",
+  "teams": 1,
+  "divs": [
+   "U14 Boys"
+  ]
+ },
+ {
+  "key": "advantage titans oba",
+  "name": "Advantage Titans OBA",
+  "teams": 1,
+  "divs": [
+   "U14 Boys"
+  ],
+  "region": "Durham-York",
+  "lat": 43.8760863,
+  "lon": -79.0300733
+ },
+ {
+  "key": "ontario",
+  "name": "Ontario Elite",
+  "teams": 1,
+  "divs": [
+   "U14 Boys"
+  ],
+  "city": "Eastern Ontario (Ottawa area)",
+  "region": "Capital-Kingston",
+  "lat": 0,
+  "lon": 0
+ },
+ {
+  "key": "nepean devils",
+  "name": "Nepean Blue Devils",
+  "teams": 1,
+  "divs": [
+   "U14 Boys"
+  ],
+  "region": "Capital-Kingston",
+  "lat": 45.2847264,
+  "lon": -75.7564617
+ },
+ {
+  "key": "toronto lords kenyon",
+  "name": "Toronto Lords Kenyon",
+  "teams": 1,
+  "divs": [
+   "U14 Boys"
+  ],
+  "region": "Toronto Region",
+  "lat": 43.6441973,
+  "lon": -79.4042754
+ },
+ {
+  "key": "kw viper langer",
+  "name": "KW Viper Langer",
+  "teams": 1,
+  "divs": [
+   "U14 Boys"
+  ]
+ },
+ {
+  "key": "gba ken",
+  "name": "GBA Ken",
+  "teams": 1,
+  "divs": [
+   "U14 Boys"
+  ]
+ },
+ {
+  "key": "gba dexter",
+  "name": "GBA Dexter",
+  "teams": 1,
+  "divs": [
+   "U14 Boys"
+  ]
+ },
+ {
+  "key": "motion kings",
+  "name": "Motion Kings",
+  "teams": 1,
+  "divs": [
+   "U14 Boys"
+  ],
+  "city": "",
+  "region": "GTA",
+  "lat": 0,
+  "lon": 0
+ },
+ {
+  "key": "burloak rishi",
+  "name": "Burloak Elite Rishi",
+  "teams": 1,
+  "divs": [
+   "U14 Boys"
+  ],
+  "city": "Burlington/Oakville",
+  "region": "Halton",
+  "lat": 0,
+  "lon": 0
+ },
+ {
+  "key": "young dragons",
+  "name": "Young Dragons",
+  "teams": 1,
+  "divs": [
+   "U14 Boys"
+  ],
+  "region": "Durham-York",
+  "lat": 43.9281811,
+  "lon": -78.6996098
+ },
+ {
+  "key": "ynba avengers",
+  "name": "YNBA Avengers U14B Blue",
+  "teams": 2,
+  "divs": [
+   "U14 Boys",
+   "U16 Girls"
+  ]
+ },
+ {
+  "key": "kw viper thomas",
+  "name": "KW Viper Thomas",
+  "teams": 1,
+  "divs": [
+   "U14 Boys"
+  ]
+ },
+ {
+  "key": "breakdown impowerful",
+  "name": "TEAM BREAKDOWN IMPOWERFUL",
+  "teams": 2,
+  "divs": [
+   "U14 Boys",
+   "U17 Boys"
+  ]
+ },
+ {
+  "key": "caledon cougars",
+  "name": "Caledon Cougars",
+  "teams": 1,
+  "divs": [
+   "U14 Boys"
+  ],
+  "lat": 43.878837,
+  "lon": -79.7394266,
+  "city": "Caledon",
+  "region": "Peel-Halton",
+  "via": "cityname"
+ },
+ {
+  "key": "grassroots kitchener",
+  "name": "Grassroots Kitchener BLACK",
+  "teams": 2,
+  "divs": [
+   "U14 Boys"
+  ],
+  "region": "Toronto Region",
+  "lat": 43.7596586,
+  "lon": -79.5105305
+ },
+ {
+  "key": "barrie royals oster",
+  "name": "Barrie Royals Oster",
+  "teams": 1,
+  "divs": [
+   "U14 Boys"
+  ],
+  "region": "North Region",
+  "lat": 44.3625934,
+  "lon": -79.6398594
+ },
+ {
+  "key": "york lions malik phillips",
+  "name": "North York Lions Malik Phillips",
+  "teams": 1,
+  "divs": [
+   "U14 Boys"
+  ],
+  "city": "North York",
+  "region": "Toronto",
+  "lat": 43.7995365,
+  "lon": -79.3554441,
+  "via": "cityname"
+ },
+ {
+  "key": "gba david",
+  "name": "GBA David",
+  "teams": 1,
+  "divs": [
+   "U14 Boys"
+  ]
+ },
+ {
+  "key": "sba scott",
+  "name": "SBA Team Scott",
+  "teams": 1,
+  "divs": [
+   "U14 Boys"
+  ]
+ },
+ {
+  "key": "crunch time",
+  "name": "Crunch Time Elite",
+  "teams": 1,
+  "divs": [
+   "U14 Boys"
+  ],
+  "region": "Durham-York",
+  "lat": 43.8561243,
+  "lon": -79.3562178
+ },
+ {
+  "key": "elevation athletics arne",
+  "name": "Elevation Athletics Arne",
+  "teams": 1,
+  "divs": [
+   "U14 Boys"
+  ]
+ },
+ {
+  "key": "breakdown impowerful 2",
+  "name": "TEAM BREAKDOWN IMPOWERFUL TEAM 2",
+  "teams": 1,
+  "divs": [
+   "U14 Boys"
+  ]
+ },
+ {
+  "key": "kingston impact fisher dowker",
+  "name": "Kingston Impact Fisher Dowker",
+  "teams": 1,
+  "divs": [
+   "U14 Boys"
+  ],
+  "region": "Capital-Kingston",
+  "lat": 44.2529897,
+  "lon": -76.550255
+ },
+ {
+  "key": "oshawa commander",
+  "name": "Oshawa Commander",
+  "teams": 1,
+  "divs": [
+   "U14 Boys"
+  ],
+  "lat": 43.8586329,
+  "lon": -78.8828473,
+  "city": "Oshawa",
+  "region": "Durham-York",
+  "via": "cityname"
+ },
+ {
+  "key": "gladiators ivor",
+  "name": "GLADIATORS IVOR",
+  "teams": 1,
+  "divs": [
+   "U14 Boys"
+  ]
+ },
+ {
+  "key": "gba grizzlies",
+  "name": "U14B GBA Grizzlies",
+  "teams": 1,
+  "divs": [
+   "U14 Boys"
+  ]
+ },
+ {
+  "key": "yssk thomas",
+  "name": "YSSK Thomas",
+  "teams": 1,
+  "divs": [
+   "U14 Boys"
+  ]
+ },
+ {
+  "key": "peterborough power summers",
+  "name": "Peterborough Power Summers",
+  "teams": 1,
+  "divs": [
+   "U14 Boys"
+  ],
+  "lat": 44.3021376,
+  "lon": -78.3198987,
+  "city": "Peterborough",
+  "region": "Durham-York",
+  "via": "cityname"
+ },
+ {
+  "key": "kazmaier",
+  "name": "Kazmaier",
+  "teams": 1,
+  "divs": [
+   "U14 Boys"
+  ]
+ },
+ {
+  "key": "sba clarke",
+  "name": "SBA Team Clarke",
+  "teams": 1,
+  "divs": [
+   "U14 Girls"
+  ]
+ },
+ {
+  "key": "barrie royals hreljac",
+  "name": "Barrie Royals Hreljac",
+  "teams": 1,
+  "divs": [
+   "U14 Girls"
+  ],
+  "region": "North Region",
+  "lat": 44.3625934,
+  "lon": -79.6398594
+ },
+ {
+  "key": "york lions appiah phillips",
+  "name": "North York Lions Appiah/Phillips",
+  "teams": 1,
+  "divs": [
+   "U14 Girls"
+  ],
+  "city": "North York",
+  "region": "Toronto",
+  "lat": 43.7995365,
+  "lon": -79.3554441,
+  "via": "cityname"
+ },
+ {
+  "key": "kingston impact severino",
+  "name": "Kingston Impact Severino",
+  "teams": 1,
+  "divs": [
+   "U14 Girls"
+  ],
+  "region": "Capital-Kingston",
+  "lat": 44.2529897,
+  "lon": -76.550255
+ },
+ {
+  "key": "valhalla",
+  "name": "U14G Valhalla",
+  "teams": 1,
+  "divs": [
+   "U14 Girls"
+  ],
+  "region": "West Region",
+  "lat": 42.9979343,
+  "lon": -82.3746831
+ },
+ {
+  "key": "gyba robbins",
+  "name": "GYBA Robbins",
+  "teams": 1,
+  "divs": [
+   "U14 Girls"
+  ]
+ },
+ {
+  "key": "kw viper majuery",
+  "name": "KW Viper Majuery",
+  "teams": 1,
+  "divs": [
+   "U14 Girls"
+  ]
+ },
+ {
+  "key": "belleville spirits de vries",
+  "name": "Belleville Spirits de Vries",
+  "teams": 1,
+  "divs": [
+   "U14 Girls"
+  ],
+  "region": "Capital-Kingston",
+  "lat": 44.1744093,
+  "lon": -77.3613343
+ },
+ {
+  "key": "tecumseh",
+  "name": "Tecumseh U14G",
+  "teams": 1,
+  "divs": [
+   "U14 Girls"
+  ],
+  "region": "West Region",
+  "lat": 42.3117966,
+  "lon": -82.8857592
+ },
+ {
+  "key": "london 86ers friesen",
+  "name": "London 86ers Friesen",
+  "teams": 1,
+  "divs": [
+   "U14 Girls"
+  ],
+  "region": "West Region",
+  "lat": 43.0279031,
+  "lon": -81.2592827
+ },
+ {
+  "key": "toronto lords bunag",
+  "name": "Toronto Lords Bunag",
+  "teams": 1,
+  "divs": [
+   "U14 Girls"
+  ],
+  "region": "Toronto Region",
+  "lat": 43.6441973,
+  "lon": -79.4042754
+ },
+ {
+  "key": "peterborough power harrington",
+  "name": "Peterborough Power Harrington",
+  "teams": 1,
+  "divs": [
+   "U14 Girls"
+  ],
+  "lat": 44.3021376,
+  "lon": -78.3198987,
+  "city": "Peterborough",
+  "region": "Durham-York",
+  "via": "cityname"
+ },
+ {
+  "key": "breakdown alan",
+  "name": "TEAM BREAKDOWN ALAN",
+  "teams": 1,
+  "divs": [
+   "U14 Girls"
+  ]
+ },
+ {
+  "key": "hoopzone",
+  "name": "Hoopzone",
+  "teams": 1,
+  "divs": [
+   "U14 Girls"
+  ],
+  "region": "Toronto Region",
+  "lat": 43.7931602,
+  "lon": -79.4192221
+ },
+ {
+  "key": "ynba avengers liversidge",
+  "name": "YNBA Avengers U14G Liversidge",
+  "teams": 1,
+  "divs": [
+   "U14 Girls"
+  ]
+ },
+ {
+  "key": "kingston impact law",
+  "name": "Kingston Impact Law",
+  "teams": 1,
+  "divs": [
+   "U14 Girls"
+  ],
+  "region": "Capital-Kingston",
+  "lat": 44.2529897,
+  "lon": -76.550255
+ },
+ {
+  "key": "ckatt cooksville",
+  "name": "CKATT/Cooksville",
+  "teams": 1,
+  "divs": [
+   "U16 Boys"
+  ],
+  "region": "Peel-Halton",
+  "lat": 43.6515107,
+  "lon": -79.7696928
+ },
+ {
+  "key": "burloak xzennis",
+  "name": "Burloak Elite Xzennis",
+  "teams": 1,
+  "divs": [
+   "U16 Boys"
+  ],
+  "city": "Burlington/Oakville",
+  "region": "Halton",
+  "lat": 0,
+  "lon": 0
+ },
+ {
+  "key": "eastern basketball",
+  "name": "Eastern Basketball Academy",
+  "teams": 1,
+  "divs": [
+   "U16 Boys"
+  ],
+  "region": "Toronto Region",
+  "lat": 43.8069636,
+  "lon": -79.2750655
+ },
+ {
+  "key": "haldimand huskies hinzey",
+  "name": "Haldimand Huskies Hinzey",
+  "teams": 1,
+  "divs": [
+   "U16 Boys"
+  ],
+  "region": "Hamilton-Niagara",
+  "lat": 43.0632605,
+  "lon": -79.9528799
+ },
+ {
+  "key": "union basil",
+  "name": "Union Elite Basil",
+  "teams": 1,
+  "divs": [
+   "U16 Boys"
+  ]
+ },
+ {
+  "key": "dk dragons",
+  "name": "DK Dragons Red",
+  "teams": 2,
+  "divs": [
+   "U16 Boys"
+  ],
+  "region": "Durham-York",
+  "lat": 43.9281811,
+  "lon": -78.6996098
+ },
+ {
+  "key": "breakdown fcf",
+  "name": "Breakdown FCF",
+  "teams": 1,
+  "divs": [
+   "U16 Boys"
+  ]
+ },
+ {
+  "key": "dc united",
+  "name": "DC UNITED",
+  "teams": 1,
+  "divs": [
+   "U16 Boys"
+  ],
+  "region": "Capital-Kingston",
+  "lat": 45.0212762,
+  "lon": -74.730345
+ },
+ {
+  "key": "gba steve",
+  "name": "GBA Steve",
+  "teams": 1,
+  "divs": [
+   "U16 Boys"
+  ]
+ },
+ {
+  "key": "eastern earthquakes",
+  "name": "Eastern Earthquakes",
+  "teams": 1,
+  "divs": [
+   "U16 Boys"
+  ],
+  "city": "",
+  "region": "",
+  "lat": 0,
+  "lon": 0
+ },
+ {
+  "key": "toronto lords ptolemy",
+  "name": "Toronto Lords Ptolemy",
+  "teams": 1,
+  "divs": [
+   "U16 Boys"
+  ],
+  "region": "Toronto Region",
+  "lat": 43.6441973,
+  "lon": -79.4042754
+ },
+ {
+  "key": "kw viper zavitz",
+  "name": "KW Viper Zavitz",
+  "teams": 1,
+  "divs": [
+   "U16 Boys"
+  ]
+ },
+ {
+  "key": "burloak jamie",
+  "name": "Burloak Elite Jamie",
+  "teams": 1,
+  "divs": [
+   "U16 Boys"
+  ],
+  "city": "Burlington/Oakville",
+  "region": "Halton",
+  "lat": 0,
+  "lon": 0
+ },
+ {
+  "key": "sba tappin",
+  "name": "SBA Team Tappin",
+  "teams": 1,
+  "divs": [
+   "U16 Boys"
+  ]
+ },
+ {
+  "key": "8",
+  "name": "ELITE 8",
+  "teams": 1,
+  "divs": [
+   "U16 Boys"
+  ]
+ },
+ {
+  "key": "hoopzone knights",
+  "name": "Hoopzone Knights",
+  "teams": 1,
+  "divs": [
+   "U16 Boys"
+  ],
+  "region": "Toronto Region",
+  "lat": 43.7931602,
+  "lon": -79.4192221
+ },
+ {
+  "key": "gba jaime",
+  "name": "GBA Jaime",
+  "teams": 1,
+  "divs": [
+   "U16 Boys"
+  ]
+ },
+ {
+  "key": "barrie royals cramp",
+  "name": "Barrie Royals Cramp",
+  "teams": 1,
+  "divs": [
+   "U16 Boys"
+  ],
+  "region": "North Region",
+  "lat": 44.3625934,
+  "lon": -79.6398594
+ },
+ {
+  "key": "cba",
+  "name": "CBA White",
+  "teams": 1,
+  "divs": [
+   "U16 Boys"
+  ]
+ },
+ {
+  "key": "breakthrough athletics",
+  "name": "Breakthrough Athletics",
+  "teams": 1,
+  "divs": [
+   "U16 Boys"
+  ],
+  "city": "",
+  "region": "",
+  "lat": 0,
+  "lon": 0
+ },
+ {
+  "key": "toronto lords yasay",
+  "name": "Toronto Lords Yasay",
+  "teams": 1,
+  "divs": [
+   "U16 Boys"
+  ],
+  "region": "Toronto Region",
+  "lat": 43.6441973,
+  "lon": -79.4042754
+ },
+ {
+  "key": "durham crossover basketball",
+  "name": "Durham Crossover Basketball",
+  "teams": 1,
+  "divs": [
+   "U16 Boys"
+  ],
+  "region": "Toronto Region",
+  "lat": 43.8069636,
+  "lon": -79.2750655
+ },
+ {
+  "key": "v3 basketball",
+  "name": "V3 Basketball",
+  "teams": 1,
+  "divs": [
+   "U16 Boys"
+  ],
+  "region": "Toronto Region",
+  "lat": 43.6890226,
+  "lon": -79.3181246
+ },
+ {
+  "key": "haldimand huskies quinn",
+  "name": "Haldimand Huskies Quinn",
+  "teams": 1,
+  "divs": [
+   "U16 Boys"
+  ],
+  "region": "Hamilton-Niagara",
+  "lat": 43.0632605,
+  "lon": -79.9528799
+ },
+ {
+  "key": "gba jordan",
+  "name": "GBA Jordan",
+  "teams": 1,
+  "divs": [
+   "U16 Boys"
+  ]
+ },
+ {
+  "key": "burloak anthony",
+  "name": "Burloak Elite Anthony",
+  "teams": 1,
+  "divs": [
+   "U16 Boys"
+  ],
+  "city": "Burlington/Oakville",
+  "region": "Halton",
+  "lat": 0,
+  "lon": 0
+ },
+ {
+  "key": "dba wright",
+  "name": "DBA Team Wright",
+  "teams": 1,
+  "divs": [
+   "U16 Boys"
+  ]
+ },
+ {
+  "key": "sba moore",
+  "name": "SBA Team Moore",
+  "teams": 1,
+  "divs": [
+   "U16 Boys"
+  ]
+ },
+ {
+  "key": "ynba avengers gabel",
+  "name": "YNBA Avengers U16B Gabel",
+  "teams": 1,
+  "divs": [
+   "U16 Boys"
+  ]
+ },
+ {
+  "key": "gladiators rowell",
+  "name": "GLADIATORS ROWELL",
+  "teams": 1,
+  "divs": [
+   "U16 Boys"
+  ]
+ },
+ {
+  "key": "myaa jaguars",
+  "name": "MYAA Jaguars",
+  "teams": 1,
+  "divs": [
+   "U16 Boys"
+  ]
+ },
+ {
+  "key": "northumberland edge",
+  "name": "Northumberland Edge",
+  "teams": 1,
+  "divs": [
+   "U16 Boys"
+  ]
+ },
+ {
+  "key": "ancaster magic palamarchuk",
+  "name": "Ancaster Magic Palamarchuk",
+  "teams": 1,
+  "divs": [
+   "U16 Boys"
+  ]
+ },
+ {
+  "key": "yssk lee",
+  "name": "YSSK Lee",
+  "teams": 1,
+  "divs": [
+   "U16 Boys"
+  ]
+ },
+ {
+  "key": "yssk jones",
+  "name": "YSSK Jones",
+  "teams": 1,
+  "divs": [
+   "U16 Boys"
+  ]
+ },
+ {
+  "key": "ancaster magic bonitatibus",
+  "name": "Ancaster Magic Bonitatibus",
+  "teams": 1,
+  "divs": [
+   "U16 Boys"
+  ]
+ },
+ {
+  "key": "burloak ossama",
+  "name": "Burloak Elite Ossama",
+  "teams": 1,
+  "divs": [
+   "U16 Boys"
+  ],
+  "city": "Burlington/Oakville",
+  "region": "Halton",
+  "lat": 0,
+  "lon": 0
+ },
+ {
+  "key": "sba barron",
+  "name": "SBA Team Barron",
+  "teams": 1,
+  "divs": [
+   "U16 Girls"
+  ]
+ },
+ {
+  "key": "gcba wolverines",
+  "name": "GCBA Wolverines",
+  "teams": 1,
+  "divs": [
+   "U16 Girls"
+  ]
+ },
+ {
+  "key": "peterborough power mcgarry",
+  "name": "Peterborough Power McGarry",
+  "teams": 1,
+  "divs": [
+   "U16 Girls"
+  ],
+  "lat": 44.3021376,
+  "lon": -78.3198987,
+  "city": "Peterborough",
+  "region": "Durham-York",
+  "via": "cityname"
+ },
+ {
+  "key": "yssk",
+  "name": "YSSK",
+  "teams": 1,
+  "divs": [
+   "U16 Girls"
+  ]
+ },
+ {
+  "key": "sba wiltshire",
+  "name": "SBA Team Wiltshire",
+  "teams": 1,
+  "divs": [
+   "U16 Girls"
+  ]
+ },
+ {
+  "key": "swampdonkeys",
+  "name": "Swampdonkeys",
+  "teams": 1,
+  "divs": [
+   "U16 Girls"
+  ]
+ },
+ {
+  "key": "nmba edge",
+  "name": "NMBA Edge",
+  "teams": 1,
+  "divs": [
+   "U17 Boys"
+  ]
+ },
+ {
+  "key": "gba jamal",
+  "name": "GBA Jamal",
+  "teams": 1,
+  "divs": [
+   "U17 Boys"
+  ]
+ },
+ {
+  "key": "gibbons",
+  "name": "Gibbons",
+  "teams": 1,
+  "divs": [
+   "U17 Boys"
+  ]
+ },
+ {
+  "key": "sba andrade",
+  "name": "SBA Team Andrade",
+  "teams": 1,
+  "divs": [
+   "U17 Boys"
+  ]
+ },
+ {
+  "key": "woodbridge lions",
+  "name": "WOODBRIDGE LIONS U17B",
+  "teams": 2,
+  "divs": [
+   "U17 Boys",
+   "U19 Women"
+  ]
+ },
+ {
+  "key": "cba varsity",
+  "name": "CBA Varsity U17 Boys",
+  "teams": 2,
+  "divs": [
+   "U17 Boys",
+   "U19 Men"
+  ]
+ },
+ {
+  "key": "ynba avengers mcwilliams",
+  "name": "YNBA Avengers U17B McWilliams",
+  "teams": 1,
+  "divs": [
+   "U17 Boys"
+  ]
+ },
+ {
+  "key": "barrie royals chapler",
+  "name": "Barrie Royals Chapler",
+  "teams": 1,
+  "divs": [
+   "U17 Boys"
+  ],
+  "region": "North Region",
+  "lat": 44.3625934,
+  "lon": -79.6398594
+ },
+ {
+  "key": "malton sting basketball",
+  "name": "Malton Sting Basketball- U17B",
+  "teams": 1,
+  "divs": [
+   "U17 Boys"
+  ],
+  "region": "Toronto Region",
+  "lat": 43.8069636,
+  "lon": -79.2750655
+ },
+ {
+  "key": "gladiators",
+  "name": "GLADIATORS - DAVE",
+  "teams": 1,
+  "divs": [
+   "U17 Boys"
+  ],
+  "region": "Durham-York",
+  "lat": 43.920959,
+  "lon": -78.9388849
+ },
+ {
+  "key": "gm johnston",
+  "name": "GM JOHNSTON",
+  "teams": 1,
+  "divs": [
+   "U17 Boys"
+  ]
+ },
+ {
+  "key": "guelph cyo",
+  "name": "Guelph CYO",
+  "teams": 1,
+  "divs": [
+   "U17 Boys"
+  ],
+  "lat": 43.5596243,
+  "lon": -80.2339612,
+  "city": "Guelph",
+  "region": "Kitchener-Waterloo",
+  "via": "cityname"
+ },
+ {
+  "key": "game 6 sports",
+  "name": "Game 6 Sports",
+  "teams": 1,
+  "divs": [
+   "U17 Boys"
+  ],
+  "region": "Durham-York",
+  "lat": 43.85075,
+  "lon": -79.6670506
+ },
+ {
+  "key": "kw viper perrott",
+  "name": "KW Viper Perrott",
+  "teams": 1,
+  "divs": [
+   "U17 Boys"
+  ]
+ },
+ {
+  "key": "ancaster magic mcewen",
+  "name": "Ancaster Magic McEwen",
+  "teams": 1,
+  "divs": [
+   "U17 Boys"
+  ]
+ },
+ {
+  "key": "haldimand huskies tindale",
+  "name": "Haldimand Huskies Tindale",
+  "teams": 1,
+  "divs": [
+   "U17 Boys"
+  ],
+  "region": "Hamilton-Niagara",
+  "lat": 43.0632605,
+  "lon": -79.9528799
+ },
+ {
+  "key": "grassroots canada",
+  "name": "Grassroots Elite Canada",
+  "teams": 1,
+  "divs": [
+   "U17 Boys"
+  ],
+  "region": "Toronto Region",
+  "lat": 43.8221219,
+  "lon": -79.2139666
+ },
+ {
+  "key": "sba patterson",
+  "name": "SBA Team Patterson",
+  "teams": 1,
+  "divs": [
+   "U17 Boys"
+  ]
+ },
+ {
+  "key": "gladiators brad",
+  "name": "GLADIATORS BRAD",
+  "teams": 1,
+  "divs": [
+   "U17 Boys"
+  ]
+ },
+ {
+  "key": "sba heraldo",
+  "name": "SBA Team Heraldo",
+  "teams": 1,
+  "divs": [
+   "U17 Boys"
+  ]
+ },
+ {
+  "key": "pbaa",
+  "name": "PBAA Academy",
+  "teams": 1,
+  "divs": [
+   "U17 Girls"
+  ]
+ },
+ {
+  "key": "london cyo",
+  "name": "London CYO",
+  "teams": 1,
+  "divs": [
+   "U17 Girls"
+  ],
+  "region": "West Region",
+  "lat": 43.0088951,
+  "lon": -81.1807786
+ },
+ {
+  "key": "kw viper scott",
+  "name": "KW Viper Scott",
+  "teams": 1,
+  "divs": [
+   "U17 Girls"
+  ]
+ },
+ {
+  "key": "oshawa strikers",
+  "name": "Oshawa Strikers",
+  "teams": 1,
+  "divs": [
+   "U17 Girls"
+  ],
+  "lat": 43.8586329,
+  "lon": -78.8828473,
+  "city": "Oshawa",
+  "region": "Durham-York",
+  "via": "cityname"
+ },
+ {
+  "key": "peterborough power butcher",
+  "name": "Peterborough Power Butcher",
+  "teams": 1,
+  "divs": [
+   "U17 Girls"
+  ],
+  "lat": 44.3021376,
+  "lon": -78.3198987,
+  "city": "Peterborough",
+  "region": "Durham-York",
+  "via": "cityname"
+ },
+ {
+  "key": "flamborough fire sol",
+  "name": "Flamborough Fire Sol",
+  "teams": 1,
+  "divs": [
+   "U17 Girls"
+  ],
+  "region": "Hamilton-Niagara",
+  "lat": 43.3449404,
+  "lon": -79.8910346
+ },
+ {
+  "key": "eastern basketball association",
+  "name": "Eastern Basketball Association",
+  "teams": 1,
+  "divs": [
+   "U17 Girls"
+  ],
+  "region": "Toronto Region",
+  "lat": 43.8069636,
+  "lon": -79.2750655
+ },
+ {
+  "key": "flamborough fire",
+  "name": "Flamborough Fire",
+  "teams": 1,
+  "divs": [
+   "U17 Girls"
+  ],
+  "region": "Hamilton-Niagara",
+  "lat": 43.3449404,
+  "lon": -79.8910346
+ },
+ {
+  "key": "sba manalo",
+  "name": "SBA Team Manalo",
+  "teams": 1,
+  "divs": [
+   "U17 Girls"
+  ]
+ },
+ {
+  "key": "grimsby grizzlies elmer",
+  "name": "Grimsby Grizzlies Elmer",
+  "teams": 1,
+  "divs": [
+   "U17 Girls"
+  ],
+  "lat": 43.188086,
+  "lon": -79.5448014,
+  "city": "Grimsby",
+  "region": "Hamilton-Niagara",
+  "via": "cityname"
+ },
+ {
+  "key": "dk men",
+  "name": "DK U19 Men",
+  "teams": 1,
+  "divs": [
+   "U19 Men"
+  ],
+  "city": "Milton",
+  "region": "",
+  "lat": 0,
+  "lon": 0
+ },
+ {
+  "key": "downtowns finest",
+  "name": "Downtowns Finest",
+  "teams": 1,
+  "divs": [
+   "U19 Men"
+  ]
+ },
+ {
+  "key": "ancaster magic francis",
+  "name": "Ancaster Magic Francis",
+  "teams": 1,
+  "divs": [
+   "U19 Men"
+  ],
+  "city": "St. Catharines",
+  "region": "Niagara",
+  "lat": 0,
+  "lon": 0
+ },
+ {
+  "key": "blessed sacrament",
+  "name": "Blessed Sacrament",
+  "teams": 1,
+  "divs": [
+   "U19 Men"
+  ],
+  "region": "Hamilton-Niagara",
+  "lat": 43.2284688,
+  "lon": -79.8398503
+ },
+ {
+  "key": "kw viper randell",
+  "name": "KW Viper Randell",
+  "teams": 1,
+  "divs": [
+   "U19 Men"
+  ]
+ },
+ {
+  "key": "ck wildcats",
+  "name": "CK Wildcats",
+  "teams": 1,
+  "divs": [
+   "U19 Men"
+  ],
+  "region": "Durham-York",
+  "lat": 44.3530682,
+  "lon": -78.738543
+ },
+ {
+  "key": "collingwood trailblazers u19m",
+  "name": "Collingwood Trailblazers U19M",
+  "teams": 1,
+  "divs": [
+   "U19 Men"
+  ],
+  "region": "North Region",
+  "lat": 44.5029416,
+  "lon": -80.2212387
+ },
+ {
+  "key": "woodbridge lions u19m",
+  "name": "WOODBRIDGE LIONS U19M",
+  "teams": 1,
+  "divs": [
+   "U19 Men"
+  ]
+ },
+ {
+  "key": "ancaster magic ransom",
+  "name": "Ancaster Magic Ransom",
+  "teams": 1,
+  "divs": [
+   "U19 Men"
+  ]
+ },
+ {
+  "key": "sba matsugu",
+  "name": "SBA Team Matsugu",
+  "teams": 1,
+  "divs": [
+   "U19 Men"
+  ]
+ },
+ {
+  "key": "gladiators andre",
+  "name": "GLADIATORS ANDRE",
+  "teams": 1,
+  "divs": [
+   "U19 Men"
+  ]
+ },
+ {
+  "key": "yssk jameer",
+  "name": "YSSK Jameer",
+  "teams": 1,
+  "divs": [
+   "U19 Men"
+  ]
+ },
+ {
+  "key": "kw viper streit",
+  "name": "KW Viper Streit",
+  "teams": 1,
+  "divs": [
+   "U19 Men"
+  ]
+ },
+ {
+  "key": "brooklin",
+  "name": "Brooklin Elite",
+  "teams": 1,
+  "divs": [
+   "U19 Men"
+  ]
+ },
+ {
+  "key": "sba busby",
+  "name": "SBA Team Busby",
+  "teams": 1,
+  "divs": [
+   "U19 Women"
+  ]
+ },
+ {
+  "key": "timmins selects",
+  "name": "Timmins Selects",
+  "teams": 1,
+  "divs": [
+   "U19 Women"
+  ],
+  "region": "North Region",
+  "lat": 48.4916075,
+  "lon": -81.3378856
+ },
+ {
+  "key": "gcba",
+  "name": "GCBA - Rob Lavoie",
+  "teams": 1,
+  "divs": [
+   "U19 Women"
+  ]
+ },
+ {
+  "key": "u19w trailblazers",
+  "name": "U19W Trailblazers",
+  "teams": 1,
+  "divs": [
+   "U19 Women"
+  ]
+ },
+ {
+  "key": "barrie royals wylie",
+  "name": "Barrie Royals Wylie",
+  "teams": 1,
+  "divs": [
+   "U19 Women"
+  ],
+  "region": "North Region",
+  "lat": 44.3625934,
+  "lon": -79.6398594
+ },
+ {
+  "key": "yssk marchione",
+  "name": "YSSK Marchione",
+  "teams": 1,
+  "divs": [
+   "U19 Women"
+  ]
+ },
+ {
+  "key": "london cyo lambert",
+  "name": "London CYO Lambert",
+  "teams": 1,
+  "divs": [
+   "U19 Women"
+  ],
+  "region": "West Region",
+  "lat": 43.0088951,
+  "lon": -81.1807786
+ },
+ {
+  "key": "burloak darcy",
+  "name": "Burloak Elite Darcy",
+  "teams": 1,
+  "divs": [
+   "U19 Women"
+  ],
+  "city": "Burlington/Oakville",
+  "region": "Halton",
+  "lat": 0,
+  "lon": 0
+ },
+ {
+  "key": "kw viper dunkley",
+  "name": "KW Viper Dunkley",
+  "teams": 1,
+  "divs": [
+   "U19 Women"
+  ]
+ }
+]

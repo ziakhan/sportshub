@@ -1,0 +1,131 @@
+{
+  "investigated_at": "2026-08-14",
+  "routes": [
+    {
+      "name": "OBA \"Find a Club\" embedded Google My Maps -> KML export (THE ROUTE)",
+      "url": "https://www.google.com/maps/d/kml?mid=1jf36n-Sx3O1KSIlSjRcGu-JABLNcyUgo&forcekml=1",
+      "access": "public",
+      "yields": "club list",
+      "estimated_records": 187,
+      "structure": "The basketball.on.ca/find-a-club/ page (regional tabs: West, Hamilton-Niagara, North, Kitchener-Waterloo, Toronto, Durham-York, Peel-Halton, Capital-Kingston) is a static shell with no club data in its own HTML -- the real data is a Google My Maps map embedded via <iframe src=\"https://www.google.com/maps/d/u/1/embed?mid=1jf36n-Sx3O1KSIlSjRcGu-JABLNcyUgo...\">. Google My Maps exposes every such map as a plain KML file at the URL above (standard Google endpoint, no auth, works with a bare curl, no custom headers needed -- verified with and without a User-Agent). The KML has one <Folder> per region (matching the 8 site tabs exactly) and one <Placemark> per club inside each folder: <name> = club name, <description> = club website URL (and sometimes an email), <Point><coordinates> = lat/long. Parsed 187 Placemarks total, zero parsing anomalies (folder names never leak in as fake clubs). This count matches OBA's own public claim of ~175-187 affiliated member clubs almost exactly, so this is very likely the COMPLETE grassroots/rep club membership list, not a sample.",
+      "url_pattern": "Single static URL, not paginated: https://www.google.com/maps/d/kml?mid=<MAP_ID>&forcekml=1 where MAP_ID=1jf36n-Sx3O1KSIlSjRcGu-JABLNcyUgo. One fetch returns all 187 clubs across all 8 regions in one XML document.",
+      "sample_records": [
+        "Albany Avenue Basketball (Toronto Region) - https://albanyavenuebasketball.ca/",
+        "Basketball World Toronto (Toronto Region) - https://www.bwt.ca/ | youth@bwt.ca",
+        "YAAACE (Toronto Region)",
+        "Scarborough Basketball Association (Toronto Region)",
+        "Etobicoke Basketball Association (Toronto Region)",
+        "Durham City Basketball Association (Durham-York)",
+        "Markham Unionville Minor Basketball Association (MUMBA) (Durham-York)",
+        "Brampton Minor Basketball Association (Peel-Halton)",
+        "Ancaster Basketball Club (Magic) (Hamilton-Niagara)",
+        "Greater Sudbury Basketball Association (North Region)",
+        "Gloucester Cumberland Basketball Association (Wolverines) (Capital-Kingston)",
+        "London 86ers (West Region)"
+      ],
+      "notes": "This is the single highest-value route found. Region breakdown observed: Toronto Region 34, Durham-York 37, Kitchener-Waterloo 11, Capital-Kingston 20, West Region 19, North Region 21, Hamilton-Niagara 17, Peel-Halton 28 = 187 total. About 14 clubs have an empty <description> (no website on file with OBA) but still have a name/region/coordinates. Full parsed list (name, region, website/email, lat/long) saved to docs/research/raw/oba-find-a-club-kml-parsed.json for direct reuse -- no further scraping needed, this can be loaded as-is."
+    },
+    {
+      "name": "OBL division schedules -- per-division Google Sheets (public CSV export)",
+      "url": "https://basketball.on.ca/competitions/obl/ontario-basketball-league-schedule-2/",
+      "access": "public",
+      "yields": "team list",
+      "estimated_records": 1900,
+      "structure": "The OBL schedule page links out to one Google Sheet per age/gender division (19 divisions: U9-U19 Boys, U10-U19 Girls). Each sheet's normal /edit URL renders via JS and returns no data to a plain fetch, BUT the Google Sheets CSV export endpoint (https://docs.google.com/spreadsheets/d/<ID>/export?format=csv) works with a bare curl, no login, no cookies. Each division's sheet lays out teams as a grid of 'Pool A / Pool B / Pool C...' column headers with one team name per cell underneath (team names typically embed club name + division + coach, e.g. 'Burlington Force U14 Boys (Scully)', 'EY Eagles U14 Boys - Rozario'). Verified by direct fetch on all 9 boys divisions (U9-U17): non-empty team-cell counts were 21/63/88/119/137/174/119/143/89 respectively (~953 team-slots for boys alone across 9 divisions before the fetch loop was cut short by a timeout); girls divisions U10-U19 plus U19 Men were not exhaustively counted but the page structure and per-division Google Sheets are identical and confirmed public.",
+      "url_pattern": "https://docs.google.com/spreadsheets/d/<SHEET_ID>/export?format=csv -- one SHEET_ID per division, harvested off the OBL schedule page's link list (19 IDs collected, see notes).",
+      "sample_records": [
+        "The Performance Group (TPG) [U14 Boys Pool A]",
+        "EY Eagles U14 Boys - Rozario [U14 Boys Pool A]",
+        "YAAACE U14 [U14 Boys Pool A]",
+        "Burlington Force U14 Boys (Scully) [U14 Boys Pool A]",
+        "Brantford CYO Hawks - U14 - Esposito [U14 Boys Pool F]",
+        "Union Elite Gr 8 Marv [U14 Boys Pool A]",
+        "Blessed Sacrament Yellow Jackets- Guibao [U14 Boys Pool E]",
+        "Vaughan Panthers U14 Boys - Coach Curtis [U14 Boys Pool E]",
+        "Ancaster Magic U14 Boys Hall [U14 Boys Pool I]",
+        "Nepean Blue Devils [U14 Boys Pool I]"
+      ],
+      "notes": "These are TEAM entries (a club can field several across age groups/tiers), so this is the route to reach OBA's claimed ~1,200 rep teams, complementary to the 187-club KML route which gives the club/org layer. Team names need light parsing to strip age-group/coach suffixes and map back to a parent club (most already contain a recognizable club name as a prefix). All 19 division sheet IDs for OBL were collected directly off the schedule page; the same page pattern (two Google Sheet links per division: one Provincial Championship, one Ontario Cup) also exists on https://basketball.on.ca/competitions/championships/schedules-results/ with 18 divisions x 2 = 36 more sheets, all following the same public export?format=csv pattern -- confirmed working on one sample (see Ontario Cup route below)."
+    },
+    {
+      "name": "Ontario Cup entry lists / pools -- per-division Google Sheets (public CSV export)",
+      "url": "https://basketball.on.ca/competitions/championships/schedules-results/",
+      "access": "public",
+      "yields": "team list",
+      "estimated_records": 800,
+      "structure": "Same mechanism as the OBL sheets: the page lists 18 age/gender divisions, each with a 'Provincial Championship' and an 'Ontario Cup' Google Sheet link. The Ontario Cup sheet sampled (U10 Girls, Division #1, hosted by Pelham Panthers) contains pool standings with team names in a 'Seed / Name' column plus won-loss records and tie-break logic, e.g. real teams: 'Etobicoke Thunder U10 Girls', 'Chatham Kent Wildcats - U10 Girls - Brennan', 'Guelph Gryphons Greenidge', 'Hamilton Transway #1'.",
+      "url_pattern": "https://docs.google.com/spreadsheets/d/<SHEET_ID>/export?format=csv&gid=<GID> -- SHEET_ID+GID pairs harvested per division off the schedules-results page (18 Ontario Cup + 18 Provincial Championship links collected).",
+      "sample_records": [
+        "Etobicoke Thunder U10 Girls",
+        "Chatham Kent Wildcats - U10 Girls - Brennan",
+        "Guelph Gryphons Greenidge",
+        "Hamilton Transway #1",
+        "Pelham Panthers (host club)"
+      ],
+      "notes": "Not exhaustively harvested (only 1 of 36 sheets fetched to confirm access), but the mechanism is proven public and identical to the OBL sheets. Ontario Cup entries skew toward the same clubs already captured in the 187-club KML list, so this route is best used to validate/enrich team-level detail rather than discover new clubs."
+    },
+    {
+      "name": "RAMP InterActive host for OBA Provincial Championships",
+      "url": "http://obaprovincials.msa4.rampinteractive.com/division/3544/32092/standings",
+      "access": "blocked",
+      "yields": "none",
+      "estimated_records": 0,
+      "structure": "Confirmed real RAMP host: obaprovincials.msa4.rampinteractive.com (found via web search snippet showing a real team page: '/team/11238/3766/34008/316225/calendar' for 'MYAA Jaguars U17 Boys'). This is a genuine public site (Cloudflare-fronted, no login wall) that would enumerate every team per division/standings page if reachable.",
+      "url_pattern": "http(s)://obaprovincials.msa4.rampinteractive.com/division/<divisionGroupId>/<divisionId>/standings ; team pages at /team/<teamId>/<...>/calendar",
+      "sample_records": ["MYAA Jaguars U17 Boys (seen only in a search-engine result snippet, page itself not retrievable)"],
+      "notes": "Both the WebFetch tool and a direct curl (with a normal browser User-Agent, following the http->https redirect) got HTTP 403 with header 'cf-mitigated: challenge' -- this is Cloudflare's JS/browser challenge, NOT a login wall. No account or credential is being blocked; a human opening this URL in an ordinary browser would very likely see the standings page fine (bots/scripts get challenged). This is not something to bypass per the task's rules -- flagging it as a route that exists and is genuinely public-facing, but that a plain fetch/curl cannot retrieve. If this data is wanted, the practical unblockers are: (a) a headless browser with JS execution capable of clearing a Cloudflare challenge, or (b) asking OBA/RAMP for a data export, or (c) relying on the equivalent Google Sheets (see OBL/Ontario Cup routes above), which mirror the same standings data and are NOT behind Cloudflare."
+    },
+    {
+      "name": "OBA site search / sitemap / robots.txt",
+      "url": "https://basketball.on.ca/sitemap.xml , https://basketball.on.ca/robots.txt",
+      "access": "public",
+      "yields": "none",
+      "estimated_records": 0,
+      "structure": "robots.txt only disallows calendar-plugin action URLs and an ai1ec_exporter_controller param -- nothing relevant is blocked. sitemap.xml (Yoast-generated) indexes post-sitemap1/2, page-sitemap, widget-sitemap, hof_inductee-sitemap, team_ontario-sitemap, team_ontario_coaches-sitemap, category/tag sitemaps -- no club or member directory sitemap exists; club data isn't in a normal WP page/post at all, it lives only in the embedded Google My Maps (see route 1).",
+      "url_pattern": "n/a",
+      "sample_records": [],
+      "notes": "Useful only to confirm nothing is hidden/blocked here -- the club directory genuinely isn't crawlable through normal WordPress content, which is why it took the iframe->KML pivot to find it."
+    },
+    {
+      "name": "OBA sanctioned tournament search",
+      "url": "https://basketball.on.ca/competitions/search-for-tournament/",
+      "access": "public",
+      "yields": "none",
+      "estimated_records": 0,
+      "structure": "Page template with column headers (Date, Tournament Name, Age & Gender, Number of Teams, Registration Deadline, Links, Contact Person) but currently empty for the 2026-27 season -- no data rendered yet.",
+      "url_pattern": "n/a",
+      "sample_records": [],
+      "notes": "Dead end for now, revisit later in the season once tournaments are posted; even when populated this yields tournament entrants (a subset of club/team activity), not the full member roster."
+    },
+    {
+      "name": "OBA annual reports / financial statements (PDF)",
+      "url": "https://basketball.on.ca/wp-content/uploads/2024/10/2023-24-OBA-Annual-Report.pdf , https://basketball.on.ca/wp-content/uploads/2026/06/Ontario-Basketball-Association-20250831-Final-FS.pdf",
+      "access": "public",
+      "yields": "none",
+      "estimated_records": 0,
+      "structure": "PDF documents linked from https://basketball.on.ca/about-us-2/annual-meeting-members/ and /about-us-2/. Prior web-search snippet states OBA 'affiliates about 180 member clubs and associations each year' and 'sanctions approximately 400 tournaments' -- a summary count, not a per-club list. PDFs not opened page-by-page in this pass; flagging as a place to double check for a club-count corroboration only, not a name-level list.",
+      "url_pattern": "n/a",
+      "sample_records": [],
+      "notes": "Low priority -- the KML route already yields names, these PDFs would at best confirm the total count (~180, which matches our 187 observed)."
+    },
+    {
+      "name": "Regional multi-sport associations feeding OBL (Toronto/York/Peel/Durham/Ottawa)",
+      "url": "n/a",
+      "access": "public",
+      "yields": "none",
+      "estimated_records": 0,
+      "structure": "Investigated whether bodies like 'Scarborough Basketball Association', 'Etobicoke Basketball Association', 'Vaughan Basketball Association', 'Gloucester Cumberland Basketball Association' etc. are umbrella organizations with their OWN separate member-club sub-lists (which would mean the KML undercounts). They are not -- in the KML, these ARE the leaf-level clubs themselves (one Placemark each), and the 'Toronto Region' / 'Durham-York' / 'Peel-Halton' / 'Capital-Kingston' groupings in the KML already ARE the regional associations OBA organizes by. No separate regional-body directory exists beyond what route 1 already captures.",
+      "url_pattern": "n/a",
+      "sample_records": [],
+      "notes": "Ruled out as a distinct route -- folded into route 1's findings."
+    }
+  ],
+  "best_route": "Route 1, the OBA 'Find a Club' embedded Google My Maps KML export (https://www.google.com/maps/d/kml?mid=1jf36n-Sx3O1KSIlSjRcGu-JABLNcyUgo&forcekml=1). It is a single unauthenticated GET that returns all 187 member clubs in one document, pre-organized into the same 8 regions OBA itself uses, each with a name, website/email, and lat/long -- essentially a ready-made structured dataset, no pagination, no JS rendering, no Cloudflare, matches OBA's own ~180-club claim almost exactly. Already parsed and saved to docs/research/raw/oba-find-a-club-kml-parsed.json. For the ~1,200 rep-team layer (finer than club), pair it with the OBL/Ontario Cup per-division Google Sheets (routes 2 and 3), which are also public CSV exports and give team-level entries that map back to these same 187 clubs.",
+  "blockers": [
+    "obaprovincials.msa4.rampinteractive.com (the RAMP standings/team site) is Cloudflare-challenge protected (HTTP 403, cf-mitigated: challenge) against scripted fetches. It is not a login wall -- a human browser would likely load it fine -- but it cannot be curled or WebFetched as-is. Not attempted to bypass per task rules. If this data is specifically needed, it requires either a JS-capable headless browser or an OBA/RAMP data request; otherwise the Google Sheets routes already substitute for it.",
+    "The 36 Provincial-Championship + Ontario-Cup sheets and the 19 OBL division sheets were only spot-checked (a handful fetched), not fully harvested end-to-end in this pass -- doing so is mechanical (script the export?format=csv fetch over the ~55 collected sheet IDs) but was left for an actual harvest run rather than this recon pass.",
+    "~14 of the 187 KML club records have no website/email on file with OBA (name + region + coordinates only) -- fine for a directory entry, but there's no contact/enrichment path for those without a manual search.",
+    "OBA annual report / financial statement PDFs were not opened in this pass; only relevant to corroborate the ~180-club total, not to add names."
+  ],
+  "estimated_total_ontario_clubs_reachable": 187
+}

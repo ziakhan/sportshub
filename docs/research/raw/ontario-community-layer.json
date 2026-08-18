@@ -1,0 +1,196 @@
+{
+  "investigated_at": "2026-08-14",
+  "method_note": "Public web research only (WebSearch + WebFetch of public pages). No logins bypassed. Ontario Basketball's own 'Find a Club' directory (basketball.on.ca/find-a-club/) renders its per-region club lists via client-side JavaScript tabs that a static fetch cannot see — flagged below as the single highest-value unresolved target. Every club below was corroborated by at least one fetched or search-indexed page; the evidence_url is where the name/city/type was actually seen.",
+  "directories": [
+    {
+      "name": "Ontario Basketball Association – Find a Club",
+      "url": "https://basketball.on.ca/find-a-club/",
+      "access": "public",
+      "yields_count": 0,
+      "notes": "Confirmed structure: 8 regional tabs (West Region, Hamilton-Niagara Region, North Region, Kitchener-Waterloo Region, Toronto Region, Durham-York, Peel-Halton, Capital-Kingston) covering ~175-180 affiliated clubs/associations per OBA's own public statements. The actual club listings inside each tab load via JavaScript and were NOT retrievable through static WebFetch (tool returned only the page shell/nav both times, including a second attempt explicitly hunting for embedded JSON). This is almost certainly where most of Ontario's community layer is enumerated by OBA itself. Needs a browser-automation fetch (e.g. Playwright) to click each regional tab and scrape the DOM after render."
+    },
+    {
+      "name": "Ontario Basketball Association – Find an Affiliated Club or Camp Info",
+      "url": "https://basketball.on.ca/get-involved/find-an-affiliated-club-or-camp-info/",
+      "access": "public",
+      "yields_count": 1,
+      "notes": "Single club-profile template page (Sports Savvy, Dundas ON) rendered with mostly placeholder/Lorem-ipsum fields — appears to be an individual listing detail page in the same club-directory system as 'Find a Club', reached via a per-club ID/slug not discovered in this sweep."
+    },
+    {
+      "name": "Ontario Basketball Association – Registered Teams",
+      "url": "https://basketball.on.ca/competitions/registered-teams/",
+      "access": "public",
+      "yields_count": 0,
+      "notes": "Filter UI (Club / Age Group / Gender) that hands off to an external SportsAvvy-powered registration portal; no static list of club names visible."
+    },
+    {
+      "name": "Ontario Basketball Association – Annual Reports (PDF archive)",
+      "url": "https://basketball.on.ca/about-us-2/annual-report/",
+      "access": "public",
+      "yields_count": 0,
+      "notes": "PDF annual reports (e.g. 2022-23, 2018-19) exist and were located but not opened/read in this sweep. OBA states ~175-180 affiliated clubs/year; these reports may contain an appendix roster of every affiliated club — a promising unread source."
+    },
+    {
+      "name": "211 Ontario (211ontario.ca) community services directory",
+      "url": "https://211ontario.ca/",
+      "access": "public",
+      "yields_count": 15,
+      "notes": "The single most productive general directory found. Individual org records are indexed and fetchable (Guelph Youth Basketball Association, Kitchener-Waterloo Youth Basketball Association, Grimsby Basketball Association, Chatham-Kent Wildcats, Orillia Youth Basketball Association, Pelham Panthers Basketball Association, etc. all confirmed this way). However, direct in-site search (https://211ontario.ca/search/?q=basketball) returned only a bot-check/'Verification' interstitial to WebFetch — could not bulk-browse. All yields here came from targeted WebSearch queries of the form 'site:211ontario.ca basketball', which almost certainly only surfaced a fraction of what 211's ~60,000-record province-wide database actually holds under its Basketball/Youth Sports category."
+    },
+    {
+      "name": "CIOC / OpenCIOC regional community-information network (peel.cioc.ca, halton.cioc.ca, niagara.cioc.ca, centraleastontario.cioc.ca, regionofwaterloo.cioc.ca, infobarrie.cioc.ca, simcoecounty.cioc.ca, orillia.cioc.ca, info-bhn.cioc.ca, etc.)",
+      "url": "https://www.cioc.ca/",
+      "access": "public",
+      "yields_count": 8,
+      "notes": "Legacy 211-affiliated regional directories, one per county/region, each with its own 'bresults.asp?SubjID=NNN' basketball-category search. Peel's (peel.cioc.ca/bresults.asp?SubjID=186) worked and returned 6 results (2 genuine clubs + 2 municipal rec centres + 1 unrelated soccer centre + 1 satellite youth-outreach office), confirming the mechanism but showing thin/inconsistent tagging (it missed known Peel clubs like Team Breakdown and Monarchs). The same SubjID guessed against Halton, Niagara, Central-East Ontario, and Waterloo Region either returned 'no records' or 302-redirected to www.cioc.ca root, indicating those regional instances are being sunset/merged into 211ontario.ca. Individual record pages (not the category search) still resolve fine on several of these subdomains."
+    },
+    {
+      "name": "Sudbury SportLink",
+      "url": "https://sudburysportlink.ca/sudbury-youth-basketball-association/",
+      "access": "public",
+      "yields_count": 1,
+      "notes": "City-specific community-sport directory site (comparable model to basketball604.com but multi-sport and single-city). Only one basketball entry surfaced via search; the site's own basketball or full-directory category page was not located/fetched. Worth a direct crawl — other Ontario cities may run similar 'SportLink'-branded directories not yet checked."
+    },
+    {
+      "name": "Total Sports Quinte – Basketball directory category",
+      "url": "https://quinte.totalsportsmedia.ca/directory/wpbdp_category/basketball/",
+      "access": "public",
+      "yields_count": 6,
+      "notes": "Regional sports-media business directory for the Belleville/Quinte/Trenton area. Returned 6 basketball-tagged listings, but most are competitive/travel clubs (Belleville Spirits) or municipal/military recreation (PSP Community Recreation at CFB Trenton, Wheelchair Basketball Quinte) rather than house-league community associations — suggests the true Quinte community layer sits elsewhere (municipal program guides, school gyms) and is under-indexed here."
+    },
+    {
+      "name": "Ottawa Valley Basketball Association of Basketball Officials – Links & Partners page",
+      "url": "https://ovbabo.com/links-and-partners/",
+      "access": "public",
+      "yields_count": 8,
+      "notes": "An officials' association (not itself a youth club) whose partner-links page functions as a de facto small directory of Ottawa/Eastern-Ontario community basketball associations (Kanata, Gloucester-Cumberland, Nepean, West Ottawa, Ottawa Shooting Stars, Ottawa South, plus the Eastern Ontario Basketball League and Naismith Basketball Association). High-value low-volume find."
+    },
+    {
+      "name": "Niagara District Basketball [Referees/Officials] Association – links page",
+      "url": "http://ndbra.com/links.html",
+      "access": "blocked",
+      "yields_count": 0,
+      "notes": "Site serves over an obsolete/unsupported TLS configuration — WebFetch failed with 'UNSUPPORTED_PROTOCOL'. Surfaced only in search snippets; never actually read. Likely a dead or near-dead site but worth one more try via a plain browser/curl with legacy TLS allowed."
+    },
+    {
+      "name": "Jr. NBA Canada – Find a Community / Find Your Program",
+      "url": "https://www.jrnba.ca/the-program/find-your-program",
+      "access": "blocked",
+      "yields_count": 0,
+      "notes": "This was expected to be Ontario's equivalent of the Saskatchewan TeamLinkt SKY Basketball communities page (which yielded 27 clubs there). Fetched twice under different URLs (jrnba.ca/find-your-program and the ecrew.ca locator referenced from a search snippet, nba.ecrew.ca/index.php?type=RE&loc=en&doprovince=ON&v=d) — the jrnba.ca page is a template with no populated results in static HTML, and nba.ecrew.ca failed outright with a DNS error (domain does not currently resolve). This remains the biggest gap against angle #6 of the brief; needs either a working current URL for the Jr NBA Canada host-site locator or a JS-rendering fetch of jrnba.ca's results widget."
+    },
+    {
+      "name": "Ontario Basketball Association – Community programs page (Jr. NBA, Mega Hoops, 3x3, OSDP, Midnight Basketball, Lay-Up Camp)",
+      "url": "https://basketball.on.ca/programs/community/",
+      "access": "public",
+      "yields_count": 2,
+      "notes": "Lists OBA's own community-facing programs and names two Toronto community partners (Lay-Up Youth Basketball Camp, Midnight Basketball) but is a program-description page, not a club directory."
+    }
+  ],
+  "clubs": [
+    { "name": "North Toronto Basketball Association (NTBA)", "city": "Toronto (North Toronto)", "region": "Toronto Region", "type": "house-league", "website": "https://ntbasketball.com/", "email": "", "phone": "", "evidence_url": "https://ntbasketball.com/house-league/" },
+    { "name": "Scarborough Basketball Association (SBA)", "city": "Toronto (Scarborough)", "region": "Toronto Region", "type": "house-league", "website": "https://sbabasketball.ca/", "email": "", "phone": "", "evidence_url": "https://sbabasketball.ca/sba-house-league-basketball/" },
+    { "name": "East York Basketball (Club)", "city": "Toronto (East York/Beaches)", "region": "Toronto Region", "type": "house-league", "website": "https://eastyorkbasketball.com/", "email": "", "phone": "", "evidence_url": "https://eastyorkbasketball.com/houseleague/" },
+    { "name": "Etobicoke Basketball Association (EBA)", "city": "Toronto (Etobicoke)", "region": "Toronto Region", "type": "house-league", "website": "https://etobicokebasketball.com/", "email": "", "phone": "(647) 238-2690", "evidence_url": "https://etobicokebasketball.com/etobicoke-basketball-league" },
+    { "name": "North Region Basketball Association (NRBA)", "city": "Toronto (Downsview/North York)", "region": "Toronto Region", "type": "house-league", "website": "https://www.leaguelineup.com/welcome.asp?url=northregionbasketball", "email": "", "phone": "", "evidence_url": "https://www.leaguelineup.com/welcome.asp?url=northregionbasketball" },
+    { "name": "Toronto Chinese Basketball Association (TCBL/TCBA)", "city": "Toronto/Markham", "region": "Toronto Region", "type": "community", "website": "https://tcba.torontochinese.ca/about-league/", "email": "", "phone": "", "evidence_url": "https://tcba.torontochinese.ca/about-league/" },
+    { "name": "Midnight Basketball (Toronto)", "city": "Toronto", "region": "Toronto Region", "type": "community", "website": "", "email": "", "phone": "", "evidence_url": "https://basketball.on.ca/programs/community/" },
+    { "name": "Lay-Up Youth Basketball Camp", "city": "Toronto", "region": "Toronto Region", "type": "community", "website": "", "email": "", "phone": "", "evidence_url": "https://basketball.on.ca/programs/community/" },
+
+    { "name": "Brampton Minor Basketball Association (BMBA)", "city": "Brampton", "region": "Peel-Halton", "type": "community", "website": "https://bramptonbasketball.com/", "email": "info@bramptonbasketball.com", "phone": "905-455-5277", "evidence_url": "https://bramptonbasketball.com/club-info/" },
+    { "name": "Mississauga Minor Basketball Association (MMBA)", "city": "Mississauga", "region": "Peel-Halton", "type": "community", "website": "http://www.mmba.on.ca", "email": "info@mmba.on.ca", "phone": "905-607-9803", "evidence_url": "https://localwiki.org/mississauga/Mississauga_Minor_Basketball_Association" },
+    { "name": "Caledon Cougars Basketball Association", "city": "Caledon", "region": "Peel-Halton", "type": "community", "website": "", "email": "", "phone": "", "evidence_url": "https://peel.cioc.ca/record/CAL0171" },
+    { "name": "Team Breakdown Basketball", "city": "Brampton/Mississauga/Guelph/Caledon", "region": "Peel-Halton", "type": "community", "website": "https://www.breakdownbasketball.ca/", "email": "", "phone": "", "evidence_url": "https://www.breakdownbasketball.ca/" },
+    { "name": "Monarchs Basketball", "city": "Mississauga/Milton/Oakville/Caledon", "region": "Peel-Halton", "type": "community", "website": "https://monarchsbasketball.ca/", "email": "", "phone": "", "evidence_url": "https://monarchsbasketball.ca/" },
+    { "name": "BGC Peel (Boys and Girls Club of Peel)", "city": "Mississauga/Brampton/Caledon", "region": "Peel-Halton", "type": "ymca", "website": "https://www.bgcpeel.org/", "email": "", "phone": "", "evidence_url": "https://www.bgcpeel.org/programs/program-locations/" },
+    { "name": "Brampton Community Services – Cassie Campbell Community Centre (basketball programs)", "city": "Brampton", "region": "Peel-Halton", "type": "municipal", "website": "", "email": "", "phone": "", "evidence_url": "https://peel.cioc.ca/bresults.asp?SubjID=186" },
+    { "name": "Mississauga Community Services – Huron Park Community Centre (basketball programs)", "city": "Mississauga (Erindale)", "region": "Peel-Halton", "type": "municipal", "website": "", "email": "", "phone": "", "evidence_url": "https://peel.cioc.ca/bresults.asp?SubjID=186" },
+
+    { "name": "Oakville Basketball Club (OBC)", "city": "Oakville", "region": "Peel-Halton", "type": "community", "website": "https://oakvillebasketball.com/", "email": "", "phone": "", "evidence_url": "https://oakvillebasketball.com/" },
+    { "name": "Halton Basketball League", "city": "Oakville", "region": "Peel-Halton", "type": "house-league", "website": "https://haltonbasketballleague.net/", "email": "", "phone": "", "evidence_url": "https://haltonbasketballleague.net/about-us/" },
+    { "name": "Milton Stags Basketball Club (Milton Stags Youth Basketball)", "city": "Milton", "region": "Peel-Halton", "type": "community", "website": "https://www.miltonstags.com/", "email": "", "phone": "", "evidence_url": "https://halton.cioc.ca/record/MIL3942" },
+    { "name": "Burlington Basketball", "city": "Burlington", "region": "Peel-Halton", "type": "community", "website": "https://www.burlingtonbasketball.ca/", "email": "", "phone": "", "evidence_url": "https://halton.cioc.ca/record/BTN4527" },
+    { "name": "Halton Basketball Club", "city": "Halton Region", "region": "Peel-Halton", "type": "community", "website": "", "email": "", "phone": "", "evidence_url": "https://www.facebook.com/haltonbasketball/" },
+
+    { "name": "Markham Unionville Minor Basketball Association (MUMBA)", "city": "Markham", "region": "Durham-York", "type": "community", "website": "https://mumbabasketball.ca/", "email": "", "phone": "(647) 535-6747", "evidence_url": "https://mumbabasketball.ca/" },
+    { "name": "ABC Basketball (formerly Gino's Basketball)", "city": "Aurora/Richmond Hill/Newmarket", "region": "Durham-York", "type": "house-league", "website": "https://www.abcbasketball.ca/", "email": "", "phone": "", "evidence_url": "https://www.abcbasketball.ca/" },
+    { "name": "GTA Mavericks Basketball Association", "city": "Richmond Hill/Vaughan/Markham/Aurora/Thornhill", "region": "Durham-York", "type": "community", "website": "https://gtamavericks.ca/", "email": "", "phone": "", "evidence_url": "https://gtamavericks.ca/basketball-in-richmond-hill/" },
+    { "name": "Crunch Time Basketball", "city": "Markham/Unionville/Stouffville/Richmond Hill/Newmarket/Aurora", "region": "Durham-York", "type": "community", "website": "https://www.crunchtimebasketball.ca/", "email": "", "phone": "", "evidence_url": "https://www.crunchtimebasketball.ca/" },
+    { "name": "York South Silver Knights Basketball", "city": "Richmond Hill/Markham/Vaughan", "region": "Durham-York", "type": "house-league", "website": "https://www.silverknightsbasketball.com/", "email": "", "phone": "", "evidence_url": "https://www.silverknightsbasketball.com/" },
+    { "name": "IEM Basketball", "city": "Newmarket/Aurora", "region": "Durham-York", "type": "house-league", "website": "https://www.iembasketball.com/", "email": "", "phone": "", "evidence_url": "https://www.iembasketball.com/registration/" },
+    { "name": "Thornhill Basketball Association", "city": "Thornhill", "region": "Durham-York", "type": "community", "website": "https://thornhillbasketball.ca/", "email": "", "phone": "", "evidence_url": "https://thornhillbasketball.ca/" },
+    { "name": "York Region Basketball League (YRBL)", "city": "Vaughan/Markham/Richmond Hill/Newmarket/Aurora", "region": "Durham-York", "type": "community", "website": "https://yrbl.ca/", "email": "", "phone": "", "evidence_url": "https://yrbl.ca/" },
+    { "name": "York North Basketball Association (YNBA)", "city": "Aurora/Newmarket/East Gwillimbury/King", "region": "Durham-York", "type": "house-league", "website": "https://ynba.ca/", "email": "", "phone": "", "evidence_url": "https://ynba.ca/boys-fall-house-league/" },
+
+    { "name": "Oshawa Basketball Association (OBA)", "city": "Oshawa/Whitby/Ajax/Pickering/Bowmanville", "region": "Durham-York", "type": "house-league", "website": "https://oshawabasketball.ca/", "email": "", "phone": "", "evidence_url": "https://oshawabasketball.ca/" },
+    { "name": "Durham City Basketball Association (DCBA)", "city": "Ajax/Pickering/Whitby/Oshawa", "region": "Durham-York", "type": "community", "website": "https://www.durhamcitybasketball.ca/", "email": "", "phone": "", "evidence_url": "https://www.durhamcitybasketball.ca/" },
+    { "name": "360 Beyond The Game (360BTG)", "city": "Oshawa/Whitby/Clarington/Ajax/Pickering", "region": "Durham-York", "type": "house-league", "website": "https://www.360btg.com/", "email": "", "phone": "", "evidence_url": "https://www.360btg.com/basketball-league/" },
+    { "name": "Filipino Basketball Association of Durham (FBAD)", "city": "Durham Region", "region": "Durham-York", "type": "community", "website": "https://www.fbadurham.org/", "email": "", "phone": "", "evidence_url": "https://www.fbadurham.org/untitled" },
+    { "name": "Durham Blues Basketball", "city": "Durham Region", "region": "Durham-York", "type": "house-league", "website": "https://www.durhambluesbasketball.com/", "email": "", "phone": "", "evidence_url": "https://www.durhambluesbasketball.com/" },
+    { "name": "Kid Ballers (Durham Region Basketball)", "city": "Durham Region", "region": "Durham-York", "type": "rec", "website": "https://www.kidballers.com/", "email": "", "phone": "", "evidence_url": "https://www.kidballers.com/" },
+
+    { "name": "Hamilton Basketball Association (HBA)", "city": "Hamilton", "region": "Hamilton-Niagara Region", "type": "house-league", "website": "https://www.hbabasketball.ca/", "email": "", "phone": "", "evidence_url": "https://www.hbabasketball.ca/the-hba/" },
+    { "name": "Blessed Sacrament Basketball (BSYK)", "city": "Hamilton", "region": "Hamilton-Niagara Region", "type": "parish", "website": "https://blessedsacramentbasketball.ca/", "email": "", "phone": "", "evidence_url": "https://blessedsacramentbasketball.ca/" },
+    { "name": "Hamilton Celtics Basketball", "city": "Hamilton", "region": "Hamilton-Niagara Region", "type": "community", "website": "https://hamiltonceltics.ca/", "email": "", "phone": "", "evidence_url": "https://hamiltonceltics.ca/" },
+    { "name": "Grimsby Basketball Association", "city": "Grimsby", "region": "Hamilton-Niagara Region", "type": "house-league", "website": "", "email": "", "phone": "", "evidence_url": "https://211ontario.ca/service/65805309/agency/grimsby-basketball-association/" },
+
+    { "name": "Welland Minor Basketball Association", "city": "Welland", "region": "Hamilton-Niagara Region", "type": "community", "website": "http://www.wellandminorbasketball.ca/", "email": "", "phone": "", "evidence_url": "http://www.wellandminorbasketball.ca/site/ClientSite/article/115457" },
+    { "name": "Niagara Falls Basketball Association (formerly Niagara Falls Red Raiders)", "city": "Niagara Falls", "region": "Hamilton-Niagara Region", "type": "house-league", "website": "", "email": "", "phone": "", "evidence_url": "https://www.bpsportsniagara.com/falls-minor-basketball-seeks-new-nickname/" },
+    { "name": "St. Catharines CYO Basketball Association", "city": "St. Catharines", "region": "Hamilton-Niagara Region", "type": "parish", "website": "https://www.cyobball.com/", "email": "", "phone": "", "evidence_url": "https://www.cyobball.com/" },
+    { "name": "Niagara Girls Basketball Academy (NGBA)", "city": "Niagara Region", "region": "Hamilton-Niagara Region", "type": "community", "website": "https://niagarabasketballacademy.com/", "email": "", "phone": "", "evidence_url": "https://niagarabasketballacademy.com/" },
+    { "name": "Pelham Panthers Basketball Association", "city": "Pelham", "region": "Hamilton-Niagara Region", "type": "community", "website": "", "email": "", "phone": "", "evidence_url": "https://211ontario.ca/service/65806919/pelham-panthers-basketball-association-pelham-panthers-basketball-association/" },
+
+    { "name": "Kitchener-Waterloo Youth Basketball Association (KW YBA)", "city": "Waterloo", "region": "Kitchener-Waterloo Region", "type": "community", "website": "https://www.kwyba.com/", "email": "", "phone": "", "evidence_url": "https://211ontario.ca/service/73447022/site/kitchener-waterloo-youth-basketball-association-kitchener-waterloo-youth-basketball-association/" },
+    { "name": "Kitchener-Waterloo Valour Basketball House League", "city": "Kitchener-Waterloo", "region": "Kitchener-Waterloo Region", "type": "house-league", "website": "https://tricity40basketball.com/valourleague/", "email": "", "phone": "", "evidence_url": "https://tricity40basketball.com/valourleague/" },
+    { "name": "Cambridge Athletic Club (CAC) Youth Basketball", "city": "Cambridge", "region": "Kitchener-Waterloo Region", "type": "community", "website": "https://www.cambridgeathletic.com/", "email": "", "phone": "", "evidence_url": "https://www.cambridgeathletic.com/youth-basketball" },
+    { "name": "Guelph Youth Basketball Association (GYBA)", "city": "Guelph", "region": "Kitchener-Waterloo Region", "type": "community", "website": "https://www.guelphbasketball.com/", "email": "", "phone": "", "evidence_url": "https://211ontario.ca/service/71895508/guelph-youth-basketball-association-guelph-youth-basketball-association/" },
+
+    { "name": "London Ramblers Basketball", "city": "London", "region": "West Region", "type": "house-league", "website": "https://londonramblers.com/", "email": "", "phone": "", "evidence_url": "https://londonramblers.com/houseleagues/" },
+    { "name": "Orion Basketball", "city": "London", "region": "West Region", "type": "house-league", "website": "https://www.orionbasketball.com/", "email": "", "phone": "", "evidence_url": "https://www.orionbasketball.com/house-league/" },
+    { "name": "London CYO Basketball Club", "city": "London", "region": "West Region", "type": "parish", "website": "https://www.londoncyobasketball.com/", "email": "", "phone": "", "evidence_url": "https://www.londoncyobasketball.com/" },
+    { "name": "London Basketball Club", "city": "London", "region": "West Region", "type": "community", "website": "https://www.londonbasketballclub.ca/", "email": "", "phone": "", "evidence_url": "https://www.londonbasketballclub.ca/" },
+    { "name": "Woodstock Oxford Minor Basketball Association (WOMBA)", "city": "Woodstock", "region": "West Region", "type": "community", "website": "https://womba.ca/", "email": "", "phone": "", "evidence_url": "https://womba.ca/" },
+    { "name": "Chatham Youth Basketball Association", "city": "Chatham", "region": "West Region", "type": "community", "website": "https://www.chathamyba.org/", "email": "", "phone": "", "evidence_url": "https://www.chathamyba.org/" },
+    { "name": "Chatham-Kent Wildcats Basketball", "city": "Chatham-Kent", "region": "West Region", "type": "community", "website": "http://www.chathamkentwildcats.com/", "email": "", "phone": "", "evidence_url": "https://211ontario.ca/service/71350955/agency/" },
+    { "name": "Valhalla Youth Basketball Association", "city": "Sarnia", "region": "West Region", "type": "community", "website": "http://www.valhallabasketball.org/", "email": "Basketballvalhalla@gmail.com", "phone": "519-336-0813", "evidence_url": "https://canada.chamberofcommerce.com/business-directory/ontario/sarnia/basketball-club/490611-valhalla-youth-basketball-association" },
+    { "name": "Windsor Valiants (house league basketball)", "city": "Windsor", "region": "West Region", "type": "house-league", "website": "https://www.windsorvaliants.com/", "email": "", "phone": "", "evidence_url": "https://www.windsorvaliants.com/" },
+    { "name": "South Windsor Warriors", "city": "Windsor", "region": "West Region", "type": "community", "website": "https://www.southwindsorwarriors.com/", "email": "", "phone": "", "evidence_url": "https://www.southwindsorwarriors.com/" },
+    { "name": "Stratford Basketball Association", "city": "Stratford", "region": "West Region", "type": "community", "website": "", "email": "", "phone": "", "evidence_url": "https://centraleastontario.cioc.ca/record/PER0736" },
+    { "name": "Brantford CYO Girls Basketball", "city": "Brantford", "region": "West Region", "type": "parish", "website": "", "email": "", "phone": "", "evidence_url": "https://info-bhn.cioc.ca/record/BRD0063" },
+    { "name": "BGC London", "city": "London", "region": "West Region", "type": "ymca", "website": "https://www.bgclondon.ca/", "email": "", "phone": "", "evidence_url": "https://www.bgclondon.ca/" },
+
+    { "name": "Ottawa South Basketball Association (OSBA)", "city": "Ottawa (South)", "region": "Capital-Kingston", "type": "house-league", "website": "https://ottawasouthbasketball.ca/", "email": "", "phone": "", "evidence_url": "https://ottawasouthbasketball.ca/" },
+    { "name": "Nepean Blue Devils Basketball Association (NBBA)", "city": "Ottawa (Nepean)", "region": "Capital-Kingston", "type": "community", "website": "https://www.nepeanbluedevils.ca/", "email": "", "phone": "", "evidence_url": "https://www.nepeanbluedevils.ca/" },
+    { "name": "West Ottawa Basketball Association (WOBA)", "city": "Ottawa (West)", "region": "Capital-Kingston", "type": "community", "website": "http://westottawabasketball.com/", "email": "", "phone": "", "evidence_url": "http://westottawabasketball.com/" },
+    { "name": "Kanata Youth Basketball Association (KYBA)", "city": "Ottawa (Kanata)", "region": "Capital-Kingston", "type": "house-league", "website": "https://www.kanatabasketball.ca/", "email": "", "phone": "", "evidence_url": "https://www.kanatabasketball.ca/" },
+    { "name": "Gloucester Cumberland Basketball Association (GCBA)", "city": "Ottawa (Gloucester/Cumberland/Orleans)", "region": "Capital-Kingston", "type": "community", "website": "https://gcba.ca/", "email": "", "phone": "", "evidence_url": "https://gcba.ca/" },
+    { "name": "Ottawa Shooting Stars (OSS)", "city": "Ottawa", "region": "Capital-Kingston", "type": "community", "website": "https://ottawashootingstars.com/", "email": "", "phone": "", "evidence_url": "https://ovbabo.com/links-and-partners/" },
+    { "name": "Eastern Ontario Basketball League (EOBL)", "city": "Eastern Ontario (Ottawa area)", "region": "Capital-Kingston", "type": "community", "website": "https://eobahoops.com/", "email": "", "phone": "", "evidence_url": "https://ovbabo.com/links-and-partners/" },
+    { "name": "Naismith Basketball Association", "city": "Eastern Ontario (Ottawa area)", "region": "Capital-Kingston", "type": "community", "website": "https://naismithbasketball.ca/", "email": "", "phone": "", "evidence_url": "https://ovbabo.com/links-and-partners/" },
+    { "name": "BGC Ottawa (Boys and Girls Club of Ottawa)", "city": "Ottawa", "region": "Capital-Kingston", "type": "ymca", "website": "https://bgcottawa.my.site.com/", "email": "", "phone": "", "evidence_url": "https://cneo-nceo.ca/record/68968305/" },
+
+    { "name": "Kingston Impact Basketball Academy (successor to Kingston Pacers house league)", "city": "Kingston", "region": "Capital-Kingston", "type": "house-league", "website": "https://www.kingstonimpact.ca/", "email": "", "phone": "", "evidence_url": "https://www.kingstonimpact.ca/competitive-obl-hosting" },
+    { "name": "Christian Youth Basketball League (CYBL)", "city": "Barrie & Kingston", "region": "North Region", "type": "community", "website": "https://www.cyblbasketball.ca/", "email": "", "phone": "", "evidence_url": "https://www.cyblbasketball.ca/" },
+
+    { "name": "Belleville Spirits Basketball (Boys/Girls)", "city": "Belleville", "region": "Capital-Kingston", "type": "community", "website": "", "email": "", "phone": "", "evidence_url": "https://quinte.totalsportsmedia.ca/directory/wpbdp_category/basketball/" },
+    { "name": "No Limits Youth Organization (Basketball)", "city": "Quinte/Belleville area", "region": "Capital-Kingston", "type": "community", "website": "https://nolimitsyouth.ca/", "email": "", "phone": "", "evidence_url": "https://nolimitsyouth.ca/basketball/" },
+
+    { "name": "Barrie Royals Basketball Club", "city": "Barrie", "region": "North Region", "type": "community", "website": "https://www.barrieroyals.ca/", "email": "", "phone": "", "evidence_url": "https://www.barrieroyals.ca/" },
+    { "name": "Orillia Youth Basketball Association", "city": "Orillia", "region": "North Region", "type": "house-league", "website": "", "email": "", "phone": "", "evidence_url": "https://orillia.cioc.ca/record/ORI0090" },
+    { "name": "Next Level Basketball (Barrie)", "city": "Barrie", "region": "North Region", "type": "community", "website": "", "email": "", "phone": "", "evidence_url": "https://infobarrie.cioc.ca/record/BAR1687?UseCICVw=221" },
+    { "name": "Greater Sudbury Basketball Association (GSBA) / Sudbury Storm", "city": "Greater Sudbury", "region": "North Region", "type": "house-league", "website": "https://greatersudburybasketball.com/", "email": "", "phone": "", "evidence_url": "https://greatersudburybasketball.com/" },
+    { "name": "Sudbury Youth Basketball Association (Sudbury Jam)", "city": "Sudbury", "region": "North Region", "type": "community", "website": "https://www.sudburybasketball.com/", "email": "", "phone": "", "evidence_url": "https://sudburysportlink.ca/sudbury-youth-basketball-association/" }
+  ],
+  "coverage_assessment": "This sweep found and verified 80 distinct community/house-league/rec/municipal/YMCA/parish basketball organizations across essentially every populated region of Ontario (Toronto's old boroughs, Peel, Halton, York, Durham, Hamilton-Niagara, Waterloo Region, London/SW Ontario, Windsor-Essex, Ottawa/Eastern Ontario, Simcoe/Barrie/Orillia, and Sudbury), plus 12 directories/aggregators of varying usefulness. That is a real, non-trivial layer where the prior Ontario list had zero. But I do not believe this is close to the true universe. Reasoning: (1) Ontario Basketball's own site states it affiliates ~175-180 clubs/associations a year, and its 'Find a Club' directory — which almost certainly contains a large fraction of the true count — could not be scraped because its listings are JavaScript-rendered; none of those specific club names were captured here except by lucky independent discovery. (2) OBA-affiliation itself is not exhaustive — several house leagues in this list (e.g. small parish leagues, some municipal programs) plausibly never affiliate with OBA at all, closer to how BC/Prairie community associations sit outside their provincial federation's elite pathway. (3) Ontario has roughly 444 municipalities and dozens of mid-size cities/towns not touched at all in this sweep (e.g. Peterborough, Cornwall proper, Pembroke, Renfrew, Haliburton, Bracebridge/Muskoka towns, Parry Sound, Elliot Lake, Kenora, Sioux Lookout, most of Northwestern Ontario, and dozens of GTA-adjacent small towns) — basketball house leagues likely exist in many of these but have thin-to-nonexistent indexed web presence (Facebook-only, or folded into a multi-sport 'minor sports association'). (4) Parish/CYO leagues are almost certainly badly under-counted: general web search surfaces overwhelmingly US Catholic Youth Organization content for 'CYO basketball,' and Ontario parish leagues (Toronto Archdiocese, Hamilton Diocese, London Diocese) were only found where a specific parish name was already known (Blessed Sacrament, St. Catharines, Brantford, London) — diocesan sports-office pages were never reached directly. (5) YMCA Ontario branches (~30+ locations) were only lightly touched (Ottawa, general references) — branch-by-branch basketball program confirmation was not done. Rough honest estimate: the true Ontario community/rec/house-league basketball universe is very likely 250-450+ organizations (roughly proportional to Ontario's ~40% share of Canada's population weighed against the other provinces' community-layer percentages), meaning this sweep has likely captured somewhere in the 15-27% range of the true universe — a solid seed list, not a census.",
+  "next_best_sources": [
+    "Browser-automation (Playwright/headless-browser) scrape of basketball.on.ca/find-a-club/ clicking through all 8 regional tabs — single highest-value unresolved target, likely the closest thing to an authoritative ~175-180-club roster",
+    "Open and OCR/parse the OBA 2022-23 and 2018-19 Annual Report PDFs (basketball.on.ca/wp-content/uploads/.../*.pdf) for an affiliated-club appendix",
+    "211ontario.ca full-text search via an actual browser session (not raw query-string WebFetch, which hit a bot-check interstitial) to enumerate its Basketball/Youth Sports category province-wide rather than relying on piecemeal 'site:211ontario.ca' Google queries",
+    "Municipal parks & recreation seasonal 'Activity Guide' PDFs for City of Toronto, Mississauga, Brampton, Hamilton, Ottawa, London, Markham, Vaughan, Richmond Hill — these typically list every community-run house league that has a standing gym permit, which is exactly the segment missed here",
+    "Diocesan sports/CYO office pages for the Archdiocese of Toronto, Diocese of Hamilton, and Diocese of London directly (not general web search, which is swamped by US CYO results) to get full parish-league rosters",
+    "City-specific 'SportLink'-style aggregator sites (confirmed one exists for Sudbury at sudburysportlink.ca) — worth checking whether London, Windsor, Ottawa, or other mid-size cities run an equivalent",
+    "Facebook Page search by city name + 'basketball' + 'minor'/'house league' — several confirmed clubs in this sweep (East York, WOMBA, Sarnia Valhalla, NGBA) have Facebook as their most current/primary web presence, suggesting many more community leagues exist there and nowhere else indexable by general web search",
+    "YMCA of Ontario branch-by-branch site check (YMCA of Greater Toronto, YMCA of Hamilton/Burlington/Brantford, YMCA of Southwestern Ontario, YMCA of Eastern Ontario, YMCA of Northeastern Ontario) for basketball-specific programming, only lightly touched this round",
+    "Direct outreach/search for Northwestern and far-Northern Ontario (Thunder Bay, Kenora, Sioux Lookout, Timmins, North Bay) minor basketball associations — this sweep surfaced almost nothing there and those communities were not confirmed one way or the other"
+  ]
+}

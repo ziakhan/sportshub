@@ -1,0 +1,7461 @@
+{
+ "source": "OBA OBL division schedule Google Sheets (public CSV export)",
+ "source_page": "https://basketball.on.ca/competitions/obl/ontario-basketball-league-schedule-2/",
+ "fetched": "2026-08-14",
+ "divisions_fetched": 19,
+ "team_entries": 1256,
+ "distinct_club_stems": 645,
+ "per_division_team_counts": {
+  "U10 Boys": 63,
+  "U10 Girls": 18,
+  "U11 Boys": 88,
+  "U11 Girls": 32,
+  "U12 Boys": 119,
+  "U12 Girls": 49,
+  "U13 Boys": 135,
+  "U13 Girls": 59,
+  "U14 Boys": 174,
+  "U14 Girls": 71,
+  "U15 Boys": 29,
+  "U15 Girls": 29,
+  "U16 Boys": 136,
+  "U16 Girls": 47,
+  "U17 Boys": 82,
+  "U17 Girls": 26,
+  "U19 Men": 47,
+  "U19 Women": 37,
+  "U9 Boys": 15
+ },
+ "clubs": [
+  {
+   "club": "PDM Basketball",
+   "team_entries": 25,
+   "divisions": [
+    "U10 Boys",
+    "U11 Boys",
+    "U12 Boys",
+    "U13 Boys",
+    "U13 Girls",
+    "U14 Boys",
+    "U14 Girls",
+    "U16 Boys",
+    "U16 Girls",
+    "U17 Boys",
+    "U17 Girls",
+    "U19 Women"
+   ],
+   "teams": [
+    "PDM Basketball - Elite",
+    "PDM Basketball - Gold",
+    "PDM Basketball - Gold - East",
+    "PDM Basketball - Gold - North",
+    "PDM Basketball - White"
+   ]
+  },
+  {
+   "club": "EY Eagles",
+   "team_entries": 23,
+   "divisions": [
+    "U10 Boys",
+    "U10 Girls",
+    "U11 Boys",
+    "U11 Girls",
+    "U12 Boys",
+    "U12 Girls",
+    "U13 Boys",
+    "U13 Girls",
+    "U14 Boys",
+    "U14 Girls",
+    "U16 Boys",
+    "U16 Girls",
+    "U17 Boys",
+    "U19 Women",
+    "U9 Boys"
+   ],
+   "teams": [
+    "EY Eagles - Cooper",
+    "EY Eagles U10 Boys - Wolch",
+    "EY Eagles U10 Girls - Watson",
+    "EY Eagles U11 Boys - Carpenter",
+    "EY Eagles U11 Boys - Knight",
+    "EY Eagles U11 Girls - Alie",
+    "EY Eagles U12 Boys - Gilbert",
+    "EY Eagles U12 Boys - Kalogeras",
+    "EY Eagles U12 Girls - Duporte",
+    "EY Eagles U12 Girls - Hilton",
+    "EY Eagles U13 Boys - Agarwal",
+    "EY Eagles U13 Boys - Neil",
+    "EY Eagles U13 Girls - Anderson",
+    "EY Eagles U13 Girls - Dennis",
+    "EY Eagles U14 Boys - Rozario",
+    "EY Eagles U14 Girls - Richardson",
+    "EY Eagles U14 Girls - Vesely",
+    "EY Eagles U16 Boys - Swinnerton",
+    "EY Eagles U16 Girls - Clarke",
+    "EY Eagles U16 Girls - Mgaya",
+    "EY Eagles U17 Boys - Farrell",
+    "EY Eagles U19 Girls - Coates",
+    "EY Eagles U9 Boys - Gleeson"
+   ]
+  },
+  {
+   "club": "NT Huskies",
+   "team_entries": 22,
+   "divisions": [
+    "U10 Girls",
+    "U11 Boys",
+    "U11 Girls",
+    "U12 Boys",
+    "U12 Girls",
+    "U13 Boys",
+    "U13 Girls",
+    "U14 Boys",
+    "U14 Girls",
+    "U16 Boys",
+    "U16 Girls",
+    "U17 Boys",
+    "U19 Men",
+    "U19 Women",
+    "U9 Boys"
+   ],
+   "teams": [
+    "NT Huskies - Michalski",
+    "NT Huskies U10 Girls - Peskun",
+    "NT Huskies U11 Boys - Herling",
+    "NT Huskies U11 Boys - Pike",
+    "NT Huskies U11 Girls - Goodman",
+    "NT Huskies U11 Girls - Rowe",
+    "NT Huskies U12 Boys - Swartz",
+    "NT Huskies U12 Girls - Tolensky",
+    "NT Huskies U13 Boys - Boye",
+    "NT Huskies U13 Boys - Dorenbush",
+    "NT Huskies U13 Boys - Restivo",
+    "NT Huskies U13 Girls - Easton",
+    "NT Huskies U14 Boys - Greenhouse",
+    "NT Huskies U14 Boys - Gross",
+    "NT Huskies U14 Girls - Perez",
+    "NT Huskies U16 Boys - Ohemeng",
+    "NT Huskies U16 Boys - Wajs",
+    "NT Huskies U17 Boys - Hamilton",
+    "NT Huskies U17 Boys - Hough",
+    "NT Huskies U19 Men - Nkansah",
+    "NT Huskies U19 Women - Liston",
+    "NT Huskies U9 Boys - Frieberg"
+   ]
+  },
+  {
+   "club": "Cambridge Basketball",
+   "team_entries": 17,
+   "divisions": [
+    "U10 Boys",
+    "U10 Girls",
+    "U11 Boys",
+    "U12 Boys",
+    "U12 Girls",
+    "U13 Boys",
+    "U13 Girls",
+    "U14 Boys",
+    "U14 Girls",
+    "U16 Boys",
+    "U17 Boys",
+    "U19 Men",
+    "U9 Boys"
+   ],
+   "teams": [
+    "Cambridge Basketball - Burke",
+    "Cambridge Basketball U10 Boys - Jackman",
+    "Cambridge Basketball U10 Girls - Heymans",
+    "Cambridge Basketball U11 Boys - Scott",
+    "Cambridge Basketball U12 Boys - Bazinet",
+    "Cambridge Basketball U12 Boys - Contardo",
+    "Cambridge Basketball U12 Girls - Small",
+    "Cambridge Basketball U13 Boys - Laswick",
+    "Cambridge Basketball U13 Boys - Mason",
+    "Cambridge Basketball U13 Girls - Jarman",
+    "Cambridge Basketball U14 Boys - Abrego",
+    "Cambridge Basketball U14 Boys - Jaipersaud",
+    "Cambridge Basketball U14 Girls - Pressman",
+    "Cambridge Basketball U16 Boys - Kyei",
+    "Cambridge Basketball U16 Boys - Tasch",
+    "Cambridge Basketball U19 Men - Day",
+    "Cambridge Basketball U9 Boys - Schmid"
+   ]
+  },
+  {
+   "club": "Burlington Force",
+   "team_entries": 15,
+   "divisions": [
+    "U10 Boys",
+    "U11 Boys",
+    "U12 Boys",
+    "U13 Boys",
+    "U13 Girls",
+    "U14 Boys",
+    "U14 Girls",
+    "U16 Boys",
+    "U17 Boys",
+    "U9 Boys"
+   ],
+   "teams": [
+    "Burlington Force U10 Boys (Fielding)",
+    "Burlington Force U11 Boys (Sabourin)",
+    "Burlington Force U11 Boys (Tolhurst)",
+    "Burlington Force U12 Boys (Gray)",
+    "Burlington Force U12 Boys (Stewart)",
+    "Burlington Force U13 Boys (Koshy)",
+    "Burlington Force U13 Boys (Tolhurst)",
+    "Burlington Force U13 Girls (Spisani)",
+    "Burlington Force U14 Boys (Miller)",
+    "Burlington Force U14 Boys (Scully)",
+    "Burlington Force U14 Girls (Ceelen)",
+    "Burlington Force U14 Girls (Green)",
+    "Burlington Force U16 Boys (Snaidero)",
+    "Burlington Force U17 Boys (Dodd)",
+    "Burlington Force U9 Boys (Motuma)"
+   ]
+  },
+  {
+   "club": "17 IGNITE",
+   "team_entries": 14,
+   "divisions": [
+    "U10 Boys",
+    "U11 Boys",
+    "U12 Boys",
+    "U13 Boys",
+    "U14 Boys",
+    "U9 Boys"
+   ],
+   "teams": [
+    "17 IGNITE - Black",
+    "17 IGNITE - Red",
+    "17 IGNITE - White"
+   ]
+  },
+  {
+   "club": "Thornhill Thunder",
+   "team_entries": 14,
+   "divisions": [
+    "U11 Boys",
+    "U12 Boys",
+    "U13 Boys",
+    "U14 Boys",
+    "U16 Boys",
+    "U16 Girls",
+    "U17 Boys",
+    "U17 Girls"
+   ],
+   "teams": [
+    "Thornhill Thunder - Exclusive",
+    "Thornhill Thunder - Navy",
+    "Thornhill Thunder - Silver",
+    "Thornhill Thunder - White"
+   ]
+  },
+  {
+   "club": "Blitz",
+   "team_entries": 13,
+   "divisions": [
+    "U10 Boys",
+    "U11 Boys",
+    "U12 Boys",
+    "U13 Boys",
+    "U13 Girls",
+    "U14 Girls",
+    "U16 Girls",
+    "U17 Boys",
+    "U19 Men"
+   ],
+   "teams": [
+    "U10 Blitz Boys - Dunphy",
+    "U10 Blitz Boys - Walker",
+    "U11 Blitz Boys - Johnson",
+    "U11 Blitz Boys - Robitaille",
+    "U12 Blitz Boys - Adachi",
+    "U12 Blitz Boys - Vesprini",
+    "U13 Blitz Boys - Rawlings",
+    "U13 Blitz Girls - Barilla",
+    "U14 Blitz Girls - Barrett",
+    "U14 Blitz Girls - Sal",
+    "U16 Blitz Girls - Smith",
+    "U17 Blitz Boys - Blake",
+    "U19 Blitz Boys - Talaga"
+   ]
+  },
+  {
+   "club": "Eurostep",
+   "team_entries": 13,
+   "divisions": [
+    "U11 Boys",
+    "U12 Boys",
+    "U12 Girls",
+    "U13 Boys",
+    "U14 Boys",
+    "U14 Girls",
+    "U16 Boys",
+    "U17 Boys",
+    "U19 Men"
+   ],
+   "teams": [
+    "Eurostep U11 - Damnjan",
+    "Eurostep U11 - Jesus",
+    "Eurostep U12 - Filip",
+    "Eurostep U12 - Lucas",
+    "Eurostep U13 - Thomas",
+    "Eurostep U14 - Luka",
+    "Eurostep U14 - Mike",
+    "Eurostep U14 - Milos",
+    "Eurostep U14 - Silobad",
+    "Eurostep U16 - David",
+    "Eurostep U16 - Jadranko",
+    "Eurostep U17 - Jaiden",
+    "Eurostep U19 - Luka"
+   ]
+  },
+  {
+   "club": "Guelph Knights",
+   "team_entries": 12,
+   "divisions": [
+    "U11 Boys",
+    "U12 Boys",
+    "U12 Girls",
+    "U13 Boys",
+    "U13 Girls",
+    "U14 Boys",
+    "U16 Boys"
+   ],
+   "teams": [
+    "Guelph Knights (Gold) U16 - Costello",
+    "Guelph Knights U11 (Gold) - Pranger",
+    "Guelph Knights U11 (Red) - Manella",
+    "Guelph Knights U12 (Gold)",
+    "Guelph Knights U12 (Gold) - Hines",
+    "Guelph Knights U12 (Red) - Monaghan",
+    "Guelph Knights U13",
+    "Guelph Knights U13 (Gold)",
+    "Guelph Knights U13 (Red) - Kleppe",
+    "Guelph Knights U14 (Black) - Hill",
+    "Guelph Knights U14 (Gold) - Cummings",
+    "Guelph Knights U14 (Red)- Crichton"
+   ]
+  },
+  {
+   "club": "CW Celtics",
+   "team_entries": 12,
+   "divisions": [
+    "U11 Boys",
+    "U12 Boys",
+    "U12 Girls",
+    "U13 Boys",
+    "U13 Girls",
+    "U14 Boys",
+    "U14 Girls",
+    "U16 Boys",
+    "U17 Boys",
+    "U17 Girls",
+    "U19 Men",
+    "U19 Women"
+   ],
+   "teams": [
+    "CW Celtics U11 Boys - Blue",
+    "CW Celtics U12 Boys",
+    "CW Celtics U12 Girls",
+    "CW Celtics U13 Boys",
+    "CW Celtics U13 Girls",
+    "CW Celtics U14 Boys",
+    "CW Celtics U14 Girls",
+    "CW Celtics U16 Boys",
+    "CW Celtics U17 Boys",
+    "CW Celtics U17 Girls",
+    "CW Celtics U19 Men",
+    "CW Celtics U19 Women"
+   ]
+  },
+  {
+   "club": "London Ramblers",
+   "team_entries": 11,
+   "divisions": [
+    "U10 Boys",
+    "U10 Girls",
+    "U11 Boys",
+    "U11 Girls",
+    "U12 Boys",
+    "U12 Girls",
+    "U13 Boys",
+    "U14 Girls",
+    "U16 Girls",
+    "U17 Boys",
+    "U19 Women"
+   ],
+   "teams": [
+    "London Ramblers",
+    "London Ramblers U10 Boys",
+    "London Ramblers U10 Girls",
+    "London Ramblers U11 Boys",
+    "London Ramblers U11 Girls",
+    "London Ramblers U12 Boys",
+    "London Ramblers U12 Girls",
+    "London Ramblers U13 Boys",
+    "London Ramblers U14 Girls",
+    "London Ramblers U17 Boys",
+    "London Ramblers U19 Women"
+   ]
+  },
+  {
+   "club": "Chatham Kent Wildcats",
+   "team_entries": 11,
+   "divisions": [
+    "U10 Girls",
+    "U11 Boys",
+    "U11 Girls",
+    "U12 Boys",
+    "U12 Girls",
+    "U13 Boys",
+    "U13 Girls",
+    "U14 Girls",
+    "U16 Boys",
+    "U16 Girls",
+    "U17 Boys"
+   ],
+   "teams": [
+    "Chatham Kent Wildcats",
+    "Chatham Kent Wildcats - Ferren",
+    "Chatham Kent Wildcats - U10 Girls - Brennan",
+    "Chatham Kent Wildcats - U11 Boys - Quigley",
+    "Chatham Kent Wildcats - U12 Boys - Wolting",
+    "Chatham Kent Wildcats - U12 Girls - Blokzyl",
+    "Chatham Kent Wildcats - U13 Boys - Beattie",
+    "Chatham Kent Wildcats - U13 Girls - Green",
+    "Chatham Kent Wildcats - U14 Girls - Regan",
+    "Chatham Kent Wildcats - U16 Boys - Stong",
+    "Chatham- Kent Wildcats"
+   ]
+  },
+  {
+   "club": "Oxford Attack",
+   "team_entries": 11,
+   "divisions": [
+    "U11 Boys",
+    "U12 Boys",
+    "U12 Girls",
+    "U13 Boys",
+    "U14 Boys",
+    "U14 Girls",
+    "U16 Boys",
+    "U16 Girls",
+    "U17 Boys",
+    "U19 Men"
+   ],
+   "teams": [
+    "Oxford Attack",
+    "Oxford Attack U11 boys",
+    "Oxford Attack U12 boys",
+    "Oxford Attack U12 girls",
+    "Oxford Attack U13 boys",
+    "Oxford Attack U14 boys - Kreiger",
+    "Oxford Attack U14 boys - Rudy",
+    "Oxford Attack U14 girls",
+    "Oxford Attack U16 boys",
+    "Oxford Attack U17 boys",
+    "Oxford Attack U19 men"
+   ]
+  },
+  {
+   "club": "St. Thomas Shock",
+   "team_entries": 10,
+   "divisions": [
+    "U10 Boys",
+    "U11 Boys",
+    "U12 Boys",
+    "U12 Girls",
+    "U13 Boys",
+    "U14 Boys",
+    "U14 Girls",
+    "U16 Boys",
+    "U17 Boys"
+   ],
+   "teams": [
+    "St. Thomas Shock - U10 Boys",
+    "St. Thomas Shock - U11 - Boys",
+    "St. Thomas Shock - U12 Boys",
+    "St. Thomas Shock - U12 Girls - Herbert",
+    "St. Thomas Shock - U13 - Boys",
+    "St. Thomas Shock - U14 - Boys",
+    "St. Thomas Shock - U14 Girls - Ambrose",
+    "St. Thomas Shock - U14 Girls - Walters",
+    "St. Thomas Shock - U16 - Boys",
+    "St. Thomas Shock - U17 Boys - Kirk"
+   ]
+  },
+  {
+   "club": "JCC Warriors",
+   "team_entries": 10,
+   "divisions": [
+    "U10 Boys",
+    "U11 Boys",
+    "U12 Boys",
+    "U12 Girls",
+    "U13 Boys",
+    "U13 Girls",
+    "U14 Girls",
+    "U16 Boys"
+   ],
+   "teams": [
+    "JCC Warriors - U10 South",
+    "JCC Warriors - U11 South",
+    "JCC Warriors - U12 North Girls",
+    "JCC Warriors - U12 South",
+    "JCC Warriors - U13 Downtown",
+    "JCC Warriors - U13 South",
+    "JCC Warriors - U13 South Girls",
+    "JCC Warriors - U14 South Girls",
+    "JCC Warriors - U16 South",
+    "JCC Warriors - U9 North"
+   ]
+  },
+  {
+   "club": "Mississauga Monarchs",
+   "team_entries": 10,
+   "divisions": [
+    "U11 Boys",
+    "U12 Boys",
+    "U12 Girls",
+    "U13 Boys",
+    "U13 Girls",
+    "U14 Boys",
+    "U14 Girls",
+    "U16 Girls"
+   ],
+   "teams": [
+    "Mississauga Monarchs - Badwal (U12 Girls)",
+    "Mississauga Monarchs - Bansfield",
+    "Mississauga Monarchs - Bennett (U14 Girls)",
+    "Mississauga Monarchs - Elliott (U11 Boys)",
+    "Mississauga Monarchs - Kane (U16 Girls)",
+    "Mississauga Monarchs - Kenny",
+    "Mississauga Monarchs - Malaq (U13 Girls)",
+    "Mississauga Monarchs - Millar (U13 Boys)",
+    "Mississauga Monarchs - Syed (U11 Boys)",
+    "Mississauga Monarchs - Virdi (U12 Boys)"
+   ]
+  },
+  {
+   "club": "Belleville Spirits",
+   "team_entries": 10,
+   "divisions": [
+    "U11 Boys",
+    "U12 Girls",
+    "U13 Girls",
+    "U14 Boys",
+    "U16 Boys",
+    "U16 Girls",
+    "U17 Boys"
+   ],
+   "teams": [
+    "Belleville Spirits - Barbeau",
+    "Belleville Spirits - Michell",
+    "Belleville Spirits - Palleschi",
+    "Belleville Spirits - Shakell",
+    "U11 Belleville Spirits Boys - Guan",
+    "U14 Belleville Spirits Boys - Cruz",
+    "U14 Belleville Spirits Boys - Meeks",
+    "U14 Belleville Spirits Boys - Michell",
+    "U16 Belleville Spirits Boys - Milne",
+    "U17 Belleville Spirits Boys - Doolan"
+   ]
+  },
+  {
+   "club": "SCNYB",
+   "team_entries": 9,
+   "divisions": [
+    "U10 Boys",
+    "U11 Boys",
+    "U11 Girls",
+    "U12 Boys",
+    "U13 Boys",
+    "U14 Boys",
+    "U16 Boys"
+   ],
+   "teams": [
+    "SCNYB U10 Boys ( Patrick )",
+    "SCNYB U10 Boys - Hendrickse",
+    "SCNYB U11 Boys ( King )",
+    "SCNYB U11 Girls ( Dempsey )",
+    "SCNYB U12 Boys ( Burke )",
+    "SCNYB U13 Boys ( Dempsey )",
+    "SCNYB U13 Boys ( Fuca )",
+    "SCNYB U14 Boys ( Krzywicki )",
+    "SCNYB U16 Boys ( Fuca )"
+   ]
+  },
+  {
+   "club": "North Bay Spartans",
+   "team_entries": 9,
+   "divisions": [
+    "U10 Boys",
+    "U12 Boys",
+    "U13 Girls",
+    "U14 Boys",
+    "U16 Boys",
+    "U16 Girls",
+    "U17 Boys",
+    "U17 Girls",
+    "U19 Men"
+   ],
+   "teams": [
+    "North Bay Spartans",
+    "North Bay Spartans U10 Boys",
+    "North Bay Spartans U12 Boys",
+    "North Bay Spartans U13 Girls",
+    "North Bay Spartans U14 Boys",
+    "North Bay Spartans U16 Boys",
+    "North Bay Spartans U17 Boys",
+    "North Bay Spartans U17 Girls",
+    "North Bay Spartans U19 Boys"
+   ]
+  },
+  {
+   "club": "Orillia Lakers",
+   "team_entries": 8,
+   "divisions": [
+    "U10 Boys",
+    "U11 Girls",
+    "U13 Boys",
+    "U14 Boys",
+    "U14 Girls",
+    "U17 Girls",
+    "U19 Men"
+   ],
+   "teams": [
+    "Orillia Lakers - Beaudin",
+    "Orillia Lakers - Castellani",
+    "Orillia Lakers - Chatten",
+    "Orillia Lakers - Clark",
+    "Orillia Lakers - Grieve",
+    "Orillia Lakers - Lumsdon",
+    "Orillia Lakers - Vodarek",
+    "Orillia Lakers U17 Girls - Gammon"
+   ]
+  },
+  {
+   "club": "Etobicoke Thunder",
+   "team_entries": 8,
+   "divisions": [
+    "U10 Girls",
+    "U11 Girls",
+    "U12 Girls",
+    "U13 Boys",
+    "U13 Girls",
+    "U16 Girls",
+    "U17 Boys",
+    "U19 Men"
+   ],
+   "teams": [
+    "Etobicoke Thunder",
+    "Etobicoke Thunder U10 Girls",
+    "Etobicoke Thunder U11 Girls",
+    "Etobicoke Thunder U12 Girls",
+    "Etobicoke Thunder U13 Boys",
+    "Etobicoke Thunder U13 Girls",
+    "Etobicoke Thunder U16 Girls",
+    "Etobicoke Thunder U19 Men"
+   ]
+  },
+  {
+   "club": "Brian Owusu Academy",
+   "team_entries": 8,
+   "divisions": [
+    "U11 Boys",
+    "U12 Boys",
+    "U13 Boys",
+    "U14 Boys",
+    "U9 Boys"
+   ],
+   "teams": [
+    "Brian Owusu Academy",
+    "Brian Owusu Academy #1",
+    "Brian Owusu Academy #2",
+    "Brian Owusu Academy (U10)",
+    "Brian Owusu Academy (U11)",
+    "Brian Owusu Academy (U12)"
+   ]
+  },
+  {
+   "club": "HOF HUSTLE",
+   "team_entries": 8,
+   "divisions": [
+    "U11 Boys",
+    "U11 Girls",
+    "U13 Boys",
+    "U13 Girls",
+    "U14 Boys"
+   ],
+   "teams": [
+    "U11 HOF HUSTLE BOYS",
+    "U11 HOF HUSTLE GIRLS",
+    "U13 Girls HOF Hustle - Jordan",
+    "U13 HOF HUSTLE Boys - Kevin",
+    "U13 HOF HUSTLE Boys - Sly",
+    "U13 HOF HUSTLE Girls - Sly",
+    "U14 HOF HUSTLE Boys - Jason",
+    "U14 HOF HUSTLE Boys - Neko"
+   ]
+  },
+  {
+   "club": "Oakville Venom",
+   "team_entries": 7,
+   "divisions": [
+    "U10 Boys",
+    "U11 Boys",
+    "U12 Boys",
+    "U13 Boys",
+    "U14 Boys",
+    "U16 Boys",
+    "U19 Men"
+   ],
+   "teams": [
+    "Oakville Venom Atom Boys",
+    "Oakville Venom Bantam Boys",
+    "Oakville Venom Junior Boys",
+    "Oakville Venom Major Atom Boys",
+    "Oakville Venom Major Bantam Boys",
+    "Oakville Venom Major Midget Boys",
+    "Oakville Venom Novice Boys"
+   ]
+  },
+  {
+   "club": "YAAACE",
+   "team_entries": 7,
+   "divisions": [
+    "U10 Boys",
+    "U11 Boys",
+    "U12 Boys",
+    "U12 Girls",
+    "U13 Boys",
+    "U14 Boys",
+    "U9 Boys"
+   ],
+   "teams": [
+    "YAAACE",
+    "YAAACE U10",
+    "YAAACE U11",
+    "YAAACE U12",
+    "YAAACE U13",
+    "YAAACE U14",
+    "YAAACE U9"
+   ]
+  },
+  {
+   "club": "IEM Newmarket",
+   "team_entries": 7,
+   "divisions": [
+    "U10 Boys",
+    "U11 Girls",
+    "U13 Girls",
+    "U14 Boys",
+    "U16 Boys",
+    "U17 Boys",
+    "U19 Men"
+   ],
+   "teams": [
+    "IEM Newmarket BU10",
+    "IEM Newmarket BU14",
+    "IEM Newmarket BU16",
+    "IEM Newmarket BU17",
+    "IEM Newmarket BU19",
+    "IEM Newmarket GU11",
+    "IEM Newmarket GU13"
+   ]
+  },
+  {
+   "club": "Orangeville Bears",
+   "team_entries": 7,
+   "divisions": [
+    "U10 Boys",
+    "U12 Boys",
+    "U12 Girls",
+    "U13 Boys",
+    "U14 Boys",
+    "U17 Boys",
+    "U19 Men"
+   ],
+   "teams": [
+    "Orangeville Bears",
+    "Orangeville Bears #1",
+    "Orangeville Bears - Millican"
+   ]
+  },
+  {
+   "club": "Brantford CYO Hawks",
+   "team_entries": 7,
+   "divisions": [
+    "U10 Boys",
+    "U11 Boys",
+    "U12 Boys",
+    "U13 Boys",
+    "U14 Boys",
+    "U16 Boys"
+   ],
+   "teams": [
+    "Brantford CYO Hawks - Cameron",
+    "Brantford CYO Hawks - U10 - Dawson",
+    "Brantford CYO Hawks - U11 - Rousseau",
+    "Brantford CYO Hawks - U12 - Wilcock",
+    "Brantford CYO Hawks - U13 - Jackson",
+    "Brantford CYO Hawks - U14 - Esposito",
+    "Brantford CYO Hawks - U14 - Hall"
+   ]
+  },
+  {
+   "club": "Oakville Vytis",
+   "team_entries": 7,
+   "divisions": [
+    "U10 Girls",
+    "U11 Girls",
+    "U12 Girls",
+    "U13 Girls",
+    "U14 Girls",
+    "U19 Women"
+   ],
+   "teams": [
+    "Oakville Vytis U10",
+    "Oakville Vytis U11",
+    "Oakville Vytis U12",
+    "Oakville Vytis U13 - Charles",
+    "Oakville Vytis U13 - Dorsey",
+    "Oakville Vytis U14",
+    "Oakville Vytis U19"
+   ]
+  },
+  {
+   "club": "Dundas Dynamo",
+   "team_entries": 7,
+   "divisions": [
+    "U10 Girls",
+    "U12 Girls",
+    "U14 Girls",
+    "U16 Boys",
+    "U17 Girls",
+    "U19 Men"
+   ],
+   "teams": [
+    "Dundas Dynamo - U19 Men",
+    "Dundas Dynamo U10 Girls",
+    "Dundas Dynamo U12 Girls",
+    "Dundas Dynamo U14 Girls",
+    "Dundas Dynamo U16 Boys (Gordon)",
+    "Dundas Dynamo U16 Boys (Mackay)",
+    "Dundas Dynamo U17 Girls"
+   ]
+  },
+  {
+   "club": "Game6 Lions",
+   "team_entries": 7,
+   "divisions": [
+    "U11 Boys",
+    "U12 Boys",
+    "U14 Boys",
+    "U14 Girls",
+    "U16 Boys"
+   ],
+   "teams": [
+    "Game6 Lions - Black",
+    "Game6 Lions - Gold",
+    "Game6 Lions - Red",
+    "Game6 Lions U11",
+    "Game6 Lions U12",
+    "Game6 Lions U14",
+    "Game6 Lions U16"
+   ]
+  },
+  {
+   "club": "Barrie Royals",
+   "team_entries": 7,
+   "divisions": [
+    "U11 Girls",
+    "U12 Boys",
+    "U12 Girls",
+    "U16 Girls",
+    "U19 Men"
+   ],
+   "teams": [
+    "Barrie Royals - Blake",
+    "Barrie Royals - Coulson",
+    "Barrie Royals - Hooper",
+    "Barrie Royals - Matthews",
+    "Barrie Royals - Minty",
+    "Barrie Royals - Riding",
+    "Barrie Royals U11 Girls - Friend"
+   ]
+  },
+  {
+   "club": "Golden Eagles",
+   "team_entries": 7,
+   "divisions": [
+    "U12 Boys",
+    "U12 Girls",
+    "U13 Boys",
+    "U14 Boys",
+    "U14 Girls",
+    "U16 Boys",
+    "U17 Boys"
+   ],
+   "teams": [
+    "Golden Eagles",
+    "U12 Boys - Golden Eagles",
+    "U12 Girls - Golden Eagles",
+    "U13 Boys - Golden Eagles",
+    "U14 Boys - Golden Eagles",
+    "U14 Girls - Golden Eagles",
+    "U17 Boys - Golden Eagles"
+   ]
+  },
+  {
+   "club": "MILTON STAGS RED",
+   "team_entries": 6,
+   "divisions": [
+    "U10 Boys",
+    "U11 Boys",
+    "U12 Boys",
+    "U13 Boys",
+    "U14 Boys",
+    "U16 Boys"
+   ],
+   "teams": [
+    "MILTON STAGS RED"
+   ]
+  },
+  {
+   "club": "New Horizon Heat",
+   "team_entries": 6,
+   "divisions": [
+    "U10 Boys",
+    "U11 Girls",
+    "U12 Girls",
+    "U13 Boys",
+    "U13 Girls",
+    "U14 Boys"
+   ],
+   "teams": [
+    "U10 New Horizon Heat",
+    "U11 New Horizon Heat(Girls)",
+    "U12 New Horizon Heat(Girls)",
+    "U13 New Horizon Heat",
+    "U14 New Horizon Heat"
+   ]
+  },
+  {
+   "club": "Grassroots Elite RED",
+   "team_entries": 6,
+   "divisions": [
+    "U10 Boys",
+    "U11 Boys",
+    "U12 Boys",
+    "U13 Boys",
+    "U14 Boys",
+    "U9 Boys"
+   ],
+   "teams": [
+    "U10 Grassroots Elite RED",
+    "U11 Grassroots Elite - RED",
+    "U12 Grassroots Elite RED",
+    "U13 Grassroots Elite RED",
+    "U14 Grassroots Elite RED",
+    "U9 Grassroots Elite RED"
+   ]
+  },
+  {
+   "club": "Jump Basketball",
+   "team_entries": 6,
+   "divisions": [
+    "U10 Boys",
+    "U11 Boys",
+    "U12 Boys",
+    "U13 Girls",
+    "U14 Boys",
+    "U16 Boys"
+   ],
+   "teams": [
+    "Jump Basketball - U13 Girls",
+    "Jump Basketball U10",
+    "Jump Basketball U11",
+    "Jump Basketball U12",
+    "Jump Basketball U14",
+    "Jump Basketball U16"
+   ]
+  },
+  {
+   "club": "St Catharines CYO Rebels",
+   "team_entries": 6,
+   "divisions": [
+    "U10 Boys",
+    "U12 Boys",
+    "U13 Boys",
+    "U13 Girls",
+    "U14 Boys",
+    "U16 Boys"
+   ],
+   "teams": [
+    "St Catharines CYO Rebels Bantam Boys #1",
+    "St Catharines CYO Rebels Major Atom boys #1",
+    "St Catharines CYO Rebels Major Bantam Boys #1",
+    "St Catharines CYO Rebels Novice boys #1",
+    "St Catharines CYO Rebels U13 Girls #1",
+    "St Catharines CYO Rebels U16 boys #1"
+   ]
+  },
+  {
+   "club": "Niagara Falls Basketball Association",
+   "team_entries": 6,
+   "divisions": [
+    "U10 Boys",
+    "U11 Boys",
+    "U12 Boys",
+    "U16 Boys",
+    "U17 Boys",
+    "U19 Men"
+   ],
+   "teams": [
+    "Niagara Falls Basketball Association"
+   ]
+  },
+  {
+   "club": "Midland Waves",
+   "team_entries": 6,
+   "divisions": [
+    "U10 Boys",
+    "U11 Girls",
+    "U12 Boys",
+    "U14 Girls",
+    "U16 Girls",
+    "U17 Boys"
+   ],
+   "teams": [
+    "Midland Waves",
+    "Midland Waves U11 Girls",
+    "Midland Waves U12 Boys",
+    "Midland Waves U14 Girls",
+    "Midland Waves U17 Boys",
+    "Midland Waves u10 Boys"
+   ]
+  },
+  {
+   "club": "Hamilton Transway",
+   "team_entries": 6,
+   "divisions": [
+    "U10 Girls",
+    "U11 Girls",
+    "U12 Girls",
+    "U13 Girls",
+    "U19 Women"
+   ],
+   "teams": [
+    "Hamilton Transway",
+    "Hamilton Transway #1",
+    "Hamilton Transway #2"
+   ]
+  },
+  {
+   "club": "Elevation Athletics",
+   "team_entries": 6,
+   "divisions": [
+    "U12 Boys",
+    "U13 Boys",
+    "U14 Boys",
+    "U16 Boys",
+    "U19 Women"
+   ],
+   "teams": [
+    "Elevation Athletics",
+    "Elevation Athletics - Mac",
+    "Elevation Athletics U16"
+   ]
+  },
+  {
+   "club": "South Muskoka Breakers",
+   "team_entries": 6,
+   "divisions": [
+    "U12 Boys",
+    "U13 Boys",
+    "U14 Boys",
+    "U16 Boys",
+    "U17 Boys",
+    "U19 Men"
+   ],
+   "teams": [
+    "South Muskoka Breakers U12 Boys",
+    "South Muskoka Breakers U13 Boys",
+    "South Muskoka Breakers U14 Boys",
+    "South Muskoka Breakers U16 Boys",
+    "South Muskoka Breakers U17 Boys",
+    "South Muskoka Breakers U19 Jr Mens"
+   ]
+  },
+  {
+   "club": "Huntsville Hurricanes",
+   "team_entries": 6,
+   "divisions": [
+    "U12 Boys",
+    "U14 Boys",
+    "U14 Girls",
+    "U16 Boys",
+    "U16 Girls",
+    "U19 Women"
+   ],
+   "teams": [
+    "Huntsville Hurricanes",
+    "Huntsville Hurricanes - U19 Women",
+    "Huntsville Hurricanes U14 Boys",
+    "Huntsville Hurricanes U14 Girls"
+   ]
+  },
+  {
+   "club": "The Performance Group",
+   "team_entries": 5,
+   "divisions": [
+    "U10 Boys",
+    "U11 Boys",
+    "U13 Boys",
+    "U14 Boys"
+   ],
+   "teams": [
+    "The Performance Group (TPG)",
+    "The Performance Group (TPG) - U10",
+    "The Performance Group (TPG) - U9"
+   ]
+  },
+  {
+   "club": "Wildhawk",
+   "team_entries": 5,
+   "divisions": [
+    "U10 Boys",
+    "U11 Boys",
+    "U12 Boys",
+    "U13 Boys",
+    "U14 Boys"
+   ],
+   "teams": [
+    "U10 Wildhawk Boys",
+    "U11 Wildhawk Boys",
+    "U12 Wildhawk Boys",
+    "U13 Wildhawk Boys",
+    "U14 Wildhawk Boys"
+   ]
+  },
+  {
+   "club": "Stratford Revolution",
+   "team_entries": 5,
+   "divisions": [
+    "U10 Boys",
+    "U12 Boys",
+    "U16 Boys",
+    "U17 Boys",
+    "U19 Men"
+   ],
+   "teams": [
+    "Stratford Revolution U10 Boys",
+    "Stratford Revolution U12 Boys",
+    "Stratford Revolution U16 Boys",
+    "Stratford Revolution U17 Boys",
+    "Stratford Revolution U19 Men"
+   ]
+  },
+  {
+   "club": "JCC Warriors - North Blue",
+   "team_entries": 5,
+   "divisions": [
+    "U11 Boys",
+    "U12 Boys",
+    "U13 Boys",
+    "U14 Boys",
+    "U16 Boys"
+   ],
+   "teams": [
+    "JCC Warriors - U11 North Blue",
+    "JCC Warriors - U12 North Blue",
+    "JCC Warriors - U13 North Blue",
+    "JCC Warriors - U14 North Blue",
+    "JCC Warriors - U16 North Blue"
+   ]
+  },
+  {
+   "club": "Top Tier",
+   "team_entries": 5,
+   "divisions": [
+    "U11 Boys",
+    "U12 Boys",
+    "U13 Boys",
+    "U14 Boys",
+    "U16 Boys"
+   ],
+   "teams": [
+    "Top Tier",
+    "Top Tier U11 (Johnson)",
+    "Top Tier U12 (Johnson)",
+    "Top Tier U13",
+    "Top Tier U14"
+   ]
+  },
+  {
+   "club": "Nepean",
+   "team_entries": 5,
+   "divisions": [
+    "U11 Boys",
+    "U12 Boys",
+    "U13 Boys",
+    "U13 Girls",
+    "U16 Girls"
+   ],
+   "teams": [
+    "Nepean - Aden",
+    "Nepean - Frechette",
+    "Nepean - Kettles",
+    "Nepean - Manny",
+    "Nepean - Pelton"
+   ]
+  },
+  {
+   "club": "JCC Warriors - North White",
+   "team_entries": 5,
+   "divisions": [
+    "U11 Boys",
+    "U12 Boys",
+    "U13 Boys",
+    "U14 Boys",
+    "U16 Boys"
+   ],
+   "teams": [
+    "JCC Warriors - U11 North White",
+    "JCC Warriors - U12 North White",
+    "JCC Warriors - U13 North White",
+    "JCC Warriors - U14 North White",
+    "JCC Warriors - U16 North White"
+   ]
+  },
+  {
+   "club": "LaSalle Guardians",
+   "team_entries": 5,
+   "divisions": [
+    "U11 Boys",
+    "U13 Boys",
+    "U14 Boys",
+    "U16 Boys"
+   ],
+   "teams": [
+    "LaSalle Guardians",
+    "LaSalle Guardians #1",
+    "LaSalle Guardians #2"
+   ]
+  },
+  {
+   "club": "Maple Basketball",
+   "team_entries": 5,
+   "divisions": [
+    "U11 Boys",
+    "U12 Boys",
+    "U13 Boys",
+    "U9 Boys"
+   ],
+   "teams": [
+    "Maple Basketball U11",
+    "Maple Basketball U12",
+    "Maple Basketball U13 - Crimson",
+    "Maple Basketball U13 - Silver",
+    "Maple Basketball U9"
+   ]
+  },
+  {
+   "club": "Huron Lakers",
+   "team_entries": 5,
+   "divisions": [
+    "U11 Girls",
+    "U12 Boys",
+    "U13 Boys",
+    "U13 Girls",
+    "U14 Girls"
+   ],
+   "teams": [
+    "Huron Lakers - Bettridge",
+    "Huron Lakers - Grimmond",
+    "Huron Lakers - Hyatt",
+    "Huron Lakers - Spadafora",
+    "Huron Lakers - Tsiaprailis"
+   ]
+  },
+  {
+   "club": "Kingston Impact",
+   "team_entries": 5,
+   "divisions": [
+    "U12 Boys",
+    "U16 Boys",
+    "U16 Girls",
+    "U19 Men"
+   ],
+   "teams": [
+    "Kingston Impact - Clark",
+    "Kingston Impact - Dale",
+    "Kingston Impact - Simpson",
+    "Kingston Impact - U16 Girls Lachaine",
+    "Kingston Impact - Wallace"
+   ]
+  },
+  {
+   "club": "Burloak Elite",
+   "team_entries": 4,
+   "divisions": [
+    "U10 Boys",
+    "U12 Boys",
+    "U14 Boys",
+    "U16 Girls"
+   ],
+   "teams": [
+    "Burloak Elite - Ana",
+    "U10 Burloak Elite Boys",
+    "U12 Burloak Elite Junior",
+    "U14 Burloak Elite Junior"
+   ]
+  },
+  {
+   "club": "Etobicoke Thunder 1",
+   "team_entries": 4,
+   "divisions": [
+    "U10 Boys",
+    "U11 Boys",
+    "U14 Boys",
+    "U16 Boys"
+   ],
+   "teams": [
+    "Etobicoke Thunder U10 Boys 1",
+    "Etobicoke Thunder U11 Boys 1",
+    "Etobicoke Thunder U14 Boys 1",
+    "Etobicoke Thunder U16 Boys 1"
+   ]
+  },
+  {
+   "club": "Etobicoke Thunder 2",
+   "team_entries": 4,
+   "divisions": [
+    "U10 Boys",
+    "U11 Boys",
+    "U12 Boys",
+    "U14 Boys"
+   ],
+   "teams": [
+    "Etobicoke Thunder U10 Boys 2",
+    "Etobicoke Thunder U11 Boys 2",
+    "Etobicoke Thunder U12 Boys 2",
+    "Etobicoke Thunder U14 Boys 2"
+   ]
+  },
+  {
+   "club": "North York Lions",
+   "team_entries": 4,
+   "divisions": [
+    "U11 Boys",
+    "U13 Boys",
+    "U14 Boys"
+   ],
+   "teams": [
+    "North York Lions #1",
+    "North York Lions #2",
+    "North York Lions - Ergars",
+    "North York Lions - Rhodes"
+   ]
+  },
+  {
+   "club": "MILTON STAGS",
+   "team_entries": 4,
+   "divisions": [
+    "U11 Girls",
+    "U12 Girls",
+    "U13 Girls",
+    "U16 Girls"
+   ],
+   "teams": [
+    "MILTON STAGS"
+   ]
+  },
+  {
+   "club": "Union Next Man Up",
+   "team_entries": 4,
+   "divisions": [
+    "U12 Boys",
+    "U13 Boys",
+    "U14 Boys",
+    "U16 Boys"
+   ],
+   "teams": [
+    "Union Next Man Up",
+    "Union Next Man Up 12U",
+    "Union Next Man Up 13U",
+    "Union Next Man Up 14U"
+   ]
+  },
+  {
+   "club": "Momentum Orange",
+   "team_entries": 4,
+   "divisions": [
+    "U12 Boys",
+    "U13 Boys",
+    "U14 Boys",
+    "U16 Boys"
+   ],
+   "teams": [
+    "Momentum Orange"
+   ]
+  },
+  {
+   "club": "Lindsay Wildcats",
+   "team_entries": 4,
+   "divisions": [
+    "U12 Boys",
+    "U14 Boys",
+    "U16 Boys",
+    "U17 Boys"
+   ],
+   "teams": [
+    "Lindsay Wildcats"
+   ]
+  },
+  {
+   "club": "Next Generation Basketball Club",
+   "team_entries": 4,
+   "divisions": [
+    "U12 Boys",
+    "U14 Girls",
+    "U16 Boys",
+    "U19 Men"
+   ],
+   "teams": [
+    "Next Generation Basketball Club U16 Boys - Tyler",
+    "Next Generation Basketball Club U19 Men",
+    "Next Generation Basketball Club u12 Boys",
+    "Next Generation Basketball Club u14 Girls"
+   ]
+  },
+  {
+   "club": "KWGBA Phoenix",
+   "team_entries": 4,
+   "divisions": [
+    "U13 Girls",
+    "U14 Girls",
+    "U16 Girls",
+    "U19 Women"
+   ],
+   "teams": [
+    "KWGBA Phoenix Girls U13 - Bhavnani",
+    "KWGBA Phoenix Girls U14 - Curtis",
+    "KWGBA Phoenix Girls U16 - Grant",
+    "KWGBA Phoenix Girls U19 - Arthur"
+   ]
+  },
+  {
+   "club": "Grimsby Grizzlies",
+   "team_entries": 4,
+   "divisions": [
+    "U14 Girls",
+    "U16 Boys",
+    "U17 Boys",
+    "U19 Women"
+   ],
+   "teams": [
+    "Grimsby Grizzlies",
+    "Grimsby Grizzlies U16 boys",
+    "Grimsby Grizzlies U17 boys",
+    "Grimsby Grizzlies U19 women"
+   ]
+  },
+  {
+   "club": "#REF!",
+   "team_entries": 4,
+   "divisions": [
+    "U16 Boys",
+    "U17 Boys",
+    "U19 Men",
+    "U9 Boys"
+   ],
+   "teams": [
+    "#REF!"
+   ]
+  },
+  {
+   "club": "London Gold Medal",
+   "team_entries": 4,
+   "divisions": [
+    "U16 Boys",
+    "U16 Girls",
+    "U17 Boys",
+    "U19 Men"
+   ],
+   "teams": [
+    "London Gold Medal - Caulfield",
+    "London Gold Medal - Cordeiro",
+    "London Gold Medal - Greg"
+   ]
+  },
+  {
+   "club": "The Collective Elite",
+   "team_entries": 3,
+   "divisions": [
+    "U10 Boys",
+    "U11 Boys",
+    "U13 Boys"
+   ],
+   "teams": [
+    "The Collective Elite",
+    "The Collective Elite - U10",
+    "The Collective Elite - U11"
+   ]
+  },
+  {
+   "club": "DEEP Basketball Club",
+   "team_entries": 3,
+   "divisions": [
+    "U10 Boys",
+    "U12 Boys",
+    "U13 Boys"
+   ],
+   "teams": [
+    "DEEP Basketball Club"
+   ]
+  },
+  {
+   "club": "BALL905",
+   "team_entries": 3,
+   "divisions": [
+    "U10 Boys",
+    "U13 Boys",
+    "U14 Boys"
+   ],
+   "teams": [
+    "BALL905 U10 Boys",
+    "BALL905 U13 Boys",
+    "BALL905 U14 Boys"
+   ]
+  },
+  {
+   "club": "HOOPSTARS",
+   "team_entries": 3,
+   "divisions": [
+    "U11 Boys",
+    "U13 Boys",
+    "U19 Women"
+   ],
+   "teams": [
+    "HOOPSTARS U11",
+    "HOOPSTARS U13",
+    "HOOPSTARS U19"
+   ]
+  },
+  {
+   "club": "Brantford CYO",
+   "team_entries": 3,
+   "divisions": [
+    "U11 Girls",
+    "U12 Girls",
+    "U19 Women"
+   ],
+   "teams": [
+    "Brantford CYO - Lovett",
+    "Brantford CYO - Williams",
+    "Brantford CYO U19 - Cleary"
+   ]
+  },
+  {
+   "club": "IEM Aurora",
+   "team_entries": 3,
+   "divisions": [
+    "U12 Boys",
+    "U13 Boys",
+    "U16 Boys"
+   ],
+   "teams": [
+    "IEM Aurora BU12",
+    "IEM Aurora BU13",
+    "IEM Aurora BU16"
+   ]
+  },
+  {
+   "club": "MILTON STAGS WHITE",
+   "team_entries": 3,
+   "divisions": [
+    "U12 Boys",
+    "U13 Boys",
+    "U14 Boys"
+   ],
+   "teams": [
+    "MILTON STAGS WHITE",
+    "Milton Stags White"
+   ]
+  },
+  {
+   "club": "Guelph Gryphons",
+   "team_entries": 3,
+   "divisions": [
+    "U12 Boys",
+    "U16 Boys",
+    "U16 Girls"
+   ],
+   "teams": [
+    "Guelph Gryphons - Baker",
+    "Guelph Gryphons - Perkin",
+    "Guelph Gryphons - Wallace"
+   ]
+  },
+  {
+   "club": "Hoopzone Knights 's",
+   "team_entries": 3,
+   "divisions": [
+    "U12 Boys",
+    "U13 Boys",
+    "U14 Boys"
+   ],
+   "teams": [
+    "Hoopzone Knights 2012's",
+    "Hoopzone Knights 2013's",
+    "Hoopzone Knights 2014's"
+   ]
+  },
+  {
+   "club": "Durham Rising Suns",
+   "team_entries": 3,
+   "divisions": [
+    "U13 Boys",
+    "U14 Boys"
+   ],
+   "teams": [
+    "Durham Rising Suns - Gold",
+    "Durham Rising Suns - Jake",
+    "Durham Rising Suns - Julius"
+   ]
+  },
+  {
+   "club": "Toronto Lords Academy",
+   "team_entries": 3,
+   "divisions": [
+    "U13 Boys",
+    "U14 Girls",
+    "U16 Girls"
+   ],
+   "teams": [
+    "Toronto Lords Girls Jr. Academy",
+    "Toronto Lords U13 Boys Academy",
+    "Toronto Lords U14 Girls Academy"
+   ]
+  },
+  {
+   "club": "Napanee Hawks",
+   "team_entries": 3,
+   "divisions": [
+    "U13 Boys",
+    "U16 Boys",
+    "U17 Boys"
+   ],
+   "teams": [
+    "Napanee U13 Boys Jr Hawks",
+    "Napanee U16 Boys Hawks",
+    "Napanee U17 Boys Hawks"
+   ]
+  },
+  {
+   "club": "MUMBA ELITE",
+   "team_entries": 3,
+   "divisions": [
+    "U13 Girls",
+    "U16 Girls",
+    "U9 Boys"
+   ],
+   "teams": [
+    "MUMBA ELITE"
+   ]
+  },
+  {
+   "club": "Owen Sound",
+   "team_entries": 3,
+   "divisions": [
+    "U13 Girls",
+    "U16 Boys",
+    "U17 Girls"
+   ],
+   "teams": [
+    "Owen Sound - Roberts",
+    "Owen Sound U13 Girls - Matheson",
+    "Owen Sound U17 Girls - Nickel"
+   ]
+  },
+  {
+   "club": "RSB Association",
+   "team_entries": 3,
+   "divisions": [
+    "U14 Boys",
+    "U16 Boys"
+   ],
+   "teams": [
+    "RSB Association (Retro - L.Williams)",
+    "RSB Association (T.Cox)",
+    "U14 - RSB Association (Legacy)"
+   ]
+  },
+  {
+   "club": "Parry Sound Stingers",
+   "team_entries": 3,
+   "divisions": [
+    "U14 Girls",
+    "U17 Girls",
+    "U19 Men"
+   ],
+   "teams": [
+    "U14 Parry Sound Stingers",
+    "U17 Parry Sound Stingers",
+    "U19 Parry Sound Stingers"
+   ]
+  },
+  {
+   "club": "ONLX",
+   "team_entries": 3,
+   "divisions": [
+    "U16 Boys",
+    "U17 Boys",
+    "U19 Men"
+   ],
+   "teams": [
+    "ONLX - Junior",
+    "ONLX - Rise",
+    "ONLX - Senior"
+   ]
+  },
+  {
+   "club": "Grassroots",
+   "team_entries": 3,
+   "divisions": [
+    "U16 Boys"
+   ],
+   "teams": [
+    "U16 Grassroots - Akash",
+    "U16 Grassroots - Ala",
+    "U16 Grassroots - Bailey"
+   ]
+  },
+  {
+   "club": "Lambton Lions",
+   "team_entries": 3,
+   "divisions": [
+    "U16 Boys",
+    "U16 Girls",
+    "U17 Boys"
+   ],
+   "teams": [
+    "U16 Girls Lambton Junior Lions (Turner)",
+    "U16 Lambton Junior Lions - Concisom",
+    "U17 Boys Lambton Junior Lions (Boyle)"
+   ]
+  },
+  {
+   "club": "Toronto Lords",
+   "team_entries": 3,
+   "divisions": [
+    "U16 Girls",
+    "U17 Boys",
+    "U19 Men"
+   ],
+   "teams": [
+    "Toronto Lords",
+    "Toronto Lords U17 Boys",
+    "Toronto Lords U19 Men"
+   ]
+  },
+  {
+   "club": "TCBL Dragons - coach Navid",
+   "team_entries": 2,
+   "divisions": [
+    "U10 Boys",
+    "U12 Boys"
+   ],
+   "teams": [
+    "TCBL U10 Dragons - coach Navid",
+    "TCBL U12 Dragons - coach Navid"
+   ]
+  },
+  {
+   "club": "MUMBA ELITE - VARNAN",
+   "team_entries": 2,
+   "divisions": [
+    "U10 Boys",
+    "U14 Boys"
+   ],
+   "teams": [
+    "MUMBA ELITE - VARNAN"
+   ]
+  },
+  {
+   "club": "Hamilton Celtics",
+   "team_entries": 2,
+   "divisions": [
+    "U10 Boys",
+    "U14 Boys"
+   ],
+   "teams": [
+    "Hamilton Celtics U10 Boys",
+    "Hamilton Celtics U14 Boys"
+   ]
+  },
+  {
+   "club": "Advantage Titans",
+   "team_entries": 2,
+   "divisions": [
+    "U10 Boys",
+    "U12 Girls"
+   ],
+   "teams": [
+    "Advantage Titans",
+    "U12 Girls Advantage Titans"
+   ]
+  },
+  {
+   "club": "Pelham Panthers - Team Dudley",
+   "team_entries": 2,
+   "divisions": [
+    "U10 Boys",
+    "U13 Girls"
+   ],
+   "teams": [
+    "Pelham Panthers - Team Dudley"
+   ]
+  },
+  {
+   "club": "KWGBA Phoenix WHITE",
+   "team_entries": 2,
+   "divisions": [
+    "U10 Girls",
+    "U12 Girls"
+   ],
+   "teams": [
+    "KWGBA Phoenix Girls U10 WHITE - Dahl",
+    "KWGBA Phoenix Girls U12 WHITE - Nelson"
+   ]
+  },
+  {
+   "club": "KWGBA Phoenix NAVY",
+   "team_entries": 2,
+   "divisions": [
+    "U10 Girls",
+    "U12 Girls"
+   ],
+   "teams": [
+    "KWGBA Phoenix Girls U10 NAVY - Gallagher",
+    "KWGBA Phoenix Girls U12 NAVY - Poulin"
+   ]
+  },
+  {
+   "club": "GBA Teran",
+   "team_entries": 2,
+   "divisions": [
+    "U11 Boys",
+    "U14 Boys"
+   ],
+   "teams": [
+    "U11- GBA Teran",
+    "U14 - GBA Teran"
+   ]
+  },
+  {
+   "club": "TCBL Dragons - coach Devon",
+   "team_entries": 2,
+   "divisions": [
+    "U11 Boys",
+    "U12 Boys"
+   ],
+   "teams": [
+    "TCBL U11 Dragons - coach Devon",
+    "TCBL U12 Dragons - coach Devon"
+   ]
+  },
+  {
+   "club": "DC Storm",
+   "team_entries": 2,
+   "divisions": [
+    "U11 Boys",
+    "U13 Boys"
+   ],
+   "teams": [
+    "DC Storm U11",
+    "DC Storm U13"
+   ]
+  },
+  {
+   "club": "Pelham Panthers - Team Newton",
+   "team_entries": 2,
+   "divisions": [
+    "U11 Boys",
+    "U13 Boys"
+   ],
+   "teams": [
+    "Pelham Panthers - Team Newton"
+   ]
+  },
+  {
+   "club": "Toronto Lords Johnson",
+   "team_entries": 2,
+   "divisions": [
+    "U11 Boys",
+    "U14 Boys"
+   ],
+   "teams": [
+    "Toronto Lords U11 Boys Johnson",
+    "Toronto Lords U14 Boys Johnson"
+   ]
+  },
+  {
+   "club": "Orillia",
+   "team_entries": 2,
+   "divisions": [
+    "U11 Boys",
+    "U16 Boys"
+   ],
+   "teams": [
+    "Orillia  - Clemmens",
+    "Orillia - Clark"
+   ]
+  },
+  {
+   "club": "Peterborough Power Palmer",
+   "team_entries": 2,
+   "divisions": [
+    "U11 Boys",
+    "U16 Boys"
+   ],
+   "teams": [
+    "Peterborough Power Palmer"
+   ]
+  },
+  {
+   "club": "Grassroots Elite BLACK",
+   "team_entries": 2,
+   "divisions": [
+    "U11 Boys",
+    "U13 Boys"
+   ],
+   "teams": [
+    "U11 Grassroots Elite BLACK",
+    "U13 Grassroots Elite BLACK"
+   ]
+  },
+  {
+   "club": "Burloak Elite Allen",
+   "team_entries": 2,
+   "divisions": [
+    "U11 Girls",
+    "U14 Boys"
+   ],
+   "teams": [
+    "U11 Burloak Elite Allen",
+    "U14 Burloak Elite Allen"
+   ]
+  },
+  {
+   "club": "London 86ers",
+   "team_entries": 2,
+   "divisions": [
+    "U11 Girls",
+    "U16 Girls"
+   ],
+   "teams": [
+    "London 86ers - Baird",
+    "London 86ers - Philion"
+   ]
+  },
+  {
+   "club": "Union Elite Bam",
+   "team_entries": 2,
+   "divisions": [
+    "U12 Boys",
+    "U13 Boys"
+   ],
+   "teams": [
+    "Union Elite Gr 6 Bam",
+    "Union Elite Gr 7 Bam"
+   ]
+  },
+  {
+   "club": "Brampton Warriors U12B",
+   "team_entries": 2,
+   "divisions": [
+    "U12 Boys"
+   ],
+   "teams": [
+    "Brampton Warriors U12B - Brade",
+    "Brampton Warriors U12B - Watson"
+   ]
+  },
+  {
+   "club": "Brooklin BTSO Elite",
+   "team_entries": 2,
+   "divisions": [
+    "U12 Boys"
+   ],
+   "teams": [
+    "Brooklin BTSO Elite - Anthony",
+    "Brooklin BTSO Elite - Justin"
+   ]
+  },
+  {
+   "club": "RISING SUNS KINGS",
+   "team_entries": 2,
+   "divisions": [
+    "U12 Boys",
+    "U16 Boys"
+   ],
+   "teams": [
+    "RISING SUNS U12 KINGS",
+    "RISING SUNS U16 KINGS"
+   ]
+  },
+  {
+   "club": "MUMBA ELITE - TORRES",
+   "team_entries": 2,
+   "divisions": [
+    "U12 Boys",
+    "U17 Boys"
+   ],
+   "teams": [
+    "MUMBA ELITE - TORRES"
+   ]
+  },
+  {
+   "club": "Toronto Nets",
+   "team_entries": 2,
+   "divisions": [
+    "U12 Boys",
+    "U14 Boys"
+   ],
+   "teams": [
+    "Toronto Nets"
+   ]
+  },
+  {
+   "club": "Ballmatics",
+   "team_entries": 2,
+   "divisions": [
+    "U12 Boys",
+    "U14 Boys"
+   ],
+   "teams": [
+    "Ballmatics U12",
+    "Ballmatics U14"
+   ]
+  },
+  {
+   "club": "Peterborough Power Handa",
+   "team_entries": 2,
+   "divisions": [
+    "U12 Boys",
+    "U17 Boys"
+   ],
+   "teams": [
+    "Peterborough Power Handa"
+   ]
+  },
+  {
+   "club": "B1CE London",
+   "team_entries": 2,
+   "divisions": [
+    "U12 Girls",
+    "U14 Girls"
+   ],
+   "teams": [
+    "B1CE London"
+   ]
+  },
+  {
+   "club": "B1CE",
+   "team_entries": 2,
+   "divisions": [
+    "U12 Girls",
+    "U13 Girls"
+   ],
+   "teams": [
+    "B1CE"
+   ]
+  },
+  {
+   "club": "Riverside Falcons",
+   "team_entries": 2,
+   "divisions": [
+    "U13 Boys",
+    "U14 Boys"
+   ],
+   "teams": [
+    "Riverside Falcons"
+   ]
+  },
+  {
+   "club": "DC Bulldogs",
+   "team_entries": 2,
+   "divisions": [
+    "U13 Boys",
+    "U14 Boys"
+   ],
+   "teams": [
+    "DC Bulldogs U13",
+    "DC Bulldogs U14"
+   ]
+  },
+  {
+   "club": "Truth-Brothers Keepers",
+   "team_entries": 2,
+   "divisions": [
+    "U13 Boys",
+    "U14 Girls"
+   ],
+   "teams": [
+    "Truth-Brothers Keepers"
+   ]
+  },
+  {
+   "club": "Port Colborne Hornets",
+   "team_entries": 2,
+   "divisions": [
+    "U13 Boys",
+    "U14 Boys"
+   ],
+   "teams": [
+    "U13 Boys Port Colborne Hornets (Murphy)",
+    "U14 Boys Port Colborne Hornets (Stewart)"
+   ]
+  },
+  {
+   "club": "KW Viper Quigley",
+   "team_entries": 2,
+   "divisions": [
+    "U13 Boys",
+    "U16 Boys"
+   ],
+   "teams": [
+    "KW Viper Quigley",
+    "KW Viper U13 Boys Quigley"
+   ]
+  },
+  {
+   "club": "Oshawa Commanders",
+   "team_entries": 2,
+   "divisions": [
+    "U13 Boys",
+    "U9 Boys"
+   ],
+   "teams": [
+    "Oshawa Commanders U13",
+    "Oshawa Commanders U9- Liv"
+   ]
+  },
+  {
+   "club": "GTA Mavericks- Reid",
+   "team_entries": 2,
+   "divisions": [
+    "U13 Boys",
+    "U14 Boys"
+   ],
+   "teams": [
+    "GTA Mavericks- Reid"
+   ]
+  },
+  {
+   "club": "MUMBA ELITE - GUTIERREZ",
+   "team_entries": 2,
+   "divisions": [
+    "U13 Boys",
+    "U14 Boys"
+   ],
+   "teams": [
+    "MUMBA ELITE - GUTIERREZ"
+   ]
+  },
+  {
+   "club": "Malton Sting",
+   "team_entries": 2,
+   "divisions": [
+    "U13 Boys",
+    "U16 Girls"
+   ],
+   "teams": [
+    "Malton Sting (U13)",
+    "Malton Sting (U16 Girls)"
+   ]
+  },
+  {
+   "club": "UEWB",
+   "team_entries": 2,
+   "divisions": [
+    "U13 Boys",
+    "U19 Women"
+   ],
+   "teams": [
+    "UEWB",
+    "UEWB - WOMENS"
+   ]
+  },
+  {
+   "club": "Prince Edward County Clippers",
+   "team_entries": 2,
+   "divisions": [
+    "U13 Boys",
+    "U17 Boys"
+   ],
+   "teams": [
+    "Prince Edward County Clippers U13 Boys",
+    "Prince Edward County Clippers U17 Boys"
+   ]
+  },
+  {
+   "club": "Momentum Navy",
+   "team_entries": 2,
+   "divisions": [
+    "U13 Boys",
+    "U14 Boys"
+   ],
+   "teams": [
+    "Momentum Navy"
+   ]
+  },
+  {
+   "club": "MBA",
+   "team_entries": 2,
+   "divisions": [
+    "U13 Girls",
+    "U14 Girls"
+   ],
+   "teams": [
+    "MBA"
+   ]
+  },
+  {
+   "club": "NRBA Crazy Catz",
+   "team_entries": 2,
+   "divisions": [
+    "U13 Girls",
+    "U19 Women"
+   ],
+   "teams": [
+    "NRBA Crazy Catz",
+    "NRBA U19 Crazy Catz"
+   ]
+  },
+  {
+   "club": "Cooksville CKATT",
+   "team_entries": 2,
+   "divisions": [
+    "U14 Boys",
+    "U16 Boys"
+   ],
+   "teams": [
+    "Cooksville 2010 CKATT",
+    "Cooksville 2012 CKATT"
+   ]
+  },
+  {
+   "club": "Union Elite Marv",
+   "team_entries": 2,
+   "divisions": [
+    "U14 Boys",
+    "U16 Boys"
+   ],
+   "teams": [
+    "Union Elite Gr 10 Marv",
+    "Union Elite Gr 8 Marv"
+   ]
+  },
+  {
+   "club": "IEM East Gwillimbury",
+   "team_entries": 2,
+   "divisions": [
+    "U14 Boys",
+    "U17 Boys"
+   ],
+   "teams": [
+    "IEM East Gwillimbury BU14",
+    "IEM East Gwillimbury BU17"
+   ]
+  },
+  {
+   "club": "Brampton Warriors U14B",
+   "team_entries": 2,
+   "divisions": [
+    "U14 Boys"
+   ],
+   "teams": [
+    "Brampton Warriors U14B - Singh",
+    "Brampton Warriors U14B-Senior"
+   ]
+  },
+  {
+   "club": "IEM King City",
+   "team_entries": 2,
+   "divisions": [
+    "U14 Boys",
+    "U14 Girls"
+   ],
+   "teams": [
+    "IEM King City BU14",
+    "IEM King City GU14"
+   ]
+  },
+  {
+   "club": "Niagara Falls Red Raiders",
+   "team_entries": 2,
+   "divisions": [
+    "U14 Boys",
+    "U14 Girls"
+   ],
+   "teams": [
+    "Niagara Falls Red Raiders"
+   ]
+  },
+  {
+   "club": "SBA Team McPherson DB",
+   "team_entries": 2,
+   "divisions": [
+    "U14 Boys",
+    "U14 Girls"
+   ],
+   "teams": [
+    "SBA Team McPherson DB"
+   ]
+  },
+  {
+   "club": "BWT Rebels",
+   "team_entries": 2,
+   "divisions": [
+    "U14 Boys",
+    "U16 Boys"
+   ],
+   "teams": [
+    "BWT Rebels",
+    "BWT Rebels U16"
+   ]
+  },
+  {
+   "club": "South Simcoe Sonics",
+   "team_entries": 2,
+   "divisions": [
+    "U14 Boys",
+    "U16 Boys"
+   ],
+   "teams": [
+    "South Simcoe Sonics U14 Boys",
+    "South Simcoe Sonics U16 Boys"
+   ]
+  },
+  {
+   "club": "NRBA Blue Mad Dogz",
+   "team_entries": 2,
+   "divisions": [
+    "U14 Boys",
+    "U17 Boys"
+   ],
+   "teams": [
+    "NRBA Blue Mad Dogz",
+    "U17 NRBA Blue Mad Dogz"
+   ]
+  },
+  {
+   "club": "Burloak Elite Nate",
+   "team_entries": 2,
+   "divisions": [
+    "U14 Boys",
+    "U17 Boys"
+   ],
+   "teams": [
+    "U14 Burloak Elite Nate",
+    "U17 Burloak Elite Nate"
+   ]
+  },
+  {
+   "club": "DC Chameleons",
+   "team_entries": 2,
+   "divisions": [
+    "U14 Girls",
+    "U16 Girls"
+   ],
+   "teams": [
+    "DC Chameleons",
+    "DC Chameleons U14"
+   ]
+  },
+  {
+   "club": "Brampton Warriors U14G",
+   "team_entries": 2,
+   "divisions": [
+    "U14 Girls"
+   ],
+   "teams": [
+    "Brampton Warriors U14G - Archer",
+    "Brampton Warriors U14G - Harris"
+   ]
+  },
+  {
+   "club": "Pelham Panthers - Team Policella",
+   "team_entries": 2,
+   "divisions": [
+    "U14 Girls",
+    "U17 Boys"
+   ],
+   "teams": [
+    "Pelham Panthers - Team Policella"
+   ]
+  },
+  {
+   "club": ".button.primary-button:active",
+   "team_entries": 2,
+   "divisions": [
+    "U15 Boys",
+    "U15 Girls"
+   ],
+   "teams": [
+    ".button.primary-button:active"
+   ]
+  },
+  {
+   "club": ".button.primary-button:focus",
+   "team_entries": 2,
+   "divisions": [
+    "U15 Boys",
+    "U15 Girls"
+   ],
+   "teams": [
+    ".button.primary-button:focus"
+   ]
+  },
+  {
+   "club": ".login",
+   "team_entries": 2,
+   "divisions": [
+    "U15 Boys",
+    "U15 Girls"
+   ],
+   "teams": [
+    ".login"
+   ]
+  },
+  {
+   "club": ".request-storage-access{display:none}.error",
+   "team_entries": 2,
+   "divisions": [
+    "U15 Boys",
+    "U15 Girls"
+   ],
+   "teams": [
+    ".request-storage-access{display:none}.error"
+   ]
+  },
+  {
+   "club": ".request-storage-access",
+   "team_entries": 2,
+   "divisions": [
+    "U15 Boys",
+    "U15 Girls"
+   ],
+   "teams": [
+    ".request-storage-access"
+   ]
+  },
+  {
+   "club": ".too-many-login-redirects{margin:auto;padding:36px}.document-root.show-error .error",
+   "team_entries": 2,
+   "divisions": [
+    "U15 Boys",
+    "U15 Girls"
+   ],
+   "teams": [
+    ".too-many-login-redirects{margin:auto;padding:36px}.document-root.show-error .error"
+   ]
+  },
+  {
+   "club": ".document-root.show-login-page .login",
+   "team_entries": 2,
+   "divisions": [
+    "U15 Boys",
+    "U15 Girls"
+   ],
+   "teams": [
+    ".document-root.show-login-page .login"
+   ]
+  },
+  {
+   "club": ".document-root.show-storage-access .request-storage-access",
+   "team_entries": 2,
+   "divisions": [
+    "U15 Boys",
+    "U15 Girls"
+   ],
+   "teams": [
+    ".document-root.show-storage-access .request-storage-access"
+   ]
+  },
+  {
+   "club": "Roboto",
+   "team_entries": 2,
+   "divisions": [
+    "U15 Boys",
+    "U15 Girls"
+   ],
+   "teams": [
+    "Roboto"
+   ]
+  },
+  {
+   "club": "sans-serif;text-align:center}.subtitle-text{font-family:Google Sans Text",
+   "team_entries": 2,
+   "divisions": [
+    "U15 Boys",
+    "U15 Girls"
+   ],
+   "teams": [
+    "sans-serif;text-align:center}.subtitle-text{font-family:Google Sans Text"
+   ]
+  },
+  {
+   "club": "sans-serif;margin-top:16px;text-align:center}",
+   "team_entries": 2,
+   "divisions": [
+    "U15 Boys",
+    "U15 Girls"
+   ],
+   "teams": [
+    "sans-serif;margin-top:16px;text-align:center}"
+   ]
+  },
+  {
+   "club": "not_in_iframe",
+   "team_entries": 2,
+   "divisions": [
+    "U15 Boys",
+    "U15 Girls"
+   ],
+   "teams": [
+    "not_in_iframe"
+   ]
+  },
+  {
+   "club": "Copyright The Closure Library Authors.",
+   "team_entries": 2,
+   "divisions": [
+    "U15 Boys",
+    "U15 Girls"
+   ],
+   "teams": [
+    "Copyright The Closure Library Authors."
+   ]
+  },
+  {
+   "club": "SPDX-License-Identifier: Apache-2.0",
+   "team_entries": 2,
+   "divisions": [
+    "U15 Boys",
+    "U15 Girls"
+   ],
+   "teams": [
+    "SPDX-License-Identifier: Apache-2.0"
+   ]
+  },
+  {
+   "club": "Copyright Google LLC",
+   "team_entries": 2,
+   "divisions": [
+    "U15 Boys",
+    "U15 Girls"
+   ],
+   "teams": [
+    "Copyright Google LLC"
+   ]
+  },
+  {
+   "club": "function n {var a=new p",
+   "team_entries": 2,
+   "divisions": [
+    "U15 Boys",
+    "U15 Girls"
+   ],
+   "teams": [
+    "function n(){var a=new p"
+   ]
+  },
+  {
+   "club": "b=new q",
+   "team_entries": 2,
+   "divisions": [
+    "U15 Boys",
+    "U15 Girls"
+   ],
+   "teams": [
+    "b=new q"
+   ]
+  },
+  {
+   "club": "window.location.href",
+   "team_entries": 2,
+   "divisions": [
+    "U15 Boys",
+    "U15 Girls"
+   ],
+   "teams": [
+    "window.location.href"
+   ]
+  },
+  {
+   "club": "b!==void 0&&(a.href=b))}function y(a",
+   "team_entries": 2,
+   "divisions": [
+    "U15 Boys",
+    "U15 Girls"
+   ],
+   "teams": [
+    "b!==void 0&&(a.href=b))}function y(a"
+   ]
+  },
+  {
+   "club": "function {d&&d.close ;var e=window.location.href;var f=(new URL(e)).searchParams",
+   "team_entries": 2,
+   "divisions": [
+    "U15 Boys",
+    "U15 Girls"
+   ],
+   "teams": [
+    "function(){d&&d.close();var e=window.location.href;var f=(new URL(e)).searchParams"
+   ]
+  },
+  {
+   "club": "isFinite(f)&&(g=f+1));e=m(e",
+   "team_entries": 2,
+   "divisions": [
+    "U15 Boys",
+    "U15 Girls"
+   ],
+   "teams": [
+    "isFinite(f)&&(g=f+1));e=m(e"
+   ]
+  },
+  {
+   "club": "login_counter",
+   "team_entries": 2,
+   "divisions": [
+    "U15 Boys",
+    "U15 Girls"
+   ],
+   "teams": [
+    "login_counter"
+   ]
+  },
+  {
+   "club": "String(g));A(a",
+   "team_entries": 2,
+   "divisions": [
+    "U15 Boys",
+    "U15 Girls"
+   ],
+   "teams": [
+    "String(g));A(a"
+   ]
+  },
+  {
+   "club": "b){b=C(b);return b!==void 0?a.open(b",
+   "team_entries": 2,
+   "divisions": [
+    "U15 Boys",
+    "U15 Girls"
+   ],
+   "teams": [
+    "b){b=C(b);return b!==void 0?a.open(b"
+   ]
+  },
+  {
+   "club": "popupWindow",
+   "team_entries": 2,
+   "divisions": [
+    "U15 Boys",
+    "U15 Girls"
+   ],
+   "teams": [
+    "popupWindow"
+   ]
+  },
+  {
+   "club": "__Secure-1PAPISID",
+   "team_entries": 2,
+   "divisions": [
+    "U15 Boys",
+    "U15 Girls"
+   ],
+   "teams": [
+    "__Secure-1PAPISID"
+   ]
+  },
+  {
+   "club": "b){a.g&&clearInterval(a.g);for(var c={}",
+   "team_entries": 2,
+   "divisions": [
+    "U15 Boys",
+    "U15 Girls"
+   ],
+   "teams": [
+    "b){a.g&&clearInterval(a.g);for(var c={}"
+   ]
+  },
+  {
+   "club": "L(g)!==void 0&&c !==L(g)){f=!0;break a}f=!1}f&&(clearInterval(a.g)",
+   "team_entries": 2,
+   "divisions": [
+    "U15 Boys",
+    "U15 Girls"
+   ],
+   "teams": [
+    "L(g)!==void 0&&c[g]!==L(g)){f=!0;break a}f=!1}f&&(clearInterval(a.g)"
+   ]
+  },
+  {
+   "club": "a.g=void 0",
+   "team_entries": 2,
+   "divisions": [
+    "U15 Boys",
+    "U15 Girls"
+   ],
+   "teams": [
+    "a.g=void 0"
+   ]
+  },
+  {
+   "club": "KW Viper Brown",
+   "team_entries": 2,
+   "divisions": [
+    "U16 Boys",
+    "U19 Women"
+   ],
+   "teams": [
+    "KW Viper U16 Boys Brown",
+    "KW Viper U19 Women Brown"
+   ]
+  },
+  {
+   "club": "Vaughan Panthers - Coach Chris",
+   "team_entries": 2,
+   "divisions": [
+    "U16 Boys",
+    "U19 Men"
+   ],
+   "teams": [
+    "Vaughan Panthers U16 Boys - Coach Chris",
+    "Vaughan Panthers U19 Men - Coach Chris"
+   ]
+  },
+  {
+   "club": "BALL905 Mississauga",
+   "team_entries": 2,
+   "divisions": [
+    "U16 Boys",
+    "U17 Boys"
+   ],
+   "teams": [
+    "BALL905 Mississauga"
+   ]
+  },
+  {
+   "club": "Orangeville Hawks",
+   "team_entries": 2,
+   "divisions": [
+    "U16 Boys",
+    "U17 Boys"
+   ],
+   "teams": [
+    "Orangeville Hawks Boys U16",
+    "Orangeville Hawks U17 Boys"
+   ]
+  },
+  {
+   "club": "GYBA",
+   "team_entries": 2,
+   "divisions": [
+    "U16 Boys",
+    "U17 Boys"
+   ],
+   "teams": [
+    "GYBA - Everitt",
+    "GYBA - Price"
+   ]
+  },
+  {
+   "club": "BALL905 Brampton",
+   "team_entries": 2,
+   "divisions": [
+    "U16 Boys",
+    "U17 Boys"
+   ],
+   "teams": [
+    "BALL905 Brampton"
+   ]
+  },
+  {
+   "club": "BALL905 Halton Hills",
+   "team_entries": 2,
+   "divisions": [
+    "U16 Boys",
+    "U19 Men"
+   ],
+   "teams": [
+    "BALL905 Halton Hills U16",
+    "BALL905 Halton Hills U19"
+   ]
+  },
+  {
+   "club": "Thunder Bay Wolves",
+   "team_entries": 2,
+   "divisions": [
+    "U16 Girls",
+    "U19 Women"
+   ],
+   "teams": [
+    "Thunder Bay Wolves",
+    "U19 Thunder Bay Wolves"
+   ]
+  },
+  {
+   "club": "West Ottawa Hornets",
+   "team_entries": 2,
+   "divisions": [
+    "U17 Boys",
+    "U19 Women"
+   ],
+   "teams": [
+    "West Ottawa Hornets"
+   ]
+  },
+  {
+   "club": "RISING SUNS JAKE",
+   "team_entries": 2,
+   "divisions": [
+    "U17 Boys",
+    "U9 Boys"
+   ],
+   "teams": [
+    "RISING SUNS U17 JAKE",
+    "RISING SUNS U9 JAKE"
+   ]
+  },
+  {
+   "club": "Inter-City Saints Navy",
+   "team_entries": 1,
+   "divisions": [
+    "U10 Boys"
+   ],
+   "teams": [
+    "Inter-City Saints U10 Navy"
+   ]
+  },
+  {
+   "club": "Inter-City Saints Gray",
+   "team_entries": 1,
+   "divisions": [
+    "U10 Boys"
+   ],
+   "teams": [
+    "Inter-City Saints U10 Gray"
+   ]
+  },
+  {
+   "club": "SBA- Team Wade",
+   "team_entries": 1,
+   "divisions": [
+    "U10 Boys"
+   ],
+   "teams": [
+    "SBA- Team Wade"
+   ]
+  },
+  {
+   "club": "Blitz - DeGuzman",
+   "team_entries": 1,
+   "divisions": [
+    "U10 Boys"
+   ],
+   "teams": [
+    "U10 Blitz Boys - DeGuzman"
+   ]
+  },
+  {
+   "club": "KW Vipers",
+   "team_entries": 1,
+   "divisions": [
+    "U10 Boys"
+   ],
+   "teams": [
+    "U10 KW Vipers"
+   ]
+  },
+  {
+   "club": "Sweet/Morgan",
+   "team_entries": 1,
+   "divisions": [
+    "U10 Boys"
+   ],
+   "teams": [
+    "U10 Boys Sweet/Morgan"
+   ]
+  },
+  {
+   "club": "TTT U10 Boys",
+   "team_entries": 1,
+   "divisions": [
+    "U10 Boys"
+   ],
+   "teams": [
+    "TTT U10 Boys"
+   ]
+  },
+  {
+   "club": "North York Appiah/Phillips",
+   "team_entries": 1,
+   "divisions": [
+    "U10 Boys"
+   ],
+   "teams": [
+    "U10 Boys North York Appiah/Phillips"
+   ]
+  },
+  {
+   "club": "Brampton Warriors U10B- Elliott",
+   "team_entries": 1,
+   "divisions": [
+    "U10 Boys"
+   ],
+   "teams": [
+    "Brampton Warriors U10B- Elliott"
+   ]
+  },
+  {
+   "club": "GBA Ken/Felix",
+   "team_entries": 1,
+   "divisions": [
+    "U10 Boys"
+   ],
+   "teams": [
+    "U10 - GBA Ken/Felix"
+   ]
+  },
+  {
+   "club": "Co-Ed Port Colborne Hornets",
+   "team_entries": 1,
+   "divisions": [
+    "U10 Boys"
+   ],
+   "teams": [
+    "U10 Co-Ed Port Colborne Hornets (Stewart)"
+   ]
+  },
+  {
+   "club": "Ancaster Magic Offord",
+   "team_entries": 1,
+   "divisions": [
+    "U10 Boys"
+   ],
+   "teams": [
+    "Ancaster Magic U10 Boys Offord"
+   ]
+  },
+  {
+   "club": "YNBA Avengers U10B Pelly",
+   "team_entries": 1,
+   "divisions": [
+    "U10 Boys"
+   ],
+   "teams": [
+    "YNBA Avengers U10B Pelly"
+   ]
+  },
+  {
+   "club": "RISING SUNS BRYAN",
+   "team_entries": 1,
+   "divisions": [
+    "U10 Boys"
+   ],
+   "teams": [
+    "RISING SUNS U10 BRYAN"
+   ]
+  },
+  {
+   "club": "Peterborough Power Marshall",
+   "team_entries": 1,
+   "divisions": [
+    "U10 Boys"
+   ],
+   "teams": [
+    "Peterborough Power Marshall"
+   ]
+  },
+  {
+   "club": "U10B Trailblazers",
+   "team_entries": 1,
+   "divisions": [
+    "U10 Boys"
+   ],
+   "teams": [
+    "U10B Trailblazers"
+   ]
+  },
+  {
+   "club": "Inter-City Saints Gold",
+   "team_entries": 1,
+   "divisions": [
+    "U10 Boys"
+   ],
+   "teams": [
+    "Inter-City Saints U10 Gold"
+   ]
+  },
+  {
+   "club": "GYBA Hermann",
+   "team_entries": 1,
+   "divisions": [
+    "U10 Boys"
+   ],
+   "teams": [
+    "GYBA BU10 Hermann"
+   ]
+  },
+  {
+   "club": "GYBA Lindsay",
+   "team_entries": 1,
+   "divisions": [
+    "U10 Boys"
+   ],
+   "teams": [
+    "GYBA BU10 Lindsay"
+   ]
+  },
+  {
+   "club": "TTT U10 Girls",
+   "team_entries": 1,
+   "divisions": [
+    "U10 Girls"
+   ],
+   "teams": [
+    "TTT U10 Girls"
+   ]
+  },
+  {
+   "club": "Barrie Royals- Rogers",
+   "team_entries": 1,
+   "divisions": [
+    "U10 Girls"
+   ],
+   "teams": [
+    "Barrie Royals- Rogers"
+   ]
+  },
+  {
+   "club": "Guelph Gryphons- Greenidge",
+   "team_entries": 1,
+   "divisions": [
+    "U10 Girls"
+   ],
+   "teams": [
+    "Guelph Gryphons- Greenidge"
+   ]
+  },
+  {
+   "club": "Brantford CYO-Lynch",
+   "team_entries": 1,
+   "divisions": [
+    "U10 Girls"
+   ],
+   "teams": [
+    "Brantford CYO-Lynch"
+   ]
+  },
+  {
+   "club": "Elevation Athletics U10G- Asante",
+   "team_entries": 1,
+   "divisions": [
+    "U10 Girls"
+   ],
+   "teams": [
+    "Elevation Athletics U10G- Asante"
+   ]
+  },
+  {
+   "club": "SBA Team Beltijar",
+   "team_entries": 1,
+   "divisions": [
+    "U10 Girls"
+   ],
+   "teams": [
+    "SBA Team Beltijar"
+   ]
+  },
+  {
+   "club": "Pelham Panthers - Team Kissi",
+   "team_entries": 1,
+   "divisions": [
+    "U10 Girls"
+   ],
+   "teams": [
+    "Pelham Panthers - Team Kissi"
+   ]
+  },
+  {
+   "club": "Barrie Royals- Rodger",
+   "team_entries": 1,
+   "divisions": [
+    "U11 Boys"
+   ],
+   "teams": [
+    "Barrie Royals- Rodger"
+   ]
+  },
+  {
+   "club": "Toronto Lords Waito",
+   "team_entries": 1,
+   "divisions": [
+    "U11 Boys"
+   ],
+   "teams": [
+    "Toronto Lords U11 Boys Waito"
+   ]
+  },
+  {
+   "club": "DC Bulldogs Thomas",
+   "team_entries": 1,
+   "divisions": [
+    "U11 Boys"
+   ],
+   "teams": [
+    "DC Bulldogs U11 Thomas"
+   ]
+  },
+  {
+   "club": "Union Elite",
+   "team_entries": 1,
+   "divisions": [
+    "U11 Boys"
+   ],
+   "teams": [
+    "Union Elite Gr 5"
+   ]
+  },
+  {
+   "club": "MUMBA ELITE - GLEZAKOS",
+   "team_entries": 1,
+   "divisions": [
+    "U11 Boys"
+   ],
+   "teams": [
+    "MUMBA ELITE - GLEZAKOS"
+   ]
+  },
+  {
+   "club": "SBA Team Lalog",
+   "team_entries": 1,
+   "divisions": [
+    "U11 Boys"
+   ],
+   "teams": [
+    "SBA Team Lalog"
+   ]
+  },
+  {
+   "club": "SBA Team Piracha",
+   "team_entries": 1,
+   "divisions": [
+    "U11 Boys"
+   ],
+   "teams": [
+    "SBA Team Piracha"
+   ]
+  },
+  {
+   "club": "Brampton Warriors U11B",
+   "team_entries": 1,
+   "divisions": [
+    "U11 Boys"
+   ],
+   "teams": [
+    "Brampton Warriors U11B - Wharton"
+   ]
+  },
+  {
+   "club": "DC Bulldogs Smith",
+   "team_entries": 1,
+   "divisions": [
+    "U11 Boys"
+   ],
+   "teams": [
+    "DC Bulldogs U11 Smith"
+   ]
+  },
+  {
+   "club": "TCBL Dragons - coach Kareem",
+   "team_entries": 1,
+   "divisions": [
+    "U11 Boys"
+   ],
+   "teams": [
+    "TCBL U11 Dragons - coach Kareem"
+   ]
+  },
+  {
+   "club": "St. Clair . Saints",
+   "team_entries": 1,
+   "divisions": [
+    "U11 Boys"
+   ],
+   "teams": [
+    "St. Clair Jr. Saints U11 Boys"
+   ]
+  },
+  {
+   "club": "RISING SUNS GIRRARD",
+   "team_entries": 1,
+   "divisions": [
+    "U11 Boys"
+   ],
+   "teams": [
+    "RISING SUNS U11 GIRRARD"
+   ]
+  },
+  {
+   "club": "ANCASTER MAGIC",
+   "team_entries": 1,
+   "divisions": [
+    "U11 Boys"
+   ],
+   "teams": [
+    "ANCASTER MAGIC"
+   ]
+  },
+  {
+   "club": "Vaughan Panthers - Coach Mike",
+   "team_entries": 1,
+   "divisions": [
+    "U11 Boys"
+   ],
+   "teams": [
+    "Vaughan Panthers U11 Boys - Coach Mike"
+   ]
+  },
+  {
+   "club": "Skillz",
+   "team_entries": 1,
+   "divisions": [
+    "U11 Boys"
+   ],
+   "teams": [
+    "Skillz"
+   ]
+  },
+  {
+   "club": "TTT U11 Boys",
+   "team_entries": 1,
+   "divisions": [
+    "U11 Boys"
+   ],
+   "teams": [
+    "TTT U11 Boys"
+   ]
+  },
+  {
+   "club": "KW Viper Smith",
+   "team_entries": 1,
+   "divisions": [
+    "U11 Boys"
+   ],
+   "teams": [
+    "KW Viper U11 Boys Smith"
+   ]
+  },
+  {
+   "club": "MUMBA ELITE - JAINARAINE",
+   "team_entries": 1,
+   "divisions": [
+    "U11 Boys"
+   ],
+   "teams": [
+    "MUMBA ELITE - JAINARAINE"
+   ]
+  },
+  {
+   "club": "Burloak Elite James",
+   "team_entries": 1,
+   "divisions": [
+    "U11 Boys"
+   ],
+   "teams": [
+    "U11 Burloak Elite James"
+   ]
+  },
+  {
+   "club": "YNBA Avengers U11B Meschino",
+   "team_entries": 1,
+   "divisions": [
+    "U11 Boys"
+   ],
+   "teams": [
+    "YNBA Avengers U11B Meschino"
+   ]
+  },
+  {
+   "club": "Kingston Impact- Morgenstern",
+   "team_entries": 1,
+   "divisions": [
+    "U11 Boys"
+   ],
+   "teams": [
+    "Kingston Impact- Morgenstern"
+   ]
+  },
+  {
+   "club": "Durham Crossover- Abe",
+   "team_entries": 1,
+   "divisions": [
+    "U11 Boys"
+   ],
+   "teams": [
+    "Durham Crossover- Abe"
+   ]
+  },
+  {
+   "club": "DK U11 Boys",
+   "team_entries": 1,
+   "divisions": [
+    "U11 Boys"
+   ],
+   "teams": [
+    "DK U11 Boys"
+   ]
+  },
+  {
+   "club": "GBA Justin/Phil",
+   "team_entries": 1,
+   "divisions": [
+    "U11 Boys"
+   ],
+   "teams": [
+    "U11 - GBA Justin/Phil"
+   ]
+  },
+  {
+   "club": "U11B Collingwood Trailblazers",
+   "team_entries": 1,
+   "divisions": [
+    "U11 Boys"
+   ],
+   "teams": [
+    "U11B Collingwood Trailblazers"
+   ]
+  },
+  {
+   "club": "GBA Alan",
+   "team_entries": 1,
+   "divisions": [
+    "U11 Boys"
+   ],
+   "teams": [
+    "U11 - GBA Alan"
+   ]
+  },
+  {
+   "club": "YNBA Avengers U11B DeCaria",
+   "team_entries": 1,
+   "divisions": [
+    "U11 Boys"
+   ],
+   "teams": [
+    "YNBA Avengers U11B DeCaria"
+   ]
+  },
+  {
+   "club": "YSSK Gendi",
+   "team_entries": 1,
+   "divisions": [
+    "U11 Boys"
+   ],
+   "teams": [
+    "YSSK U11 Boys Gendi"
+   ]
+  },
+  {
+   "club": "KWGBA Phoenix - McNally",
+   "team_entries": 1,
+   "divisions": [
+    "U11 Girls"
+   ],
+   "teams": [
+    "KWGBA Phoenix Girls U11 - McNally"
+   ]
+  },
+  {
+   "club": "MUMBA ELITE - DELA PENA",
+   "team_entries": 1,
+   "divisions": [
+    "U11 Girls"
+   ],
+   "teams": [
+    "MUMBA ELITE - DELA PENA"
+   ]
+  },
+  {
+   "club": "SBA Team Ferreira",
+   "team_entries": 1,
+   "divisions": [
+    "U11 Girls"
+   ],
+   "teams": [
+    "SBA Team Ferreira"
+   ]
+  },
+  {
+   "club": "U11G Collingwood Trailblazers",
+   "team_entries": 1,
+   "divisions": [
+    "U11 Girls"
+   ],
+   "teams": [
+    "U11G Collingwood Trailblazers"
+   ]
+  },
+  {
+   "club": "Brampton Warriors U11G- Passley",
+   "team_entries": 1,
+   "divisions": [
+    "U11 Girls"
+   ],
+   "teams": [
+    "Brampton Warriors U11G- Passley"
+   ]
+  },
+  {
+   "club": "Kingston Impact- Clarke",
+   "team_entries": 1,
+   "divisions": [
+    "U11 Girls"
+   ],
+   "teams": [
+    "Kingston Impact- Clarke"
+   ]
+  },
+  {
+   "club": "YNBA Avengers U11G Paine",
+   "team_entries": 1,
+   "divisions": [
+    "U11 Girls"
+   ],
+   "teams": [
+    "YNBA Avengers U11G Paine"
+   ]
+  },
+  {
+   "club": "Guelph Gryphons- Millar",
+   "team_entries": 1,
+   "divisions": [
+    "U11 Girls"
+   ],
+   "teams": [
+    "Guelph Gryphons-  Millar"
+   ]
+  },
+  {
+   "club": "TTT U11 Girls",
+   "team_entries": 1,
+   "divisions": [
+    "U11 Girls"
+   ],
+   "teams": [
+    "TTT U11 Girls"
+   ]
+  },
+  {
+   "club": "Toronto Lords Cross",
+   "team_entries": 1,
+   "divisions": [
+    "U11 Girls"
+   ],
+   "teams": [
+    "Toronto Lords U11 Girls Cross"
+   ]
+  },
+  {
+   "club": "Brantford CYO - DiLivio",
+   "team_entries": 1,
+   "divisions": [
+    "U11 Girls"
+   ],
+   "teams": [
+    "Brantford CYO - DiLivio"
+   ]
+  },
+  {
+   "club": "Tecumseh Saint Clair Beach Basketball",
+   "team_entries": 1,
+   "divisions": [
+    "U11 Girls"
+   ],
+   "teams": [
+    "Tecumseh Saint Clair Beach Basketball"
+   ]
+  },
+  {
+   "club": "Kw Vipers Randell",
+   "team_entries": 1,
+   "divisions": [
+    "U12 Boys"
+   ],
+   "teams": [
+    "Kw Vipers Randell"
+   ]
+  },
+  {
+   "club": "SBA Team Salvi",
+   "team_entries": 1,
+   "divisions": [
+    "U12 Boys"
+   ],
+   "teams": [
+    "SBA Team Salvi"
+   ]
+  },
+  {
+   "club": "Mississauga Monarchs - D & Hemeng",
+   "team_entries": 1,
+   "divisions": [
+    "U12 Boys"
+   ],
+   "teams": [
+    "Mississauga Monarchs - D &amp; Hemeng (U12 Boys)"
+   ]
+  },
+  {
+   "club": "U12A New Horizon Heat",
+   "team_entries": 1,
+   "divisions": [
+    "U12 Boys"
+   ],
+   "teams": [
+    "U12A New Horizon Heat"
+   ]
+  },
+  {
+   "club": "The Performance Group - GOLD",
+   "team_entries": 1,
+   "divisions": [
+    "U12 Boys"
+   ],
+   "teams": [
+    "The Performance Group (TPG) - GOLD"
+   ]
+  },
+  {
+   "club": "UPlay",
+   "team_entries": 1,
+   "divisions": [
+    "U12 Boys"
+   ],
+   "teams": [
+    "UPlay"
+   ]
+  },
+  {
+   "club": "The Performance Group - BLACK",
+   "team_entries": 1,
+   "divisions": [
+    "U12 Boys"
+   ],
+   "teams": [
+    "The Performance Group (TPG) - BLACK"
+   ]
+  },
+  {
+   "club": "Triple Balance",
+   "team_entries": 1,
+   "divisions": [
+    "U12 Boys"
+   ],
+   "teams": [
+    "Triple Balance"
+   ]
+  },
+  {
+   "club": "Falcons United",
+   "team_entries": 1,
+   "divisions": [
+    "U12 Boys"
+   ],
+   "teams": [
+    "Falcons United"
+   ]
+  },
+  {
+   "club": "Ancaster Magic Levely",
+   "team_entries": 1,
+   "divisions": [
+    "U12 Boys"
+   ],
+   "teams": [
+    "Ancaster Magic U12 Boys Levely"
+   ]
+  },
+  {
+   "club": "Union Elite Warren",
+   "team_entries": 1,
+   "divisions": [
+    "U12 Boys"
+   ],
+   "teams": [
+    "Union Elite Gr 6 Warren"
+   ]
+  },
+  {
+   "club": "Vaughan Panthers - Coach Cory",
+   "team_entries": 1,
+   "divisions": [
+    "U12 Boys"
+   ],
+   "teams": [
+    "Vaughan Panthers U12 Boys - Coach Cory"
+   ]
+  },
+  {
+   "club": "TTT - Morris-Katz",
+   "team_entries": 1,
+   "divisions": [
+    "U12 Boys"
+   ],
+   "teams": [
+    "TTT U12 Boys - Morris-Katz"
+   ]
+  },
+  {
+   "club": "RISING SUNS JAY",
+   "team_entries": 1,
+   "divisions": [
+    "U12 Boys"
+   ],
+   "teams": [
+    "RISING SUNS U12 JAY"
+   ]
+  },
+  {
+   "club": "Toronto NuStep Ballers",
+   "team_entries": 1,
+   "divisions": [
+    "U12 Boys"
+   ],
+   "teams": [
+    "Toronto NuStep Ballers - U12 Boys"
+   ]
+  },
+  {
+   "club": "Motion Kings Gladman",
+   "team_entries": 1,
+   "divisions": [
+    "U12 Boys"
+   ],
+   "teams": [
+    "Motion Kings U12 Gladman"
+   ]
+  },
+  {
+   "club": "Kw Vipers Howison",
+   "team_entries": 1,
+   "divisions": [
+    "U12 Boys"
+   ],
+   "teams": [
+    "Kw Vipers Howison"
+   ]
+  },
+  {
+   "club": "U12B New Horizon Heat",
+   "team_entries": 1,
+   "divisions": [
+    "U12 Boys"
+   ],
+   "teams": [
+    "U12B New Horizon Heat"
+   ]
+  },
+  {
+   "club": "Burloak Elite Gaige",
+   "team_entries": 1,
+   "divisions": [
+    "U12 Boys"
+   ],
+   "teams": [
+    "U12 Burloak Elite Gaige"
+   ]
+  },
+  {
+   "club": "YNBA Avengers U12B Cade",
+   "team_entries": 1,
+   "divisions": [
+    "U12 Boys"
+   ],
+   "teams": [
+    "YNBA Avengers U12B Cade"
+   ]
+  },
+  {
+   "club": "GBA /Brian",
+   "team_entries": 1,
+   "divisions": [
+    "U12 Boys"
+   ],
+   "teams": [
+    "U12 - GBA Jr/Brian"
+   ]
+  },
+  {
+   "club": "Burloak Elite Mike",
+   "team_entries": 1,
+   "divisions": [
+    "U12 Boys"
+   ],
+   "teams": [
+    "U12 Burloak Elite Mike"
+   ]
+  },
+  {
+   "club": "Hamilton Celtics U12B",
+   "team_entries": 1,
+   "divisions": [
+    "U12 Boys"
+   ],
+   "teams": [
+    "Hamilton Celtics U12B"
+   ]
+  },
+  {
+   "club": "Pelham Panthers - Team Hales",
+   "team_entries": 1,
+   "divisions": [
+    "U12 Boys"
+   ],
+   "teams": [
+    "Pelham Panthers - Team Hales"
+   ]
+  },
+  {
+   "club": "FO3 U12 Boys",
+   "team_entries": 1,
+   "divisions": [
+    "U12 Boys"
+   ],
+   "teams": [
+    "FO3 U12 Boys"
+   ]
+  },
+  {
+   "club": "DK U12 Boys",
+   "team_entries": 1,
+   "divisions": [
+    "U12 Boys"
+   ],
+   "teams": [
+    "DK U12 Boys"
+   ]
+  },
+  {
+   "club": "Etobicoke Thunder 1 Seeley",
+   "team_entries": 1,
+   "divisions": [
+    "U12 Boys"
+   ],
+   "teams": [
+    "Etobicoke Thunder U12 Boys 1 Seeley"
+   ]
+  },
+  {
+   "club": "YNBA Avengers U12B Martin",
+   "team_entries": 1,
+   "divisions": [
+    "U12 Boys"
+   ],
+   "teams": [
+    "YNBA Avengers U12B Martin"
+   ]
+  },
+  {
+   "club": "Breakthrough Bandits",
+   "team_entries": 1,
+   "divisions": [
+    "U12 Boys"
+   ],
+   "teams": [
+    "Breakthrough Bandits"
+   ]
+  },
+  {
+   "club": "RISING SUNS UNDFTD",
+   "team_entries": 1,
+   "divisions": [
+    "U12 Boys"
+   ],
+   "teams": [
+    "RISING SUNS U12 UNDFTD"
+   ]
+  },
+  {
+   "club": "Belleville Spirits - McFadden",
+   "team_entries": 1,
+   "divisions": [
+    "U12 Boys"
+   ],
+   "teams": [
+    "U12 Belleville Spirits Boys - McFadden"
+   ]
+  },
+  {
+   "club": "Gold Medal- Morrison",
+   "team_entries": 1,
+   "divisions": [
+    "U12 Boys"
+   ],
+   "teams": [
+    "Gold Medal- Morrison"
+   ]
+  },
+  {
+   "club": "MUMBA ELITE - BARANOV",
+   "team_entries": 1,
+   "divisions": [
+    "U12 Boys"
+   ],
+   "teams": [
+    "MUMBA ELITE - BARANOV"
+   ]
+  },
+  {
+   "club": "U12B Trailblazers",
+   "team_entries": 1,
+   "divisions": [
+    "U12 Boys"
+   ],
+   "teams": [
+    "U12B Trailblazers"
+   ]
+  },
+  {
+   "club": "GBA Ryan/",
+   "team_entries": 1,
+   "divisions": [
+    "U12 Boys"
+   ],
+   "teams": [
+    "U12 - GBA Ryan/Jr"
+   ]
+  },
+  {
+   "club": "SBA Team Wright DB",
+   "team_entries": 1,
+   "divisions": [
+    "U12 Boys"
+   ],
+   "teams": [
+    "SBA Team Wright DB"
+   ]
+  },
+  {
+   "club": "TTT U12 Boys - Burnie",
+   "team_entries": 1,
+   "divisions": [
+    "U12 Boys"
+   ],
+   "teams": [
+    "TTT U12 Boys - Burnie"
+   ]
+  },
+  {
+   "club": "JOOOKOOO - Ontario Elite",
+   "team_entries": 1,
+   "divisions": [
+    "U12 Boys"
+   ],
+   "teams": [
+    "JOOOKOOO - Ontario Elite"
+   ]
+  },
+  {
+   "club": "Peterborough Power Keating",
+   "team_entries": 1,
+   "divisions": [
+    "U12 Boys"
+   ],
+   "teams": [
+    "Peterborough Power Keating"
+   ]
+  },
+  {
+   "club": "SBA Team Chris",
+   "team_entries": 1,
+   "divisions": [
+    "U12 Girls"
+   ],
+   "teams": [
+    "SBA Team Chris"
+   ]
+  },
+  {
+   "club": "MUMBA ELITE - FROST",
+   "team_entries": 1,
+   "divisions": [
+    "U12 Girls"
+   ],
+   "teams": [
+    "MUMBA ELITE - FROST"
+   ]
+  },
+  {
+   "club": "Orillia Lakers- McParland (late reg)",
+   "team_entries": 1,
+   "divisions": [
+    "U12 Girls"
+   ],
+   "teams": [
+    "Orillia Lakers- McParland (late reg)"
+   ]
+  },
+  {
+   "club": "Burloak Elite Jenn",
+   "team_entries": 1,
+   "divisions": [
+    "U12 Girls"
+   ],
+   "teams": [
+    "U12 Burloak Elite Jenn"
+   ]
+  },
+  {
+   "club": "YNBA Avengers U12G Garvin",
+   "team_entries": 1,
+   "divisions": [
+    "U12 Girls"
+   ],
+   "teams": [
+    "YNBA Avengers U12G Garvin"
+   ]
+  },
+  {
+   "club": "GBA- Best",
+   "team_entries": 1,
+   "divisions": [
+    "U12 Girls"
+   ],
+   "teams": [
+    "GBA- Best"
+   ]
+  },
+  {
+   "club": "TTT U12 Girls",
+   "team_entries": 1,
+   "divisions": [
+    "U12 Girls"
+   ],
+   "teams": [
+    "TTT U12 Girls"
+   ]
+  },
+  {
+   "club": "MUMBA ELITE - LEONARD",
+   "team_entries": 1,
+   "divisions": [
+    "U12 Girls"
+   ],
+   "teams": [
+    "MUMBA ELITE - LEONARD"
+   ]
+  },
+  {
+   "club": "London 86ers Santandrea",
+   "team_entries": 1,
+   "divisions": [
+    "U12 Girls"
+   ],
+   "teams": [
+    "London 86ers U12 Santandrea"
+   ]
+  },
+  {
+   "club": "Sudbury Storm - Coach Jamie -26",
+   "team_entries": 1,
+   "divisions": [
+    "U12 Girls"
+   ],
+   "teams": [
+    "Sudbury Storm - U12 Girls Coach Jamie 2025-26"
+   ]
+  },
+  {
+   "club": "Pelham Panthers - Team Davies",
+   "team_entries": 1,
+   "divisions": [
+    "U12 Girls"
+   ],
+   "teams": [
+    "Pelham Panthers - Team Davies"
+   ]
+  },
+  {
+   "club": "Peterborough Power Ellis",
+   "team_entries": 1,
+   "divisions": [
+    "U12 Girls"
+   ],
+   "teams": [
+    "Peterborough Power Ellis"
+   ]
+  },
+  {
+   "club": "Kingston Impact- Dzierniejko",
+   "team_entries": 1,
+   "divisions": [
+    "U12 Girls"
+   ],
+   "teams": [
+    "Kingston Impact- Dzierniejko"
+   ]
+  },
+  {
+   "club": "YNBA Avengers U12G Watson",
+   "team_entries": 1,
+   "divisions": [
+    "U12 Girls"
+   ],
+   "teams": [
+    "YNBA Avengers U12G Watson"
+   ]
+  },
+  {
+   "club": "U12G Trailblazers",
+   "team_entries": 1,
+   "divisions": [
+    "U12 Girls"
+   ],
+   "teams": [
+    "U12G Trailblazers"
+   ]
+  },
+  {
+   "club": "Guelph Gryphons- Hermann",
+   "team_entries": 1,
+   "divisions": [
+    "U12 Girls"
+   ],
+   "teams": [
+    "Guelph Gryphons- Hermann"
+   ]
+  },
+  {
+   "club": "Hamilton Celtics U12G",
+   "team_entries": 1,
+   "divisions": [
+    "U12 Girls"
+   ],
+   "teams": [
+    "Hamilton Celtics U12G"
+   ]
+  },
+  {
+   "club": "Grimsby",
+   "team_entries": 1,
+   "divisions": [
+    "U12 Girls"
+   ],
+   "teams": [
+    "U12 Grimsby Girls"
+   ]
+  },
+  {
+   "club": "SBA Premier Team Hanif Blue",
+   "team_entries": 1,
+   "divisions": [
+    "U13 Boys"
+   ],
+   "teams": [
+    "SBA Premier Team Hanif Blue"
+   ]
+  },
+  {
+   "club": "ONL - El Sidani",
+   "team_entries": 1,
+   "divisions": [
+    "U13 Boys"
+   ],
+   "teams": [
+    "ONL U13 Boys - El Sidani"
+   ]
+  },
+  {
+   "club": "Cooksville N.O.F",
+   "team_entries": 1,
+   "divisions": [
+    "U13 Boys"
+   ],
+   "teams": [
+    "Cooksville 2013 N.O.F"
+   ]
+  },
+  {
+   "club": "Union Elite Norm",
+   "team_entries": 1,
+   "divisions": [
+    "U13 Boys"
+   ],
+   "teams": [
+    "Union Elite Gr 7 Norm"
+   ]
+  },
+  {
+   "club": "FO3 U13 Boys",
+   "team_entries": 1,
+   "divisions": [
+    "U13 Boys"
+   ],
+   "teams": [
+    "FO3 U13 Boys"
+   ]
+  },
+  {
+   "club": "UPlay- Coach Kash",
+   "team_entries": 1,
+   "divisions": [
+    "U13 Boys"
+   ],
+   "teams": [
+    "UPlay- Coach Kash"
+   ]
+  },
+  {
+   "club": "Burloak Elite Chris",
+   "team_entries": 1,
+   "divisions": [
+    "U13 Boys"
+   ],
+   "teams": [
+    "U13 Burloak Elite Chris"
+   ]
+  },
+  {
+   "club": "Belleville Spirits - Bassett-Spiers",
+   "team_entries": 1,
+   "divisions": [
+    "U13 Boys"
+   ],
+   "teams": [
+    "U13 Belleville Spirits Boys - Bassett-Spiers"
+   ]
+  },
+  {
+   "club": "Union Elite Ivan",
+   "team_entries": 1,
+   "divisions": [
+    "U13 Boys"
+   ],
+   "teams": [
+    "Union Elite Gr 7 Ivan"
+   ]
+  },
+  {
+   "club": "Brampton Warriors U13B",
+   "team_entries": 1,
+   "divisions": [
+    "U13 Boys"
+   ],
+   "teams": [
+    "Brampton Warriors U13B - Simpson"
+   ]
+  },
+  {
+   "club": "Vaughan Panthers - Coach Avi",
+   "team_entries": 1,
+   "divisions": [
+    "U13 Boys"
+   ],
+   "teams": [
+    "Vaughan Panthers U13 Boys - Coach Avi"
+   ]
+  },
+  {
+   "club": "Union Elite Sigmund",
+   "team_entries": 1,
+   "divisions": [
+    "U13 Boys"
+   ],
+   "teams": [
+    "Union Elite Gr 7 Sigmund"
+   ]
+  },
+  {
+   "club": "Barrie Royals Quach",
+   "team_entries": 1,
+   "divisions": [
+    "U13 Boys"
+   ],
+   "teams": [
+    "Barrie Royals U13 Boys Quach"
+   ]
+  },
+  {
+   "club": "Ancaster Magic Moore",
+   "team_entries": 1,
+   "divisions": [
+    "U13 Boys"
+   ],
+   "teams": [
+    "Ancaster Magic U13 Boys Moore"
+   ]
+  },
+  {
+   "club": "SBA Premier Team Maragh White",
+   "team_entries": 1,
+   "divisions": [
+    "U13 Boys"
+   ],
+   "teams": [
+    "SBA Premier Team Maragh White"
+   ]
+  },
+  {
+   "club": "Jump Basketball - Travel Team",
+   "team_entries": 1,
+   "divisions": [
+    "U13 Boys"
+   ],
+   "teams": [
+    "Jump Basketball - Travel Team"
+   ]
+  },
+  {
+   "club": "TTT U13 Boys - Mitchell",
+   "team_entries": 1,
+   "divisions": [
+    "U13 Boys"
+   ],
+   "teams": [
+    "TTT U13 Boys - Mitchell"
+   ]
+  },
+  {
+   "club": "BREAKDOWN",
+   "team_entries": 1,
+   "divisions": [
+    "U13 Boys"
+   ],
+   "teams": [
+    "U13 BREAKDOWN BOYS"
+   ]
+  },
+  {
+   "club": "YNBA Avengers U13B Chen",
+   "team_entries": 1,
+   "divisions": [
+    "U13 Boys"
+   ],
+   "teams": [
+    "YNBA Avengers U13B Chen"
+   ]
+  },
+  {
+   "club": "Kingston Impact Hunter",
+   "team_entries": 1,
+   "divisions": [
+    "U13 Boys"
+   ],
+   "teams": [
+    "Kingston Impact U13 boys Hunter"
+   ]
+  },
+  {
+   "club": "MUMBA ELITE - MCKAY",
+   "team_entries": 1,
+   "divisions": [
+    "U13 Boys"
+   ],
+   "teams": [
+    "MUMBA ELITE - MCKAY"
+   ]
+  },
+  {
+   "club": "Gillingham & Gagné",
+   "team_entries": 1,
+   "divisions": [
+    "U13 Boys"
+   ],
+   "teams": [
+    "BU13 Gillingham & Gagné"
+   ]
+  },
+  {
+   "club": "Peterborough Power Wade",
+   "team_entries": 1,
+   "divisions": [
+    "U13 Boys"
+   ],
+   "teams": [
+    "Peterborough Power Wade"
+   ]
+  },
+  {
+   "club": "MUMBA ELITE - KRKLINSKI",
+   "team_entries": 1,
+   "divisions": [
+    "U13 Boys"
+   ],
+   "teams": [
+    "MUMBA ELITE - KRKLINSKI"
+   ]
+  },
+  {
+   "club": "DK U13 Boys",
+   "team_entries": 1,
+   "divisions": [
+    "U13 Boys"
+   ],
+   "teams": [
+    "DK U13 Boys"
+   ]
+  },
+  {
+   "club": "IEM Richmond Hill",
+   "team_entries": 1,
+   "divisions": [
+    "U13 Boys"
+   ],
+   "teams": [
+    "IEM Richmond Hill BU13"
+   ]
+  },
+  {
+   "club": "U13B Trailblazers",
+   "team_entries": 1,
+   "divisions": [
+    "U13 Boys"
+   ],
+   "teams": [
+    "U13B Trailblazers"
+   ]
+  },
+  {
+   "club": "GBA Wayne",
+   "team_entries": 1,
+   "divisions": [
+    "U13 Boys"
+   ],
+   "teams": [
+    "U13 - GBA Wayne"
+   ]
+  },
+  {
+   "club": "Gold Medal Murray",
+   "team_entries": 1,
+   "divisions": [
+    "U13 Boys"
+   ],
+   "teams": [
+    "U13 Gold Medal Murray"
+   ]
+  },
+  {
+   "club": "Toronto Lords Rep Moyo",
+   "team_entries": 1,
+   "divisions": [
+    "U13 Boys"
+   ],
+   "teams": [
+    "Toronto Lords U13 Boys Rep Moyo"
+   ]
+  },
+  {
+   "club": "GBA Saran",
+   "team_entries": 1,
+   "divisions": [
+    "U13 Boys"
+   ],
+   "teams": [
+    "U13 - GBA Saran"
+   ]
+  },
+  {
+   "club": "Pelham Panthers - Team Kroeker",
+   "team_entries": 1,
+   "divisions": [
+    "U13 Boys"
+   ],
+   "teams": [
+    "Pelham Panthers - Team Kroeker"
+   ]
+  },
+  {
+   "club": "Burloak Elite AY",
+   "team_entries": 1,
+   "divisions": [
+    "U13 Boys"
+   ],
+   "teams": [
+    "U13 Burloak Elite AY"
+   ]
+  },
+  {
+   "club": "SBA Team Patterson DB",
+   "team_entries": 1,
+   "divisions": [
+    "U13 Boys"
+   ],
+   "teams": [
+    "SBA Team Patterson DB"
+   ]
+  },
+  {
+   "club": "V3 Basketball Association",
+   "team_entries": 1,
+   "divisions": [
+    "U13 Boys"
+   ],
+   "teams": [
+    "V3 Basketball Association"
+   ]
+  },
+  {
+   "club": "Game6 Sports",
+   "team_entries": 1,
+   "divisions": [
+    "U13 Boys"
+   ],
+   "teams": [
+    "Game6 Sports U13"
+   ]
+  },
+  {
+   "club": "GBA Arthur",
+   "team_entries": 1,
+   "divisions": [
+    "U13 Boys"
+   ],
+   "teams": [
+    "U13 - GBA Arthur"
+   ]
+  },
+  {
+   "club": "YSSK Ziorli",
+   "team_entries": 1,
+   "divisions": [
+    "U13 Boys"
+   ],
+   "teams": [
+    "YSSK U13 Boys Ziorli"
+   ]
+  },
+  {
+   "club": "Peterborough Power Hess",
+   "team_entries": 1,
+   "divisions": [
+    "U13 Boys"
+   ],
+   "teams": [
+    "Peterborough Power Hess"
+   ]
+  },
+  {
+   "club": "TTT U13 Boys- Gamal",
+   "team_entries": 1,
+   "divisions": [
+    "U13 Boys"
+   ],
+   "teams": [
+    "TTT U13 Boys- Gamal"
+   ]
+  },
+  {
+   "club": "Barrie Royals McCracken",
+   "team_entries": 1,
+   "divisions": [
+    "U13 Boys"
+   ],
+   "teams": [
+    "Barrie Royals U13 Boys McCracken"
+   ]
+  },
+  {
+   "club": "Ancaster Magic Pathammavong",
+   "team_entries": 1,
+   "divisions": [
+    "U13 Boys"
+   ],
+   "teams": [
+    "Ancaster Magic U13 Boys Pathammavong"
+   ]
+  },
+  {
+   "club": "Niagara Falls Red Raiders- Hunt",
+   "team_entries": 1,
+   "divisions": [
+    "U13 Boys"
+   ],
+   "teams": [
+    "Niagara Falls Red Raiders- Hunt"
+   ]
+  },
+  {
+   "club": "Sudbury Storm - Coach Glen -26",
+   "team_entries": 1,
+   "divisions": [
+    "U13 Boys"
+   ],
+   "teams": [
+    "Sudbury Storm - U13 Boys Coach Glen 2025-26"
+   ]
+  },
+  {
+   "club": "GLADIATORS ONIKA",
+   "team_entries": 1,
+   "divisions": [
+    "U13 Boys"
+   ],
+   "teams": [
+    "GLADIATORS U13 BOYS ONIKA"
+   ]
+  },
+  {
+   "club": "GTA Mavericks- Evan",
+   "team_entries": 1,
+   "divisions": [
+    "U13 Boys"
+   ],
+   "teams": [
+    "GTA Mavericks- Evan"
+   ]
+  },
+  {
+   "club": "YSSK Ma",
+   "team_entries": 1,
+   "divisions": [
+    "U13 Boys"
+   ],
+   "teams": [
+    "YSSK U13 Boys Ma"
+   ]
+  },
+  {
+   "club": "VCB U13- Peter",
+   "team_entries": 1,
+   "divisions": [
+    "U13 Girls"
+   ],
+   "teams": [
+    "VCB U13- Peter"
+   ]
+  },
+  {
+   "club": "Ottawa South",
+   "team_entries": 1,
+   "divisions": [
+    "U13 Girls"
+   ],
+   "teams": [
+    "Ottawa South - Fraser"
+   ]
+  },
+  {
+   "club": "ONL U13 Girls - Fleming",
+   "team_entries": 1,
+   "divisions": [
+    "U13 Girls"
+   ],
+   "teams": [
+    "ONL U13 Girls - Fleming"
+   ]
+  },
+  {
+   "club": "YNBA Avengers U13G Perlmutter",
+   "team_entries": 1,
+   "divisions": [
+    "U13 Girls"
+   ],
+   "teams": [
+    "YNBA Avengers U13G Perlmutter"
+   ]
+  },
+  {
+   "club": "Brantford CYO -Woodburn",
+   "team_entries": 1,
+   "divisions": [
+    "U13 Girls"
+   ],
+   "teams": [
+    "Brantford CYO U13-Woodburn"
+   ]
+  },
+  {
+   "club": "OSS Rising Stars - Cooper/Cressman",
+   "team_entries": 1,
+   "divisions": [
+    "U13 Girls"
+   ],
+   "teams": [
+    "OSS Rising Stars - Cooper/Cressman"
+   ]
+  },
+  {
+   "club": "Brampton Warriors U13G- Archer",
+   "team_entries": 1,
+   "divisions": [
+    "U13 Girls"
+   ],
+   "teams": [
+    "Brampton Warriors U13G- Archer"
+   ]
+  },
+  {
+   "club": "GBA Ranger",
+   "team_entries": 1,
+   "divisions": [
+    "U13 Girls"
+   ],
+   "teams": [
+    "U13 - GBA Ranger"
+   ]
+  },
+  {
+   "club": "Kingston Impact Caverly",
+   "team_entries": 1,
+   "divisions": [
+    "U13 Girls"
+   ],
+   "teams": [
+    "Kingston Impact U13 girls Caverly"
+   ]
+  },
+  {
+   "club": "Orillia Lakers - Thomson 1",
+   "team_entries": 1,
+   "divisions": [
+    "U13 Girls"
+   ],
+   "teams": [
+    "Orillia Lakers U13 Girls - Thomson 1"
+   ]
+  },
+  {
+   "club": "Barrie Royals Zyla",
+   "team_entries": 1,
+   "divisions": [
+    "U13 Girls"
+   ],
+   "teams": [
+    "Barrie Royals U13 Girls Zyla"
+   ]
+  },
+  {
+   "club": "SBA Team Riche",
+   "team_entries": 1,
+   "divisions": [
+    "U13 Girls"
+   ],
+   "teams": [
+    "SBA Team Riche"
+   ]
+  },
+  {
+   "club": "U13G Trailblazers",
+   "team_entries": 1,
+   "divisions": [
+    "U13 Girls"
+   ],
+   "teams": [
+    "U13G Trailblazers"
+   ]
+  },
+  {
+   "club": "YNBA Avengers U13G Lambie",
+   "team_entries": 1,
+   "divisions": [
+    "U13 Girls"
+   ],
+   "teams": [
+    "YNBA Avengers U13G Lambie"
+   ]
+  },
+  {
+   "club": "TTT U13 Girls",
+   "team_entries": 1,
+   "divisions": [
+    "U13 Girls"
+   ],
+   "teams": [
+    "TTT U13 Girls"
+   ]
+  },
+  {
+   "club": "Prince Edward Clippers",
+   "team_entries": 1,
+   "divisions": [
+    "U13 Girls"
+   ],
+   "teams": [
+    "Prince Edward Clippers U13 Girls"
+   ]
+  },
+  {
+   "club": "North York Lions Ergas",
+   "team_entries": 1,
+   "divisions": [
+    "U13 Girls"
+   ],
+   "teams": [
+    "North York Lions U13 Girls Ergas"
+   ]
+  },
+  {
+   "club": "Guelph Gryphons- Swan",
+   "team_entries": 1,
+   "divisions": [
+    "U13 Girls"
+   ],
+   "teams": [
+    "Guelph Gryphons- Swan"
+   ]
+  },
+  {
+   "club": "Orillia Lakers - Thomson 2",
+   "team_entries": 1,
+   "divisions": [
+    "U13 Girls"
+   ],
+   "teams": [
+    "Orillia Lakers U13 Girls - Thomson 2"
+   ]
+  },
+  {
+   "club": "London 86ers Findlay",
+   "team_entries": 1,
+   "divisions": [
+    "U13 Girls"
+   ],
+   "teams": [
+    "London 86ers U13 Findlay"
+   ]
+  },
+  {
+   "club": "Toronto Lords Rep",
+   "team_entries": 1,
+   "divisions": [
+    "U13 Girls"
+   ],
+   "teams": [
+    "Toronto Lords U13 Girls Rep"
+   ]
+  },
+  {
+   "club": "Peterborough Power Fitzgerald",
+   "team_entries": 1,
+   "divisions": [
+    "U13 Girls"
+   ],
+   "teams": [
+    "Peterborough Power Fitzgerald"
+   ]
+  },
+  {
+   "club": "Vaughan City basketball",
+   "team_entries": 1,
+   "divisions": [
+    "U13 Girls"
+   ],
+   "teams": [
+    "Vaughan City basketball"
+   ]
+  },
+  {
+   "club": "TCBL Phoenix",
+   "team_entries": 1,
+   "divisions": [
+    "U13 Girls"
+   ],
+   "teams": [
+    "TCBL Phoenix"
+   ]
+  },
+  {
+   "club": "Brantford CYO -Seewald",
+   "team_entries": 1,
+   "divisions": [
+    "U13 Girls"
+   ],
+   "teams": [
+    "Brantford CYO U13-Seewald"
+   ]
+  },
+  {
+   "club": "SBA Premier Team Miller",
+   "team_entries": 1,
+   "divisions": [
+    "U14 Boys"
+   ],
+   "teams": [
+    "SBA Premier Team Miller"
+   ]
+  },
+  {
+   "club": "JCC Warriors - South Blue",
+   "team_entries": 1,
+   "divisions": [
+    "U14 Boys"
+   ],
+   "teams": [
+    "JCC Warriors - U14 South Blue"
+   ]
+  },
+  {
+   "club": "TTT U14 Boys - Clarke",
+   "team_entries": 1,
+   "divisions": [
+    "U14 Boys"
+   ],
+   "teams": [
+    "TTT U14 Boys - Clarke"
+   ]
+  },
+  {
+   "club": "The Collective Elite Team Blue",
+   "team_entries": 1,
+   "divisions": [
+    "U14 Boys"
+   ],
+   "teams": [
+    "The Collective Elite Team Blue"
+   ]
+  },
+  {
+   "club": "RISING SUNS PHENOM",
+   "team_entries": 1,
+   "divisions": [
+    "U14 Boys"
+   ],
+   "teams": [
+    "RISING SUNS U14 PHENOM"
+   ]
+  },
+  {
+   "club": "KW Viper Mannarelli",
+   "team_entries": 1,
+   "divisions": [
+    "U14 Boys"
+   ],
+   "teams": [
+    "KW Viper U14 Boys Mannarelli"
+   ]
+  },
+  {
+   "club": "SOLDIERS",
+   "team_entries": 1,
+   "divisions": [
+    "U14 Boys"
+   ],
+   "teams": [
+    "SOLDIERS U14 BOYS"
+   ]
+  },
+  {
+   "club": "Barrie Royals Messecar",
+   "team_entries": 1,
+   "divisions": [
+    "U14 Boys"
+   ],
+   "teams": [
+    "Barrie Royals U14 Boys Messecar"
+   ]
+  },
+  {
+   "club": "Team Breakdown IAN",
+   "team_entries": 1,
+   "divisions": [
+    "U14 Boys"
+   ],
+   "teams": [
+    "Team Breakdown U14 IAN"
+   ]
+  },
+  {
+   "club": "Kingston Impact McMillan",
+   "team_entries": 1,
+   "divisions": [
+    "U14 Boys"
+   ],
+   "teams": [
+    "Kingston Impact U14 boys McMillan"
+   ]
+  },
+  {
+   "club": "Union Elite Nate",
+   "team_entries": 1,
+   "divisions": [
+    "U14 Boys"
+   ],
+   "teams": [
+    "Union Elite Gr 8 Nate"
+   ]
+  },
+  {
+   "club": "GBA - Henry",
+   "team_entries": 1,
+   "divisions": [
+    "U14 Boys"
+   ],
+   "teams": [
+    "GBA - Henry"
+   ]
+  },
+  {
+   "club": "Blessed Sacrament Yellow Jackets- Guibao",
+   "team_entries": 1,
+   "divisions": [
+    "U14 Boys"
+   ],
+   "teams": [
+    "Blessed Sacrament Yellow Jackets- Guibao"
+   ]
+  },
+  {
+   "club": "DC Storm Team White",
+   "team_entries": 1,
+   "divisions": [
+    "U14 Boys"
+   ],
+   "teams": [
+    "DC Storm U14 Team White"
+   ]
+  },
+  {
+   "club": "BTSO Elite",
+   "team_entries": 1,
+   "divisions": [
+    "U14 Boys"
+   ],
+   "teams": [
+    "BTSO Elite U14 - Justin"
+   ]
+  },
+  {
+   "club": "SBA Team McKenna",
+   "team_entries": 1,
+   "divisions": [
+    "U14 Boys"
+   ],
+   "teams": [
+    "SBA Team McKenna"
+   ]
+  },
+  {
+   "club": "Vaughan Panthers - Coach Curtis",
+   "team_entries": 1,
+   "divisions": [
+    "U14 Boys"
+   ],
+   "teams": [
+    "Vaughan Panthers U14 Boys - Coach Curtis"
+   ]
+  },
+  {
+   "club": "The Collective Elite Team White",
+   "team_entries": 1,
+   "divisions": [
+    "U14 Boys"
+   ],
+   "teams": [
+    "The Collective Elite Team White"
+   ]
+  },
+  {
+   "club": "ONL U14 Boys - Kanji",
+   "team_entries": 1,
+   "divisions": [
+    "U14 Boys"
+   ],
+   "teams": [
+    "ONL U14 Boys - Kanji"
+   ]
+  },
+  {
+   "club": "GBA - Collington",
+   "team_entries": 1,
+   "divisions": [
+    "U14 Boys"
+   ],
+   "teams": [
+    "GBA - Collington"
+   ]
+  },
+  {
+   "club": "Ancaster Magic Hall",
+   "team_entries": 1,
+   "divisions": [
+    "U14 Boys"
+   ],
+   "teams": [
+    "Ancaster Magic U14 Boys Hall"
+   ]
+  },
+  {
+   "club": "Pelham Panthers - Team Stewart",
+   "team_entries": 1,
+   "divisions": [
+    "U14 Boys"
+   ],
+   "teams": [
+    "Pelham Panthers - Team Stewart"
+   ]
+  },
+  {
+   "club": "Advantage Titans OBA",
+   "team_entries": 1,
+   "divisions": [
+    "U14 Boys"
+   ],
+   "teams": [
+    "Advantage Titans OBA U14"
+   ]
+  },
+  {
+   "club": "ONL U14 Boys - Kilfoyl",
+   "team_entries": 1,
+   "divisions": [
+    "U14 Boys"
+   ],
+   "teams": [
+    "ONL U14 Boys - Kilfoyl"
+   ]
+  },
+  {
+   "club": "GBA - Blackburn",
+   "team_entries": 1,
+   "divisions": [
+    "U14 Boys"
+   ],
+   "teams": [
+    "GBA - Blackburn"
+   ]
+  },
+  {
+   "club": "Ontario Elite",
+   "team_entries": 1,
+   "divisions": [
+    "U14 Boys"
+   ],
+   "teams": [
+    "Ontario Elite (JOOOKOOO)"
+   ]
+  },
+  {
+   "club": "Nepean Blue Devils",
+   "team_entries": 1,
+   "divisions": [
+    "U14 Boys"
+   ],
+   "teams": [
+    "Nepean Blue Devils"
+   ]
+  },
+  {
+   "club": "Sudbury Storm - - Coach Derrick -26",
+   "team_entries": 1,
+   "divisions": [
+    "U14 Boys"
+   ],
+   "teams": [
+    "Sudbury Storm - U14 Boys - Coach Derrick 2025-26"
+   ]
+  },
+  {
+   "club": "Toronto Lords Kenyon",
+   "team_entries": 1,
+   "divisions": [
+    "U14 Boys"
+   ],
+   "teams": [
+    "Toronto Lords U14 Boys Kenyon"
+   ]
+  },
+  {
+   "club": "KW Viper Langer",
+   "team_entries": 1,
+   "divisions": [
+    "U14 Boys"
+   ],
+   "teams": [
+    "KW Viper U14 Boys Langer"
+   ]
+  },
+  {
+   "club": "GBA Ken",
+   "team_entries": 1,
+   "divisions": [
+    "U14 Boys"
+   ],
+   "teams": [
+    "U14 - GBA Ken"
+   ]
+  },
+  {
+   "club": "GBA Dexter",
+   "team_entries": 1,
+   "divisions": [
+    "U14 Boys"
+   ],
+   "teams": [
+    "U14 - GBA Dexter"
+   ]
+  },
+  {
+   "club": "Motion Kings",
+   "team_entries": 1,
+   "divisions": [
+    "U14 Boys"
+   ],
+   "teams": [
+    "Motion Kings"
+   ]
+  },
+  {
+   "club": "Burloak Elite Rishi",
+   "team_entries": 1,
+   "divisions": [
+    "U14 Boys"
+   ],
+   "teams": [
+    "U14 Burloak Elite Rishi"
+   ]
+  },
+  {
+   "club": "Young Dragons",
+   "team_entries": 1,
+   "divisions": [
+    "U14 Boys"
+   ],
+   "teams": [
+    "Young Dragons"
+   ]
+  },
+  {
+   "club": "EY Eagles - McLeod",
+   "team_entries": 1,
+   "divisions": [
+    "U14 Boys"
+   ],
+   "teams": [
+    "EY Eagles U14 Boys - McLeod"
+   ]
+  },
+  {
+   "club": "YNBA Avengers U14B Blue",
+   "team_entries": 1,
+   "divisions": [
+    "U14 Boys"
+   ],
+   "teams": [
+    "YNBA Avengers U14B Blue"
+   ]
+  },
+  {
+   "club": "KW Viper Thomas",
+   "team_entries": 1,
+   "divisions": [
+    "U14 Boys"
+   ],
+   "teams": [
+    "KW Viper U14 Boys Thomas"
+   ]
+  },
+  {
+   "club": "Sudbury Storm - - Coach Alex",
+   "team_entries": 1,
+   "divisions": [
+    "U14 Boys"
+   ],
+   "teams": [
+    "Sudbury Storm - U14 Boys - Coach Alex"
+   ]
+  },
+  {
+   "club": "Vaughan Panthers - Coach John",
+   "team_entries": 1,
+   "divisions": [
+    "U14 Boys"
+   ],
+   "teams": [
+    "Vaughan Panthers U14 Boys - Coach John"
+   ]
+  },
+  {
+   "club": "GBA - Chris",
+   "team_entries": 1,
+   "divisions": [
+    "U14 Boys"
+   ],
+   "teams": [
+    "GBA - Chris"
+   ]
+  },
+  {
+   "club": "JCC Warriors - South White",
+   "team_entries": 1,
+   "divisions": [
+    "U14 Boys"
+   ],
+   "teams": [
+    "JCC Warriors - U14 South White"
+   ]
+  },
+  {
+   "club": "TEAM BREAKDOWN IMPOWERFUL",
+   "team_entries": 1,
+   "divisions": [
+    "U14 Boys"
+   ],
+   "teams": [
+    "U14 TEAM BREAKDOWN IMPOWERFUL"
+   ]
+  },
+  {
+   "club": "BREAKDOWN GREEN",
+   "team_entries": 1,
+   "divisions": [
+    "U14 Boys"
+   ],
+   "teams": [
+    "U14 BREAKDOWN GREEN"
+   ]
+  },
+  {
+   "club": "Midland Waves White",
+   "team_entries": 1,
+   "divisions": [
+    "U14 Boys"
+   ],
+   "teams": [
+    "Midland Waves U14 White"
+   ]
+  },
+  {
+   "club": "Guelph Gryphons-Sambol",
+   "team_entries": 1,
+   "divisions": [
+    "U14 Boys"
+   ],
+   "teams": [
+    "Guelph Gryphons-Sambol"
+   ]
+  },
+  {
+   "club": "Next Generation Basketball Club - Team Ceddy",
+   "team_entries": 1,
+   "divisions": [
+    "U14 Boys"
+   ],
+   "teams": [
+    "Next Generation Basketball Club U14 Boys - Team Ceddy"
+   ]
+  },
+  {
+   "club": "Caledon Cougars",
+   "team_entries": 1,
+   "divisions": [
+    "U14 Boys"
+   ],
+   "teams": [
+    "Caledon Cougars"
+   ]
+  },
+  {
+   "club": "Grassroots Kitchener BLACK",
+   "team_entries": 1,
+   "divisions": [
+    "U14 Boys"
+   ],
+   "teams": [
+    "U14 Grassroots Kitchener BLACK"
+   ]
+  },
+  {
+   "club": "DC Storm Team Black",
+   "team_entries": 1,
+   "divisions": [
+    "U14 Boys"
+   ],
+   "teams": [
+    "DC Storm U14 Team Black"
+   ]
+  },
+  {
+   "club": "Barrie Royals Oster",
+   "team_entries": 1,
+   "divisions": [
+    "U14 Boys"
+   ],
+   "teams": [
+    "Barrie Royals U14 Boys Oster"
+   ]
+  },
+  {
+   "club": "North York Lions Malik Phillips",
+   "team_entries": 1,
+   "divisions": [
+    "U14 Boys"
+   ],
+   "teams": [
+    "North York Lions U14 Malik Phillips"
+   ]
+  },
+  {
+   "club": "U14B Trailblazers",
+   "team_entries": 1,
+   "divisions": [
+    "U14 Boys"
+   ],
+   "teams": [
+    "U14B Trailblazers"
+   ]
+  },
+  {
+   "club": "MUMBA ELITE - NOORI",
+   "team_entries": 1,
+   "divisions": [
+    "U14 Boys"
+   ],
+   "teams": [
+    "MUMBA ELITE - NOORI"
+   ]
+  },
+  {
+   "club": "GBA David",
+   "team_entries": 1,
+   "divisions": [
+    "U14 Boys"
+   ],
+   "teams": [
+    "U14 - GBA David"
+   ]
+  },
+  {
+   "club": "DK U14 Boys",
+   "team_entries": 1,
+   "divisions": [
+    "U14 Boys"
+   ],
+   "teams": [
+    "DK U14 Boys"
+   ]
+  },
+  {
+   "club": "SBA Team Scott",
+   "team_entries": 1,
+   "divisions": [
+    "U14 Boys"
+   ],
+   "teams": [
+    "SBA Team Scott"
+   ]
+  },
+  {
+   "club": "Oakville Venom Blue Team",
+   "team_entries": 1,
+   "divisions": [
+    "U14 Boys"
+   ],
+   "teams": [
+    "Oakville Venom Major Bantam Blue Team"
+   ]
+  },
+  {
+   "club": "Crunch Time Elite",
+   "team_entries": 1,
+   "divisions": [
+    "U14 Boys"
+   ],
+   "teams": [
+    "Crunch Time Elite"
+   ]
+  },
+  {
+   "club": "Elevation Athletics Arne",
+   "team_entries": 1,
+   "divisions": [
+    "U14 Boys"
+   ],
+   "teams": [
+    "Elevation Athletics U14 Arne"
+   ]
+  },
+  {
+   "club": "TTT U14 Boys - Jakovic",
+   "team_entries": 1,
+   "divisions": [
+    "U14 Boys"
+   ],
+   "teams": [
+    "TTT U14 Boys - Jakovic"
+   ]
+  },
+  {
+   "club": "TEAM BREAKDOWN IMPOWERFUL TEAM 2",
+   "team_entries": 1,
+   "divisions": [
+    "U14 Boys"
+   ],
+   "teams": [
+    "U14 TEAM BREAKDOWN IMPOWERFUL TEAM 2"
+   ]
+  },
+  {
+   "club": "Blessed Sacrament Yellow Jackets- Demerjian",
+   "team_entries": 1,
+   "divisions": [
+    "U14 Boys"
+   ],
+   "teams": [
+    "Blessed Sacrament Yellow Jackets- Demerjian"
+   ]
+  },
+  {
+   "club": "Kingston Impact Fisher Dowker",
+   "team_entries": 1,
+   "divisions": [
+    "U14 Boys"
+   ],
+   "teams": [
+    "Kingston Impact U14 boys Fisher Dowker"
+   ]
+  },
+  {
+   "club": "Midland Waves Blue",
+   "team_entries": 1,
+   "divisions": [
+    "U14 Boys"
+   ],
+   "teams": [
+    "Midland Waves U14 Blue"
+   ]
+  },
+  {
+   "club": "Oshawa Commander",
+   "team_entries": 1,
+   "divisions": [
+    "U14 Boys"
+   ],
+   "teams": [
+    "Oshawa Commander U14"
+   ]
+  },
+  {
+   "club": "YNBA Avengers U14B Martin",
+   "team_entries": 1,
+   "divisions": [
+    "U14 Boys"
+   ],
+   "teams": [
+    "YNBA Avengers U14B Martin"
+   ]
+  },
+  {
+   "club": "GLADIATORS IVOR",
+   "team_entries": 1,
+   "divisions": [
+    "U14 Boys"
+   ],
+   "teams": [
+    "GLADIATORS U14 BOYS IVOR"
+   ]
+  },
+  {
+   "club": "U14B GBA Grizzlies",
+   "team_entries": 1,
+   "divisions": [
+    "U14 Boys"
+   ],
+   "teams": [
+    "U14B GBA Grizzlies"
+   ]
+  },
+  {
+   "club": "Durham Crossover",
+   "team_entries": 1,
+   "divisions": [
+    "U14 Boys"
+   ],
+   "teams": [
+    "Durham Crossover"
+   ]
+  },
+  {
+   "club": "GBA - Justin",
+   "team_entries": 1,
+   "divisions": [
+    "U14 Boys"
+   ],
+   "teams": [
+    "GBA - Justin"
+   ]
+  },
+  {
+   "club": "YSSK Thomas",
+   "team_entries": 1,
+   "divisions": [
+    "U14 Boys"
+   ],
+   "teams": [
+    "YSSK U14 Boys Thomas"
+   ]
+  },
+  {
+   "club": "Peterborough Power Summers",
+   "team_entries": 1,
+   "divisions": [
+    "U14 Boys"
+   ],
+   "teams": [
+    "Peterborough Power Summers"
+   ]
+  },
+  {
+   "club": "Grassroots Kitchener GREY",
+   "team_entries": 1,
+   "divisions": [
+    "U14 Boys"
+   ],
+   "teams": [
+    "U14 Grassroots Kitchener GREY"
+   ]
+  },
+  {
+   "club": "Kazmaier",
+   "team_entries": 1,
+   "divisions": [
+    "U14 Boys"
+   ],
+   "teams": [
+    "BU14 Kazmaier"
+   ]
+  },
+  {
+   "club": "Vaughan Panthers - Coach Larry",
+   "team_entries": 1,
+   "divisions": [
+    "U14 Girls"
+   ],
+   "teams": [
+    "Vaughan Panthers U14 Girls - Coach Larry"
+   ]
+  },
+  {
+   "club": "GBA - Chad",
+   "team_entries": 1,
+   "divisions": [
+    "U14 Girls"
+   ],
+   "teams": [
+    "GBA - Chad"
+   ]
+  },
+  {
+   "club": "SBA Team Clarke",
+   "team_entries": 1,
+   "divisions": [
+    "U14 Girls"
+   ],
+   "teams": [
+    "SBA Team Clarke"
+   ]
+  },
+  {
+   "club": "Pelham Panthers - Team Addy",
+   "team_entries": 1,
+   "divisions": [
+    "U14 Girls"
+   ],
+   "teams": [
+    "Pelham Panthers - Team Addy"
+   ]
+  },
+  {
+   "club": "Collingwood Trailblazers",
+   "team_entries": 1,
+   "divisions": [
+    "U14 Girls"
+   ],
+   "teams": [
+    "Collingwood Trailblazers"
+   ]
+  },
+  {
+   "club": "Brantford CYO -Petrella",
+   "team_entries": 1,
+   "divisions": [
+    "U14 Girls"
+   ],
+   "teams": [
+    "Brantford CYO U14-Petrella"
+   ]
+  },
+  {
+   "club": "Barrie Royals Hreljac",
+   "team_entries": 1,
+   "divisions": [
+    "U14 Girls"
+   ],
+   "teams": [
+    "Barrie Royals U14 Girls Hreljac"
+   ]
+  },
+  {
+   "club": "North York Lions Appiah/Phillips",
+   "team_entries": 1,
+   "divisions": [
+    "U14 Girls"
+   ],
+   "teams": [
+    "North York Lions (PBAA) Appiah/Phillips"
+   ]
+  },
+  {
+   "club": "Kingston Impact Severino",
+   "team_entries": 1,
+   "divisions": [
+    "U14 Girls"
+   ],
+   "teams": [
+    "Kingston Impact U14 girls Severino"
+   ]
+  },
+  {
+   "club": "U14G Valhalla",
+   "team_entries": 1,
+   "divisions": [
+    "U14 Girls"
+   ],
+   "teams": [
+    "U14G Valhalla"
+   ]
+  },
+  {
+   "club": "MUMBA ELITE - HABASH",
+   "team_entries": 1,
+   "divisions": [
+    "U14 Girls"
+   ],
+   "teams": [
+    "MUMBA ELITE - HABASH"
+   ]
+  },
+  {
+   "club": "GYBA Robbins",
+   "team_entries": 1,
+   "divisions": [
+    "U14 Girls"
+   ],
+   "teams": [
+    "GYBA GU14 Robbins"
+   ]
+  },
+  {
+   "club": "TTT U14 Girls",
+   "team_entries": 1,
+   "divisions": [
+    "U14 Girls"
+   ],
+   "teams": [
+    "TTT U14 Girls"
+   ]
+  },
+  {
+   "club": "MUMBA ELITE - JARVIS",
+   "team_entries": 1,
+   "divisions": [
+    "U14 Girls"
+   ],
+   "teams": [
+    "MUMBA ELITE - JARVIS"
+   ]
+  },
+  {
+   "club": "KW Viper Majuery",
+   "team_entries": 1,
+   "divisions": [
+    "U14 Girls"
+   ],
+   "teams": [
+    "KW Viper U14 Girls Majuery"
+   ]
+  },
+  {
+   "club": "Belleville Spirits de Vries",
+   "team_entries": 1,
+   "divisions": [
+    "U14 Girls"
+   ],
+   "teams": [
+    "Belleville Spirits U14 de Vries"
+   ]
+  },
+  {
+   "club": "Tecumseh U14G",
+   "team_entries": 1,
+   "divisions": [
+    "U14 Girls"
+   ],
+   "teams": [
+    "Tecumseh U14G"
+   ]
+  },
+  {
+   "club": "London 86ers Friesen",
+   "team_entries": 1,
+   "divisions": [
+    "U14 Girls"
+   ],
+   "teams": [
+    "London 86ers U14 Friesen"
+   ]
+  },
+  {
+   "club": "Toronto Lords Bunag",
+   "team_entries": 1,
+   "divisions": [
+    "U14 Girls"
+   ],
+   "teams": [
+    "Toronto Lords U14 Girls Bunag"
+   ]
+  },
+  {
+   "club": "Peterborough Power Harrington",
+   "team_entries": 1,
+   "divisions": [
+    "U14 Girls"
+   ],
+   "teams": [
+    "Peterborough Power Harrington"
+   ]
+  },
+  {
+   "club": "TEAM BREAKDOWN ALAN",
+   "team_entries": 1,
+   "divisions": [
+    "U14 Girls"
+   ],
+   "teams": [
+    "TEAM BREAKDOWN U14 GIRLS ALAN"
+   ]
+  },
+  {
+   "club": "Brantford CYO -Stevens",
+   "team_entries": 1,
+   "divisions": [
+    "U14 Girls"
+   ],
+   "teams": [
+    "Brantford CYO U14-Stevens"
+   ]
+  },
+  {
+   "club": "MUMBA ELITE - ARCE",
+   "team_entries": 1,
+   "divisions": [
+    "U14 Girls"
+   ],
+   "teams": [
+    "MUMBA ELITE - ARCE"
+   ]
+  },
+  {
+   "club": "GBA - Kevin",
+   "team_entries": 1,
+   "divisions": [
+    "U14 Girls"
+   ],
+   "teams": [
+    "GBA - Kevin"
+   ]
+  },
+  {
+   "club": "Hoopzone",
+   "team_entries": 1,
+   "divisions": [
+    "U14 Girls"
+   ],
+   "teams": [
+    "Hoopzone U14 Girls"
+   ]
+  },
+  {
+   "club": "EY Eagles - O'Brien",
+   "team_entries": 1,
+   "divisions": [
+    "U14 Girls"
+   ],
+   "teams": [
+    "EY Eagles U14 Girls - O'Brien"
+   ]
+  },
+  {
+   "club": "YNBA Avengers U14G Liversidge",
+   "team_entries": 1,
+   "divisions": [
+    "U14 Girls"
+   ],
+   "teams": [
+    "YNBA Avengers U14G Liversidge"
+   ]
+  },
+  {
+   "club": "Kingston Impact Law",
+   "team_entries": 1,
+   "divisions": [
+    "U14 Girls"
+   ],
+   "teams": [
+    "Kingston Impact U14 girls Law"
+   ]
+  },
+  {
+   "club": "Sudbury Storm - Coach Breanna -26",
+   "team_entries": 1,
+   "divisions": [
+    "U14 Girls"
+   ],
+   "teams": [
+    "Sudbury Storm - U14 Girls Coach Breanna 2025-26"
+   ]
+  },
+  {
+   "club": "BALL905 Elite",
+   "team_entries": 1,
+   "divisions": [
+    "U16 Boys"
+   ],
+   "teams": [
+    "BALL905 Elite"
+   ]
+  },
+  {
+   "club": "Brampton Warriors U16B",
+   "team_entries": 1,
+   "divisions": [
+    "U16 Boys"
+   ],
+   "teams": [
+    "Brampton Warriors U16B - Mangat"
+   ]
+  },
+  {
+   "club": "Pelham Panthers - Team Piekny",
+   "team_entries": 1,
+   "divisions": [
+    "U16 Boys"
+   ],
+   "teams": [
+    "Pelham Panthers - Team Piekny"
+   ]
+  },
+  {
+   "club": "London Ramblers Red",
+   "team_entries": 1,
+   "divisions": [
+    "U16 Boys"
+   ],
+   "teams": [
+    "London Ramblers U16 Boys Red"
+   ]
+  },
+  {
+   "club": "CKATT/Cooksville",
+   "team_entries": 1,
+   "divisions": [
+    "U16 Boys"
+   ],
+   "teams": [
+    "CKATT/Cooksville"
+   ]
+  },
+  {
+   "club": "Burloak Elite Xzennis",
+   "team_entries": 1,
+   "divisions": [
+    "U16 Boys"
+   ],
+   "teams": [
+    "U16 Burloak Elite Xzennis"
+   ]
+  },
+  {
+   "club": "Eastern Basketball Academy",
+   "team_entries": 1,
+   "divisions": [
+    "U16 Boys"
+   ],
+   "teams": [
+    "Eastern Basketball Academy"
+   ]
+  },
+  {
+   "club": "London Ramblers Blue",
+   "team_entries": 1,
+   "divisions": [
+    "U16 Boys"
+   ],
+   "teams": [
+    "London Ramblers U16 Boys Blue"
+   ]
+  },
+  {
+   "club": "London Gold Medal-Cyros",
+   "team_entries": 1,
+   "divisions": [
+    "U16 Boys"
+   ],
+   "teams": [
+    "London Gold Medal-Cyros"
+   ]
+  },
+  {
+   "club": "OSS Rising Stars - Al Hussaini",
+   "team_entries": 1,
+   "divisions": [
+    "U16 Boys"
+   ],
+   "teams": [
+    "OSS Rising Stars - Al Hussaini"
+   ]
+  },
+  {
+   "club": "Haldimand Huskies Hinzey",
+   "team_entries": 1,
+   "divisions": [
+    "U16 Boys"
+   ],
+   "teams": [
+    "Haldimand Huskies U16 Hinzey"
+   ]
+  },
+  {
+   "club": "TTT U16 Boys - Scott",
+   "team_entries": 1,
+   "divisions": [
+    "U16 Boys"
+   ],
+   "teams": [
+    "TTT U16 Boys - Scott"
+   ]
+  },
+  {
+   "club": "Union Elite Basil",
+   "team_entries": 1,
+   "divisions": [
+    "U16 Boys"
+   ],
+   "teams": [
+    "Union Elite Gr 10 Basil"
+   ]
+  },
+  {
+   "club": "Sudbury Storm - - Coach Dan –26",
+   "team_entries": 1,
+   "divisions": [
+    "U16 Boys"
+   ],
+   "teams": [
+    "Sudbury Storm - U16 Boys - Coach Dan 2025–26"
+   ]
+  },
+  {
+   "club": "DK Dragons Red",
+   "team_entries": 1,
+   "divisions": [
+    "U16 Boys"
+   ],
+   "teams": [
+    "DK Dragons Red"
+   ]
+  },
+  {
+   "club": "Hamilton Celtics U16B",
+   "team_entries": 1,
+   "divisions": [
+    "U16 Boys"
+   ],
+   "teams": [
+    "Hamilton Celtics U16B"
+   ]
+  },
+  {
+   "club": "Breakdown FCF",
+   "team_entries": 1,
+   "divisions": [
+    "U16 Boys"
+   ],
+   "teams": [
+    "Breakdown FCF U16"
+   ]
+  },
+  {
+   "club": "DC UNITED",
+   "team_entries": 1,
+   "divisions": [
+    "U16 Boys"
+   ],
+   "teams": [
+    "DC UNITED U16"
+   ]
+  },
+  {
+   "club": "GBA Steve",
+   "team_entries": 1,
+   "divisions": [
+    "U16 Boys"
+   ],
+   "teams": [
+    "U16 - GBA Steve"
+   ]
+  },
+  {
+   "club": "Eastern Earthquakes",
+   "team_entries": 1,
+   "divisions": [
+    "U16 Boys"
+   ],
+   "teams": [
+    "Eastern Earthquakes"
+   ]
+  },
+  {
+   "club": "Toronto Lords Ptolemy",
+   "team_entries": 1,
+   "divisions": [
+    "U16 Boys"
+   ],
+   "teams": [
+    "Toronto Lords U16 Boys Ptolemy"
+   ]
+  },
+  {
+   "club": "KW Viper Zavitz",
+   "team_entries": 1,
+   "divisions": [
+    "U16 Boys"
+   ],
+   "teams": [
+    "KW Viper U16 Boys Zavitz"
+   ]
+  },
+  {
+   "club": "Burloak Elite Jamie",
+   "team_entries": 1,
+   "divisions": [
+    "U16 Boys"
+   ],
+   "teams": [
+    "U16 Burloak Elite Jamie"
+   ]
+  },
+  {
+   "club": "SBA Team Tappin",
+   "team_entries": 1,
+   "divisions": [
+    "U16 Boys"
+   ],
+   "teams": [
+    "SBA Team Tappin"
+   ]
+  },
+  {
+   "club": "MUMBA ELITE - HENG",
+   "team_entries": 1,
+   "divisions": [
+    "U16 Boys"
+   ],
+   "teams": [
+    "MUMBA ELITE - HENG"
+   ]
+  },
+  {
+   "club": "ELITE 8",
+   "team_entries": 1,
+   "divisions": [
+    "U16 Boys"
+   ],
+   "teams": [
+    "ELITE 8"
+   ]
+  },
+  {
+   "club": "Pelham Panthers - Team Kobe",
+   "team_entries": 1,
+   "divisions": [
+    "U16 Boys"
+   ],
+   "teams": [
+    "Pelham Panthers - Team Kobe"
+   ]
+  },
+  {
+   "club": "Hoopzone Knights",
+   "team_entries": 1,
+   "divisions": [
+    "U16 Boys"
+   ],
+   "teams": [
+    "Hoopzone Knights"
+   ]
+  },
+  {
+   "club": "GBA Jaime",
+   "team_entries": 1,
+   "divisions": [
+    "U16 Boys"
+   ],
+   "teams": [
+    "U16 - GBA Jaime"
+   ]
+  },
+  {
+   "club": "Kingston Impact- Turnbull",
+   "team_entries": 1,
+   "divisions": [
+    "U16 Boys"
+   ],
+   "teams": [
+    "Kingston Impact- Turnbull"
+   ]
+  },
+  {
+   "club": "Barrie Royals Cramp",
+   "team_entries": 1,
+   "divisions": [
+    "U16 Boys"
+   ],
+   "teams": [
+    "Barrie Royals U16 Boys Cramp"
+   ]
+  },
+  {
+   "club": "MUMBA ELITE - BLACKETT",
+   "team_entries": 1,
+   "divisions": [
+    "U16 Boys"
+   ],
+   "teams": [
+    "MUMBA ELITE - BLACKETT"
+   ]
+  },
+  {
+   "club": "CBA White",
+   "team_entries": 1,
+   "divisions": [
+    "U16 Boys"
+   ],
+   "teams": [
+    "CBA Varsity U16 Boys White"
+   ]
+  },
+  {
+   "club": "Breakthrough Athletics",
+   "team_entries": 1,
+   "divisions": [
+    "U16 Boys"
+   ],
+   "teams": [
+    "Breakthrough Athletics"
+   ]
+  },
+  {
+   "club": "Toronto Lords Yasay",
+   "team_entries": 1,
+   "divisions": [
+    "U16 Boys"
+   ],
+   "teams": [
+    "Toronto Lords U16 Boys Yasay"
+   ]
+  },
+  {
+   "club": "Durham Crossover Basketball",
+   "team_entries": 1,
+   "divisions": [
+    "U16 Boys"
+   ],
+   "teams": [
+    "Durham Crossover Basketball U16"
+   ]
+  },
+  {
+   "club": "V3 Basketball",
+   "team_entries": 1,
+   "divisions": [
+    "U16 Boys"
+   ],
+   "teams": [
+    "V3 Basketball"
+   ]
+  },
+  {
+   "club": "Haldimand Huskies Quinn",
+   "team_entries": 1,
+   "divisions": [
+    "U16 Boys"
+   ],
+   "teams": [
+    "Haldimand Huskies U16 Quinn"
+   ]
+  },
+  {
+   "club": "GBA Jordan",
+   "team_entries": 1,
+   "divisions": [
+    "U16 Boys"
+   ],
+   "teams": [
+    "U16 - GBA Jordan"
+   ]
+  },
+  {
+   "club": "Burloak Elite Anthony",
+   "team_entries": 1,
+   "divisions": [
+    "U16 Boys"
+   ],
+   "teams": [
+    "U16 Burloak Elite Anthony"
+   ]
+  },
+  {
+   "club": "DBA Team Wright",
+   "team_entries": 1,
+   "divisions": [
+    "U16 Boys"
+   ],
+   "teams": [
+    "DBA Team Wright"
+   ]
+  },
+  {
+   "club": "U16B Trailblazers",
+   "team_entries": 1,
+   "divisions": [
+    "U16 Boys"
+   ],
+   "teams": [
+    "U16B Trailblazers"
+   ]
+  },
+  {
+   "club": "SBA Team Moore",
+   "team_entries": 1,
+   "divisions": [
+    "U16 Boys"
+   ],
+   "teams": [
+    "SBA Team Moore"
+   ]
+  },
+  {
+   "club": "YNBA Avengers U16B Gabel",
+   "team_entries": 1,
+   "divisions": [
+    "U16 Boys"
+   ],
+   "teams": [
+    "YNBA Avengers U16B Gabel"
+   ]
+  },
+  {
+   "club": "MUMBA ELITE - NISAL",
+   "team_entries": 1,
+   "divisions": [
+    "U16 Boys"
+   ],
+   "teams": [
+    "MUMBA ELITE - NISAL"
+   ]
+  },
+  {
+   "club": "Pelham Panthers - Team Allen",
+   "team_entries": 1,
+   "divisions": [
+    "U16 Boys"
+   ],
+   "teams": [
+    "Pelham Panthers - Team Allen"
+   ]
+  },
+  {
+   "club": "GLADIATORS ROWELL",
+   "team_entries": 1,
+   "divisions": [
+    "U16 Boys"
+   ],
+   "teams": [
+    "GLADIATORS U16 BOYS ROWELL"
+   ]
+  },
+  {
+   "club": "Gold Medal",
+   "team_entries": 1,
+   "divisions": [
+    "U16 Boys"
+   ],
+   "teams": [
+    "U16 Gold Medal - Bennett"
+   ]
+  },
+  {
+   "club": "MYAA Jaguars",
+   "team_entries": 1,
+   "divisions": [
+    "U16 Boys"
+   ],
+   "teams": [
+    "MYAA Jaguars U16 Boys"
+   ]
+  },
+  {
+   "club": "Dk Dragons Black",
+   "team_entries": 1,
+   "divisions": [
+    "U16 Boys"
+   ],
+   "teams": [
+    "Dk Dragons Black"
+   ]
+  },
+  {
+   "club": "NRBA Mad Dogz-English",
+   "team_entries": 1,
+   "divisions": [
+    "U16 Boys"
+   ],
+   "teams": [
+    "U16 NRBA Mad Dogz-English"
+   ]
+  },
+  {
+   "club": "Northumberland Edge",
+   "team_entries": 1,
+   "divisions": [
+    "U16 Boys"
+   ],
+   "teams": [
+    "Northumberland Edge U16"
+   ]
+  },
+  {
+   "club": "TTT U16 Boys - Batura",
+   "team_entries": 1,
+   "divisions": [
+    "U16 Boys"
+   ],
+   "teams": [
+    "TTT U16 Boys - Batura"
+   ]
+  },
+  {
+   "club": "Sudbury Storm - - Coach Noah - -26",
+   "team_entries": 1,
+   "divisions": [
+    "U16 Boys"
+   ],
+   "teams": [
+    "Sudbury Storm - U16 Boys - Coach Noah - 2025-26"
+   ]
+  },
+  {
+   "club": "Ancaster Magic Palamarchuk",
+   "team_entries": 1,
+   "divisions": [
+    "U16 Boys"
+   ],
+   "teams": [
+    "Ancaster Magic U16 Boys Palamarchuk"
+   ]
+  },
+  {
+   "club": "YSSK Lee",
+   "team_entries": 1,
+   "divisions": [
+    "U16 Boys"
+   ],
+   "teams": [
+    "YSSK U16 Boys Lee"
+   ]
+  },
+  {
+   "club": "YSSK Jones",
+   "team_entries": 1,
+   "divisions": [
+    "U16 Boys"
+   ],
+   "teams": [
+    "YSSK U16 Boys Jones"
+   ]
+  },
+  {
+   "club": "Ancaster Magic Bonitatibus",
+   "team_entries": 1,
+   "divisions": [
+    "U16 Boys"
+   ],
+   "teams": [
+    "Ancaster Magic U16 Boys Bonitatibus"
+   ]
+  },
+  {
+   "club": "Burloak Elite Ossama",
+   "team_entries": 1,
+   "divisions": [
+    "U16 Boys"
+   ],
+   "teams": [
+    "Burloak Elite Ossama"
+   ]
+  },
+  {
+   "club": "SBA Team Barron",
+   "team_entries": 1,
+   "divisions": [
+    "U16 Girls"
+   ],
+   "teams": [
+    "SBA Team Barron"
+   ]
+  },
+  {
+   "club": "Vaughan Panthers - Coach Jimmy",
+   "team_entries": 1,
+   "divisions": [
+    "U16 Girls"
+   ],
+   "teams": [
+    "Vaughan Panthers U16 Girls - Coach Jimmy"
+   ]
+  },
+  {
+   "club": "GCBA Wolverines",
+   "team_entries": 1,
+   "divisions": [
+    "U16 Girls"
+   ],
+   "teams": [
+    "GCBA Wolverines - Gauthier"
+   ]
+  },
+  {
+   "club": "Peterborough Power McGarry",
+   "team_entries": 1,
+   "divisions": [
+    "U16 Girls"
+   ],
+   "teams": [
+    "Peterborough Power McGarry"
+   ]
+  },
+  {
+   "club": "Pelham Panthers - Team Ingribelli",
+   "team_entries": 1,
+   "divisions": [
+    "U16 Girls"
+   ],
+   "teams": [
+    "Pelham Panthers - Team Ingribelli"
+   ]
+  },
+  {
+   "club": "YSSK",
+   "team_entries": 1,
+   "divisions": [
+    "U16 Girls"
+   ],
+   "teams": [
+    "YSSK - Clark"
+   ]
+  },
+  {
+   "club": "YNBA Avengers",
+   "team_entries": 1,
+   "divisions": [
+    "U16 Girls"
+   ],
+   "teams": [
+    "YNBA Avengers - Paine"
+   ]
+  },
+  {
+   "club": "Blitz - St. Julien",
+   "team_entries": 1,
+   "divisions": [
+    "U16 Girls"
+   ],
+   "teams": [
+    "U16 Blitz Girls - St. Julien"
+   ]
+  },
+  {
+   "club": "SBA Team Wiltshire",
+   "team_entries": 1,
+   "divisions": [
+    "U16 Girls"
+   ],
+   "teams": [
+    "SBA Team Wiltshire"
+   ]
+  },
+  {
+   "club": "Inter-City Saints Redley",
+   "team_entries": 1,
+   "divisions": [
+    "U16 Girls"
+   ],
+   "teams": [
+    "Inter-City Saints Redley"
+   ]
+  },
+  {
+   "club": "Cambridge Basketball- Jaipersaud",
+   "team_entries": 1,
+   "divisions": [
+    "U16 Girls"
+   ],
+   "teams": [
+    "Cambridge Basketball- Jaipersaud"
+   ]
+  },
+  {
+   "club": "Sudbury Storm - Coach Ghislain -26",
+   "team_entries": 1,
+   "divisions": [
+    "U16 Girls"
+   ],
+   "teams": [
+    "Sudbury Storm - U16 Girls Coach Ghislain 2025-26"
+   ]
+  },
+  {
+   "club": "Swampdonkeys",
+   "team_entries": 1,
+   "divisions": [
+    "U16 Girls"
+   ],
+   "teams": [
+    "Swampdonkeys"
+   ]
+  },
+  {
+   "club": "NMBA Edge",
+   "team_entries": 1,
+   "divisions": [
+    "U17 Boys"
+   ],
+   "teams": [
+    "NMBA Edge"
+   ]
+  },
+  {
+   "club": "Jump Basketball West",
+   "team_entries": 1,
+   "divisions": [
+    "U17 Boys"
+   ],
+   "teams": [
+    "Jump Basketball West"
+   ]
+  },
+  {
+   "club": "GBA Jamal",
+   "team_entries": 1,
+   "divisions": [
+    "U17 Boys"
+   ],
+   "teams": [
+    "GBA Jamal"
+   ]
+  },
+  {
+   "club": "OSS Rising Stars",
+   "team_entries": 1,
+   "divisions": [
+    "U17 Boys"
+   ],
+   "teams": [
+    "OSS Rising Stars - Lairson"
+   ]
+  },
+  {
+   "club": "Gibbons",
+   "team_entries": 1,
+   "divisions": [
+    "U17 Boys"
+   ],
+   "teams": [
+    "U17 Boys - Gibbons"
+   ]
+  },
+  {
+   "club": "Brantford CYO Hawks - - Esposito/Dawson",
+   "team_entries": 1,
+   "divisions": [
+    "U17 Boys"
+   ],
+   "teams": [
+    "Brantford CYO Hawks - U17 - Esposito/Dawson"
+   ]
+  },
+  {
+   "club": "Sudbury Storm - Coach Josh -26",
+   "team_entries": 1,
+   "divisions": [
+    "U17 Boys"
+   ],
+   "teams": [
+    "Sudbury Storm - U17 Boys Coach Josh 2025-26"
+   ]
+  },
+  {
+   "club": "Kingston Impact- Wallace",
+   "team_entries": 1,
+   "divisions": [
+    "U17 Boys"
+   ],
+   "teams": [
+    "Kingston Impact- Wallace"
+   ]
+  },
+  {
+   "club": "SBA Team Andrade",
+   "team_entries": 1,
+   "divisions": [
+    "U17 Boys"
+   ],
+   "teams": [
+    "SBA Team Andrade"
+   ]
+  },
+  {
+   "club": "WOODBRIDGE LIONS U17B",
+   "team_entries": 1,
+   "divisions": [
+    "U17 Boys"
+   ],
+   "teams": [
+    "WOODBRIDGE LIONS U17B"
+   ]
+  },
+  {
+   "club": "TTT U17 Boys",
+   "team_entries": 1,
+   "divisions": [
+    "U17 Boys"
+   ],
+   "teams": [
+    "TTT U17 Boys"
+   ]
+  },
+  {
+   "club": "CBA Varsity U17 Boys",
+   "team_entries": 1,
+   "divisions": [
+    "U17 Boys"
+   ],
+   "teams": [
+    "CBA Varsity U17 Boys"
+   ]
+  },
+  {
+   "club": "ONL U17 Boys - Mostafa",
+   "team_entries": 1,
+   "divisions": [
+    "U17 Boys"
+   ],
+   "teams": [
+    "ONL U17 Boys - Mostafa"
+   ]
+  },
+  {
+   "club": "YNBA Avengers U17B McWilliams",
+   "team_entries": 1,
+   "divisions": [
+    "U17 Boys"
+   ],
+   "teams": [
+    "YNBA Avengers U17B McWilliams"
+   ]
+  },
+  {
+   "club": "Barrie Royals Chapler",
+   "team_entries": 1,
+   "divisions": [
+    "U17 Boys"
+   ],
+   "teams": [
+    "Barrie Royals U17 Boys Chapler"
+   ]
+  },
+  {
+   "club": "Ancaster Magic Gray",
+   "team_entries": 1,
+   "divisions": [
+    "U17 Boys"
+   ],
+   "teams": [
+    "Ancaster Magic U17 Boys Gray"
+   ]
+  },
+  {
+   "club": "Breakdown Impowerful",
+   "team_entries": 1,
+   "divisions": [
+    "U17 Boys"
+   ],
+   "teams": [
+    "U17 Breakdown Impowerful"
+   ]
+  },
+  {
+   "club": "Malton Sting Basketball- U17B",
+   "team_entries": 1,
+   "divisions": [
+    "U17 Boys"
+   ],
+   "teams": [
+    "Malton Sting Basketball- U17B"
+   ]
+  },
+  {
+   "club": "GLADIATORS - DAVE",
+   "team_entries": 1,
+   "divisions": [
+    "U17 Boys"
+   ],
+   "teams": [
+    "GLADIATORS - DAVE"
+   ]
+  },
+  {
+   "club": "GM JOHNSTON",
+   "team_entries": 1,
+   "divisions": [
+    "U17 Boys"
+   ],
+   "teams": [
+    "GM U17 BOYS JOHNSTON"
+   ]
+  },
+  {
+   "club": "Pelham Panthers - Team Sanecki",
+   "team_entries": 1,
+   "divisions": [
+    "U17 Boys"
+   ],
+   "teams": [
+    "Pelham Panthers - Team Sanecki"
+   ]
+  },
+  {
+   "club": "Jump Basketball East",
+   "team_entries": 1,
+   "divisions": [
+    "U17 Boys"
+   ],
+   "teams": [
+    "Jump Basketball East"
+   ]
+  },
+  {
+   "club": "Guelph CYO",
+   "team_entries": 1,
+   "divisions": [
+    "U17 Boys"
+   ],
+   "teams": [
+    "Guelph CYO"
+   ]
+  },
+  {
+   "club": "Game 6 Sports",
+   "team_entries": 1,
+   "divisions": [
+    "U17 Boys"
+   ],
+   "teams": [
+    "Game 6 Sports U17"
+   ]
+  },
+  {
+   "club": "KW Viper Perrott",
+   "team_entries": 1,
+   "divisions": [
+    "U17 Boys"
+   ],
+   "teams": [
+    "KW Viper U17 Boys Perrott"
+   ]
+  },
+  {
+   "club": "Vaughan Panthers - Coach Daniele",
+   "team_entries": 1,
+   "divisions": [
+    "U17 Boys"
+   ],
+   "teams": [
+    "Vaughan Panthers U17 Boys - Coach Daniele"
+   ]
+  },
+  {
+   "club": "Ancaster Magic McEwen",
+   "team_entries": 1,
+   "divisions": [
+    "U17 Boys"
+   ],
+   "teams": [
+    "Ancaster Magic U17 Boys McEwen"
+   ]
+  },
+  {
+   "club": "Haldimand Huskies Tindale",
+   "team_entries": 1,
+   "divisions": [
+    "U17 Boys"
+   ],
+   "teams": [
+    "Haldimand Huskies U17 Tindale"
+   ]
+  },
+  {
+   "club": "Next Generation Basketball Club - Monzon/Rego",
+   "team_entries": 1,
+   "divisions": [
+    "U17 Boys"
+   ],
+   "teams": [
+    "Next Generation Basketball Club U17 Boys - Monzon/Rego"
+   ]
+  },
+  {
+   "club": "U17B Trailblazers",
+   "team_entries": 1,
+   "divisions": [
+    "U17 Boys"
+   ],
+   "teams": [
+    "U17B Trailblazers"
+   ]
+  },
+  {
+   "club": "Grassroots Elite Canada",
+   "team_entries": 1,
+   "divisions": [
+    "U17 Boys"
+   ],
+   "teams": [
+    "Grassroots Elite Canada"
+   ]
+  },
+  {
+   "club": "SBA Team Patterson",
+   "team_entries": 1,
+   "divisions": [
+    "U17 Boys"
+   ],
+   "teams": [
+    "SBA Team Patterson"
+   ]
+  },
+  {
+   "club": "GLADIATORS BRAD",
+   "team_entries": 1,
+   "divisions": [
+    "U17 Boys"
+   ],
+   "teams": [
+    "GLADIATORS U17 BOYS BRAD"
+   ]
+  },
+  {
+   "club": "ABA TORONTO KNIGHTS (Albany Avenue Basketball Inc.)",
+   "team_entries": 1,
+   "divisions": [
+    "U17 Boys"
+   ],
+   "teams": [
+    "ABA TORONTO KNIGHTS (Albany Avenue Basketball Inc.)"
+   ]
+  },
+  {
+   "club": "Guelph Knights Red",
+   "team_entries": 1,
+   "divisions": [
+    "U17 Boys"
+   ],
+   "teams": [
+    "Guelph Knights Red - U17 Nelson"
+   ]
+  },
+  {
+   "club": "SBA Team Heraldo",
+   "team_entries": 1,
+   "divisions": [
+    "U17 Boys"
+   ],
+   "teams": [
+    "SBA Team Heraldo"
+   ]
+  },
+  {
+   "club": "PBAA Academy",
+   "team_entries": 1,
+   "divisions": [
+    "U17 Girls"
+   ],
+   "teams": [
+    "PBAA Senior Girls Academy"
+   ]
+  },
+  {
+   "club": "Brantford CYO -Towers",
+   "team_entries": 1,
+   "divisions": [
+    "U17 Girls"
+   ],
+   "teams": [
+    "Brantford CYO U17-Towers"
+   ]
+  },
+  {
+   "club": "London CYO",
+   "team_entries": 1,
+   "divisions": [
+    "U17 Girls"
+   ],
+   "teams": [
+    "London CYO U17 Girls"
+   ]
+  },
+  {
+   "club": "Brampton Warriors U17G- Ganza",
+   "team_entries": 1,
+   "divisions": [
+    "U17 Girls"
+   ],
+   "teams": [
+    "Brampton Warriors U17G- Ganza"
+   ]
+  },
+  {
+   "club": "TTT U17 Girls",
+   "team_entries": 1,
+   "divisions": [
+    "U17 Girls"
+   ],
+   "teams": [
+    "TTT U17 Girls"
+   ]
+  },
+  {
+   "club": "KW Viper Scott",
+   "team_entries": 1,
+   "divisions": [
+    "U17 Girls"
+   ],
+   "teams": [
+    "KW Viper U17 Girls Scott"
+   ]
+  },
+  {
+   "club": "U17G Trailblazers",
+   "team_entries": 1,
+   "divisions": [
+    "U17 Girls"
+   ],
+   "teams": [
+    "U17G Trailblazers"
+   ]
+  },
+  {
+   "club": "Oshawa Strikers",
+   "team_entries": 1,
+   "divisions": [
+    "U17 Girls"
+   ],
+   "teams": [
+    "Oshawa Strikers U17"
+   ]
+  },
+  {
+   "club": "Peterborough Power Butcher",
+   "team_entries": 1,
+   "divisions": [
+    "U17 Girls"
+   ],
+   "teams": [
+    "Peterborough Power Butcher"
+   ]
+  },
+  {
+   "club": "Pelham Panthers - Team Birrell",
+   "team_entries": 1,
+   "divisions": [
+    "U17 Girls"
+   ],
+   "teams": [
+    "Pelham Panthers - Team Birrell"
+   ]
+  },
+  {
+   "club": "Flamborough Fire Sol",
+   "team_entries": 1,
+   "divisions": [
+    "U17 Girls"
+   ],
+   "teams": [
+    "Flamborough Fire U17 Sol"
+   ]
+  },
+  {
+   "club": "Eastern Basketball Association",
+   "team_entries": 1,
+   "divisions": [
+    "U17 Girls"
+   ],
+   "teams": [
+    "Eastern Basketball Association"
+   ]
+  },
+  {
+   "club": "Flamborough Fire",
+   "team_entries": 1,
+   "divisions": [
+    "U17 Girls"
+   ],
+   "teams": [
+    "Flamborough Fire (Kerekesch)"
+   ]
+  },
+  {
+   "club": "SBA Team Manalo",
+   "team_entries": 1,
+   "divisions": [
+    "U17 Girls"
+   ],
+   "teams": [
+    "SBA Team Manalo"
+   ]
+  },
+  {
+   "club": "Grimsby Grizzlies Elmer",
+   "team_entries": 1,
+   "divisions": [
+    "U17 Girls"
+   ],
+   "teams": [
+    "Grimsby Grizzlies U17 Elmer"
+   ]
+  },
+  {
+   "club": "London 86ers- Spears",
+   "team_entries": 1,
+   "divisions": [
+    "U17 Girls"
+   ],
+   "teams": [
+    "London 86ers- Spears"
+   ]
+  },
+  {
+   "club": "Cambridge Basketball- Crawford",
+   "team_entries": 1,
+   "divisions": [
+    "U17 Girls"
+   ],
+   "teams": [
+    "Cambridge Basketball- Crawford"
+   ]
+  },
+  {
+   "club": "DK U19 Men",
+   "team_entries": 1,
+   "divisions": [
+    "U19 Men"
+   ],
+   "teams": [
+    "DK U19 Men"
+   ]
+  },
+  {
+   "club": "Sudbury Storm - - Coach Tony -26",
+   "team_entries": 1,
+   "divisions": [
+    "U19 Men"
+   ],
+   "teams": [
+    "Sudbury Storm - U19 Men - Coach Tony 2025-26"
+   ]
+  },
+  {
+   "club": "Downtowns Finest",
+   "team_entries": 1,
+   "divisions": [
+    "U19 Men"
+   ],
+   "teams": [
+    "Downtowns Finest"
+   ]
+  },
+  {
+   "club": "Ancaster Magic Francis",
+   "team_entries": 1,
+   "divisions": [
+    "U19 Men"
+   ],
+   "teams": [
+    "Ancaster Magic U19 Men Francis"
+   ]
+  },
+  {
+   "club": "Blessed Sacrament",
+   "team_entries": 1,
+   "divisions": [
+    "U19 Men"
+   ],
+   "teams": [
+    "Blessed Sacrament"
+   ]
+  },
+  {
+   "club": "Pelham Panthers - Team Feor",
+   "team_entries": 1,
+   "divisions": [
+    "U19 Men"
+   ],
+   "teams": [
+    "Pelham Panthers - Team Feor"
+   ]
+  },
+  {
+   "club": "Pelham Panthers - Team Shy",
+   "team_entries": 1,
+   "divisions": [
+    "U19 Men"
+   ],
+   "teams": [
+    "Pelham Panthers - Team Shy"
+   ]
+  },
+  {
+   "club": "CBA Varsity U19 Boys",
+   "team_entries": 1,
+   "divisions": [
+    "U19 Men"
+   ],
+   "teams": [
+    "CBA Varsity U19 Boys"
+   ]
+  },
+  {
+   "club": "KW Viper Randell",
+   "team_entries": 1,
+   "divisions": [
+    "U19 Men"
+   ],
+   "teams": [
+    "KW Viper U19 Men Randell"
+   ]
+  },
+  {
+   "club": "CK Wildcats",
+   "team_entries": 1,
+   "divisions": [
+    "U19 Men"
+   ],
+   "teams": [
+    "CK Wildcats"
+   ]
+  },
+  {
+   "club": "Collingwood Trailblazers U19M",
+   "team_entries": 1,
+   "divisions": [
+    "U19 Men"
+   ],
+   "teams": [
+    "Collingwood Trailblazers U19M"
+   ]
+  },
+  {
+   "club": "TTT U19 Boys",
+   "team_entries": 1,
+   "divisions": [
+    "U19 Men"
+   ],
+   "teams": [
+    "TTT U19 Boys"
+   ]
+  },
+  {
+   "club": "WOODBRIDGE LIONS U19M",
+   "team_entries": 1,
+   "divisions": [
+    "U19 Men"
+   ],
+   "teams": [
+    "WOODBRIDGE LIONS U19M"
+   ]
+  },
+  {
+   "club": "Ancaster Magic Ransom",
+   "team_entries": 1,
+   "divisions": [
+    "U19 Men"
+   ],
+   "teams": [
+    "Ancaster Magic U19 Men Ransom"
+   ]
+  },
+  {
+   "club": "SBA Team Matsugu",
+   "team_entries": 1,
+   "divisions": [
+    "U19 Men"
+   ],
+   "teams": [
+    "SBA Team Matsugu"
+   ]
+  },
+  {
+   "club": "Brantford CYO Hawks - - DeJonge",
+   "team_entries": 1,
+   "divisions": [
+    "U19 Men"
+   ],
+   "teams": [
+    "Brantford CYO Hawks - U19 - DeJonge"
+   ]
+  },
+  {
+   "club": "GLADIATORS ANDRE",
+   "team_entries": 1,
+   "divisions": [
+    "U19 Men"
+   ],
+   "teams": [
+    "GLADIATORS U19 MENS ANDRE"
+   ]
+  },
+  {
+   "club": "YSSK Jameer",
+   "team_entries": 1,
+   "divisions": [
+    "U19 Men"
+   ],
+   "teams": [
+    "YSSK U19 Men Jameer"
+   ]
+  },
+  {
+   "club": "KW Viper Streit",
+   "team_entries": 1,
+   "divisions": [
+    "U19 Men"
+   ],
+   "teams": [
+    "KW Viper U19 Men Streit"
+   ]
+  },
+  {
+   "club": "Brooklin Elite",
+   "team_entries": 1,
+   "divisions": [
+    "U19 Men"
+   ],
+   "teams": [
+    "Brooklin Elite"
+   ]
+  },
+  {
+   "club": "MUMBA ELITE - MACDONALD",
+   "team_entries": 1,
+   "divisions": [
+    "U19 Men"
+   ],
+   "teams": [
+    "MUMBA ELITE - MACDONALD"
+   ]
+  },
+  {
+   "club": "SBA Team Busby",
+   "team_entries": 1,
+   "divisions": [
+    "U19 Women"
+   ],
+   "teams": [
+    "SBA Team Busby"
+   ]
+  },
+  {
+   "club": "Timmins Selects",
+   "team_entries": 1,
+   "divisions": [
+    "U19 Women"
+   ],
+   "teams": [
+    "Timmins Selects - U19 Girls"
+   ]
+  },
+  {
+   "club": "GCBA - Rob Lavoie",
+   "team_entries": 1,
+   "divisions": [
+    "U19 Women"
+   ],
+   "teams": [
+    "GCBA U19 - Rob Lavoie"
+   ]
+  },
+  {
+   "club": "U19W Trailblazers",
+   "team_entries": 1,
+   "divisions": [
+    "U19 Women"
+   ],
+   "teams": [
+    "U19W Trailblazers"
+   ]
+  },
+  {
+   "club": "TTT U19 Girls",
+   "team_entries": 1,
+   "divisions": [
+    "U19 Women"
+   ],
+   "teams": [
+    "TTT U19 Girls"
+   ]
+  },
+  {
+   "club": "Woodbridge Lions - U19W YOUSEF",
+   "team_entries": 1,
+   "divisions": [
+    "U19 Women"
+   ],
+   "teams": [
+    "Woodbridge Lions - U19W YOUSEF"
+   ]
+  },
+  {
+   "club": "St. Thomas Shock - G-Elite",
+   "team_entries": 1,
+   "divisions": [
+    "U19 Women"
+   ],
+   "teams": [
+    "St. Thomas Shock - G-Elite - U19 Women"
+   ]
+  },
+  {
+   "club": "Pelham Panthers - Team Luciani",
+   "team_entries": 1,
+   "divisions": [
+    "U19 Women"
+   ],
+   "teams": [
+    "Pelham Panthers - Team Luciani"
+   ]
+  },
+  {
+   "club": "Belleville Spirits - McGrath",
+   "team_entries": 1,
+   "divisions": [
+    "U19 Women"
+   ],
+   "teams": [
+    "Belleville Spirits - U19 McGrath"
+   ]
+  },
+  {
+   "club": "Barrie Royals Wylie",
+   "team_entries": 1,
+   "divisions": [
+    "U19 Women"
+   ],
+   "teams": [
+    "Barrie Royals U19 Women Wylie"
+   ]
+  },
+  {
+   "club": "Kingston Impact - U19W Stevenson",
+   "team_entries": 1,
+   "divisions": [
+    "U19 Women"
+   ],
+   "teams": [
+    "Kingston Impact - U19W Stevenson"
+   ]
+  },
+  {
+   "club": "Brampton Warriors u19G- Graham",
+   "team_entries": 1,
+   "divisions": [
+    "U19 Women"
+   ],
+   "teams": [
+    "Brampton Warriors u19G- Graham"
+   ]
+  },
+  {
+   "club": "YSSK Marchione",
+   "team_entries": 1,
+   "divisions": [
+    "U19 Women"
+   ],
+   "teams": [
+    "YSSK U19 Women Marchione"
+   ]
+  },
+  {
+   "club": "London CYO Lambert",
+   "team_entries": 1,
+   "divisions": [
+    "U19 Women"
+   ],
+   "teams": [
+    "London CYO U19 Lambert"
+   ]
+  },
+  {
+   "club": "Burloak Elite Darcy",
+   "team_entries": 1,
+   "divisions": [
+    "U19 Women"
+   ],
+   "teams": [
+    "U19 Burloak Elite Darcy"
+   ]
+  },
+  {
+   "club": "KW Viper Dunkley",
+   "team_entries": 1,
+   "divisions": [
+    "U19 Women"
+   ],
+   "teams": [
+    "KW Viper U19 Women Dunkley"
+   ]
+  },
+  {
+   "club": "Inter-City Saints Vasquez",
+   "team_entries": 1,
+   "divisions": [
+    "U19 Women"
+   ],
+   "teams": [
+    "Inter-City Saints Vasquez"
+   ]
+  }
+ ]
+}

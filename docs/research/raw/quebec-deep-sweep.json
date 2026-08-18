@@ -1,0 +1,203 @@
+{
+  "investigated_at": "2026-08-14",
+  "method_note": "Public web research only (WebSearch + WebFetch/curl on public pages). No logins bypassed, no bot-walls circumvented. Deliberately did NOT re-scrape the three sources already in hand (basketball.qc.ca 'réseau basketball Québec' regional pages, the regional PDF registries, and the clubs_et_organisations page) beyond spot-checking that they still resolve. All new club names below were surfaced via the angles in the brief: MBL full roster, Circuit/Ligue Basketball Québec, Quebec Youth Basketball League, municipal/loisirs directories for named zero-club municipalities, and French-language private-academy searches.",
+  "directories": [
+    {
+      "name": "Basketball Québec — Où Jouer? / réseau basketball Québec regional pages",
+      "url": "https://www.basketball.qc.ca/fr/page/reseau_basketball_quebec/montreal.html (and 16 sibling regional pages: abitibi, centre-du-quebec, quebecchaudiere-appalaches, cote-nord, est-du-quebec, estrie, lac_st-louis, lanaudiere, laurentides, laval, mauricie, outaouais, richelieu-yamaska, rive-sud, saguenay_lac_saint-jean, sud-ouest)",
+      "access": "public",
+      "yields_count": 56,
+      "notes": "Already in hand per brief (~56 clubs) — not re-scraped in depth. Confirmed the region URLs still resolve (HTTP 200) and are static HTML (no JS map). The standalone 'ou_jouer.html' page cited in the brief now 404s; the live entry point is the region list under /fr/page/organisation_clubassociation.html. No Google My Maps iframe found anywhere on basketball.qc.ca — checked ou_jouer.html, organisation_clubassociation.html, and the Montréal regional page's raw HTML for 'google.com/maps/d/'; none present. Basketball Québec does not appear to run an interactive map."
+    },
+    {
+      "name": "Ligue de Basketball de Montréal (MBL) — Organizations & Teams pages",
+      "url": "https://www.basketballmontreal.org/en/page/organization.html",
+      "access": "public",
+      "yields_count": 21,
+      "notes": "Full member roster extracted (AAA/AA/Girls divisions combined): Brookwood, Chateauguay Ravens (CBA Ravens), DBC Hawks/Bobcats (=Dexter's Basketball Club, already known), DC Blues (Downtown Community Blues), LaSalle Leaders, Laval (Nobel Élite program of Association Basketball Laval — NEW distinct program name), Monarques, Page (PAGÉ Basketball), Parc Ex Knights, St Jean Riverains, Sun Youth Hornets, Tornades, WILBA, CBO Cavaliers, CSL Warriors, Revolution, St-Hubert Lynx, St-Laurent Lynx, Uptown Huskies, YMHA Wolves. 19 of 21 were already in the census under different capitalizations/aliases — real value-add here was recovering their ACTUAL websites from page hrefs (cbaravens.com, dod-basketball.com, tornades.org, wilba.net, basketlaval.ca, brookwoodbasketball.org, cslwarriors.ca, basketballstlaurent.com, leadersbasketball.com, downtowncommunityblues.org, monarquesmtl.com, pagebasketball.com, sunyouth.org, revolutionbasket.com, cavaliersbasketballouest.ca), which the existing census rows mostly lacked."
+    },
+    {
+      "name": "Circuit Basketball Québec (CBQ) — kreezee-sports.com platform",
+      "url": "https://circuit-basketball-quebec.kreezee-sports.com/",
+      "access": "blocked",
+      "yields_count": 12,
+      "notes": "AngularJS single-page app — team/organization data loads via an internal API that could not be discovered from the static bundle (no public REST endpoint found; /api/teams and /api/organizations both 404). Front page and /equipes, /classement routes return only an empty app shell via curl/WebFetch. WORKAROUND: individual team pages ARE indexed by search engines with real titles (Google cache), so 'site:circuit-basketball-quebec.kreezee-sports.com' searches surfaced team names: CB Drummondville, Escadron Sport-Études, É.S Henri-Bourassa, Noir et Or É.S. De Mortagne, Fondation Fusion Élite, Vortex É.S.Gérard-Fillion, Pionniers É.S. Polybel, Géants Polyvalente St-Jérôme, DV Élite (school-tied, likely École secondaire Dalbé-Viau), Collège NDL, Club de Basketball les Astéries, École secondaire Dalbé-Viau, Association régionale de basketball Laval. Basketball Québec states the CBQ has 57 organizations / 220+ teams province-wide (2025-2026), but only this Montréal/Laurentides-heavy subset is search-indexed — the rest (including any Québec City, Sherbrooke, Gatineau, Saguenay entries) could not be enumerated without a login or API access. All named teams here map to clubs/schools already in the census."
+    },
+    {
+      "name": "Ligue Basketball Québec (LBQ) — kreezee-sports.com platform",
+      "url": "https://ligue-basketball-quebec.kreezee-sports.com/",
+      "access": "blocked",
+      "yields_count": 6,
+      "notes": "Same JS-app limitation as CBQ (same vendor). Search-indexed team pages found: MTG Basketball, BMAA/NMAA Club de Basketball de Montreal-Nord, NFA LANO, JFAAA Club de basket Révolution des Laurentides, BFA Basketball Boucherville. All already known. LBQ has 3 sections (Montérégie, Rive-Nord/Montréal, Provinciale) per basketball.qc.ca but no full team list is publicly enumerable."
+    },
+    {
+      "name": "Quebec Youth Basketball League (QYBL / LJBQ)",
+      "url": "https://qybl.ca/",
+      "access": "public",
+      "yields_count": 13,
+      "notes": "Independent youth league (Montréal + Rive-Sud divisions), NOT run by Basketball Québec/MBL/CBQ — a genuinely separate layer. 2026-2027 team list: Zone Basketball Academy, CB Elite, FCAWI (known), Gilas (known), DD Basketball (unconfirmed elsewhere — possibly a naming variant, not verified), Bluehounds (known), Cobras de Boucherville (= Basketball Boucherville, known), Lions de Roussillon (= ABR Lions, known), Vortex (school-tied, see CBQ), Wexl (single mention only, could not corroborate — flagged low-confidence, not added as a club), Sonic de St-Amable, AGBU, Ace Warriors (single mention only, could not corroborate). Contact: info@qybl.ca."
+    },
+    {
+      "name": "MaCommunaute.ca / arrondissement.com — Quebec community-organization directory (bottin des organismes)",
+      "url": "https://macommunaute.ca/bottin-des-organismes/ + https://macommunaute.ca/thematiques/sports-loisirs/",
+      "access": "public",
+      "yields_count": 8,
+      "notes": "Broad province-wide 'bottin' covering Montréal boroughs, Laval, and beyond (arrondissement.com now 301-redirects into this same platform). Useful as a cross-check but its on-site search (?s=, ?mc_search=) does not actually filter — confirmed by identical irrelevant result sets across three different param names. Had to rely on Google's 'site:' search instead, which surfaced: Club de Basket-Ball de Saint-Léonard, Basket-Ball Les Lynx de St-Hubert, Ligue de basketball extérieure de l'Ouest-de-l'Île (=WIOBL), Association régionale de basketball de Laval, Association de basketball West Island Lakers (=WILBA), Fédération de basketball du Québec, Association de basketball de Saint-Bruno, DOD-Basketball — all already known. No new clubs surfaced from this source."
+    },
+    {
+      "name": "Zone Loisir Montérégie — member list",
+      "url": "https://zlm.qc.ca/a-propos/nos-membres/",
+      "access": "public",
+      "yields_count": 1,
+      "notes": "Full member directory (Classe A/B/C + associate, ~200 orgs across Montérégie) fetched in full. Only one basketball entry: 'Club de basketball Les Tornades' (Longueuil, already known). Confirms Montérégie's municipal recreation network does not itself run basketball programs beyond the handful of clubs already in the census — most Montérégie towns route kids through regional clubs (Tornades, CBO/Cavaliers, DBC) rather than town-run programs."
+    },
+    {
+      "name": "Municipal loisirs sites for named zero-club municipalities",
+      "url": "mirabel.ca/clubs-sportifs, mirabel.ca/carte-interactive/loisirs/basketball, ville.valleyfield.qc.ca/organismes-et-clubs-sportifs, ville.valleyfield.qc.ca/basketball, rouyn-noranda.ca (via search), ville.vaudreuil-dorion.qc.ca",
+      "access": "public",
+      "yields_count": 1,
+      "notes": "Mirabel: no basketball club listed in the city's sports-club directory or interactive recreation map — genuine gap, only school teams (Cyclones, École secondaire de Mirabel) exist. Salaberry-de-Valleyfield: full sports-org directory fetched — the ONLY basketball entry is a wheelchair/adapted program (Club de basketball en fauteuil roulant, via Sports inclusifs Sud-Ouest); no able-bodied youth club is town-run. Local kids are served by CBO/Cavaliers Île-Perrot (Vaudreuil-Dorion/L'Île-Perrot), which already trains in Valleyfield/Coteau-du-Lac gyms per local press. Vaudreuil-Dorion: no independent club beyond CBO; a 'Vaudreuil Basketball' Facebook page exists but could not be verified beyond its existence (Facebook restricts full content without login). Rouyn-Noranda: genuine new find, Basketball Rouyn-Noranda (basketballrn.ca) — confirmed live site + Facebook page. Saint-Georges (Beauce): no town-run club found; only lead is an unverified Facebook group 'Club de basketball de Beauce' (page content not accessible without login) plus the Cégep Beauce-Appalaches collegiate team (not a youth club)."
+    },
+    {
+      "name": "Private academy websites (French-language search sweep)",
+      "url": "cbelite.ca, aslouis.qc.ca/programmes/basketball, zonebasketball.ca, mbsbasketball.ca, embq.qc.ca",
+      "access": "public",
+      "yields_count": 3,
+      "notes": "New: CB Elite (Montréal AAU program, cbelite.ca), Académie Saint-Louis (Québec City, Études-sports basketball, aslouis.qc.ca), Académie de Basketball Zone (zonebasketball.ca, city unconfirmed — plays in QYBL Montréal/Rive-Sud divisions). Re-confirmed with live websites (already known, no longer new): MBS Basketball / École de basketball de Modibo (mbsbasketball.ca, St. Patrick's High School Québec City) and École de mini-basketball de Québec (embq.qc.ca)."
+    },
+    {
+      "name": "Facebook groups/pages surfaced as leads",
+      "url": "facebook.com/groups/165606103514972 (Club de basketball de Beauce), facebook.com/p/Vaudreuil-Basketball-61579277767264",
+      "access": "login_required",
+      "yields_count": 0,
+      "notes": "Facebook restricts group/page content to logged-in users beyond the title and a short snippet — could not verify current activity, contact info, or real club name beyond what appeared in the search snippet. Reported as leads only, not confirmed clubs."
+    },
+    {
+      "name": "Jr. NBA Canada club directory",
+      "url": "https://www.jrnba.ca/club-directory/",
+      "access": "dead",
+      "yields_count": 0,
+      "notes": "301-redirects then 404s. A cached search snippet referenced 'YMCA Quebec - NDG' as a directory entry but the live page could not be reached to confirm or expand the list."
+    },
+    {
+      "name": "NBA/Jr.NBA league finder (ecrew.ca)",
+      "url": "http://nba.ecrew.ca/index.php?type=RE&loc=fr&doprovince=QC&v=m",
+      "access": "dead",
+      "yields_count": 0,
+      "notes": "Domain does not resolve (DNS failure) — dead tool, likely decommissioned."
+    },
+    {
+      "name": "\"Clubs mandataires sportifs\" list, Centre de services scolaire des Patriotes",
+      "url": "https://demortagne.cssp.gouv.qc.ca/files/2022/09/Liste-des-clubs-mandataires-sportifs-2022-23-1-1.pdf",
+      "access": "dead",
+      "yields_count": 0,
+      "notes": "404 — the 2022-23 PDF has been taken down/moved. This is a promising angle (each Quebec centre de services scolaire designates 'mandataire' sports clubs for its sport-études/concentration programs, which would surface private academies a federation-level sweep misses) but this specific document could not be recovered. See next_best_sources."
+    },
+    {
+      "name": "Canada Basketball national clubs page",
+      "url": "https://www.basketball.ca/en/clubs",
+      "access": "public",
+      "yields_count": 0,
+      "notes": "No club-level directory or province filter — only links out to provincial federations (i.e., back to Basketball Québec). Dead end for enumeration."
+    }
+  ],
+  "clubs": [
+    {
+      "name": "Nobel Élite (Association Basketball Laval — 'Laval Nobel' program)",
+      "city": "Laval",
+      "region": "Laval",
+      "type": "community",
+      "website": "http://www.basketlaval.ca/",
+      "email": "",
+      "phone": "",
+      "leagues": "Ligue de Basketball de Montréal (MBL) — AAA/AA/Girls",
+      "evidence_url": "https://www.basketballmontreal.org/en/page/teams/laval.html"
+    },
+    {
+      "name": "Basketball Rouyn-Noranda",
+      "city": "Rouyn-Noranda",
+      "region": "Abitibi-Témiscamingue",
+      "type": "community",
+      "website": "https://www.basketballrn.ca/",
+      "email": "basketballrouynnoranda@gmail.com",
+      "phone": "",
+      "leagues": "",
+      "evidence_url": "https://www.basketballrn.ca/"
+    },
+    {
+      "name": "CB Elite",
+      "city": "Montréal",
+      "region": "Greater Montréal",
+      "type": "private academy",
+      "website": "https://www.cbelite.ca/",
+      "email": "",
+      "phone": "",
+      "leagues": "Quebec Youth Basketball League (QYBL); described as a Québec AAU program",
+      "evidence_url": "https://www.cbelite.ca/"
+    },
+    {
+      "name": "Académie Saint-Louis — programme Études-sports Basketball",
+      "city": "Québec",
+      "region": "Capitale-Nationale",
+      "type": "school-affiliated",
+      "website": "https://aslouis.qc.ca/programmes/basketball/",
+      "email": "",
+      "phone": "418-845-5121",
+      "leagues": "RSEQ interscolaire (D1-D4)",
+      "evidence_url": "https://aslouis.qc.ca/programmes/basketball/"
+    },
+    {
+      "name": "Académie de Basketball Zone / Zone Basketball Academy",
+      "city": "Greater Montréal (exact city not published)",
+      "region": "Greater Montréal — Rive-Sud",
+      "type": "private academy",
+      "website": "https://zonebasketball.ca/",
+      "email": "zonebasketball@outlook.com",
+      "phone": "",
+      "leagues": "Quebec Youth Basketball League (QYBL/LJBQ)",
+      "evidence_url": "https://zonebasketball.ca/"
+    },
+    {
+      "name": "Sonic de St-Amable",
+      "city": "Saint-Amable",
+      "region": "Montérégie",
+      "type": "community",
+      "website": "",
+      "email": "",
+      "phone": "",
+      "leagues": "Quebec Youth Basketball League (QYBL)",
+      "evidence_url": "https://qybl.ca/"
+    },
+    {
+      "name": "AGBU basketball (Armenian General Benevolent Union)",
+      "city": "Montréal (unconfirmed)",
+      "region": "Greater Montréal",
+      "type": "community",
+      "website": "",
+      "email": "",
+      "phone": "",
+      "leagues": "Quebec Youth Basketball League (QYBL)",
+      "evidence_url": "https://qybl.ca/"
+    },
+    {
+      "name": "Club de basketball de Beauce",
+      "city": "Saint-Georges",
+      "region": "Chaudière-Appalaches",
+      "type": "community",
+      "website": "",
+      "email": "",
+      "phone": "",
+      "leagues": "",
+      "evidence_url": "https://www.facebook.com/groups/165606103514972/"
+    }
+  ],
+  "coverage_assessment": "The 169-club Quebec census is still a significant undercount, but the shortfall is concentrated in a specific place: private/independent academies and hyper-local town programs that never touch a federation registry, not in undiscovered regional associations. This sweep confirmed the federation layer (Basketball Québec regional pages, CBQ, LBQ) is largely already captured — the JS-rendered kreezee-sports.com platform behind CBQ/LBQ hides its full 57-organization/220-team roster behind an app shell with no public API, and the slice recoverable via search-engine indexing maps almost entirely onto clubs the census already has. The one genuinely new competitive layer found is QYBL/LJBQ (qybl.ca), an independent Montréal/Rive-Sud youth league outside the Basketball Québec/MBL/CBQ family entirely — its 13-team roster added several new names (Sonic de St-Amable, AGBU, plus low-confidence Wexl/Ace Warriors/DD Basketball that could not be corroborated elsewhere). Municipal-directory scraping (the angle expected to be highest-yield) mostly proved that the five named zero-club municipalities are REAL gaps, not research gaps: Mirabel and Salaberry-de-Valleyfield have no dedicated youth basketball club at all (confirmed via their own sports-club directories), Vaudreuil-Dorion is served by the already-known CBO/Cavaliers rather than its own club, and only Rouyn-Noranda yielded a genuine new find (Basketball Rouyn-Noranda). This suggests the true province-wide club count is probably in the 200-260 range rather than dramatically higher than 169 — Quebec's basketball infrastructure appears to be real but thin outside Greater Montréal/Laval/Longueuil, unlike Ontario where the gap was concentrated in one undiscovered provincial registry. The remaining undercount likely lives in three places this sweep could only partially reach: (1) each Centre de services scolaire's own 'mandataire sportif' list for sport-études programs (the one document found was 404; there are ~72 CSS/CSSP boards province-wide, each potentially naming 1-3 basketball mandataires), (2) small single-city private academies with no social presence beyond Instagram (weak signal, hard to search), and (3) the un-indexed remainder of the CBQ/LBQ team rosters. Regions with almost no independent verification in this sweep, positive or negative: Bas-Saint-Laurent (beyond Rimouski, already known), Gaspésie–Îles-de-la-Madeleine, Côte-Nord beyond Baie-Comeau, and most of Abitibi-Témiscamingue beyond Rouyn-Noranda — these were searched but returned only CEGEP/school programs, not community clubs, which may reflect either a real absence of organized youth basketball or simply weak web presence in low-population regions.",
+  "next_best_sources": [
+    "Enumerate each of Quebec's ~72 Centres de services scolaires' own 'programme sport-études / concentration basketball / club mandataire' pages individually — Basketball Québec's own 'Liste des programmes Sport-études et Concentration' page (basketball.qc.ca/fr/page/programme_dexcellence/liste_des_programmes_sport-etudes_et_concentration.html) is a ready-made index of these and was NOT deep-scraped in this pass — likely the single highest-yield remaining source for private-academy discovery.",
+    "Reverse-engineer or request API access to the kreezee-sports.com backend behind circuit-basketball-quebec and ligue-basketball-quebec — the full 57-org/220-team CBQ roster and full LBQ roster exist server-side but are invisible to a public scrape; a logged-in account or a request to Basketball Québec (contact: ymercier@basketball.qc.ca) for the CSV/PDF team list would close this gap directly.",
+    "QYBL (qybl.ca, info@qybl.ca) — contact directly for their full multi-season team history; this sweep only saw the current Autumn 2026/Winter 2027 roster and could not corroborate 3 of 13 team names (Wexl, Ace Warriors, DD Basketball) elsewhere.",
+    "Facebook Graph/Page search for Quebec cities + 'basketball' + 'club'/'académie' with a logged-in account — repeatedly hit real-looking leads (Vaudreuil Basketball, Club de basketball de Beauce) that a login-free sweep could not verify or extract contact details from.",
+    "Instagram hashtag/location search for smaller regions (Bas-Saint-Laurent, Gaspésie, Côte-Nord, most of Abitibi) — private academies in low-population regions appear to have Instagram-only presence with no indexed website, which this sweep's search-engine-based method is structurally weak against.",
+    "Direct outreach to the 15 regional 'unités régionales de loisir et de sport' offices (contacts already in qc-pdf-clubs.json) asking specifically for basketball-club rosters — these bodies administer regional sport development and would know of clubs with no web presence at all."
+  ]
+}

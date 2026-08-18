@@ -1,0 +1,659 @@
+{
+ "batch": 5,
+ "investigated_at": "2026-08-14",
+ "results": [
+  {
+   "club": "Ottawa Herd Valley",
+   "found": false,
+   "email": "",
+   "phone": "",
+   "social": "",
+   "website": "",
+   "contact_person": "",
+   "evidence_url": "",
+   "searched": [
+    "\"Ottawa Herd\" basketball club Ottawa Valley",
+    "\"Ottawa Herd\" OR \"Valley Herd\" basketball natcaphoops contact coach"
+   ],
+   "notes": "Team appears in National Capital Hoops Circuit standings as 'Valley Herd', not 'Ottawa Herd Valley'. Team profile page (natcaphoops.com/teams/c5946311-03c7-4f57-bf54-fd174bb32b6f) blocks automated fetch (403 Forbidden). No independent website or social account located. Not found."
+  },
+  {
+   "club": "Ottawa Prospects",
+   "found": true,
+   "email": "",
+   "phone": "",
+   "social": "IG @ottawaprospects",
+   "website": "",
+   "contact_person": "",
+   "evidence_url": "https://www.natcaphoops.com/teams/6c10370d-0636-4ea9-8661-c86daaa67976",
+   "searched": [
+    "\"Ottawa Prospects\" basketball Ottawa contact"
+   ],
+   "notes": "Confirmed as a Supreme-division team in the National Capital Hoops Circuit (Ottawa). Team profile page exists but blocks automated fetch (403); no email/phone located beyond the IG handle already known from input."
+  },
+  {
+   "club": "PRBC",
+   "found": true,
+   "email": "prbcrocketsbball@gmail.com",
+   "phone": "",
+   "social": "Facebook facebook.com/rocketsbasketball ; Instagram @prbcrockets",
+   "website": "https://prbcrockets.ca/",
+   "contact_person": "",
+   "evidence_url": "https://prbcrockets.ca/",
+   "searched": [
+    "\"Prescott-Russell Basketball Club\" contact email",
+    "site fetch: prescottrussellbasketballclub.teamsnapsites.com/contact-us/",
+    "site fetch: prbcrockets.ca"
+   ],
+   "notes": "Prescott Russell Basketball Club ('the Rockets'), Embrun ON — matches Eastern Ontario / EOBA region. Old site (teamsnapsites.com) now redirects to prbcrockets.ca; both list this email. Mailing address: PO Box 1244 Embrun PO, 1034 Notre-Dame Street, Embrun ON K0A 1W0."
+  },
+  {
+   "club": "PRBC",
+   "found": true,
+   "email": "prbcrocketsbball@gmail.com",
+   "phone": "",
+   "social": "Facebook facebook.com/rocketsbasketball ; Instagram @prbcrockets",
+   "website": "https://prbcrockets.ca/",
+   "contact_person": "",
+   "evidence_url": "https://prbcrockets.ca/",
+   "searched": [
+    "\"Prescott-Russell Basketball Club\" contact email",
+    "site fetch: prbcrockets.ca"
+   ],
+   "notes": "Duplicate input entry for the same club as above (EOBA Competitive Season 2025-26 listing). Prescott Russell Basketball Club, Embrun ON."
+  },
+  {
+   "club": "Pelham",
+   "found": true,
+   "email": "ppba.registrar@gmail.com",
+   "phone": "905-732-7655",
+   "social": "",
+   "website": "https://pelhambasketball.ca/",
+   "contact_person": "",
+   "evidence_url": "https://pelhambasketball.ca/contact/",
+   "searched": [
+    "\"Pelham Panthers Basketball\" Ontario contact"
+   ],
+   "notes": "Matched to Pelham Panthers Basketball Association, Meridian Community Centre, 100 Meridian Wy, Fonthill/Pelham ON L3E 0X1/L3B 5N5. Phone number sourced from a 211 Ontario directory listing for the club (may route through the community centre front desk); registrar email confirmed directly on the club's own contact page."
+  },
+  {
+   "club": "Pelham Panthers Basketball Association",
+   "found": true,
+   "email": "ppba.registrar@gmail.com",
+   "phone": "905-732-7655",
+   "social": "",
+   "website": "https://pelhambasketball.ca/",
+   "contact_person": "",
+   "evidence_url": "https://pelhambasketball.ca/contact/",
+   "searched": [
+    "\"Pelham Panthers Basketball\" Ontario contact"
+   ],
+   "notes": "Fax on file: 905-732-2912. Registrar email confirmed directly on club contact page; phone from 211 Ontario directory listing."
+  },
+  {
+   "club": "Philippine Basketball Association of Ottawa",
+   "found": false,
+   "email": "",
+   "phone": "",
+   "social": "",
+   "website": "",
+   "contact_person": "",
+   "evidence_url": "",
+   "searched": [
+    "\"Philippine Basketball Association\" Ottawa contact",
+    "\"pbaottawa\" OR \"Philippine Basketball Association\" Ottawa Facebook",
+    "\"Ottawa Filipino League\" contact email phone"
+   ],
+   "notes": "Old club site pbaottawa.freeservers.com (est. 1983 per search snippets) returns 403/connection errors and could not be verified as current. A Facebook group 'OTTAWA Titans (Philippine Basketball Association of Ottawa)' exists (facebook.com/groups/117035081583) but is login-gated and no public contact info could be extracted. The related-sounding 'Ottawa Filipino League' (ottawafilipinoleague.com) appears to be a distinct, separate organization — not reported here to avoid misattribution. Not found."
+  },
+  {
+   "club": "Phoenix Elite Basketball / Phoenix Elite / PHNX Elite / Phx Elite",
+   "found": true,
+   "email": "",
+   "phone": "",
+   "social": "Instagram @phx_elitebasketball",
+   "website": "",
+   "contact_person": "",
+   "evidence_url": "https://www.instagram.com/phx_elitebasketball/?hl=en",
+   "searched": [
+    "\"Phoenix Elite\" basketball Toronto \"Hoop Dome\" contact",
+    "usamateurbasketball.com/teams/1880 (does not operate/give out team contact info)"
+   ],
+   "notes": "IMPORTANT: phxbasketball1@gmail.com / 647-764-6473 found in search results belongs to the 'Phoenix (Basketball) League' event organizer at Hoop Dome, not confirmed as this specific AAU club's own contact — deliberately excluded to avoid misattributing a league contact as the club's. US Amateur Basketball explicitly does not release team contact info. Only the club's own Instagram handle is reported."
+  },
+  {
+   "club": "Redmond Basketball (Father John Redmond CSS)",
+   "found": true,
+   "email": "fourpointbasketball@gmail.com",
+   "phone": "",
+   "social": "Instagram/X @redmondosba",
+   "website": "https://redmondredhawks.com/",
+   "contact_person": "",
+   "evidence_url": "https://redmondredhawks.com/",
+   "searched": [
+    "\"Redmond\" basketball \"Father John Redmond\" Toronto OSBA"
+   ],
+   "notes": "Redmond Redhawks, based at Father John Redmond CSS, 28 Colonel Samuel Smith Park Drive, Etobicoke ON — confirmed OSBA member, matches input. General inquiry email is on the site with instruction to use subject line 'Redhawks Inquiry'. Named staff also on file: Warren Williams (Head Coach) and Ray Chateau (Program Director, humber.ca email) — not used as the reported contact since it's an outside institutional address."
+  },
+  {
+   "club": "Richmond Hill Ascend Prep",
+   "found": true,
+   "email": "",
+   "phone": "",
+   "social": "Instagram @ascend_prep ; X @AscendPrep",
+   "website": "",
+   "contact_person": "",
+   "evidence_url": "https://x.com/AscendPrep",
+   "searched": [
+    "\"Ascend Prep\" basketball Richmond Hill contact email"
+   ],
+   "notes": "Confirmed as an OSBA member academy based in Richmond Hill. IG handle already known from input; X/Twitter handle newly confirmed. No email/phone located."
+  },
+  {
+   "club": "Royal City",
+   "found": true,
+   "email": "info@royalcitybasketball.com",
+   "phone": "226-332-2255",
+   "social": "Instagram @royalcitybasketballclub ; Facebook facebook.com/royalcitybasketball",
+   "website": "https://royalcitybasketball.com/rcb22/",
+   "contact_person": "Brian Campos (Technical Director)",
+   "evidence_url": "https://royalcitybasketball.com/rcb22/",
+   "searched": [
+    "\"Royal City\" basketball Guelph club contact"
+   ],
+   "notes": "Royal City Basketball Club, 683 Woolwich St, Guelph ON N1H 3Y8 — matches input's own inference that 'Royal City' = Guelph's nickname. Club also operates programs in Cambridge/Kitchener/Waterloo."
+  },
+  {
+   "club": "Royal City Basketball",
+   "found": true,
+   "email": "info@royalcitybasketball.com",
+   "phone": "226-332-2255",
+   "social": "Instagram @royalcitybasketballclub ; Facebook facebook.com/royalcitybasketball",
+   "website": "https://royalcitybasketball.com/rcb22/",
+   "contact_person": "Brian Campos (Technical Director)",
+   "evidence_url": "https://royalcitybasketball.com/rcb22/",
+   "searched": [
+    "\"Royal City\" basketball Guelph club contact"
+   ],
+   "notes": "Same club as the 'Royal City' entry above (Guelph). Input lists this one under Phoenix League vs. the other under Hoop City League — both plausibly the same club fielding teams in multiple leagues."
+  },
+  {
+   "club": "SBA Blues",
+   "found": true,
+   "email": "lisa@sbablues.ca",
+   "phone": "",
+   "social": "X/Instagram @sbabball",
+   "website": "https://sbabasketball.ca/",
+   "contact_person": "Lisa (coaching contact)",
+   "evidence_url": "https://x.com/sbabball?lang=en",
+   "searched": [
+    "\"Scarborough Blues\" basketball SBA contact email",
+    "site fetch: sbabasketball.ca (403 Forbidden, both root and /contact page)"
+   ],
+   "notes": "Scarborough Basketball Association, 1335 Morningside Avenue Suite 101, Scarborough ON M1B 5M4. Site blocks automated fetch (403), so no club-general 'info@' address could be confirmed — the only emails surfaced were individual staff addresses (lisa@sbablues.ca for coaching inquiries; angelamoncada@sbablues.ca, HR Manager, for employment). Reported the coaching contact as most relevant to a youth-basketball inquiry, per the rule to use a personal address only when no club-level one is available."
+  },
+  {
+   "club": "SCI Spartans",
+   "found": false,
+   "email": "",
+   "phone": "",
+   "social": "",
+   "website": "",
+   "contact_person": "",
+   "evidence_url": "",
+   "searched": [
+    "\"SCI Spartans\" basketball Ontario school"
+   ],
+   "notes": "Could not confidently identify which school/institution 'SCI' refers to (several Ontario 'Spartans' programs exist — North Bay, St. Catharines, etc. — none matched the abbreviation with confidence). Not pursued further to avoid misattribution. Not found."
+  },
+  {
+   "club": "SSF Blizzard (Séminaire Saint-François)",
+   "found": false,
+   "email": "",
+   "phone": "",
+   "social": "",
+   "website": "",
+   "contact_person": "",
+   "evidence_url": "",
+   "searched": [
+    "background knowledge check on Séminaire Saint-François location"
+   ],
+   "notes": "FLAG: Séminaire Saint-François is a school in Saint-Augustin-de-Desmaures, Quebec (near Quebec City) — not Ontario. The input record itself lists this city, suggesting this entry may not belong in an Ontario youth-basketball dataset at all. Did not pursue a contact given the jurisdiction mismatch; recommend the data source re-verify why this appears in the Ontario list (leagues cited are NJC/NSC, both national-level circuits a Quebec school could plausibly join)."
+  },
+  {
+   "club": "Scarborough Blues (SBA)",
+   "found": true,
+   "email": "lisa@sbablues.ca",
+   "phone": "",
+   "social": "X/Instagram @sbabball",
+   "website": "https://sbabasketball.ca/",
+   "contact_person": "Lisa (coaching contact)",
+   "evidence_url": "https://x.com/sbabball?lang=en",
+   "searched": [
+    "\"Scarborough Blues\" basketball SBA contact email"
+   ],
+   "notes": "Same organization as the 'SBA Blues' entry above — Scarborough Basketball Association."
+  },
+  {
+   "club": "Simcoe United",
+   "found": true,
+   "email": "info@simcoeunitedbasketball.com",
+   "phone": "705-717-6449",
+   "social": "",
+   "website": "https://simcoeunitedbasketball.com/",
+   "contact_person": "",
+   "evidence_url": "https://simcoeunitedbasketball.com/juel/",
+   "searched": [
+    "\"Simcoe United\" basketball JUEL contact"
+   ],
+   "notes": "Confirmed match — site explicitly runs a 'Simcoe United JUEL' girls program, matching input's JUEL/JUEL Prep league listing."
+  },
+  {
+   "club": "Smith Falls Hawks",
+   "found": true,
+   "email": "",
+   "phone": "613-978-3829",
+   "social": "Facebook 'smithsfallsstorm' ; Instagram @sfyouthbasketball",
+   "website": "https://leagues.teamlinkt.com/smithsfallsbasketball",
+   "contact_person": "",
+   "evidence_url": "https://leagues.teamlinkt.com/smithsfallsbasketball",
+   "searched": [
+    "\"Smith Falls Hawks\" OR \"Smiths Falls\" basketball CYBL contact"
+   ],
+   "notes": "CAUTION: 'Smiths Falls Hawks' itself is listed as a team in the Diamond division of the National Capital Hoops Circuit (not confirmed as CYBL, the league in the input). The phone/address/socials reported here belong to the umbrella 'Smiths Falls Community Basketball' / 'Smiths Falls Youth Basketball Association' organization (317 Ferguson Tetlock Rd, Smiths Falls ON), which fields multiple age-group/branded teams (Hawks, Storm, RedHawks) and is the most likely single point of contact, but this specific league affiliation was not independently verified."
+  },
+  {
+   "club": "Smiths Falls",
+   "found": true,
+   "email": "",
+   "phone": "613-978-3829",
+   "social": "Facebook 'smithsfallsstorm' ; Instagram @sfyouthbasketball",
+   "website": "https://leagues.teamlinkt.com/smithsfallsbasketball",
+   "contact_person": "",
+   "evidence_url": "https://leagues.teamlinkt.com/smithsfallsbasketball",
+   "searched": [
+    "\"Smith Falls Hawks\" OR \"Smiths Falls\" basketball CYBL contact"
+   ],
+   "notes": "Smiths Falls Youth Basketball Association / Smiths Falls Community Basketball — described in search results as EOBL/OBA affiliated, consistent with input's EOBA listing."
+  },
+  {
+   "club": "St Judes",
+   "found": false,
+   "email": "",
+   "phone": "",
+   "social": "",
+   "website": "",
+   "contact_person": "",
+   "evidence_url": "",
+   "searched": [
+    "\"St Judes\" basketball Toronto Big League parish"
+   ],
+   "notes": "Multiple 'St. Jude' basketball programs exist (St. Jude's Academy in OSBA; St. Jude's Parish, Weston, Toronto), but none confirmed as fielding the Toronto Big League team named in the input. Declined to attribute either organization's contact info without confirmation. Not found."
+  },
+  {
+   "club": "St Michael's College",
+   "found": false,
+   "email": "",
+   "phone": "",
+   "social": "",
+   "website": "",
+   "contact_person": "",
+   "evidence_url": "",
+   "searched": [
+    "\"St. Michael's College\" basketball Toronto CYBL contact"
+   ],
+   "notes": "St. Michael's College School (Toronto, all-boys Catholic school) runs a CYBL U14/U15 program per stmichaelscollegeschool.com, matching input's league. Staff directory names Jennifer Bucci (Coordinator of Athletic Life) but no email address was confirmed publicly for her or the basketball program specifically; general school office contact is not club-specific enough to report per the no-guessing rule. Not found."
+  },
+  {
+   "club": "Stoney Creek Basketball",
+   "found": false,
+   "email": "",
+   "phone": "",
+   "social": "",
+   "website": "",
+   "contact_person": "",
+   "evidence_url": "",
+   "searched": [
+    "\"Stoney Creek\" basketball club Hamilton Ontario contact"
+   ],
+   "notes": "Ontario Basketball Association 'Find a Club' listing exists for a Stoney Creek club (basketball.on.ca/stoney-creek-oba40/) but the page carries no club-specific contact — only the OBA head-office address/phone/email, which is not club-level. Not found."
+  },
+  {
+   "club": "TPG Basketball",
+   "found": true,
+   "email": "thepgba@gmail.com",
+   "phone": "",
+   "social": "Instagram/X @tpgbasketball",
+   "website": "http://performancegroupbasketball.com/",
+   "contact_person": "",
+   "evidence_url": "https://www.instagram.com/tpgbasketball/",
+   "searched": [
+    "\"TPG Basketball\" Brampton contact"
+   ],
+   "notes": "'The Performance Group (TPG) Basketball Association', Brampton ON — matches input's OBL listing."
+  },
+  {
+   "club": "Team 416",
+   "found": false,
+   "email": "",
+   "phone": "",
+   "social": "",
+   "website": "",
+   "contact_person": "",
+   "evidence_url": "",
+   "searched": [
+    "\"Team 416\" basketball Toronto Phoenix League contact",
+    "site fetch: 416basketball.com and www.416basketball.com (DNS did not resolve)",
+    "site fetch: facebook.com/416basketballto (login-gated, no content retrievable)"
+   ],
+   "notes": "'416 Basketball - Toronto' (416basketball.com, facebook.com/416basketballto) appears in search results as the likely parent org for a team called Team 416 competing in the Phoenix Basketball League, but the domain would not resolve for verification and the Facebook page is login-gated. Not confirmed, not reported."
+  },
+  {
+   "club": "The Conglomerate",
+   "found": true,
+   "email": "",
+   "phone": "",
+   "social": "",
+   "website": "https://conglomeratebasketball.com/",
+   "contact_person": "",
+   "evidence_url": "https://conglomeratebasketball.com/conglomerate-shop/",
+   "searched": [
+    "\"The Conglomerate\" basketball GTA NPH contact",
+    "site fetch attempts: conglomeratebasketball.com root, /conglomerate-shop/, /pages/contact, /pages/about-us"
+   ],
+   "notes": "Website confirmed to exist (a shop/merch page returned content in search results describing 'a dynamic basketball organization... developing athletes... building a strong sports community'), but every page fetched rendered blank/empty for automated extraction (likely a heavily JS-rendered storefront) — no email/phone/social could be extracted. Recommend manual visit to conglomeratebasketball.com for a contact page."
+  },
+  {
+   "club": "Tillsonburg Youth Basketball",
+   "found": true,
+   "email": "",
+   "phone": "",
+   "social": "",
+   "website": "https://www.basketballtillsonburg.com/",
+   "contact_person": "",
+   "evidence_url": "https://www.basketballtillsonburg.com/",
+   "searched": [
+    "\"Tillsonburg Youth Basketball\" contact"
+   ],
+   "notes": "Organization is 'Basketball Tillsonburg'. Site references a Facebook page and volunteer/sponsor pages but no email or phone number was present in the fetched content. Not upgraded beyond website."
+  },
+  {
+   "club": "Top Notch Prep Academy (TNPA)",
+   "found": true,
+   "email": "",
+   "phone": "",
+   "social": "IG @topnotchprepacademy",
+   "website": "",
+   "contact_person": "",
+   "evidence_url": "https://www.instagram.com/topnotchprepacademy/",
+   "searched": [
+    "\"Top Notch Prep Academy\" basketball Vaughan contact email",
+    "\"topnotchprepacademy\" instagram bio email OR contact"
+   ],
+   "notes": "Reconfirmed active — IG bio describes it as a 'Top Prep Program Located In The Northern GTA Area, Nike Partnered, @ascend_prep affiliated' (4,300+ followers). This is the same social handle already known from input; no email/phone found beyond it."
+  },
+  {
+   "club": "Toronto Alliance",
+   "found": false,
+   "email": "",
+   "phone": "",
+   "social": "",
+   "website": "",
+   "contact_person": "",
+   "evidence_url": "",
+   "searched": [
+    "\"Toronto Alliance\" basketball CYBL contact"
+   ],
+   "notes": "Confirmed as a Top Tier team in the Canadian Youth Basketball League (CYBL), but no team-specific contact found — only the league's own contact (media@cybl.ca), which is not club-level. Not found."
+  },
+  {
+   "club": "Toronto NuStep Ballers / NuStep Basketball",
+   "found": true,
+   "email": "info@nustep.ca",
+   "phone": "416-977-8633",
+   "social": "Instagram @nustep_toronto / @nustepbasketball ; Facebook facebook.com/TorontoNuStepBallers",
+   "website": "https://nustepbasketball.ca/",
+   "contact_person": "",
+   "evidence_url": "https://nustepbasketball.ca/contact-us/",
+   "searched": [
+    "\"NuStep\" basketball Toronto contact"
+   ],
+   "notes": "NuStep Athletic Association, a downtown-Toronto not-for-profit youth basketball program, PO Box 20021 Market PO, Toronto ON M5E 0B1. Confirmed real, active organization matching input."
+  },
+  {
+   "club": "Toronto Phantoms",
+   "found": false,
+   "email": "",
+   "phone": "",
+   "social": "",
+   "website": "",
+   "contact_person": "",
+   "evidence_url": "",
+   "searched": [
+    "\"Toronto Phantoms\" basketball Phoenix League contact"
+   ],
+   "notes": "Participates in the Phoenix Basketball League at Hoop Dome, but no independent club contact found; the league organizer's own email (phxbasketball1@gmail.com) is not confirmed as this team's contact and was excluded. Not found."
+  },
+  {
+   "club": "Toronto Wolves",
+   "found": true,
+   "email": "",
+   "phone": "705-626-5187",
+   "social": "Instagram @torontowolvesbasketball",
+   "website": "https://torontowolves.ca/",
+   "contact_person": "",
+   "evidence_url": "https://torontowolves.ca/registration",
+   "searched": [
+    "\"Toronto Wolves\" basketball club Ontario contact email",
+    "\"torontowolves.ca\" contact email"
+   ],
+   "notes": "Phone number is a WhatsApp business contact ('Message us on WhatsApp') listed on the club's registration page. No traditional email address found on the site."
+  },
+  {
+   "club": "Toronto Wolves Basketball Club",
+   "found": true,
+   "email": "",
+   "phone": "705-626-5187",
+   "social": "Instagram @torontowolvesbasketball",
+   "website": "https://torontowolves.ca/",
+   "contact_person": "",
+   "evidence_url": "https://torontowolves.ca/registration",
+   "searched": [
+    "\"Toronto Wolves\" basketball club Ontario contact email"
+   ],
+   "notes": "Same club as 'Toronto Wolves' entry above — input lists this one under Phoenix League vs. the other under Toronto Big League, likely the same club fielding teams in both."
+  },
+  {
+   "club": "Tri-City Basketball",
+   "found": true,
+   "email": "",
+   "phone": "",
+   "social": "Facebook facebook.com/tricitybasketball/ ; Instagram @tricityba ; X/Twitter @TriCityBA",
+   "website": "",
+   "contact_person": "",
+   "evidence_url": "https://www.instagram.com/tricityba/?hl=en",
+   "searched": [
+    "\"Tri-City Prep\" OR \"Tri-City Basketball\" Kitchener Waterloo contact"
+   ],
+   "notes": "'Tri-City Basketball Academy', serving Kitchener/Waterloo/Guelph/Cambridge — matches input's region. A phone number was partially visible on the Facebook page preview but not fully captured/confirmed, so not reported. Head coach on file: Srdjan (surname not confirmed)."
+  },
+  {
+   "club": "Tri-City Prep",
+   "found": true,
+   "email": "",
+   "phone": "",
+   "social": "Facebook facebook.com/tricitybasketball/ ; Instagram @tricityba ; X/Twitter @TriCityBA",
+   "website": "",
+   "contact_person": "",
+   "evidence_url": "https://www.instagram.com/tricityba/?hl=en",
+   "searched": [
+    "\"Tri-City Prep\" OR \"Tri-City Basketball\" Kitchener Waterloo contact"
+   ],
+   "notes": "Likely the 'Prep' tier team of the same 'Tri-City Basketball Academy' as the 'Tri-City Basketball' entry above (search describes the academy as running the only Prep team serving Kitchener/Waterloo/Guelph) — inferred, not independently confirmed as a separate entity."
+  },
+  {
+   "club": "Tri-County Soldiers",
+   "found": true,
+   "email": "elopez@soldiersbasketball.ca",
+   "phone": "519-498-2703",
+   "social": "Instagram @soldiersbasketball_",
+   "website": "https://soldiersbball.ca/",
+   "contact_person": "Eddie Lopez",
+   "evidence_url": "https://soldiersbball.ca/",
+   "searched": [
+    "\"Tri-County Thunder\" basketball JUEL contact Kitchener Waterloo"
+   ],
+   "notes": "Tri-County Soldiers Basketball Club, serving Kitchener-Waterloo/Cambridge/Brantford/Guelph — matches input's JUEL listing. Named contact and direct club email confirmed on the club's own site."
+  },
+  {
+   "club": "Tri-County Thunder",
+   "found": true,
+   "email": "",
+   "phone": "",
+   "social": "X/Twitter @tricountyt",
+   "website": "https://tcbasketball.com/",
+   "contact_person": "",
+   "evidence_url": "https://tcbasketball.com/",
+   "searched": [
+    "\"Tri-County Thunder\" basketball JUEL contact Kitchener Waterloo",
+    "site fetch: tcbasketball.com and tcbasketball.com/contact/"
+   ],
+   "notes": "'Tri-County Thunder' girls basketball developmental program, JUEL league — matches input. Website and Twitter confirmed; no email or phone surfaced on the pages fetched (home and contact page both lacked visible contact details)."
+  },
+  {
+   "club": "Tru Balance",
+   "found": true,
+   "email": "",
+   "phone": "",
+   "social": "Instagram @trubalancehoops",
+   "website": "",
+   "contact_person": "Coach Rodney (account holder; appears personal, not a club-general channel)",
+   "evidence_url": "https://www.instagram.com/trubalancehoops/",
+   "searched": [
+    "\"Tru Balance\" basketball Toronto contact email",
+    "\"trubalancehoops\" instagram bio contact"
+   ],
+   "notes": "A separately-named 'Triple Balance Basketball Services' (97 Havenlea Rd, Toronto) also surfaced in search but was NOT used — the name doesn't match ('Triple' vs 'Tru') and could not be confirmed as the same organization. Only the already-suspected @trubalancehoops IG account (run by 'Coach Rodney') is reported, with no email/phone found in its bio."
+  },
+  {
+   "club": "Tru Balance Hoops",
+   "found": true,
+   "email": "",
+   "phone": "",
+   "social": "IG @trubalancehoops",
+   "website": "",
+   "contact_person": "Coach Rodney (account holder; appears personal, not a club-general channel)",
+   "evidence_url": "https://www.instagram.com/trubalancehoops/",
+   "searched": [
+    "\"trubalancehoops\" instagram bio contact"
+   ],
+   "notes": "Same handle already known from input, reconfirmed active. No upgrade to email/phone found."
+  },
+  {
+   "club": "Up North United",
+   "found": true,
+   "email": "",
+   "phone": "",
+   "social": "Instagram @upnorthunited",
+   "website": "",
+   "contact_person": "",
+   "evidence_url": "https://www.instagram.com/upnorthunited/",
+   "searched": [
+    "\"Up North United\" basketball Ontario contact"
+   ],
+   "notes": "Bio identifies the club as 'Durham-based' — this corrects/refines input's guess of 'Northern Ontario / cottage country'; likely actually refers to Durham Region, ON. An email address surfaced once during automated bio extraction (upnorthunitedbasketbal@gmail.com) but a repeat, more careful extraction of the same bio did not reproduce it — excluded per the no-guessing rule since it could not be reliably confirmed. Recommend manual verification of the IG bio link."
+  },
+  {
+   "club": "Upper Valley (UVBA / Upper Valley Basketball Association)",
+   "found": true,
+   "email": "",
+   "phone": "",
+   "social": "Facebook facebook.com/UOVRiverdogs",
+   "website": "",
+   "contact_person": "",
+   "evidence_url": "https://www.pembroke.ca/recreation-and-culture/sports-and-recreation/sports-and-fitness-organizations/",
+   "searched": [
+    "\"Upper Valley Basketball Association\" Pembroke contact email phone"
+   ],
+   "notes": "City of Pembroke's own sports directory lists 'Upper Valley River Dogs' (facebook.com/UOVRiverdogs) as the youth-basketball contact for the Upper Ottawa Valley, with no separate phone/email given. The Facebook page itself is login-gated and could not be fetched to check its About tab."
+  },
+  {
+   "club": "Upper Valley Basketball (River Dogs)",
+   "found": true,
+   "email": "",
+   "phone": "",
+   "social": "Facebook facebook.com/uppervalleybasketball/ ; Facebook facebook.com/UOVRiverdogs/ (women's)",
+   "website": "",
+   "contact_person": "",
+   "evidence_url": "https://www.facebook.com/uppervalleybasketball/",
+   "searched": [
+    "site fetch: facebook.com/uppervalleybasketball/ (login-gated, no About-tab content retrievable)"
+   ],
+   "notes": "Social links were already present in the input; attempted to fetch both Facebook pages for an email/phone in the About tab but both are login-gated and returned no usable content. No upgrade beyond what was already known."
+  },
+  {
+   "club": "Upper Valley Basketball Association",
+   "found": true,
+   "email": "",
+   "phone": "",
+   "social": "Facebook facebook.com/UOVRiverdogs",
+   "website": "",
+   "contact_person": "",
+   "evidence_url": "https://www.pembroke.ca/recreation-and-culture/sports-and-recreation/sports-and-fitness-organizations/",
+   "searched": [
+    "\"Upper Valley Basketball Association\" Pembroke contact email phone"
+   ],
+   "notes": "Same organization as the 'Upper Valley (UVBA...)' entry above — Renfrew County / Upper Ottawa Valley."
+  },
+  {
+   "club": "Victory Prep (Brampton)",
+   "found": true,
+   "email": "",
+   "phone": "",
+   "social": "IG @victoryprepbrampton",
+   "website": "",
+   "contact_person": "",
+   "evidence_url": "https://www.instagram.com/victoryprepbrampton/?hl=en",
+   "searched": [
+    "\"Victory Prep\" basketball Brampton contact email"
+   ],
+   "notes": "Same handle already known from input, reconfirmed active. No email/phone found; a similarly-named 'Brampton City Prep' (info@bramptoncityprep.com) also surfaced but is a distinct organization, not used here."
+  },
+  {
+   "club": "Victory Prep Academy (East, West)",
+   "found": false,
+   "email": "",
+   "phone": "",
+   "social": "",
+   "website": "",
+   "contact_person": "",
+   "evidence_url": "",
+   "searched": [
+    "\"Victory Prep Academy\" Brampton East West OSBA contact"
+   ],
+   "notes": "Possibly the same organization as 'Victory Prep (Brampton)' (East/West may just denote two program locations of one academy), but this could not be independently confirmed, so its IG handle was not attributed here to avoid an incorrect join. Not found."
+  },
+  {
+   "club": "WOBA",
+   "found": true,
+   "email": "wobacompetitive@gmail.com",
+   "phone": "",
+   "social": "Facebook/Instagram @westottawabasketball",
+   "website": "http://westottawabasketball.com/",
+   "contact_person": "",
+   "evidence_url": "http://westottawabasketball.com/",
+   "searched": [
+    "\"Ottawa Herd\" basketball club Ottawa Valley (surfaced WOBA site)",
+    "\"WOBA\" \"West Ottawa Basketball\" contact email OR \"Goulbourn Basketball\""
+   ],
+   "notes": "West Ottawa Basketball Association / Goulbourn Basketball Association, PO Box 1193, Stittsville ON K2S 1B3 — matches input's West Ottawa / EOBA listing. Site also lists wobachiefreferee@gmail.com for the recreational program VP; used the competitive-program VP address as primary since it's more relevant to club-level inquiries."
+  }
+ ],
+ "summary": {
+  "total": 45,
+  "with_email": 14,
+  "with_phone": 11,
+  "with_any_contact": 34,
+  "not_found": 11
+ }
+}

@@ -1,0 +1,342 @@
+{
+  "investigated_at": "2026-08-14",
+  "directories": [
+    {
+      "name": "211 Ontario",
+      "url": "https://211ontario.ca",
+      "access": "public",
+      "records_found": 171,
+      "notes": "Public, no login/CAPTCHA. A real Chromium session with a desktop UA hit NO bot-check (the prior HTTP-only pass had stalled at 15 records). The location field requires a geocoded lat/long (autocomplete-driven); once supplied, a keyword search for 'basketball' with a large radius (sd=2500km, anchored at Toronto) returns a stable 171-record result set across 7 pages. Verified this is the FULL provincial result set: re-running the identical search anchored at Thunder Bay (sd=2500) returned the exact same 171 record IDs, and increasing sd further (5000, 100000) only added ~1 more record — so one province-wide sweep is sufficient, no need to re-run per-region. Of the 171 keyword matches (most are generic community/rec centres, YMCAs, Special Olympics chapters, First Nations recreation depts that only mention 'basketball' as one of many activities), 19 are basketball-specific clubs/leagues/officiating bodies with their own contact record; all 19 yielded a real email address on the detail page (obfuscated only via 211's own mailto footer, easily distinguished from the org's own mailto links)."
+    },
+    {
+      "name": "CIOC Peel (InfoPeel Services Directory)",
+      "url": "https://peel.cioc.ca",
+      "access": "public",
+      "records_found": 18,
+      "notes": "Public, works via plain GET (no JS needed): search form action is bresults.asp?STerms=<query>, not the '?Ss=' pattern suggested in the brief. 18 keyword matches for 'basketball'; 3 are basketball-specific clubs not present in the 211ontario.ca provincial sweep (Brampton, Caledon, Peel-region D3P) -- i.e. this regional CIOC instance carries listings 211ontario.ca does not have synced. Detail pages (/record/<ID>) expose Office Phone / E-Mail / Website / Address in a plain label/value table; emails are numeric-HTML-entity obfuscated (e.g. &#100;&#97;...) but trivially decoded."
+    },
+    {
+      "name": "CIOC Halton (InfoHalton)",
+      "url": "https://halton.cioc.ca",
+      "access": "public",
+      "records_found": 75,
+      "notes": "Public, same bresults.asp?STerms= pattern as Peel. 75 keyword matches, but every basketball-specific org found here (Burlington Basketball, DEEP Basketball, Vipers Wheelchair Basketball, Milton Men's Basketball, Milton Stags Youth Basketball, Oakville Senior Ladies Basketball League, ORBL, Tuesday Night Mens Basketball) is already captured from the 211ontario.ca sweep -- confirms Halton region CIOC and 211ontario.ca draw from the same underlying data pool. No net-new organizations, but cross-confirms the contact details already collected."
+    },
+    {
+      "name": "CIOC Info-BHN (Brant / Haldimand / Norfolk)",
+      "url": "https://info-bhn.cioc.ca",
+      "access": "public",
+      "records_found": 56,
+      "notes": "Public, same bresults.asp?STerms= pattern. 56 keyword matches. Every basketball-specific org here (Brant Norfolk Basketball Officials Association, Brantford Boys CYO Hawks Basketball, Brantford CYO Girls Basketball, Briers Basketball Club, Norfolk Youth Basketball Association) duplicates what the 211ontario.ca sweep already captured with emails. No net-new organizations."
+    },
+    {
+      "name": "CIOC Niagara (InfoNiagara)",
+      "url": "https://niagara.cioc.ca",
+      "access": "dead",
+      "records_found": 0,
+      "notes": "302-redirects to the generic www.cioc.ca project-history page (no search function). The live successor is niagara.211centralsouth.ca ('211 Central South Region - Niagara'), same 211-platform template family as 211ontario.ca -- searched it directly instead (see separate entry below)."
+    },
+    {
+      "name": "211 Central South Region - Niagara (successor to niagara.cioc.ca)",
+      "url": "https://niagara.211centralsouth.ca",
+      "access": "public",
+      "records_found": 16,
+      "notes": "Live successor to the dead niagara.cioc.ca. Same search platform as 211ontario.ca (geocoded location + keyword). Swept from 3 anchors (St. Catharines, Niagara Falls, Welland) at max radius, 16 unique keyword matches for 'basketball'. Every basketball-specific record (Grimsby Basketball Association, St Catharines CYO Rebels Basketball) duplicates what 211ontario.ca already had. No net-new organizations, but confirms the data."
+    },
+    {
+      "name": "CIOC Region of Waterloo",
+      "url": "https://regionofwaterloo.cioc.ca",
+      "access": "dead",
+      "records_found": 0,
+      "notes": "302-redirects to the generic www.cioc.ca project-history page. Unlike Niagara/Central-East, no working direct searchable successor was found: web search only surfaces 'Community Information Centre of Waterloo Region' (waterlooregion.org/cic/), which is an informational/print-directory site (Blue Book, Basic Needs Guide), not a searchable database. Reporting as dead/blocked rather than omitting -- Waterloo Region (Kitchener/Cambridge/Waterloo) basketball club contacts were NOT recoverable through this channel."
+    },
+    {
+      "name": "CIOC Central East Ontario",
+      "url": "https://centraleastontario.cioc.ca",
+      "access": "dead",
+      "records_found": 0,
+      "notes": "Loads (200) but shows only a migration banner: '211 Central East Ontario has transitioned its community directories to a new location' -> cc.search211.ca ('Community Connection'). Old bresults.asp-style search returns nothing. Searched the live successor directly instead (see cc.search211.ca entry below)."
+    },
+    {
+      "name": "CIOC InfoBarrie",
+      "url": "https://infobarrie.cioc.ca",
+      "access": "dead",
+      "records_found": 0,
+      "notes": "Same migration banner as centraleastontario.cioc.ca, same successor (cc.search211.ca). No standalone search available."
+    },
+    {
+      "name": "CIOC Simcoe County",
+      "url": "https://simcoecounty.cioc.ca",
+      "access": "dead",
+      "records_found": 0,
+      "notes": "Same migration banner as centraleastontario.cioc.ca, same successor (cc.search211.ca). No standalone search available."
+    },
+    {
+      "name": "CIOC Orillia",
+      "url": "https://orillia.cioc.ca",
+      "access": "dead",
+      "records_found": 0,
+      "notes": "302-redirects straight to centraleastontario.cioc.ca, which is itself dead/migrated (see above). Successor is cc.search211.ca."
+    },
+    {
+      "name": "Community Connection (successor to Central East Ontario / InfoBarrie / Simcoe County / Orillia CIOC instances)",
+      "url": "https://cc.search211.ca",
+      "access": "public",
+      "records_found": 46,
+      "notes": "Live successor for the whole Central East Ontario CIOC family (Simcoe County, Barrie, Peterborough, Northumberland, Bruce Grey, South Georgian Bay, Muskoka, Parry Sound). Same 211-platform template as 211ontario.ca. Coverage is tag-based ('Serving <region>') rather than pure-radius, so a single anchor point does not surface everything -- swept from 7 regional anchors (Barrie, Peterborough, Owen Sound, Collingwood, Cobourg, Huntsville, Parry Sound) at max radius and merged by record ID: 46 unique keyword matches for 'basketball'. 3 basketball-specific orgs not present anywhere else (Barrie Royals Basketball Club, Barrie and District Association of Basketball Officials, Next Level Basketball); 2 more (Shak's World Community Centre programs) duplicate records already captured from 211ontario.ca."
+    }
+  ],
+  "organizations": [
+    {
+      "name": "Brampton Minor Basketball Association",
+      "city": "Brampton",
+      "address": "Flower City Community Campus, 8930 Mclaughlin Road S, Building E, Brampton, ON, Canada L6Y 5T1",
+      "phone": "905-455-5277",
+      "email": "info@bramptonbasketball.com",
+      "website": "http://www.bramptonbasketball.com/",
+      "evidence_url": "https://peel.cioc.ca/record/CDR1031?Number=1",
+      "notes": "CIOC Peel only, not found in 211ontario.ca's provincial sweep. 'The premier youth membership organization in the sport of basketball in the city of Brampton', ages 5-18. Named contacts also on file: David Baah (President) david@bramptonbasketball.com, Reynold Bogle reynold@bramptonbasketball.com, Leslie Carmichael (Director Member Services) leslie@bramptonbasketball.com."
+    },
+    {
+      "name": "Caledon Cougars Basketball Association",
+      "city": "Bolton / Caledon",
+      "address": "33A King Street W, Bolton, ON L7E 1T3 (mailing: 33A King St W, Bolton, ON L7E 1C9)",
+      "phone": "416-452-9976",
+      "email": "caledoncougarsbasketball@gmail.com",
+      "website": "http://www.caledoncougars.ca",
+      "evidence_url": "https://peel.cioc.ca/record/CAL0171?Number=6",
+      "notes": "CIOC Peel only. Recreational and competitive basketball for boys and girls ages 6-18 in Caledon (Bolton and Caledon East). Named contacts: Mike Dodig (President) mikedodig5870@rogers.com, Dawn Dodig (Treasurer) dawn.dodig@peelsb.com."
+    },
+    {
+      "name": "D3P Sports (D3P Basketball)",
+      "city": "Brampton",
+      "address": "10 Hetherington Place, Brampton, ON, Canada L5T 1J2",
+      "phone": "647-809-0923",
+      "email": "coachfelix@d3psports.com",
+      "website": "http://www.d3psports.com",
+      "evidence_url": "https://peel.cioc.ca/record/CDR1812?Number=9",
+      "notes": "CIOC Peel only. Not a basketball-only club -- an all-abilities sports non-profit ('D3P Sports, D3P All Abilities, D3P Basketball, D3P Fitness') that began as a single basketball program in 2018. Included because it carries a real basketball program with its own contact. Primary contact: Felix Adjei, CEO, same phone/email."
+    },
+    {
+      "name": "Oakville Senior Ladies Basketball League",
+      "city": "Oakville",
+      "address": "",
+      "phone": "905-981-0079",
+      "email": "OSLBL@outlook.com",
+      "website": "http://leaguelineup.com/OSLBL",
+      "evidence_url": "https://211ontario.ca/service/97500245/oakville-senior-ladies-basketball-league-oakville-senior-ladies-basketball-league/",
+      "notes": "Adult (22+) women's recreational league, not a youth club. Games at a high school in Oakville, location varies by year."
+    },
+    {
+      "name": "Tuesday Night Mens Basketball",
+      "city": "Oakville",
+      "address": "White Oaks Secondary School - North Campus (game location), 1055 McCraney St E, Oakville, ON, L6H 2R6",
+      "phone": "",
+      "email": "jemercado5@yahoo.com",
+      "website": "",
+      "evidence_url": "https://211ontario.ca/service/97522155/tuesday-night-mens-basketball-tuesday-night-mens-basketball/",
+      "notes": "Adult recreational pick-up basketball, not a youth club. 211 record explicitly lists 'No public telephone number'."
+    },
+    {
+      "name": "Milton Men's Basketball",
+      "city": "Milton",
+      "address": "Milton District High School and Milton Sports Centre (game locations), 396 Williams Ave, Milton, ON, L9T 2G4",
+      "phone": "416-898-7059",
+      "email": "dstocktonmmbl@gmail.com",
+      "website": "http://www.leaguelineup.com/miltonmensbasketball",
+      "evidence_url": "https://211ontario.ca/service/97617674/milton-mens-basketball-milton-mens-basketball/",
+      "notes": "Adult recreational pick-up league, not a youth club. Secondary email on file: dstockton14@gmail.com."
+    },
+    {
+      "name": "Burlington Basketball",
+      "city": "Burlington",
+      "address": "The Playground, 952 Century Dr, Burlington, ON, L7L 5P2",
+      "phone": "905-220-3735",
+      "email": "operations@burlingtonbasketball.ca",
+      "website": "http://www.burlingtonbasketball.ca/",
+      "evidence_url": "https://211ontario.ca/service/97073418/burlington-basketball-burlington-basketball/",
+      "notes": "Youth club: Jr. NBA intro basketball ages 5-7, house league, Burlington Force rep teams from U10, plus elite program and camps/clinics."
+    },
+    {
+      "name": "Milton Stags Youth Basketball",
+      "city": "Milton",
+      "address": "Mattamy National Cycling Centre, 2015 Panam Blvd, Room 170, Milton, ON, L9E 0K7",
+      "phone": "289-429-1114",
+      "email": "inquiry@miltonstags.com",
+      "website": "http://www.miltonstags.com/",
+      "evidence_url": "https://211ontario.ca/service/97617808/milton-stags-youth-basketball-milton-stags-youth-basketball/",
+      "notes": "Non-profit youth club, ages 4-18, recreational through elite, affiliated with Basketball Ontario. Secondary contact: Christine@miltonstags.com."
+    },
+    {
+      "name": "DEEP Basketball",
+      "city": "Burlington",
+      "address": "Nelson High School Gym (program location), 4181 New St, Burlington, ON, L7L 1T3",
+      "phone": "",
+      "email": "info@deepbasketball.com",
+      "website": "http://deepbasketball.com/",
+      "evidence_url": "https://211ontario.ca/service/97496057/deep-basketball-deep-basketball/",
+      "notes": "Youth programs ages 7-16+ (intro, Jr NBA/WNBA, house league, rep)."
+    },
+    {
+      "name": "Golden Horseshoe Disabled Sports Association (Vipers Wheelchair Basketball)",
+      "city": "Burlington",
+      "address": "Alton Recreation Centre (program location), 3040 Tim Dobbie Dr, Burlington, ON, L7M 0M4",
+      "phone": "",
+      "email": "info@vipersbasketball.ca",
+      "website": "http://vipersbasketball.ca/",
+      "evidence_url": "https://211ontario.ca/service/97587228/golden-horseshoe-disabled-sports-association-vipers-wheelchair-basketball/",
+      "notes": "Wheelchair basketball club, developmental program ages 4-18 and adult competitive/recreational levels."
+    },
+    {
+      "name": "St Catharines CYO Rebels Basketball",
+      "city": "St Catharines",
+      "address": "",
+      "phone": "",
+      "email": "Gerrymcilhone@gmail.com",
+      "website": "https://www.cyobball.com/",
+      "evidence_url": "https://211ontario.ca/service/65807212/st-catharines-cyo-rebels-basketball-st-catharines-cyo-rebels-basketball/",
+      "notes": "Youth basketball league, house leagues + select team program. Secondary contact: Frank.keltos@gmail.com."
+    },
+    {
+      "name": "Grimsby Basketball Association",
+      "city": "Grimsby",
+      "address": "",
+      "phone": "",
+      "email": "grizzliebasketball@gmail.com",
+      "website": "https://www.grimsbybasketball.ca/",
+      "evidence_url": "https://211ontario.ca/service/65805312/grimsby-basketball-association-grimsby-basketball-association/",
+      "notes": "Volunteer-run youth house league + travel program, registered with Ontario Basketball Association (OBA). Secondary contact: natthefiddler@gmail.com."
+    },
+    {
+      "name": "Shak's World Community Centre (Basketball Programs)",
+      "city": "Barrie",
+      "address": "59 Maple Ave, Barrie, ON, L4N 1R8",
+      "phone": "705-252-0175",
+      "email": "info@shaksworld.com",
+      "website": "https://www.shaksworld.org/",
+      "evidence_url": "https://211ontario.ca/service/92410077/shaks-world-community-centre-basketball-programs/",
+      "notes": "General youth community centre (ages 7-17) with a distinct house-league basketball program listing; also confirmed via the Community Connection / search211.ca successor directory (same record ID 92410077)."
+    },
+    {
+      "name": "Brant Norfolk Basketball Officials Association",
+      "city": "Brant / Norfolk counties",
+      "address": "",
+      "phone": "",
+      "email": "snell.jb@gmail.com",
+      "website": "",
+      "evidence_url": "https://211ontario.ca/service/79836342/brant-norfolk-basketball-officials-association-youth-basketball-refereeing-services/",
+      "notes": "Referee/officiating association, not a playing club -- ~50 members, referees ~1,300 games/year for youth, school and adult leagues in Brant and Norfolk. Also runs recruitment/training for new officials. Secondary contact: jessandjay14@outlook.com. Also present in CIOC info-bhn.cioc.ca (SIM1127) with no additional contact detail beyond this."
+    },
+    {
+      "name": "Brantford Boys CYO Hawks Basketball",
+      "city": "Brantford",
+      "address": "245 King George Rd, Suite 175, Brantford, ON, N3R 7N7",
+      "phone": "",
+      "email": "brantfordcyoboys@gmail.com",
+      "website": "https://www.brantfordcyo.ca/",
+      "evidence_url": "https://211ontario.ca/service/79831306/brantford-boys-cyo-hawks-basketball-youth-basketball-program/",
+      "notes": "Youth boys' basketball, house + rep leagues. Secondary contact: nickesposito04@gmail.com. Also present in CIOC info-bhn.cioc.ca (BRD0056), same underlying record."
+    },
+    {
+      "name": "Briers Basketball Club",
+      "city": "Brantford",
+      "address": "",
+      "phone": "519-714-1287",
+      "email": "info@briersbasketball.ca",
+      "website": "https://www.briersbasketball.ca/",
+      "evidence_url": "https://211ontario.ca/service/79831310/briers-basketball-club-basketball-programs/",
+      "notes": "Girls' and boys' basketball programs. Also present in CIOC info-bhn.cioc.ca (BRD0057), same underlying record."
+    },
+    {
+      "name": "Brantford CYO Girls Basketball",
+      "city": "Brantford",
+      "address": "Assumption College, 257 Shellard Lane, Brantford, ON, N3T 5L5",
+      "phone": "",
+      "email": "brantfordcyogirls@outlook.com",
+      "website": "https://www.brantfordcyogirls.com/",
+      "evidence_url": "https://211ontario.ca/service/79831314/brantford-cyo-girls-basketball-girls-basketball-programs/",
+      "notes": "Recreational and competitive girls' basketball club. Also present in CIOC info-bhn.cioc.ca (BRD0063), same underlying record."
+    },
+    {
+      "name": "Twin City Spinners Wheelchair Basketball",
+      "city": "Kitchener-Waterloo",
+      "address": "",
+      "phone": "",
+      "email": "kwspinners@gmail.com",
+      "website": "https://tcspinners.wixsite.com/twincityspinners",
+      "evidence_url": "https://211ontario.ca/service/73444301/twin-city-spinners-wheelchair-basketball-twin-city-spinners-wheelchair-basketball/",
+      "notes": "Wheelchair basketball, open to age 8+ including able-bodied friends/family. Only Kitchener-Waterloo-area basketball org recovered in this pass (regionofwaterloo.cioc.ca was dead with no working successor found)."
+    },
+    {
+      "name": "Norfolk Youth Basketball Association",
+      "city": "Waterford / Norfolk County",
+      "address": "Waterford District High School, 227 Main St S, Norfolk, ON, N0E 1Y0",
+      "phone": "519-427-3899",
+      "email": "norfolkyba@gmail.com",
+      "website": "https://norfolkyouthbasketball.ca/",
+      "evidence_url": "https://211ontario.ca/service/79836338/norfolk-youth-basketball-association-youth-basketbal-programs/",
+      "notes": "House and select basketball programs for boys and girls at local high schools. Secondary contact: jeanmontgomery2@gmail.com. Also present in CIOC info-bhn.cioc.ca (SIM1120), same underlying record."
+    },
+    {
+      "name": "London Wheelchair Basketball Association",
+      "city": "London",
+      "address": "",
+      "phone": "",
+      "email": "lwbafcf@gmail.com",
+      "website": "",
+      "evidence_url": "https://211ontario.ca/service/97167940/london-wheelchair-basketball-association-london-wheelchair-basketball-association/",
+      "notes": "Recreational and competitive wheelchair basketball, youth and adult, season Oct-May."
+    },
+    {
+      "name": "Ottawa-Carleton Wheelchair Sports Association",
+      "city": "Ottawa",
+      "address": "",
+      "phone": "",
+      "email": "ocwsa.info@gmail.com",
+      "website": "https://ocwsa.wordpress.com/",
+      "evidence_url": "https://211ontario.ca/service/68973484/ottawa-carleton-wheelchair-sports-association-ottawa-carleton-wheelchair-sports-association/",
+      "notes": "Wheelchair basketball throughout eastern Ontario / western Quebec; runs a competitive team ('The Royals'), a recreational league, and a junior program."
+    },
+    {
+      "name": "Oakville Recreational Basketball League (ORBL)",
+      "city": "Oakville",
+      "address": "Oakville Trafalgar Community Centre, 325 Renyolds St, Oakville, ON",
+      "phone": "905-845-6601 ext 7209",
+      "email": "orbl@oakville.ca",
+      "website": "http://oakvillerecleagues.ca/",
+      "evidence_url": "https://211ontario.ca/service/97498704/oakville-recreation-and-culture-oakville-recreational-leagues/",
+      "notes": "Municipal adult (men's/women's/co-ed) recreational basketball league run by the Town of Oakville's Recreation and Culture dept, listed under the parent record 'Oakville. Recreation and Culture / Oakville Recreational Leagues' alongside sibling leagues (hockey, volleyball, pickleball). Phone/ext shown is shared with the hockey league booking line; email is ORBL-specific."
+    },
+    {
+      "name": "Barrie Royals Basketball Club",
+      "city": "Barrie",
+      "address": "",
+      "phone": "",
+      "email": "info@barrieroyals.ca",
+      "website": "https://www.barrieroyals.ca/",
+      "evidence_url": "https://cc.search211.ca/record/71089280/barrie-royals-basketball-club-barrie-royals-basketball-club/",
+      "notes": "Found only via the Community Connection / search211.ca successor directory, not in 211ontario.ca's sweep. Record states 'No public telephone number'. Additional contacts: secretary@barrieroyals.ca, VP@barrieroyals.ca."
+    },
+    {
+      "name": "Barrie and District Association of Basketball Officials (BDABO)",
+      "city": "Barrie / Simcoe County",
+      "address": "",
+      "phone": "705-549-1906",
+      "email": "vadebong@csolve.net",
+      "website": "http://www.bdabo.ca/",
+      "evidence_url": "https://cc.search211.ca/record/71090132/barrie-and-district-association-of-basketball-officials-barrie-and-district-association-of-basketball-officials/",
+      "notes": "Referee/officiating association, not a playing club. Found only via Community Connection / search211.ca. Secondary contact: stephenporter@me.com, phone 705-441-3244."
+    },
+    {
+      "name": "Next Level Basketball",
+      "city": "Barrie / Simcoe County",
+      "address": "",
+      "phone": "705-737-7108",
+      "email": "nextlevelbballcamp@gmail.com",
+      "website": "https://nextlevelhoops.ca/",
+      "evidence_url": "https://cc.search211.ca/record/93593240/next-level-basketball-next-level-basketball/",
+      "notes": "Found only via Community Connection / search211.ca. Description: call or email for program info, see website (camps/skills training)."
+    }
+  ],
+  "summary": "Harvested 25 basketball organizations with real contact details (24 of 25 have an email; 12 also have a working phone number; a few adult/wheelchair/officials orgs explicitly show 'no public telephone number' on the source record) from Ontario community-services directories, via a real Chromium session (no bot-check ever triggered once a proper desktop UA + Accept-Language header was set -- contrary to the earlier HTTP-only pass that stalled at 15 records on 211ontario.ca). Key finding: 211ontario.ca, halton.cioc.ca and info-bhn.cioc.ca all draw from the same underlying data pool -- a single province-wide 211ontario.ca sweep (171 'basketball' keyword matches, confirmed identical regardless of anchor city) already contains everything those regional CIOC mirrors would add. Net-new sources were: (1) peel.cioc.ca, which is NOT synced to 211ontario.ca and added 3 orgs (Brampton Minor Basketball Association, Caledon Cougars Basketball Association, D3P Sports); and (2) cc.search211.ca ('Community Connection'), the live successor to the now-dead Central East Ontario / InfoBarrie / Simcoe County / Orillia CIOC instances, which added 3 more (Barrie Royals Basketball Club, Barrie and District Association of Basketball Officials, Next Level Basketball). Three of the nine originally-listed CIOC targets (niagara, centraleastontario-family, and by extension infobarrie/simcoecounty/orillia) have migrated to new 211-platform-family domains, which were located and searched directly. regionofwaterloo.cioc.ca is dead with no working searchable successor found -- Waterloo Region basketball clubs remain a gap in this data source. Included several adult-league, wheelchair-basketball and officials/referee associations alongside youth clubs since they carry real contact info and downstream deduplication can triage; each entry's notes flag what kind of organization it is."
+}

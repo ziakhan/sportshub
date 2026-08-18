@@ -1,0 +1,1089 @@
+{
+  "investigated_at": "2026-08-14",
+  "municipalities": [
+    {
+      "municipality": "Mississauga",
+      "directory_url": "https://mississauga.ca/our-organization/about-our-organization/city-affiliates",
+      "access": "public",
+      "records_found": 3,
+      "notes": "City of Mississauga 'Community Group Registry Program' / City Affiliates list. Curated list of volunteer-governed community groups by category (sports, arts, etc). Lists org name + website only, no phone/email/contact person on the directory page itself — had to hop to each org's own site for contacts. Lists JUMP Basketball Mississauga Association, Malton Sting Basketball Club, Mississauga Minor Basketball Association (branded 'Monarchs Basketball')."
+    },
+    {
+      "municipality": "Brampton",
+      "directory_url": "https://peel.cioc.ca/ (Information Peel / Peel Community Services Directory, OpenCIOC platform, covers Mississauga/Brampton/Caledon)",
+      "access": "public",
+      "records_found": 1,
+      "notes": "Classic OpenCIOC site — plain GET search works without JS: https://peel.cioc.ca/bresults.asp?STerms=basketball&SType=A (or SType=O for org-name-only match). Individual records at /record/<ID> render full contact tables server-side; emails are HTML-entity-encoded (e.g. &#109;&#97;...) but fully public/visible in any browser — decoded with Python html.unescape. Found Brampton Minor Basketball Association (CDR1031) with rich contact detail (President, alternate contact, volunteer coordinator, each with direct email)."
+    },
+    {
+      "municipality": "Caledon",
+      "directory_url": "https://peel.cioc.ca/ (same Information Peel directory as Brampton/Mississauga)",
+      "access": "public",
+      "records_found": 2,
+      "notes": "Same OpenCIOC search as Brampton. Found Caledon Cougars Basketball Association (CAL0171) and D3P Sports/D3P Basketball (CDR1812, adaptive/all-abilities sports academy based in Caledon, basketball is one of several programs) with full decoded contact info."
+    },
+    {
+      "municipality": "Toronto",
+      "directory_url": "none found",
+      "access": "none-found",
+      "records_found": 0,
+      "notes": "No municipal 'community organizations' / affiliated-groups directory exists for Toronto. toronto.ca's gym/facility permit system is decentralized per community centre with no public list of permit-holding clubs; no community-centre-advisory-council roster found either. York University's kincommunities.info.yorku.ca database lists Scarborough Basketball Association among community sport orgs but provides no contact details, only a website link, and is a third-party academic project, not a City of Toronto directory. Ontario Basketball Association's 'Find a Club' (basketball.on.ca/find-a-club) is JS-rendered and enumerates Toronto Region clubs, but that's a provincial body's directory, not municipal, and is out of scope for this harvest."
+    },
+    {
+      "municipality": "Vaughan",
+      "directory_url": "none found (sv.vaughan.ca Service Vaughan Portal is an application intake for Community Service Organization status, not a public browsable directory; City of Vaughan maintains an internal 'Registry of Community and Ratepayer Associations' available only by request to clerks@vaughan.ca, not published online)",
+      "access": "none-found",
+      "records_found": 0,
+      "notes": "VaughanDirect.ca (a private local-business/marketing directory unaffiliated with the City) lists Vaughan Basketball Association but is not a municipal source. No public City of Vaughan basketball-club contact directory exists."
+    },
+    {
+      "municipality": "Barrie",
+      "directory_url": "https://cc.search211.ca/ (Community Connection, 211-network directory for Simcoe County/Central East Ontario; legacy infobarrie.cioc.ca and simcoecounty.cioc.ca both now redirect here with a migration notice)",
+      "access": "public",
+      "records_found": 4,
+      "notes": "JS-rendered (WordPress) but each listing embeds clean schema.org JSON-LD with phone/email/address/website. Found Barrie Royals Basketball Club, Barrie and District Association of Basketball Officials, Shak's World Community Centre (Basketball Programs + Youth Programs), Next Level Basketball. Geocoder for arbitrary city search appears broken (always falls back to a default ~25km radius around Collingwood), so results are whatever falls in that default radius rather than a true Barrie-only query — still, all 4 basketball hits are genuinely Barrie-based."
+    },
+    {
+      "municipality": "Innisfil",
+      "directory_url": "https://www.innisfil.ca/community-recreation/community-groups-organizations",
+      "access": "public",
+      "records_found": 1,
+      "notes": "Real Town of Innisfil directory page, plain HTML list of community sports organizations by name with outbound website links (no phone/email on the page itself). Lists South Simcoe Basketball Club (linked to ssbasketball.ca)."
+    },
+    {
+      "municipality": "Bradford West Gwillimbury",
+      "directory_url": "none found",
+      "access": "none-found",
+      "records_found": 0,
+      "notes": "No Town of Bradford West Gwillimbury community-group/sports directory page found (townofbwg.com has no equivalent to Innisfil's list). South Simcoe Basketball Club is headquartered in Bradford (per the club's own contact page) and was discovered via the Innisfil municipal directory above — recorded once there rather than duplicated. A 'West Bradford Youth Athletics' (wbya.org) surfaced in search results but was verified to be a Downingtown, Pennsylvania organization — a name collision, not a real Ontario match; correctly excluded."
+    },
+    {
+      "municipality": "Orillia",
+      "directory_url": "orillia.cioc.ca (Information Orillia) — DECOMMISSIONED, migrated to cc.search211.ca; legacy record for 'Orillia Youth Basketball Association' (ORI0090) now returns an access-restricted notice",
+      "access": "public",
+      "records_found": 1,
+      "notes": "Found Orillia Youth Basketball Association / 'Orillia Lakers' via search + the org's own site (orillialakers.com); no phone or email published anywhere, contact is via an on-site form only. Legacy Information Orillia contact (for reference, not the club): 36 Mississaga St, Orillia ON L3V 3A6, 705-326-7743, info@informationorillia.org."
+    },
+    {
+      "municipality": "Markham",
+      "directory_url": "none found",
+      "access": "none-found",
+      "records_found": 0,
+      "notes": "No sports/community-group directory on markham.ca. The city publishes a 'Ratepayer Associations' list (civic/neighbourhood associations, not sports) and links to the Markham Board of Trade's business directory, neither of which covers basketball clubs. Known local clubs (MSBA Storm, Markham Men's Basketball League, York South Silver Knights, Scarborough Basketball Association serving parts of Markham) exist per general web search but are NOT sourced from a municipal directory, so intentionally omitted here to avoid duplicating prior general-research census files."
+    },
+    {
+      "municipality": "Richmond Hill",
+      "directory_url": "none found",
+      "access": "none-found",
+      "records_found": 0,
+      "notes": "richmondhill.ca has no published community-group/sports-club directory; recreation staff direct residents to email recreation@richmondhill.ca directly for program info rather than a public list."
+    },
+    {
+      "municipality": "Aurora",
+      "directory_url": "https://www.aurora.ca/recreation-arts-and-culture/sport/sport-organizations-serving-aurora/",
+      "access": "public",
+      "records_found": 3,
+      "notes": "Real Town of Aurora directory of sport organizations serving Aurora, org name + website only (no phone/email on the page). Lists IEM Basketball, York North Basketball Association, and Aurora Dunks Basketball (a Special Olympics Ontario program). Town also publishes a PDF 'Program Guide Community Directory' (aurora.ca/media/gzcdx4c0/...) not yet cross-checked for additional contact detail. Town recreation staff contact for directory corrections: Hailey Jones, hjones@aurora.ca."
+    },
+    {
+      "municipality": "Newmarket",
+      "directory_url": "https://www.newmarket.ca/community-and-culture/community-groups",
+      "access": "public",
+      "records_found": 0,
+      "notes": "Real, comprehensive Town of Newmarket community-groups directory (swim, skating, softball, tennis, soccer, hockey, ringette, curling, lawn bowling, etc.) but genuinely lists ZERO basketball clubs — a real gap despite York North Basketball Association (YNBA) being headquartered at Newmarket's own Magna Centre (800 Mulock Dr) and a 'Ladies Newmarket Basketball League' + Newmarket Youth Athletics Association basketball program both operating in town. Recorded YNBA under Aurora (where the town directory actually lists it) to avoid duplication."
+    },
+    {
+      "municipality": "King (King Township)",
+      "directory_url": "https://www.king.ca/communitygroups",
+      "access": "public",
+      "records_found": 0,
+      "notes": "Real, extensive Township of King community-groups directory (hockey, skating, curling, soccer, tennis, softball, swimming, etc., organized by category) but genuinely lists ZERO basketball organizations — a confirmed real gap, not a search miss."
+    },
+    {
+      "municipality": "East Gwillimbury",
+      "directory_url": "https://www.eastgwillimbury.ca/en/living-in-eg/community-contacts.aspx (page now 404s — dead link)",
+      "access": "dead",
+      "records_found": 0,
+      "notes": "The Town's own 'Community Contacts' directory page, previously indexed by search engines, now returns a 404. No replacement page found on eastgwillimbury.ca. IEM Basketball (recorded under Aurora) states on its own site that it also serves East Gwillimbury."
+    },
+    {
+      "municipality": "Whitchurch-Stouffville",
+      "directory_url": "none found",
+      "access": "none-found",
+      "records_found": 0,
+      "notes": "townofws.ca has facility/program pages (Leisure Centre, sport courts) but no published community-group or sports-club directory. Contact for leisure services: leisure.services@townofws.ca / 905-642-7529."
+    },
+    {
+      "municipality": "Georgina",
+      "directory_url": "https://www.georgina.ca/things-do/sports-clubs-and-organizations/sports-groups",
+      "access": "public",
+      "records_found": 0,
+      "notes": "Real, very rich Town of Georgina directory with full contact detail (phone, email, contact-person name) for ~30 clubs across baseball, hockey, soccer, skating, gymnastics, lawn bowling, dragon boat, etc. — confirms this town's directory infrastructure is exactly the gold-standard the task describes. But genuinely lists ZERO basketball organizations, corroborating an independent prior finding (docs/research/raw/ontario-gap-fill.json) that Georgina is a real basketball gap despite dozens of other sports being organized. Town Community Services contact: eleisure@georgina.ca / 905-476-4301."
+    },
+    {
+      "municipality": "Burlington",
+      "directory_url": "https://www.hipinfo.ca/ (Information Halton / Halton Community Services Directory, live classic OpenCIOC site covering Oakville/Burlington/Milton/Halton Hills — note: bare 'hipinfo.ca' without 'www.' times out in this environment, but 'https://www.hipinfo.ca/' works fine)",
+      "access": "public",
+      "records_found": 3,
+      "notes": "Plain GET search works without JS: https://www.hipinfo.ca/results.asp?STerms=basketball&SType=A. Record pages render full contact tables in PLAIN readable text (no HTML-entity obfuscation, unlike Peel's install). Found Burlington Basketball (BTN4527), DEEP Basketball Burlington (BTN0229), and Golden Horseshoe Disabled Sports Association / Vipers Wheelchair Basketball (BTN4062, serves Halton + Hamilton)."
+    },
+    {
+      "municipality": "Milton",
+      "directory_url": "https://www.hipinfo.ca/ (same Information Halton directory)",
+      "access": "public",
+      "records_found": 2,
+      "notes": "Same search as Burlington. Found Milton Men's Basketball (MIL0482) and Milton Stags Youth Basketball (MIL3942), both with rich contact tables (named primary/alternate contacts, direct emails)."
+    },
+    {
+      "municipality": "Oakville",
+      "directory_url": "https://www.hipinfo.ca/ (same Information Halton directory)",
+      "access": "public",
+      "records_found": 2,
+      "notes": "Same search as Burlington. Found Oakville Senior Ladies Basketball League (OAK3056) and Tuesday Night Mens Basketball (OAK3484), both with named contacts and direct emails."
+    },
+    {
+      "municipality": "Halton Hills",
+      "directory_url": "https://www.hipinfo.ca/ (same Information Halton directory)",
+      "access": "public",
+      "records_found": 0,
+      "notes": "Same directory as the other 3 Halton towns was searched (ACT prefix = Halton Hills records) but genuinely returned ZERO basketball organizations — only Halton Hills Sports Hall of Fame, sports-field/court bookings, and a general Special Olympics Ontario Halton Hills chapter page (no basketball-specific program listed under it). This is a real gap in the official directory, even though general web search (see docs/research/raw/ontario-gap-fill.json) previously found 'Halton Hills Girls' Basketball Club' and a 'Halton Basketball Club' via Facebook/local news — neither is registered in Information Halton and neither publishes a phone or email anywhere found."
+    },
+    {
+      "municipality": "Ajax",
+      "directory_url": "none found",
+      "access": "none-found",
+      "records_found": 0,
+      "notes": "No Town of Ajax community-organizations directory page found (their site covers facilities/programs but not a club registry). JUMP Basketball (see Mississauga entry) runs a Pickering/Ajax location per jumpbasketball.ca/locations/pickering-ajax/; Eastern Basketball Association and Oshawa Basketball Association (recorded under Oshawa) both also explicitly serve Ajax."
+    },
+    {
+      "municipality": "Pickering",
+      "directory_url": "https://www.pickering.ca/parks-recreation-culture/community-organizations/",
+      "access": "public",
+      "records_found": 0,
+      "notes": "Real City of Pickering directory (Community Groups, Sport Associations, Service Clubs, etc.) but the Sport Associations section (hockey, tennis, soccer, swimming, ringette, skating, squash, lacrosse, pickleball) genuinely lists ZERO basketball organizations."
+    },
+    {
+      "municipality": "Whitby",
+      "directory_url": "https://www.whitby.ca/community-and-people/community-and-sports-organizations/",
+      "access": "public",
+      "records_found": 0,
+      "notes": "Real, very extensive Town of Whitby directory (11 categories: hockey/ringette, skating, lacrosse, soccer, baseball/softball, cricket, rugby, ball hockey, football, tennis, swimming/synchro — dozens of named clubs with websites) but genuinely lists ZERO basketball clubs, a striking gap given Whitby Saints Basketball, Eastern Basketball Association, Oshawa Basketball Association and 360BTG all explicitly serve Whitby per their own sites."
+    },
+    {
+      "municipality": "Oshawa",
+      "directory_url": "https://community.oshawa.ca/ (City-run community clubs/groups/organizations directory)",
+      "access": "dead",
+      "records_found": 0,
+      "notes": "Site currently returns Cloudflare error 526 (invalid origin SSL certificate) on every attempt (both WebFetch and direct curl) — the City's own directory platform appears to be broken/misconfigured at time of this harvest, not a bot-wall. Oshawa Basketball Association (oshawabasketball.ca / oshawabasketball.com) and 360BTG (360btg.com) are both real, active Oshawa-based basketball orgs found via general web search rather than this directory — recorded below with full contact info."
+    },
+    {
+      "municipality": "Clarington",
+      "directory_url": "https://www.clarington.net/community-and-people/volunteering-and-community-involvement/community-organizations/",
+      "access": "public",
+      "records_found": 0,
+      "notes": "Real, extensive Municipality of Clarington directory (~80 organizations across sports, arts, service clubs, agencies) including Bowmanville Badminton Club, Clarington Girls Hockey, Clarington Minor Football, Clarington Toros Minor Hockey, Courtice F.C., etc. — but genuinely lists ZERO basketball organizations, despite an active 'Clarington Basketball' community program (facebook.com/basketballclarington, Bowmanville-based) not appearing on the town's own list. No phone/email found for Clarington Basketball beyond its Facebook page."
+    },
+    {
+      "municipality": "Uxbridge",
+      "directory_url": "https://www.uxbridge.ca/en/living-here/community-groups-and-clubs.aspx (returns a true 404 as of this harvest; a Google-cached snapshot of the same URL lists PROBUS, Horseshoes, Lions, Historical Society, Seniors, Skating, Swim Club, Cadet Corps, theatre group, bowling — no basketball club)",
+      "access": "dead",
+      "records_found": 0,
+      "notes": "Township of Uxbridge's own club directory page is currently unreachable (confirmed true 404 via verbose curl, not a redirect/bot-wall). Uxbridge Spartan Basketball Association (uxbridgespartanbasketball.com, SportsEngine-hosted) is a real, active club found via general web search; its 'Our Board' page requires JS (rendered via Playwright) and lists 13 named board members (President Marc Calarese, VP Justin Bashaw, Secretary Patrick Fitzgerald, Treasurer Keith Vaidya, etc.) but no public phone or email — recorded below with what's available."
+    },
+    {
+      "municipality": "Brock",
+      "directory_url": "https://townshipofbrock.ca/resident-services/community-groups-and-clubs",
+      "access": "public",
+      "records_found": 0,
+      "notes": "Real, thorough Township of Brock directory (community groups, charitable groups, arts/culture, hobby groups, summer + winter sports clubs) but genuinely lists ZERO basketball organizations among its ~35 listed clubs."
+    },
+    {
+      "municipality": "Scugog",
+      "directory_url": "https://www.scugog.ca/parks-recreation-culture/recreation/clubs-and-organizations/",
+      "access": "public",
+      "records_found": 1,
+      "notes": "Excellent, rich Township of Scugog directory (summer sports, winter sports, general clubs — dozens of organizations with named contacts and direct phone/email, exactly the gold-standard format the task describes). Found Greenbank Basketball with a direct contact email."
+    },
+    {
+      "municipality": "Hamilton",
+      "directory_url": "https://www.sporthamilton.com/sport-clubs-basketball (Sport Hamilton, the City-recognized official Sport Council for Hamilton)",
+      "access": "public",
+      "records_found": 9,
+      "notes": "Sport Hamilton is Hamilton's official Sport Council (city-recognized umbrella body, not a City of Hamilton webpage itself, but the closest municipal-adjacent equivalent — same relationship Sport Councils have to their cities elsewhere in Ontario). The Basketball category page is a SportsEngine/JS site (rendered via Playwright) that links out to member clubs' own sites by logo only (no text labels, so anchors had to be extracted from the rendered DOM). Found 9 real Hamilton-area basketball clubs: Hamilton Basketball Association, Ancaster Magic, Binbrook Basketball Club (Twitter-only), Blessed Sacrament Basketball (site dead — Cloudflare 'DNS points to prohibited IP'), Blitz Basketball, Dundas Dynamo Basketball, Hamilton Celtics, Transway Basketball, IBSA Basketball, Stoney Creek Basketball Club (Twitter-only)."
+    },
+    {
+      "municipality": "Ottawa",
+      "directory_url": "https://www.ottawa.ca/en/recreation-and-parks/jobs-and-community-involvement/partners-and-community-organizations/athletics-sports-and-leisure-groups/basketball",
+      "access": "blocked",
+      "records_found": 0,
+      "notes": "City of Ottawa DOES publish an official 'Athletics, sports and leisure groups' directory with a dedicated Basketball category page (confirmed to exist via search-result snippets and page title), but ottawa.ca sits behind an Incapsula bot-wall — both a direct curl and WebFetch attempt were stopped ('Request unsuccessful. Incapsula incident ID...' / empty content). Per instructions, this bot-wall was not bypassed; reporting it as blocked rather than harvesting via workaround. OttawaSportsPages.ca (a third-party community sports directory) and the Ottawa Sport & Social Club (adult league operator) both independently list Basketball categories and could be a follow-up non-municipal source."
+    },
+    {
+      "municipality": "Kitchener",
+      "directory_url": "none found",
+      "access": "none-found",
+      "records_found": 0,
+      "notes": "kitchener.ca only publishes a 'Neighbourhood associations' list (geographic residents' associations, not sports clubs) — no community-organizations/sports-club directory exists. Kitchener-Waterloo Youth Basketball Association (KWYBA) and Kitchener Waterloo Girls Basketball Association (KWGBA) both serve Kitchener but were found via general web search, not a municipal source — recorded under Waterloo where KWYBA's mailing address is registered."
+    },
+    {
+      "municipality": "Waterloo",
+      "directory_url": "none found",
+      "access": "none-found",
+      "records_found": 0,
+      "notes": "No City of Waterloo community-group/sports-club directory found (the city runs its own adult-league program, CARL, rather than publishing a club registry). KWYBA and KWGBA recorded below serve the whole Kitchener-Waterloo region and are registered at a Waterloo mailing address."
+    },
+    {
+      "municipality": "Cambridge",
+      "directory_url": "https://www.cambridge.ca/en/parks-recreation-culture/Clubs-and-Organizations.aspx (confirmed true 404 via curl — dead link, despite being the URL search engines still index)",
+      "access": "dead",
+      "records_found": 0,
+      "notes": "City of Cambridge states 'more than 80 minor sport organizations' are affiliated with the city, but the page that would list them is currently a dead link. Cambridge Basketball Association Inc. (SportsEngine site, cambridgevtbasketball.sportngin.com) is a real, active club found via general web search; its site returned 403 Forbidden to both WebFetch and would need further work to access — recorded with website only, no contact info retrieved."
+    },
+    {
+      "municipality": "Guelph",
+      "directory_url": "none found",
+      "access": "none-found",
+      "records_found": 0,
+      "notes": "No official guelph.ca community-organizations or sport-club directory found. GuelphToday.com (a Village Media local-news site, not a City of Guelph page) runs a community/sports directory listing Guelph Youth Basketball Association, but that's a third-party publisher, not municipal. GYBA's own contact info recorded below regardless, since it's the definitive Guelph youth basketball org."
+    },
+    {
+      "municipality": "London",
+      "directory_url": "https://www.londonsportscouncil.ca/sport-directory/ (London Sports Council, a city-recognized non-profit sport council, not a city.ca page)",
+      "access": "public",
+      "records_found": 0,
+      "notes": "The London Sports Council 'Sport Directory' page currently renders as an ORGANIZATION SUBMISSION FORM (fields for organization name/sport/contact person/email/phone) rather than a browsable public listing — i.e. the directory is being built but not yet published for public browsing, so zero records could be harvested from it. London Basketball Club (londonbasketballclub.ca, est. 2020) is a real, active club recorded below with limited contact info; no official City of London community-groups directory was found."
+    },
+    {
+      "municipality": "Windsor",
+      "directory_url": "none found",
+      "access": "none-found",
+      "records_found": 0,
+      "notes": "Windsor, ON search results were dominated by an unrelated 'Town of Windsor, CA' (California) municipal site — no City of Windsor, Ontario community-organizations directory surfaced. Not pursued further given time constraints; a follow-up pass focused specifically on windsor.ca / winsorrecreation would be worthwhile."
+    },
+    {
+      "municipality": "Chatham-Kent",
+      "directory_url": "https://www.chatham-kent.ca/livingck/communityconnections/ckgroups/Pages/default.aspx ('Get Connected' community groups directory) and https://www.chatham-kent.ca/livingck/livinginck/dailylife/Pages/Playing-Sports.aspx ('Playing Sports' page)",
+      "access": "public",
+      "records_found": 0,
+      "notes": "Both real, official Chatham-Kent municipal pages checked. 'Get Connected' lists 9 general community groups (none sports-related). 'Playing Sports' explicitly invites residents to report sports clubs not yet listed and currently shows none — basketball included. Chatham-Kent Wildcats Basketball (a real, long-running club) was found via general web search instead, with a very rich contact page (recorded below) — worth flagging to the municipality as a listing gap. Municipal contact for corrections: LivingCK@Chatham-Kent.ca / 519-360-1998."
+    },
+    {
+      "municipality": "Sarnia",
+      "directory_url": "https://www.sarnia.ca/play/community-partners/",
+      "access": "public",
+      "records_found": 0,
+      "notes": "Real City of Sarnia 'Community Partners' directory, but it lists city-wide partner organizations (tourism, marina, humane society, YMCA, arts centre) rather than a sports-club registry — genuinely no basketball entries. HOOPS All-Star Basketball Inc. (recorded below), Sarnia Valhalla Basketball / Valhalla Youth Basketball Association (est. 1983), and Sarnia Heat Basketball Club (High Park P.S., 757 Kember Ave) are all real active clubs found via general web search, not this directory."
+    },
+    {
+      "municipality": "St. Catharines",
+      "directory_url": "none found",
+      "access": "none-found",
+      "records_found": 0,
+      "notes": "stcatharines.ca has recreation/facility pages and a charity-tickets program but no published community-organizations or sports-club directory. St. Catharines CYO Basketball (Rebels) is a real, active club found via general web search, recorded below."
+    },
+    {
+      "municipality": "Niagara Falls",
+      "directory_url": "none found",
+      "access": "none-found",
+      "records_found": 0,
+      "notes": "niagarafalls.ca has recreation/facility pages (MacBain Community Centre, Sports Wall of Fame) but no published community-organizations directory. Niagara Falls Boys & Girls Club runs a 'Biddy Basketball' program (BGC Niagara, bgcn.ca/contact) and Niagara Apex Basketball (region-wide, recorded below) also serves the city; neither was sourced from a municipal directory."
+    },
+    {
+      "municipality": "Greater Sudbury",
+      "directory_url": "https://www.greatersudbury.ca/play/clubs-and-organizations/",
+      "access": "public",
+      "records_found": 0,
+      "notes": "Real official City page, but it's only a 3-link index (Community Action Networks, Neighbourhood Associations, Older Adult Clubs/Associations) — no sports-club sub-directory at all, so no basketball listing was possible in this structure. Greater Sudbury Basketball Association (greatersudburybasketball.com, OBA-affiliated) is a real, active club found via general web search; no direct phone/email published on its site (Board of Directors page not checked in depth). Municipal contact for community listings: leisure.services@greatersudbury.ca / 705-674-4455 ext 2446."
+    },
+    {
+      "municipality": "Thunder Bay",
+      "directory_url": "https://www.thunderbay.ca/en/city-services/clubs-and-groups.aspx",
+      "access": "public",
+      "records_found": 0,
+      "notes": "Real official City page but only lists 3 seniors'/hobby clubs (Retirement Explorers, Amateur Radio Club, Senior Social & Fix-It Club) — no sports-club section present, so no basketball entries possible. Thunder Bay Basketball (thunderbaybball.com) is a real club found via general web search; its site displayed no contact details recoverable via WebFetch."
+    },
+    {
+      "municipality": "Sault Ste. Marie",
+      "directory_url": "https://saultstemarie.ca/Government/City-Departments/Community-Development-Enterprise-Services/Community-Services/Recreation-and-Culture/Sports.aspx",
+      "access": "public",
+      "records_found": 0,
+      "notes": "Real official City 'Sports' page, but it only lists financial-assistance recipients (darts, gymnastics, curling, weightlifting) for elite athletes/teams, not a club directory — no basketball entries. Elite 8 Basketball Academy (an OBA member club) was already documented with full contact info in prior research (docs/research/raw/ontario-gap-fill.json) via a different, non-municipal source (saultsports.com article) — not re-added here to avoid duplication."
+    },
+    {
+      "municipality": "Timmins",
+      "directory_url": "none found",
+      "access": "none-found",
+      "records_found": 0,
+      "notes": "No City of Timmins community-organizations directory found. Timmins Selects Basketball Club (timminsselects.ca, adult/youth leagues) and Timmins High Basketball (school team) are both real, found via general web search — recorded below."
+    },
+    {
+      "municipality": "North Bay",
+      "directory_url": "none found",
+      "access": "none-found",
+      "records_found": 0,
+      "notes": "No City of North Bay community-organizations directory found (BayToday.ca, a Village Media local-news site, runs a third-party sports directory but is not municipal). North Bay Spartans Basketball (OBA member club, ages 9-18) is real and found via general web search — recorded below. Caution: 'North Bay Basketball Academy' (northbaybasketball.com) is a NAME COLLISION with a Marin/Sonoma County, California organization — correctly excluded."
+    },
+    {
+      "municipality": "Kingston",
+      "directory_url": "none found",
+      "access": "none-found",
+      "records_found": 0,
+      "notes": "No City of Kingston, Ontario community-organizations directory found (search results were dominated by unrelated 'Kingston' place names in Australia/Massachusetts). Kingston Impact Basketball Club (kingstonimpact.ca, 'largest full service youth basketball club between Ottawa and Toronto') is real and found via general web search — recorded below."
+    },
+    {
+      "municipality": "Cornwall",
+      "directory_url": "https://www.cornwall.ca/en/play-here/sports-associations.aspx (confirmed true 404 via curl — dead link)",
+      "access": "dead",
+      "records_found": 0,
+      "notes": "City of Cornwall's own Sports Associations directory page (still indexed by search engines) is currently a dead link. Cornwall and United Counties Basketball Association (30+ years, house leagues + Cornwall Lions travelling teams) is real and found via general web search — recorded below."
+    },
+    {
+      "municipality": "Brockville",
+      "directory_url": "none found",
+      "access": "none-found",
+      "records_found": 0,
+      "notes": "No City of Brockville community-organizations directory found. Brockville Blazers Basketball Association (brockvilleblazers.com) is real and active (has an annual general meeting); its site's Contact page is a form only, no email/phone published — recorded below with website only."
+    },
+    {
+      "municipality": "Belleville",
+      "directory_url": "https://quinte.totalsportsmedia.ca/directory/wpbdp_category/basketball/ (Total Sports Quinte / 'Bay of Quinte Sports Directory', a community sports-media directory covering the Belleville/Quinte West area — not a city.ca page)",
+      "access": "public",
+      "records_found": 2,
+      "notes": "No official City of Belleville community-groups directory found, but this community sports directory explicitly covering the Bay of Quinte area (Belleville + Quinte West together) yielded real basketball entries with a mix of full and placeholder contact data (some phone fields show '0000000000' as an unset placeholder rather than a real number — not used). Found Belleville Spirits Boys Basketball, Belleville Spirits Girls Basketball Club (girls 8-18), and Jr. NBA Belleville (Facebook only, ages 5-10, not independently confirmed with contact info)."
+    },
+    {
+      "municipality": "Quinte West",
+      "directory_url": "https://quinte.totalsportsmedia.ca/directory/wpbdp_category/basketball/ (same Bay of Quinte Sports Directory as Belleville)",
+      "access": "public",
+      "records_found": 2,
+      "notes": "Same directory as Belleville. Found PSP Community Recreation Men's/Women's Basketball at CFB Trenton (21 Namao Dr, Trenton) and Wheelchair Basketball Quinte (50 Monogram Place, Trenton) — both recorded below. This corroborates and extends an earlier finding (docs/research/raw/ontario-gap-fill.json) that Quinte West itself had only adult/adaptive basketball at CFB Trenton with no youth club based in Trenton proper."
+    },
+    {
+      "municipality": "Peterborough",
+      "directory_url": "https://www.peterborough.ca/en/explore-and-play/local-sport-and-recreation.aspx",
+      "access": "public",
+      "records_found": 0,
+      "notes": "City of Peterborough's own 'Local Sport and Recreation' page highlights leagues/programs using municipal facilities but was not confirmed to list individual club contacts (page describes itself as pointing to community-run programs rather than itemizing them). Three real, active basketball orgs found via general web search instead: Peterborough City Basketball Club, Kawartha Basketball Club, and Peterborough Youth Basketball Association (PYBA) — recorded below."
+    },
+    {
+      "municipality": "Kawartha Lakes",
+      "directory_url": "https://www.kawarthalakes.ca/explore-play/community-organizations/",
+      "access": "public",
+      "records_found": 0,
+      "notes": "Real official City of Kawartha Lakes directory, but only 8 general clubs listed (BGC Kawarthas, curling/service/Lions/Probus/Optimist clubs) — no sports-club section and no basketball. Search results referenced a separate 'Community Sports and Leisure Directory' on kawarthalakes.ca but its direct URL could not be located in the time available. Lindsay Wildcats Basketball Association (Lindsay) was already documented with contact info in prior research (docs/research/raw/ontario-gap-fill.json) — not re-added here to avoid duplication."
+    },
+    {
+      "municipality": "Norfolk County",
+      "directory_url": "https://info-bhn.cioc.ca/ ('Contact Brant' / Information Brant-Haldimand-Norfolk, a live classic OpenCIOC site covering Brantford + County of Brant + Haldimand County + Norfolk County all in one directory)",
+      "access": "public",
+      "records_found": 1,
+      "notes": "Plain GET search works without JS: https://info-bhn.cioc.ca/bresults.asp?STerms=basketball&SType=A. Found Norfolk Youth Basketball Association (SIM1120) with a rich contact record (President + Treasurer with cell numbers) — this updates/corroborates the same organization already found in prior research (docs/research/raw/ontario-gap-fill.json) via 211ontario.ca, now with two named personal contacts added. County-wide 'Brant Norfolk Basketball Officials Association' also serves Norfolk (recorded under Brantford)."
+    },
+    {
+      "municipality": "Haldimand County",
+      "directory_url": "https://info-bhn.cioc.ca/ (same tri-county directory as Norfolk County and Brantford)",
+      "access": "public",
+      "records_found": 0,
+      "notes": "Same directory/search as Norfolk and Brantford was checked (Haldimand records use no distinct prefix but were identifiable by name) — only arenas, museums, and a Special Olympics Ontario Haldimand County chapter turned up; no dedicated Haldimand basketball club appears in this directory. This is a real gap in the region's official directory."
+    },
+    {
+      "municipality": "Brantford",
+      "directory_url": "https://info-bhn.cioc.ca/ (same tri-county 'Contact Brant' directory) and https://brantfordsportscouncil.ca/member-sports-organizations/ (Brantford Sports Council)",
+      "access": "public",
+      "records_found": 4,
+      "notes": "The Contact Brant OpenCIOC directory yielded 4 real basketball orgs: Brant Norfolk Basketball Officials Association, Brantford Boys CYO Hawks Basketball, Brantford CYO Girls Basketball, and Briers Basketball Club (est. 1978) — all with rich contact records (named president/officers, direct emails, one with a phone number). The Brantford Sports Council (a city-recognized umbrella body, contact Bill Harding, brantfordsports@gmail.com) independently lists the same CYO clubs as member organizations, corroborating this list."
+    },
+    {
+      "municipality": "Woodstock",
+      "directory_url": "none found",
+      "access": "none-found",
+      "records_found": 0,
+      "notes": "No Oxford County or City of Woodstock community-organizations/sports-club directory found; search results returned only general facility/background information (Oxford County departments page, Reeves Community Complex). No basketball club identified for Woodstock in this pass — flagged as a gap needing a deeper follow-up rather than a confirmed 'no club exists' finding, given the light search effort here."
+    }
+  ],
+  "organizations": [
+    {
+      "name": "Brampton Minor Basketball Association",
+      "city": "Brampton",
+      "address": "Flower City Community Campus, 8930 McLaughlin Road S, Building E, Brampton, ON L6Y 5T1",
+      "phone": "905-455-5277",
+      "email": "info@bramptonbasketball.com",
+      "website": "http://www.bramptonbasketball.com",
+      "contact_person": "David Baah (President, david@bramptonbasketball.com); Reynold Bogle (Alternate contact, reynold@bramptonbasketball.com); Leslie Carmichael (Director Member Services / Volunteer Coordinator, leslie@bramptonbasketball.com)",
+      "evidence_url": "https://peel.cioc.ca/record/CDR1031",
+      "notes": "Sourced via Information Peel (peel.cioc.ca) community services directory, an OpenCIOC platform serving Peel Region on behalf of the municipalities."
+    },
+    {
+      "name": "Caledon Cougars Basketball Association",
+      "city": "Caledon (Bolton)",
+      "address": "33A King St W, Bolton, ON L7E 1C9",
+      "phone": "",
+      "email": "mikedodig5870@rogers.com",
+      "website": "http://www.caledoncougars.ca",
+      "contact_person": "Mike Dodig (President); Dawn Dodig (Treasurer, dawn.dodig@peelsb.com)",
+      "evidence_url": "https://peel.cioc.ca/record/CAL0171",
+      "notes": "Sourced via Information Peel (peel.cioc.ca). Office phone field was blank on the record; primary/alternate contact emails were HTML-entity-encoded on the page but fully public."
+    },
+    {
+      "name": "D3P Sports (D3P Basketball / D3P All Abilities / D3P Fitness)",
+      "city": "Caledon",
+      "address": "",
+      "phone": "647-809-0923",
+      "email": "coachfelix@d3psports.com",
+      "website": "http://www.d3psports.com",
+      "contact_person": "Felix Adjei (CEO)",
+      "evidence_url": "https://peel.cioc.ca/record/CDR1812",
+      "notes": "Adaptive/multi-sport academy based in Caledon; basketball is one of several programs (D3P Basketball) alongside all-abilities and fitness programming. Sourced via Information Peel (peel.cioc.ca)."
+    },
+    {
+      "name": "JUMP Basketball Mississauga Association",
+      "city": "Mississauga",
+      "address": "100-4310 Sherwoodtowne Blvd, Mississauga, ON L4Z 4C4",
+      "phone": "647-549-5867",
+      "email": "support@jumpbasketball.ca",
+      "website": "https://jumpbasketball.ca/",
+      "contact_person": "Eric (eric@jumpbasketball.ca, per site footer)",
+      "evidence_url": "https://mississauga.ca/our-organization/about-our-organization/city-affiliates",
+      "notes": "Listed on the City of Mississauga's City Affiliates / Community Group Registry page (name + website only); phone/email pulled from the org's own site."
+    },
+    {
+      "name": "Malton Sting Basketball Club",
+      "city": "Mississauga (Malton)",
+      "address": "",
+      "phone": "",
+      "email": "maltonsting.bc@gmail.com",
+      "website": "https://www.maltonsting.com/",
+      "contact_person": "",
+      "evidence_url": "https://mississauga.ca/our-organization/about-our-organization/city-affiliates",
+      "notes": "Listed on the City of Mississauga's City Affiliates page (name + website only); email pulled from the org's own contact page. No phone or contact-person name published."
+    },
+    {
+      "name": "Mississauga Minor Basketball Association (Monarchs Basketball)",
+      "city": "Mississauga",
+      "address": "5600 Rose Cherry Place, Entrance C 3rd Floor, Mississauga, ON L4Z 4B6",
+      "phone": "905-502-0050",
+      "email": "info@monarchsbasketball.ca",
+      "website": "https://www.monarchsbasketball.ca/",
+      "contact_person": "",
+      "evidence_url": "https://mississauga.ca/our-organization/about-our-organization/city-affiliates",
+      "notes": "Listed on the City of Mississauga's City Affiliates page as 'Mississauga Minor Basketball Association' (name + website only); full contact info pulled from the org's own site, which brands itself 'Monarchs Basketball'."
+    },
+    {
+      "name": "Barrie Royals Basketball Club",
+      "city": "Barrie",
+      "address": "",
+      "phone": "",
+      "email": "info@barrieroyals.ca",
+      "website": "https://www.barrieroyals.ca/",
+      "contact_person": "",
+      "evidence_url": "https://cc.search211.ca/record/71089280/barrie-royals-basketball-club-barrie-royals-basketball-club/",
+      "notes": "House League + competitive rep teams (ages 8-18), OBA-affiliated. Sourced via Community Connection (cc.search211.ca), the 211-network community directory covering Simcoe County/Barrie. Record explicitly states 'No public telephone number'. Social: facebook.com/BarrieRoyalsBasketballClub, instagram.com/thebarrieroyals, twitter.com/TheBarrieRoyals."
+    },
+    {
+      "name": "Barrie and District Association of Basketball Officials",
+      "city": "Barrie",
+      "address": "",
+      "phone": "",
+      "email": "",
+      "website": "http://www.bdabo.ca/",
+      "contact_person": "Secretary to the Board (no name published; contact via website)",
+      "evidence_url": "https://cc.search211.ca/record/71090132/barrie-and-district-association-of-basketball-officials-barrie-and-district-association-of-basketball-officials/",
+      "notes": "Referee/officiating board (1 of 44 OABO boards), not a playing club — included since it is a real basketball org with public presence; no phone/email published, 'email secretary for information' via website only."
+    },
+    {
+      "name": "Shak's World Community Centre — Basketball Programs",
+      "city": "Barrie",
+      "address": "59 Maple Ave, Barrie, ON L4N 1R8",
+      "phone": "705-252-0175",
+      "email": "info@shaksworld.com",
+      "website": "https://www.shaksworld.org/",
+      "contact_person": "",
+      "evidence_url": "https://cc.search211.ca/record/92410077/shaks-world-community-centre-basketball-programs/",
+      "notes": "Private community centre running house-league/drop-in/camp basketball programs (not a club per se, but a real facility with rich contact data running youth basketball year-round). Sourced via Community Connection (cc.search211.ca)."
+    },
+    {
+      "name": "Next Level Basketball",
+      "city": "Barrie",
+      "address": "",
+      "phone": "705-737-7108",
+      "email": "nextlevelbballcamp@gmail.com",
+      "website": "https://nextlevelhoops.ca",
+      "contact_person": "",
+      "evidence_url": "https://cc.search211.ca/record/93593240/next-level-basketball-next-level-basketball/",
+      "notes": "Basketball skills academy (house league, rep/travel program, summer camp), serves Simcoe County. Sourced via Community Connection (cc.search211.ca)."
+    },
+    {
+      "name": "South Simcoe Basketball Club",
+      "city": "Innisfil / Bradford West Gwillimbury",
+      "address": "450 Holland Street West, Suite 5-333, Bradford, ON L3Z 0J4 (mailing address per club site); training location also cited elsewhere as 2270 Richardson St, Innisfil, ON L9S 1G6",
+      "phone": "905-716-5339",
+      "email": "info@ssbasketball.ca",
+      "website": "http://ssbasketball.ca/",
+      "contact_person": "",
+      "evidence_url": "https://www.innisfil.ca/community-recreation/community-groups-organizations",
+      "notes": "Listed on the Town of Innisfil's Community Groups directory (name + website link only); phone from a general web search result, address + email from the club's own site. Club serves both Innisfil and Bradford West Gwillimbury (branded 'Sonics')."
+    },
+    {
+      "name": "Orillia Youth Basketball Association (Orillia Lakers)",
+      "city": "Orillia",
+      "address": "",
+      "phone": "",
+      "email": "",
+      "website": "https://orillialakers.com/",
+      "contact_person": "",
+      "evidence_url": "https://orillialakers.com/",
+      "notes": "House league (grades 3-8) + rep teams (ages 8-19). No phone or email published; site only offers a contact form. Facebook: facebook.com/orillialakersyouthbasketball, Instagram @orillialakers."
+    },
+    {
+      "name": "IEM Basketball",
+      "city": "Aurora",
+      "address": "Alpha High Performance Center, Aurora, ON",
+      "phone": "905-836-6195",
+      "email": "info@iembasketball.com",
+      "website": "http://www.iembasketball.com/",
+      "contact_person": "Ion (tournament/admin contact, no formal title given)",
+      "evidence_url": "https://www.aurora.ca/recreation-arts-and-culture/sport/sport-organizations-serving-aurora/",
+      "notes": "Listed on Town of Aurora's sport organizations directory (name + website only); phone/email from the org's own site. Club states it serves Newmarket, Aurora, Keswick, East Gwillimbury and Bradford."
+    },
+    {
+      "name": "York North Basketball Association (YNBA)",
+      "city": "Aurora / Newmarket",
+      "address": "Magna Centre, 800 Mulock Dr, Newmarket, ON L3Y 9C1",
+      "phone": "905-853-9102",
+      "email": "admin@ynba.ca",
+      "website": "https://ynba.ca/",
+      "contact_person": "",
+      "evidence_url": "https://www.aurora.ca/recreation-arts-and-culture/sport/sport-organizations-serving-aurora/",
+      "notes": "Listed on Town of Aurora's sport organizations directory (name + website only); full contact info from the org's own site. Physically based at Newmarket's Magna Centre despite being listed under Aurora's directory; Newmarket's own community-groups directory does not list it."
+    },
+    {
+      "name": "Aurora Dunks Basketball (Special Olympics Ontario)",
+      "city": "Aurora",
+      "address": "",
+      "phone": "",
+      "email": "",
+      "website": "https://aurora.specialolympicsontario.ca/programs/basketball",
+      "contact_person": "",
+      "evidence_url": "https://www.aurora.ca/recreation-arts-and-culture/sport/sport-organizations-serving-aurora/",
+      "notes": "Special Olympics Ontario adaptive basketball program under the Aurora chapter; listed on Town of Aurora's sport organizations directory. No independent phone/email; use the Special Olympics Ontario Aurora chapter page."
+    },
+    {
+      "name": "Burlington Basketball",
+      "city": "Burlington",
+      "address": "The Playground, 952 Century Dr, Burlington, ON L7L 5P2 (mailing: c/o Operations, PO Box 175, 2186 Mountain Grove Ave, Burlington, ON L7P 4X4)",
+      "phone": "905-220-3735",
+      "email": "operations@burlingtonbasketball.ca",
+      "website": "https://www.burlingtonbasketball.ca/",
+      "contact_person": "",
+      "evidence_url": "https://www.hipinfo.ca/record/BTN4527",
+      "notes": "Not-for-profit youth basketball association, ages 5-18 (Jr. NBA intro, house league, Burlington Force rep teams from U10, elite program, camps). Est. 1973. Sourced via Information Halton (hipinfo.ca)."
+    },
+    {
+      "name": "DEEP Basketball",
+      "city": "Burlington",
+      "address": "Nelson High School Gym (program location), 4181 New St, Burlington, ON L7L 1T3",
+      "phone": "",
+      "email": "info@deepbasketball.com",
+      "website": "https://deepbasketball.com/",
+      "contact_person": "Coach Hope (Founder)",
+      "evidence_url": "https://www.hipinfo.ca/record/BTN0229",
+      "notes": "Not-for-profit basketball programs for youth ages 5-18 (intro, Jr NBA/WNBA, house league, rep). No public telephone number. Sourced via Information Halton (hipinfo.ca)."
+    },
+    {
+      "name": "Golden Horseshoe Disabled Sports Association — Vipers Wheelchair Basketball",
+      "city": "Burlington",
+      "address": "Alton Recreation Centre, 3040 Tim Dobbie Dr, Burlington, ON L7M 0M4",
+      "phone": "",
+      "email": "info@vipersbasketball.ca",
+      "website": "https://vipersbasketball.ca",
+      "contact_person": "",
+      "evidence_url": "https://www.hipinfo.ca/record/BTN4062",
+      "notes": "Registered charity (est. 1986), wheelchair basketball for all physical abilities, ages 4+, serves Halton Region and Hamilton and surrounding areas. No public telephone number. Sourced via Information Halton (hipinfo.ca)."
+    },
+    {
+      "name": "Milton Men's Basketball",
+      "city": "Milton",
+      "address": "Milton District High School / Milton Sports Centre (game locations), 396 Williams Ave, Milton, ON L9T 2G4",
+      "phone": "416-898-7059",
+      "email": "dstocktonmmbl@gmail.com",
+      "website": "https://www.leaguelineup.com/miltonmensbasketball",
+      "contact_person": "Dave Stockton (President, dstockton14@gmail.com); Jon Nameth (Deputy Commissioner, 905-749-1822)",
+      "evidence_url": "https://www.hipinfo.ca/record/MIL0482",
+      "notes": "Recreational men's basketball league, est. 1985, limited enrollment, ages 25-65. Sourced via Information Halton (hipinfo.ca)."
+    },
+    {
+      "name": "Milton Stags Youth Basketball",
+      "city": "Milton",
+      "address": "Mattamy National Cycling Centre, 2015 Panam Blvd Room 170, Milton, ON L9E 0K7",
+      "phone": "289-429-1114",
+      "email": "inquiry@miltonstags.com",
+      "website": "https://www.miltonstags.com",
+      "contact_person": "Christine Giroux (Director of Operations, Christine@miltonstags.com)",
+      "evidence_url": "https://www.hipinfo.ca/record/MIL3942",
+      "notes": "Non-profit basketball club, ages 4-18, recreational through elite, affiliated with Basketball Ontario, serves Halton + Peel Region. Office hours Mon-Fri 6-8pm at Milton Velodrome Room 170. Sourced via Information Halton (hipinfo.ca)."
+    },
+    {
+      "name": "Oakville Senior Ladies Basketball League",
+      "city": "Oakville",
+      "address": "",
+      "phone": "905-981-0079",
+      "email": "OSLBL@outlook.com",
+      "website": "https://leaguelineup.com/OSLBL",
+      "contact_person": "Kendra & Erin (League Organizers)",
+      "evidence_url": "https://www.hipinfo.ca/record/OAK3056",
+      "notes": "Recreational women's basketball league, ages 22+, serves Burlington/Milton/Oakville. Sourced via Information Halton (hipinfo.ca)."
+    },
+    {
+      "name": "Tuesday Night Mens Basketball",
+      "city": "Oakville",
+      "address": "Game location: White Oaks Secondary School - North Campus, 1055 McCraney St E, Oakville, ON L6H 2R6; mailing c/o James Mercado, 1345 Creekside Dr, Oakville, ON L6H 4Y3",
+      "phone": "",
+      "email": "jemercado5@yahoo.com",
+      "website": "",
+      "contact_person": "James Mercado (Coordinator)",
+      "evidence_url": "https://www.hipinfo.ca/record/OAK3484",
+      "notes": "Recreational pick-up basketball for men 35+, est. 1970, games Tuesdays 8-10pm Sep-May. Sourced via Information Halton (hipinfo.ca)."
+    },
+    {
+      "name": "Greenbank Basketball",
+      "city": "Scugog (Greenbank)",
+      "address": "",
+      "phone": "",
+      "email": "reneeadamkowski@gmail.com",
+      "website": "",
+      "contact_person": "Renee Adamkowski",
+      "evidence_url": "https://www.scugog.ca/parks-recreation-culture/recreation/clubs-and-organizations/",
+      "notes": "Listed under Summer Sports Clubs on the Township of Scugog's official Clubs and Organizations directory — a direct hit with contact email straight from a real municipal directory."
+    },
+    {
+      "name": "Oshawa Basketball Association",
+      "city": "Oshawa",
+      "address": "",
+      "phone": "416-453-1319",
+      "email": "info@oshawabasketball.com",
+      "website": "https://oshawabasketball.ca/",
+      "contact_person": "",
+      "evidence_url": "https://oshawabasketball.ca/",
+      "notes": "NOT found via a municipal directory (City of Oshawa's own community.oshawa.ca directory is currently broken — see Oshawa municipality entry) — found via general web search. Serves 1,000+ players across Durham Region: Oshawa, Whitby, Ajax, Pickering, Bowmanville, Newcastle. Ages 6-17, skill development through competitive rep. Also reachable via WhatsApp at the same number."
+    },
+    {
+      "name": "Eastern Basketball Association",
+      "city": "Oshawa / Pickering / Ajax / Whitby / Clarington",
+      "address": "",
+      "phone": "905-924-3137",
+      "email": "info@easternbasketball.ca",
+      "website": "https://www.easternbasketball.ca/",
+      "contact_person": "",
+      "evidence_url": "https://www.easternbasketball.ca/",
+      "notes": "NOT found via any municipal directory (Pickering, Whitby, and Clarington's own official directories were all checked and list zero basketball orgs) — found via general web search. Not-for-profit serving Durham Region broadly (Pickering, Ajax, Whitby, Oshawa, Courtice, Bowmanville, Clarington), ages 6-18, house league + competitive rep + skills clinics."
+    },
+    {
+      "name": "360BTG (Basketball & Soccer)",
+      "city": "Oshawa / Whitby / Clarington / Ajax / Pickering",
+      "address": "Maxwell Heights Secondary School, 1100 Coldstream Dr, Oshawa, ON",
+      "phone": "",
+      "email": "director@360btg.com",
+      "website": "https://www.360btg.com/",
+      "contact_person": "",
+      "evidence_url": "https://www.360btg.com/",
+      "notes": "NOT found via any municipal directory — found via general web search. Youth basketball + soccer house leagues and camps ages 7-17, serves Oshawa/Whitby/Clarington/Ajax/Pickering. High-performance rep training arm uses admin@rumibasketball.com."
+    },
+    {
+      "name": "Uxbridge Spartan Basketball Association (USBA)",
+      "city": "Uxbridge",
+      "address": "",
+      "phone": "",
+      "email": "",
+      "website": "https://www.uxbridgespartanbasketball.com/",
+      "contact_person": "Marc Calarese (President); Justin Bashaw (Vice-President); Patrick Fitzgerald (Secretary); Keith Vaidya (Treasurer, Hecla Hoops Coordinator)",
+      "evidence_url": "https://uxbridgespartanbasketball.sportngin.com/board",
+      "notes": "Township of Uxbridge's own community-groups directory page is currently a dead link (see municipality entry), so this was found via general web search + Facebook. Board member names are public on the SportsEngine-hosted 'Our Board' page, but no direct phone or email is published anywhere on the site — members are reachable only through an internal SportsEngine contact form (not accessed, to respect the platform's member-contact gate)."
+    },
+    {
+      "name": "Hamilton Basketball Association (HBA)",
+      "city": "Hamilton",
+      "address": "2-558 Upper Gage Avenue, Suite 271, Hamilton, ON L8V 4J6",
+      "phone": "",
+      "email": "info@hbabasketball.ca",
+      "website": "https://www.hbabasketball.ca/",
+      "contact_person": "",
+      "evidence_url": "https://www.sporthamilton.com/sport-clubs-basketball",
+      "notes": "Hamilton's longest-running youth house league, girls 5-17 / boys 5-18. Sourced via Sport Hamilton's official club directory (JS-rendered, Playwright used to enumerate member clubs)."
+    },
+    {
+      "name": "Ancaster Magic Basketball",
+      "city": "Hamilton (Ancaster)",
+      "address": "",
+      "phone": "",
+      "email": "ancastermagic@gmail.com",
+      "website": "https://www.ancastermagic.ca/",
+      "contact_person": "",
+      "evidence_url": "https://www.sporthamilton.com/sport-clubs-basketball",
+      "notes": "OBA-sanctioned rep and house league teams for youth in Ancaster. Site domain in Sport Hamilton's directory (.com) redirects to the real .ca site. Sourced via Sport Hamilton's official club directory."
+    },
+    {
+      "name": "Blitz Basketball",
+      "city": "Hamilton (Ancaster)",
+      "address": "31 Benvenuto Crescent, Hamilton, ON L9B 2J8",
+      "phone": "905-807-1438",
+      "email": "",
+      "website": "https://www.blitzbasketball.net/",
+      "contact_person": "",
+      "evidence_url": "https://www.sporthamilton.com/sport-clubs-basketball",
+      "notes": "Youth basketball development, beginner through competitive rep. Sourced via Sport Hamilton's official club directory. No email published; contact form only."
+    },
+    {
+      "name": "Dundas Dynamo Basketball",
+      "city": "Hamilton (Dundas)",
+      "address": "",
+      "phone": "",
+      "email": "",
+      "website": "https://dynamobasketball.ca/",
+      "contact_person": "",
+      "evidence_url": "https://www.sporthamilton.com/sport-clubs-basketball",
+      "notes": "Rep + house league club (boys U10/U16-17, girls U11/U13/U15/U19). Sourced via Sport Hamilton's official club directory. No phone/email published on-site; 'Contact Us' page is form-only."
+    },
+    {
+      "name": "Transway Basketball Club",
+      "city": "Hamilton",
+      "address": "",
+      "phone": "",
+      "email": "info@transwaybasketball.com",
+      "website": "https://www.transwaybasketball.com/",
+      "contact_person": "",
+      "evidence_url": "https://www.sporthamilton.com/sport-clubs-basketball",
+      "notes": "Non-profit girls' basketball club est. 1979 by Doug Harrison and Brian Humes; 109 provincial championships, described as most wins of any Ontario basketball club. Rep, house league, and summer camps. Sourced via Sport Hamilton's official club directory."
+    },
+    {
+      "name": "IBSA Basketball",
+      "city": "Hamilton",
+      "address": "training locations in Hamilton, Ancaster (3-on-3), and Binbrook (3-on-3)",
+      "phone": "877-897-1033",
+      "email": "",
+      "website": "https://www.ibsabasketball.com/",
+      "contact_person": "",
+      "evidence_url": "https://www.sporthamilton.com/sport-clubs-basketball",
+      "notes": "Year-round basketball training academy across the Hamilton area; independent web research separately describes a related recreational program serving Hamilton's Islamic community. Sourced via Sport Hamilton's official club directory."
+    },
+    {
+      "name": "Hamilton Celtics Basketball",
+      "city": "Hamilton",
+      "address": "",
+      "phone": "",
+      "email": "",
+      "website": "https://hamiltonceltics.ca/",
+      "contact_person": "",
+      "evidence_url": "https://www.sporthamilton.com/sport-clubs-basketball",
+      "notes": "Sourced via Sport Hamilton's official club directory. Site returns HTTP 202 (JS loading-challenge page) to both curl and WebFetch — no contact info recoverable without deeper browser automation; recorded name/website only."
+    },
+    {
+      "name": "Kitchener-Waterloo Youth Basketball Association (KWYBA)",
+      "city": "Kitchener-Waterloo",
+      "address": "500 Parkside Dr, Waterloo, ON N2L 5J4",
+      "phone": "519-573-4582",
+      "email": "coachqwlu@hotmail.com",
+      "website": "https://www.kwyba.com/",
+      "contact_person": "Mike Quigley (Executive Administrator)",
+      "evidence_url": "https://www.kwyba.com/contact_us/",
+      "notes": "Serves youth ages 8-18 across Kitchener, Waterloo and surrounding region. Found via general web search (211ontario.ca agency listing + the org's own site) — no municipal directory exists for Kitchener or Waterloo."
+    },
+    {
+      "name": "Kitchener Waterloo Girls Basketball Association (KWGBA)",
+      "city": "Kitchener-Waterloo",
+      "address": "",
+      "phone": "",
+      "email": "kwgirlsbball@gmail.com",
+      "website": "https://www.kwgba.ca/",
+      "contact_person": "",
+      "evidence_url": "https://www.kwgba.ca/",
+      "notes": "Girls-focused counterpart to KWYBA. Found via general web search, not a municipal directory."
+    },
+    {
+      "name": "Cambridge Basketball Association Inc.",
+      "city": "Cambridge",
+      "address": "",
+      "phone": "",
+      "email": "",
+      "website": "https://cambridgevtbasketball.sportngin.com/",
+      "contact_person": "",
+      "evidence_url": "https://cambridgevtbasketball.sportngin.com/",
+      "notes": "Serves 100+ young athletes Pre-K through grade 6. Found via general web search since the City of Cambridge's own clubs directory page is dead (see municipality entry). Site returned 403 Forbidden on fetch attempt — not pursued further; website only, no phone/email retrieved."
+    },
+    {
+      "name": "Guelph Youth Basketball Association (GYBA)",
+      "city": "Guelph",
+      "address": "304 Stone Road West, Suite 539, Guelph, ON N1G 4W4",
+      "phone": "",
+      "email": "administration@guelphbasketball.com",
+      "website": "https://www.guelphbasketball.com/",
+      "contact_person": "",
+      "evidence_url": "https://www.guelphbasketball.com/",
+      "notes": "Founded 2006 through unification of 7 local basketball clubs, ages 5-18. No official City of Guelph directory exists; found via general web search (guelphtoday.com and the org's own site)."
+    },
+    {
+      "name": "London Basketball Club",
+      "city": "London",
+      "address": "London, ON N6C 1J4",
+      "phone": "",
+      "email": "",
+      "website": "https://www.londonbasketballclub.ca/",
+      "contact_person": "",
+      "evidence_url": "https://www.londonbasketballclub.ca/",
+      "notes": "Founded January 2020, follows Canada Basketball's Long Term Athletic Development pathway. No direct phone/email published; site directs inquiries to a Board of Directors page. The London Sports Council's own directory (see municipality entry) is not yet publicly browsable."
+    },
+    {
+      "name": "Chatham-Kent Wildcats Basketball",
+      "city": "Chatham-Kent",
+      "address": "",
+      "phone": "519-791-5989",
+      "email": "ckwildcats.treasurer@gmail.com",
+      "website": "http://www.chathamkentwildcats.com/",
+      "contact_person": "Corky Butcher (President); Scott Barko (Vice President, 519-791-5989); Shannon Wilkins (Treasurer, ckwildcats.treasurer@gmail.com)",
+      "evidence_url": "http://www.chathamkentwildcats.com/organizations/3519/contact_page",
+      "notes": "NOT found via a municipal directory (Chatham-Kent's own 'Get Connected' and 'Playing Sports' pages list zero basketball orgs, see municipality entry) — found via general web search. Very rich public contact page (TeamPages-hosted) listing 13 named executives/coaches with direct personal emails/phone, all published for public contact on the org's own site. Note: TLS cert on chathamkentwildcats.com is misconfigured (mismatched altnames to teampages.com) — content was still retrieved, no bot-wall involved, just an expired/misissued certificate."
+    },
+    {
+      "name": "HOOPS All-Star Basketball Inc.",
+      "city": "Sarnia",
+      "address": "",
+      "phone": "",
+      "email": "hoops.office@hoopsallstar.ca",
+      "website": "https://hoopsallstar.ca/",
+      "contact_person": "",
+      "evidence_url": "https://hoopsallstar.ca/home/",
+      "notes": "NOT found via a municipal directory (City of Sarnia's own Community Partners page lists zero basketball orgs, see municipality entry) — found via general web search. Youth developmental/house-league basketball."
+    },
+    {
+      "name": "St. Catharines CYO Basketball (Rebels)",
+      "city": "St. Catharines",
+      "address": "Ridley College's Griffith Gym and Field House (program location)",
+      "phone": "",
+      "email": "gerrymcilhone@gmail.com",
+      "website": "https://www.cyobball.com/",
+      "contact_person": "Gerry McIlhone; Frank Keltos (frank.keltos@gmail.com)",
+      "evidence_url": "https://www.cyobball.com/",
+      "notes": "Jr NBA, house league and travel team programs. No municipal directory exists for St. Catharines (see municipality entry) — found via general web search."
+    },
+    {
+      "name": "Niagara Apex Basketball",
+      "city": "Niagara Region (serves St. Catharines / Niagara Falls area)",
+      "address": "",
+      "phone": "",
+      "email": "info@niagaraapexbasketball.ca",
+      "website": "https://www.niagaraapexbasketball.ca/home",
+      "contact_person": "Andre Salmon (Founder, 2021)",
+      "evidence_url": "https://www.niagaraapexbasketball.ca/home",
+      "notes": "Non-profit youth basketball development, ages 4+, region-wide. No municipal directory exists for Niagara Falls or St. Catharines — found via general web search."
+    },
+    {
+      "name": "Greater Sudbury Basketball Association",
+      "city": "Greater Sudbury",
+      "address": "",
+      "phone": "",
+      "email": "",
+      "website": "https://greatersudburybasketball.com/",
+      "contact_person": "",
+      "evidence_url": "https://greatersudburybasketball.com/",
+      "notes": "OBA-affiliated youth training club. No municipal directory exists for Sudbury (see municipality entry). No phone/email recovered from the site; contact via Facebook/Instagram only."
+    },
+    {
+      "name": "Timmins Selects Basketball Club",
+      "city": "Timmins",
+      "address": "",
+      "phone": "",
+      "email": "",
+      "website": "https://www.timminsselects.ca/",
+      "contact_person": "",
+      "evidence_url": "https://www.timminsselects.ca/",
+      "notes": "Youth and men's league basketball. No municipal directory exists for Timmins. Site returned 403 Forbidden on fetch attempt; not pursued further."
+    },
+    {
+      "name": "Timmins High Basketball",
+      "city": "Timmins",
+      "address": "451 Theriault Blvd, Timmins, ON",
+      "phone": "705-360-3982",
+      "email": "Peter.graham@dsb1.ca",
+      "website": "",
+      "contact_person": "Peter Graham",
+      "evidence_url": "https://www.facebook.com/timminshighbball/",
+      "notes": "School-affiliated basketball program (District School Board Ontario North East, dsb1.ca domain). Found via general web search, not a municipal directory."
+    },
+    {
+      "name": "North Bay Spartans Basketball",
+      "city": "North Bay",
+      "address": "",
+      "phone": "",
+      "email": "spartansbasketballnorthbay@gmail.com",
+      "website": "https://www.spartansbasketball.ca/",
+      "contact_person": "",
+      "evidence_url": "https://www.spartansbasketball.ca/",
+      "notes": "OBA member club, boys and girls ages 9-18. No municipal directory exists for North Bay. A separate contact for North Bay-area basketball found via general search: Stephen Bryon, 705-498-3433, sbryon48@hotmail.com (association/role not confirmed, so not merged into this record)."
+    },
+    {
+      "name": "Kingston Impact Basketball Club",
+      "city": "Kingston",
+      "address": "",
+      "phone": "",
+      "email": "info@kingstonimpact.ca",
+      "website": "https://www.kingstonimpact.ca/",
+      "contact_person": "",
+      "evidence_url": "https://www.kingstonimpact.ca/",
+      "notes": "Describes itself as the largest full-service youth basketball club between Ottawa and Toronto. No municipal directory exists for Kingston — found via general web search."
+    },
+    {
+      "name": "Cornwall and United Counties Basketball Association",
+      "city": "Cornwall",
+      "address": "",
+      "phone": "",
+      "email": "lionscornwall@gmail.com",
+      "website": "https://cornwallbasketball.com/",
+      "contact_person": "Denis Andre (President, since 2022)",
+      "evidence_url": "https://www.facebook.com/cornwallunitedcountiesbasketball/",
+      "notes": "30+ years running house leagues and 'Cornwall Lions' travelling teams. City of Cornwall's own Sports Associations directory page is dead (see municipality entry) — found via general web search."
+    },
+    {
+      "name": "Brockville Blazers Basketball Association",
+      "city": "Brockville",
+      "address": "",
+      "phone": "",
+      "email": "",
+      "website": "https://brockvilleblazers.com/",
+      "contact_person": "",
+      "evidence_url": "https://brockvilleblazers.com/",
+      "notes": "Active club with an annual general meeting. No municipal directory exists for Brockville. No phone/email published; contact form only on the Contact page."
+    },
+    {
+      "name": "Belleville Spirits Girls Basketball Club",
+      "city": "Belleville",
+      "address": "",
+      "phone": "",
+      "email": "bellevillespiritscomm@gmail.com",
+      "website": "https://www.spiritsbasketball.net/",
+      "contact_person": "",
+      "evidence_url": "https://quinte.totalsportsmedia.ca/directory/belleville-spirits-girls-basketball-club/",
+      "notes": "Non-profit competitive + recreational basketball for girls ages 8-18. Sourced via the Bay of Quinte Sports Directory (Total Sports Quinte)."
+    },
+    {
+      "name": "Belleville Spirits Boys Basketball",
+      "city": "Belleville",
+      "address": "",
+      "phone": "",
+      "email": "",
+      "website": "https://quinte.totalsportsmedia.ca/directory/belleville-spirits-boys-basketball/",
+      "contact_person": "",
+      "evidence_url": "https://quinte.totalsportsmedia.ca/directory/belleville-spirits-boys-basketball/",
+      "notes": "Sourced via the Bay of Quinte Sports Directory (Total Sports Quinte). No phone/email/address published in the directory listing."
+    },
+    {
+      "name": "PSP Community Recreation — Men's & Women's Basketball (CFB Trenton)",
+      "city": "Quinte West (Trenton)",
+      "address": "21 Namao Dr, Trenton, ON K8V 1C5",
+      "phone": "613-392-2811 ext. 3361",
+      "email": "",
+      "website": "",
+      "contact_person": "",
+      "evidence_url": "https://quinte.totalsportsmedia.ca/directory/caf-sports-basketball-mens/",
+      "notes": "Canadian Forces Base Trenton's Personnel Support Programs recreational basketball (separate men's and women's listings, same address/phone). Sourced via the Bay of Quinte Sports Directory (Total Sports Quinte). Corroborates prior finding that Quinte West's only basketball presence is CFB-affiliated, adult-oriented."
+    },
+    {
+      "name": "Wheelchair Basketball Quinte",
+      "city": "Quinte West (Trenton)",
+      "address": "50 Monogram Place, Trenton, ON K8V 5P8",
+      "phone": "613-243-7977",
+      "email": "kkerr1024@gmail.com",
+      "website": "https://owsa.ca/wheelchair-basketball/wheelchair-basketball-clubs/",
+      "contact_person": "K. Kerr",
+      "evidence_url": "https://quinte.totalsportsmedia.ca/directory/wheelchair-basketball-quinte/",
+      "notes": "Weekly drop-in wheelchair basketball for all ages/abilities, part of the Ontario Wheelchair Sports Association network. Sourced via the Bay of Quinte Sports Directory (Total Sports Quinte)."
+    },
+    {
+      "name": "Peterborough City Basketball Club",
+      "city": "Peterborough",
+      "address": "",
+      "phone": "",
+      "email": "info@peterboroughcitybasketball.com",
+      "website": "https://www.peterboroughcitybasketball.com",
+      "contact_person": "",
+      "evidence_url": "https://www.peterboroughcitybasketball.com/about-the-club",
+      "notes": "Community basketball for boys and girls ages 6-18. No confirmed municipal directory listing (see Peterborough municipality entry) — found via general web search."
+    },
+    {
+      "name": "Peterborough Youth Basketball Association (PYBA)",
+      "city": "Peterborough",
+      "address": "",
+      "phone": "",
+      "email": "operations.pyba@gmail.com",
+      "website": "https://www.pyba.ca/",
+      "contact_person": "",
+      "evidence_url": "https://www.pyba.ca/",
+      "notes": "Governed by a community board of directors. Found via general web search."
+    },
+    {
+      "name": "Kawartha Basketball Club",
+      "city": "Peterborough",
+      "address": "",
+      "phone": "",
+      "email": "",
+      "website": "https://www.kawarthabasketball.ca/",
+      "contact_person": "",
+      "evidence_url": "https://www.kawarthabasketball.ca/",
+      "notes": "Not-for-profit dedicated to growing basketball in the Peterborough area. Found via general web search; not fetched for contact details due to time constraints in this pass."
+    },
+    {
+      "name": "Norfolk Youth Basketball Association",
+      "city": "Simcoe (Norfolk County)",
+      "address": "",
+      "phone": "",
+      "email": "norfolkyba@gmail.com",
+      "website": "https://norfolkyouthbasketball.ca/",
+      "contact_person": "Jean Montgomery (President, cell 519-427-3899, jeanmontgomery2@gmail.com); Barry Malcolm (Treasurer, cell 519-428-7091)",
+      "evidence_url": "https://info-bhn.cioc.ca/record/SIM1120",
+      "notes": "Sourced via 'Contact Brant' / Information Brant-Haldimand-Norfolk (info-bhn.cioc.ca), a live OpenCIOC directory covering the tri-county region. This organization was previously found via 211ontario.ca in prior research with only the general email — this pass adds two named personal contacts with cell numbers."
+    },
+    {
+      "name": "Brant Norfolk Basketball Officials Association",
+      "city": "Brantford / Norfolk County (region-wide)",
+      "address": "",
+      "phone": "",
+      "email": "snell.jb@gmail.com",
+      "website": "",
+      "contact_person": "Jamie Snell (President); Jason Smith (Vice President, jessandjay14@outlook.com)",
+      "evidence_url": "https://info-bhn.cioc.ca/record/SIM1127",
+      "notes": "Referee/officiating body serving both Brantford and Norfolk County. Sourced via Contact Brant (info-bhn.cioc.ca)."
+    },
+    {
+      "name": "Brantford Boys CYO Hawks Basketball",
+      "city": "Brantford",
+      "address": "",
+      "phone": "",
+      "email": "brantfordcyoboys@gmail.com",
+      "website": "https://www.brantfordcyo.ca",
+      "contact_person": "Nick Esposito (President, nickesposito04@gmail.com); Kyle McNiven (Tournament Chair)",
+      "evidence_url": "https://info-bhn.cioc.ca/record/BRD0056",
+      "notes": "Sourced via Contact Brant (info-bhn.cioc.ca), corroborated as a member of the Brantford Sports Council."
+    },
+    {
+      "name": "Brantford CYO Girls Basketball",
+      "city": "Brantford",
+      "address": "",
+      "phone": "",
+      "email": "brantfordcyogirls@outlook.com",
+      "website": "https://www.brantfordcyogirls.com",
+      "contact_person": "Tammy Ryan (President)",
+      "evidence_url": "https://info-bhn.cioc.ca/record/BRD0063",
+      "notes": "Sourced via Contact Brant (info-bhn.cioc.ca), corroborated as a member of the Brantford Sports Council."
+    },
+    {
+      "name": "Briers Basketball Club",
+      "city": "Brantford",
+      "address": "",
+      "phone": "519-714-1287",
+      "email": "info@briersbasketball.ca",
+      "website": "https://www.briersbasketball.ca",
+      "contact_person": "",
+      "evidence_url": "https://info-bhn.cioc.ca/record/BRD0057",
+      "notes": "Founded 1978, recreational and competitive basketball for young people in Brantford and surrounding area. Sourced via Contact Brant (info-bhn.cioc.ca)."
+    }
+  ],
+  "summary": "COMPLETE — all 57 target municipalities investigated. 33 have a genuine public directory (city page or regional 211/CIOC system), 18 have no directory found ('none-found' — a real finding, not a search failure), 5 have a directory that is currently a dead link/broken (404 or Cloudflare error, still indexed by search engines), and 1 (Ottawa) has a real basketball directory page sitting behind an Incapsula bot-wall that was NOT bypassed per instructions. 62 organizations harvested: 46 have an email, 23 have a phone, 20 have both, 24 have a named contact person — 49 of 62 (79%) have at least one direct contact channel beyond a bare website.\n\nBIGGEST INFRASTRUCTURE FINDING: several Ontario regions publish their municipal 'community organization' directory through the 211/OpenCIOC network rather than the city's own domain, and these are dramatically higher-yield than city.ca pages — exactly the CIOC pattern the task predicted. Three CIOC installs were live and query-able with a plain GET request, no JS/Playwright needed (?STerms=basketball&SType=A on a bresults.asp endpoint): peel.cioc.ca (Information Peel — Mississauga/Brampton/Caledon), www.hipinfo.ca (Information Halton — Oakville/Burlington/Milton/Halton Hills; note bare 'hipinfo.ca' without 'www.' times out, but 'https://www.hipinfo.ca/' works), and info-bhn.cioc.ca (Contact Brant — Brantford/County of Brant/Haldimand/Norfolk, found late but very productive: 4 basketball orgs in Brantford alone). Their record pages sometimes HTML-entity-encode emails (e.g. Peel's install) — these are still fully public/visible to any browser, just decoded with Python's html.unescape, not a bot-wall bypass. A fourth CIOC-family site, cc.search211.ca ('Community Connection', covering Simcoe County/Barrie/Central-East Ontario), is a newer WordPress-based 211 portal that needs JS rendering (Playwright) but embeds clean schema.org JSON-LD contact data per listing; its arbitrary-city geocoder appears broken in this environment (every explicit searchLocation query silently fell back to a fixed ~25km radius around Collingwood), which capped how much of its wider catchment area (Innisfil, Bradford West Gwillimbury, Orillia) could be reached this way — those three were covered instead via each town's own municipal page or general search. Many other regional OpenCIOC domains once listed in the OpenCIOC project's own site directory (york.cioc.ca, durham.cioc.ca, regionofwaterloo.cioc.ca, niagara.cioc.ca, communitylinks.cioc.ca [Guelph], easternontario.cioc.ca, infomarkham.cioc.ca, southsimcoecic.cioc.ca, orillia.cioc.ca, simcoecounty.cioc.ca, infobarrie.cioc.ca) have been DECOMMISSIONED and now either redirect to the generic cioc.ca homepage or show a migration notice pointing to a successor 211 platform (durham.cioc.ca → durham.211central.ca/211central.ca; the Simcoe-family sites → cc.search211.ca).\n\nSECOND PATTERN: a real number of small/mid-size municipalities (Mississauga, Aurora, Georgina, Newmarket, King Township, Pickering, Whitby, Clarington, Brock, Scugog, Cornwall [dead now], Cambridge [dead now]) publish their OWN plain-HTML 'community groups' or 'sport organizations' directory page, exactly matching the task's hypothesis — but for basketball specifically these directories are frequently EMPTY even when comprehensive for every other sport: Newmarket, King, Pickering, Whitby, Clarington, and Brock each list dozens of hockey/soccer/baseball/tennis/etc. clubs with rich contact detail yet zero basketball entries, while real basketball clubs demonstrably serving those same towns (Whitby Saints, Eastern Basketball Association, Oshawa Basketball Association, 360BTG, Clarington Basketball, YNBA in Newmarket) simply aren't registered with their town. Georgina's directory is the clearest example: ~30 richly-detailed clubs across a dozen other sports, explicitly zero for basketball (corroborating an independent prior finding in docs/research/raw/ontario-gap-fill.json). Scugog (Greenbank Basketball) and Peel/Halton/Brant-Norfolk's CIOC installs are the exceptions where basketball IS represented.\n\nTHIRD PATTERN: several small-city/regional 'sport council' bodies (Sport Hamilton, Brantford Sports Council, London Sports Council) function as city-recognized umbrella directories even though they're not literally a .ca government domain — Sport Hamilton in particular was the single richest non-CIOC source found (9 real basketball clubs via a JS-rendered SportsEngine site, Playwright-rendered).\n\nDEAD/BLOCKED LINKS: five municipal directory pages that are still indexed by Google/Bing return a true 404 or origin error today — East Gwillimbury's community-contacts page, Uxbridge's community-groups page, Cambridge's clubs-and-organizations page, Cornwall's sports-associations page, and Oshawa's community.oshawa.ca (Cloudflare 526, invalid origin SSL). None were bypassed; all reported as 'dead' per instructions, with the last-known content (where cached/indexed) noted. Ottawa's ottawa.ca sits behind a genuine Incapsula bot-wall on both curl and WebFetch and was reported as 'blocked', not circumvented.\n\nHIGHEST-VALUE NEW CONTACTS (name + phone + email + often a named president/treasurer): Brampton Minor Basketball Association, Caledon Cougars Basketball Association, Milton Stags Youth Basketball, Milton Men's Basketball, Burlington Basketball, Chatham-Kent Wildcats Basketball (13 named executives/coaches), Norfolk Youth Basketball Association, Brantford's 3 CYO/Briers clubs, Hamilton Basketball Association, and Kitchener-Waterloo Youth Basketball Association.\n\nCAUTION FLAGGED: two apparent basketball-club search hits were confirmed to be NAME COLLISIONS with same-named organizations in the US (a 'West Bradford Youth Athletics' in Downingtown, Pennsylvania — not Bradford West Gwillimbury, ON; and a 'North Bay Basketball Academy' in Marin/Sonoma County, California — not North Bay, ON) and were correctly excluded rather than miscounted."
+}

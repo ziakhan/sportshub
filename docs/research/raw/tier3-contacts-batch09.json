@@ -1,0 +1,294 @@
+{
+ "batch": 9,
+ "investigated_at": "2026-08-14",
+ "results": [
+  {
+   "club": "Team Compass",
+   "found": false,
+   "email": "", "phone": "", "social": "", "website": "", "contact_person": "",
+   "evidence_url": "",
+   "searched": [
+    "\"Team Compass\" basketball Ontario CYBL Phoenix League",
+    "\"Team Compass\" basketball site:instagram.com OR site:facebook.com",
+    "facebook.com/p/Team-Compass-Basketball-100040376963539/ (fetched, blank/no bio content returned)"
+   ],
+   "notes": "A Facebook page 'Team Compass Basketball' (facebook.com/p/Team-Compass-Basketball-100040376963539/) exists but returned no bio/location text on fetch, so could not confirm it is this Ontario CYBL/Phoenix League club rather than a same-named US program (there is also a 'Compass Basketball Academy' in Bridgewater NJ and 'Team Compass London' unrelated youth-ministry group). Not reporting an unverified contact."
+  },
+  {
+   "club": "Team Natty",
+   "found": false,
+   "email": "", "phone": "", "social": "", "website": "", "contact_person": "",
+   "evidence_url": "",
+   "searched": [
+    "\"Team Natty\" basketball Toronto Big League",
+    "\"Team Natty\" basketball site:instagram.com OR site:facebook.com Toronto"
+   ],
+   "notes": "No standalone club page found. Only lead was an Instagram reel 'Toronto Prospect Elite Basketball vs DLAB-NATTY', which is a different team name (DLAB-NATTY) and not clearly this club. Too generic a name to disambiguate further without more search budget."
+  },
+  {
+   "club": "Team Seven",
+   "found": false,
+   "email": "", "phone": "", "social": "", "website": "", "contact_person": "",
+   "evidence_url": "",
+   "searched": [
+    "\"Team Seven\" basketball Toronto Big League SR Rep",
+    "\"Team Seven\" basketball site:instagram.com OR site:facebook.com Toronto"
+   ],
+   "notes": "Multiple same-named accounts found (Seven Squad Basketball, Seven10 basketball, TEAM 7 OFFICIAL, team07.official_) but none confirmed as a Toronto Big League SR Rep club specifically. Name too generic to confirm without more search budget."
+  },
+  {
+   "club": "Team Truth",
+   "found": true,
+   "email": "teamtruth360@gmail.com", "phone": "", "social": "instagram.com/teamtruth360, facebook.com/TeamTruth360", "website": "",
+   "contact_person": "",
+   "evidence_url": "https://linktr.ee/teamtruth360",
+   "searched": [
+    "\"Team Truth\" basketball Ontario Phoenix League",
+    "\"Team Truth\" basketball site:instagram.com OR site:facebook.com Ontario Phoenix",
+    "facebook.com/TeamTruth360 (fetched)",
+    "instagram.com/teamtruth360 (fetched)",
+    "linktr.ee/teamtruth360 (fetched)"
+   ],
+   "notes": "Confirmed: 'Team Truth 360', a GTA youth basketball program at Domenico DiLuca C.C., 25 Stanley Rd, Toronto ON M3N 1C2, playing in @obabball (OBA) and Coalition Basketball League. Bio: 'A youth basketball program located in the GTA'. Also saw teamtruthinfo@gmail.com used specifically for their Dev-League program payments/questions - info@ style teamtruth360@gmail.com used for tryouts, preferred as the general contact. Note: an unrelated Instagram account @teamtruthbasketball is a different Team Truth based in Conway, AR - not this club."
+  },
+  {
+   "club": "The Collective Elite",
+   "found": true,
+   "email": "info@thecollectiveelite.ca", "phone": "", "social": "", "website": "https://thecollectiveelite.ca",
+   "contact_person": "",
+   "evidence_url": "https://thecollectiveelite.ca",
+   "searched": [
+    "\"The Collective Elite\" basketball Ontario CYBL OBL",
+    "sportsengine.com/org/the-collective-elite-basketball-association (fetched)",
+    "thecollectiveelite.ca (fetched)"
+   ],
+   "notes": "Site footer reads 'BRAMPTON BASKETBALL', consistent with a GTA-area club; site was mid-relaunch ('NEW UPDATED WEBSITE COMING SOON') at time of check but the info@ email link was live on the page. Also listed on SportsEngine as 'The Collective Elite Basketball Association', address in Ontario, ON L6T 2A4 (Brampton postal prefix), no separate email/phone there."
+  },
+  {
+   "club": "The Conglomerate Unit",
+   "found": true,
+   "email": "", "phone": "", "social": "instagram.com/the_conglomerate_unit", "website": "https://conglomeratebasketball.com",
+   "contact_person": "",
+   "evidence_url": "https://www.instagram.com/the_conglomerate_unit/",
+   "searched": [
+    "\"The Conglomerate Unit\" basketball Ontario",
+    "instagram.com/the_conglomerate_unit (fetched)",
+    "conglomeratebasketball.com and conglomeratebasketball.com/pages/contact, /pages/about-us (fetched, all returned blank - likely JS-rendered storefront, no content retrievable without a browser)"
+   ],
+   "notes": "Instagram bio: 'President of THE CONGLOMERATE UNIT, Coached 14 years! 14 American championships/medals, 64 Canadian' - confirms a Canadian basketball org matching results (BU16 Silver, BU17 runner-up at NSU Summer Heat, Oshawa ON 2025). No email or phone visible on Instagram; the website is a Shopify storefront that would not render as static HTML for further checking."
+  },
+  {
+   "club": "Time 2 Hoop",
+   "found": true,
+   "email": "", "phone": "", "social": "facebook.com/time2hoopbball", "website": "https://www.time2hoop.ca",
+   "contact_person": "",
+   "evidence_url": "https://www.time2hoop.ca/",
+   "searched": [
+    "\"Time 2 Hoop\" basketball Toronto Ontario",
+    "time2hoop.ca, time2hoop.ca/contact (fetched, 403 Forbidden)",
+    "facebook.com/time2hoopbball (fetched, no bio content returned)",
+    "time2hoop.sportngin.com/register/form/366247707 (fetched, 403 Forbidden)"
+   ],
+   "notes": "'Time 2 Hoop Basketball Academy Inc. x Time 2 Hoop Sports Inc.' website and Facebook page both confirmed to exist and match the org (youth basketball academy fielding Junior/Senior teams against prep programs), but the site blocked automated fetches (403) and Facebook returned no visible About/contact text. No email or phone recovered."
+  },
+  {
+   "club": "Top Left",
+   "found": true,
+   "email": "", "phone": "", "social": "instagram.com/topleftbasketball", "website": "",
+   "contact_person": "",
+   "evidence_url": "https://www.instagram.com/topleftbasketball/",
+   "searched": [
+    "\"Top Left\" basketball NJC Ontario",
+    "\"Top Left\" basketball site:instagram.com OR site:facebook.com",
+    "instagram.com/topleftbasketball (fetched)"
+   ],
+   "notes": "Instagram bio for @topleftbasketball tags @national_jr_circuit, matching this club's listed NJC league - reasonable confidence this is the right account, but no location tag, email, or phone visible in the bio, and no separate website found."
+  },
+  {
+   "club": "Top Notch",
+   "found": false,
+   "email": "", "phone": "", "social": "", "website": "", "contact_person": "",
+   "evidence_url": "",
+   "searched": [
+    "\"Top Notch\" basketball Phoenix League Ontario",
+    "topnotchstarsbasketball.weebly.com (fetched)"
+   ],
+   "notes": "Only candidate found was 'Top Notch Stars Basketball' (topnotchstarsbasketball.weebly.com), which mentions 'League Games In Ontario' but never states a home city, and its email is Cloudflare-obfuscated ([email protected], undecodable via fetch) with no phone. Given the generic name and lack of a clear Ontario home base or league match to 'Phoenix League' specifically, not confident enough to report as this club."
+  },
+  {
+   "club": "Top Tier",
+   "found": true,
+   "email": "torontotoptierhoops@gmail.com", "phone": "4167083508", "social": "instagram.com/torontotoptier, tiktok.com/@torontotoptier, twitter.com/torontotoptier", "website": "https://www.torontotoptier.com/",
+   "contact_person": "",
+   "evidence_url": "https://www.torontotoptier.com/",
+   "searched": [
+    "\"Top Tier\" basketball Ontario CYBL OBL Toronto Big League",
+    "torontotoptier.com (fetched)"
+   ],
+   "notes": "'Toronto Top Tier', Etobicoke ON - elite GTA basketball program, fits all four listed leagues (CYBL, Hoop City, OBL, Toronto Big League JR Prep). High confidence match."
+  },
+  {
+   "club": "Triple Balance Academy",
+   "found": true,
+   "email": "info@triplebalance.ca", "phone": "", "social": "facebook.com/p/Triple-Balance-Basketball-100054248150572/", "website": "https://www.triplebalance.ca",
+   "contact_person": "",
+   "evidence_url": "https://www.triplebalance.ca/page/show/2129815-contact-us",
+   "searched": [
+    "\"Triple Balance Academy\" basketball Ontario",
+    "triplebalance.ca, triplebalance.ca/page/show/2129815-contact-us, triplebalance.sportngin.com/page/show/2129815-contact-us (fetched, 403 Forbidden - Cloudflare-protected; info drawn from search result snippet only)"
+   ],
+   "notes": "Triple Balance Basketball Services, 97 Havenlea Rd, Toronto (Scarborough) ON M1X 1T3, also operating a Durham location; participates in Ontario Basketball Provincials, matching this club's GTA region and NJC league listing. Direct site fetch was blocked (403), so email is taken from an aggregated search snippet quoting the site's own contact page rather than a first-hand page read - flagging that as slightly weaker evidence than a direct fetch."
+  },
+  {
+   "club": "True Balance Basketball",
+   "found": false,
+   "email": "", "phone": "", "social": "", "website": "", "contact_person": "",
+   "evidence_url": "",
+   "searched": [
+    "\"True Balance Basketball\" Ontario NPH Showcase",
+    "\"True Balance\" basketball Ontario site:facebook.com OR site:instagram.com",
+    "instagram.com/truebalancebasketball (fetched, no content returned)"
+   ],
+   "notes": "No distinct organization called 'True Balance Basketball' was found. Suspicious naming overlap with 'Triple Balance Academy' (also in this batch, GTA/NJC) which North Pole Hoops tags as 'Triple Balance Toronto' in NPH Showcase-adjacent coverage - possible that 'True Balance Basketball' is a mis-transcription of 'Triple Balance', but this is an unverified hypothesis, not a confirmed match, so no contact is reported here."
+  },
+  {
+   "club": "Uda G Elite",
+   "found": false,
+   "email": "", "phone": "", "social": "", "website": "", "contact_person": "",
+   "evidence_url": "",
+   "searched": [
+    "\"Uda G Elite\" basketball Ontario",
+    "\"Uda-G\" OR \"UdaG\" basketball elite Toronto",
+    "instagram.com/udagelite (fetched, no content returned)"
+   ],
+   "notes": "No organization by this name or a plausible variant was found. Ontario Basketball's G-Elite girls' high-school league (a different 'G-Elite') and several unrelated 'Elite' clubs turned up, but nothing matching 'Uda G Elite' specifically."
+  },
+  {
+   "club": "V3 Basketball",
+   "found": true,
+   "email": "info@v3basketballclub.ca", "phone": "6476938929", "social": "facebook.com/v3basketballassociation", "website": "https://v3basketballclub.ca",
+   "contact_person": "",
+   "evidence_url": "https://www.facebook.com/v3basketballassociation/",
+   "searched": [
+    "\"V3 Basketball\" Ontario Toronto Big League Hoop City",
+    "site:facebook.com \"V3 Basketball\" Toronto",
+    "v3basketballclub.ca, v3basketballclub.ca/contact, mbasic.facebook.com/v3basketballassociation/about (fetched directly, all returned blank/blocked)"
+   ],
+   "notes": "V3 (Youth) Basketball Association, 701 Military Trail, Scarborough ON - 'Canada Basketball Verified' program in East Scarborough, matching the club's Toronto/GTA leagues. Contact details (email/phone/address) came from an aggregated search snippet citing the Facebook page; direct fetches of the website and Facebook About page were blocked/blank, so this is second-hand but specific and plausible (Canadian mobile number, .ca domain matching the club name)."
+  },
+  {
+   "club": "Victory",
+   "found": false,
+   "email": "", "phone": "", "social": "", "website": "", "contact_person": "",
+   "evidence_url": "",
+   "searched": [
+    "\"Victory\" basketball Ontario CYBL \"Toronto Big League\""
+   ],
+   "notes": "Only lead was 'Victory Prep' appearing as a CYBL high-school-division team name; no dedicated club website, social account, email, or phone found. Name too generic/short to search further without more budget."
+  },
+  {
+   "club": "West United",
+   "found": true,
+   "email": "westunitedprepacademy@gmail.com", "phone": "", "social": "instagram.com/teamwestunited, instagram.com/westunitedprepacademy", "website": "",
+   "contact_person": "",
+   "evidence_url": "https://linktr.ee/westunitedprepacademy",
+   "searched": [
+    "\"West United\" basketball Ontario GTA",
+    "\"West United\" basketball site:instagram.com OR site:facebook.com Toronto",
+    "instagram.com/teamwestunited, instagram.com/westunitedprepacademy (fetched)",
+    "linktr.ee/westunitedprepacademy (fetched)"
+   ],
+   "notes": "'Team West United' (rep program) / 'West United Prep Academy', based at 821 Main St E, Milton ON (Halton region). Bio: 'Halton's Rising Elite Basketball Club'. Prep academy plays 'Big Shots Prep Nationals' and NPH D1/NPH Open, and fields Senior Boys (2008-2010) and Jr Boys (2011) teams - consistent with this club's NPH Showcase + Toronto Big League listing. Email found via linktree, used for e-transfer registration payments."
+  },
+  {
+   "club": "Who's Next Elite",
+   "found": true,
+   "email": "", "phone": "", "social": "instagram.com/whosnextelite", "website": "",
+   "contact_person": "",
+   "evidence_url": "https://www.instagram.com/whosnextelite/",
+   "searched": [
+    "\"Who's Next Elite\" basketball Toronto",
+    "instagram.com/whosnextelite (fetched)"
+   ],
+   "notes": "Instagram bio exactly matches the club name: 'Who's Next Elite | AAU & Prep Sponsored by @filmedby.ely Partnered with @aementorship'. No GTA/Toronto location tag, email, or phone visible on the profile, so the Toronto Big League SR Rep affiliation is inferred from the exact name match only, not independently confirmed."
+  },
+  {
+   "club": "Wolverine Academy",
+   "found": false,
+   "email": "", "phone": "", "social": "", "website": "", "contact_person": "",
+   "evidence_url": "",
+   "searched": [
+    "\"Wolverine Academy\" basketball Ontario",
+    "instagram.com/wolverinebasketballacademy (fetched, no content returned)",
+    "facebook.com/waterloowolverinesbball (fetched, no bio content returned)"
+   ],
+   "notes": "Several same-family names found (GCBA Wolverines Elite in Ottawa/Gloucester-Cumberland, Waterloo Wolverines Elite Basketball Academy, an Instagram-only 'Wolverine Basketball Academy') but none confirmed as a GTA-region club named exactly 'Wolverine Academy' matching this entry's NPH Showcase listing and GTA region tag."
+  },
+  {
+   "club": "YNBA Basketball",
+   "found": true,
+   "email": "admin@ynba.ca", "phone": "9058539102", "social": "instagram.com/ynbaball, facebook.com/YNBAbasketball", "website": "https://ynba.ca",
+   "contact_person": "",
+   "evidence_url": "https://ynba.ca/",
+   "searched": [
+    "\"YNBA\" basketball Ontario",
+    "ynba.ca (fetched)"
+   ],
+   "notes": "York North Basketball Association, Magna Centre, 800 Mulock Dr, Newmarket ON L3Y 9C1. Dedicated contact form also available at https://ynba.ca/contact-us/. High confidence exact-name match."
+  },
+  {
+   "club": "York Region",
+   "found": true,
+   "email": "admin@ynba.ca", "phone": "9058539102", "social": "instagram.com/ynbaball, facebook.com/YNBAbasketball", "website": "https://ynba.ca",
+   "contact_person": "",
+   "evidence_url": "https://ynba.ca/juel/",
+   "searched": [
+    "\"York Region\" basketball club JUEL Prep"
+   ],
+   "notes": "CAUTION - inferred match, not a direct name hit: search results state 'York North Basketball Association (YNBA) is the JUEL franchise holder for York Region' and 'provides JUEL, JUEL Prep, and JUEL Academy teams' - i.e. YNBA is the organization that fields the 'York Region' team in the JUEL/JUEL Prep league listed for this entry. Reporting YNBA's own contact info (same as the 'YNBA Basketball' entry in this batch) but flagging that this club entry's name ('York Region') is the team/franchise label rather than YNBA's own name, so please double-check this inference before using it."
+  },
+  {
+   "club": "York Region Academy",
+   "found": false,
+   "email": "", "phone": "", "social": "", "website": "", "contact_person": "",
+   "evidence_url": "",
+   "searched": [
+    "\"York Region Academy\" basketball Toronto Big League",
+    "\"York Region Academy\" basketball Instagram OR Facebook",
+    "instagram.com/yorkregionacademy (fetched, no content returned)"
+   ],
+   "notes": "No club by this exact name was found. Unlike 'York Region' (JUEL, tied to YNBA), this entry is tagged to Toronto Big League (JR Rep), a different league, so the YNBA/JUEL connection does not obviously apply here - did not report YNBA's contact for this entry."
+  },
+  {
+   "club": "York Region Elite",
+   "found": true,
+   "email": "", "phone": "", "social": "youtube.com/@yorkregionelite", "website": "https://www.yorkregionelite.com",
+   "contact_person": "",
+   "evidence_url": "https://www.yorkregionelite.com/new-page",
+   "searched": [
+    "\"York Region Elite\" basketball Phoenix League",
+    "yorkregionelite.com, yorkregionelite.com/new-page, www.yorkregionelite.com/new-page (fetched - DNS lookup failed at time of check, ENOTFOUND)"
+   ],
+   "notes": "'York Region Elite Basketball' - offers AAU training/camps, 3 teams grade 6-11, matches this club's name exactly. Website and an 'About us' page (yorkregionelite.com/new-page) were identified via search, but the domain would not resolve (DNS failure) when fetched directly at time of check, so no email/phone could be confirmed - site may be temporarily down or between hosting providers. Recommend re-checking the domain later."
+  },
+  {
+   "club": "École St-Gabriel",
+   "found": false,
+   "email": "", "phone": "", "social": "", "website": "", "contact_person": "",
+   "evidence_url": "",
+   "searched": [
+    "\"École St-Gabriel\" basketball NPH",
+    "\"NPH-D1\" OR \"North Pole Hoops\" \"St-Gabriel\" OR \"St. Gabriel\" basketball prep",
+    "northpolehoops.com/nph-d1/ (fetched - no team/school roster listed on the page)"
+   ],
+   "notes": "ORG MISMATCH WARNING: the only 'École St-Gabriel' with a basketball program findable is École secondaire Saint-Gabriel in Sainte-Therese, QUEBEC (CSSMI school board, a Sport-etudes basketball program) - not Ontario. NPH-D1 is nominally an Ontario-hosted league but its own materials describe it as open to 'Canadian Youth Basketball Prep Teams across the country', so a Quebec school could plausibly enter it, but that would make this a Quebec entity incorrectly filed as an Ontario club. Not reporting the Quebec school's contact info since it cannot be confirmed as 'this' Ontario club; flagging for manual review instead."
+  }
+ ],
+ "summary": {
+  "total": 23,
+  "with_email": 8,
+  "with_phone": 4,
+  "with_any_contact": 13,
+  "not_found": 10
+ }
+}

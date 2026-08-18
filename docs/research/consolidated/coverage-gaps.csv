@@ -1,0 +1,398 @@
+municipality,province,population,clubs_found,priority
+Norfolk County,Ontario,67490,0,high
+Mirabel,Quebec,61108,0,high
+Whitchurch-Stouffville,Ontario,49864,0,high
+Haldimand County,Ontario,49216,0,high
+Georgina,Ontario,47642,0,high
+Quinte West,Ontario,46560,0,high
+Vaudreuil-Dorion,Quebec,43268,0,high
+Salaberry-de-Valleyfield,Quebec,42787,0,high
+Val-d'Or,Quebec,32752,0,high
+LaSalle,Ontario,32721,0,high
+North Cowichan,British Columbia,31990,0,high
+Chambly,Quebec,31444,0,high
+Sainte-Julie,Quebec,30045,0,high
+Saint-Constant,Quebec,29954,0,high
+Boisbriand,Quebec,28308,0,high
+Whitehorse,Yukon,28201,0,high
+Conception Bay South,Newfoundland and Labrador,27168,0,high
+Woolwich,Ontario,26999,0,high
+Clarence-Rockland,Ontario,26505,0,high
+Lunenburg,Nova Scotia,25545,0,high
+Wasaga Beach,Ontario,24862,0,medium
+Thorold,Ontario,23816,0,medium
+Amherstburg,Ontario,23524,0,medium
+L'Assomption,Quebec,23442,0,medium
+Oro-Medonte,Ontario,23017,0,medium
+Essa,Ontario,22970,0,medium
+"Kings, Subd. A",Nova Scotia,22355,0,medium
+White Rock,British Columbia,21939,0,medium
+Springwater,Ontario,21701,0,medium
+Scugog,Ontario,21581,0,medium
+Uxbridge,Ontario,21556,0,medium
+Wilmot,Ontario,21429,0,medium
+Joliette,Quebec,21384,0,medium
+Essex,Ontario,21216,0,medium
+Yellowknife,Northwest Territories,20340,0,medium
+South Frontenac,Ontario,20188,0,medium
+Rivière-du-Loup,Quebec,20118,0,medium
+Saint-Augustin-de-Desmaures,Quebec,19907,0,medium
+"Colchester, Subd. B",Nova Scotia,19806,0,medium
+Westmount,Quebec,19658,0,medium
+Kirkland,Quebec,19413,0,medium
+Dorval,Quebec,19302,0,medium
+Beaconsfield,Quebec,19277,0,medium
+Middlesex Centre,Ontario,18928,0,medium
+Mont-Saint-Hilaire,Quebec,18859,0,medium
+Selwyn,Ontario,18653,0,medium
+Petawawa,Ontario,18160,0,medium
+Sainte-Sophie,Quebec,18080,0,medium
+North Grenville,Ontario,17964,0,medium
+Loyalist,Ontario,17943,0,medium
+Deux-Montagnes,Quebec,17915,0,medium
+Saint-Colomban,Quebec,17740,0,medium
+Sainte-Catherine,Quebec,17347,0,medium
+Bracebridge,Ontario,17305,0,medium
+Port Hope,Ontario,17294,0,medium
+Hanover,Manitoba,17216,0,medium
+L'Ancienne-Lorette,Quebec,16970,0,medium
+Greater Napanee,Ontario,16879,0,medium
+Springfield,Manitoba,16142,0,medium
+Tracadie,New Brunswick,16043,0,medium
+Saugeen Shores,Ontario,15908,0,medium
+Cold Lake,Alberta,15661,0,medium
+North Perth,Ontario,15538,0,medium
+West Lincoln,Ontario,15454,0,medium
+Cowansville,Quebec,15234,0,medium
+Sainte-Anne-des-Plaines,Quebec,15221,0,medium
+Gaspé,Quebec,15063,0,medium
+Kenora,Ontario,14967,0,medium
+Brooks,Alberta,14924,0,medium
+Clearview,Ontario,14814,0,medium
+Pincourt,Quebec,14751,0,medium
+Mississippi Mills,Ontario,14740,0,medium
+St. Clair,Ontario,14659,0,medium
+Mercier,Quebec,14626,0,medium
+West Nipissing / Nipissing Ouest,Ontario,14583,0,medium
+Severn,Ontario,14576,0,medium
+High River,Alberta,14324,0,medium
+Mont-Laurier,Quebec,14180,0,medium
+Lachute,Quebec,14100,0,medium
+Sainte-Adèle,Quebec,14010,0,medium
+Matane,Quebec,13987,0,medium
+Thames Centre,Ontario,13980,0,medium
+Trent Hills,Ontario,13861,0,medium
+Central Elgin,Ontario,13746,0,medium
+Dolbeau-Mistassini,Quebec,13718,0,medium
+Prévost,Quebec,13692,0,medium
+Parksville,British Columbia,13642,0,medium
+Beauharnois,Quebec,13638,0,medium
+South Stormont,Ontario,13570,0,medium
+Bécancour,Quebec,13561,0,medium
+Lacombe,Alberta,13396,0,medium
+The Nation / La Nation,Ontario,13350,0,medium
+South Glengarry,Ontario,13330,0,medium
+Val-des-Monts,Quebec,13328,0,medium
+Gravenhurst,Ontario,13157,0,medium
+Sainte-Marie,Quebec,13134,0,medium
+West Grey,Ontario,13131,0,medium
+Mountain View County,Alberta,12981,0,medium
+Tiny,Ontario,12966,0,medium
+Bonnyville No. 87,Alberta,12897,0,medium
+Mackenzie County,Alberta,12804,0,medium
+Amos,Quebec,12675,0,medium
+Perth East,Ontario,12595,0,medium
+Carleton Place,Ontario,12517,0,medium
+"Colchester, Subd. C",Nova Scotia,12476,0,medium
+Wellington North,Ontario,12431,0,medium
+Sidney,British Columbia,12318,0,medium
+Kincardine,Ontario,12268,0,medium
+Les Îles-de-la-Madeleine,Quebec,12190,0,medium
+Brighton,Ontario,12108,0,medium
+Summerland,British Columbia,12042,0,medium
+"Kings, Subd. B",Nova Scotia,11951,0,medium
+Taché,Manitoba,11916,0,medium
+Lambton Shores,Ontario,11876,0,medium
+Clearwater County,Alberta,11865,0,medium
+Lloydminster (Part),Saskatchewan,11843,0,medium
+St. Andrews,Manitoba,11723,0,medium
+Rawdon,Quebec,11719,0,medium
+Saltspring Island,British Columbia,11635,0,medium
+St. Clements,Manitoba,11586,0,medium
+Saint-Sauveur,Quebec,11580,0,medium
+View Royal,British Columbia,11575,0,medium
+Meaford,Ontario,11485,0,medium
+Cantley,Quebec,11449,0,medium
+Bromont,Quebec,11357,0,medium
+Marieville,Quebec,11332,0,medium
+Wellesley,Ontario,11318,0,medium
+Sainte-Agathe-des-Monts,Quebec,11211,0,medium
+Sainte-Julienne,Quebec,11173,0,medium
+Coldstream,British Columbia,11171,0,medium
+Norwich,Ontario,11151,0,medium
+La Tuque,Quebec,11129,0,medium
+Saint-Raymond,Quebec,11108,0,medium
+Georgian Bluffs,Ontario,11100,0,medium
+Tay,Ontario,11091,0,medium
+Montmagny,Quebec,10999,0,medium
+Adjala-Tosorontio,Ontario,10989,0,medium
+Rideau Lakes,Ontario,10883,0,medium
+Sechelt,British Columbia,10847,0,medium
+Mapleton,Ontario,10839,0,medium
+Lac Ste. Anne County,Alberta,10832,0,medium
+Chester,Nova Scotia,10693,0,medium
+Saint-Hippolyte,Quebec,10669,0,medium
+North Dumfries,Ontario,10619,0,medium
+Blackfalds,Alberta,10470,0,medium
+Yellowhead County,Alberta,10426,0,medium
+Grey Highlands,Ontario,10424,0,medium
+Ramara,Ontario,10377,0,medium
+Lacombe County,Alberta,10283,0,medium
+Hawkesbury,Ontario,10194,0,medium
+Bois-des-Filion,Quebec,10159,0,medium
+Farnham,Quebec,10149,0,medium
+North Glengarry,Ontario,10144,0,medium
+Pont-Rouge,Quebec,10121,0,medium
+Saint-Félicien,Quebec,10089,0,medium
+South Huron,Ontario,10063,0,medium
+Cavan Monaghan,Ontario,10016,0,medium
+Alfred and Plantagenet,Ontario,9949,0,medium
+Roberval,Quebec,9840,0,medium
+Hinton,Alberta,9817,0,medium
+Leeds and the Thousand Islands,Ontario,9804,0,medium
+Brockton,Ontario,9784,0,medium
+East St. Paul,Manitoba,9725,0,medium
+Stoneham-et-Tewkesbury,Quebec,9682,0,medium
+Temiskaming Shores,Ontario,9634,0,medium
+Saint-Zotique,Quebec,9618,0,medium
+Elizabethtown-Kitley,Ontario,9545,0,medium
+Huron East,Ontario,9512,0,medium
+Lorraine,Quebec,9502,0,medium
+Contrecoeur,Quebec,9480,0,medium
+Notre-Dame-des-Prairies,Quebec,9471,0,medium
+Laurentian Valley,Ontario,9450,0,medium
+The Blue Mountains,Ontario,9390,0,medium
+Malahide,Ontario,9308,0,medium
+Qualicum Beach,British Columbia,9303,0,medium
+Comox Valley C (Puntledge - Black Creek),British Columbia,9158,0,medium
+South Bruce Peninsula,Ontario,9137,0,medium
+Tsinstikeptum 9,British Columbia,9134,0,medium
+Minto,Ontario,9094,0,medium
+Oromocto,New Brunswick,9045,0,medium
+West Perth,Ontario,9038,0,medium
+Beckwith,Ontario,9021,0,medium
+Cowichan Valley B,British Columbia,8994,0,medium
+Shelburne,Ontario,8994,0,medium
+Ladysmith,British Columbia,8990,0,medium
+Stanley,Manitoba,8981,0,medium
+Saint-Rémi,Quebec,8957,0,medium
+Columbia-Shuswap C,British Columbia,8919,0,medium
+Corman Park No. 344,Saskatchewan,8909,0,medium
+Coaticook,Quebec,8867,0,medium
+Wheatland County,Alberta,8738,0,medium
+Southgate,Ontario,8716,0,medium
+Champlain,Ontario,8665,0,medium
+La Pêche,Quebec,8636,0,medium
+Zorra,Ontario,8628,0,medium
+Nicolet,Quebec,8620,0,medium
+Greenview No. 16,Alberta,8584,0,medium
+Otterburn Park,Quebec,8479,0,medium
+Sainte-Catherine-de-la-Jacques-Cartier,Quebec,8442,0,medium
+Rockwood,Manitoba,8440,0,medium
+Portugal Cove-St. Philip's,Newfoundland and Labrador,8415,0,medium
+"Pictou, Subd. C",Nova Scotia,8386,0,medium
+"Kings, Subd. C",Nova Scotia,8348,0,medium
+Plympton-Wyoming,Ontario,8308,0,medium
+Banff,Alberta,8305,0,medium
+Kitimat,British Columbia,8236,0,medium
+La Malbaie,Quebec,8235,0,medium
+Boischatel,Quebec,8231,0,medium
+Renfrew,Ontario,8190,0,medium
+Drummond/North Elmsley,Ontario,8183,0,medium
+Macdonald,Manitoba,8120,0,medium
+Kimberley,British Columbia,8115,0,medium
+Kapuskasing,Ontario,8057,0,medium
+Happy Valley-Goose Bay,Newfoundland and Labrador,8040,0,medium
+Chelsea,Quebec,8000,0,medium
+Vermilion River County,Alberta,7994,0,medium
+Innisfail,Alberta,7985,0,medium
+Saint-Apollinaire,Quebec,7968,0,medium
+Hanover,Ontario,7967,0,medium
+Puslinch,Ontario,7944,0,medium
+Comox Valley A,British Columbia,7926,0,medium
+Trail,British Columbia,7920,0,medium
+Drumheller,Alberta,7909,0,medium
+Goderich,Ontario,7881,0,medium
+Argyle,Nova Scotia,7870,0,medium
+Rigaud,Quebec,7854,0,medium
+East Zorra-Tavistock,Ontario,7841,0,medium
+Stone Mills,Ontario,7826,0,medium
+Central Huron,Ontario,7799,0,medium
+Kirkland Lake,Ontario,7750,0,medium
+Huron-Kinloss,Ontario,7723,0,medium
+Aylmer,Ontario,7699,0,medium
+Clare,Nova Scotia,7678,0,medium
+Lac la Biche County,Alberta,7673,0,medium
+Muskoka Lakes,Ontario,7652,0,medium
+Douro-Dummer,Ontario,7632,0,medium
+Acton Vale,Quebec,7605,0,medium
+McNab/Braeside,Ontario,7591,0,medium
+South-West Oxford,Ontario,7583,0,medium
+Blandford-Blenheim,Ontario,7565,0,medium
+Bluewater,Ontario,7540,0,medium
+Shediac,New Brunswick,7535,0,medium
+Cypress County,Alberta,7524,0,medium
+Lincoln,New Brunswick,7519,0,medium
+Edwardsburgh/Cardinal,Ontario,7505,0,medium
+Chandler,Quebec,7490,0,medium
+"Kenora, Unorganized",Ontario,7475,0,medium
+Alnwick/Haldimand,Ontario,7473,0,medium
+Coteau-du-Lac,Quebec,7473,0,medium
+Ritchot,Manitoba,7469,0,medium
+Fort Frances,Ontario,7466,0,medium
+Newell County,Alberta,7465,0,medium
+Donnacona,Quebec,7436,0,medium
+Iqaluit,Nunavut,7429,0,medium
+North Stormont,Ontario,7400,0,medium
+Comox Valley B (Lazo North),British Columbia,7392,0,medium
+Dryden,Ontario,7388,0,medium
+Augusta,Ontario,7386,0,medium
+St. Marys,Ontario,7386,0,medium
+Baie-Saint-Paul,Quebec,7371,0,medium
+La Sarre,Quebec,7358,0,medium
+Louiseville,Quebec,7340,0,medium
+Drayton Valley,Alberta,7291,0,medium
+Shefford,Quebec,7253,0,medium
+Brownsburg-Chatham,Quebec,7247,0,medium
+Digby,Nova Scotia,7242,0,medium
+Chibougamau,Quebec,7233,0,medium
+Whitewater Region,Ontario,7225,0,medium
+Westlock County,Alberta,7186,0,medium
+Les Cèdres,Quebec,7184,0,medium
+Dysart et al,Ontario,7182,0,medium
+Brazeau County,Alberta,7179,0,medium
+Bayham,Ontario,7096,0,medium
+Val-des-Sources,Quebec,7088,0,medium
+Otonabee-South Monaghan,Ontario,7087,0,medium
+Chatsworth,Ontario,7080,0,medium
+Campbellton,New Brunswick,7047,0,medium
+Hampstead,Quebec,7037,0,medium
+Saint-Joseph-du-Lac,Quebec,7031,0,medium
+Saint-Félix-de-Valois,Quebec,6975,0,medium
+Minden Hills,Ontario,6971,0,medium
+Athabasca County,Alberta,6959,0,medium
+Arran-Elderslie,Ontario,6913,0,medium
+Wainfleet,Ontario,6887,0,medium
+Saint-Lambert-de-Lauzon,Quebec,6817,0,medium
+Saint-Calixte,Quebec,6792,0,medium
+"Cumberland, Subd. B",Nova Scotia,6786,0,medium
+La Broquerie,Manitoba,6725,0,medium
+Beaubassin East / Beaubassin-est,New Brunswick,6718,0,medium
+Clarenville,Newfoundland and Labrador,6704,0,medium
+Hope,British Columbia,6686,0,medium
+Wainwright,Alberta,6606,0,medium
+Gimli,Manitoba,6569,0,medium
+Saint-Paul,Quebec,6566,0,medium
+Stephenville,Newfoundland and Labrador,6540,0,medium
+East Kootenay C,British Columbia,6536,0,medium
+Barrington,Nova Scotia,6523,0,medium
+Port-Cartier,Quebec,6516,0,medium
+Cramahe,Ontario,6509,0,medium
+Perth,Ontario,6469,0,medium
+Trent Lakes,Ontario,6439,0,medium
+Shannon,Quebec,6432,0,medium
+Plessisville,Quebec,6414,0,medium
+Bonnyville,Alberta,6404,0,medium
+Mont-Joli,Quebec,6384,0,medium
+Saint-Honoré,Quebec,6376,0,medium
+North Middlesex,Ontario,6307,0,medium
+St. Paul County No. 19,Alberta,6306,0,medium
+Charlemagne,Quebec,6302,0,medium
+Kent,British Columbia,6300,0,medium
+Pointe-Calumet,Quebec,6281,0,medium
+Beresford,New Brunswick,6226,0,medium
+Princeville,Quebec,6218,0,medium
+Beauceville,Quebec,6185,0,medium
+Cariboo A,British Columbia,6169,0,medium
+"Pictou, Subd. A",Nova Scotia,6153,0,medium
+"Pictou, Subd. B",Nova Scotia,6137,0,medium
+Notre-Dame-du-Mont-Carmel,Quebec,6121,0,medium
+Sainte-Anne-des-Monts,Quebec,6121,0,medium
+L'Ange-Gardien,Quebec,6102,0,medium
+Southern Gulf Islands,British Columbia,6101,0,medium
+Willow Creek No. 26,Alberta,6081,0,medium
+Tweed,Ontario,6067,0,medium
+"Algoma, Unorganized, North Part",Ontario,6050,0,medium
+Oliver Paipoonge,Ontario,6035,0,medium
+Petrolia,Ontario,6013,0,medium
+Amqui,Quebec,5999,0,medium
+"Annapolis, Subd. A",Nova Scotia,5980,0,medium
+Saint-Césaire,Quebec,5972,0,medium
+Peace River C,British Columbia,5947,0,medium
+McMasterville,Quebec,5936,0,medium
+Douglas,New Brunswick,5935,0,medium
+Tay Valley,Ontario,5925,0,medium
+Lac-Brome,Quebec,5923,0,medium
+Southwest Middlesex,Ontario,5893,0,medium
+Ashfield-Colborne-Wawanosh,Ontario,5884,0,medium
+South Bruce,Ontario,5880,0,medium
+Beaver County,Alberta,5868,0,medium
+St. Paul,Alberta,5863,0,medium
+Saint-Pie,Quebec,5847,0,medium
+Sioux Lookout,Ontario,5839,0,medium
+Rhineland,Manitoba,5819,0,medium
+Saint-Henri,Quebec,5813,0,medium
+Peachland,British Columbia,5789,0,medium
+Verchères,Quebec,5759,0,medium
+Lac-Mégantic,Quebec,5747,0,medium
+Lanark Highlands,Ontario,5737,0,medium
+Crowsnest Pass,Alberta,5695,0,medium
+"Cumberland, Subd. C",Nova Scotia,5694,0,medium
+Vegreville,Alberta,5689,0,medium
+Neepawa,Manitoba,5685,0,medium
+Lucan Biddulph,Ontario,5680,0,medium
+Sainte-Martine,Quebec,5664,0,medium
+Les Coteaux,Quebec,5643,0,medium
+Bulkley-Nechako A,British Columbia,5587,0,medium
+Ste. Anne,Manitoba,5584,0,medium
+Creston,British Columbia,5583,0,medium
+Redcliff,Alberta,5581,0,medium
+Val-David,Quebec,5558,0,medium
+Osoyoos,British Columbia,5556,0,medium
+Saint-Roch-de-l'Achigan,Quebec,5453,0,medium
+Brokenhead,Manitoba,5414,0,medium
+Hudson,Quebec,5411,0,medium
+Norway House 17,Manitoba,5390,0,medium
+Cochrane,Ontario,5390,0,medium
+Gananoque,Ontario,5383,0,medium
+Peace River B,British Columbia,5379,0,medium
+Cookshire-Eaton,Quebec,5344,0,medium
+Armstrong,British Columbia,5323,0,medium
+Cariboo G,British Columbia,5312,0,medium
+Spallumcheen,British Columbia,5307,0,medium
+Chertsey,Quebec,5295,0,medium
+Windsor,Quebec,5294,0,medium
+Seguin,Ontario,5280,0,medium
+"Kings, Subd. D",Nova Scotia,5264,0,medium
+"Annapolis, Subd. C",Nova Scotia,5218,0,medium
+Marystown,Newfoundland and Labrador,5204,0,medium
+Espanola,Ontario,5185,0,medium
+Burton,New Brunswick,5176,0,medium
+Shediac,New Brunswick,5144,0,medium
+Lanoraie,Quebec,5134,0,medium
+Juan de Fuca (Part 1),British Columbia,5132,0,medium
+Oliver,British Columbia,5094,0,medium
+Saint Marys,New Brunswick,5084,0,medium
+Havelock-Belmont-Methuen,Ontario,5083,0,medium
+Metchosin,British Columbia,5067,0,medium
+West Elgin,Ontario,5060,0,medium
+Témiscouata-sur-le-Lac,Quebec,5054,0,medium
+North Huron,Ontario,5052,0,medium
+Cowichan Valley C,British Columbia,5046,0,medium
+Stonewall,Manitoba,5046,0,medium
+Central Kootenay H,British Columbia,5045,0,medium
+Memramcook,New Brunswick,5029,0,medium
+Sainte-Anne-de-Bellevue,Quebec,5027,0,medium
+Stirling-Rawdon,Ontario,5015,0,medium
+Saint-Joseph-de-Beauce,Quebec,5014,0,medium
+Orford,Quebec,5007,0,medium

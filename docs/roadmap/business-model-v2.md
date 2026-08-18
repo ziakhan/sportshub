@@ -5,6 +5,8 @@ tags: [theme/business, type/plan, status/working]
 
 # Business Model v2 — social-first launch, payments margin, family revenue
 
+> ⚠️ **Extended by [[business-model-v3]] (2026-08-15)** — v3 adds market benchmarking, club/league/referee pricing structure, team-count tiering, and the content-rights strategy. §1–§16 below remain the source of truth for the payments mechanics, content catalog, gamification and build order.
+
 Owner working session 2026-07-25. Supersedes pricing-v1 assumptions; BUSINESS MODEL still not final until owner signs off.
 
 ## 1. Money rails (the engine)

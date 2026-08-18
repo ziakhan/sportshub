@@ -1,0 +1,373 @@
+{
+ "batch": 7,
+ "investigated_at": "2026-08-14",
+ "results": [
+  {
+   "club": "Disturbance Elite",
+   "found": false,
+   "email": "", "phone": "", "social": "", "website": "", "contact_person": "",
+   "evidence_url": "",
+   "searched": ["\"Disturbance Elite\" basketball Ontario", "site:instagram.com \"Disturbance Elite\" basketball"],
+   "notes": "Only trace found is an Instagram reel from a different club (BallMatics Academy) showing a game vs Disturbance Elite (instagram.com/reel/DItyE0gsiWu/). No own website, social account, email or phone located."
+  },
+  {
+   "club": "Dream Chaserzzz",
+   "found": true,
+   "email": "info@dreamchaserzzz.ca", "phone": "6475742324", "social": "IG @dream.chaserzzz", "website": "https://www.dreamchaserzzz.ca/", "contact_person": "Justin Alliman (Founder/CEO)",
+   "evidence_url": "https://www.dreamchaserzzz.ca/",
+   "searched": ["\"Dream Chaserzzz\" basketball Ontario", "\"Dream Chaserzzz\" contact email phone"],
+   "notes": "Dream Chaserzzz Basketball Inc., Woodbridge/Etobicoke ON, founded by Justin Alliman. Address: 71 Innovation Dr Unit #7, Woodbridge, ON L4H 0S3."
+  },
+  {
+   "club": "Dream Chaserzzz Academy",
+   "found": true,
+   "email": "info@dreamchaserzzz.ca", "phone": "6475742324", "social": "IG @dream.chaserzzz", "website": "https://www.dreamchaserzzz.ca/", "contact_person": "Justin Alliman (Founder/CEO)",
+   "evidence_url": "https://www.dreamchaserzzz.ca/",
+   "searched": ["\"Dream Chaserzzz\" basketball Ontario"],
+   "notes": "MODERATE CONFIDENCE: no separate 'Academy'-branded entity was found; the main Dream Chaserzzz website explicitly states it has no distinct Academy program. Assuming this Hoop City-league entry is the same parent org (Dream Chaserzzz Basketball Inc.) fielding a differently-named team. Verify before contacting."
+  },
+  {
+   "club": "Dropoff Elite",
+   "found": false,
+   "email": "", "phone": "", "social": "", "website": "", "contact_person": "",
+   "evidence_url": "",
+   "searched": ["\"Dropoff Elite\" basketball Ontario", "\"Dropoff Elite\" Toronto OR Ontario OR GTA basketball contact"],
+   "notes": "ORG MISMATCH CONCERN: the only active 'Dropoff Elite' found (Instagram @dropoffelite, ~9000 followers, sportspassports.com listing) is described as Montreal, QC based, competing in CNIT. Our record lists it as GTA-region with Ontario leagues (CYBL, NPH). Could not confirm a distinct Ontario-based chapter of this club — did not report the Montreal contact to avoid a wrong-club match."
+  },
+  {
+   "club": "Dynamite",
+   "found": false,
+   "email": "", "phone": "", "social": "", "website": "", "contact_person": "",
+   "evidence_url": "",
+   "searched": [],
+   "notes": "Not individually researched — web search budget was exhausted before a dedicated query could be run for this generic-name club. No prior evidence of website/social to fall back on."
+  },
+  {
+   "club": "Dynastie (ACD)",
+   "found": false,
+   "email": "", "phone": "", "social": "", "website": "", "contact_person": "",
+   "evidence_url": "",
+   "searched": ["\"Dynastie\" ACD basketball Ontario"],
+   "notes": "ORG MISMATCH CONCERN: 'Dynastie Basketball' / Institut de Sport Dynastie found (facebook.com/dynastiebasketball) is a Quebec prep program (near Montreal) that plays in national circuits — matches this record's NPH-D1 league listing but is not an Ontario club. Did not report its contact for that reason."
+  },
+  {
+   "club": "EM Elite",
+   "found": false,
+   "email": "", "phone": "", "social": "", "website": "", "contact_person": "",
+   "evidence_url": "",
+   "searched": ["\"EM Elite\" basketball Ontario contact"],
+   "notes": "No matching club found; results only surfaced unrelated 'Elite' basketball camps/leagues (Elite Basketball Camps, Union Elite, ETBL)."
+  },
+  {
+   "club": "Eastern Academy",
+   "found": false,
+   "email": "", "phone": "", "social": "", "website": "", "contact_person": "",
+   "evidence_url": "",
+   "searched": ["\"Eastern Academy\" basketball Toronto Big League"],
+   "notes": "No specific club page/social found for a Toronto Big League team named Eastern Academy."
+  },
+  {
+   "club": "Edge Basketball",
+   "found": false,
+   "email": "", "phone": "", "social": "", "website": "", "contact_person": "",
+   "evidence_url": "",
+   "searched": ["\"Edge Basketball\" GTA Ontario NPA contact", "\"Edge Basketball\" GTA Ontario instagram (bing)"],
+   "notes": "No match; too generic a name, results dominated by Edge School (Alberta), Microsoft Edge, and an unrelated Burlington photography company."
+  },
+  {
+   "club": "Edge Varsity",
+   "found": false,
+   "email": "", "phone": "", "social": "", "website": "", "contact_person": "",
+   "evidence_url": "",
+   "searched": ["\"Edge Varsity\" basketball Ontario"],
+   "notes": "Only match is Edge School in Rocky View County, Alberta (a different, unrelated prep basketball program) — not this Ontario NPH-D1 club."
+  },
+  {
+   "club": "Elite Academy",
+   "found": false,
+   "email": "", "phone": "", "social": "", "website": "", "contact_person": "",
+   "evidence_url": "",
+   "searched": ["\"Elite Academy\" basketball GTA NPH showcase"],
+   "notes": "Name too generic — many 'Elite' academies exist in the GTA (Elite Camps/EABA, Elite Basketball Academy, etc.) with no way to confirm which corresponds to this NPH Showcase entry."
+  },
+  {
+   "club": "Elite Omega Academy",
+   "found": true,
+   "email": "eliteomegaacademy@outlook.com", "phone": "4162064509", "social": "IG @eoatraining", "website": "https://eoatraining.com/", "contact_person": "",
+   "evidence_url": "https://eoatraining.com/contact",
+   "searched": ["\"Elite Omega Academy\" basketball"],
+   "notes": "Operates as 'EOA Training', established 2019, based in Ajax, ON, serving Pickering/Ajax/Whitby/Oshawa (Durham Region) — matches CYBL league listing region."
+  },
+  {
+   "club": "Elton Academy Basketball Program",
+   "found": true,
+   "email": "info@eltonacademy.ca", "phone": "9057310505", "social": "IG @elton_academy_basketball", "website": "https://eltonacademy.ca/rep-basketball-program/", "contact_person": "",
+   "evidence_url": "https://eltonacademy.ca/rep-basketball-program/",
+   "searched": ["\"Elton Academy\" basketball Phoenix League Ontario"],
+   "notes": "Located in Richmond Hill, Ontario; confirmed participant in Phoenix Basketball Spring League 2026."
+  },
+  {
+   "club": "FCNS",
+   "found": false,
+   "email": "", "phone": "", "social": "", "website": "", "contact_person": "",
+   "evidence_url": "",
+   "searched": ["\"FCNS\" basketball Toronto Big League"],
+   "notes": "Acronym did not resolve to any indexed club; no website or social account found."
+  },
+  {
+   "club": "FO3",
+   "found": true,
+   "email": "Info@fo3academy.ca", "phone": "6132761828", "social": "", "website": "https://www.fo3academy.ca/", "contact_person": "",
+   "evidence_url": "https://www.fo3academy.ca/policies",
+   "searched": ["\"FO3\" basketball EOBA Ontario"],
+   "notes": "'Family on Three (FO3) Academy' — youth basketball programs across Ottawa; aligned with Canada Basketball/OBA Safe Sport standards. Ottawa location matches EOBA (Eastern Ontario Basketball Association) league listing."
+  },
+  {
+   "club": "First Step Basketball",
+   "found": false,
+   "email": "", "phone": "", "social": "", "website": "", "contact_person": "",
+   "evidence_url": "",
+   "searched": ["\"First Step Basketball\" Ontario GTA contact"],
+   "notes": "ORG MISMATCH CONCERN: firststepbasketball.org appears (per search summary) to be based in Fairfield, California, not Ontario — WebFetch of its /contact page returned HTTP 403 so this could not be independently confirmed either way. Did not report its contact given the risk it is a different, same-named US org."
+  },
+  {
+   "club": "Fitz Youth",
+   "found": false,
+   "email": "", "phone": "", "social": "", "website": "", "contact_person": "",
+   "evidence_url": "",
+   "searched": ["\"Fitz Youth\" basketball Ontario CYBL"],
+   "notes": "Confirmed as a CYBL-participating program name only; no dedicated website or social account located."
+  },
+  {
+   "club": "Flower City Falcons",
+   "found": true,
+   "email": "Flowercityfalcons@gmail.com", "phone": "6478022577", "social": "IG @flowercityfalcons", "website": "", "contact_person": "",
+   "evidence_url": "https://www.instagram.com/flowercityfalcons/",
+   "searched": ["\"Flower City Falcons\" basketball Ontario"],
+   "notes": "Brampton-based (tryouts held at Brampton Soccer Centre). Matches Phoenix League listing region."
+  },
+  {
+   "club": "Full Circle Academy",
+   "found": false,
+   "email": "", "phone": "", "social": "", "website": "", "contact_person": "",
+   "evidence_url": "",
+   "searched": ["\"Full Circle Academy\" basketball Ontario CYBL", "https://fullcirclebasketballacademy.com/ (fetch)", "https://www.instagram.com/fullcirclebasketballacademy/ (fetch)"],
+   "notes": "Full Circle Basketball Academy is confirmed to exist in Courtice, Ontario (competes in CYBL Premier League Junior Prep; listed on ontariosba.ca and Dun & Bradstreet) but its website domain (fullcirclebasketballacademy.com) did not resolve (DNS error) and the Instagram bio could not be read for contact details. No verified email/phone/social found."
+  },
+  {
+   "club": "GBA",
+   "found": true,
+   "email": "info@grimsbybasketball.ca", "phone": "2898085571", "social": "IG @grimsby_basketball_association", "website": "https://www.grimsbybasketball.ca/", "contact_person": "Natalie Walker (President)",
+   "evidence_url": "https://www.instagram.com/grimsby_basketball_association/",
+   "searched": ["\"GBA\" basketball Hoop City OBL Ontario team contact", "\"GBA\" basketball association Ontario club full name Grimsby OR Guelph OR Georgina", "Grimsby Basketball Association email phone contact"],
+   "notes": "MODERATE-HIGH CONFIDENCE: Grimsby Basketball Association publicly brands itself 'GBA' (Instagram bio literally reads 'GBA offers a fun and safe environment...'; Facebook page titled 'Grimsby Basketball Association - GBA'). Grimsby is in the Hamilton-Niagara OBA region, consistent with the OBL league listing. Not 100% certain this is the same 'GBA' entity referenced in the Hoop City league table (could not verify team-level roster naming), but this is the only Ontario basketball club known to use the exact 'GBA' abbreviation."
+  },
+  {
+   "club": "GBA North",
+   "found": false,
+   "email": "", "phone": "", "social": "", "website": "", "contact_person": "",
+   "evidence_url": "",
+   "searched": ["\"GBA North\" basketball CYBL"],
+   "notes": "Search only surfaced 'GBA North Jr' as a CYBL program-name mention with no further detail; unclear if related to Grimsby Basketball Association or a different GBA. Not confirmed either way, so no contact reported."
+  },
+  {
+   "club": "GT Elite",
+   "found": false,
+   "email": "", "phone": "", "social": "", "website": "", "contact_person": "",
+   "evidence_url": "",
+   "searched": ["\"GT Elite\" basketball Ontario GTA NPH", "\"GT Elite\" basketball NPH-SL circuit Ontario", "bing: \"GT Elite\" basketball Ontario NPH"],
+   "notes": "No dedicated club page found; results only returned an old (2017) 'GTA Elite' roster (different name/era) and unrelated GT-branded content (Giant Tiger, GT Bicycles, etc.)."
+  },
+  {
+   "club": "Gators",
+   "found": true,
+   "email": "contactgatorsacademy@gmail.com", "phone": "", "social": "IG @gatorsacademy", "website": "https://www.gatorsbasketballacademy.com/", "contact_person": "",
+   "evidence_url": "https://www.gatorsbasketballacademy.com/contactus",
+   "searched": ["\"Gators\" basketball Hoop City Basketball League team Ontario -academy -Markham"],
+   "notes": "MODERATE CONFIDENCE: Gators Basketball Academy (Markham/Richmond Hill/Durham, ON) is the only well-documented 'Gators' basketball organization in the GTA and fields multiple team brands (Gators Elite, Lady Gators). Assuming this Hoop City League 'Gators' entry is one of their teams, but this was not independently confirmed on a Hoop City roster page."
+  },
+  {
+   "club": "Gators Basketball",
+   "found": true,
+   "email": "contactgatorsacademy@gmail.com", "phone": "", "social": "IG @gatorsacademy", "website": "https://www.gatorsbasketballacademy.com/", "contact_person": "",
+   "evidence_url": "https://www.gatorsbasketballacademy.com/contactus",
+   "searched": ["\"Gators Basketball\" CYBL Ontario team"],
+   "notes": "Search results directly identify Gators Basketball Academy (5694 Highway 7, Markham, ON) as the organization behind a CYBL-participating 'Gators Basketball' team."
+  },
+  {
+   "club": "Gators Elite",
+   "found": true,
+   "email": "contactgatorsacademy@gmail.com", "phone": "6472831873", "social": "IG @gatorselitecanada", "website": "https://www.gatorsbasketballacademy.com/", "contact_person": "",
+   "evidence_url": "https://www.gatorsbasketballacademy.com/",
+   "searched": ["\"Gators Elite\" basketball Ontario Hoop City"],
+   "notes": "HIGH CONFIDENCE: Gators Basketball Academy explicitly names 'Gators Elite' as its AAU/competitive stream. Main office: 5 Sherwood Plaza, 4-5694 Hwy #7 East, Suite 122, Markham, ON L3P 1B4. AAU line: 647-283-1873."
+  },
+  {
+   "club": "HG Elite",
+   "found": false,
+   "email": "", "phone": "", "social": "", "website": "", "contact_person": "",
+   "evidence_url": "",
+   "searched": ["\"HG Elite\" basketball Ontario Phoenix League"],
+   "notes": "No matching club found."
+  },
+  {
+   "club": "HQ Prep",
+   "found": false,
+   "email": "", "phone": "", "social": "", "website": "", "contact_person": "",
+   "evidence_url": "",
+   "searched": ["\"HQ Prep\" basketball Toronto Big League"],
+   "notes": "Only found the Toronto Big League's own contact (Yao, torontobigleague@gmail.com, 647-503-7190) which is the LEAGUE, not the HQ Prep club/team itself — not reported as it would misattribute a league contact to this specific club."
+  },
+  {
+   "club": "Hampton City",
+   "found": false,
+   "email": "", "phone": "", "social": "", "website": "", "contact_person": "",
+   "evidence_url": "",
+   "searched": ["\"Hampton City\" basketball CYBL Ontario"],
+   "notes": "Confirmed as a CYBL program name ('Hampton City Prep') only; no website/social/contact found."
+  },
+  {
+   "club": "Hooptrotters OGs",
+   "found": false,
+   "email": "", "phone": "", "social": "", "website": "", "contact_person": "",
+   "evidence_url": "",
+   "searched": ["\"Hooptrotters\" basketball Ontario GTA NPH"],
+   "notes": "Found a related team name 'Hooptrotters 5Gs' in GTA league listings (North York winter league, NPH premier league) but no dedicated website, social handle, email or phone for 'Hooptrotters OGs' specifically."
+  },
+  {
+   "club": "Hounds Elite",
+   "found": true,
+   "email": "", "phone": "", "social": "IG @hounds_elite_basketball / FB Hounds Elite Basketball / YouTube HoundsEliteBasketball", "website": "", "contact_person": "",
+   "evidence_url": "https://www.instagram.com/hounds_elite_basketball/",
+   "searched": ["\"Hounds Elite\" basketball Ontario Hoop City"],
+   "notes": "Based at La Liga Sports Complex, 1107 Finch Ave W, North York, ON M3J 3H4. No email or phone was listed in the Instagram bio; club appears to rely on DMs via social media."
+  },
+  {
+   "club": "Hustle Elite Basketball",
+   "found": false,
+   "email": "", "phone": "", "social": "", "website": "", "contact_person": "",
+   "evidence_url": "",
+   "searched": ["\"Hustle Elite Basketball\" Ontario GTA contact"],
+   "notes": "ORG MISMATCH CONCERN: the only 'Hustle Basketball' contact found (info@hustlebasketball.com, area code 859) is Kentucky-based, not this GTA/NJC club. Not reported. A 'U13B HOF Hustle Elite' roster page exists on Ontario Basketball's own championships site but had no contact details."
+  },
+  {
+   "club": "Iconic",
+   "found": false,
+   "email": "", "phone": "", "social": "", "website": "", "contact_person": "",
+   "evidence_url": "",
+   "searched": ["\"Iconic\" basketball Ontario Hoop City team"],
+   "notes": "Name too generic; no matching club identified."
+  },
+  {
+   "club": "Ignite Academy",
+   "found": false,
+   "email": "", "phone": "", "social": "", "website": "", "contact_person": "",
+   "evidence_url": "",
+   "searched": ["\"Ignite Academy\" basketball Ontario NJC contact", "bing: \"Ignite Academy\" basketball Ontario NJC national junior circuit"],
+   "notes": "Multiple unrelated 'Ignite' basketball programs exist (Calgary, Winnipeg, Idaho); ignitecanadabasketball.com returned HTTP 404 on fetch. Could not confirm which, if any, corresponds to this Ontario NJC club."
+  },
+  {
+   "club": "JKT Elite",
+   "found": false,
+   "email": "", "phone": "", "social": "", "website": "", "contact_person": "",
+   "evidence_url": "",
+   "searched": [],
+   "notes": "Not individually researched — web search budget was exhausted before a dedicated query could be run."
+  },
+  {
+   "club": "JR Basketball Academy",
+   "found": false,
+   "email": "", "phone": "", "social": "", "website": "", "contact_person": "",
+   "evidence_url": "",
+   "searched": ["\"JR Basketball Academy\" Toronto Ontario contact"],
+   "notes": "Search only surfaced Canada Basketball's national 'Jr. Academy' program (contacts mmeeks@basketball.ca / dgrundman@basketball.ca — a Canada Basketball national program, not this specific Toronto-region club) and the unrelated JR NBA Toronto camp. No club-specific contact confirmed."
+  },
+  {
+   "club": "Jaxx City Elite",
+   "found": true,
+   "email": "jaxxcityelite@gmail.com", "phone": "4164747039", "social": "IG @jaxxcityelite", "website": "https://www.jaxxcityelite.ca/", "contact_person": "",
+   "evidence_url": "https://www.instagram.com/jaxxcityelite/",
+   "searched": ["\"Jaxx City Elite\" basketball Ontario Toronto"],
+   "notes": "Also has a Linktree (linktr.ee/jaxxcityelite). Operates in the Durham Region/GTA since 2018, ages 4-18, rep/AAU/house league/training."
+  },
+  {
+   "club": "Jazba Elite",
+   "found": false,
+   "email": "", "phone": "", "social": "", "website": "", "contact_person": "",
+   "evidence_url": "",
+   "searched": ["\"Jazba Elite\" basketball Ontario Phoenix League"],
+   "notes": "Confirmed as a Phoenix League participant (Toronto, ON) but only trace is a third-party Instagram reel ('Team Jazba' at a Toronto tournament) — no dedicated club account, email or phone found."
+  },
+  {
+   "club": "K9",
+   "found": false,
+   "email": "", "phone": "", "social": "", "website": "", "contact_person": "",
+   "evidence_url": "",
+   "searched": [],
+   "notes": "Not individually researched — web search budget was exhausted before a dedicated query could be run for this two-character club name (extremely hard to search regardless)."
+  },
+  {
+   "club": "KBA Elite",
+   "found": false,
+   "email": "", "phone": "", "social": "", "website": "", "contact_person": "",
+   "evidence_url": "",
+   "searched": ["\"KBA Elite\" basketball Ontario GTA NPH showcase contact", "bing: \"KBA Elite\" basketball instagram"],
+   "notes": "Confirmed as an NPH Showcase League participant only; no dedicated website/social/contact found."
+  },
+  {
+   "club": "Kainos Basketball Academy",
+   "found": true,
+   "email": "", "phone": "", "social": "IG @kainosbasketball / FB Kainos Basketball Academy", "website": "https://kainosbasketball.com/", "contact_person": "",
+   "evidence_url": "https://www.instagram.com/kainosbasketball/",
+   "searched": ["\"Kainos Basketball Academy\" Toronto Ontario contact"],
+   "notes": "Based in Ottawa, ON (50 Maple Ln) despite the Toronto Big League listing in our data — also appears in the National Capital Hoops Circuit (natcaphoops.com) as 'Kainos Academy Senior', which fits an Ottawa location. Website is JS-rendered so no email/phone could be extracted via fetch; none was visible on Instagram bio either."
+  },
+  {
+   "club": "Kings Court Academy",
+   "found": true,
+   "email": "jrkingscourtbasketball@gmail.com", "phone": "6478645104", "social": "IG @_jrkings", "website": "https://www.jrkcb.ca/", "contact_person": "",
+   "evidence_url": "https://www.jrkcb.ca/",
+   "searched": ["\"Kings Court Academy\" basketball Ontario GTA NJC"],
+   "notes": "Organization is 'JR Kings Court Basketball' (JKCB), serving Toronto/Hamilton/GTA since 2004. Physical address: St Jean De Brebeuf High School, 200 Acadia Dr, Hamilton, ON L8W 1B7."
+  },
+  {
+   "club": "LOBA",
+   "found": false,
+   "email": "", "phone": "", "social": "", "website": "", "contact_person": "",
+   "evidence_url": "",
+   "searched": [],
+   "notes": "Not individually researched — web search budget was exhausted before a dedicated query could be run for this acronym club name."
+  },
+  {
+   "club": "Lead2Greatness",
+   "found": true,
+   "email": "", "phone": "", "social": "IG @lead2greatness", "website": "", "contact_person": "",
+   "evidence_url": "https://www.instagram.com/lead2greatness/",
+   "searched": ["\"Lead2Greatness\" basketball Ontario contact email"],
+   "notes": "Confirmed active Toronto/Vaughan-based club ('proud members of @nxtpro_hoops'), contact via Google Form linked in Instagram bio, no email/phone published. IMPORTANT: lead2greatness.com belongs to a DIFFERENT, unrelated organization (Lead to Greatness LLC, a motivational-speaking company run by Cedric Francis in Houston, Texas) — do NOT use that domain/email for this club."
+  },
+  {
+   "club": "Legends Elite",
+   "found": false,
+   "email": "", "phone": "", "social": "", "website": "", "contact_person": "",
+   "evidence_url": "",
+   "searched": ["\"Legends Elite\" basketball Ontario Phoenix League contact", "bing: \"Legends Elite\" basketball Ontario Phoenix League instagram"],
+   "notes": "Confirmed Phoenix League (Toronto) participant only; no dedicated website/social/contact found — name too generic to disambiguate from many same-named US 'Legends' programs."
+  },
+  {
+   "club": "M&R",
+   "found": false,
+   "email": "", "phone": "", "social": "", "website": "", "contact_person": "",
+   "evidence_url": "",
+   "searched": [],
+   "notes": "Not individually researched — web search budget was exhausted before a dedicated query could be run for this acronym club name."
+  }
+ ],
+ "summary": {
+  "total": 45,
+  "with_email": 12,
+  "with_phone": 10,
+  "with_any_contact": 15,
+  "not_found": 30
+ }
+}

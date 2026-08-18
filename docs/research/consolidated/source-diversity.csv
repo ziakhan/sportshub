@@ -1,0 +1,12 @@
+province,clubs,distinct_source_hosts,top_host,top_host_share,registry_backed_rows,academy_or_private,academy_share,risk_flags
+British Columbia,229,128,basketball604.com,28%,22,132,58%,
+Alberta,203,126,aybc.ca,15%,27,77,38%,
+Ontario,187,0,,,0,0,0%,single-source;thin-academy-layer;no-per-row-provenance
+Quebec,176,72,basketball.qc.ca,37%,65,42,24%,
+Saskatchewan,107,43,basketballsask.com,29%,31,21,20%,
+Manitoba,95,42,basketballmanitoba.ca,46%,44,12,13%,thin-academy-layer
+Nova Scotia,65,28,basketballnovascotia.ca,49%,32,6,9%,thin-academy-layer
+New Brunswick,53,30,basketball.nb.ca,36%,19,9,17%,
+Newfoundland & Labrador,33,11,newfoundlandlabradorbasketball.com,52%,17,14,42%,dominated-by-one-host
+Territories (YT/NWT/NU),17,12,nnsl.com,18%,0,0,0%,thin-academy-layer
+Prince Edward Island,13,2,basketballpei.ca,92%,12,0,0%,single-source;dominated-by-one-host;thin-academy-layer

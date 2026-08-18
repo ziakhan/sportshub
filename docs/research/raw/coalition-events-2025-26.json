@@ -1,0 +1,4567 @@
+{
+ "250406": {
+  "title": "Winter League - Oct 18 - Apr 12, 2026 - North York, Ontario Participat",
+  "rows": [
+   {
+    "division": "SENIOR (U17/U19 Girls) - DIAMOND DIVISION",
+    "team": "Barrie Royals"
+   },
+   {
+    "division": "SENIOR (U17/U19 Girls) - DIAMOND DIVISION",
+    "team": "Brampton Warriors - Ganza"
+   },
+   {
+    "division": "SENIOR (U17/U19 Girls) - DIAMOND DIVISION",
+    "team": "Hoopher"
+   },
+   {
+    "division": "SENIOR (U17/U19 Girls) - DIAMOND DIVISION",
+    "team": "Knights Basketball"
+   },
+   {
+    "division": "SENIOR (U17/U19 Girls) - DIAMOND DIVISION",
+    "team": "MUMBA ACADEMY - KAYYAL"
+   },
+   {
+    "division": "SENIOR (U17/U19 Girls) - DIAMOND DIVISION",
+    "team": "Oshawa Strikers"
+   },
+   {
+    "division": "SENIOR (U17/U19 Girls) - DIAMOND DIVISION",
+    "team": "Toronto Triple Threat (U17)"
+   },
+   {
+    "division": "SENIOR (U17/U19 Girls) - DIAMOND DIVISION",
+    "team": "Toronto Triple Threat (U19)"
+   },
+   {
+    "division": "SENIOR (U17/U19 Girls) - Division 2",
+    "team": "Brantford CYO Falcons - Towers"
+   },
+   {
+    "division": "SENIOR (U17/U19 Girls) - Division 2",
+    "team": "Eastern Earthquakes Cliff"
+   },
+   {
+    "division": "SENIOR (U17/U19 Girls) - Division 2",
+    "team": "Hoop Addicts"
+   },
+   {
+    "division": "SENIOR (U17/U19 Girls) - Division 2",
+    "team": "Intercity Saints"
+   },
+   {
+    "division": "SENIOR (U17/U19 Girls) - Division 2",
+    "team": "KW Vipers - Dunkley"
+   },
+   {
+    "division": "SENIOR (U17/U19 Girls) - Division 2",
+    "team": "KW Vipers - Scott"
+   },
+   {
+    "division": "SENIOR (U17/U19 Girls) - Division 2",
+    "team": "North Toronto Huskies - Liston"
+   },
+   {
+    "division": "SENIOR (U17/U19 Girls) - Division 2",
+    "team": "Oakville Vytis"
+   },
+   {
+    "division": "SENIOR (U17/U19 Girls) - Division 2",
+    "team": "PDM Elite"
+   },
+   {
+    "division": "SENIOR (U17/U19 Girls) - Division 2",
+    "team": "Sudbury JAM - Dawson"
+   },
+   {
+    "division": "SENIOR (U17/U19 Girls) - Division 2",
+    "team": "Toronto Lords"
+   },
+   {
+    "division": "SENIOR (U17/U19 Girls) - Division 3",
+    "team": "Burloak Elite Darcy"
+   },
+   {
+    "division": "SENIOR (U17/U19 Girls) - Division 3",
+    "team": "CW Celtics"
+   },
+   {
+    "division": "SENIOR (U17/U19 Girls) - Division 3",
+    "team": "East York Eagles"
+   },
+   {
+    "division": "SENIOR (U17/U19 Girls) - Division 3",
+    "team": "Elevation Athletics"
+   },
+   {
+    "division": "SENIOR (U17/U19 Girls) - Division 3",
+    "team": "Niagara Splash Basketball"
+   },
+   {
+    "division": "SENIOR (U17/U19 Girls) - Division 3",
+    "team": "SBA Blues Team Manalo"
+   },
+   {
+    "division": "SENIOR (U17/U19 Girls) - Division 3",
+    "team": "Toronto NuStep Ballers"
+   },
+   {
+    "division": "U09 Boys",
+    "team": "17 Ignite"
+   },
+   {
+    "division": "U09 Boys",
+    "team": "Durham Basketball Club"
+   },
+   {
+    "division": "U09 Boys",
+    "team": "East York Eagles"
+   },
+   {
+    "division": "U09 Boys",
+    "team": "Maple Basketball"
+   },
+   {
+    "division": "U09 Boys",
+    "team": "MUMBA ELITE - HARI"
+   },
+   {
+    "division": "U09 Boys",
+    "team": "North Toronto Huskies"
+   },
+   {
+    "division": "U09 Boys",
+    "team": "Northern Kings - Vidal"
+   },
+   {
+    "division": "U09 Boys",
+    "team": "Rising Suns- Jake"
+   },
+   {
+    "division": "U09 Boys",
+    "team": "SCNYB - Hendrickse"
+   },
+   {
+    "division": "U10 Boys - (D1) Quest for the Ring",
+    "team": "17 Ignite - White"
+   },
+   {
+    "division": "U10 Boys - (D1) Quest for the Ring",
+    "team": "Blitz - Team Dunphy"
+   },
+   {
+    "division": "U10 Boys - (D1) Quest for the Ring",
+    "team": "Burloak Elite Chris"
+   },
+   {
+    "division": "U10 Boys - (D1) Quest for the Ring",
+    "team": "East York Eagles - Wolch"
+   },
+   {
+    "division": "U10 Boys - (D1) Quest for the Ring",
+    "team": "FTF ACADEMY"
+   },
+   {
+    "division": "U10 Boys - (D1) Quest for the Ring",
+    "team": "ICS/All-In Gray"
+   },
+   {
+    "division": "U10 Boys - (D1) Quest for the Ring",
+    "team": "ICS/All-In NAVY"
+   },
+   {
+    "division": "U10 Boys - (D1) Quest for the Ring",
+    "team": "New Horizon Heat"
+   },
+   {
+    "division": "U10 Boys - (D1) Quest for the Ring",
+    "team": "TCYBA Dragons - Navid"
+   },
+   {
+    "division": "U10 Boys - Division 2",
+    "team": "17 Ignite - Red"
+   },
+   {
+    "division": "U10 Boys - Division 2",
+    "team": "BALL905 CST"
+   },
+   {
+    "division": "U10 Boys - Division 2",
+    "team": "Cambridge Basketball"
+   },
+   {
+    "division": "U10 Boys - Division 2",
+    "team": "Defenders Basketball"
+   },
+   {
+    "division": "U10 Boys - Division 2",
+    "team": "JUMP Basketball"
+   },
+   {
+    "division": "U10 Boys - Division 2",
+    "team": "Kitchener Impact - Red"
+   },
+   {
+    "division": "U10 Boys - Division 2",
+    "team": "MUMBA ELITE - VARNAN"
+   },
+   {
+    "division": "U10 Boys - Division 2",
+    "team": "Northern Kings - Ahmed"
+   },
+   {
+    "division": "U10 Boys - Division 2",
+    "team": "YvY Elite"
+   },
+   {
+    "division": "U10 Boys - Division 3",
+    "team": "DEEP Basketball Club"
+   },
+   {
+    "division": "U10 Boys - Division 3",
+    "team": "JCC Warriors"
+   },
+   {
+    "division": "U10 Boys - Division 3",
+    "team": "KW Vipers - Quigley"
+   },
+   {
+    "division": "U10 Boys - Division 3",
+    "team": "MILTON STAGS RED"
+   },
+   {
+    "division": "U10 Boys - Division 3",
+    "team": "MUMBA ELITE - SOMESAN"
+   },
+   {
+    "division": "U10 Boys - Division 3",
+    "team": "Oakville Venom"
+   },
+   {
+    "division": "U10 Boys - Division 3",
+    "team": "Rising Suns - Bryan"
+   },
+   {
+    "division": "U10 Boys - Division 3",
+    "team": "SBA Blues Team Wade"
+   },
+   {
+    "division": "U10 Boys - Division 3",
+    "team": "SCNYB - Patrick"
+   },
+   {
+    "division": "U10 Boys - Division 3",
+    "team": "Skillz Basketball Saints"
+   },
+   {
+    "division": "U10 Boys - Division 3",
+    "team": "Thornhill Thunder"
+   },
+   {
+    "division": "U11 Boys - (D1) Quest for the Ring",
+    "team": "17 Ignite - White"
+   },
+   {
+    "division": "U11 Boys - (D1) Quest for the Ring",
+    "team": "Brampton Warriors Wharton"
+   },
+   {
+    "division": "U11 Boys - (D1) Quest for the Ring",
+    "team": "Burlington Force - Sabourin"
+   },
+   {
+    "division": "U11 Boys - (D1) Quest for the Ring",
+    "team": "DC Bulldogs"
+   },
+   {
+    "division": "U11 Boys - (D1) Quest for the Ring",
+    "team": "Durham Basketball Club"
+   },
+   {
+    "division": "U11 Boys - (D1) Quest for the Ring",
+    "team": "Guelph Knights"
+   },
+   {
+    "division": "U11 Boys - (D1) Quest for the Ring",
+    "team": "Kitchener Impact - Red"
+   },
+   {
+    "division": "U11 Boys - (D1) Quest for the Ring",
+    "team": "Monarchs - Elliott"
+   },
+   {
+    "division": "U11 Boys - (D1) Quest for the Ring",
+    "team": "MSBA Storm"
+   },
+   {
+    "division": "U11 Boys - (D1) Quest for the Ring",
+    "team": "TCYBA Dragons - Devon"
+   },
+   {
+    "division": "U11 Boys - (D1) Quest for the Ring",
+    "team": "The UN1T"
+   },
+   {
+    "division": "U11 Boys - (D1) Quest for the Ring",
+    "team": "Union Elite"
+   },
+   {
+    "division": "U11 Boys - Division 2",
+    "team": "Barrie Royals"
+   },
+   {
+    "division": "U11 Boys - Division 2",
+    "team": "Burloak Elite James"
+   },
+   {
+    "division": "U11 Boys - Division 2",
+    "team": "Cambridge Basketball"
+   },
+   {
+    "division": "U11 Boys - Division 2",
+    "team": "East York Eagles - Knight"
+   },
+   {
+    "division": "U11 Boys - Division 2",
+    "team": "Etobicoke Thunder"
+   },
+   {
+    "division": "U11 Boys - Division 2",
+    "team": "FIRST STEP ELITE"
+   },
+   {
+    "division": "U11 Boys - Division 2",
+    "team": "MILTON STAGS RED"
+   },
+   {
+    "division": "U11 Boys - Division 2",
+    "team": "MUMBA ELITE - GLEZAKOS"
+   },
+   {
+    "division": "U11 Boys - Division 2",
+    "team": "North Toronto Huskies - Pike"
+   },
+   {
+    "division": "U11 Boys - Division 2",
+    "team": "Northern Kings - Carlo"
+   },
+   {
+    "division": "U11 Boys - Division 2",
+    "team": "Oakville Venom"
+   },
+   {
+    "division": "U11 Boys - Division 2",
+    "team": "Rising Suns- Girrard"
+   },
+   {
+    "division": "U11 Boys - Division 2",
+    "team": "SBA Blues Team Lalog"
+   },
+   {
+    "division": "U11 Boys - Division 2",
+    "team": "Team Sanctuary"
+   },
+   {
+    "division": "U11 Boys - Division 3",
+    "team": "Ancaster Blitz - Robitaille"
+   },
+   {
+    "division": "U11 Boys - Division 3",
+    "team": "East York Eagles - Carpenter"
+   },
+   {
+    "division": "U11 Boys - Division 3",
+    "team": "Helix Rise"
+   },
+   {
+    "division": "U11 Boys - Division 3",
+    "team": "JCC Warriors - North White"
+   },
+   {
+    "division": "U11 Boys - Division 3",
+    "team": "Jump Basketball"
+   },
+   {
+    "division": "U11 Boys - Division 3",
+    "team": "KW Vipers - Smith"
+   },
+   {
+    "division": "U11 Boys - Division 3",
+    "team": "Maple Basketball (A)"
+   },
+   {
+    "division": "U11 Boys - Division 3",
+    "team": "Monarchs - Syed"
+   },
+   {
+    "division": "U11 Boys - Division 3",
+    "team": "MUMBA ELITE - JAINARAINE"
+   },
+   {
+    "division": "U11 Boys - Division 3",
+    "team": "SBA Blues Team Piracha"
+   },
+   {
+    "division": "U11 Boys - Division 3",
+    "team": "Skillz Basketball Academy"
+   },
+   {
+    "division": "U11 Boys - Division 3",
+    "team": "Team MOBA"
+   },
+   {
+    "division": "U11 Boys - Division 4",
+    "team": "Burlington Force - Tolhurst"
+   },
+   {
+    "division": "U11 Boys - Division 4",
+    "team": "HOOPSTARS"
+   },
+   {
+    "division": "U11 Boys - Division 4",
+    "team": "IEM Spartans - North York"
+   },
+   {
+    "division": "U11 Boys - Division 4",
+    "team": "JCC Warriors - South White"
+   },
+   {
+    "division": "U11 Boys - Division 4",
+    "team": "Kitchener Impact - Black"
+   },
+   {
+    "division": "U11 Boys - Division 4",
+    "team": "North Toronto Huskies - Herling"
+   },
+   {
+    "division": "U11 Boys - Division 4",
+    "team": "NRBA Blue Mad Dogz"
+   },
+   {
+    "division": "U11 Boys - Division 4",
+    "team": "Snf Hamilton Eagles"
+   },
+   {
+    "division": "U11 Boys - Division 4",
+    "team": "Sudbury JAM - Suprunov"
+   },
+   {
+    "division": "U11 Boys - Division 4",
+    "team": "TCYBA Dragons - Kareem"
+   },
+   {
+    "division": "U11 Boys - Division 4",
+    "team": "Thornhill Thunder - Navy"
+   },
+   {
+    "division": "U11 Boys - Division 4",
+    "team": "Toronto Lords - Johnson"
+   },
+   {
+    "division": "U11 Girls - Diamond Division",
+    "team": "B.1.C.E Majesty"
+   },
+   {
+    "division": "U11 Girls - Diamond Division",
+    "team": "Brampton Warriors"
+   },
+   {
+    "division": "U11 Girls - Diamond Division",
+    "team": "Burloak Elite Allen"
+   },
+   {
+    "division": "U11 Girls - Diamond Division",
+    "team": "Collingwood Trailblazers"
+   },
+   {
+    "division": "U11 Girls - Diamond Division",
+    "team": "KWGBA Phoenix - McNally"
+   },
+   {
+    "division": "U11 Girls - Diamond Division",
+    "team": "New Horizon Heat"
+   },
+   {
+    "division": "U11 Girls - Diamond Division",
+    "team": "North Toronto Huskies - Goodman"
+   },
+   {
+    "division": "U11 Girls - Diamond Division",
+    "team": "SBA Blues Team Ferreira"
+   },
+   {
+    "division": "U11 Girls - Division 2",
+    "team": "BALL905"
+   },
+   {
+    "division": "U11 Girls - Division 2",
+    "team": "Barrie Royals"
+   },
+   {
+    "division": "U11 Girls - Division 2",
+    "team": "Cali Prep - Joanne"
+   },
+   {
+    "division": "U11 Girls - Division 2",
+    "team": "MUMBA ELITE - Dela Pena"
+   },
+   {
+    "division": "U11 Girls - Division 2",
+    "team": "North Toronto Huskies - Rowe"
+   },
+   {
+    "division": "U11 Girls - Division 2",
+    "team": "SBA Blues Team Beltijar (U10)"
+   },
+   {
+    "division": "U11 Girls - Division 2",
+    "team": "Toronto Lords"
+   },
+   {
+    "division": "U11 Girls - Division 2",
+    "team": "Toronto Triple Threat"
+   },
+   {
+    "division": "U11 Girls - Division 2",
+    "team": "VCB"
+   },
+   {
+    "division": "U12 Boys - (D1) Quest for the Ring",
+    "team": "17 Ignite - White"
+   },
+   {
+    "division": "U12 Boys - (D1) Quest for the Ring",
+    "team": "Barrie Royals - Blake"
+   },
+   {
+    "division": "U12 Boys - (D1) Quest for the Ring",
+    "team": "Born 2 Stand Out"
+   },
+   {
+    "division": "U12 Boys - (D1) Quest for the Ring",
+    "team": "Durham Basketball Club"
+   },
+   {
+    "division": "U12 Boys - (D1) Quest for the Ring",
+    "team": "JCC Warriors - North Blue"
+   },
+   {
+    "division": "U12 Boys - (D1) Quest for the Ring",
+    "team": "K9 ELITE U12"
+   },
+   {
+    "division": "U12 Boys - (D1) Quest for the Ring",
+    "team": "Locked In Sports"
+   },
+   {
+    "division": "U12 Boys - (D1) Quest for the Ring",
+    "team": "MILTON STAGS RED"
+   },
+   {
+    "division": "U12 Boys - (D1) Quest for the Ring",
+    "team": "Monarchs - D & Hemeng"
+   },
+   {
+    "division": "U12 Boys - (D1) Quest for the Ring",
+    "team": "New Horizon- O'Neil"
+   },
+   {
+    "division": "U12 Boys - (D1) Quest for the Ring",
+    "team": "ONL - Verma"
+   },
+   {
+    "division": "U12 Boys - (D1) Quest for the Ring",
+    "team": "SBA Premier Salvi"
+   },
+   {
+    "division": "U12 Boys - (D1) Quest for the Ring",
+    "team": "TCYBA Dragons - Devon"
+   },
+   {
+    "division": "U12 Boys - (D1) Quest for the Ring",
+    "team": "Team Compass"
+   },
+   {
+    "division": "U12 Boys - (D1) Quest for the Ring",
+    "team": "The UN1T"
+   },
+   {
+    "division": "U12 Boys - (D1) Quest for the Ring",
+    "team": "Top Tier - Johnson"
+   },
+   {
+    "division": "U12 Boys - (D1) Quest for the Ring",
+    "team": "Triple Balance - Irv"
+   },
+   {
+    "division": "U12 Boys - (D1) Quest for the Ring",
+    "team": "Union Elite - Bam"
+   },
+   {
+    "division": "U12 Boys - (D1) Quest for the Ring",
+    "team": "Uplay 2033"
+   },
+   {
+    "division": "U12 Boys - Division 2",
+    "team": "Ancaster Magic"
+   },
+   {
+    "division": "U12 Boys - Division 2",
+    "team": "Brampton Warriors Watson"
+   },
+   {
+    "division": "U12 Boys - Division 2",
+    "team": "Burloak Elite - Gaige"
+   },
+   {
+    "division": "U12 Boys - Division 2",
+    "team": "DEEP Basketball Club"
+   },
+   {
+    "division": "U12 Boys - Division 2",
+    "team": "Defenders Basketball"
+   },
+   {
+    "division": "U12 Boys - Division 2",
+    "team": "JUMP Basketball"
+   },
+   {
+    "division": "U12 Boys - Division 2",
+    "team": "Kitchener Impact - Red"
+   },
+   {
+    "division": "U12 Boys - Division 2",
+    "team": "KW Vipers - Randell"
+   },
+   {
+    "division": "U12 Boys - Division 2",
+    "team": "London Ramblers"
+   },
+   {
+    "division": "U12 Boys - Division 2",
+    "team": "MUMBA ELITE - TORRES"
+   },
+   {
+    "division": "U12 Boys - Division 2",
+    "team": "New Horizon - Akash"
+   },
+   {
+    "division": "U12 Boys - Division 2",
+    "team": "North Toronto Huskies - Swartz"
+   },
+   {
+    "division": "U12 Boys - Division 2",
+    "team": "Northern Kings - Darwin"
+   },
+   {
+    "division": "U12 Boys - Division 2",
+    "team": "Vaughan Panthers"
+   },
+   {
+    "division": "U12 Boys - Division 3",
+    "team": "Barrie Royals - Coulson"
+   },
+   {
+    "division": "U12 Boys - Division 3",
+    "team": "Burlington Force - Gray"
+   },
+   {
+    "division": "U12 Boys - Division 3",
+    "team": "Etobicoke Thunder - Seeley"
+   },
+   {
+    "division": "U12 Boys - Division 3",
+    "team": "Eurostep - Lucas"
+   },
+   {
+    "division": "U12 Boys - Division 3",
+    "team": "Guelph Knights - Catacutan"
+   },
+   {
+    "division": "U12 Boys - Division 3",
+    "team": "Momentum \u2013 Orange"
+   },
+   {
+    "division": "U12 Boys - Division 3",
+    "team": "Monarchs - Virdi"
+   },
+   {
+    "division": "U12 Boys - Division 3",
+    "team": "Simcoe Kings Basketball"
+   },
+   {
+    "division": "U12 Boys - Division 3",
+    "team": "Toronto Sixers"
+   },
+   {
+    "division": "U12 Boys - Division 3",
+    "team": "Waterloo Wildhawks"
+   },
+   {
+    "division": "U12 Boys - Division 3",
+    "team": "YvY Elite Black"
+   },
+   {
+    "division": "U12 Boys - Division 4",
+    "team": "Oakville Venom"
+   },
+   {
+    "division": "U12 Boys - Division 4",
+    "team": "Red Dot Basketball"
+   },
+   {
+    "division": "U12 Boys - Division 4",
+    "team": "Rising Suns - Anthony"
+   },
+   {
+    "division": "U12 Boys - Division 4",
+    "team": "SCNYB"
+   },
+   {
+    "division": "U12 Boys - Division 4",
+    "team": "TCYBA Dragons - Chuck"
+   },
+   {
+    "division": "U12 Boys - Division 4",
+    "team": "Toronto Gauchos"
+   },
+   {
+    "division": "U12 Boys - Division 4",
+    "team": "Toronto Triple Threat Morris-Katz"
+   },
+   {
+    "division": "U12 Boys - Division 4",
+    "team": "Union Elite - Warren"
+   },
+   {
+    "division": "U12 Boys - Division 4",
+    "team": "Woodbridge Lions"
+   },
+   {
+    "division": "U12 Boys - Division 4",
+    "team": "YNBA Cade"
+   },
+   {
+    "division": "U12 Boys - Division 5",
+    "team": "Durham Blues - Wright"
+   },
+   {
+    "division": "U12 Boys - Division 5",
+    "team": "East York Eagles - Gilbert"
+   },
+   {
+    "division": "U12 Boys - Division 5",
+    "team": "JCC Warriors - North White"
+   },
+   {
+    "division": "U12 Boys - Division 5",
+    "team": "Motion Kings"
+   },
+   {
+    "division": "U12 Boys - Division 5",
+    "team": "Next Man Up"
+   },
+   {
+    "division": "U12 Boys - Division 5",
+    "team": "Rising Suns - Jay"
+   },
+   {
+    "division": "U12 Boys - Division 5",
+    "team": "Time 2 Hoop"
+   },
+   {
+    "division": "U12 Boys - Division 5",
+    "team": "Top Tier"
+   },
+   {
+    "division": "U12 Boys - Division 5",
+    "team": "Toronto Lords - Gold"
+   },
+   {
+    "division": "U12 Boys - Division 5",
+    "team": "YvY Elite White"
+   },
+   {
+    "division": "U12 Boys - Division 6",
+    "team": "17 Ignite - Red"
+   },
+   {
+    "division": "U12 Boys - Division 6",
+    "team": "Born 2 Stand Out - Anthony"
+   },
+   {
+    "division": "U12 Boys - Division 6",
+    "team": "Burlington Force - Stewart"
+   },
+   {
+    "division": "U12 Boys - Division 6",
+    "team": "Burloak Elite Mike"
+   },
+   {
+    "division": "U12 Boys - Division 6",
+    "team": "City Hoops"
+   },
+   {
+    "division": "U12 Boys - Division 6",
+    "team": "Finesse Basketball"
+   },
+   {
+    "division": "U12 Boys - Division 6",
+    "team": "Locked In Sports - Green"
+   },
+   {
+    "division": "U12 Boys - Division 6",
+    "team": "Maple Basketball"
+   },
+   {
+    "division": "U12 Boys - Division 6",
+    "team": "NRBA Mad Dogz"
+   },
+   {
+    "division": "U12 Boys - Division 6",
+    "team": "SBA Academy"
+   },
+   {
+    "division": "U12 Boys - Division 6",
+    "team": "Skillz Basketball Saints"
+   },
+   {
+    "division": "U12 Boys - Division 6",
+    "team": "Toronto Triple Threat - Burnie"
+   },
+   {
+    "division": "U12 Girls - Diamond Division",
+    "team": "Barrie Royals"
+   },
+   {
+    "division": "U12 Girls - Diamond Division",
+    "team": "Cali Prep - Darwin"
+   },
+   {
+    "division": "U12 Girls - Diamond Division",
+    "team": "Durham Rangers Basketball - U12"
+   },
+   {
+    "division": "U12 Girls - Diamond Division",
+    "team": "East York Eagles - Duporte"
+   },
+   {
+    "division": "U12 Girls - Diamond Division",
+    "team": "East York Eagles - Hilton"
+   },
+   {
+    "division": "U12 Girls - Diamond Division",
+    "team": "MUMBA ELITE - FROST"
+   },
+   {
+    "division": "U12 Girls - Diamond Division",
+    "team": "North Toronto Huskies - Tolensky"
+   },
+   {
+    "division": "U12 Girls - Diamond Division",
+    "team": "Orillia Lakers"
+   },
+   {
+    "division": "U12 Girls - Diamond Division",
+    "team": "SBA Blues Team Barron"
+   },
+   {
+    "division": "U12 Girls - Diamond Division",
+    "team": "YNBA Garvin"
+   },
+   {
+    "division": "U12 Girls - Division 2",
+    "team": "Collingwood Trailblazers"
+   },
+   {
+    "division": "U12 Girls - Division 2",
+    "team": "Eurostep - Filip"
+   },
+   {
+    "division": "U12 Girls - Division 2",
+    "team": "JCC Warriors"
+   },
+   {
+    "division": "U12 Girls - Division 2",
+    "team": "Monarchs - Rupi"
+   },
+   {
+    "division": "U12 Girls - Division 2",
+    "team": "Thornhill Thunder - Navy"
+   },
+   {
+    "division": "U12 Girls - Division 2",
+    "team": "Toronto Triple Threat"
+   },
+   {
+    "division": "U12 Girls - Division 2",
+    "team": "VCB"
+   },
+   {
+    "division": "U12 Girls - Division 2",
+    "team": "YNBA Watson"
+   },
+   {
+    "division": "U13 Boys - (D1) Quest for the Ring",
+    "team": "Barrie Royals - Quach"
+   },
+   {
+    "division": "U13 Boys - (D1) Quest for the Ring",
+    "team": "Brampton Warriors - Simpson"
+   },
+   {
+    "division": "U13 Boys - (D1) Quest for the Ring",
+    "team": "Burloak Elite Chris"
+   },
+   {
+    "division": "U13 Boys - (D1) Quest for the Ring",
+    "team": "City Above Elite"
+   },
+   {
+    "division": "U13 Boys - (D1) Quest for the Ring",
+    "team": "Kings Court Basketball"
+   },
+   {
+    "division": "U13 Boys - (D1) Quest for the Ring",
+    "team": "MILTON STAGS RED"
+   },
+   {
+    "division": "U13 Boys - (D1) Quest for the Ring",
+    "team": "Monarchs - Antonio"
+   },
+   {
+    "division": "U13 Boys - (D1) Quest for the Ring",
+    "team": "Rising Suns - Jake"
+   },
+   {
+    "division": "U13 Boys - (D1) Quest for the Ring",
+    "team": "SBA Premier Blue"
+   },
+   {
+    "division": "U13 Boys - (D1) Quest for the Ring",
+    "team": "SCNYB - Fuca"
+   },
+   {
+    "division": "U13 Boys - (D1) Quest for the Ring",
+    "team": "St Clair Jr Saints - Shaw"
+   },
+   {
+    "division": "U13 Boys - (D1) Quest for the Ring",
+    "team": "Team Sanctuary BLACK"
+   },
+   {
+    "division": "U13 Boys - (D1) Quest for the Ring",
+    "team": "Triple Balance - Jay'R"
+   },
+   {
+    "division": "U13 Boys - (D1) Quest for the Ring",
+    "team": "Union Elite - Norm"
+   },
+   {
+    "division": "U13 Boys - (D1) Quest for the Ring",
+    "team": "UPLAY East"
+   },
+   {
+    "division": "U13 Boys - (D1) Quest for the Ring",
+    "team": "Vaughan Panthers"
+   },
+   {
+    "division": "U13 Boys - (D1) Quest for the Ring",
+    "team": "YvY Elite"
+   },
+   {
+    "division": "U13 Boys - Division 2",
+    "team": "17 Ignite - Red"
+   },
+   {
+    "division": "U13 Boys - Division 2",
+    "team": "BALL905"
+   },
+   {
+    "division": "U13 Boys - Division 2",
+    "team": "Barrie Buccaneers"
+   },
+   {
+    "division": "U13 Boys - Division 2",
+    "team": "East York Eagles - Neil"
+   },
+   {
+    "division": "U13 Boys - Division 2",
+    "team": "FIRST STEP ELITE"
+   },
+   {
+    "division": "U13 Boys - Division 2",
+    "team": "IEM Spartans - Newmarket"
+   },
+   {
+    "division": "U13 Boys - Division 2",
+    "team": "JCC Warriors - South"
+   },
+   {
+    "division": "U13 Boys - Division 2",
+    "team": "London Ramblers"
+   },
+   {
+    "division": "U13 Boys - Division 2",
+    "team": "M & R Basketball - Lam"
+   },
+   {
+    "division": "U13 Boys - Division 2",
+    "team": "MUMBA ELITE - MCKAY"
+   },
+   {
+    "division": "U13 Boys - Division 2",
+    "team": "STRIVE HOOPS"
+   },
+   {
+    "division": "U13 Boys - Division 2",
+    "team": "Team Sanctuary SILVER"
+   },
+   {
+    "division": "U13 Boys - Division 2",
+    "team": "Union Elite - Ivan"
+   },
+   {
+    "division": "U13 Boys - Division 3",
+    "team": "Burlington Force - Tolhurst"
+   },
+   {
+    "division": "U13 Boys - Division 3",
+    "team": "Eurostep - Thomas"
+   },
+   {
+    "division": "U13 Boys - Division 3",
+    "team": "JUMP Basketball - Black"
+   },
+   {
+    "division": "U13 Boys - Division 3",
+    "team": "LEGACY UNITED"
+   },
+   {
+    "division": "U13 Boys - Division 3",
+    "team": "Momentum - Orange"
+   },
+   {
+    "division": "U13 Boys - Division 3",
+    "team": "New Horizon - Everton"
+   },
+   {
+    "division": "U13 Boys - Division 3",
+    "team": "Northern Kings - Sonny"
+   },
+   {
+    "division": "U13 Boys - Division 3",
+    "team": "SBA Premier White"
+   },
+   {
+    "division": "U13 Boys - Division 3",
+    "team": "Team Truth"
+   },
+   {
+    "division": "U13 Boys - Division 3",
+    "team": "Union Elite - Sigmund"
+   },
+   {
+    "division": "U13 Boys - Division 4",
+    "team": "Etobicoke Thunder"
+   },
+   {
+    "division": "U13 Boys - Division 4",
+    "team": "Helix Rise"
+   },
+   {
+    "division": "U13 Boys - Division 4",
+    "team": "Hounds Elite"
+   },
+   {
+    "division": "U13 Boys - Division 4",
+    "team": "JCC Warriors - North White"
+   },
+   {
+    "division": "U13 Boys - Division 4",
+    "team": "KW Vipers - Quigley"
+   },
+   {
+    "division": "U13 Boys - Division 4",
+    "team": "Maple Basketball Silver"
+   },
+   {
+    "division": "U13 Boys - Division 4",
+    "team": "Monarchs - Millar"
+   },
+   {
+    "division": "U13 Boys - Division 4",
+    "team": "Motion West Express Basketball - Millar"
+   },
+   {
+    "division": "U13 Boys - Division 4",
+    "team": "Orillia Lakers - Grieve"
+   },
+   {
+    "division": "U13 Boys - Division 4",
+    "team": "Rising Suns - Julius"
+   },
+   {
+    "division": "U13 Boys - Division 4",
+    "team": "V3 Basketball"
+   },
+   {
+    "division": "U13 Boys - Division 4",
+    "team": "Woodbridge Lions"
+   },
+   {
+    "division": "U13 Boys - Division 5",
+    "team": "Cambridge Basketball - Laswick"
+   },
+   {
+    "division": "U13 Boys - Division 5",
+    "team": "DEEP Basketball Club"
+   },
+   {
+    "division": "U13 Boys - Division 5",
+    "team": "Durham Blues - Patterson"
+   },
+   {
+    "division": "U13 Boys - Division 5",
+    "team": "East York Eagles"
+   },
+   {
+    "division": "U13 Boys - Division 5",
+    "team": "GTA Mavericks"
+   },
+   {
+    "division": "U13 Boys - Division 5",
+    "team": "JUMP Basketball - Red"
+   },
+   {
+    "division": "U13 Boys - Division 5",
+    "team": "LIFT"
+   },
+   {
+    "division": "U13 Boys - Division 5",
+    "team": "Maple Basketball - Crimson"
+   },
+   {
+    "division": "U13 Boys - Division 5",
+    "team": "Red Dot Basketball (U13)"
+   },
+   {
+    "division": "U13 Boys - Division 5",
+    "team": "RWI Kings"
+   },
+   {
+    "division": "U13 Boys - Division 5",
+    "team": "Thornhill Thunder - Purple"
+   },
+   {
+    "division": "U13 Boys - Division 5",
+    "team": "Toronto Triple Threat - Mitchell"
+   },
+   {
+    "division": "U13 Boys - Division 5",
+    "team": "United Elite Basketball Club"
+   },
+   {
+    "division": "U13 Boys - Division 6",
+    "team": "Burloak Elite AY"
+   },
+   {
+    "division": "U13 Boys - Division 6",
+    "team": "City Hoops"
+   },
+   {
+    "division": "U13 Boys - Division 6",
+    "team": "Factory Elite"
+   },
+   {
+    "division": "U13 Boys - Division 6",
+    "team": "Next Man Up"
+   },
+   {
+    "division": "U13 Boys - Division 6",
+    "team": "Oakville Venom"
+   },
+   {
+    "division": "U13 Boys - Division 6",
+    "team": "Orillia Lakers - Castellani"
+   },
+   {
+    "division": "U13 Boys - Division 6",
+    "team": "Thornhill Thunder - Navy"
+   },
+   {
+    "division": "U13 Boys - Division 6",
+    "team": "Top Tier West"
+   },
+   {
+    "division": "U13 Boys - Division 6",
+    "team": "Toronto Phantoms"
+   },
+   {
+    "division": "U13 Boys - Division 6",
+    "team": "Underdog Elite"
+   },
+   {
+    "division": "U13 Boys - Division 7",
+    "team": "Barrie Royals - McCracken"
+   },
+   {
+    "division": "U13 Boys - Division 7",
+    "team": "Defenders Basketball"
+   },
+   {
+    "division": "U13 Boys - Division 7",
+    "team": "Golden Eagles Basketball Academy"
+   },
+   {
+    "division": "U13 Boys - Division 7",
+    "team": "HOOPSTARS"
+   },
+   {
+    "division": "U13 Boys - Division 7",
+    "team": "JCC Warriors - Downtown"
+   },
+   {
+    "division": "U13 Boys - Division 7",
+    "team": "Kitchener Impact - Black"
+   },
+   {
+    "division": "U13 Boys - Division 7",
+    "team": "Momentum - Navy"
+   },
+   {
+    "division": "U13 Boys - Division 7",
+    "team": "NRBA Mad Dogz"
+   },
+   {
+    "division": "U13 Boys - Division 7",
+    "team": "Toronto Lords - Moyo"
+   },
+   {
+    "division": "U13 Boys - Division 7",
+    "team": "York South Silver Knights"
+   },
+   {
+    "division": "U13 Girls - DIAMOND DIVISION",
+    "team": "B.1.C.E Majesty"
+   },
+   {
+    "division": "U13 Girls - DIAMOND DIVISION",
+    "team": "Barrie Royals"
+   },
+   {
+    "division": "U13 Girls - DIAMOND DIVISION",
+    "team": "Burlington Force - Spisani"
+   },
+   {
+    "division": "U13 Girls - DIAMOND DIVISION",
+    "team": "Durham Rangers Basketball - U13"
+   },
+   {
+    "division": "U13 Girls - DIAMOND DIVISION",
+    "team": "East York Eagles - Anderson"
+   },
+   {
+    "division": "U13 Girls - DIAMOND DIVISION",
+    "team": "Orillia Lakers - Thomson 1"
+   },
+   {
+    "division": "U13 Girls - DIAMOND DIVISION",
+    "team": "St. Catharines Rebels"
+   },
+   {
+    "division": "U13 Girls - DIAMOND DIVISION",
+    "team": "VCB - Peter"
+   },
+   {
+    "division": "U13 Girls - DIAMOND DIVISION",
+    "team": "YNBA Perlmutter"
+   },
+   {
+    "division": "U13 Girls - Division 2",
+    "team": "Collingwood Trailblazers"
+   },
+   {
+    "division": "U13 Girls - Division 2",
+    "team": "CW Celtics"
+   },
+   {
+    "division": "U13 Girls - Division 2",
+    "team": "Durham Blues"
+   },
+   {
+    "division": "U13 Girls - Division 2",
+    "team": "Jump Basketball"
+   },
+   {
+    "division": "U13 Girls - Division 2",
+    "team": "KWGBA Phoenix"
+   },
+   {
+    "division": "U13 Girls - Division 2",
+    "team": "New Horizon - Denise"
+   },
+   {
+    "division": "U13 Girls - Division 2",
+    "team": "North Toronto Huskies - Easton"
+   },
+   {
+    "division": "U13 Girls - Division 2",
+    "team": "SBA Blues Team Riche"
+   },
+   {
+    "division": "U13 Girls - Division 2",
+    "team": "TCYBA Phoenix"
+   },
+   {
+    "division": "U13 Girls - Division 2",
+    "team": "Toronto Triple Threat"
+   },
+   {
+    "division": "U13 Girls - Division 2",
+    "team": "YNBA Lambie"
+   },
+   {
+    "division": "U13 Girls - Division 3",
+    "team": "FIRST STEP ELITE - Lady Steppers"
+   },
+   {
+    "division": "U13 Girls - Division 3",
+    "team": "Guelph Knights"
+   },
+   {
+    "division": "U13 Girls - Division 3",
+    "team": "IEM Spartans - Newmarket"
+   },
+   {
+    "division": "U13 Girls - Division 3",
+    "team": "Toronto Lords"
+   },
+   {
+    "division": "U13 Girls - Division 3",
+    "team": "Toronto NuStep Ballers"
+   },
+   {
+    "division": "U14 Boys - (D1) Quest for the Ring",
+    "team": "Barrie Royals - Messecar"
+   },
+   {
+    "division": "U14 Boys - (D1) Quest for the Ring",
+    "team": "Born 2 Stand Out - Justin"
+   },
+   {
+    "division": "U14 Boys - (D1) Quest for the Ring",
+    "team": "Burlington Force - Scully"
+   },
+   {
+    "division": "U14 Boys - (D1) Quest for the Ring",
+    "team": "City Above Elite - Eman"
+   },
+   {
+    "division": "U14 Boys - (D1) Quest for the Ring",
+    "team": "East York Eagles - Rozario"
+   },
+   {
+    "division": "U14 Boys - (D1) Quest for the Ring",
+    "team": "Eurostep - Luka"
+   },
+   {
+    "division": "U14 Boys - (D1) Quest for the Ring",
+    "team": "K9 ELITE BLUE"
+   },
+   {
+    "division": "U14 Boys - (D1) Quest for the Ring",
+    "team": "K9 ELITE WHITE"
+   },
+   {
+    "division": "U14 Boys - (D1) Quest for the Ring",
+    "team": "KW Vipers - Mannarelli"
+   },
+   {
+    "division": "U14 Boys - (D1) Quest for the Ring",
+    "team": "Northern Kings - Ahmed"
+   },
+   {
+    "division": "U14 Boys - (D1) Quest for the Ring",
+    "team": "SBA Premier Miller"
+   },
+   {
+    "division": "U14 Boys - (D1) Quest for the Ring",
+    "team": "SCNYB"
+   },
+   {
+    "division": "U14 Boys - (D1) Quest for the Ring",
+    "team": "St Clair Jr Saints"
+   },
+   {
+    "division": "U14 Boys - (D1) Quest for the Ring",
+    "team": "Team Sanctuary PURPLE"
+   },
+   {
+    "division": "U14 Boys - (D1) Quest for the Ring",
+    "team": "Team Sanctuary WHITE"
+   },
+   {
+    "division": "U14 Boys - (D1) Quest for the Ring",
+    "team": "The UN1T"
+   },
+   {
+    "division": "U14 Boys - (D1) Quest for the Ring",
+    "team": "Triple Balance - Skinner"
+   },
+   {
+    "division": "U14 Boys - (D1) Quest for the Ring",
+    "team": "Triple Balance - Xavier"
+   },
+   {
+    "division": "U14 Boys - (D1) Quest for the Ring",
+    "team": "Union Elite - Marv"
+   },
+   {
+    "division": "U14 Boys - (D1) Quest for the Ring",
+    "team": "Wiggins Eilte"
+   },
+   {
+    "division": "U14 Boys - Division 2",
+    "team": "Ancaster Magic - Duffy"
+   },
+   {
+    "division": "U14 Boys - Division 2",
+    "team": "BALL905 CST"
+   },
+   {
+    "division": "U14 Boys - Division 2",
+    "team": "Brampton Warriors - Singh"
+   },
+   {
+    "division": "U14 Boys - Division 2",
+    "team": "Brantford Hawks"
+   },
+   {
+    "division": "U14 Boys - Division 2",
+    "team": "DC Bulldogs"
+   },
+   {
+    "division": "U14 Boys - Division 2",
+    "team": "Defenders Basketball - Gold"
+   },
+   {
+    "division": "U14 Boys - Division 2",
+    "team": "Etobicoke Thunder - Ferreira"
+   },
+   {
+    "division": "U14 Boys - Division 2",
+    "team": "Helix Rise"
+   },
+   {
+    "division": "U14 Boys - Division 2",
+    "team": "IEM Spartans Elite"
+   },
+   {
+    "division": "U14 Boys - Division 2",
+    "team": "Kitchener Impact - Red"
+   },
+   {
+    "division": "U14 Boys - Division 2",
+    "team": "Northern Kings - Kevin"
+   },
+   {
+    "division": "U14 Boys - Division 2",
+    "team": "Rising Suns - Phenom"
+   },
+   {
+    "division": "U14 Boys - Division 2",
+    "team": "Team Sanctuary BLACK"
+   },
+   {
+    "division": "U14 Boys - Division 2",
+    "team": "The Collective Elite - White"
+   },
+   {
+    "division": "U14 Boys - Division 2",
+    "team": "Union Elite - Bam (2013)"
+   },
+   {
+    "division": "U14 Boys - Division 2",
+    "team": "Up North United"
+   },
+   {
+    "division": "U14 Boys - Division 2",
+    "team": "Vaughan Panthers - Curtis"
+   },
+   {
+    "division": "U14 Boys - Division 2",
+    "team": "YvY Elite Black"
+   },
+   {
+    "division": "U14 Boys - Division 3",
+    "team": "17 Ignite - Red"
+   },
+   {
+    "division": "U14 Boys - Division 3",
+    "team": "2-Way Elite"
+   },
+   {
+    "division": "U14 Boys - Division 3",
+    "team": "Ancaster Magic - Hall"
+   },
+   {
+    "division": "U14 Boys - Division 3",
+    "team": "City Above Elite - Jerald"
+   },
+   {
+    "division": "U14 Boys - Division 3",
+    "team": "Etobicoke Thunder - Qadri"
+   },
+   {
+    "division": "U14 Boys - Division 3",
+    "team": "Hall of Fame Hustle"
+   },
+   {
+    "division": "U14 Boys - Division 3",
+    "team": "IEM Spartans - Aurora"
+   },
+   {
+    "division": "U14 Boys - Division 3",
+    "team": "LIFT"
+   },
+   {
+    "division": "U14 Boys - Division 3",
+    "team": "MILTON STAGS RED"
+   },
+   {
+    "division": "U14 Boys - Division 3",
+    "team": "SBA Blues Team McKenna"
+   },
+   {
+    "division": "U14 Boys - Division 3",
+    "team": "Team Breakdown - Darryl"
+   },
+   {
+    "division": "U14 Boys - Division 3",
+    "team": "Top Tier West"
+   },
+   {
+    "division": "U14 Boys - Division 3",
+    "team": "Toronto Triple Threat - Team Clarke"
+   },
+   {
+    "division": "U14 Boys - Division 3",
+    "team": "UPLAY - Coach Kash"
+   },
+   {
+    "division": "U14 Boys - Division 4",
+    "team": "Ancaster Blitz - Moretuzzo"
+   },
+   {
+    "division": "U14 Boys - Division 4",
+    "team": "Barrie Buccaneers"
+   },
+   {
+    "division": "U14 Boys - Division 4",
+    "team": "Barrie Royals - Oster"
+   },
+   {
+    "division": "U14 Boys - Division 4",
+    "team": "Burloak Elite Rishi"
+   },
+   {
+    "division": "U14 Boys - Division 4",
+    "team": "JCC Warriors - South White"
+   },
+   {
+    "division": "U14 Boys - Division 4",
+    "team": "KW Vipers - Langer"
+   },
+   {
+    "division": "U14 Boys - Division 4",
+    "team": "Lightning Basketball - Team Quincy"
+   },
+   {
+    "division": "U14 Boys - Division 4",
+    "team": "Monarchs - Kenny"
+   },
+   {
+    "division": "U14 Boys - Division 4",
+    "team": "STRIVE Hoops"
+   },
+   {
+    "division": "U14 Boys - Division 4",
+    "team": "The UN1T - Minix"
+   },
+   {
+    "division": "U14 Boys - Division 4",
+    "team": "Toronto Phantoms"
+   },
+   {
+    "division": "U14 Boys - Division 4",
+    "team": "Underground Basketball Club"
+   },
+   {
+    "division": "U14 Boys - Division 5",
+    "team": "Burlington Force - Miller"
+   },
+   {
+    "division": "U14 Boys - Division 5",
+    "team": "Cadougan Elite"
+   },
+   {
+    "division": "U14 Boys - Division 5",
+    "team": "East York Eagles - McLeod"
+   },
+   {
+    "division": "U14 Boys - Division 5",
+    "team": "Eastern Earthquakes TJ"
+   },
+   {
+    "division": "U14 Boys - Division 5",
+    "team": "Elite Omega Academy"
+   },
+   {
+    "division": "U14 Boys - Division 5",
+    "team": "ImPowerful Athletics"
+   },
+   {
+    "division": "U14 Boys - Division 5",
+    "team": "LEGACY UNITED"
+   },
+   {
+    "division": "U14 Boys - Division 5",
+    "team": "M & R Basketball - Kirk"
+   },
+   {
+    "division": "U14 Boys - Division 5",
+    "team": "Maple Basketball"
+   },
+   {
+    "division": "U14 Boys - Division 5",
+    "team": "Peel Outlaws"
+   },
+   {
+    "division": "U14 Boys - Division 5",
+    "team": "Thornhill Thunder - Exclusive"
+   },
+   {
+    "division": "U14 Boys - Division 5",
+    "team": "Time 2 Hoop"
+   },
+   {
+    "division": "U14 Boys - Division 6",
+    "team": "Advantage Titans"
+   },
+   {
+    "division": "U14 Boys - Division 6",
+    "team": "G2S Game Changers"
+   },
+   {
+    "division": "U14 Boys - Division 6",
+    "team": "GTA Mavericks"
+   },
+   {
+    "division": "U14 Boys - Division 6",
+    "team": "Hoopzone Knights"
+   },
+   {
+    "division": "U14 Boys - Division 6",
+    "team": "Jaxx City Elite"
+   },
+   {
+    "division": "U14 Boys - Division 6",
+    "team": "Lifelong Elite"
+   },
+   {
+    "division": "U14 Boys - Division 6",
+    "team": "Locked In Sports"
+   },
+   {
+    "division": "U14 Boys - Division 6",
+    "team": "MUMBA ELITE - VARNAN"
+   },
+   {
+    "division": "U14 Boys - Division 6",
+    "team": "North Toronto Huskies - Gross"
+   },
+   {
+    "division": "U14 Boys - Division 6",
+    "team": "Toronto Lords Academy"
+   },
+   {
+    "division": "U14 Boys - Division 6",
+    "team": "Union Elite - Nate"
+   },
+   {
+    "division": "U14 Boys - Division 6",
+    "team": "West Hill Warriors - Coach John"
+   },
+   {
+    "division": "U14 Boys - Division 7",
+    "team": "City Hoops"
+   },
+   {
+    "division": "U14 Boys - Division 7",
+    "team": "Druva"
+   },
+   {
+    "division": "U14 Boys - Division 7",
+    "team": "Durham Blues - McPherson"
+   },
+   {
+    "division": "U14 Boys - Division 7",
+    "team": "Elevation Athletics - Seif"
+   },
+   {
+    "division": "U14 Boys - Division 7",
+    "team": "Eurostep - Milos"
+   },
+   {
+    "division": "U14 Boys - Division 7",
+    "team": "JCC Warriors - North Blue"
+   },
+   {
+    "division": "U14 Boys - Division 7",
+    "team": "JCC Warriors - North White"
+   },
+   {
+    "division": "U14 Boys - Division 7",
+    "team": "Momentum - Orange"
+   },
+   {
+    "division": "U14 Boys - Division 7",
+    "team": "Monarchs - Tariq"
+   },
+   {
+    "division": "U14 Boys - Division 7",
+    "team": "Toronto Lords - Kenyon"
+   },
+   {
+    "division": "U14 Boys - Division 7",
+    "team": "Vaughan Panthers - John"
+   },
+   {
+    "division": "U14 Boys - Division 7",
+    "team": "YvY Elite White"
+   },
+   {
+    "division": "U14 Boys - Division 8",
+    "team": "Born 2 Stand Out - Mohamad"
+   },
+   {
+    "division": "U14 Boys - Division 8",
+    "team": "Collingwood Trailblazers"
+   },
+   {
+    "division": "U14 Boys - Division 8",
+    "team": "Defenders Basketball - Grey"
+   },
+   {
+    "division": "U14 Boys - Division 8",
+    "team": "KW Vipers - Thomas"
+   },
+   {
+    "division": "U14 Boys - Division 8",
+    "team": "Legacy Basketball Academy"
+   },
+   {
+    "division": "U14 Boys - Division 8",
+    "team": "Next Man Up"
+   },
+   {
+    "division": "U14 Boys - Division 8",
+    "team": "Oakville Venom"
+   },
+   {
+    "division": "U14 Boys - Division 8",
+    "team": "Oshawa Commanders"
+   },
+   {
+    "division": "U14 Boys - Division 8",
+    "team": "Red Dot Basketball (U14)"
+   },
+   {
+    "division": "U14 Boys - Division 8",
+    "team": "S.W.O.T Academy"
+   },
+   {
+    "division": "U14 Boys - Division 8",
+    "team": "SBA Blues Team Scott"
+   },
+   {
+    "division": "U14 Boys - Division 8",
+    "team": "Team Breakdown - Andrew"
+   },
+   {
+    "division": "U14 Boys - Division 9",
+    "team": "Cooksville Basketball"
+   },
+   {
+    "division": "U14 Boys - Division 9",
+    "team": "Elevation Athletics"
+   },
+   {
+    "division": "U14 Boys - Division 9",
+    "team": "Golden Eagles Basketball Academy"
+   },
+   {
+    "division": "U14 Boys - Division 9",
+    "team": "Jump Basketball"
+   },
+   {
+    "division": "U14 Boys - Division 9",
+    "team": "Nexus Wolves"
+   },
+   {
+    "division": "U14 Boys - Division 9",
+    "team": "Retro Elite"
+   },
+   {
+    "division": "U14 Boys - Division 9",
+    "team": "SBA Academy"
+   },
+   {
+    "division": "U14 Boys - Division 9",
+    "team": "Thornhill Thunder - Blue"
+   },
+   {
+    "division": "U14 Boys - Division 9",
+    "team": "Time 2 Hoop"
+   },
+   {
+    "division": "U14 Boys - Division 9",
+    "team": "Toronto Lords Purple"
+   },
+   {
+    "division": "U14 Boys - Division 9",
+    "team": "Toronto Triple Threat - Jakovic"
+   },
+   {
+    "division": "U14 Boys - Division 9",
+    "team": "Underdog Elite"
+   },
+   {
+    "division": "U14 Boys - Division 9",
+    "team": "Woodbridge Lions"
+   },
+   {
+    "division": "U14 Boys - Division-10",
+    "team": "BALL905 Halton Hills"
+   },
+   {
+    "division": "U14 Boys - Division-10",
+    "team": "Brampton Warriors - Senior"
+   },
+   {
+    "division": "U14 Boys - Division-10",
+    "team": "Brotherhood Elite"
+   },
+   {
+    "division": "U14 Boys - Division-10",
+    "team": "Burloak Elite Allen"
+   },
+   {
+    "division": "U14 Boys - Division-10",
+    "team": "Finesse Basketball"
+   },
+   {
+    "division": "U14 Boys - Division-10",
+    "team": "ImPowerful Athletics - Grey"
+   },
+   {
+    "division": "U14 Boys - Division-10",
+    "team": "MILTON STAGS WHITE"
+   },
+   {
+    "division": "U14 Boys - Division-10",
+    "team": "Momentum - Navy"
+   },
+   {
+    "division": "U14 Boys - Division-10",
+    "team": "New Horizon - Mike"
+   },
+   {
+    "division": "U14 Boys - Division-10",
+    "team": "Niagara Splash Basketball - Team 1"
+   },
+   {
+    "division": "U14 Boys - Division-10",
+    "team": "North Toronto Huskies - Greenhouse"
+   },
+   {
+    "division": "U14 Boys - Division-10",
+    "team": "Northern Kings - Mark"
+   },
+   {
+    "division": "U14 Boys - Division-10",
+    "team": "NRBA Mad Dogz Blue Patel"
+   },
+   {
+    "division": "U14 Boys - Division-10",
+    "team": "NRBA Mad Dogz Marc"
+   },
+   {
+    "division": "U14 Boys - Division-10",
+    "team": "RWI Kings"
+   },
+   {
+    "division": "U14 Boys - Division-10",
+    "team": "Wynn Basketball Academy"
+   },
+   {
+    "division": "U14 Boys - Division-10",
+    "team": "YvY Elite"
+   },
+   {
+    "division": "U14 Girls - DIAMOND DIVISION",
+    "team": "Brampton Warriors - Harris"
+   },
+   {
+    "division": "U14 Girls - DIAMOND DIVISION",
+    "team": "Collingwood Trailblazers"
+   },
+   {
+    "division": "U14 Girls - DIAMOND DIVISION",
+    "team": "EcoHoops"
+   },
+   {
+    "division": "U14 Girls - DIAMOND DIVISION",
+    "team": "KW Vipers - Majuery"
+   },
+   {
+    "division": "U14 Girls - DIAMOND DIVISION",
+    "team": "MUMBA ELITE - JARVIS"
+   },
+   {
+    "division": "U14 Girls - DIAMOND DIVISION",
+    "team": "Red Dot Elite"
+   },
+   {
+    "division": "U14 Girls - DIAMOND DIVISION",
+    "team": "Toronto Triple Threat"
+   },
+   {
+    "division": "U14 Girls - Division 2",
+    "team": "CW Celtics"
+   },
+   {
+    "division": "U14 Girls - Division 2",
+    "team": "Durham Blues"
+   },
+   {
+    "division": "U14 Girls - Division 2",
+    "team": "East York Eagles - O'Brien"
+   },
+   {
+    "division": "U14 Girls - Division 2",
+    "team": "East York Eagles - Richardson"
+   },
+   {
+    "division": "U14 Girls - Division 2",
+    "team": "Eastern Earthquakes Niya"
+   },
+   {
+    "division": "U14 Girls - Division 2",
+    "team": "Midland Waves"
+   },
+   {
+    "division": "U14 Girls - Division 2",
+    "team": "Monarchs - Bennett"
+   },
+   {
+    "division": "U14 Girls - Division 2",
+    "team": "MUMBA ELITE - HABASH"
+   },
+   {
+    "division": "U14 Girls - Division 2",
+    "team": "North Toronto Huskies"
+   },
+   {
+    "division": "U14 Girls - Division 2",
+    "team": "Orillia Lakers"
+   },
+   {
+    "division": "U14 Girls - Division 2",
+    "team": "Thornhill Thunder - Navy"
+   },
+   {
+    "division": "U14 Girls - Division 2",
+    "team": "Time 2 Hoop"
+   },
+   {
+    "division": "U14 Girls - Division 2",
+    "team": "Toronto Lords Bunag"
+   },
+   {
+    "division": "U14 Girls - Division 2",
+    "team": "Vaughan Panthers"
+   },
+   {
+    "division": "U14 Girls - Division 2",
+    "team": "VCB"
+   },
+   {
+    "division": "U14 Girls - Division 2",
+    "team": "YNBA Liversidge"
+   },
+   {
+    "division": "U15 Boys - (D1) Quest for the Ring",
+    "team": "BALL905 Elite"
+   },
+   {
+    "division": "U15 Boys - (D1) Quest for the Ring",
+    "team": "Blessed Sacrament"
+   },
+   {
+    "division": "U15 Boys - (D1) Quest for the Ring",
+    "team": "Born 2 Stand Out - Steve"
+   },
+   {
+    "division": "U15 Boys - (D1) Quest for the Ring",
+    "team": "Brantford Storm"
+   },
+   {
+    "division": "U15 Boys - (D1) Quest for the Ring",
+    "team": "Burloak Elite James"
+   },
+   {
+    "division": "U15 Boys - (D1) Quest for the Ring",
+    "team": "Fundamentals First Basketball"
+   },
+   {
+    "division": "U15 Boys - (D1) Quest for the Ring",
+    "team": "G2S Game Changers"
+   },
+   {
+    "division": "U15 Boys - (D1) Quest for the Ring",
+    "team": "Gloucester Wolverines"
+   },
+   {
+    "division": "U15 Boys - (D1) Quest for the Ring",
+    "team": "Guelph Gryphons - Salanga"
+   },
+   {
+    "division": "U15 Boys - (D1) Quest for the Ring",
+    "team": "IEM Spartans Elite"
+   },
+   {
+    "division": "U15 Boys - (D1) Quest for the Ring",
+    "team": "Jaxx City Elite - Black"
+   },
+   {
+    "division": "U15 Boys - (D1) Quest for the Ring",
+    "team": "Kings Court Basketball"
+   },
+   {
+    "division": "U15 Boys - (D1) Quest for the Ring",
+    "team": "Locked In Sports - Grey"
+   },
+   {
+    "division": "U15 Boys - (D1) Quest for the Ring",
+    "team": "Next Gen Rockets"
+   },
+   {
+    "division": "U15 Boys - (D1) Quest for the Ring",
+    "team": "Peel Elite"
+   },
+   {
+    "division": "U15 Boys - (D1) Quest for the Ring",
+    "team": "Peterborough Power"
+   },
+   {
+    "division": "U15 Boys - (D1) Quest for the Ring",
+    "team": "SBA Premier Maragh"
+   },
+   {
+    "division": "U15 Boys - (D1) Quest for the Ring",
+    "team": "St. Catharines Rebels"
+   },
+   {
+    "division": "U15 Boys - (D1) Quest for the Ring",
+    "team": "TEAM HAZARD CANADA"
+   },
+   {
+    "division": "U15 Boys - (D1) Quest for the Ring",
+    "team": "Team Truth"
+   },
+   {
+    "division": "U15 Boys - (D1) Quest for the Ring",
+    "team": "TNP East"
+   },
+   {
+    "division": "U15 Boys - (D1) Quest for the Ring",
+    "team": "Trubalancehoops"
+   },
+   {
+    "division": "U15 Boys - (D1) Quest for the Ring",
+    "team": "Wiggins Eilte"
+   },
+   {
+    "division": "U15 Boys - (D1) Quest for the Ring",
+    "team": "Youth Elite Ballers"
+   },
+   {
+    "division": "U15 Boys - Division 2",
+    "team": "17 Ignite - Red"
+   },
+   {
+    "division": "U15 Boys - Division 2",
+    "team": "Barrie Royals Renwick"
+   },
+   {
+    "division": "U15 Boys - Division 2",
+    "team": "Burlington Force - Sims"
+   },
+   {
+    "division": "U15 Boys - Division 2",
+    "team": "Burloak Elite Mario"
+   },
+   {
+    "division": "U15 Boys - Division 2",
+    "team": "Clutch Points"
+   },
+   {
+    "division": "U15 Boys - Division 2",
+    "team": "East York Eagles - Bishop"
+   },
+   {
+    "division": "U15 Boys - Division 2",
+    "team": "EcoHoops"
+   },
+   {
+    "division": "U15 Boys - Division 2",
+    "team": "Etobicoke Thunder - Nelson"
+   },
+   {
+    "division": "U15 Boys - Division 2",
+    "team": "Eurostep - Giuliano"
+   },
+   {
+    "division": "U15 Boys - Division 2",
+    "team": "Gold Medal"
+   },
+   {
+    "division": "U15 Boys - Division 2",
+    "team": "HOOPSTARS"
+   },
+   {
+    "division": "U15 Boys - Division 2",
+    "team": "JCC Warriors - North"
+   },
+   {
+    "division": "U15 Boys - Division 2",
+    "team": "LIFT"
+   },
+   {
+    "division": "U15 Boys - Division 2",
+    "team": "M & R Basketball - Burns"
+   },
+   {
+    "division": "U15 Boys - Division 2",
+    "team": "Monarchs - Stewart"
+   },
+   {
+    "division": "U15 Boys - Division 2",
+    "team": "MUMBA ELITE - GUTIERREZ"
+   },
+   {
+    "division": "U15 Boys - Division 2",
+    "team": "North Toronto Huskies"
+   },
+   {
+    "division": "U15 Boys - Division 2",
+    "team": "Northern Kings - Wayne"
+   },
+   {
+    "division": "U15 Boys - Division 2",
+    "team": "Ottawa South - St. John"
+   },
+   {
+    "division": "U15 Boys - Division 2",
+    "team": "Rising Suns Girrard"
+   },
+   {
+    "division": "U15 Boys - Division 2",
+    "team": "RSB Regional"
+   },
+   {
+    "division": "U15 Boys - Division 2",
+    "team": "STRIVE Hoops"
+   },
+   {
+    "division": "U15 Boys - Division 2",
+    "team": "Vaughan Panthers"
+   },
+   {
+    "division": "U15 Boys - Division 3",
+    "team": "Burlington Force - Rasheed"
+   },
+   {
+    "division": "U15 Boys - Division 3",
+    "team": "City Hoops"
+   },
+   {
+    "division": "U15 Boys - Division 3",
+    "team": "DC Bulldogs - Henry"
+   },
+   {
+    "division": "U15 Boys - Division 3",
+    "team": "Durham Blues - Teal"
+   },
+   {
+    "division": "U15 Boys - Division 3",
+    "team": "East York Eagles - Liam"
+   },
+   {
+    "division": "U15 Boys - Division 3",
+    "team": "Eastern Earthquakes Grizzle"
+   },
+   {
+    "division": "U15 Boys - Division 3",
+    "team": "Elite Omega Academy"
+   },
+   {
+    "division": "U15 Boys - Division 3",
+    "team": "Etobicoke Thunder - Mowlid"
+   },
+   {
+    "division": "U15 Boys - Division 3",
+    "team": "Hardcore Hoops"
+   },
+   {
+    "division": "U15 Boys - Division 3",
+    "team": "New Horizon - Everton"
+   },
+   {
+    "division": "U15 Boys - Division 3",
+    "team": "Peel Outlaws"
+   },
+   {
+    "division": "U15 Boys - Division 3",
+    "team": "Union Elite - Mike"
+   },
+   {
+    "division": "U15 Boys - Division 4",
+    "team": "BALL905 Mississauga"
+   },
+   {
+    "division": "U15 Boys - Division 4",
+    "team": "CW Celtics"
+   },
+   {
+    "division": "U15 Boys - Division 4",
+    "team": "Guelph Knights CYO Lochan"
+   },
+   {
+    "division": "U15 Boys - Division 4",
+    "team": "JCC Warriors - South"
+   },
+   {
+    "division": "U15 Boys - Division 4",
+    "team": "Momentum - White"
+   },
+   {
+    "division": "U15 Boys - Division 4",
+    "team": "MUMBA ELITE -  ORNELLA"
+   },
+   {
+    "division": "U15 Boys - Division 4",
+    "team": "Sudbury JAM - Celtus"
+   },
+   {
+    "division": "U15 Boys - Division 4",
+    "team": "Toronto Lords - Belasco"
+   },
+   {
+    "division": "U15 Boys - Division 4",
+    "team": "Toronto Triple Threat"
+   },
+   {
+    "division": "U15 Boys - Division 4",
+    "team": "YvY Elite"
+   },
+   {
+    "division": "U15 Boys - Division 5",
+    "team": "Eurostep - Jovan"
+   },
+   {
+    "division": "U15 Boys - Division 5",
+    "team": "FIRST STEP ELITE - Black"
+   },
+   {
+    "division": "U15 Boys - Division 5",
+    "team": "Jaxx City Elite - Green"
+   },
+   {
+    "division": "U15 Boys - Division 5",
+    "team": "KW Vipers - Brown"
+   },
+   {
+    "division": "U15 Boys - Division 5",
+    "team": "Locked In Sports - Red"
+   },
+   {
+    "division": "U15 Boys - Division 5",
+    "team": "M & R Basketball - Kirk"
+   },
+   {
+    "division": "U15 Boys - Division 5",
+    "team": "Made Different Basketball"
+   },
+   {
+    "division": "U15 Boys - Division 5",
+    "team": "Momentum - Navy"
+   },
+   {
+    "division": "U15 Boys - Division 5",
+    "team": "North York Aquilas"
+   },
+   {
+    "division": "U15 Boys - Division 5",
+    "team": "SBA Blues Team Arthurs"
+   },
+   {
+    "division": "U15 Boys - Division 5",
+    "team": "Time 2 Hoop Basketball Academy"
+   },
+   {
+    "division": "U15 Boys - Division 5",
+    "team": "United Elite Basketball Club - Queonis"
+   },
+   {
+    "division": "U15 Boys - Division 6",
+    "team": "Bayan Basketball"
+   },
+   {
+    "division": "U15 Boys - Division 6",
+    "team": "Brampton Elite"
+   },
+   {
+    "division": "U15 Boys - Division 6",
+    "team": "Golden Eagles Academy"
+   },
+   {
+    "division": "U15 Boys - Division 6",
+    "team": "Hamilton Elite"
+   },
+   {
+    "division": "U15 Boys - Division 6",
+    "team": "Hoopzone Knights White"
+   },
+   {
+    "division": "U15 Boys - Division 6",
+    "team": "Lead2greatness"
+   },
+   {
+    "division": "U15 Boys - Division 6",
+    "team": "Locked In Sports - Green"
+   },
+   {
+    "division": "U15 Boys - Division 6",
+    "team": "Niagara Splash Basketball"
+   },
+   {
+    "division": "U15 Boys - Division 6",
+    "team": "Red Dot Basketball"
+   },
+   {
+    "division": "U15 Boys - Division 6",
+    "team": "Top Tier - Caparas"
+   },
+   {
+    "division": "U15 Boys - Division 6",
+    "team": "Toronto Lords - Bhang"
+   },
+   {
+    "division": "U15 Boys - Division 6",
+    "team": "Underdog Elite"
+   },
+   {
+    "division": "U15 Boys - Division 6",
+    "team": "Woodbridge Lions Elite - Fernando"
+   },
+   {
+    "division": "U15 Boys - Division 7",
+    "team": "AET Basketball"
+   },
+   {
+    "division": "U15 Boys - Division 7",
+    "team": "Apex Wolves"
+   },
+   {
+    "division": "U15 Boys - Division 7",
+    "team": "BALL905 Halton Hills"
+   },
+   {
+    "division": "U15 Boys - Division 7",
+    "team": "Homenetment Toronto"
+   },
+   {
+    "division": "U15 Boys - Division 7",
+    "team": "Lindsay Wildcats"
+   },
+   {
+    "division": "U15 Boys - Division 7",
+    "team": "Maharlika Royals"
+   },
+   {
+    "division": "U15 Boys - Division 7",
+    "team": "Maple Basketball"
+   },
+   {
+    "division": "U15 Boys - Division 7",
+    "team": "Midland Waves"
+   },
+   {
+    "division": "U15 Boys - Division 7",
+    "team": "Team MOBA"
+   },
+   {
+    "division": "U15 Boys - Division 7",
+    "team": "Thornhill Thunder - Navy"
+   },
+   {
+    "division": "U15 Boys - Division 7",
+    "team": "YNBA Smith"
+   },
+   {
+    "division": "U15 Boys - Division 7",
+    "team": "YSSK Thomas"
+   },
+   {
+    "division": "U15 Boys - Division 8",
+    "team": "BALL905 Erin Mills"
+   },
+   {
+    "division": "U15 Boys - Division 8",
+    "team": "Burloak Elite Malachi"
+   },
+   {
+    "division": "U15 Boys - Division 8",
+    "team": "Canadian Basketball Academy"
+   },
+   {
+    "division": "U15 Boys - Division 8",
+    "team": "Elevation Athletics"
+   },
+   {
+    "division": "U15 Boys - Division 8",
+    "team": "Finesse Basketball"
+   },
+   {
+    "division": "U15 Boys - Division 8",
+    "team": "Flower City Falcons"
+   },
+   {
+    "division": "U15 Boys - Division 8",
+    "team": "MUMBA ELITE - SOMESAN"
+   },
+   {
+    "division": "U15 Boys - Division 8",
+    "team": "NOBAT"
+   },
+   {
+    "division": "U15 Boys - Division 8",
+    "team": "Oakville Venom"
+   },
+   {
+    "division": "U15 Boys - Division 8",
+    "team": "Oshawa Commanders"
+   },
+   {
+    "division": "U15 Boys - Division 8",
+    "team": "Silver Knights - RIVAS"
+   },
+   {
+    "division": "U15 Boys - Division 8",
+    "team": "Thornhill Thunder - Silver"
+   },
+   {
+    "division": "U15 Boys - Division 9",
+    "team": "B-Elite Basketball"
+   },
+   {
+    "division": "U15 Boys - Division 9",
+    "team": "Durham Blues - Black"
+   },
+   {
+    "division": "U15 Boys - Division 9",
+    "team": "Factory Elite"
+   },
+   {
+    "division": "U15 Boys - Division 9",
+    "team": "Guelph Gryphons - M&M"
+   },
+   {
+    "division": "U15 Boys - Division 9",
+    "team": "Hamilton Eagles"
+   },
+   {
+    "division": "U15 Boys - Division 9",
+    "team": "Hoopzone Knights Black"
+   },
+   {
+    "division": "U15 Boys - Division 9",
+    "team": "IEM Spartans - Aurora"
+   },
+   {
+    "division": "U15 Boys - Division 9",
+    "team": "Kidballers Knights"
+   },
+   {
+    "division": "U15 Boys - Division 9",
+    "team": "Kitchener\u2019s Finest"
+   },
+   {
+    "division": "U15 Boys - Division 9",
+    "team": "MILTON STAGS WHITE"
+   },
+   {
+    "division": "U15 Boys - Division 9",
+    "team": "Oakville Anchor"
+   },
+   {
+    "division": "U15 Boys - Division 9",
+    "team": "Orillia Lakers - Murdoch"
+   },
+   {
+    "division": "U15 Boys - Division 9",
+    "team": "Sauga City Kings"
+   },
+   {
+    "division": "U15 Boys - Division 9",
+    "team": "SBA Blues Team Sheppard"
+   },
+   {
+    "division": "U15 Boys - Division 9",
+    "team": "The North Basketball"
+   },
+   {
+    "division": "U15 Boys - Division 9",
+    "team": "Thornhill Thunder - White"
+   },
+   {
+    "division": "U15 Boys - Division 9",
+    "team": "United Elite Basketball Club - Jaone"
+   },
+   {
+    "division": "U15 Boys - Division 9",
+    "team": "V3 Basketball"
+   },
+   {
+    "division": "U15 Girls - Diamond Division",
+    "team": "Born 2 Stand Out Queens - Ferguson"
+   },
+   {
+    "division": "U15 Girls - Diamond Division",
+    "team": "Barrie Royals"
+   },
+   {
+    "division": "U15 Girls - Diamond Division",
+    "team": "Burlington Force - Steiner"
+   },
+   {
+    "division": "U15 Girls - Diamond Division",
+    "team": "Durham City Chameleons - Charles"
+   },
+   {
+    "division": "U15 Girls - Diamond Division",
+    "team": "East York Eagles"
+   },
+   {
+    "division": "U15 Girls - Diamond Division",
+    "team": "KW Vipers - Tulipano"
+   },
+   {
+    "division": "U15 Girls - Diamond Division",
+    "team": "North Toronto Huskies - Liston"
+   },
+   {
+    "division": "U15 Girls - Diamond Division",
+    "team": "Toronto Lords"
+   },
+   {
+    "division": "U15 Girls - Division 2",
+    "team": "Aurora Dreamers - Elevation Athletics"
+   },
+   {
+    "division": "U15 Girls - Division 2",
+    "team": "Guelph Knights"
+   },
+   {
+    "division": "U15 Girls - Division 2",
+    "team": "HOF Hustle"
+   },
+   {
+    "division": "U15 Girls - Division 2",
+    "team": "Irish Basketball Club"
+   },
+   {
+    "division": "U15 Girls - Division 2",
+    "team": "Orillia Lakers"
+   },
+   {
+    "division": "U15 Girls - Division 2",
+    "team": "PDM Gold"
+   },
+   {
+    "division": "U15 Girls - Division 2",
+    "team": "South Simcoe Sonics"
+   },
+   {
+    "division": "U15 Girls - Division 2",
+    "team": "Sudbury JAM"
+   },
+   {
+    "division": "U15 Girls - Division 2",
+    "team": "Toronto Triple Threat"
+   },
+   {
+    "division": "U15 Girls - Division 2",
+    "team": "Woodbridge Lions"
+   },
+   {
+    "division": "U15 Girls - Division 3",
+    "team": "Caledon Cougars"
+   },
+   {
+    "division": "U15 Girls - Division 3",
+    "team": "Homenetmen Toronto"
+   },
+   {
+    "division": "U15 Girls - Division 3",
+    "team": "IEM KING CITY"
+   },
+   {
+    "division": "U15 Girls - Division 3",
+    "team": "Monarchs - Wayne"
+   },
+   {
+    "division": "U15 Girls - Division 3",
+    "team": "Niagara Splash Basketball"
+   },
+   {
+    "division": "U15 Girls - Division 3",
+    "team": "SBA Blues Team Zongo"
+   },
+   {
+    "division": "U15 Girls - Division 3",
+    "team": "Silver Knights"
+   },
+   {
+    "division": "U15 Girls - Division 3",
+    "team": "St Catharines Rebels"
+   },
+   {
+    "division": "U15 Girls - Division 3",
+    "team": "Thornhill Thunder - Silver"
+   },
+   {
+    "division": "U15 Girls - Division 3",
+    "team": "VCB"
+   },
+   {
+    "division": "U15 Girls - Division 3",
+    "team": "YNBA Thomas"
+   },
+   {
+    "division": "U16 Boys - (D1) Quest for the Ring",
+    "team": "Brampton Warriors Mangat"
+   },
+   {
+    "division": "U16 Boys - (D1) Quest for the Ring",
+    "team": "Brotherhood Elite Mississauga"
+   },
+   {
+    "division": "U16 Boys - (D1) Quest for the Ring",
+    "team": "Brothers Keeper"
+   },
+   {
+    "division": "U16 Boys - (D1) Quest for the Ring",
+    "team": "Burloak Elite Xzennis"
+   },
+   {
+    "division": "U16 Boys - (D1) Quest for the Ring",
+    "team": "Etobicoke Thunder - Seeley"
+   },
+   {
+    "division": "U16 Boys - (D1) Quest for the Ring",
+    "team": "Eurostep - David"
+   },
+   {
+    "division": "U16 Boys - (D1) Quest for the Ring",
+    "team": "Guelph Gryphons"
+   },
+   {
+    "division": "U16 Boys - (D1) Quest for the Ring",
+    "team": "IEM Spartans - Leppington"
+   },
+   {
+    "division": "U16 Boys - (D1) Quest for the Ring",
+    "team": "Jaxx City Elite"
+   },
+   {
+    "division": "U16 Boys - (D1) Quest for the Ring",
+    "team": "Kitchener Impact - Red"
+   },
+   {
+    "division": "U16 Boys - (D1) Quest for the Ring",
+    "team": "LIFT"
+   },
+   {
+    "division": "U16 Boys - (D1) Quest for the Ring",
+    "team": "Locked In Sports - Red"
+   },
+   {
+    "division": "U16 Boys - (D1) Quest for the Ring",
+    "team": "Nova Stars Elite - G10"
+   },
+   {
+    "division": "U16 Boys - (D1) Quest for the Ring",
+    "team": "Oxford Attack"
+   },
+   {
+    "division": "U16 Boys - (D1) Quest for the Ring",
+    "team": "Pelham Panthers - Kobe"
+   },
+   {
+    "division": "U16 Boys - (D1) Quest for the Ring",
+    "team": "RSB Regional"
+   },
+   {
+    "division": "U16 Boys - (D1) Quest for the Ring",
+    "team": "SBA Premier White"
+   },
+   {
+    "division": "U16 Boys - (D1) Quest for the Ring",
+    "team": "Simcoe Kings Basketball"
+   },
+   {
+    "division": "U16 Boys - (D1) Quest for the Ring",
+    "team": "Union Elite - Marv"
+   },
+   {
+    "division": "U16 Boys - (D1) Quest for the Ring",
+    "team": "YvY Elite Black"
+   },
+   {
+    "division": "U16 Boys - Division 2",
+    "team": "BALL905 Elite"
+   },
+   {
+    "division": "U16 Boys - Division 2",
+    "team": "Burlington Force - Snaidero"
+   },
+   {
+    "division": "U16 Boys - Division 2",
+    "team": "Cooksville Basketball"
+   },
+   {
+    "division": "U16 Boys - Division 2",
+    "team": "East York Eagles - Cooper"
+   },
+   {
+    "division": "U16 Boys - Division 2",
+    "team": "Hamilton Transformation Academy"
+   },
+   {
+    "division": "U16 Boys - Division 2",
+    "team": "JCC Warriors - North Blue"
+   },
+   {
+    "division": "U16 Boys - Division 2",
+    "team": "Locked In Sports - Green"
+   },
+   {
+    "division": "U16 Boys - Division 2",
+    "team": "M & R Basketball Team - Anil"
+   },
+   {
+    "division": "U16 Boys - Division 2",
+    "team": "Northern Kings - Lloyd"
+   },
+   {
+    "division": "U16 Boys - Division 2",
+    "team": "Team Truth"
+   },
+   {
+    "division": "U16 Boys - Division 2",
+    "team": "Toronto Triple Threat - Scott"
+   },
+   {
+    "division": "U16 Boys - Division 2",
+    "team": "Up North United"
+   },
+   {
+    "division": "U16 Boys - Division 3",
+    "team": "2-Way Elite"
+   },
+   {
+    "division": "U16 Boys - Division 3",
+    "team": "BALL905 Mississauga"
+   },
+   {
+    "division": "U16 Boys - Division 3",
+    "team": "Barrie Royals"
+   },
+   {
+    "division": "U16 Boys - Division 3",
+    "team": "Brampton Eclipse"
+   },
+   {
+    "division": "U16 Boys - Division 3",
+    "team": "Durham Crossover"
+   },
+   {
+    "division": "U16 Boys - Division 3",
+    "team": "Eastern Earthquakes Meka"
+   },
+   {
+    "division": "U16 Boys - Division 3",
+    "team": "GameDay Hustle"
+   },
+   {
+    "division": "U16 Boys - Division 3",
+    "team": "Helix Rise Black"
+   },
+   {
+    "division": "U16 Boys - Division 3",
+    "team": "KW Vipers - Brown"
+   },
+   {
+    "division": "U16 Boys - Division 3",
+    "team": "LIFT - Team Alex"
+   },
+   {
+    "division": "U16 Boys - Division 3",
+    "team": "MYAA JAGUARS"
+   },
+   {
+    "division": "U16 Boys - Division 3",
+    "team": "Union Elite - Basil"
+   },
+   {
+    "division": "U16 Boys - Division 4",
+    "team": "Brampton Elite"
+   },
+   {
+    "division": "U16 Boys - Division 4",
+    "team": "Burloak Elite Jamie"
+   },
+   {
+    "division": "U16 Boys - Division 4",
+    "team": "Eastern Earthquakes Kevin"
+   },
+   {
+    "division": "U16 Boys - Division 4",
+    "team": "Flower City Falcons"
+   },
+   {
+    "division": "U16 Boys - Division 4",
+    "team": "Golden Eagles Basketball Academy"
+   },
+   {
+    "division": "U16 Boys - Division 4",
+    "team": "Helix Rise Yellow"
+   },
+   {
+    "division": "U16 Boys - Division 4",
+    "team": "KW Vipers - Zavitz"
+   },
+   {
+    "division": "U16 Boys - Division 4",
+    "team": "Nexus Wolves"
+   },
+   {
+    "division": "U16 Boys - Division 4",
+    "team": "SBA Blues Team Tappin"
+   },
+   {
+    "division": "U16 Boys - Division 4",
+    "team": "Toronto NuStep Ballers"
+   },
+   {
+    "division": "U16 Boys - Division 4",
+    "team": "V3 Basketball"
+   },
+   {
+    "division": "U16 Boys - Division 4",
+    "team": "YvY Elite White"
+   },
+   {
+    "division": "U16 Boys - Division 5",
+    "team": "Hooptrotters 5Gs"
+   },
+   {
+    "division": "U16 Boys - Division 5",
+    "team": "Hoopzone Knights"
+   },
+   {
+    "division": "U16 Boys - Division 5",
+    "team": "Kitchener Impact - Black"
+   },
+   {
+    "division": "U16 Boys - Division 5",
+    "team": "M & R Basketball Team - Jay"
+   },
+   {
+    "division": "U16 Boys - Division 5",
+    "team": "MILTON STAGS RED"
+   },
+   {
+    "division": "U16 Boys - Division 5",
+    "team": "North Toronto Huskies - Wajs"
+   },
+   {
+    "division": "U16 Boys - Division 5",
+    "team": "Northumberland Edge"
+   },
+   {
+    "division": "U16 Boys - Division 5",
+    "team": "RWI Kings"
+   },
+   {
+    "division": "U16 Boys - Division 5",
+    "team": "Toronto Lords - Ptolemy"
+   },
+   {
+    "division": "U16 Boys - Division 5",
+    "team": "Toronto Sixers"
+   },
+   {
+    "division": "U16 Boys - Division 5",
+    "team": "Toronto Wolves Basketball Club"
+   },
+   {
+    "division": "U16 Boys - Division 5",
+    "team": "YNBA Gabel"
+   },
+   {
+    "division": "U16 Boys - Division 6",
+    "team": "AET basketball"
+   },
+   {
+    "division": "U16 Boys - Division 6",
+    "team": "Burlington Hoops Academy"
+   },
+   {
+    "division": "U16 Boys - Division 6",
+    "team": "Burloak Elite Anthony"
+   },
+   {
+    "division": "U16 Boys - Division 6",
+    "team": "Dundas Dynamo"
+   },
+   {
+    "division": "U16 Boys - Division 6",
+    "team": "Eurostep - Jadranko"
+   },
+   {
+    "division": "U16 Boys - Division 6",
+    "team": "Next Man Up East"
+   },
+   {
+    "division": "U16 Boys - Division 6",
+    "team": "North Toronto Huskies - Ohemeng"
+   },
+   {
+    "division": "U16 Boys - Division 6",
+    "team": "Phenoms Basketball"
+   },
+   {
+    "division": "U16 Boys - Division 6",
+    "team": "S.W.A.R.M"
+   },
+   {
+    "division": "U16 Boys - Division 6",
+    "team": "S.W.O.T Academy"
+   },
+   {
+    "division": "U16 Boys - Division 6",
+    "team": "Toronto Triple Threat - Batura"
+   },
+   {
+    "division": "U16 Boys - Division 6",
+    "team": "Wynn Basketball Academy"
+   },
+   {
+    "division": "U16 Boys - Division 7",
+    "team": "Apex Wolves"
+   },
+   {
+    "division": "U16 Boys - Division 7",
+    "team": "BALL905 Brampton"
+   },
+   {
+    "division": "U16 Boys - Division 7",
+    "team": "Bayan Basketball"
+   },
+   {
+    "division": "U16 Boys - Division 7",
+    "team": "CKATT 2010"
+   },
+   {
+    "division": "U16 Boys - Division 7",
+    "team": "Durham Blues - Sosa"
+   },
+   {
+    "division": "U16 Boys - Division 7",
+    "team": "Eastern Earthquakes Kern"
+   },
+   {
+    "division": "U16 Boys - Division 7",
+    "team": "Guelph Gryphons - Everitt"
+   },
+   {
+    "division": "U16 Boys - Division 7",
+    "team": "JCC Warriors - North White"
+   },
+   {
+    "division": "U16 Boys - Division 7",
+    "team": "NOBAT"
+   },
+   {
+    "division": "U16 Boys - Division 7",
+    "team": "The Conglomerate"
+   },
+   {
+    "division": "U16 Boys - Division 7",
+    "team": "Toronto Phantoms"
+   },
+   {
+    "division": "U16 Boys - Division 7",
+    "team": "York South Silver Knights - Lee"
+   },
+   {
+    "division": "U16 Boys - Division 8",
+    "team": "BALL905 Halton Hills"
+   },
+   {
+    "division": "U16 Boys - Division 8",
+    "team": "Born 2 Stand Out - Marlon"
+   },
+   {
+    "division": "U16 Boys - Division 8",
+    "team": "Brotherhood Elite Scarborough"
+   },
+   {
+    "division": "U16 Boys - Division 8",
+    "team": "Burloak Elite Ossama"
+   },
+   {
+    "division": "U16 Boys - Division 8",
+    "team": "Jump Basketball"
+   },
+   {
+    "division": "U16 Boys - Division 8",
+    "team": "Momentum - Orange"
+   },
+   {
+    "division": "U16 Boys - Division 8",
+    "team": "Monarchs - Kenny"
+   },
+   {
+    "division": "U16 Boys - Division 8",
+    "team": "NRBA Mad Dogz - English"
+   },
+   {
+    "division": "U16 Boys - Division 8",
+    "team": "NRBA Mad Dogz - Wood"
+   },
+   {
+    "division": "U16 Boys - Division 8",
+    "team": "Oakville Venom"
+   },
+   {
+    "division": "U16 Boys - Division 8",
+    "team": "Sauga City Kings"
+   },
+   {
+    "division": "U16 Boys - Division 8",
+    "team": "SBA Blues Team Moore"
+   },
+   {
+    "division": "U16 Boys - Division 8",
+    "team": "Toronto Lords - Yasay"
+   },
+   {
+    "division": "U16 Boys - Division 8",
+    "team": "Underdog elite"
+   },
+   {
+    "division": "U16 Boys - Division 8",
+    "team": "Up Top Hoops Elite"
+   },
+   {
+    "division": "U16 Girls - Diamond Division",
+    "team": "Cali Prep"
+   },
+   {
+    "division": "U16 Girls - Diamond Division",
+    "team": "Durham City Chameleons - Miller"
+   },
+   {
+    "division": "U16 Girls - Diamond Division",
+    "team": "East York Eagles - Clarke"
+   },
+   {
+    "division": "U16 Girls - Diamond Division",
+    "team": "MUMBA Academy"
+   },
+   {
+    "division": "U16 Girls - Diamond Division",
+    "team": "Oxford Attack"
+   },
+   {
+    "division": "U16 Girls - Diamond Division",
+    "team": "Vaughan Panthers"
+   },
+   {
+    "division": "U16 Girls - Division 2",
+    "team": "Burloak Elite Ana"
+   },
+   {
+    "division": "U16 Girls - Division 2",
+    "team": "Dundas Dynamo Basketball"
+   },
+   {
+    "division": "U16 Girls - Division 2",
+    "team": "Durham Blues"
+   },
+   {
+    "division": "U16 Girls - Division 2",
+    "team": "East York Eagles - Mgaya"
+   },
+   {
+    "division": "U16 Girls - Division 2",
+    "team": "Eastern Earthquakes Cliff"
+   },
+   {
+    "division": "U16 Girls - Division 2",
+    "team": "HoopHER"
+   },
+   {
+    "division": "U16 Girls - Division 2",
+    "team": "InterCity Saints"
+   },
+   {
+    "division": "U16 Girls - Division 2",
+    "team": "MILTON STAGS"
+   },
+   {
+    "division": "U16 Girls - Division 2",
+    "team": "MUMBA ELITE - KUYA"
+   },
+   {
+    "division": "U16 Girls - Division 2",
+    "team": "Peterborough Power"
+   },
+   {
+    "division": "U16 Girls - Division 2",
+    "team": "Retro Elite"
+   },
+   {
+    "division": "U16 Girls - Division 2",
+    "team": "SBA Blues Team Chris"
+   },
+   {
+    "division": "U16 Girls - Division 2",
+    "team": "SBA Blues Team Wiltshire"
+   },
+   {
+    "division": "U16 Girls - Division 2",
+    "team": "Toronto Lords - Vanessa"
+   },
+   {
+    "division": "U16 Girls - Division 2",
+    "team": "YNBA Paine"
+   },
+   {
+    "division": "U17 Boys - (D1) Quest for the Ring",
+    "team": "Brothers Keeper"
+   },
+   {
+    "division": "U17 Boys - (D1) Quest for the Ring",
+    "team": "Cadougan Elite"
+   },
+   {
+    "division": "U17 Boys - (D1) Quest for the Ring",
+    "team": "Durham Blues - Teal"
+   },
+   {
+    "division": "U17 Boys - (D1) Quest for the Ring",
+    "team": "FIRST STEP ELITE - GOLD"
+   },
+   {
+    "division": "U17 Boys - (D1) Quest for the Ring",
+    "team": "FOEVER DREAMERS"
+   },
+   {
+    "division": "U17 Boys - (D1) Quest for the Ring",
+    "team": "LIFT - Tay"
+   },
+   {
+    "division": "U17 Boys - (D1) Quest for the Ring",
+    "team": "Locked In Sports - Grey"
+   },
+   {
+    "division": "U17 Boys - (D1) Quest for the Ring",
+    "team": "Rising Suns- Jake"
+   },
+   {
+    "division": "U17 Boys - (D1) Quest for the Ring",
+    "team": "SBA Premier Andrade"
+   },
+   {
+    "division": "U17 Boys - (D1) Quest for the Ring",
+    "team": "Toronto Lords"
+   },
+   {
+    "division": "U17 Boys - (D1) Quest for the Ring",
+    "team": "UEWB CANADA"
+   },
+   {
+    "division": "U17 Boys - (D1) Quest for the Ring",
+    "team": "Woodbridge Lions"
+   },
+   {
+    "division": "U17 Boys - Division 2",
+    "team": "AEG"
+   },
+   {
+    "division": "U17 Boys - Division 2",
+    "team": "Barrie Royals"
+   },
+   {
+    "division": "U17 Boys - Division 2",
+    "team": "Brotherhood Elite Ottawa"
+   },
+   {
+    "division": "U17 Boys - Division 2",
+    "team": "East York Eagles"
+   },
+   {
+    "division": "U17 Boys - Division 2",
+    "team": "Golden Eagles Academy"
+   },
+   {
+    "division": "U17 Boys - Division 2",
+    "team": "Jump Basketball - West"
+   },
+   {
+    "division": "U17 Boys - Division 2",
+    "team": "NMBA Edge"
+   },
+   {
+    "division": "U17 Boys - Division 2",
+    "team": "S.W.O.T Academy"
+   },
+   {
+    "division": "U17 Boys - Division 2",
+    "team": "V3 Basketball"
+   },
+   {
+    "division": "U17 Boys - Division 2",
+    "team": "YvY Elite Black"
+   },
+   {
+    "division": "U17 Boys - Division 3",
+    "team": "Ancaster Magic A Team"
+   },
+   {
+    "division": "U17 Boys - Division 3",
+    "team": "BALL905 Mississauga"
+   },
+   {
+    "division": "U17 Boys - Division 3",
+    "team": "Burloak Elite Jamie"
+   },
+   {
+    "division": "U17 Boys - Division 3",
+    "team": "Canadian Basketball Academy"
+   },
+   {
+    "division": "U17 Boys - Division 3",
+    "team": "DFA Academy"
+   },
+   {
+    "division": "U17 Boys - Division 3",
+    "team": "Eurostep - Jaiden"
+   },
+   {
+    "division": "U17 Boys - Division 3",
+    "team": "Hamilton Elite"
+   },
+   {
+    "division": "U17 Boys - Division 3",
+    "team": "IEM Spartans - Newmarket"
+   },
+   {
+    "division": "U17 Boys - Division 3",
+    "team": "Kitchener Impact - Red"
+   },
+   {
+    "division": "U17 Boys - Division 3",
+    "team": "Locked In Sports - Green"
+   },
+   {
+    "division": "U17 Boys - Division 3",
+    "team": "M & R Basketball - Abu"
+   },
+   {
+    "division": "U17 Boys - Division 3",
+    "team": "Motion express"
+   },
+   {
+    "division": "U17 Boys - Division 3",
+    "team": "NextlevelElitee"
+   },
+   {
+    "division": "U17 Boys - Division 3",
+    "team": "Orangeville Hawks"
+   },
+   {
+    "division": "U17 Boys - Division 3",
+    "team": "RWI Kings"
+   },
+   {
+    "division": "U17 Boys - Division 3",
+    "team": "Sauga City Kings"
+   },
+   {
+    "division": "U17 Boys - Division 3",
+    "team": "Toronto Phantoms"
+   },
+   {
+    "division": "U17 Boys - Division 4",
+    "team": "Ancaster Magic - McEwen"
+   },
+   {
+    "division": "U17 Boys - Division 4",
+    "team": "Blitz - Team Blake"
+   },
+   {
+    "division": "U17 Boys - Division 4",
+    "team": "Burlington Force - Dodd"
+   },
+   {
+    "division": "U17 Boys - Division 4",
+    "team": "Durham Scarborough Dribblers (DSD)"
+   },
+   {
+    "division": "U17 Boys - Division 4",
+    "team": "FIRST STEP ELITE - BLACK"
+   },
+   {
+    "division": "U17 Boys - Division 4",
+    "team": "Grimsby Grizzlies"
+   },
+   {
+    "division": "U17 Boys - Division 4",
+    "team": "IEM East Gwillimbury"
+   },
+   {
+    "division": "U17 Boys - Division 4",
+    "team": "Made Different Basketball"
+   },
+   {
+    "division": "U17 Boys - Division 4",
+    "team": "North Toronto Huskies - Hough"
+   },
+   {
+    "division": "U17 Boys - Division 4",
+    "team": "NRBA Mad Dogz - Weisman"
+   },
+   {
+    "division": "U17 Boys - Division 4",
+    "team": "Sudbury JAM - Goudreau"
+   },
+   {
+    "division": "U17 Boys - Division 4",
+    "team": "Team Breakdown - Clint"
+   },
+   {
+    "division": "U17 Boys - Division 5",
+    "team": "17 Ignite"
+   },
+   {
+    "division": "U17 Boys - Division 5",
+    "team": "ABA Toronto Knights"
+   },
+   {
+    "division": "U17 Boys - Division 5",
+    "team": "BALL905 Brampton"
+   },
+   {
+    "division": "U17 Boys - Division 5",
+    "team": "Court Starz"
+   },
+   {
+    "division": "U17 Boys - Division 5",
+    "team": "Durham Blues - Black"
+   },
+   {
+    "division": "U17 Boys - Division 5",
+    "team": "Game6 Lions"
+   },
+   {
+    "division": "U17 Boys - Division 5",
+    "team": "ImPowerful Athletics"
+   },
+   {
+    "division": "U17 Boys - Division 5",
+    "team": "JUMP Basketball - East"
+   },
+   {
+    "division": "U17 Boys - Division 5",
+    "team": "KW Vipers - Perrott"
+   },
+   {
+    "division": "U17 Boys - Division 5",
+    "team": "NRBA Mad Dogz Blue Team Patel"
+   },
+   {
+    "division": "U17 Boys - Division 5",
+    "team": "SBA Blues Team Heraldo"
+   },
+   {
+    "division": "U17 Boys - Division 5",
+    "team": "Vaughan Panthers"
+   },
+   {
+    "division": "U17 Boys - Division 5",
+    "team": "YvY Elite White"
+   },
+   {
+    "division": "U19 Boys - (D1) Quest for the Ring",
+    "team": "AAA ACADEMY"
+   },
+   {
+    "division": "U19 Boys - (D1) Quest for the Ring",
+    "team": "BALL905 Halton Hills"
+   },
+   {
+    "division": "U19 Boys - (D1) Quest for the Ring",
+    "team": "CODE Regional"
+   },
+   {
+    "division": "U19 Boys - (D1) Quest for the Ring",
+    "team": "Collingwood Trailblazers"
+   },
+   {
+    "division": "U19 Boys - (D1) Quest for the Ring",
+    "team": "Cooksville Basketball"
+   },
+   {
+    "division": "U19 Boys - (D1) Quest for the Ring",
+    "team": "DFA Academy"
+   },
+   {
+    "division": "U19 Boys - (D1) Quest for the Ring",
+    "team": "Eastern Earthquakes Matt"
+   },
+   {
+    "division": "U19 Boys - (D1) Quest for the Ring",
+    "team": "Eurostep - Luka"
+   },
+   {
+    "division": "U19 Boys - (D1) Quest for the Ring",
+    "team": "H5 Regional"
+   },
+   {
+    "division": "U19 Boys - (D1) Quest for the Ring",
+    "team": "LIFT"
+   },
+   {
+    "division": "U19 Boys - (D1) Quest for the Ring",
+    "team": "OXFORD ATTACK"
+   },
+   {
+    "division": "U19 Boys - (D1) Quest for the Ring",
+    "team": "Pelham Panthers - Team Shy"
+   },
+   {
+    "division": "U19 Boys - (D1) Quest for the Ring",
+    "team": "SBA Blues Team Matsugu"
+   },
+   {
+    "division": "U19 Boys - (D1) Quest for the Ring",
+    "team": "Team Truth"
+   },
+   {
+    "division": "U19 Boys - (D1) Quest for the Ring",
+    "team": "The Conglomerate"
+   },
+   {
+    "division": "U19 Boys - Division 2",
+    "team": "ATS Prep"
+   },
+   {
+    "division": "U19 Boys - Division 2",
+    "team": "Barrie Royals"
+   },
+   {
+    "division": "U19 Boys - Division 2",
+    "team": "Brantford Hawks"
+   },
+   {
+    "division": "U19 Boys - Division 2",
+    "team": "Canadian Basketball Academy"
+   },
+   {
+    "division": "U19 Boys - Division 2",
+    "team": "Flower City Falcons"
+   },
+   {
+    "division": "U19 Boys - Division 2",
+    "team": "Gladiators"
+   },
+   {
+    "division": "U19 Boys - Division 2",
+    "team": "Glory Basketball SR"
+   },
+   {
+    "division": "U19 Boys - Division 2",
+    "team": "Kidballers Knights"
+   },
+   {
+    "division": "U19 Boys - Division 2",
+    "team": "Lightning Basketball Academy"
+   },
+   {
+    "division": "U19 Boys - Division 2",
+    "team": "MSBA Storm"
+   },
+   {
+    "division": "U19 Boys - Division 2",
+    "team": "MYAA JAGUARS"
+   },
+   {
+    "division": "U19 Boys - Division 2",
+    "team": "Northern Kings - Anthony"
+   },
+   {
+    "division": "U19 Boys - Division 2",
+    "team": "Orillia Lakers - Clark"
+   },
+   {
+    "division": "U19 Boys - Division 2",
+    "team": "Sauga City Kings"
+   },
+   {
+    "division": "U19 Boys - Division 2",
+    "team": "Toronto Lords"
+   },
+   {
+    "division": "U19 Boys - Division 2",
+    "team": "Toronto NuStep Ballers"
+   },
+   {
+    "division": "U19 Boys - Division 2",
+    "team": "Woodbridge Lions"
+   },
+   {
+    "division": "U19 Boys - Division 2",
+    "team": "Zer0 Doubt"
+   }
+  ]
+ },
+ "251984": {
+  "title": "X League - Nov 8 - Feb 22, 2026 - Mississauga, Ontario Participating T",
+  "rows": [
+   {
+    "division": "Junior Boys (GR9/10)",
+    "team": "BCP South"
+   },
+   {
+    "division": "Junior Boys (GR9/10)",
+    "team": "Cali Prep - Dwight"
+   },
+   {
+    "division": "Junior Boys (GR9/10)",
+    "team": "Cali Prep - Jeff"
+   },
+   {
+    "division": "Junior Boys (GR9/10)",
+    "team": "East Prep"
+   },
+   {
+    "division": "Junior Boys (GR9/10)",
+    "team": "Eastern Basketball Academy"
+   },
+   {
+    "division": "Junior Boys (GR9/10)",
+    "team": "Eurostep Academy Damnjan"
+   },
+   {
+    "division": "Junior Boys (GR9/10)",
+    "team": "Fitz Youth"
+   },
+   {
+    "division": "Junior Boys (GR9/10)",
+    "team": "JCM Prep"
+   },
+   {
+    "division": "Junior Boys (GR9/10)",
+    "team": "Kings Court Academy"
+   },
+   {
+    "division": "Junior Boys (GR9/10)",
+    "team": "KW Viper Quigley"
+   },
+   {
+    "division": "Junior Boys (GR9/10)",
+    "team": "LIFT"
+   },
+   {
+    "division": "Junior Boys (GR9/10)",
+    "team": "Locked In Academy"
+   },
+   {
+    "division": "Junior Boys (GR9/10)",
+    "team": "SBA Premier Blue"
+   },
+   {
+    "division": "Junior Boys (GR9/10)",
+    "team": "Skillz Basketball Saints"
+   },
+   {
+    "division": "Junior Boys (GR9/10)",
+    "team": "St Jude's Academy"
+   },
+   {
+    "division": "Junior Boys (GR9/10)",
+    "team": "Stoney Creek NYB"
+   },
+   {
+    "division": "Junior Boys (GR9/10)",
+    "team": "Time 2 Hoop Basketball Academy"
+   },
+   {
+    "division": "Junior Boys (GR9/10)",
+    "team": "TSA"
+   },
+   {
+    "division": "Junior Boys (GR9/10)",
+    "team": "UPLAY"
+   },
+   {
+    "division": "Junior Boys (GR9/10)",
+    "team": "Wiggins Eilte"
+   },
+   {
+    "division": "Senior Boys (GR11/12)",
+    "team": "BCP Provincial"
+   },
+   {
+    "division": "Senior Boys (GR11/12)",
+    "team": "BCP Regional"
+   },
+   {
+    "division": "Senior Boys (GR11/12)",
+    "team": "Brotherhood Elite"
+   },
+   {
+    "division": "Senior Boys (GR11/12)",
+    "team": "City Above Elite"
+   },
+   {
+    "division": "Senior Boys (GR11/12)",
+    "team": "Druva Prep"
+   },
+   {
+    "division": "Senior Boys (GR11/12)",
+    "team": "Dynamic Basketball"
+   },
+   {
+    "division": "Senior Boys (GR11/12)",
+    "team": "Eurostep Academy Lucas"
+   },
+   {
+    "division": "Senior Boys (GR11/12)",
+    "team": "FOEVER DREAMERS"
+   },
+   {
+    "division": "Senior Boys (GR11/12)",
+    "team": "KW Vipers Randell"
+   },
+   {
+    "division": "Senior Boys (GR11/12)",
+    "team": "LIFT - Dustin"
+   },
+   {
+    "division": "Senior Boys (GR11/12)",
+    "team": "LIFT - Taylor"
+   },
+   {
+    "division": "Senior Boys (GR11/12)",
+    "team": "Locked In Academy"
+   },
+   {
+    "division": "Senior Boys (GR11/12)",
+    "team": "Monarchs - Yazan"
+   },
+   {
+    "division": "Senior Boys (GR11/12)",
+    "team": "Quantum Sports Academy"
+   },
+   {
+    "division": "Senior Boys (GR11/12)",
+    "team": "Retro Elite"
+   },
+   {
+    "division": "Senior Boys (GR11/12)",
+    "team": "RWI"
+   },
+   {
+    "division": "Senior Boys (GR11/12)",
+    "team": "SBA Premier"
+   },
+   {
+    "division": "Senior Boys (GR11/12)",
+    "team": "St Jude's Academy Silver"
+   },
+   {
+    "division": "Senior Boys (GR11/12)",
+    "team": "Tall Pines Academy Varsity"
+   },
+   {
+    "division": "Senior Boys (GR11/12)",
+    "team": "Wiggins Eilte"
+   }
+  ]
+ },
+ "264029": {
+  "title": "2026 Ontario Provincials - Apr 25-26, 2026 - Mississauga, Ontario Part",
+  "rows": [
+   {
+    "division": "Grade 9",
+    "team": "5 Out"
+   },
+   {
+    "division": "Grade 9",
+    "team": "Hardcore Hoops"
+   },
+   {
+    "division": "Grade 9",
+    "team": "North York Elite"
+   },
+   {
+    "division": "Grade 9",
+    "team": "SBA Premier"
+   },
+   {
+    "division": "Grade 9",
+    "team": "United Elite Basketball Club"
+   },
+   {
+    "division": "Grade 8 AAA",
+    "team": "2-Way Elite"
+   },
+   {
+    "division": "Grade 8 AAA",
+    "team": "CE23 Elite"
+   },
+   {
+    "division": "Grade 8 AAA",
+    "team": "East York Eagles"
+   },
+   {
+    "division": "Grade 8 AAA",
+    "team": "HG Elite Basketball"
+   },
+   {
+    "division": "Grade 8 AAA",
+    "team": "K9 Elite"
+   },
+   {
+    "division": "Grade 8 AAA",
+    "team": "KW Vipers"
+   },
+   {
+    "division": "Grade 8 AAA",
+    "team": "Northern Kings U14 Ahmed"
+   },
+   {
+    "division": "Grade 8 AAA",
+    "team": "SBA Premier"
+   },
+   {
+    "division": "Grade 8 AA",
+    "team": "Blessed Sacrament Yellowjackets"
+   },
+   {
+    "division": "Grade 8 AA",
+    "team": "Defenders Basketball - Gold"
+   },
+   {
+    "division": "Grade 8 AA",
+    "team": "Helix Rise"
+   },
+   {
+    "division": "Grade 8 AA",
+    "team": "IEM Basketball League Inc."
+   },
+   {
+    "division": "Grade 8 AA",
+    "team": "Jr Kings Court Basketball"
+   },
+   {
+    "division": "Grade 8 AA",
+    "team": "Lightning Basketball Academy"
+   },
+   {
+    "division": "Grade 8 AA",
+    "team": "M&R Basketball Rose - AA"
+   },
+   {
+    "division": "Grade 8 AA",
+    "team": "Nexus Wolves"
+   },
+   {
+    "division": "Grade 8 AA",
+    "team": "North York Elite"
+   },
+   {
+    "division": "Grade 8 AA",
+    "team": "Peel Outlaws"
+   },
+   {
+    "division": "Grade 8 AA",
+    "team": "St Clair Jr Saints"
+   },
+   {
+    "division": "Grade 8 AA",
+    "team": "Team Breakdown- Andrew"
+   },
+   {
+    "division": "Grade 8 AA",
+    "team": "Toronto Phantoms"
+   },
+   {
+    "division": "Grade 8 AA",
+    "team": "Underground basketball club"
+   },
+   {
+    "division": "Grade 8 AA",
+    "team": "Vaughan Panthers - Coach Curtis"
+   },
+   {
+    "division": "Grade 8 AA",
+    "team": "YASO"
+   },
+   {
+    "division": "Grade 8 A",
+    "team": "17 Ignite"
+   },
+   {
+    "division": "Grade 8 A",
+    "team": "Defenders Basketball - Grey"
+   },
+   {
+    "division": "Grade 8 A",
+    "team": "GTA Mavericks"
+   },
+   {
+    "division": "Grade 8 A",
+    "team": "Hall of Fame Hustle"
+   },
+   {
+    "division": "Grade 8 A",
+    "team": "IEM Basketball League Inc. Gold"
+   },
+   {
+    "division": "Grade 8 A",
+    "team": "Monarchs Basketball - Team Kenny"
+   },
+   {
+    "division": "Grade 8 A",
+    "team": "Niagara Splash"
+   },
+   {
+    "division": "Grade 8 A",
+    "team": "Northern Kings U14 Kevin"
+   },
+   {
+    "division": "Grade 8 A",
+    "team": "Northern Kings U14 Mark"
+   },
+   {
+    "division": "Grade 8 A",
+    "team": "Vaughan Panthers"
+   },
+   {
+    "division": "Grade 8 A",
+    "team": "Wynn Basketball"
+   },
+   {
+    "division": "Grade 7",
+    "team": "Barrie Buccaneers"
+   },
+   {
+    "division": "Grade 7",
+    "team": "CE23 Elite"
+   },
+   {
+    "division": "Grade 7",
+    "team": "IEM Basketball League Inc."
+   },
+   {
+    "division": "Grade 7",
+    "team": "M&R Basketball David - AAA"
+   },
+   {
+    "division": "Grade 7",
+    "team": "Monarchs"
+   },
+   {
+    "division": "Grade 7",
+    "team": "Royal City Basketball Club"
+   },
+   {
+    "division": "Grade 7",
+    "team": "SBA Premier"
+   },
+   {
+    "division": "Grade 7",
+    "team": "Top Tier"
+   },
+   {
+    "division": "Grade 7",
+    "team": "United Elite Basketball Club"
+   },
+   {
+    "division": "Grade 6",
+    "team": "17 Ignite"
+   },
+   {
+    "division": "Grade 6",
+    "team": "Brampton Warriors"
+   },
+   {
+    "division": "Grade 6",
+    "team": "Monarchs Basketball - D & Hemeng"
+   },
+   {
+    "division": "Grade 6",
+    "team": "Northern Kings Darwin"
+   },
+   {
+    "division": "Grade 6",
+    "team": "NuStep"
+   },
+   {
+    "division": "Grade 6",
+    "team": "RedDot Basketball"
+   },
+   {
+    "division": "Grade 6",
+    "team": "Rising Suns -Anthony"
+   },
+   {
+    "division": "Grade 6",
+    "team": "SBA Premier"
+   },
+   {
+    "division": "Grade 6",
+    "team": "Strive4Greatness 2033"
+   },
+   {
+    "division": "Grade 6",
+    "team": "TCBL Dragons"
+   },
+   {
+    "division": "Grade 6",
+    "team": "Team Compass"
+   },
+   {
+    "division": "Grade 6",
+    "team": "Time 2 Hoop"
+   },
+   {
+    "division": "Grade 6",
+    "team": "Top Tier"
+   },
+   {
+    "division": "Grade 6",
+    "team": "Top Tier Gold"
+   },
+   {
+    "division": "Grade 6",
+    "team": "Toronto Select"
+   },
+   {
+    "division": "Grade 6",
+    "team": "Wynn Basketball"
+   },
+   {
+    "division": "Grade 5",
+    "team": "17 Ignite"
+   },
+   {
+    "division": "Grade 5",
+    "team": "Ancaster Blitz"
+   },
+   {
+    "division": "Grade 5",
+    "team": "Blacktop Stars"
+   },
+   {
+    "division": "Grade 5",
+    "team": "East York Eagles U11 Boys - Team Carpenter - A"
+   },
+   {
+    "division": "Grade 5",
+    "team": "MSBA Storm"
+   },
+   {
+    "division": "Grade 5",
+    "team": "Northern Kings U11 Carlo"
+   },
+   {
+    "division": "Grade 5",
+    "team": "ON Wolves"
+   },
+   {
+    "division": "Grade 5",
+    "team": "Shooting Stars (North York)"
+   },
+   {
+    "division": "Grade 5",
+    "team": "Snf hamilton eagles"
+   },
+   {
+    "division": "Grade 5",
+    "team": "Sudbury JAM - U11 Boys"
+   },
+   {
+    "division": "Grade 5",
+    "team": "The Collective Elite"
+   },
+   {
+    "division": "Grade 5",
+    "team": "Toronto Select"
+   },
+   {
+    "division": "Grade 4 Raptors",
+    "team": "All-In Gray"
+   },
+   {
+    "division": "Grade 4 Raptors",
+    "team": "All-In Mamba"
+   },
+   {
+    "division": "Grade 4 Raptors",
+    "team": "J17 Elite * TCBL Dragons U10"
+   },
+   {
+    "division": "Grade 4 Raptors",
+    "team": "MUMBA ELITE - HARI"
+   },
+   {
+    "division": "Grade 4 Raptors",
+    "team": "New Horizon Heat"
+   },
+   {
+    "division": "Grade 4 Raptors",
+    "team": "Northern Kings U10 Ahmed"
+   },
+   {
+    "division": "Grade 4 Raptors",
+    "team": "SPB Family"
+   },
+   {
+    "division": "Grade 4 Tempo",
+    "team": "17 Ignite"
+   },
+   {
+    "division": "Grade 4 Tempo",
+    "team": "All-In Navy"
+   },
+   {
+    "division": "Grade 4 Tempo",
+    "team": "East York Eagles"
+   },
+   {
+    "division": "Grade 4 Tempo",
+    "team": "MUMBA ELITE - SOMESAN"
+   },
+   {
+    "division": "Grade 4 Tempo",
+    "team": "Skillz Basketball Saints Elite"
+   },
+   {
+    "division": "Grade 4 Tempo",
+    "team": "Thornhill Thunder"
+   }
+  ]
+ },
+ "268569": {
+  "title": "Pink City Classic - May 7-10, 2026 - Oshawa, Ontario Participating Tea",
+  "rows": [
+   {
+    "division": "U09 Boys",
+    "team": "Team Iconic"
+   },
+   {
+    "division": "U09 Boys",
+    "team": "Top Tier - Johnson"
+   },
+   {
+    "division": "U09 Boys",
+    "team": "TPG"
+   },
+   {
+    "division": "U09 Boys",
+    "team": "YAAACE.INSPIRE"
+   },
+   {
+    "division": "U10 Boys",
+    "team": "17 Ignite"
+   },
+   {
+    "division": "U10 Boys",
+    "team": "ALL - IN Basketball - Gray"
+   },
+   {
+    "division": "U10 Boys",
+    "team": "SPB Family"
+   },
+   {
+    "division": "U10 Boys",
+    "team": "TPG"
+   },
+   {
+    "division": "U10 Boys",
+    "team": "YAAACE.INSPIRE"
+   },
+   {
+    "division": "U11 Boys",
+    "team": "17 Ignite"
+   },
+   {
+    "division": "U11 Boys",
+    "team": "Bigga Elite"
+   },
+   {
+    "division": "U11 Boys",
+    "team": "Blacktop Stars"
+   },
+   {
+    "division": "U11 Boys",
+    "team": "TPG"
+   },
+   {
+    "division": "U12 Boys",
+    "team": "17 Ignite"
+   },
+   {
+    "division": "U12 Boys",
+    "team": "Bigga Elite"
+   },
+   {
+    "division": "U12 Boys",
+    "team": "Canada Elite - Gold"
+   },
+   {
+    "division": "U12 Boys",
+    "team": "Canada Elite - Red"
+   },
+   {
+    "division": "U12 Boys",
+    "team": "HG Elite"
+   },
+   {
+    "division": "U12 Boys",
+    "team": "JCC Warriors"
+   },
+   {
+    "division": "U12 Boys",
+    "team": "Markham Gators"
+   },
+   {
+    "division": "U12 Boys",
+    "team": "TPG - Black"
+   },
+   {
+    "division": "U12 Boys",
+    "team": "TPG - Gold"
+   },
+   {
+    "division": "U12 Boys",
+    "team": "Union Elite - Green"
+   },
+   {
+    "division": "U13 Boys",
+    "team": "Bigga Elite"
+   },
+   {
+    "division": "U13 Boys",
+    "team": "BOA - Black"
+   },
+   {
+    "division": "U13 Boys",
+    "team": "BOA - Red"
+   },
+   {
+    "division": "U13 Boys",
+    "team": "City Above Elite"
+   },
+   {
+    "division": "U13 Boys",
+    "team": "CKATT"
+   },
+   {
+    "division": "U13 Boys",
+    "team": "HG Elite"
+   },
+   {
+    "division": "U13 Boys",
+    "team": "JCC Warriors South"
+   },
+   {
+    "division": "U13 Boys",
+    "team": "M & R Basketball"
+   },
+   {
+    "division": "U13 Boys",
+    "team": "SBA Premier"
+   },
+   {
+    "division": "U13 Boys",
+    "team": "Team Sanctuary"
+   },
+   {
+    "division": "U13 Boys",
+    "team": "TPG"
+   },
+   {
+    "division": "U13 Boys",
+    "team": "Triple Balance"
+   },
+   {
+    "division": "U13 Boys",
+    "team": "YAAACE"
+   },
+   {
+    "division": "U14 Boys",
+    "team": "Bigga Elite"
+   },
+   {
+    "division": "U14 Boys",
+    "team": "BOA"
+   },
+   {
+    "division": "U14 Boys",
+    "team": "Canada Elite - Black"
+   },
+   {
+    "division": "U14 Boys",
+    "team": "Canada Elite - Gold"
+   },
+   {
+    "division": "U14 Boys",
+    "team": "City Above Elite - Eman"
+   },
+   {
+    "division": "U14 Boys",
+    "team": "City Above Elite - Jerald"
+   },
+   {
+    "division": "U14 Boys",
+    "team": "City Above Elite - North"
+   },
+   {
+    "division": "U14 Boys",
+    "team": "David Ann Academy"
+   },
+   {
+    "division": "U14 Boys",
+    "team": "H.G Elite"
+   },
+   {
+    "division": "U14 Boys",
+    "team": "H.G Elite\u00a0Blue"
+   },
+   {
+    "division": "U14 Boys",
+    "team": "Helix Rise"
+   },
+   {
+    "division": "U14 Boys",
+    "team": "Lead2greatness"
+   },
+   {
+    "division": "U14 Boys",
+    "team": "North York Elite"
+   },
+   {
+    "division": "U14 Boys",
+    "team": "TPG"
+   },
+   {
+    "division": "U14 Boys",
+    "team": "Wiggins Eilte"
+   },
+   {
+    "division": "U15 Boys",
+    "team": "416 United"
+   },
+   {
+    "division": "U15 Boys",
+    "team": "Blessed Sacrement"
+   },
+   {
+    "division": "U15 Boys",
+    "team": "Canada Elite - Black"
+   },
+   {
+    "division": "U15 Boys",
+    "team": "Canada Elite - Gold"
+   },
+   {
+    "division": "U15 Boys",
+    "team": "City Above Elite"
+   },
+   {
+    "division": "U15 Boys",
+    "team": "David Ann Academy"
+   },
+   {
+    "division": "U15 Boys",
+    "team": "Fundamentals First"
+   },
+   {
+    "division": "U15 Boys",
+    "team": "IEM (Alpha Elite)"
+   },
+   {
+    "division": "U15 Boys",
+    "team": "Kings Court"
+   },
+   {
+    "division": "U15 Boys",
+    "team": "M & R\u00a0Basketball"
+   },
+   {
+    "division": "U15 Boys",
+    "team": "PHX Elite"
+   },
+   {
+    "division": "U15 Boys",
+    "team": "Red Rush"
+   },
+   {
+    "division": "U15 Boys",
+    "team": "Rockets"
+   },
+   {
+    "division": "U15 Boys",
+    "team": "SBA Premier"
+   },
+   {
+    "division": "U15 Boys",
+    "team": "Silky Hoops"
+   },
+   {
+    "division": "U15 Boys",
+    "team": "TNS"
+   },
+   {
+    "division": "U15 Boys",
+    "team": "Vaughan Panthers"
+   },
+   {
+    "division": "U15 Boys",
+    "team": "Wiggins Elite"
+   },
+   {
+    "division": "U15 Boys",
+    "team": "YEB Elite"
+   },
+   {
+    "division": "U16 Boys",
+    "team": "2Way - Elite"
+   },
+   {
+    "division": "U16 Boys",
+    "team": "City Above Elite - Christian"
+   },
+   {
+    "division": "U16 Boys",
+    "team": "City Above Elite - Cy"
+   },
+   {
+    "division": "U16 Boys",
+    "team": "David Ann Academy"
+   },
+   {
+    "division": "U16 Boys",
+    "team": "Empower Basketball"
+   },
+   {
+    "division": "U16 Boys",
+    "team": "Helix Rise"
+   },
+   {
+    "division": "U16 Boys",
+    "team": "M & R Basketball"
+   },
+   {
+    "division": "U16 Boys",
+    "team": "MUMBA Academy"
+   },
+   {
+    "division": "U16 Boys",
+    "team": "NorthStars United (NSU)"
+   },
+   {
+    "division": "U16 Boys",
+    "team": "RSB Elite"
+   },
+   {
+    "division": "U16 Boys",
+    "team": "Silky Hoops"
+   },
+   {
+    "division": "U16 Boys",
+    "team": "TNS"
+   },
+   {
+    "division": "U16 Boys",
+    "team": "Vanguard North"
+   },
+   {
+    "division": "U16 Boys",
+    "team": "Vanguard North - Blue"
+   },
+   {
+    "division": "U16 Boys",
+    "team": "Wiggins Elite"
+   },
+   {
+    "division": "U17 Boys",
+    "team": "Blacktop Stars"
+   },
+   {
+    "division": "U17 Boys",
+    "team": "City Above Elite"
+   },
+   {
+    "division": "U17 Boys",
+    "team": "CM Sports"
+   },
+   {
+    "division": "U17 Boys",
+    "team": "M & R\u00a0Basketball"
+   },
+   {
+    "division": "U17 Boys",
+    "team": "Markham Gators"
+   },
+   {
+    "division": "U17 Boys",
+    "team": "MUMBA Academy"
+   },
+   {
+    "division": "U17 Boys",
+    "team": "Vanguard North"
+   },
+   {
+    "division": "U17 Boys",
+    "team": "Wiggins Elite"
+   },
+   {
+    "division": "U19 Boys",
+    "team": "City Above Elite - Roger"
+   },
+   {
+    "division": "U19 Boys",
+    "team": "CM Sports"
+   },
+   {
+    "division": "U19 Boys",
+    "team": "Foever Dreamers"
+   },
+   {
+    "division": "U19 Boys",
+    "team": "Lead2greatness"
+   },
+   {
+    "division": "U19 Boys",
+    "team": "M&R Basketball"
+   },
+   {
+    "division": "U19 Boys",
+    "team": "MUMBA ACADEMY"
+   },
+   {
+    "division": "U19 Boys",
+    "team": "RWI Kings"
+   },
+   {
+    "division": "U19 Boys",
+    "team": "Team FiFi"
+   }
+  ]
+ },
+ "274273": {
+  "title": "Winter League - Oct 17 - Apr 11, 2027 - Toronto, Ontario Participating",
+  "rows": [
+   {
+    "division": "U12 Boys",
+    "team": "East York Eagles - Knight"
+   },
+   {
+    "division": "U13 Boys",
+    "team": "Barrie Royals - Blake"
+   },
+   {
+    "division": "U13 Girls",
+    "team": "Core Basketball"
+   },
+   {
+    "division": "U14 Girls",
+    "team": "Guelph Knights U14 Girls"
+   },
+   {
+    "division": "U15 Boys",
+    "team": "MHT Academy"
+   },
+   {
+    "division": "U15 Boys - Single A",
+    "team": "Clutch Points"
+   },
+   {
+    "division": "U15 Girls",
+    "team": "Barrie Royals"
+   },
+   {
+    "division": "U16 Boys",
+    "team": "Clutch Points GOLD"
+   },
+   {
+    "division": "U16 Boys",
+    "team": "GYBA - Guelph Youth Basketball Association"
+   },
+   {
+    "division": "U16 Boys",
+    "team": "Push United Basketball"
+   },
+   {
+    "division": "U16 Boys - Single A",
+    "team": "Clutch Points BLACK"
+   },
+   {
+    "division": "U17 Boys",
+    "team": "SCAWR ELITE"
+   },
+   {
+    "division": "U17 Girls",
+    "team": "GCBA Wolverines"
+   },
+   {
+    "division": "U19 Girls",
+    "team": "North Toronto Huskies"
+   }
+  ]
+ }
+}

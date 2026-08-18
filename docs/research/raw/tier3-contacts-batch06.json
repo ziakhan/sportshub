@@ -1,0 +1,634 @@
+{
+  "batch": 6,
+  "investigated_at": "2026-08-14",
+  "results": [
+    {
+      "club": "West United Prep",
+      "found": true,
+      "email": "westunitedprepacademy@gmail.com",
+      "phone": "",
+      "social": "Instagram @westunitedprepacademy",
+      "website": "linktr.ee/westunitedprepacademy",
+      "contact_person": "",
+      "evidence_url": "https://www.instagram.com/westunitedprepacademy/",
+      "searched": [
+        "\"West United Prep\" basketball Ontario",
+        "\"West United Prep\" Instagram contact email basketball",
+        "linktr.ee/westunitedprepacademy fetch"
+      ],
+      "notes": "City was unconfirmed in our data. Team also shows up on National Capital Hoops Circuit and nationalsrcircuit.com (Big Shots Prep Nationals, NPH D1, NPH Open) rather than exactly 'NPH-SL/NSC' as tagged in our source, but the org name matches exactly and the Linktree/Instagram lead to a working registration email (used for e-transfer registration fees), so confidence is high this is the right club."
+    },
+    {
+      "club": "Windsor St. Clair (WSC JUEL)",
+      "found": true,
+      "email": "wscjuel@gmail.com",
+      "phone": "5199811008",
+      "social": "Instagram @windsorstclair (WSC JUEL); @wscjprep (JUEL Prep); X/Twitter @WSCBball",
+      "website": "",
+      "contact_person": "Coach Shannon Kennedy (Head Coach)",
+      "evidence_url": "https://www.instagram.com/windsorstclair/",
+      "searched": [
+        "\"Windsor St. Clair\" JUEL basketball",
+        "\"Windsor St. Clair\" JUEL Prep tryouts contact email phone"
+      ],
+      "notes": "Girls basketball program, grades 11 & 12 (JUEL) plus JUEL Prep for younger grades, based in Windsor/Windsor-Essex. Email and phone found in an Instagram post advertising 2026/27 ID sessions."
+    },
+    {
+      "club": "Windsor Suns Elite Basketball",
+      "found": true,
+      "email": "",
+      "phone": "",
+      "social": "Instagram @sunselitebasketball; Facebook 'Windsor Suns Elite U16 Basketball'",
+      "website": "wpasuns.com",
+      "contact_person": "",
+      "evidence_url": "https://www.instagram.com/sunselitebasketball/",
+      "searched": [
+        "\"Windsor Suns Elite\" basketball",
+        "site:facebook.com \"Windsor Suns Elite\" basketball"
+      ],
+      "notes": "Confirmed Windsor, Ontario based (Instagram bio: 'Based in Windsor Ontario. Suns Basketball is a division of Windsor Pinoy [Athletics]'). Their website wpasuns.com could not be fetched directly (DNS resolution failed from this environment) so email/phone on that site are unverified; no email or phone recovered from Instagram or Facebook. Also appears on nationalsportsid.com team page (13U) but that page had no contact fields either."
+    },
+    {
+      "club": "Windsor United",
+      "found": true,
+      "email": "info@windsorunited.ca",
+      "phone": "5195674280",
+      "social": "",
+      "website": "windsorunited.ca",
+      "contact_person": "Greg (greg.mboxe@windsorunited.ca)",
+      "evidence_url": "https://windsorunited.ca/contact",
+      "searched": [
+        "\"Windsor United\" basketball CYBL Windsor Ontario"
+      ],
+      "notes": "Windsor United Community Centre, 'bringing elite basketball training and competition to Windsor, Ontario', grades 2-12, listed as a CYBL participant. Contact page lists both a named staff email and a general info@ address; info@ used as primary per club-level preference."
+    },
+    {
+      "club": "Y.A.A.A.C.E",
+      "found": true,
+      "email": "info@yaaace.com",
+      "phone": "4165677994",
+      "social": "Facebook facebook.com/YAAACEsi",
+      "website": "yaaace.com",
+      "contact_person": "",
+      "evidence_url": "https://yaaace.com/contact",
+      "searched": [
+        "\"Y.A.A.A.C.E\" basketball Toronto Phoenix League",
+        "YAAACE Toronto basketball Jamaal Magloire contact",
+        "YAAACE Toronto basketball program contact email"
+      ],
+      "notes": "YAAACE (Youth Association for Academics, Athletics and Character Education) is a well-established Jane-Finch (North York/Toronto) nonprofit; its basketball arm is called 'Inspire'. Address 45 Norfinch Dr, Toronto. Matches the 'Phoenix League' tag in our data (Toronto-based youth league)."
+    },
+    {
+      "club": "YNBA",
+      "found": true,
+      "email": "admin@ynba.ca",
+      "phone": "9058539102",
+      "social": "",
+      "website": "ynba.ca",
+      "contact_person": "",
+      "evidence_url": "https://ynba.ca/contact/",
+      "searched": [
+        "YNBA basketball Aurora Newmarket Ontario"
+      ],
+      "notes": "York North Basketball Association, Magna Centre, 800 Mulock Dr, Newmarket, ON L3Y 9C1 — matches Aurora-Newmarket city tag exactly."
+    },
+    {
+      "club": "and Club of Ottawa",
+      "found": true,
+      "email": "contactus@bgcottawa.org",
+      "phone": "18888240183",
+      "social": "Instagram @bgc_thunderbolts (basketball team)",
+      "website": "bgcottawa.org",
+      "contact_person": "",
+      "evidence_url": "https://www.bgcottawa.org/contact-us",
+      "searched": [
+        "EOBA \"Club of Ottawa\" basketball",
+        "\"Boys and Girls Club\" Ottawa basketball EOBA"
+      ],
+      "notes": "Input club name looks like a truncated/mangled 'Boys and Girls Club of Ottawa' (BGC Ottawa). Their competitive basketball team plays as the 'BGC Thunderbolts' (Ottawa-based, NPH/EOBA/CHC/NCHC, practices at Ron Kolbus Clubhouse) — no separate team-level email/phone found, so the contact given is BGC Ottawa's general organizational contact, not a basketball-specific line. Flagging this uncertainty: confirm the 'and Club of Ottawa' name really refers to this org before using."
+    },
+    {
+      "club": "1 of 1",
+      "found": false,
+      "email": "",
+      "phone": "",
+      "social": "",
+      "website": "",
+      "contact_person": "",
+      "evidence_url": "",
+      "searched": [
+        "\"1 of 1\" CYBL basketball Ontario team",
+        "\"1 of 1\" basketball team CYBL OR \"Ontario Basketball\" roster"
+      ],
+      "notes": "Team name too generic to distinguish from unrelated results; no club-specific page, website, or social account found in CYBL context."
+    },
+    {
+      "club": "17 Ignite",
+      "found": false,
+      "email": "",
+      "phone": "",
+      "social": "",
+      "website": "",
+      "contact_person": "",
+      "evidence_url": "",
+      "searched": [
+        "\"17 Ignite\" basketball Ontario CYBL OBL"
+      ],
+      "notes": "Confirmed as a real team via Ontario Basketball Provincials roster pages (RAMP InterActive) in CYBL/OBL, but no contact info on those roster pages, and no independent website/social found. Note: an unrelated org '17 Basketball Club' (17basketball.com) exists in Ontario with a similar '17' name — NOT confirmed as the same organization, so not used."
+    },
+    {
+      "club": "1K Elite",
+      "found": false,
+      "email": "",
+      "phone": "",
+      "social": "",
+      "website": "",
+      "contact_person": "",
+      "evidence_url": "",
+      "searched": [
+        "\"1K Elite\" basketball GTA NPH Showcase"
+      ],
+      "notes": "Confirmed as a real NPH Showcase League (24-25) team via exposureevents.com team list, but that page has no contact fields and no independent website/social account was found."
+    },
+    {
+      "club": "2 Way Elite",
+      "found": true,
+      "email": "",
+      "phone": "",
+      "social": "Facebook facebook.com/twowayelite (@twowayelite); Instagram @twowayelite",
+      "website": "",
+      "contact_person": "",
+      "evidence_url": "https://www.instagram.com/twowayelite/",
+      "searched": [
+        "\"2 Way Elite\" basketball Phoenix League Ontario"
+      ],
+      "notes": "Bio confirms a basketball youth-development org ('Two Way Elite || Youth Sports Development', 14U Girls/Boys USA Basketball Gold) matching the Phoenix League listing, but no email or phone found on either social profile, and no city confirmation beyond the league being Toronto-based."
+    },
+    {
+      "club": "ACABA Elite",
+      "found": false,
+      "email": "",
+      "phone": "",
+      "social": "",
+      "website": "",
+      "contact_person": "",
+      "evidence_url": "",
+      "searched": [
+        "\"ACABA Elite\" basketball Hoop City Ontario"
+      ],
+      "notes": "No matching organization found; searches only returned generic Hoop City Basketball League and unrelated 'Elite Basketball Camps' results."
+    },
+    {
+      "club": "ACE Basketball",
+      "found": true,
+      "email": "",
+      "phone": "",
+      "social": "Facebook (found via search, handle unconfirmed: facebook.com/61553107808621)",
+      "website": "acebasketball.ca",
+      "contact_person": "",
+      "evidence_url": "https://www.acebasketball.ca",
+      "searched": [
+        "\"ACE Basketball\" Canada Hoops Circuit Ontario contact",
+        "site:facebook.com \"ACE Basketball\" Toronto Ontario"
+      ],
+      "notes": "Search results state ACE Basketball is based in Toronto, ON and co-hosts the Canada Hoops Circuit National Championships — matches the input league. However this environment could not resolve acebasketball.ca via direct fetch (DNS failure both with and without www), and the Facebook page returned only a 'use a supported browser' interstitial, so email/phone could not be independently confirmed — website given as best lead only."
+    },
+    {
+      "club": "AET Basketball",
+      "found": false,
+      "email": "",
+      "phone": "",
+      "social": "",
+      "website": "",
+      "contact_person": "",
+      "evidence_url": "",
+      "searched": [
+        "\"AET Basketball\" Phoenix League Ontario contact"
+      ],
+      "notes": "Confirmed as a real Phoenix League team ('AET Basketball - Gold') via exposureevents listings, but only the league organizer's contact (Jeremiah Wheatle, phxbasektball1@gmail.com) was found, not a club-level contact, so nothing recorded per the rule to prefer club-level addresses over league contacts."
+    },
+    {
+      "club": "All-In",
+      "found": false,
+      "email": "",
+      "phone": "",
+      "social": "",
+      "website": "",
+      "contact_person": "",
+      "evidence_url": "",
+      "searched": [
+        "\"All-In\" basketball CYBL team Ontario contact"
+      ],
+      "notes": "Confirmed as a real CYBL middle-school team, but no club-specific website, email, phone, or social account found — only the generic CYBL league contact channel."
+    },
+    {
+      "club": "Alma Prep",
+      "found": false,
+      "email": "",
+      "phone": "",
+      "social": "",
+      "website": "",
+      "contact_person": "",
+      "evidence_url": "",
+      "searched": [
+        "\"Alma Prep\" basketball NPH Ontario"
+      ],
+      "notes": "A Prep Hoops team page for 'Alma' exists but gives no location/contact confirmation; could not verify this is an Ontario org distinct from the generic NPH team listing."
+    },
+    {
+      "club": "Alpha Elite",
+      "found": false,
+      "email": "",
+      "phone": "",
+      "social": "",
+      "website": "",
+      "contact_person": "",
+      "evidence_url": "",
+      "searched": [
+        "Alpha Elite basketball GTA NPH Showcase contact (session WebSearch budget exhausted before this query; attempted via Bing fetch instead)"
+      ],
+      "notes": "Team name too generic; Bing results returned only unrelated hits (Alpha Course, Greek letter alpha, etc). No Ontario basketball org identified."
+    },
+    {
+      "club": "B-Elite",
+      "found": false,
+      "email": "",
+      "phone": "",
+      "social": "",
+      "website": "",
+      "contact_person": "",
+      "evidence_url": "",
+      "searched": [
+        "\"B-Elite\" basketball Hoop City Ontario contact"
+      ],
+      "notes": "No specific organization found; only generic Hoop City Basketball League and unrelated 'Elite Basketball Camps' results returned."
+    },
+    {
+      "club": "B.1.C.E Basketball",
+      "found": true,
+      "email": "",
+      "phone": "",
+      "social": "Instagram @b1cewbb ('Become One Canada Elite')",
+      "website": "",
+      "contact_person": "",
+      "evidence_url": "https://www.instagram.com/b1cewbb/",
+      "searched": [
+        "\"B.1.C.E\" basketball Ontario"
+      ],
+      "notes": "Girls-only program ('Become One Creating Empowerment'), matches 'NPH Showcase Girls' tag and appears in Ontario Basketball Provincials records. No email or phone listed on Instagram (only a Stripe payment link) and no location confirmed beyond 'Canada'."
+    },
+    {
+      "club": "BGC Thunderbolts",
+      "found": true,
+      "email": "contactus@bgcottawa.org",
+      "phone": "18888240183",
+      "social": "Instagram @bgc_thunderbolts",
+      "website": "",
+      "contact_person": "Coach Kian Nejad (founder)",
+      "evidence_url": "https://www.instagram.com/bgc_thunderbolts/",
+      "searched": [
+        "\"BGC Thunderbolts\" basketball NPH Showcase GTA"
+      ],
+      "notes": "IMPORTANT: this team is Ottawa-based ('📍 Ottawa Based' in Instagram bio, plays NPH/EOBA/CHC/NCHC out of Ron Kolbus Clubhouse), NOT GTA as tagged in our source data — likely a region-tagging error upstream, but it is a real, currently active Ontario club (back-to-back NPH Showcase League champions 2024-25). No team-specific email/phone exists; the phone/email given are BGC Ottawa's (parent org) general contact line, not basketball-specific."
+    },
+    {
+      "club": "BOA",
+      "found": false,
+      "email": "",
+      "phone": "",
+      "social": "",
+      "website": "",
+      "contact_person": "",
+      "evidence_url": "",
+      "searched": [
+        "\"BOA\" basketball CYBL team Ontario Barrie OR Oakville"
+      ],
+      "notes": "Too generic an acronym to isolate; searches returned only unrelated hockey/general CYBL results."
+    },
+    {
+      "club": "Ball4Life",
+      "found": true,
+      "email": "info@ball4life.ca",
+      "phone": "4169942023",
+      "social": "X/Twitter @b4lbasketball",
+      "website": "ball4life.ca",
+      "contact_person": "",
+      "evidence_url": "https://www.ball4life.ca/general-6",
+      "searched": [
+        "\"Ball4Life\" basketball Hoop City Ontario contact"
+      ],
+      "notes": "Toronto-area (416) basketball training company matching the club name exactly; could not independently confirm 'Hoop City' league participation on their own site (no mention found), but the name/city match is strong."
+    },
+    {
+      "club": "Bordertown",
+      "found": false,
+      "email": "",
+      "phone": "",
+      "social": "",
+      "website": "",
+      "contact_person": "",
+      "evidence_url": "",
+      "searched": [
+        "\"Bordertown\" basketball CYBL team Ontario Cornwall"
+      ],
+      "notes": "No matching organization found beyond generic CYBL league references."
+    },
+    {
+      "club": "BrBOA",
+      "found": false,
+      "email": "",
+      "phone": "",
+      "social": "",
+      "website": "",
+      "contact_person": "",
+      "evidence_url": "",
+      "searched": [
+        "\"BrBOA\" basketball CYBL Ontario team"
+      ],
+      "notes": "No matching organization found; likely an abbreviation (possibly 'Brampton' something) but could not confirm."
+    },
+    {
+      "club": "Breakthrough",
+      "found": false,
+      "email": "",
+      "phone": "",
+      "social": "",
+      "website": "",
+      "contact_person": "",
+      "evidence_url": "",
+      "searched": [
+        "\"Breakthrough\" basketball Hoop City Ontario team contact"
+      ],
+      "notes": "Only found an unrelated US company 'Breakthrough Basketball, LLC' (Cedar Rapids, IA, basketball camps) — confirmed this is a DIFFERENT organization, not the Hoop City league team. No matching Ontario club found."
+    },
+    {
+      "club": "Brother Pack",
+      "found": false,
+      "email": "",
+      "phone": "",
+      "social": "",
+      "website": "",
+      "contact_person": "",
+      "evidence_url": "",
+      "searched": [
+        "\"Brother Pack\" basketball Ontario CYBL contact"
+      ],
+      "notes": "Confirmed as a real CYBL/Hoop City team ('Brothers Pack'), but only the CYBL league contact (Sophia Brown, sophiabrown@cybl.ca) was found, not a club-level contact, so nothing recorded per the club-level-over-league-contact rule."
+    },
+    {
+      "club": "Brothers Keeper Prep",
+      "found": true,
+      "email": "",
+      "phone": "6479664667",
+      "social": "Instagram @brotherskeeper_to; Facebook facebook.com/brotherskeeperbasketballto",
+      "website": "",
+      "contact_person": "Coach Don",
+      "evidence_url": "https://www.instagram.com/brotherskeeper_to/",
+      "searched": [
+        "\"Brothers Keeper Prep\" basketball NPH Ontario"
+      ],
+      "notes": "Toronto-based AAU program ('_to' handle), matches NPH Showcase participation (played Ottawa Elite and North York Lions in NPH Showcase semis/finals). Phone number is a coach's personal contact from an Instagram post caption, not a club-level line; no club email found (only a Google Form)."
+    },
+    {
+      "club": "Bukhari Titans",
+      "found": true,
+      "email": "",
+      "phone": "12898795221",
+      "social": "Instagram @bukharibasketball",
+      "website": "bukharibasketball.com",
+      "contact_person": "",
+      "evidence_url": "https://www.bukharibasketball.com/",
+      "searched": [
+        "\"Bukhari Titans\" basketball Phoenix League Ontario"
+      ],
+      "notes": "Could only find 'Bukhari Basketball Academy' (Markham, ON, 7261 Victoria Park Ave) — a training academy, not confirmed to field a team specifically called 'Bukhari Titans' in the Phoenix League. Given the rare surname match this is very likely the same family/org, but the Titans team name and Phoenix League link are unverified on their site, so treat this contact as a probable-but-unconfirmed match."
+    },
+    {
+      "club": "CALI",
+      "found": true,
+      "email": "contact@caliprepacademy.com",
+      "phone": "8339374667",
+      "social": "Instagram @caliprepacademy; @caliprepwbb (women's)",
+      "website": "caliprepacademy.com",
+      "contact_person": "",
+      "evidence_url": "https://www.caliprepacademy.com/",
+      "searched": [
+        "\"CALI\" basketball \"Toronto Big League\" prep team"
+      ],
+      "notes": "C.A.L.I. (Character-Athletics-Life-Integrity) Prep Academy, 1420 Bayly St Unit 13, Pickering, ON. Name match is strong (CALI) and it's an Ontario prep basketball academy, but their Toronto Big League (SR Prep) participation specifically was not confirmed on-site — flagging as probable match."
+    },
+    {
+      "club": "CODE",
+      "found": true,
+      "email": "info@codeprep.ca",
+      "phone": "",
+      "social": "Instagram @codesportsacademy; X/Twitter @CODESportsAcad1",
+      "website": "codeprep.ca",
+      "contact_person": "",
+      "evidence_url": "https://www.codeprep.ca/contact",
+      "searched": [
+        "\"CODE\" basketball \"Toronto Big League\" prep team contact"
+      ],
+      "notes": "CODE Prep / CODE Sports Academy, Whitby, ON, serving grades 6-12 — matches the Toronto Big League (JR Prep / SR Prep) tag."
+    },
+    {
+      "club": "Canada Central Prep",
+      "found": false,
+      "email": "",
+      "phone": "",
+      "social": "",
+      "website": "",
+      "contact_person": "",
+      "evidence_url": "",
+      "searched": [
+        "\"Canada Central Prep\" basketball NPH Ontario"
+      ],
+      "notes": "No matching organization found under this exact name; NPH-D1 league page lists other Ontario prep schools (Ste. Cecile Academy, St. Jude's Academy, St. Michael's College, Ottawa Elite) but none named 'Canada Central Prep'."
+    },
+    {
+      "club": "Canada Phenoms",
+      "found": false,
+      "email": "",
+      "phone": "",
+      "social": "",
+      "website": "",
+      "contact_person": "",
+      "evidence_url": "",
+      "searched": [
+        "\"Canada Phenoms\" basketball GTA NPH Showcase"
+      ],
+      "notes": "Confirmed as a real NPH Showcase League 24-25 participant via exposureevents team list, but no club-specific website, email, phone, or social account found."
+    },
+    {
+      "club": "Canadian Private School",
+      "found": false,
+      "email": "",
+      "phone": "",
+      "social": "",
+      "website": "",
+      "contact_person": "",
+      "evidence_url": "",
+      "searched": [
+        "\"Canadian Private School\" basketball NPH-D1 Ontario team"
+      ],
+      "notes": "This appears to be a generic/placeholder label rather than a specific club name — NPH-D1 lists several actual Ontario private schools (Ste. Cecile Academy Windsor, St. Jude's Academy, St. Michael's College, Ottawa Elite) but none is literally named 'Canadian Private School', so no specific organization could be identified or verified."
+    },
+    {
+      "club": "Cathedral",
+      "found": false,
+      "email": "",
+      "phone": "",
+      "social": "",
+      "website": "",
+      "contact_person": "",
+      "evidence_url": "",
+      "searched": [
+        "\"Cathedral\" basketball NPH-D1 Ontario team high school"
+      ],
+      "notes": "IMPORTANT — org mismatch caught: cathedralphantoms.com ('Cathedral High School Basketball') is Cathedral High School in Los Angeles, CA, NOT an Ontario school; excluded. A 'Cathedral High School (Hamilton, Ontario)' exists per Wikipedia and a player 'from Cathedral' appears in NPH Top 100 rankings, but no dedicated basketball program contact page or NPH-D1 club-team confirmation was found for the Hamilton school."
+    },
+    {
+      "club": "Clippers",
+      "found": false,
+      "email": "",
+      "phone": "",
+      "social": "",
+      "website": "",
+      "contact_person": "",
+      "evidence_url": "",
+      "searched": [
+        "\"Clippers\" basketball EOBA Eastern Ontario team"
+      ],
+      "notes": "Confirmed as a real, current EOBA member club (represented by Eli Carlone on the EOBA executive per eobahoops.com/about), but no dedicated club website, email, phone, or social account could be found; EOBA's own contact page has no listed email/phone either (contact form only). Note: 'Ontario Clippers'/'San Diego Clippers' results are an unrelated NBA G League team, not this club."
+    },
+    {
+      "club": "College Durocher",
+      "found": false,
+      "email": "",
+      "phone": "",
+      "social": "",
+      "website": "",
+      "contact_person": "",
+      "evidence_url": "",
+      "searched": [
+        "\"College Durocher\" basketball CYBL Ontario (WebSearch budget exhausted before this could be run)"
+      ],
+      "notes": "Could not search further — session WebSearch budget was exhausted at this point in the batch. Note for follow-up: 'Collège Durocher Saint-Agnès' is a known school but it is in Sillery, Quebec (Quebec City area), not Ontario — if that's the same institution being referenced, it would NOT match our Ontario club scope and should be excluded; this needs verification in a future pass."
+    },
+    {
+      "club": "Colts",
+      "found": false,
+      "email": "",
+      "phone": "",
+      "social": "",
+      "website": "",
+      "contact_person": "",
+      "evidence_url": "",
+      "searched": [],
+      "notes": "Not independently searched — WebSearch budget was exhausted for this session before reaching this entry. Name is too generic (also a well-known Cornwall junior hockey team, 'Cornwall Colts') to search safely via WebFetch guesses alone without confirming league/sport match."
+    },
+    {
+      "club": "Corey Graham Elite Extreme",
+      "found": false,
+      "email": "",
+      "phone": "",
+      "social": "",
+      "website": "",
+      "contact_person": "",
+      "evidence_url": "",
+      "searched": [],
+      "notes": "Not independently searched — WebSearch budget was exhausted for this session before reaching this entry."
+    },
+    {
+      "club": "DC United",
+      "found": false,
+      "email": "",
+      "phone": "",
+      "social": "",
+      "website": "",
+      "contact_person": "",
+      "evidence_url": "",
+      "searched": [],
+      "notes": "Not independently searched via WebSearch (budget exhausted); tried a direct Instagram guess @dcunitedbasketball which resolved to 'Dreamchaser United Basketball' — plausible given 'DC' initials, but bio gave no location/league confirmation, so not confident enough to report as a verified match. Needs follow-up search."
+    },
+    {
+      "club": "DCBA",
+      "found": false,
+      "email": "",
+      "phone": "",
+      "social": "",
+      "website": "",
+      "contact_person": "",
+      "evidence_url": "",
+      "searched": [],
+      "notes": "Not independently searched — WebSearch budget was exhausted for this session before reaching this entry."
+    },
+    {
+      "club": "DEl1te Basketball",
+      "found": false,
+      "email": "",
+      "phone": "",
+      "social": "",
+      "website": "",
+      "contact_person": "",
+      "evidence_url": "",
+      "searched": [],
+      "notes": "Not independently searched — WebSearch budget was exhausted for this session before reaching this entry."
+    },
+    {
+      "club": "DFam United",
+      "found": false,
+      "email": "",
+      "phone": "",
+      "social": "",
+      "website": "",
+      "contact_person": "",
+      "evidence_url": "",
+      "searched": [],
+      "notes": "Not independently searched — WebSearch budget was exhausted for this session before reaching this entry."
+    },
+    {
+      "club": "DHO Prep",
+      "found": false,
+      "email": "",
+      "phone": "",
+      "social": "",
+      "website": "",
+      "contact_person": "",
+      "evidence_url": "",
+      "searched": [],
+      "notes": "Not independently searched — WebSearch budget was exhausted for this session before reaching this entry."
+    },
+    {
+      "club": "DKH Basketball",
+      "found": false,
+      "email": "",
+      "phone": "",
+      "social": "",
+      "website": "",
+      "contact_person": "",
+      "evidence_url": "",
+      "searched": [],
+      "notes": "Tried a direct Instagram guess @dkhbasketball; page returned no readable bio/contact content. Not independently searched via WebSearch (budget exhausted)."
+    },
+    {
+      "club": "DOE Academy",
+      "found": false,
+      "email": "",
+      "phone": "",
+      "social": "",
+      "website": "",
+      "contact_person": "",
+      "evidence_url": "",
+      "searched": [],
+      "notes": "Tried a direct Instagram guess @doeacademy; page returned no readable bio/contact content. Not independently searched via WebSearch (budget exhausted)."
+    }
+  ],
+  "summary": {
+    "total": 45,
+    "with_email": 10,
+    "with_phone": 10,
+    "with_any_contact": 16,
+    "not_found": 29
+  }
+}

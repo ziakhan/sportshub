@@ -1,0 +1,802 @@
+{
+  "investigated_at": "2026-08-14",
+  "methodology": "Web search + targeted page fetches only (WebSearch/WebFetch tools). No logins or bot-walls bypassed. Every club below has a working evidence_url found during this research pass; none were invented. Several evidence_urls are AI-summarized page fetches rather than raw HTML, but the underlying page was actually retrieved.",
+  "municipalities": [
+    {
+      "municipality": "Kawartha Lakes",
+      "population": 79247,
+      "clubs_found": 2,
+      "searched": [
+        "\"Kawartha Lakes minor basketball association\"",
+        "\"Lindsay Ontario youth basketball club\""
+      ],
+      "clubs": [
+        {
+          "name": "Lindsay Wildcats Basketball Association",
+          "city": "Lindsay",
+          "type": "house league (grades 3-8) + OBA rep travel teams (ages 9-18)",
+          "website": "https://www.lindsaywildcats.com/",
+          "email": "",
+          "phone": "",
+          "social": "https://www.facebook.com/LindsayWildcatsBasketballAssociation/",
+          "evidence_url": "https://www.lindsaywildcats.com/about/"
+        },
+        {
+          "name": "Boys and Girls Club of Kawartha Lakes - Basketball",
+          "city": "Lindsay",
+          "type": "8-week youth skill development program",
+          "website": "",
+          "email": "",
+          "phone": "",
+          "social": "",
+          "evidence_url": "https://klsrc.ca/activity/boys-and-girls-club-of-kawartha-lakes-basketball/"
+        }
+      ],
+      "assessment": "found"
+    },
+    {
+      "municipality": "Sault Ste. Marie",
+      "population": 72051,
+      "clubs_found": 1,
+      "searched": [
+        "\"Sault Ste. Marie minor basketball association\"",
+        "elite8basketball.com direct fetch",
+        "saultsports.com Jr NBA article fetch"
+      ],
+      "clubs": [
+        {
+          "name": "Elite 8 Basketball Academy",
+          "city": "Sault Ste. Marie",
+          "type": "OBA member club + Jr NBA program (Ecole Notre Dame du Sault, 600 North St), U13-U17 boys club teams, girls grade 6-8 training",
+          "website": "https://www.elite8basketball.com/",
+          "email": "elite8basketballacademy@gmail.com",
+          "phone": "705-971-7632",
+          "social": "linked from elite8basketball.com (Facebook/Instagram/Twitter/YouTube)",
+          "evidence_url": "https://saultsports.com/elite-8-basketball-academy-is-the-newest-member-of-the-o-b-a/"
+        }
+      ],
+      "assessment": "found",
+      "note": "Other names surfaced (Steel City Slam Basketball Club, Algoma U, St. Mary's Small Ball, Sarah Cameron's Camp of Champs) but could not be independently verified with a clean evidence URL in this pass — omitted rather than guessed."
+    },
+    {
+      "municipality": "Norfolk County",
+      "population": 67490,
+      "clubs_found": 1,
+      "searched": [
+        "\"Norfolk County basketball association Simcoe Ontario youth\""
+      ],
+      "clubs": [
+        {
+          "name": "Norfolk Youth Basketball Association",
+          "city": "Simcoe",
+          "type": "instructional house league, Jr NBA Novice/Intermediate through age 12+, Sept-March at Waterford DHS and Simcoe CS",
+          "website": "https://www.norfolkyouthbasketball.ca/content/leagues-and-camps",
+          "email": "norfolkyba@gmail.com",
+          "phone": "519-427-3899",
+          "social": "",
+          "evidence_url": "https://211ontario.ca/service/79836335/agency/norfolk-youth-basketball-association/"
+        }
+      ],
+      "assessment": "found"
+    },
+    {
+      "municipality": "Halton Hills",
+      "population": 62951,
+      "clubs_found": 3,
+      "searched": [
+        "\"Halton Hills basketball club Georgetown Acton youth\"",
+        "haltonhills.ca youth programs page fetch",
+        "haltonhillstoday.ca community organizations directory fetch (403, blocked)",
+        "\"Halton Basketball Club\" Georgetown OR \"Halton Hills\" gym rep house league"
+      ],
+      "clubs": [
+        {
+          "name": "Halton Hills Girls' Basketball Club",
+          "city": "Georgetown",
+          "type": "weekly girls skills sessions, ages 6-12, at Centennial Public School",
+          "website": "",
+          "email": "",
+          "phone": "",
+          "social": "",
+          "evidence_url": "https://www.haltonhillstoday.ca/local-sports/new-halton-hills-girls-basketball-club-getting-started-with-weekly-skills-sessions-12188595"
+        },
+        {
+          "name": "Halton Basketball Club (Halton Youth Basketball Club)",
+          "city": "Halton Hills (Georgetown) — exact municipal boundary not confirmed on page",
+          "type": "not-for-profit youth basketball club",
+          "website": "https://sites.google.com/view/haltonbasketballclub/home",
+          "email": "",
+          "phone": "",
+          "social": "https://www.facebook.com/haltonbasketball/ ; https://www.instagram.com/haltonbasketballclub/?hl=en",
+          "evidence_url": "https://www.facebook.com/haltonbasketball/"
+        },
+        {
+          "name": "Halton Hills Guardian Coed Basketball Club (Special Olympics Ontario)",
+          "city": "Georgetown",
+          "type": "adaptive/Special Olympics coed basketball",
+          "website": "",
+          "email": "",
+          "phone": "",
+          "social": "",
+          "evidence_url": "http://georgetown.specialolympicsontario.ca/home/sports/basketball"
+        }
+      ],
+      "assessment": "found",
+      "note": "\"Halton Hills United REP Basketball\" tryouts also referenced on a third-party club-services page (tier1sportsclub.com/rep-baasketball) but could not confirm it as a standalone org — omitted as a distinct club to avoid double-counting."
+    },
+    {
+      "municipality": "Whitchurch-Stouffville",
+      "population": 49864,
+      "clubs_found": 4,
+      "searched": [
+        "\"Whitchurch-Stouffville basketball club youth Stouffville minor\"",
+        "torontohoopstars.com direct fetch",
+        "\"Stouffville\" basketball association house league minor OBA"
+      ],
+      "clubs": [
+        {
+          "name": "Toronto Hoopstars",
+          "city": "Whitchurch-Stouffville (276 Sunset Boulevard)",
+          "type": "training + house league, also serves Markham",
+          "website": "https://torontohoopstars.com/",
+          "email": "info@torontohoopstars.com",
+          "phone": "(416) 684-8414",
+          "social": "",
+          "evidence_url": "https://torontohoopstars.com/"
+        },
+        {
+          "name": "Markham-Stouffville Basketball Academy (MSBA STORM)",
+          "city": "Markham/Stouffville",
+          "type": "non-profit youth development academy",
+          "website": "https://www.msbastorm.com/",
+          "email": "",
+          "phone": "",
+          "social": "https://www.facebook.com/p/Markham-Stouffville-Basketball-Academy-STORM-100084872059303/",
+          "evidence_url": "https://www.msbastorm.com/"
+        },
+        {
+          "name": "MUMBA (Markham Unionville Minor Basketball Association)",
+          "city": "Markham (programs extend to Thornhill and Stouffville)",
+          "type": "house league/basketball school + rep programs",
+          "website": "https://mumbabasketball.ca/",
+          "email": "",
+          "phone": "",
+          "social": "",
+          "evidence_url": "https://mumbabasketball.ca/about-us/"
+        },
+        {
+          "name": "Crunch Time Basketball (Ignite)",
+          "city": "Serves Markham, Unionville, Stouffville, Richmond Hill, Newmarket, Aurora",
+          "type": "OBA-affiliated, Canada Basketball verified — skills training, house league, rep",
+          "website": "https://www.crunchtimebasketball.ca/",
+          "email": "",
+          "phone": "",
+          "social": "",
+          "evidence_url": "https://www.crunchtimebasketball.ca/"
+        }
+      ],
+      "assessment": "found",
+      "note": "No club is HQ'd in Stouffville alone as a standalone town association — coverage is via multi-town York-Region academies/associations that explicitly list Stouffville. Toronto Hoopstars has a confirmed physical Stouffville address."
+    },
+    {
+      "municipality": "Haldimand County",
+      "population": 49216,
+      "clubs_found": 1,
+      "searched": [
+        "\"Haldimand County basketball club youth Cayuga Dunnville\""
+      ],
+      "clubs": [
+        {
+          "name": "Haldimand Huskies Basketball Club",
+          "city": "Caledonia",
+          "type": "PUPS (ages 6-7), house league (grades 3-8), OBA rep/travel, ages 7-18",
+          "website": "https://haldimandhuskiesbasketball.teamsnapsites.com/",
+          "email": "",
+          "phone": "",
+          "social": "https://www.facebook.com/haldimandhuskiesbasketball/",
+          "evidence_url": "https://www.facebook.com/haldimandhuskiesbasketball/"
+        }
+      ],
+      "assessment": "found"
+    },
+    {
+      "municipality": "Georgina",
+      "population": 47642,
+      "clubs_found": 0,
+      "searched": [
+        "\"Georgina basketball club Keswick Sutton youth Ontario minor basketball\"",
+        "georgina.ca/things-do/sports-clubs-and-organizations/sports-groups (direct fetch — no basketball entries)",
+        "\"Georgina basketball club Facebook Keswick youth kids\"",
+        "\"Jr NBA Georgina Keswick basketball program registration\"",
+        "\"Georgina\" basketball rep team OBA York Simcoe youth association",
+        "York North Basketball Association service-area check (esportsdesk fetch blocked 403; secondary search shows YNBA is Newmarket-HQ'd, Magna Centre, 800 Mulock Dr — not Georgina-specific)"
+      ],
+      "clubs": [],
+      "assessment": "genuinely-none",
+      "note": "The Town's own official sports-clubs-and-organizations directory lists basketball nowhere among dozens of listed sports groups (baseball, hockey, soccer, dragon boat, lawn bowling, etc.) despite Georgina running its own Georgina Gym/MURC youth basketball drop-in program (ages 8-16). Multiple angles (Jr NBA registration, OBA regional clubs, Facebook, 'Keswick basketball', 'Sutton basketball') turned up nothing but a Keswick-based youth drop-in centre (Keswick Youth Club) with no basketball affiliation confirmed. This reads as a real gap: Georgina residents likely travel to Newmarket (YNBA) or other York Region clubs rather than having a town-based association."
+    },
+    {
+      "municipality": "Quinte West",
+      "population": 46560,
+      "clubs_found": 2,
+      "searched": [
+        "\"Quinte West basketball club Trenton youth minor basketball association\"",
+        "211ontario.ca Quinte West Trenton youth basketball",
+        "\"Trenton\" Ontario minor basketball association jr NBA youth league",
+        "Quinte West Recreation Guide basketball youth program registration",
+        "CFB Trenton PSP youth basketball program Quinte West children",
+        "\"Quinte West Minor Basketball\" OR \"Trenton Minor Basketball\" (exact phrase)",
+        "basketball.on.ca/find-a-club/ (dynamic JS directory, could not extract regional listings via fetch)"
+      ],
+      "clubs": [
+        {
+          "name": "PSP Community Recreation - Basketball (Men's/Women's)",
+          "city": "Trenton (CFB Trenton, 21 Namao Dr)",
+          "type": "military-base community recreation league, not confirmed youth-specific",
+          "website": "",
+          "email": "",
+          "phone": "613-392-2811 ext. 3361",
+          "social": "https://www.facebook.com/PSPRecreationTrenton/",
+          "evidence_url": "https://quinte.totalsportsmedia.ca/directory/wpbdp_category/basketball/"
+        },
+        {
+          "name": "Wheelchair Basketball Quinte",
+          "city": "Trenton (50 Monogram Place)",
+          "type": "adaptive/wheelchair basketball, not confirmed youth-specific",
+          "website": "",
+          "email": "",
+          "phone": "613-243-7977",
+          "social": "https://www.facebook.com/WheelchairBasketballQuinte/",
+          "evidence_url": "https://quinte.totalsportsmedia.ca/directory/wpbdp_category/basketball/"
+        }
+      ],
+      "assessment": "genuinely-none",
+      "note": "No dedicated OBA-affiliated youth/minor basketball association based in Quinte West/Trenton was found despite extensive searching (city recreation guide, CFB Trenton PSP, 211Ontario, Facebook, exact-phrase search). Belleville, ~10-15km away, has multiple thriving youth clubs (Belleville Spirits Basketball Club, No Limits Youth, Jr NBA Belleville) that likely absorb Quinte West families, but nothing town-based in Quinte West itself turned up. This looks like a real gap, though a Facebook-only club could exist and simply not surface in text search."
+    },
+    {
+      "municipality": "New Tecumseth",
+      "population": 43948,
+      "clubs_found": 2,
+      "searched": [
+        "\"New Tecumseth basketball club Alliston youth minor basketball\""
+      ],
+      "clubs": [
+        {
+          "name": "Little Hoopers (New Tecumseth Jr NBA Basketball Program)",
+          "city": "Alliston",
+          "type": "Jr NBA program, ages 8-13, 3-on-3 league",
+          "website": "https://www.littlehoopers.ca/",
+          "email": "",
+          "phone": "",
+          "social": "",
+          "evidence_url": "https://www.littlehoopers.ca/"
+        },
+        {
+          "name": "South Simcoe Basketball Club",
+          "city": "Bradford (regional club; explicitly covers Alliston, Cookstown, Beeton, Tottenham — all in New Tecumseth/west of Hwy 400)",
+          "type": "OBA rep + development club, regional coverage model with area coordinator (\"Coach Doc\") for New Tecumseth",
+          "website": "https://ssbasketball.ca/",
+          "email": "",
+          "phone": "",
+          "social": "",
+          "evidence_url": "https://ssbasketball.ca/"
+        }
+      ],
+      "assessment": "found"
+    },
+    {
+      "municipality": "Innisfil",
+      "population": 43326,
+      "clubs_found": 3,
+      "searched": [
+        "\"Innisfil basketball club youth minor basketball association Ontario\""
+      ],
+      "clubs": [
+        {
+          "name": "South Simcoe Basketball Club",
+          "city": "Innisfil (2270 Richardson St, Innisfil, ON L9S 1G6)",
+          "type": "OBA rep + development club",
+          "website": "https://www.sportsengine.com/org/south-simcoe-basketball-club",
+          "email": "",
+          "phone": "",
+          "social": "",
+          "evidence_url": "https://www.sportsengine.com/org/south-simcoe-basketball-club"
+        },
+        {
+          "name": "Innisfil Ballers",
+          "city": "Innisfil",
+          "type": "youth program (\"Mini Stars - All Stars\"), self-described as Innisfil's only basketball program",
+          "website": "",
+          "email": "",
+          "phone": "",
+          "social": "https://www.facebook.com/people/Innisfil-Ballers/61564439662126/",
+          "evidence_url": "https://www.facebook.com/people/Innisfil-Ballers/61564439662126/"
+        },
+        {
+          "name": "All Star Ballers 705",
+          "city": "Innisfil",
+          "type": "Jr NBA basketball program",
+          "website": "",
+          "email": "",
+          "phone": "",
+          "social": "https://www.facebook.com/allstarballers705/",
+          "evidence_url": "https://www.facebook.com/allstarballers705/"
+        }
+      ],
+      "assessment": "found"
+    },
+    {
+      "municipality": "Orillia",
+      "population": null,
+      "clubs_found": 1,
+      "searched": [
+        "\"Orillia minor basketball association youth club\""
+      ],
+      "clubs": [
+        {
+          "name": "Orillia Lakers Youth Basketball Association/Club",
+          "city": "Orillia",
+          "type": "house league (grades 3-8), rep teams (ages 8-19), Junior Lakers (grades 1-2)",
+          "website": "http://orillialakers.com/",
+          "email": "",
+          "phone": "",
+          "social": "https://www.facebook.com/orillialakersyouthbasketball/",
+          "evidence_url": "http://orillialakers.com/"
+        }
+      ],
+      "assessment": "found"
+    },
+    {
+      "municipality": "Cobourg",
+      "population": null,
+      "clubs_found": 1,
+      "searched": [
+        "\"Cobourg basketball club youth minor basketball association Northumberland\"",
+        "northumberlandbasketball.ca direct fetch (403, blocked)",
+        "\"Northumberland Minor Basketball Association Port Hope Cobourg age groups house league\""
+      ],
+      "clubs": [
+        {
+          "name": "Northumberland Minor Basketball Association (formerly Lakeshore Minor Basketball Association, rebranded 2022)",
+          "city": "Cobourg (house league Saturdays at Cobourg Collegiate Institute)",
+          "type": "house league U10/U12/U14/U18, county-wide (Northumberland County), 20+ years running",
+          "website": "https://www.northumberlandbasketball.ca/",
+          "email": "",
+          "phone": "",
+          "social": "",
+          "evidence_url": "https://www.northumberlandbasketball.ca/page/show/7488147-house-league-2025-26-"
+        }
+      ],
+      "assessment": "found"
+    },
+    {
+      "municipality": "Port Hope",
+      "population": null,
+      "clubs_found": 1,
+      "searched": [
+        "\"Port Hope Ontario basketball club youth minor basketball\"",
+        "Northumberland Minor Basketball Association facilities page (403, blocked)"
+      ],
+      "clubs": [
+        {
+          "name": "Northumberland Minor Basketball Association",
+          "city": "County-wide (Northumberland County, which includes Port Hope); house league physically runs at Cobourg Collegiate Institute",
+          "type": "house league U10/U12/U14/U18",
+          "website": "https://www.northumberlandbasketball.ca/",
+          "email": "",
+          "phone": "",
+          "social": "",
+          "evidence_url": "https://www.northumberlandbasketball.ca/page/show/7488147-house-league-2025-26-"
+        }
+      ],
+      "assessment": "found",
+      "note": "No Port-Hope-specific club found; coverage is via the county association whose games run in Cobourg. Could not confirm a separate Port Hope location/gym (facilities page blocked WebFetch with 403)."
+    },
+    {
+      "municipality": "Owen Sound",
+      "population": null,
+      "clubs_found": 1,
+      "searched": [
+        "\"Owen Sound minor basketball association youth club\""
+      ],
+      "clubs": [
+        {
+          "name": "Owen Sound Minor Basketball (Owen Sound Bayhawks Basketball)",
+          "city": "Owen Sound",
+          "type": "minor sports registration program, part of city's fall/winter minor sports",
+          "website": "",
+          "email": "",
+          "phone": "",
+          "social": "https://m.facebook.com/owensoundminorbasketball/ ; https://www.instagram.com/owensoundminorbasketball/",
+          "evidence_url": "https://owensoundhub.org/city-hall/5721-register-for-fall-and-winter-minor-sports.html"
+        }
+      ],
+      "assessment": "found"
+    },
+    {
+      "municipality": "Collingwood",
+      "population": null,
+      "clubs_found": 1,
+      "searched": [
+        "\"Collingwood basketball club youth minor basketball association\"",
+        "collingwoodtrailblazers.ca direct fetch"
+      ],
+      "clubs": [
+        {
+          "name": "Collingwood Trailblazers Basketball Club",
+          "city": "Collingwood",
+          "type": "youth basketball club, serves \"Collingwood and the surrounding area\"",
+          "website": "https://www.collingwoodtrailblazers.ca/",
+          "email": "",
+          "phone": "",
+          "social": "facebook.com/Collingwoodtrailblazers ; instagram.com/cwoodblazers ; twitter.com/wethewood",
+          "evidence_url": "https://www.collingwoodtrailblazers.ca/"
+        }
+      ],
+      "assessment": "found"
+    },
+    {
+      "municipality": "Wasaga Beach",
+      "population": null,
+      "clubs_found": 0,
+      "searched": [
+        "\"Wasaga Beach basketball club youth minor basketball\""
+      ],
+      "clubs": [],
+      "assessment": "genuinely-none",
+      "note": "Town of Wasaga Beach runs a drop-in youth basketball program (with an on-site coach) but no independent club/association was found. Collingwood Trailblazers describes its service area as \"Collingwood and the surrounding area,\" which may or may not include Wasaga Beach (~20km away) — not confirmed by name on their site, so not counted here."
+    },
+    {
+      "municipality": "Midland",
+      "population": null,
+      "clubs_found": 1,
+      "searched": [
+        "\"Midland Ontario basketball club youth minor basketball association\""
+      ],
+      "clubs": [
+        {
+          "name": "Midland Waves Basketball Association",
+          "city": "Midland",
+          "type": "house league + OBA rep teams (U13-U19), serves Penetang-Midland, ages 6-18",
+          "website": "https://www.midlandwaves.ca/",
+          "email": "",
+          "phone": "",
+          "social": "https://www.facebook.com/MidlandWaves/",
+          "evidence_url": "https://www.midlandwaves.ca/"
+        }
+      ],
+      "assessment": "found"
+    },
+    {
+      "municipality": "Stratford",
+      "population": null,
+      "clubs_found": 1,
+      "searched": [
+        "\"Stratford Ontario basketball club youth minor basketball association\""
+      ],
+      "clubs": [
+        {
+          "name": "Stratford Basketball Association",
+          "city": "Stratford",
+          "type": "house league (Hoops for Fun) + travel program (Revolution, ages 9-19), serves Stratford/Perth/Huron Counties",
+          "website": "https://stratfordbasketball.com/",
+          "email": "",
+          "phone": "",
+          "social": "https://www.facebook.com/StratfordOBA/",
+          "evidence_url": "https://stratfordbasketball.com/Pages/1002/Mission_Vision_and_History/"
+        }
+      ],
+      "assessment": "found"
+    },
+    {
+      "municipality": "Woodstock",
+      "population": null,
+      "clubs_found": 1,
+      "searched": [
+        "\"Woodstock Ontario basketball club youth minor basketball association\""
+      ],
+      "clubs": [
+        {
+          "name": "WOMBA (Woodstock Oxford Minor Basketball Association)",
+          "city": "Woodstock",
+          "type": "minor basketball association, county-wide (Oxford)",
+          "website": "https://womba.ca/",
+          "email": "",
+          "phone": "",
+          "social": "",
+          "evidence_url": "https://womba.ca/"
+        }
+      ],
+      "assessment": "found"
+    },
+    {
+      "municipality": "Tillsonburg",
+      "population": null,
+      "clubs_found": 2,
+      "searched": [
+        "\"Tillsonburg Ontario basketball club youth minor basketball association\""
+      ],
+      "clubs": [
+        {
+          "name": "Basketball Tillsonburg",
+          "city": "Tillsonburg",
+          "type": "youth basketball program",
+          "website": "https://www.basketballtillsonburg.com/",
+          "email": "",
+          "phone": "",
+          "social": "",
+          "evidence_url": "https://www.basketballtillsonburg.com/"
+        },
+        {
+          "name": "Tillsonburg Youth Basketball",
+          "city": "Tillsonburg",
+          "type": "listed among the town's leagues and teams",
+          "website": "",
+          "email": "",
+          "phone": "",
+          "social": "",
+          "evidence_url": "https://discovertillsonburg.ca/en/explore/leagues-and-teams.aspx"
+        }
+      ],
+      "assessment": "found"
+    },
+    {
+      "municipality": "Ingersoll",
+      "population": null,
+      "clubs_found": 1,
+      "searched": [
+        "\"Ingersoll Ontario basketball club youth minor basketball association\"",
+        "ingersollbasketball.com direct fetch (domain does not resolve/DNS failure)",
+        "\"Ingersoll basketball association Facebook youth minor 2025\"",
+        "\"Ingersoll youth basketball kids camp school gym Oxford county\""
+      ],
+      "clubs": [
+        {
+          "name": "Ingersoll Basketball Association",
+          "city": "Ingersoll",
+          "type": "men's (adult) basketball league, established 1978 — no youth/minor division confirmed",
+          "website": "",
+          "email": "",
+          "phone": "",
+          "social": "https://www.facebook.com/mensiba",
+          "evidence_url": "https://www.facebook.com/mensiba"
+        }
+      ],
+      "assessment": "found",
+      "note": "Only a men's adult league was confirmed. A directory scrape surfaced a name/phone/email (\"Darren J. House\", ingersollbasketball.com) that could be a defunct youth club, but the domain no longer resolves and no independent confirmation was found — omitted rather than reported unverified. Ingersoll's Fusion Youth Centre has a gym but no dedicated basketball program was confirmed."
+    },
+    {
+      "municipality": "Strathroy",
+      "population": null,
+      "clubs_found": 1,
+      "searched": [
+        "\"Strathroy Ontario basketball club youth minor basketball association\""
+      ],
+      "clubs": [
+        {
+          "name": "Strathroy Spirit Basketball",
+          "city": "Strathroy",
+          "type": "girls basketball club, OBA member since 1992, house league + OBA competitive travel",
+          "website": "https://strathroyspirit.com/",
+          "email": "",
+          "phone": "",
+          "social": "",
+          "evidence_url": "https://strathroyspirit.com/club-history"
+        }
+      ],
+      "assessment": "found"
+    },
+    {
+      "municipality": "Leamington",
+      "population": null,
+      "clubs_found": 1,
+      "searched": [
+        "\"Leamington Ontario basketball club youth minor basketball association\"",
+        "\"Leamington basketball Facebook youth kids kids gym rec league\""
+      ],
+      "clubs": [
+        {
+          "name": "Hometown Hoops",
+          "city": "Leamington",
+          "type": "rec league, \"all ages and skill levels\" — youth-specific status not confirmed",
+          "website": "",
+          "email": "",
+          "phone": "",
+          "social": "https://www.facebook.com/HometownHoopsBasketball/",
+          "evidence_url": "https://www.facebook.com/HometownHoopsBasketball/"
+        }
+      ],
+      "assessment": "found",
+      "note": "No OBA-affiliated minor/youth basketball association confirmed for Leamington specifically; Hometown Hoops appears to be an all-ages rec league rather than a dedicated youth club."
+    },
+    {
+      "municipality": "Kenora",
+      "population": null,
+      "clubs_found": 0,
+      "searched": [
+        "\"Kenora Ontario basketball club youth minor basketball association\"",
+        "kenora.ca/en/visit-play/recreation-clubs.aspx direct fetch — no basketball listed",
+        "\"Kenora basketball Facebook youth kids minor league Lake of the Woods\"",
+        "\"Kenora minor basketball Facebook 2025 registration kids\""
+      ],
+      "clubs": [],
+      "assessment": "genuinely-none",
+      "note": "City of Kenora's own Recreation Clubs directory (curling/fitness/hockey/indoor sports/multi-sport/skating/swimming categories) lists no basketball club. The only lead was a single Facebook post inside an unrelated community group referencing a 'Kenora youth basketball club for kids and teenagers,' which could not be confirmed as a real standing organization (no dedicated page, no name, no contact info) — not counted as a found club. This is a genuine, notable gap given Kenora's size and isolation (nearest OBA clubs are 200km+ away)."
+    },
+    {
+      "municipality": "Timmins",
+      "population": null,
+      "clubs_found": 1,
+      "searched": [
+        "\"Timmins Ontario basketball club youth minor basketball association\""
+      ],
+      "clubs": [
+        {
+          "name": "Timmins Selects Basketball Club",
+          "city": "Timmins",
+          "type": "OBA rep club, U13-U19 boys and girls divisions",
+          "website": "https://www.timminsselects.ca/",
+          "email": "",
+          "phone": "",
+          "social": "",
+          "evidence_url": "https://www.timminsselects.ca/teams/default.asp?u=TIMMINSSELECTS&s=basketball&p=custom&pagename=Rep+Teams"
+        }
+      ],
+      "assessment": "found"
+    },
+    {
+      "municipality": "North Bay",
+      "population": null,
+      "clubs_found": 2,
+      "searched": [
+        "\"North Bay Ontario basketball club youth minor basketball association\""
+      ],
+      "clubs": [
+        {
+          "name": "North Bay Spartans",
+          "city": "North Bay",
+          "type": "OBA member club, youth development + competitive, ages 9-18",
+          "website": "http://northbayspartans.sportsavvy.com/",
+          "email": "",
+          "phone": "",
+          "social": "",
+          "evidence_url": "http://northbayspartans.sportsavvy.com/"
+        },
+        {
+          "name": "North Bay Basketball Academy (NBBA)",
+          "city": "North Bay",
+          "type": "basketball academy/training",
+          "website": "https://www.northbaybasketball.com/",
+          "email": "",
+          "phone": "",
+          "social": "https://x.com/NBBANorthBay",
+          "evidence_url": "https://www.northbaybasketball.com/"
+        }
+      ],
+      "assessment": "found"
+    },
+    {
+      "municipality": "Cornwall",
+      "population": null,
+      "clubs_found": 1,
+      "searched": [
+        "\"Cornwall Ontario basketball club youth minor basketball association\""
+      ],
+      "clubs": [
+        {
+          "name": "Cornwall and United Counties Basketball Association (CUCBA)",
+          "city": "Cornwall",
+          "type": "house league + travelling teams (\"Cornwall Lions\"), running since 1982",
+          "website": "https://cornwallbasketball.com/",
+          "email": "",
+          "phone": "",
+          "social": "https://www.facebook.com/cornwallunitedcountiesbasketball/",
+          "evidence_url": "https://www.cornwallbasketball.com/home"
+        }
+      ],
+      "assessment": "found"
+    },
+    {
+      "municipality": "Brockville",
+      "population": null,
+      "clubs_found": 1,
+      "searched": [
+        "\"Brockville Ontario basketball club youth minor basketball association\""
+      ],
+      "clubs": [
+        {
+          "name": "Brockville Blazers Basketball Association",
+          "city": "Brockville (1354 Linden Cr)",
+          "type": "youth basketball association",
+          "website": "",
+          "email": "",
+          "phone": "",
+          "social": "",
+          "evidence_url": "https://www.sportsengine.com/org/brockville-blazers-basketball-association"
+        }
+      ],
+      "assessment": "found"
+    },
+    {
+      "municipality": "Pembroke",
+      "population": null,
+      "clubs_found": 1,
+      "searched": [
+        "\"Pembroke Ontario basketball club youth minor basketball association\"",
+        "pembroke.ca sports-and-fitness-organizations direct fetch",
+        "\"Upper Valley River Dogs\" basketball Pembroke Petawawa Ontario"
+      ],
+      "clubs": [
+        {
+          "name": "Upper Valley Basketball (River Dogs)",
+          "city": "Pembroke (serves the Upper Ottawa Valley region)",
+          "type": "youth basketball programs, camps, and competitive teams",
+          "website": "",
+          "email": "",
+          "phone": "",
+          "social": "https://www.facebook.com/uppervalleybasketball/ ; https://www.facebook.com/UOVRiverdogs/ (women's)",
+          "evidence_url": "https://www.pembroke.ca/recreation-and-culture/sports-and-recreation/sports-and-fitness-organizations/"
+        }
+      ],
+      "assessment": "found",
+      "note": "Also confirmed a separate adult \"Pembroke Gentlemen's Basketball Association\" (men's league, Renfrew County) on the same city page — not counted as a youth club."
+    },
+    {
+      "municipality": "Petawawa",
+      "population": null,
+      "clubs_found": 1,
+      "searched": [
+        "\"Petawawa Ontario basketball club youth minor basketball association\""
+      ],
+      "clubs": [
+        {
+          "name": "Upper Valley Basketball (River Dogs)",
+          "city": "Regional — Upper Ottawa Valley, based out of Pembroke, explicitly serving the Pembroke/Petawawa/Deep River area",
+          "type": "youth basketball programs, camps, and competitive teams",
+          "website": "",
+          "email": "",
+          "phone": "",
+          "social": "https://www.facebook.com/uppervalleybasketball/",
+          "evidence_url": "https://www.facebook.com/uppervalleybasketball/"
+        }
+      ],
+      "assessment": "found",
+      "note": "No Petawawa-specific standalone club found; coverage is via the regional Upper Ottawa Valley organization headquartered in Pembroke."
+    },
+    {
+      "municipality": "Elliot Lake",
+      "population": null,
+      "clubs_found": 1,
+      "searched": [
+        "\"Elliot Lake Ontario basketball club youth minor basketball\""
+      ],
+      "clubs": [
+        {
+          "name": "City of Elliot Lake Youth Basketball (Collins Hall)",
+          "city": "Elliot Lake",
+          "type": "municipal recreation program, grades 1-8, not an independent club",
+          "website": "",
+          "email": "",
+          "phone": "705-848-2287 ext. 2300",
+          "social": "",
+          "evidence_url": "https://www.elliotlaketoday.com/local-news/registration-opens-for-youth-basketball-at-collins-hall-11197141"
+        }
+      ],
+      "assessment": "found",
+      "note": "This is a City of Elliot Lake Recreation & Culture program, not an incorporated club/association — flagged as a different type than the other entries."
+    },
+    {
+      "municipality": "Espanola",
+      "population": null,
+      "clubs_found": 0,
+      "searched": [
+        "\"Espanola Ontario basketball club youth minor basketball\"",
+        "\"Espanola basketball Facebook youth kids recreation gym Manitoulin\""
+      ],
+      "clubs": [],
+      "assessment": "genuinely-none",
+      "note": "No basketball club, association, or recreation program of any kind surfaced for Espanola across general search, Facebook search, high-school context, or Manitoulin-area regional context. Results were dominated by unrelated hockey teams (Espanola Eagles/Kings/Rivermen) sharing the town's sports-team naming. This reads as a genuine gap, though a Facebook-only or unlisted program cannot be ruled out."
+    }
+  ],
+  "summary": "Of the 10 target municipalities (25,000+ pop, zero orgs in our census), 8 have confirmed basketball organizations with working evidence URLs: Kawartha Lakes (Lindsay Wildcats), Sault Ste. Marie (Elite 8 Basketball Academy), Norfolk County (Norfolk Youth Basketball Association), Halton Hills (3 orgs incl. Halton Hills Girls' Basketball Club), Whitchurch-Stouffville (4 multi-town academies incl. Toronto Hoopstars with a Stouffville address), Haldimand County (Haldimand Huskies), New Tecumseth (Little Hoopers Jr NBA + South Simcoe Basketball Club), and Innisfil (South Simcoe Basketball Club + 2 Facebook-only programs). Two target municipalities show a genuine, well-searched gap: Georgina (town's own sports directory has zero basketball entries despite dozens of other sports listed) and Quinte West (only adult/adaptive basketball found at CFB Trenton; no youth club based in Trenton itself, though Belleville ~10km away has several). Of the 22 mid-size sweep towns, 20 have confirmed organizations (many via county-wide associations like Northumberland Minor Basketball covering both Cobourg and Port Hope, and Upper Valley Basketball covering both Pembroke and Petawawa); Kenora and Espanola are genuine gaps — Kenora's own recreation-clubs directory lists no basketball among 7 other sport categories, and Espanola returned nothing across every search angle tried. Recommend a second pass on Georgina, Quinte West, Kenora, and Espanola via direct phone calls to municipal recreation departments or a Facebook-graph-search tool, since small-town clubs that exist ONLY as unlisted/private Facebook groups are the likely blind spot of a pure web-search methodology."
+}

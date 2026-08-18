@@ -23,12 +23,13 @@ tags: [theme/research, theme/gtm, type/research, status/reference]
 | NSC (Gr11-12) | 32 | 29 | 1.1 | 2 | Senior HS |
 | OSBA (all divisions) | 94 | 38 | 2.5 | 6 (C.O.D.E.) | 100% high-school age (D-League = Gr9-10 feeder) |
 | Coalition Summer 2025 | 417 | ~175 | 2.4 | 18 (SBA, MUMBA) | **60% middle-school age (Gr4-8)** |
-| **Visible total** | **824** | — | — | — | |
+| **Coalition WINTER 2025-26** ⚠️ added 2026-08-17 | **890** | **357** | 2.5 | 22 (East York Eagles) | 72 divisions, U9-U19, tiers to Division 10 |
+| **Visible total** | **1,714** | — | — | — | (was 824 before Coalition winter was enumerated) |
 
 **Not enumerable:** OBL (~1,200 OBA rep teams claimed — the single biggest pool,
 schedules in Google Sheets), Hoop City, CYBL (sites gated), Coalition
-fall/winter rep season (separate Exposure events, not counted).
-**Ontario addressable estimate: ~2,000+ team-seasons/year** across these
+fall/winter rep season — **NOW COUNTED 2026-08-17: 890 entries, see [[coalition-league-census-2026-08]]**.
+**Ontario addressable estimate: ~3,000+ team-seasons/year** (revised up 2026-08-17) across these
 systems; OBA claims ~16,000 athletes in sanctioned rep play.
 
 **Roster size (from NJC/NSC open rosters, 83 teams):** avg **12.4 players/team**

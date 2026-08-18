@@ -1,0 +1,1690 @@
+{
+ "source": "https://www.google.com/maps/d/kml?mid=1jf36n-Sx3O1KSIlSjRcGu-JABLNcyUgo&forcekml=1",
+ "fetched": "2026-08-14",
+ "count": 187,
+ "clubs": [
+  {
+   "name": "Albany Avenue Basketball",
+   "oba_region": "Toronto Region",
+   "website": "https://albanyavenuebasketball.ca/",
+   "email": "",
+   "lat": "43.6890226",
+   "lon": "-79.3181246",
+   "desc_raw": "https://albanyavenuebasketball.ca/"
+  },
+  {
+   "name": "Ballmatics Academy",
+   "oba_region": "Toronto Region",
+   "website": "https://ballmatics.com/",
+   "email": "",
+   "lat": "43.6700592",
+   "lon": "-79.4319512",
+   "desc_raw": "https://ballmatics.com/"
+  },
+  {
+   "name": "Basketball World Toronto",
+   "oba_region": "Toronto Region",
+   "website": "https://www.bwt.ca/",
+   "email": "youth@bwt.ca",
+   "lat": "43.6728452",
+   "lon": "-79.4969934",
+   "desc_raw": "https://www.bwt.ca/ | youth@bwt.ca"
+  },
+  {
+   "name": "BC Trojka",
+   "oba_region": "Toronto Region",
+   "website": "http://basketball.trojka.ca/Home/",
+   "email": "",
+   "lat": "43.7643132",
+   "lon": "-79.3402189",
+   "desc_raw": "http://basketball.trojka.ca/Home/"
+  },
+  {
+   "name": "Canada Elite",
+   "oba_region": "Toronto Region",
+   "website": "https://www.canelite.ca/",
+   "email": "",
+   "lat": "43.8221219",
+   "lon": "-79.2139666",
+   "desc_raw": "https://www.canelite.ca/"
+  },
+  {
+   "name": "Canadian Basketball Academy",
+   "oba_region": "Toronto Region",
+   "website": "https://www.canadianbballacademy.com/",
+   "email": "",
+   "lat": "43.6904943",
+   "lon": "-79.4088446",
+   "desc_raw": "https://www.canadianbballacademy.com/ | (416) 993-9536"
+  },
+  {
+   "name": "Downtown's Finest",
+   "oba_region": "Toronto Region",
+   "website": "https://www.downtownsfinest.ca/",
+   "email": "",
+   "lat": "43.653226",
+   "lon": "-79.3831843",
+   "desc_raw": "https://www.downtownsfinest.ca/"
+  },
+  {
+   "name": "East York Basketball",
+   "oba_region": "Toronto Region",
+   "website": "https://eastyorkbasketball.com/",
+   "email": "info@eastyorkbasketball.com",
+   "lat": "43.6912006",
+   "lon": "-79.3416638",
+   "desc_raw": "https://eastyorkbasketball.com/ | info@eastyorkbasketball.com"
+  },
+  {
+   "name": "Etobicoke Basketball Association",
+   "oba_region": "Toronto Region",
+   "website": "https://etobicokebasketball.com/",
+   "email": "manager@etobicokebasketball.com",
+   "lat": "43.65554",
+   "lon": "-79.56535",
+   "desc_raw": "https://etobicokebasketball.com/ | manager@etobicokebasketball.com"
+  },
+  {
+   "name": "Eurostep Basketball",
+   "oba_region": "Toronto Region",
+   "website": "",
+   "email": "",
+   "lat": "43.6146316",
+   "lon": "-79.5166072",
+   "desc_raw": ""
+  },
+  {
+   "name": "Grassroots Elite",
+   "oba_region": "Toronto Region",
+   "website": "https://www.grassrootscanada.org/home",
+   "email": "ro@grassrootscanada.org",
+   "lat": "43.7596586",
+   "lon": "-79.5105305",
+   "desc_raw": "https://www.grassrootscanada.org/home | ro@grassrootscanada.org |  647-703-2691"
+  },
+  {
+   "name": "Hoopzone Knights",
+   "oba_region": "Toronto Region",
+   "website": "https://www.instagram.com/hoopzonebasketball",
+   "email": "",
+   "lat": "43.7931602",
+   "lon": "-79.4192221",
+   "desc_raw": "https://www.instagram.com/hoopzonebasketball"
+  },
+  {
+   "name": "JCC Maccabi Warriors",
+   "oba_region": "Toronto Region",
+   "website": "http://jbasketballtoronto.com/",
+   "email": "info@jccchaisports.com",
+   "lat": "43.7631527",
+   "lon": "-79.4420738",
+   "desc_raw": "http://jbasketballtoronto.com/ | 416.665.1836 |  info@jccchaisports.com"
+  },
+  {
+   "name": "JR Basketball Academy",
+   "oba_region": "Toronto Region",
+   "website": "",
+   "email": "",
+   "lat": "43.8069636",
+   "lon": "-79.2750655",
+   "desc_raw": ""
+  },
+  {
+   "name": "Phillips Basketball & Academics Academy (North York Lions)",
+   "oba_region": "Toronto Region",
+   "website": "http://www.pbaa.ca/",
+   "email": "info@PBAA.ca",
+   "lat": "43.7615377",
+   "lon": "-79.4110794",
+   "desc_raw": "http://www.pbaa.ca/ |  1-888-489-6441 ext. 106 | info@PBAA.ca"
+  },
+  {
+   "name": "Momentum Sports Group",
+   "oba_region": "Toronto Region",
+   "website": "https://momentumsportsgroup.ca/",
+   "email": "",
+   "lat": "43.7233471",
+   "lon": "-79.3799928",
+   "desc_raw": "https://momentumsportsgroup.ca/"
+  },
+  {
+   "name": "Motion Basketball",
+   "oba_region": "Toronto Region",
+   "website": "http://www.motionballsports.ca/",
+   "email": "",
+   "lat": "43.7368158",
+   "lon": "-79.5628573",
+   "desc_raw": "http://www.motionballsports.ca/"
+  },
+  {
+   "name": "NET Basketball Academy",
+   "oba_region": "Toronto Region",
+   "website": "http://www.netba.ca/",
+   "email": "info@netba.ca",
+   "lat": "43.7995365",
+   "lon": "-79.3554441",
+   "desc_raw": "http://www.netba.ca/ | info@netba.ca | 647-648-4073"
+  },
+  {
+   "name": "North Region Basketball",
+   "oba_region": "Toronto Region",
+   "website": "https://tonrba.com/",
+   "email": "",
+   "lat": "43.762512",
+   "lon": "-79.4530725",
+   "desc_raw": "https://tonrba.com/"
+  },
+  {
+   "name": "North Toronto Basketball Association",
+   "oba_region": "Toronto Region",
+   "website": "http://ntbasketball.com/",
+   "email": "",
+   "lat": "43.6875487",
+   "lon": "-79.3935565",
+   "desc_raw": "http://ntbasketball.com/"
+  },
+  {
+   "name": "North York Pinoy Athletic Association (North York Aquilas)",
+   "oba_region": "Toronto Region",
+   "website": "https://www.nypaa.ca/index.html",
+   "email": "",
+   "lat": "43.7810253",
+   "lon": "-79.4469188",
+   "desc_raw": "https://www.nypaa.ca/index.html"
+  },
+  {
+   "name": "Northern Kings",
+   "oba_region": "Toronto Region",
+   "website": "https://kingnationbasketball.com/",
+   "email": "",
+   "lat": "43.650439",
+   "lon": "-79.3898897",
+   "desc_raw": "https://kingnationbasketball.com/"
+  },
+  {
+   "name": "NuStep Basketball",
+   "oba_region": "Toronto Region",
+   "website": "https://nustepbasketball.ca/",
+   "email": "",
+   "lat": "43.645672",
+   "lon": "-79.3740249",
+   "desc_raw": "https://nustepbasketball.ca/"
+  },
+  {
+   "name": "Scarborough Basketball Association",
+   "oba_region": "Toronto Region",
+   "website": "https://sbabasketball.ca/",
+   "email": "",
+   "lat": "43.7580489",
+   "lon": "-79.2287812",
+   "desc_raw": "https://sbabasketball.ca/"
+  },
+  {
+   "name": "South Toronto Golden Eagles",
+   "oba_region": "Toronto Region",
+   "website": "https://www.southtorontobasketball.com/",
+   "email": "",
+   "lat": "43.6015295",
+   "lon": "-79.5021554",
+   "desc_raw": "https://www.southtorontobasketball.com/"
+  },
+  {
+   "name": "Team Iconic",
+   "oba_region": "Toronto Region",
+   "website": "https://www.instagram.com/teamiconicbasketball/",
+   "email": "",
+   "lat": "43.8069636",
+   "lon": "-79.2750655",
+   "desc_raw": "https://www.instagram.com/teamiconicbasketball/"
+  },
+  {
+   "name": "The Basketball Club",
+   "oba_region": "Toronto Region",
+   "website": "https://www.thebasketballclub.ca/",
+   "email": "",
+   "lat": "43.7210798",
+   "lon": "-79.5726357",
+   "desc_raw": "https://www.thebasketballclub.ca/"
+  },
+  {
+   "name": "Toronto City Elite",
+   "oba_region": "Toronto Region",
+   "website": "http://torontocityelite.com/view/torontocityelite/",
+   "email": "",
+   "lat": "43.8240021",
+   "lon": "-79.2724232",
+   "desc_raw": "http://torontocityelite.com/view/torontocityelite/"
+  },
+  {
+   "name": "Toronto Lords",
+   "oba_region": "Toronto Region",
+   "website": "http://www.lordsbasketball.com/",
+   "email": "lordsbasketball@gmail.com",
+   "lat": "43.6441973",
+   "lon": "-79.4042754",
+   "desc_raw": "http://www.lordsbasketball.com/      lordsbasketball@gmail.com"
+  },
+  {
+   "name": "Toronto Top Tier",
+   "oba_region": "Toronto Region",
+   "website": "https://www.torontotoptier.com/",
+   "email": "torontotoptierhoops@gmail.com",
+   "lat": "43.5918754",
+   "lon": "-79.5306614",
+   "desc_raw": "https://www.torontotoptier.com/ |  torontotoptierhoops@gmail.com"
+  },
+  {
+   "name": "Toronto Triple Threat",
+   "oba_region": "Toronto Region",
+   "website": "http://torontotriplethreat.com/",
+   "email": "triple.threat@sympatico.ca",
+   "lat": "43.6503239",
+   "lon": "-79.4807942",
+   "desc_raw": "http://torontotriplethreat.com/  triple.threat@sympatico.ca"
+  },
+  {
+   "name": "Triple Balance",
+   "oba_region": "Toronto Region",
+   "website": "https://www.triplebalance.ca/",
+   "email": "",
+   "lat": "43.821965",
+   "lon": "-79.2151548",
+   "desc_raw": "https://www.triplebalance.ca/"
+  },
+  {
+   "name": "V3 Basketball Club",
+   "oba_region": "Toronto Region",
+   "website": "https://v3basketballclub.ca/",
+   "email": "",
+   "lat": "43.7379895",
+   "lon": "-79.2588581",
+   "desc_raw": "https://v3basketballclub.ca/"
+  },
+  {
+   "name": "YAAACE",
+   "oba_region": "Toronto Region",
+   "website": "https://yaaace.com/",
+   "email": "",
+   "lat": "43.757693",
+   "lon": "-79.5272359",
+   "desc_raw": "https://yaaace.com/ |  (416) 567-7994"
+  },
+  {
+   "name": "Advantage Titans",
+   "oba_region": "Durham-York",
+   "website": "https://advantagetitans.com/",
+   "email": "info@advantagetitans.com",
+   "lat": "43.8760863",
+   "lon": "-79.0300733",
+   "desc_raw": "https://advantagetitans.com/ | info@advantagetitans.com | 416-900-5611"
+  },
+  {
+   "name": "BAYAN Basketball",
+   "oba_region": "Durham-York",
+   "website": "https://www.facebook.com/BAYAN-BASKETBALL-127016123984566/",
+   "email": "",
+   "lat": "43.8527657",
+   "lon": "-79.4411163",
+   "desc_raw": "https://www.facebook.com/BAYAN-BASKETBALL-127016123984566/"
+  },
+  {
+   "name": "Crunch Time Elite",
+   "oba_region": "Durham-York",
+   "website": "https://www.crunchtimebasketball.ca/",
+   "email": "",
+   "lat": "43.8561243",
+   "lon": "-79.3562178",
+   "desc_raw": "https://www.crunchtimebasketball.ca/"
+  },
+  {
+   "name": "DK Dragons",
+   "oba_region": "Durham-York",
+   "website": "https://dragonsbasketball.sportsengine-prelive.com/home",
+   "email": "",
+   "lat": "43.9281811",
+   "lon": "-78.6996098",
+   "desc_raw": "https://dragonsbasketball.sportsengine-prelive.com/home | 289-314-1152"
+  },
+  {
+   "name": "Durham City Basketball Association",
+   "oba_region": "Durham-York",
+   "website": "https://www.durhamcitybasketball.ca/",
+   "email": "INFO@DURHAMCITYBASKETBALL.CA",
+   "lat": "43.8298652",
+   "lon": "-79.0267177",
+   "desc_raw": "https://www.durhamcitybasketball.ca/ | INFO@DURHAMCITYBASKETBALL.CA | 905-427-4253"
+  },
+  {
+   "name": "Durham Crossover Basketball",
+   "oba_region": "Durham-York",
+   "website": "https://durhamcrossoverbasketball.weebly.com/",
+   "email": "",
+   "lat": "43.8508553",
+   "lon": "-79.0203732",
+   "desc_raw": "https://durhamcrossoverbasketball.weebly.com/"
+  },
+  {
+   "name": "Durham Force",
+   "oba_region": "Durham-York",
+   "website": "https://durhamsportsplex.com/durham-force/",
+   "email": "",
+   "lat": "43.85599",
+   "lon": "-78.8762142",
+   "desc_raw": "https://durhamsportsplex.com/durham-force/"
+  },
+  {
+   "name": "Eastern Basketball Association",
+   "oba_region": "Durham-York",
+   "website": "https://www.easternbasketball.ca/",
+   "email": "",
+   "lat": "43.9379117",
+   "lon": "-78.8407417",
+   "desc_raw": "https://www.easternbasketball.ca/"
+  },
+  {
+   "name": "East-Side City Warriors",
+   "oba_region": "Durham-York",
+   "website": "https://escw.weebly.com/",
+   "email": "",
+   "lat": "43.9247297",
+   "lon": "-78.7803825",
+   "desc_raw": "https://escw.weebly.com/"
+  },
+  {
+   "name": "Elevation Athletics Basketball",
+   "oba_region": "Durham-York",
+   "website": "https://elevationathletics.ca/",
+   "email": "",
+   "lat": "44.0537861",
+   "lon": "-79.458962",
+   "desc_raw": "https://elevationathletics.ca/"
+  },
+  {
+   "name": "Game 6 Sports Academy",
+   "oba_region": "Durham-York",
+   "website": "http://game6sportsacademy.com/",
+   "email": "",
+   "lat": "43.85075",
+   "lon": "-79.6670506",
+   "desc_raw": "http://game6sportsacademy.com/"
+  },
+  {
+   "name": "Gators Basketball Academy",
+   "oba_region": "Durham-York",
+   "website": "https://www.gatorsbasketballacademy.com/",
+   "email": "",
+   "lat": "43.8720975",
+   "lon": "-79.2685712",
+   "desc_raw": "https://www.gatorsbasketballacademy.com/"
+  },
+  {
+   "name": "Gladiators Basketball Club",
+   "oba_region": "Durham-York",
+   "website": "http://www.gladiatorsbasketball.ca/",
+   "email": "",
+   "lat": "43.920959",
+   "lon": "-78.9388849",
+   "desc_raw": "http://www.gladiatorsbasketball.ca/ | 905.492.6900"
+  },
+  {
+   "name": "GTA Mavericks",
+   "oba_region": "Durham-York",
+   "website": "https://gtamavericks.ca/",
+   "email": "",
+   "lat": "43.8493915",
+   "lon": "-79.494643",
+   "desc_raw": "https://gtamavericks.ca/"
+  },
+  {
+   "name": "IEM Basketball",
+   "oba_region": "Durham-York",
+   "website": "https://iembasketball.com/",
+   "email": "",
+   "lat": "44.0219043",
+   "lon": "-79.4172576",
+   "desc_raw": "https://iembasketball.com/"
+  },
+  {
+   "name": "JoooKooo Sports Academy",
+   "oba_region": "Durham-York",
+   "website": "https://joookooo.com/",
+   "email": "connect@joookooo.com",
+   "lat": "43.9284467",
+   "lon": "-78.7044828",
+   "desc_raw": "https://joookooo.com/ |  (647) 243-6859 |  connect@joookooo.com"
+  },
+  {
+   "name": "Lakeshore Minor Basketball Association",
+   "oba_region": "Durham-York",
+   "website": "http://www.lakeshorebasketball.ca/site/",
+   "email": "",
+   "lat": "43.9731872",
+   "lon": "-78.1592944",
+   "desc_raw": "http://www.lakeshorebasketball.ca/site/"
+  },
+  {
+   "name": "Lindsay Wildcats",
+   "oba_region": "Durham-York",
+   "website": "https://lindsaywildcats.com/",
+   "email": "",
+   "lat": "44.3530682",
+   "lon": "-78.738543",
+   "desc_raw": "https://lindsaywildcats.com/"
+  },
+  {
+   "name": "Markham Unionville Minor Basketball Association (MUMBA)",
+   "oba_region": "Durham-York",
+   "website": "https://www.mumbabasketball.ca/",
+   "email": "",
+   "lat": "43.9072095",
+   "lon": "-79.2641435",
+   "desc_raw": "https://www.mumbabasketball.ca/ | 647 945 6945"
+  },
+  {
+   "name": "New Horizon Basketball Academy",
+   "oba_region": "Durham-York",
+   "website": "http://www.newhorizonbasketball.com",
+   "email": "info@newhorizonbasketball.com",
+   "lat": "43.9634885",
+   "lon": "-78.9378402",
+   "desc_raw": "http://www.newhorizonbasketball.com | info@newhorizonbasketball.com | 416.553.6040"
+  },
+  {
+   "name": "Next Generation Basketball",
+   "oba_region": "Durham-York",
+   "website": "https://www.nextgenerationbasketballclub.com/",
+   "email": "",
+   "lat": "43.9620192",
+   "lon": "-79.267524",
+   "desc_raw": "https://www.nextgenerationbasketballclub.com/"
+  },
+  {
+   "name": "Oshawa Basketball Association",
+   "oba_region": "Durham-York",
+   "website": "https://oshawabasketball.ca/home",
+   "email": "info@oshawabasketball.com",
+   "lat": "43.8586329",
+   "lon": "-78.8828473",
+   "desc_raw": "https://oshawabasketball.ca/home | 416-453-1319 | info@oshawabasketball.com"
+  },
+  {
+   "name": "Peterborough Youth Basketball Association",
+   "oba_region": "Durham-York",
+   "website": "https://www.pyba.ca/",
+   "email": "",
+   "lat": "44.3021376",
+   "lon": "-78.3198987",
+   "desc_raw": "https://www.pyba.ca/"
+  },
+  {
+   "name": "RUMI Basketball",
+   "oba_region": "Durham-York",
+   "website": "https://www.rumibasketball.com/",
+   "email": "",
+   "lat": "43.945541",
+   "lon": "-78.8505913",
+   "desc_raw": "https://www.rumibasketball.com/"
+  },
+  {
+   "name": "Skillz Basketball Lab",
+   "oba_region": "Durham-York",
+   "website": "https://skillzbasketballlab.com/",
+   "email": "",
+   "lat": "43.8637074",
+   "lon": "-79.5536706",
+   "desc_raw": "https://skillzbasketballlab.com/"
+  },
+  {
+   "name": "TC Sports",
+   "oba_region": "Durham-York",
+   "website": "https://sports.torontochinese.ca/",
+   "email": "",
+   "lat": "43.8301804",
+   "lon": "-79.4025121",
+   "desc_raw": "https://sports.torontochinese.ca/"
+  },
+  {
+   "name": "TCBL Basketball",
+   "oba_region": "Durham-York",
+   "website": "https://tcbl.ca/",
+   "email": "",
+   "lat": "43.8092926",
+   "lon": "-79.4193979",
+   "desc_raw": "https://tcbl.ca/"
+  },
+  {
+   "name": "Toronto Hoopstars",
+   "oba_region": "Durham-York",
+   "website": "https://torontohoopstars.com/",
+   "email": "",
+   "lat": "43.8798621",
+   "lon": "-79.250451",
+   "desc_raw": "https://torontohoopstars.com/"
+  },
+  {
+   "name": "Thornhill Basketball Association",
+   "oba_region": "Durham-York",
+   "website": "https://thornhillbasketball.ca/",
+   "email": "",
+   "lat": "43.8172743",
+   "lon": "-79.4241465",
+   "desc_raw": "https://thornhillbasketball.ca/"
+  },
+  {
+   "name": "Woodbridge Basketball Association",
+   "oba_region": "Durham-York",
+   "website": "https://www.wlions.ca/",
+   "email": "",
+   "lat": "43.8084405",
+   "lon": "-79.5373004",
+   "desc_raw": "https://www.wlions.ca/"
+  },
+  {
+   "name": "Whitby Wildcats",
+   "oba_region": "Durham-York",
+   "website": "https://whitbywildcatbasketball.com/",
+   "email": "",
+   "lat": "43.914908",
+   "lon": "-78.942613",
+   "desc_raw": "https://whitbywildcatbasketball.com/"
+  },
+  {
+   "name": "Whitby Saints",
+   "oba_region": "Durham-York",
+   "website": "http://www.whitbysaints.com/",
+   "email": "",
+   "lat": "43.8881449",
+   "lon": "-78.9033418",
+   "desc_raw": "http://www.whitbysaints.com/"
+  },
+  {
+   "name": "Vaughan Basketball Association",
+   "oba_region": "Durham-York",
+   "website": "http://vaughanbasketball.com/",
+   "email": "",
+   "lat": "43.8598826",
+   "lon": "-79.5148348",
+   "desc_raw": "http://vaughanbasketball.com/"
+  },
+  {
+   "name": "Vaughan City Basketball",
+   "oba_region": "Durham-York",
+   "website": "https://www.vaughancitybasketball.com/",
+   "email": "vaughancitybasketball@gmail.com",
+   "lat": "43.7829789",
+   "lon": "-79.6001982",
+   "desc_raw": "https://www.vaughancitybasketball.com/ | vaughancitybasketball@gmail.com"
+  },
+  {
+   "name": "York South Silver Knights",
+   "oba_region": "Durham-York",
+   "website": "https://www.silverknightsbasketball.com/",
+   "email": "",
+   "lat": "43.8584988",
+   "lon": "-79.3366637",
+   "desc_raw": "https://www.silverknightsbasketball.com/"
+  },
+  {
+   "name": "York North Basketball Association",
+   "oba_region": "Durham-York",
+   "website": "http://www.ynba.ca/",
+   "email": "",
+   "lat": "44.0285895",
+   "lon": "-79.4483613",
+   "desc_raw": "http://www.ynba.ca/"
+  },
+  {
+   "name": "Point 36",
+   "oba_region": "Durham-York",
+   "website": "",
+   "email": "",
+   "lat": "44.025183",
+   "lon": "-79.4189098",
+   "desc_raw": ""
+  },
+  {
+   "name": "Brantford CYO Boys",
+   "oba_region": "Kitchener-Waterloo",
+   "website": "http://www.brantfordcyo.ca/",
+   "email": "brantfordcyoboys@gmail.com",
+   "lat": "43.1607399",
+   "lon": "-80.2873787",
+   "desc_raw": "http://www.brantfordcyo.ca/                                     brantfordcyoboys@gmail.com"
+  },
+  {
+   "name": "Brantford CYO Girls",
+   "oba_region": "Kitchener-Waterloo",
+   "website": "https://brantfordcyogirls.com/",
+   "email": "brantfordcyogirls@outlook.com",
+   "lat": "43.122757",
+   "lon": "-80.2861378",
+   "desc_raw": "https://brantfordcyogirls.com/                                  brantfordcyogirls@outlook.com"
+  },
+  {
+   "name": "Cambridge Basketball",
+   "oba_region": "Kitchener-Waterloo",
+   "website": "https://cambridgebasketball.com/",
+   "email": "info@cambridgebasketball.com",
+   "lat": "43.3616211",
+   "lon": "-80.3144276",
+   "desc_raw": "https://cambridgebasketball.com/                           info@cambridgebasketball.com"
+  },
+  {
+   "name": "Centre Wellington Celtics",
+   "oba_region": "Kitchener-Waterloo",
+   "website": "https://cwceltics.ca/",
+   "email": "jess.cwceltics@gmail.com",
+   "lat": "43.5857399",
+   "lon": "-80.3769999",
+   "desc_raw": "https://cwceltics.ca/                                                  jess.cwceltics@gmail.com"
+  },
+  {
+   "name": "Factory Basketball Academy",
+   "oba_region": "Kitchener-Waterloo",
+   "website": "https://factorybasketballacademy.com/",
+   "email": "",
+   "lat": "43.1953002",
+   "lon": "-80.3858719",
+   "desc_raw": "https://factorybasketballacademy.com/"
+  },
+  {
+   "name": "Guelph Knights",
+   "oba_region": "Kitchener-Waterloo",
+   "website": "https://www.guelphknights.ca/",
+   "email": "info@guelphknights.ca",
+   "lat": "43.5596243",
+   "lon": "-80.2339612",
+   "desc_raw": "https://www.guelphknights.ca/                                info@guelphknights.ca"
+  },
+  {
+   "name": "Guelph Youth Basketball Association",
+   "oba_region": "Kitchener-Waterloo",
+   "website": "https://www.guelphbasketball.com/",
+   "email": "",
+   "lat": "43.5185111",
+   "lon": "-80.2345711",
+   "desc_raw": "https://www.guelphbasketball.com/ | 519-820-1783"
+  },
+  {
+   "name": "Kitchener-Waterloo Girls Basketball Association",
+   "oba_region": "Kitchener-Waterloo",
+   "website": "http://www.kwgba.ca/",
+   "email": "kwgirlsbball@gmail.com",
+   "lat": "43.4516395",
+   "lon": "-80.4925337",
+   "desc_raw": "http://www.kwgba.ca/ | kwgirlsbball@gmail.com"
+  },
+  {
+   "name": "Kitchener-Waterloo Youth Basketball Association (Vipers)",
+   "oba_region": "Kitchener-Waterloo",
+   "website": "https://www.kwyba.com/",
+   "email": "",
+   "lat": "43.4888461",
+   "lon": "-80.5447131",
+   "desc_raw": "https://www.kwyba.com/"
+  },
+  {
+   "name": "Norfolk Youth Basketball Association",
+   "oba_region": "Kitchener-Waterloo",
+   "website": "https://norfolkyouthbasketball.ca/",
+   "email": "",
+   "lat": "42.8402495",
+   "lon": "-80.3057285",
+   "desc_raw": "https://norfolkyouthbasketball.ca/"
+  },
+  {
+   "name": "Wildhawk Basketball",
+   "oba_region": "Kitchener-Waterloo",
+   "website": "http://wildhawk.ca/",
+   "email": "",
+   "lat": "43.4530876",
+   "lon": "-80.5533069",
+   "desc_raw": "http://wildhawk.ca/"
+  },
+  {
+   "name": "Arnprior Basketball Club",
+   "oba_region": "Capital-Kingston",
+   "website": "https://www.valleypridebasketball.ca/",
+   "email": "",
+   "lat": "45.447698",
+   "lon": "-76.3673522",
+   "desc_raw": "https://www.valleypridebasketball.ca/"
+  },
+  {
+   "name": "Belleville Spirits",
+   "oba_region": "Capital-Kingston",
+   "website": "https://www.spiritsbasketball.net/",
+   "email": "bellevillespirits@gmail.com",
+   "lat": "44.1744093",
+   "lon": "-77.3613343",
+   "desc_raw": "https://www.spiritsbasketball.net/                           bellevillespirits@gmail.com"
+  },
+  {
+   "name": "Brockville Blazers",
+   "oba_region": "Capital-Kingston",
+   "website": "https://brockvilleblazers.com/",
+   "email": "info@brockvilleblazers.com",
+   "lat": "44.5558981",
+   "lon": "-75.7621235",
+   "desc_raw": "https://brockvilleblazers.com/                                   info@brockvilleblazers.com"
+  },
+  {
+   "name": "Cornwall & United Counties Basketball Association (Lions)",
+   "oba_region": "Capital-Kingston",
+   "website": "https://cornwallbasketball.com/",
+   "email": "lionscornwall@gmail.com",
+   "lat": "45.0212762",
+   "lon": "-74.730345",
+   "desc_raw": "https://cornwallbasketball.com/ | lionscornwall@gmail.com"
+  },
+  {
+   "name": "Durham Rising Suns",
+   "oba_region": "Capital-Kingston",
+   "website": "https://www.durhamrisingsuns.com/",
+   "email": "info@durhamrisingsuns.com",
+   "lat": "43.8975446",
+   "lon": "-78.9429329",
+   "desc_raw": "https://www.durhamrisingsuns.com/ | info@durhamrisingsuns.com"
+  },
+  {
+   "name": "Elgin Wilcats",
+   "oba_region": "Capital-Kingston",
+   "website": "https://elginwildcatsbasketball.weebly.com/",
+   "email": "",
+   "lat": "44.6151492",
+   "lon": "-76.2100262",
+   "desc_raw": "https://elginwildcatsbasketball.weebly.com/"
+  },
+  {
+   "name": "Gloucester Cumberland Basketball Association (Wolverines)",
+   "oba_region": "Capital-Kingston",
+   "website": "https://gcba.ca/",
+   "email": "",
+   "lat": "45.4581211",
+   "lon": "-75.4933715",
+   "desc_raw": "https://gcba.ca/ | 613-834-2178"
+  },
+  {
+   "name": "Kemptville Warriors",
+   "oba_region": "Capital-Kingston",
+   "website": "https://www.kemptvillewarriors.ca/",
+   "email": "info@kemptvillewarriors.ca",
+   "lat": "44.9367244",
+   "lon": "-75.7716733",
+   "desc_raw": "https://www.kemptvillewarriors.ca/                         info@kemptvillewarriors.ca"
+  },
+  {
+   "name": "Kingston Impact",
+   "oba_region": "Capital-Kingston",
+   "website": "https://www.kingstonimpact.ca/",
+   "email": "info@kingstonimpact.ca",
+   "lat": "44.2529897",
+   "lon": "-76.550255",
+   "desc_raw": "https://www.kingstonimpact.ca/ | info@kingstonimpact.ca"
+  },
+  {
+   "name": "Kanata Youth Basketball Association (Ottawa Next Level)",
+   "oba_region": "Capital-Kingston",
+   "website": "http://kanatabasketball.ca/",
+   "email": "",
+   "lat": "45.2856225",
+   "lon": "-75.9082762",
+   "desc_raw": "http://kanatabasketball.ca/"
+  },
+  {
+   "name": "Naismith Basketball Association",
+   "oba_region": "Capital-Kingston",
+   "website": "http://www.naismithbasketball.ca/",
+   "email": "",
+   "lat": "45.14102",
+   "lon": "-76.1697718",
+   "desc_raw": "http://www.naismithbasketball.ca/"
+  },
+  {
+   "name": "Nepean Blue Devils",
+   "oba_region": "Capital-Kingston",
+   "website": "https://www.nepeanbluedevils.ca/",
+   "email": "generalmanager@nepeanbluedevils.ca",
+   "lat": "45.2847264",
+   "lon": "-75.7564617",
+   "desc_raw": "https://www.nepeanbluedevils.ca/                           generalmanager@nepeanbluedevils.ca"
+  },
+  {
+   "name": "Ottawa Elite",
+   "oba_region": "Capital-Kingston",
+   "website": "",
+   "email": "",
+   "lat": "45.3873533",
+   "lon": "-75.7342243",
+   "desc_raw": ""
+  },
+  {
+   "name": "Ottawa Shooting Stars",
+   "oba_region": "Capital-Kingston",
+   "website": "https://ottawashootingstars.com/",
+   "email": "info@ottawashootingstars.com",
+   "lat": "45.3873533",
+   "lon": "-75.7342243",
+   "desc_raw": "https://ottawashootingstars.com/ | info@ottawashootingstars.com"
+  },
+  {
+   "name": "Ottawa South Basketball Association",
+   "oba_region": "Capital-Kingston",
+   "website": "https://ottawasouthbasketball.ca/",
+   "email": "",
+   "lat": "45.3546988",
+   "lon": "-75.6508464",
+   "desc_raw": "https://ottawasouthbasketball.ca/"
+  },
+  {
+   "name": "Philippine Basketball Association of Ottawa",
+   "oba_region": "Capital-Kingston",
+   "website": "",
+   "email": "",
+   "lat": "45.3743054",
+   "lon": "-75.6050766",
+   "desc_raw": ""
+  },
+  {
+   "name": "Prescott Russell Basketball Club",
+   "oba_region": "Capital-Kingston",
+   "website": "https://prescottrussellbasketballclub.teamsnapsites.com/",
+   "email": "",
+   "lat": "45.2683916",
+   "lon": "-75.3068328",
+   "desc_raw": "https://prescottrussellbasketballclub.teamsnapsites.com/"
+  },
+  {
+   "name": "Prince Edward County Clippers",
+   "oba_region": "Capital-Kingston",
+   "website": "https://www.countyclippers.ca/",
+   "email": "info@countyclippers.ca",
+   "lat": "43.9232403",
+   "lon": "-77.1273034",
+   "desc_raw": "https://www.countyclippers.ca/ | info@countyclippers.ca"
+  },
+  {
+   "name": "Upper Valley Basketball Association",
+   "oba_region": "Capital-Kingston",
+   "website": "",
+   "email": "",
+   "lat": "45.8268635",
+   "lon": "-77.0971883",
+   "desc_raw": ""
+  },
+  {
+   "name": "West Ottawa Basketball Association (Hornets)",
+   "oba_region": "Capital-Kingston",
+   "website": "http://westottawabasketball.com/",
+   "email": "",
+   "lat": "45.2546817",
+   "lon": "-75.9168659",
+   "desc_raw": "http://westottawabasketball.com/"
+  },
+  {
+   "name": "Chatham-Kent Wildcats",
+   "oba_region": "West Region",
+   "website": "http://www.chathamkentwildcats.com/",
+   "email": "",
+   "lat": "42.4062578",
+   "lon": "-82.1756121",
+   "desc_raw": "http://www.chathamkentwildcats.com/"
+  },
+  {
+   "name": "Gold Medal Basketball Club",
+   "oba_region": "West Region",
+   "website": "http://www.goldmedal.on.ca/|",
+   "email": "",
+   "lat": "42.9498623",
+   "lon": "-81.3014069",
+   "desc_raw": "http://www.goldmedal.on.ca/| 519 685-2940"
+  },
+  {
+   "name": "Huron Lakers",
+   "oba_region": "West Region",
+   "website": "http://huronlakers.on.ca/",
+   "email": "",
+   "lat": "42.9705644",
+   "lon": "-82.4077643",
+   "desc_raw": "http://huronlakers.on.ca/"
+  },
+  {
+   "name": "Kingsville Class",
+   "oba_region": "West Region",
+   "website": "",
+   "email": "",
+   "lat": "42.0275308",
+   "lon": "-82.7401929",
+   "desc_raw": "www.kingsvilleclassbasketball.ca"
+  },
+  {
+   "name": "London 86ers",
+   "oba_region": "West Region",
+   "website": "https://www.london86ers.com/",
+   "email": "",
+   "lat": "43.0279031",
+   "lon": "-81.2592827",
+   "desc_raw": "https://www.london86ers.com/"
+  },
+  {
+   "name": "London CYO",
+   "oba_region": "West Region",
+   "website": "https://www.londoncyobasketball.com/",
+   "email": "",
+   "lat": "43.0088951",
+   "lon": "-81.1807786",
+   "desc_raw": "https://www.londoncyobasketball.com/"
+  },
+  {
+   "name": "London Ramblers",
+   "oba_region": "West Region",
+   "website": "https://londonramblers.com/",
+   "email": "",
+   "lat": "43.0474141",
+   "lon": "-81.2563574",
+   "desc_raw": "https://londonramblers.com/"
+  },
+  {
+   "name": "London Royals",
+   "oba_region": "West Region",
+   "website": "https://linktr.ee/londonroyalsbasketball",
+   "email": "",
+   "lat": "42.9901054",
+   "lon": "-81.2696062",
+   "desc_raw": "https://linktr.ee/londonroyalsbasketball"
+  },
+  {
+   "name": "Oxford Attack",
+   "oba_region": "West Region",
+   "website": "https://oxfordattackbasketball.ca/",
+   "email": "",
+   "lat": "43.1163868",
+   "lon": "-80.7375519",
+   "desc_raw": "https://oxfordattackbasketball.ca/"
+  },
+  {
+   "name": "Orion Basketball",
+   "oba_region": "West Region",
+   "website": "https://www.orionbasketball.com/",
+   "email": "",
+   "lat": "43.0339133",
+   "lon": "-81.2959632",
+   "desc_raw": "https://www.orionbasketball.com/"
+  },
+  {
+   "name": "Riverside Falcons",
+   "oba_region": "West Region",
+   "website": "http://riversidefalconsbasketball.com/",
+   "email": "",
+   "lat": "42.306228",
+   "lon": "-82.9624217",
+   "desc_raw": "http://riversidefalconsbasketball.com/"
+  },
+  {
+   "name": "South Windsor Warriors",
+   "oba_region": "West Region",
+   "website": "https://www.southwindsorwarriors.com/",
+   "email": "",
+   "lat": "42.2171219",
+   "lon": "-83.067681",
+   "desc_raw": "https://www.southwindsorwarriors.com/"
+  },
+  {
+   "name": "St. Thomas Shock",
+   "oba_region": "West Region",
+   "website": "http://www.shockbasketball.com/index.html",
+   "email": "",
+   "lat": "42.753594",
+   "lon": "-81.1936689",
+   "desc_raw": "http://www.shockbasketball.com/index.html"
+  },
+  {
+   "name": "Stratford Revolution",
+   "oba_region": "West Region",
+   "website": "https://stratfordbasketball.com/",
+   "email": "info@stratfordbasketball.com",
+   "lat": "43.3706708",
+   "lon": "-80.9792504",
+   "desc_raw": "https://stratfordbasketball.com/ | info@stratfordbasketball.com"
+  },
+  {
+   "name": "Strathroy Spirit",
+   "oba_region": "West Region",
+   "website": "https://strathroyspirit.com/",
+   "email": "",
+   "lat": "42.95542",
+   "lon": "-81.6232333",
+   "desc_raw": "https://strathroyspirit.com/"
+  },
+  {
+   "name": "Tecumseh Saints Basketball Association",
+   "oba_region": "West Region",
+   "website": "https://www.tecumsehsaintsbasketball.com/",
+   "email": "",
+   "lat": "42.3117966",
+   "lon": "-82.8857592",
+   "desc_raw": "https://www.tecumsehsaintsbasketball.com/"
+  },
+  {
+   "name": "Wallaceburg Airhawks",
+   "oba_region": "West Region",
+   "website": "https://www.facebook.com/WallaceburgAirhawks",
+   "email": "",
+   "lat": "42.5926445",
+   "lon": "-82.3882529",
+   "desc_raw": "https://www.facebook.com/WallaceburgAirhawks"
+  },
+  {
+   "name": "Windsor Valiants",
+   "oba_region": "West Region",
+   "website": "http://www.windsorvaliants.ca/",
+   "email": "",
+   "lat": "42.1320694",
+   "lon": "-83.0988739",
+   "desc_raw": "http://www.windsorvaliants.ca/"
+  },
+  {
+   "name": "Valhalla Youth Basketball Association",
+   "oba_region": "West Region",
+   "website": "http://www.valhallabasketball.com/",
+   "email": "",
+   "lat": "42.9979343",
+   "lon": "-82.3746831",
+   "desc_raw": "http://www.valhallabasketball.com/"
+  },
+  {
+   "name": "Algoma Jr. Thunderbirds",
+   "oba_region": "North Region",
+   "website": "https://algomathunderbirds.ca/sports/2017/3/23/junior-thunderbirds-programs.aspx",
+   "email": "",
+   "lat": "46.5009661",
+   "lon": "-84.2873654",
+   "desc_raw": "https://algomathunderbirds.ca/sports/2017/3/23/junior-thunderbirds-programs.aspx"
+  },
+  {
+   "name": "Barrie Royals",
+   "oba_region": "North Region",
+   "website": "https://www.barrieroyals.ca/",
+   "email": "info@barrieroyals.ca",
+   "lat": "44.3625934",
+   "lon": "-79.6398594",
+   "desc_raw": "https://www.barrieroyals.ca/                                     info@barrieroyals.ca"
+  },
+  {
+   "name": "Collingwood Trailblazers",
+   "oba_region": "North Region",
+   "website": "http://www.collingwoodtrailblazers.ca/",
+   "email": "",
+   "lat": "44.5029416",
+   "lon": "-80.2212387",
+   "desc_raw": "http://www.collingwoodtrailblazers.ca/"
+  },
+  {
+   "name": "Elite 8 Basketball Academy",
+   "oba_region": "North Region",
+   "website": "https://www.elite8basketball.com/",
+   "email": "",
+   "lat": "46.5322652",
+   "lon": "-84.3357663",
+   "desc_raw": "https://www.elite8basketball.com/"
+  },
+  {
+   "name": "Greater Sudbury Basketball Association",
+   "oba_region": "North Region",
+   "website": "",
+   "email": "info@greatersudburybasketball.com",
+   "lat": "46.518098",
+   "lon": "-80.9558794",
+   "desc_raw": "greatersudburybasketball.com/ | info@greatersudburybasketball.com"
+  },
+  {
+   "name": "Hall of Fame Basketball Academy",
+   "oba_region": "North Region",
+   "website": "https://hofba.teamsnapsites.com/",
+   "email": "slydta@msn.com",
+   "lat": "44.116188",
+   "lon": "-79.560215",
+   "desc_raw": "https://hofba.teamsnapsites.com/ |  slydta@msn.com | 289-338-1352"
+  },
+  {
+   "name": "Huntsville Hurricanes",
+   "oba_region": "North Region",
+   "website": "https://www.huntsvillehurricanes.ca/",
+   "email": "huntsvillehurricanesbasketball@gmail.com",
+   "lat": "45.3269323",
+   "lon": "-79.2167539",
+   "desc_raw": "https://www.huntsvillehurricanes.ca/ | huntsvillehurricanesbasketball@gmail.com"
+  },
+  {
+   "name": "Mile of Gold Basketball Club",
+   "oba_region": "North Region",
+   "website": "https://www.klswampdonkeys.com/",
+   "email": "",
+   "lat": "48.152102",
+   "lon": "-80.0315739",
+   "desc_raw": "https://www.klswampdonkeys.com/"
+  },
+  {
+   "name": "North Bay Spartans",
+   "oba_region": "North Region",
+   "website": "http://northbayspartans.sportsavvy.com/",
+   "email": "",
+   "lat": "46.3279495",
+   "lon": "-79.4845612",
+   "desc_raw": "http://northbayspartans.sportsavvy.com/"
+  },
+  {
+   "name": "Orillia Youth Basketball Association (Lakers)",
+   "oba_region": "North Region",
+   "website": "http://orillialakers.com/",
+   "email": "",
+   "lat": "44.6098223",
+   "lon": "-79.4185449",
+   "desc_raw": "http://orillialakers.com/"
+  },
+  {
+   "name": "Owen Sound Minor Basketball",
+   "oba_region": "North Region",
+   "website": "https://www.facebook.com/owensoundminorbasketball",
+   "email": "",
+   "lat": "44.5625465",
+   "lon": "-80.9499743",
+   "desc_raw": "https://www.facebook.com/owensoundminorbasketball"
+  },
+  {
+   "name": "Parry Sound Stingers",
+   "oba_region": "North Region",
+   "website": "http://www.stingersbasketball.com/",
+   "email": "stingersbasketball99@gmail.com",
+   "lat": "45.3607015",
+   "lon": "-79.8891956",
+   "desc_raw": "http://www.stingersbasketball.com/ | stingersbasketball99@gmail.com"
+  },
+  {
+   "name": "Penetanguishene-Midland Basketball Association",
+   "oba_region": "North Region",
+   "website": "https://www.pmbabasketball.com/",
+   "email": "",
+   "lat": "44.7783237",
+   "lon": "-79.9188957",
+   "desc_raw": "https://www.pmbabasketball.com/"
+  },
+  {
+   "name": "South Muskoka Breakers",
+   "oba_region": "North Region",
+   "website": "https://www.breakersbasketball.ca/",
+   "email": "",
+   "lat": "45.0389565",
+   "lon": "-79.3078787",
+   "desc_raw": "https://www.breakersbasketball.ca/"
+  },
+  {
+   "name": "South Simcoe Basketball Club",
+   "oba_region": "North Region",
+   "website": "http://ssbasketball.ca/",
+   "email": "",
+   "lat": "44.1084435",
+   "lon": "-79.5850135",
+   "desc_raw": "Suite 5-333 | http://ssbasketball.ca/"
+  },
+  {
+   "name": "Steel City Slam",
+   "oba_region": "North Region",
+   "website": "https://www.steelcityslam.ca/",
+   "email": "",
+   "lat": "46.5197531",
+   "lon": "-84.3040634",
+   "desc_raw": "https://www.steelcityslam.ca/"
+  },
+  {
+   "name": "Sudbury Youth Basketball Association (Jam)",
+   "oba_region": "North Region",
+   "website": "https://www.sudburyjam.com/",
+   "email": "sudburyjam@gmail.com",
+   "lat": "46.4917317",
+   "lon": "-80.993029",
+   "desc_raw": "https://www.sudburyjam.com/                                 sudburyjam@gmail.com"
+  },
+  {
+   "name": "Temiskaming Thunder",
+   "oba_region": "North Region",
+   "website": "https://www.temiskamingthunder.ca/",
+   "email": "",
+   "lat": "47.8310646",
+   "lon": "-79.8635873",
+   "desc_raw": "https://www.temiskamingthunder.ca/"
+  },
+  {
+   "name": "Thunder Bay Blaze",
+   "oba_region": "North Region",
+   "website": "https://tbblaze.teamsnapsites.com/",
+   "email": "tbayblazebasketball123@gmail.com",
+   "lat": "48.3907598",
+   "lon": "-89.2732056",
+   "desc_raw": "https://tbblaze.teamsnapsites.com/ |  tbayblazebasketball123@gmail.com"
+  },
+  {
+   "name": "Thunder Bay Jr. Wolves",
+   "oba_region": "North Region",
+   "website": "https://www.facebook.com/jrwolvestbay/",
+   "email": "",
+   "lat": "48.3808951",
+   "lon": "-89.2476823",
+   "desc_raw": "https://www.facebook.com/jrwolvestbay/"
+  },
+  {
+   "name": "Timmins Selects",
+   "oba_region": "North Region",
+   "website": "https://www.hometeamsonline.com/teams/?u=TIMMINSSELECTS&s=basketball",
+   "email": "",
+   "lat": "48.4916075",
+   "lon": "-81.3378856",
+   "desc_raw": "https://www.hometeamsonline.com/teams/?u=TIMMINSSELECTS&s=basketball"
+  },
+  {
+   "name": "Ancaster Basketball Club (Magic)",
+   "oba_region": "Hamilton-Niagara",
+   "website": "http://ancastermagic.pointstreaksites.com/view/ancastermagic/home-page-657",
+   "email": "",
+   "lat": "43.1987426",
+   "lon": "-79.9017781",
+   "desc_raw": "http://ancastermagic.pointstreaksites.com/view/ancastermagic/home-page-657"
+  },
+  {
+   "name": "Ancaster Blitz",
+   "oba_region": "Hamilton-Niagara",
+   "website": "https://www.blitzbasketball.net/",
+   "email": "",
+   "lat": "43.1832693",
+   "lon": "-79.9842847",
+   "desc_raw": "https://www.blitzbasketball.net/"
+  },
+  {
+   "name": "Blessed Sacrament Yellow Jackets",
+   "oba_region": "Hamilton-Niagara",
+   "website": "https://www.blessedsacramentbasketball.ca/#/",
+   "email": "info@blessedsacramentbasketball.ca",
+   "lat": "43.2284688",
+   "lon": "-79.8398503",
+   "desc_raw": "https://www.blessedsacramentbasketball.ca/#/  info@blessedsacramentbasketball.ca"
+  },
+  {
+   "name": "Dundas Dynamo",
+   "oba_region": "Hamilton-Niagara",
+   "website": "https://dynamobasketball.ca/",
+   "email": "",
+   "lat": "43.276937",
+   "lon": "-79.9367806",
+   "desc_raw": "https://dynamobasketball.ca/ | 289-446-5059"
+  },
+  {
+   "name": "Flamborough Fire",
+   "oba_region": "Hamilton-Niagara",
+   "website": "http://www.flamboroughfirebasketball.com/",
+   "email": "",
+   "lat": "43.3449404",
+   "lon": "-79.8910346",
+   "desc_raw": "http://www.flamboroughfirebasketball.com/"
+  },
+  {
+   "name": "Grimsby Basketball Association",
+   "oba_region": "Hamilton-Niagara",
+   "website": "http://www.grimsbybasketball.ca/",
+   "email": "",
+   "lat": "43.188086",
+   "lon": "-79.5448014",
+   "desc_raw": "http://www.grimsbybasketball.ca/"
+  },
+  {
+   "name": "Haldimand Huskies",
+   "oba_region": "Hamilton-Niagara",
+   "website": "http://www.haldimandhuskies.ca/",
+   "email": "info@haldimandhuskies.ca",
+   "lat": "43.0632605",
+   "lon": "-79.9528799",
+   "desc_raw": "http://www.haldimandhuskies.ca/ | info@haldimandhuskies.ca"
+  },
+  {
+   "name": "Hamilton Celtics",
+   "oba_region": "Hamilton-Niagara",
+   "website": "https://hamiltonceltics.ca/",
+   "email": "hamiltonceltics@gmail.com",
+   "lat": "43.1978186",
+   "lon": "-79.7958772",
+   "desc_raw": "https://hamiltonceltics.ca/ | (905) 977-0447 | hamiltonceltics@gmail.com"
+  },
+  {
+   "name": "Hamilton Transway Basketball",
+   "oba_region": "Hamilton-Niagara",
+   "website": "https://www.transwaybasketball.com/",
+   "email": "",
+   "lat": "43.2507229",
+   "lon": "-79.8726462",
+   "desc_raw": "https://www.transwaybasketball.com/"
+  },
+  {
+   "name": "Niagara Girls Basketball Academy (NGBA)",
+   "oba_region": "Hamilton-Niagara",
+   "website": "",
+   "email": "",
+   "lat": "43.010139",
+   "lon": "-79.2553344",
+   "desc_raw": "www.niagarabasketballacademy.com"
+  },
+  {
+   "name": "Niagara Falls Red Raiders",
+   "oba_region": "Hamilton-Niagara",
+   "website": "http://www.nfredraiders.com/",
+   "email": "",
+   "lat": "43.122191",
+   "lon": "-79.1029844",
+   "desc_raw": "http://www.nfredraiders.com/"
+  },
+  {
+   "name": "Niagara Rangers",
+   "oba_region": "Hamilton-Niagara",
+   "website": "http://www.niagararangers.com/",
+   "email": "",
+   "lat": "43.1527727",
+   "lon": "-79.2390356",
+   "desc_raw": "http://www.niagararangers.com/"
+  },
+  {
+   "name": "Pelham Panthers",
+   "oba_region": "Hamilton-Niagara",
+   "website": "https://www.pelhambasketball.ca/",
+   "email": "",
+   "lat": "43.0824327",
+   "lon": "-79.2803499",
+   "desc_raw": "https://www.pelhambasketball.ca/"
+  },
+  {
+   "name": "Port Colborne Youth Basketball",
+   "oba_region": "Hamilton-Niagara",
+   "website": "https://portcolbornebasketball.com/",
+   "email": "",
+   "lat": "42.8862816",
+   "lon": "-79.2598051",
+   "desc_raw": "https://portcolbornebasketball.com/"
+  },
+  {
+   "name": "STAC Basketball",
+   "oba_region": "Hamilton-Niagara",
+   "website": "https://stachamilton.ca/",
+   "email": "",
+   "lat": "43.2384768",
+   "lon": "-79.801832",
+   "desc_raw": "https://stachamilton.ca/"
+  },
+  {
+   "name": "St. Catharines CYO Rebels",
+   "oba_region": "Hamilton-Niagara",
+   "website": "http://cyobball.com/index.html",
+   "email": "",
+   "lat": "43.1783397",
+   "lon": "-79.0673302",
+   "desc_raw": "http://cyobball.com/index.html"
+  },
+  {
+   "name": "Stoney Creek NYB",
+   "oba_region": "Hamilton-Niagara",
+   "website": "https://www.scnyb.com/",
+   "email": "",
+   "lat": "43.2066387",
+   "lon": "-79.6533683",
+   "desc_raw": "https://www.scnyb.com/"
+  },
+  {
+   "name": "Anchor Sports Club",
+   "oba_region": "Peel-Halton",
+   "website": "https://anchor-sports-club.square.site/",
+   "email": "anchorsports17@gmail.com",
+   "lat": "43.4456289",
+   "lon": "-79.7316624",
+   "desc_raw": "https://anchor-sports-club.square.site/ |  (647) 700-7150 | anchorsports17@gmail.com"
+  },
+  {
+   "name": "Aspire For Higher",
+   "oba_region": "Peel-Halton",
+   "website": "https://www.a4hsports.ca/",
+   "email": "info@a4hsports.ca",
+   "lat": "43.7396585",
+   "lon": "-79.8394783",
+   "desc_raw": "https://www.a4hsports.ca/ |  info@a4hsports.ca |  (647) 799-3655"
+  },
+  {
+   "name": "Ball 905 Youth Foundation",
+   "oba_region": "Peel-Halton",
+   "website": "https://ball905rep.com/",
+   "email": "youthfoundation@ball905.com",
+   "lat": "43.591543",
+   "lon": "-79.6484562",
+   "desc_raw": "https://ball905rep.com/ | youthfoundation@ball905.com"
+  },
+  {
+   "name": "Become One Women's BBall",
+   "oba_region": "Peel-Halton",
+   "website": "https://www.instagram.com/become1wbb/",
+   "email": "",
+   "lat": "43.7437039",
+   "lon": "-79.7690755",
+   "desc_raw": "https://www.instagram.com/become1wbb/"
+  },
+  {
+   "name": "Bounce Elite",
+   "oba_region": "Peel-Halton",
+   "website": "http://www.bounceelite.ca/home",
+   "email": "",
+   "lat": "43.7245334",
+   "lon": "-79.819519",
+   "desc_raw": "http://www.bounceelite.ca/home"
+  },
+  {
+   "name": "Brampton Minor Basketball Association",
+   "oba_region": "Peel-Halton",
+   "website": "https://www.bramptonbasketball.com/",
+   "email": "info@bramptonbasketball.com",
+   "lat": "43.674182",
+   "lon": "-79.7683406",
+   "desc_raw": "https://www.bramptonbasketball.com/ | info@bramptonbasketball.com"
+  },
+  {
+   "name": "Burlington Basketball",
+   "oba_region": "Peel-Halton",
+   "website": "https://burlingtonbasketball.ca/",
+   "email": "operations@burlingtonbasketball.ca",
+   "lat": "43.3676672",
+   "lon": "-79.8268651",
+   "desc_raw": "https://burlingtonbasketball.ca/ | operations@burlingtonbasketball.ca | (905) 220-3735"
+  },
+  {
+   "name": "Burloak Basketball",
+   "oba_region": "Peel-Halton",
+   "website": "https://www.burloakbasketball.com/",
+   "email": "",
+   "lat": "43.3627013",
+   "lon": "-79.7953518",
+   "desc_raw": "https://www.burloakbasketball.com/"
+  },
+  {
+   "name": "Caledon Cougar Basketball Association",
+   "oba_region": "Peel-Halton",
+   "website": "http://www.caledoncougars.ca/teams/?u=CALEDONCOUGARS&s=basketball",
+   "email": "caledoncougarsbasketball@gmail.com",
+   "lat": "43.878837",
+   "lon": "-79.7394266",
+   "desc_raw": "http://www.caledoncougars.ca/teams/?u=CALEDONCOUGARS&s=basketball | caledoncougarsbasketball@gmail.com | (416) 452-9976"
+  },
+  {
+   "name": "CKATT / Cooksville",
+   "oba_region": "Peel-Halton",
+   "website": "http://www.ckatt.org/",
+   "email": "info@ckatt.org",
+   "lat": "43.6515107",
+   "lon": "-79.7696928",
+   "desc_raw": "http://www.ckatt.org/ | info@ckatt.org"
+  },
+  {
+   "name": "Halton Basketball Club",
+   "oba_region": "Peel-Halton",
+   "website": "http://www.haltonbasketball.com/",
+   "email": "info@haltonbasketball.com",
+   "lat": "43.5261051",
+   "lon": "-79.8391281",
+   "desc_raw": "http://www.haltonbasketball.com/ | info@haltonbasketball.com"
+  },
+  {
+   "name": "Hoops For Her",
+   "oba_region": "Peel-Halton",
+   "website": "https://hoopsforher.ca/",
+   "email": "",
+   "lat": "43.6037702",
+   "lon": "-79.7603151",
+   "desc_raw": "https://hoopsforher.ca/"
+  },
+  {
+   "name": "Inter-City Saints",
+   "oba_region": "Peel-Halton",
+   "website": "https://www.intercitysaintseliteclub.com/teams/?u=INTER-CITYSAINTS&s=basketball",
+   "email": "",
+   "lat": "43.6710952",
+   "lon": "-79.8172426",
+   "desc_raw": "https://www.intercitysaintseliteclub.com/teams/?u=INTER-CITYSAINTS&s=basketball"
+  },
+  {
+   "name": "JUMP Basketball",
+   "oba_region": "Peel-Halton",
+   "website": "https://jumpbasketball.ca/",
+   "email": "Support@JumpBasketball.ca",
+   "lat": "43.5993854",
+   "lon": "-79.6416139",
+   "desc_raw": "https://jumpbasketball.ca/ | 647.549.JUMP (5867) | Support@JumpBasketball.ca"
+  },
+  {
+   "name": "Malton Sting Basketball Club",
+   "oba_region": "Peel-Halton",
+   "website": "https://www.maltonsting.com/",
+   "email": "",
+   "lat": "43.7161148",
+   "lon": "-79.6445965",
+   "desc_raw": "https://www.maltonsting.com/"
+  },
+  {
+   "name": "Milton Stags",
+   "oba_region": "Peel-Halton",
+   "website": "https://www.miltonstags.com/",
+   "email": "inquiry@stagsbasketball.com",
+   "lat": "43.4744509",
+   "lon": "-79.876533",
+   "desc_raw": "https://www.miltonstags.com/ | inquiry@stagsbasketball.com"
+  },
+  {
+   "name": "Mississauga Knights",
+   "oba_region": "Peel-Halton",
+   "website": "http://knightsbasketball.ca/",
+   "email": "info@knightsbasketball.ca",
+   "lat": "43.5890452",
+   "lon": "-79.6441198",
+   "desc_raw": "http://knightsbasketball.ca/ | info@knightsbasketball.ca"
+  },
+  {
+   "name": "Mississauga Minor Basketball Association",
+   "oba_region": "Peel-Halton",
+   "website": "https://monarchsbasketball.ca/",
+   "email": "info@monarchsbasketball.ca",
+   "lat": "43.6313878",
+   "lon": "-79.6539032",
+   "desc_raw": "https://monarchsbasketball.ca/ | info@monarchsbasketball.ca | (905) 502-0050"
+  },
+  {
+   "name": "Mississauga Youth Athletics Association",
+   "oba_region": "Peel-Halton",
+   "website": "",
+   "email": "",
+   "lat": "43.5966945",
+   "lon": "-79.6235407",
+   "desc_raw": "myaajaguars.ca"
+  },
+  {
+   "name": "Oakville Basketball Club (Venom)",
+   "oba_region": "Peel-Halton",
+   "website": "https://www.oakvillebasketball.com/",
+   "email": "admin@oakvillebasketball.com",
+   "lat": "43.48279",
+   "lon": "-79.6954609",
+   "desc_raw": "https://www.oakvillebasketball.com/ | admin@oakvillebasketball.com | (905) 469-1855"
+  },
+  {
+   "name": "Oakville Vytis Basketball Association",
+   "oba_region": "Peel-Halton",
+   "website": "https://www.vytis.ca/",
+   "email": "",
+   "lat": "43.449276",
+   "lon": "-79.7003705",
+   "desc_raw": "https://www.vytis.ca/"
+  },
+  {
+   "name": "Orangeville Hawks",
+   "oba_region": "Peel-Halton",
+   "website": "https://orangevillehawks.ca/",
+   "email": "orangevillehawksbasketball@gmail.com",
+   "lat": "43.9224717",
+   "lon": "-80.1131091",
+   "desc_raw": "https://orangevillehawks.ca/ | orangevillehawksbasketball@gmail.com"
+  },
+  {
+   "name": "PDM Basketball",
+   "oba_region": "Peel-Halton",
+   "website": "https://pdmbasketball.com/",
+   "email": "",
+   "lat": "43.4223045",
+   "lon": "-79.7037018",
+   "desc_raw": "https://pdmbasketball.com/"
+  },
+  {
+   "name": "RSB Elite",
+   "oba_region": "Peel-Halton",
+   "website": "https://www.rsbassociation.ca/",
+   "email": "",
+   "lat": "43.7192939",
+   "lon": "-79.7170258",
+   "desc_raw": "https://www.rsbassociation.ca/"
+  },
+  {
+   "name": "Team Breakdown Basketball",
+   "oba_region": "Peel-Halton",
+   "website": "http://www.breakdownbasketball.ca/",
+   "email": "",
+   "lat": "43.6842625",
+   "lon": "-79.7986795",
+   "desc_raw": "http://www.breakdownbasketball.ca/"
+  },
+  {
+   "name": "The Collective Elite Basketball Association",
+   "oba_region": "Peel-Halton",
+   "website": "https://www.thecollectiveelite.ca/",
+   "email": "",
+   "lat": "43.7623276",
+   "lon": "-79.8345764",
+   "desc_raw": "https://www.thecollectiveelite.ca/"
+  },
+  {
+   "name": "The Performance Group (TPG) Basketball Association",
+   "oba_region": "Peel-Halton",
+   "website": "http://performancegroupbasketball.com/",
+   "email": "",
+   "lat": "43.7315479",
+   "lon": "-79.7624177",
+   "desc_raw": "http://performancegroupbasketball.com/"
+  },
+  {
+   "name": "Union Elite Basketball",
+   "oba_region": "Peel-Halton",
+   "website": "https://unionelitebasketball.com/",
+   "email": "",
+   "lat": "43.8571475",
+   "lon": "-79.0585029",
+   "desc_raw": "https://unionelitebasketball.com/"
+  }
+ ]
+}

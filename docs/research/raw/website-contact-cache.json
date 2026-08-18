@@ -1,0 +1,5207 @@
+{
+"https://www.apexathletedevelopment.ca": {
+"emails": [],
+"phones": [],
+"socials": [],
+"pages_ok": 0,
+"error": "URLError: <urlopen error [Errno 8] nodename nor servname provided, or not known>"
+},
+"http://www.calgarygrizzlies.ab.ca": {
+"emails": [],
+"phones": [],
+"socials": [],
+"pages_ok": 0,
+"error": "URLError: <urlopen error [Errno 8] nodename nor servname provided, or not known>"
+},
+"https://www.brodierec.com/locations/calgary-alberta": {
+"emails": [],
+"phones": [],
+"socials": [],
+"pages_ok": 0,
+"error": "HTTPError: HTTP Error 404: Not Found"
+},
+"https://airdriebasketball.ca": {
+"emails": [],
+"phones": [],
+"socials": [
+"FB @airdrieminorbasketball",
+"IG @airdrieminorbasketball"
+],
+"pages_ok": 1,
+"error": ""
+},
+"https://calgarybasketball.ca": {
+"emails": [],
+"phones": [],
+"socials": [
+"FB @cbacalgary",
+"IG @_c_b_a_"
+],
+"pages_ok": 1,
+"error": ""
+},
+"https://alonzolutions.ca": {
+"emails": [],
+"phones": [],
+"socials": [],
+"pages_ok": 6,
+"error": ""
+},
+"https://www.cadasports.com": {
+"emails": [
+"info@cadasports.com"
+],
+"phones": [],
+"socials": [
+"FB @CADAyouth",
+"IG @cadayouth"
+],
+"pages_ok": 1,
+"error": ""
+},
+"https://www.cochraneminorbasketball.com": {
+"emails": [],
+"phones": [],
+"socials": [],
+"pages_ok": 0,
+"error": "URLError: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify fai"
+},
+"https://www.capcitybballacademy.ca": {
+"emails": [
+"craig.frizzell@hotmail.com"
+],
+"phones": [],
+"socials": [],
+"pages_ok": 1,
+"error": ""
+},
+"https://www.calgarywestbasketball.com": {
+"emails": [],
+"phones": [],
+"socials": [],
+"pages_ok": 0,
+"error": "URLError: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify fai"
+},
+"https://www.climbbasketball.ca/home": {
+"emails": [],
+"phones": [],
+"socials": [],
+"pages_ok": 1,
+"error": ""
+},
+"https://www.eastprobasketball.ca": {
+"emails": [],
+"phones": [],
+"socials": [],
+"pages_ok": 0,
+"error": "URLError: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify fai"
+},
+"https://www.facebook.com/profile.php?id=61551046507977": {
+"emails": [],
+"phones": [],
+"socials": [],
+"pages_ok": 6,
+"error": ""
+},
+"https://bowriverbasketball.com": {
+"emails": [],
+"phones": [],
+"socials": [
+"FB @BowRiverSouthBasketball",
+"IG @bowriverbasketball"
+],
+"pages_ok": 6,
+"error": ""
+},
+"https://www.ctawest.com": {
+"emails": [],
+"phones": [],
+"socials": [],
+"pages_ok": 1,
+"error": ""
+},
+"http://thunderbasketball.ca": {
+"emails": [
+"registrar@thunderbasketball.ca"
+],
+"phones": [],
+"socials": [
+"FB @ncbcthunder"
+],
+"pages_ok": 6,
+"error": ""
+},
+"https://devonbasketball.weebly.com": {
+"emails": [],
+"phones": [],
+"socials": [],
+"pages_ok": 3,
+"error": ""
+},
+"https://edmsouthsidehoops.ca": {
+"emails": [],
+"phones": [],
+"socials": [],
+"pages_ok": 1,
+"error": ""
+},
+"https://cnwb.ca": {
+"emails": [],
+"phones": [],
+"socials": [
+"IG @calgarynwbasketball"
+],
+"pages_ok": 6,
+"error": ""
+},
+"http://www.edsonminorbasketball.com": {
+"emails": [
+"edsonminorbasketball@gmail.com"
+],
+"phones": [],
+"socials": [
+"FB @EdsonMinorBasketball"
+],
+"pages_ok": 6,
+"error": ""
+},
+"https://www.fcvhoops.ca": {
+"emails": [],
+"phones": [],
+"socials": [],
+"pages_ok": 1,
+"error": ""
+},
+"https://www.fcbablizzards.com": {
+"emails": [],
+"phones": [],
+"socials": [],
+"pages_ok": 0,
+"error": "HTTPError: HTTP Error 456: "
+},
+"https://www.facebook.com/fmelitebasketball": {
+"emails": [],
+"phones": [],
+"socials": [],
+"pages_ok": 2,
+"error": ""
+},
+"https://hypehoops.ca": {
+"emails": [
+"reid@hypehoops.ca"
+],
+"phones": [],
+"socials": [
+"FB @hypehoops.ca",
+"IG @hypehoops.ca"
+],
+"pages_ok": 1,
+"error": ""
+},
+"https://www.macewangriffins.ca/camps/jrgriffins": {
+"emails": [],
+"phones": [],
+"socials": [],
+"pages_ok": 0,
+"error": "HTTPError: HTTP Error 403: Forbidden"
+},
+"https://genesisbasketballyeg.ca": {
+"emails": [],
+"phones": [],
+"socials": [],
+"pages_ok": 6,
+"error": ""
+},
+"https://ejballers.com/index.php/ballers-league-camrose": {
+"emails": [
+"coach@ejballers.com",
+"info@ejballers.com"
+],
+"phones": [],
+"socials": [
+"FB @ejballers",
+"IG @ejballers"
+],
+"pages_ok": 3,
+"error": ""
+},
+"https://gohorns.ca/sports/2026/2/12/jr-horns-programs.aspx": {
+"emails": [],
+"phones": [],
+"socials": [],
+"pages_ok": 1,
+"error": ""
+},
+"https://iconsbasketball.ca": {
+"emails": [
+"admin@iconsbasketball.ca"
+],
+"phones": [],
+"socials": [],
+"pages_ok": 3,
+"error": ""
+},
+"https://www.facebook.com/legendsbasketball.yyc": {
+"emails": [],
+"phones": [],
+"socials": [
+"FB @legendsbasketball.yyc"
+],
+"pages_ok": 2,
+"error": ""
+},
+"https://www.legacyathletics.ca": {
+"emails": [
+"info@legacyathletics.ca"
+],
+"phones": [],
+"socials": [
+"FB @2008",
+"FB @Legacy-Athletics-103502618601049",
+"IG @genesis.yeg",
+"IG @legacyathleticsbasketball"
+],
+"pages_ok": 3,
+"error": ""
+},
+"https://bearsandpandas.ca/sports/2020/10/21/junior-bears-basketball-club.aspx": {
+"emails": [],
+"phones": [],
+"socials": [
+"FB @UABWrestling",
+"FB @UAPandasHockey",
+"FB @University-of-Alberta-Pandas-Tennis-1200",
+"FB @University-of-Alberta-Track-Field-103652"
+],
+"pages_ok": 1,
+"error": ""
+},
+"https://www.leduclightning.com": {
+"emails": [
+"communications@leduclightning.com"
+],
+"phones": [],
+"socials": [
+"IG @leduccommunitybasketball"
+],
+"pages_ok": 6,
+"error": ""
+},
+"https://www.facebook.com/lloydyouthbasketball": {
+"emails": [],
+"phones": [],
+"socials": [
+"FB @lloydyouthbasketball"
+],
+"pages_ok": 2,
+"error": ""
+},
+"https://www.facebook.com/MakinHoopsClub": {
+"emails": [],
+"phones": [],
+"socials": [
+"FB @MakinHoopsClub"
+],
+"pages_ok": 2,
+"error": ""
+},
+"https://lethbridgebasketball.ca": {
+"emails": [
+"battle.lmba@gmail.com",
+"lethbridgebasketball@gmail.com",
+"lethbridgeminorbasketball@gmail.com"
+],
+"phones": [],
+"socials": [
+"FB @2008",
+"FB @LMBALethbridge",
+"IG @lethbridgebasketball"
+],
+"pages_ok": 2,
+"error": ""
+},
+"https://gobroncos.ca": {
+"emails": [],
+"phones": [],
+"socials": [],
+"pages_ok": 0,
+"error": "HTTPError: HTTP Error 403: Forbidden"
+},
+"http://northwestbasketball.ca": {
+"emails": [
+"info@northwestbasketball.ca"
+],
+"phones": [],
+"socials": [
+"IG @nwbballyeg"
+],
+"pages_ok": 6,
+"error": ""
+},
+"http://northeastbasketball.com": {
+"emails": [
+"info@northeastbasketball.com"
+],
+"phones": [],
+"socials": [
+"FB @North-East-Basketball-Association-164858"
+],
+"pages_ok": 6,
+"error": ""
+},
+"https://lethbridgecougars.ca/lcbc": {
+"emails": [],
+"phones": [
+"4033934871"
+],
+"socials": [],
+"pages_ok": 4,
+"error": ""
+},
+"http://www.parklandbasketball.ca": {
+"emails": [
+"info@parklandbasketball.ca"
+],
+"phones": [],
+"socials": [
+"FB @bballpride",
+"IG @parklandbasketball"
+],
+"pages_ok": 6,
+"error": ""
+},
+"https://www.facebook.com/p/Lloydminster-Minor-Basketball-Association-61558519229133": {
+"emails": [],
+"phones": [],
+"socials": [
+"FB @contactus",
+"FB @lloydyouthbasketball"
+],
+"pages_ok": 6,
+"error": ""
+},
+"http://rustlersyouthbasketball.ca": {
+"emails": [],
+"phones": [],
+"socials": [],
+"pages_ok": 6,
+"error": ""
+},
+"http://www.morinvilleyouthbasketball.com": {
+"emails": [
+"ask.myba@gmail.com"
+],
+"phones": [],
+"socials": [
+"FB @morinvilleyouthbasketball",
+"IG @morinvilleyouthbasketball"
+],
+"pages_ok": 6,
+"error": ""
+},
+"https://www.rockyrapidsbball.com": {
+"emails": [
+"rapidsbball@gmail.com"
+],
+"phones": [],
+"socials": [
+"FB @rockyrapids"
+],
+"pages_ok": 6,
+"error": ""
+},
+"https://www.respectbasketball.ca": {
+"emails": [
+"respectbball@gmail.com"
+],
+"phones": [],
+"socials": [
+"FB @respectbballyyc",
+"IG @respectbball"
+],
+"pages_ok": 6,
+"error": ""
+},
+"https://sccba.ca": {
+"emails": [
+"admin@sccba.ca"
+],
+"phones": [],
+"socials": [
+"FB @southcalgarycommunitybasketballassociati",
+"IG @southcalgarybasketball"
+],
+"pages_ok": 6,
+"error": ""
+},
+"https://southwestbasketball.com": {
+"emails": [
+"info@southwestbasketball.com"
+],
+"phones": [],
+"socials": [
+"FB @swzyba",
+"IG @swzyba"
+],
+"pages_ok": 6,
+"error": ""
+},
+"https://southstoneybasketball.com": {
+"emails": [
+"coacheval@southstoneybasketball.com",
+"facilities@southstoneybasketball.com",
+"johndoe@gmail.com",
+"president@southstoneybasketball.com",
+"registrar@southstoneybasketball.com"
+],
+"phones": [],
+"socials": [
+"FB @2008"
+],
+"pages_ok": 3,
+"error": ""
+},
+"https://www.reddeerbball.ca": {
+"emails": [],
+"phones": [],
+"socials": [],
+"pages_ok": 6,
+"error": ""
+},
+"https://sites.google.com/view/west-elite-basketball/home": {
+"emails": [],
+"phones": [],
+"socials": [
+"FB @thegrindsession"
+],
+"pages_ok": 1,
+"error": ""
+},
+"https://www.perimeterbasketballacademy.ca": {
+"emails": [
+"perimeter.basketball.academy@gmail.com"
+],
+"phones": [],
+"socials": [
+"FB @theperimeterbasketballacademy",
+"IG @perimeterbasketballacademy"
+],
+"pages_ok": 1,
+"error": ""
+},
+"https://www.stalbertslam.com": {
+"emails": [],
+"phones": [],
+"socials": [
+"FB @https",
+"IG @st.albertslam"
+],
+"pages_ok": 6,
+"error": ""
+},
+"https://www.wolvesathleticclub.com": {
+"emails": [
+"info@yourbaseballsite.com",
+"wolves@freeplayforkids.com"
+],
+"phones": [],
+"socials": [
+"FB @freeplayforkidsyeg",
+"IG @wolves.athleticclub"
+],
+"pages_ok": 2,
+"error": ""
+},
+"https://www.albernibasketball.ca": {
+"emails": [],
+"phones": [],
+"socials": [],
+"pages_ok": 0,
+"error": "URLError: <urlopen error [Errno 8] nodename nor servname provided, or not known>"
+},
+"https://www.academybasketball.com": {
+"emails": [],
+"phones": [
+"7788353632"
+],
+"socials": [
+"FB @VancouverBasketballAcademy",
+"IG @academy.basketball",
+"IG @vancouverbasketballacademy"
+],
+"pages_ok": 3,
+"error": ""
+},
+"https://www.instagram.com/wolfpackclubbasketball": {
+"emails": [],
+"phones": [],
+"socials": [
+"IG @wolfpackclubbasketball"
+],
+"pages_ok": 6,
+"error": ""
+},
+"https://www.facebook.com/Wetaskiwin-Basketball-Club-463146107518650": {
+"emails": [],
+"phones": [],
+"socials": [],
+"pages_ok": 2,
+"error": ""
+},
+"https://www.believebasketballacademy.com": {
+"emails": [],
+"phones": [],
+"socials": [],
+"pages_ok": 0,
+"error": "URLError: <urlopen error [Errno 8] nodename nor servname provided, or not known>"
+},
+"http://www.athelitebasketball.com": {
+"emails": [
+"info@athelitebasketball.com"
+],
+"phones": [],
+"socials": [
+"FB @athelitebball",
+"IG @athelitebball"
+],
+"pages_ok": 2,
+"error": ""
+},
+"https://www.facebook.com/aimbball": {
+"emails": [],
+"phones": [],
+"socials": [
+"FB @aimbball"
+],
+"pages_ok": 2,
+"error": ""
+},
+"https://bcswishbasketballclub.com": {
+"emails": [
+"bcswishbasketballclub@gmail.com"
+],
+"phones": [],
+"socials": [
+"FB @BC-SWISH-Basketball-Club-165120167166107",
+"FB @CatchShootSWISH",
+"IG @bcswishbasketball"
+],
+"pages_ok": 1,
+"error": ""
+},
+"https://www.bcunitedbasketball.com": {
+"emails": [
+"info@bcunitedbasketball.com",
+"techteam@bcunitedbasketball.com"
+],
+"phones": [],
+"socials": [
+"FB @bcunitedhoops",
+"IG @bcunitedhoops"
+],
+"pages_ok": 2,
+"error": ""
+},
+"https://www.facebook.com/profile.php?id=61579214611190": {
+"emails": [],
+"phones": [],
+"socials": [],
+"pages_ok": 6,
+"error": ""
+},
+"https://burnabybasketballclub.com": {
+"emails": [],
+"phones": [],
+"socials": [],
+"pages_ok": 6,
+"error": ""
+},
+"https://beyondbasketball.ca": {
+"emails": [],
+"phones": [],
+"socials": [
+"IG @beyondbasketballco"
+],
+"pages_ok": 1,
+"error": ""
+},
+"https://born2grindathletics.com": {
+"emails": [
+"tomas@born2grindathletics.com"
+],
+"phones": [],
+"socials": [
+"IG @born2grind_athletics"
+],
+"pages_ok": 6,
+"error": ""
+},
+"https://www.bvbasketball.ca": {
+"emails": [
+"basketballbv@gmail.com",
+"clubbasketballbv@gmail.com"
+],
+"phones": [],
+"socials": [
+"FB @RedDogLogging",
+"FB @staggeredpeakscontracting"
+],
+"pages_ok": 2,
+"error": ""
+},
+"https://www.community-elite.com": {
+"emails": [
+"cmntyelite@gmail.com"
+],
+"phones": [],
+"socials": [
+"FB @2008",
+"IG @communityelite_",
+"IG @luxury_rentals_yvr"
+],
+"pages_ok": 3,
+"error": ""
+},
+"https://3pointbasketball.com": {
+"emails": [],
+"phones": [],
+"socials": [],
+"pages_ok": 1,
+"error": ""
+},
+"https://carnarvon.ca/basketball": {
+"emails": [
+"carnarvon11ucoordinator@gmail.com",
+"carnarvon13ucoordinator@gmail.com",
+"carnarvon15ucoordinator@gmail.com",
+"carnarvon18ucoorinator@gmail.com",
+"carnarvon5ucoordinator@gmail.com"
+],
+"phones": [],
+"socials": [
+"FB @carnarvonballclub",
+"IG @carnarvonballclub"
+],
+"pages_ok": 4,
+"error": ""
+},
+"https://www.ekhoopstraining.com": {
+"emails": [],
+"phones": [],
+"socials": [],
+"pages_ok": 0,
+"error": "URLError: <urlopen error [Errno 8] nodename nor servname provided, or not known>"
+},
+"https://www.facebook.com/DCWildcatsBasketball": {
+"emails": [],
+"phones": [],
+"socials": [
+"FB @DCWildcatsBasketball"
+],
+"pages_ok": 2,
+"error": ""
+},
+"https://abbotsfordbasketball.com": {
+"emails": [
+"info@abbotsfordbasketball.com"
+],
+"phones": [],
+"socials": [
+"FB @AbbotsfordBasketballAssociation",
+"FB @abbotsfordbasketballassociation",
+"IG @abbotsfordbasketball",
+"IG @abbotsfordmbl"
+],
+"pages_ok": 3,
+"error": ""
+},
+"https://www.facebook.com/DDNationVentures": {
+"emails": [],
+"phones": [],
+"socials": [
+"FB @DDNationVentures"
+],
+"pages_ok": 2,
+"error": ""
+},
+"https://www.dimevalleybasketball.ca": {
+"emails": [
+"dimevalleybasketball@gmail.com"
+],
+"phones": [],
+"socials": [
+"FB @2008",
+"FB @dimevalleybasketball",
+"IG @dimevalleybasketball"
+],
+"pages_ok": 3,
+"error": ""
+},
+"https://www.fastbreakbasketballbc.ca": {
+"emails": [],
+"phones": [],
+"socials": [],
+"pages_ok": 0,
+"error": "URLError: <urlopen error [Errno 8] nodename nor servname provided, or not known>"
+},
+"https://www.elipasquale.com": {
+"emails": [],
+"phones": [],
+"socials": [
+"IG @elipasqualebasketball"
+],
+"pages_ok": 3,
+"error": ""
+},
+"https://drivebasketball.com": {
+"emails": [],
+"phones": [
+"6046704340"
+],
+"socials": [
+"FB @DRIVE.Basketball",
+"FB @DRIVEBasketball",
+"IG @drivebasketball"
+],
+"pages_ok": 6,
+"error": ""
+},
+"http://www.community-elite.com": {
+"emails": [
+"cmntyelite@gmail.com"
+],
+"phones": [],
+"socials": [
+"FB @2008",
+"IG @communityelite_",
+"IG @luxury_rentals_yvr"
+],
+"pages_ok": 3,
+"error": ""
+},
+"https://formbasketball.com": {
+"emails": [
+"amkryukov@gmail.com",
+"coaches@formbasketball.com",
+"jonpinhorn.typedesign@gmail.com",
+"socialmedia@formbasketball.com"
+],
+"phones": [],
+"socials": [
+"FB @FORMBasketball",
+"FB @formbasketball",
+"IG @f.o.r.m._basketball"
+],
+"pages_ok": 3,
+"error": ""
+},
+"https://www.ferniebasketball.com": {
+"emails": [],
+"phones": [],
+"socials": [],
+"pages_ok": 0,
+"error": "HTTPError: HTTP Error 404: Not Found"
+},
+"https://www.flightbasketball.ca": {
+"emails": [
+"info@flightbasketball.ca"
+],
+"phones": [],
+"socials": [
+"FB @Flightbballvic",
+"FB @flightbasketballvictoria",
+"IG @flightbasketballvictoria"
+],
+"pages_ok": 1,
+"error": ""
+},
+"https://www.dynamitebasketball.com": {
+"emails": [],
+"phones": [],
+"socials": [
+"IG @dynamitebasketball"
+],
+"pages_ok": 3,
+"error": ""
+},
+"https://fsjflight.ca": {
+"emails": [
+"community@fsjflight.ca",
+"competitive@fsjflight.ca",
+"facilities@fsjflight.ca",
+"info@fsjflight.ca",
+"registrar@fsjflight.ca"
+],
+"phones": [],
+"socials": [
+"FB @FSJClubBasketball",
+"IG @fsj_flight_basketball_club"
+],
+"pages_ok": 4,
+"error": ""
+},
+"https://www.facebook.com/fvbball": {
+"emails": [],
+"phones": [],
+"socials": [
+"FB @fvbball"
+],
+"pages_ok": 2,
+"error": ""
+},
+"https://www.fyba.ca": {
+"emails": [],
+"phones": [],
+"socials": [],
+"pages_ok": 0,
+"error": "URLError: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify fai"
+},
+"http://elevateyourgame.ca": {
+"emails": [
+"elevateyourgame.basketballcamps@gmail.com",
+"elevateyourgame.clubteams@gmail.com",
+"elevateyourgame.hoopsnights@gmail.com",
+"elevateyourgame.info@gmail.com",
+"elevateyourgame.privatetraining@gmail.com"
+],
+"phones": [],
+"socials": [
+"FB @ElevateBask",
+"FB @elevateyourgame",
+"IG @elevatebask",
+"IG @pureshooting"
+],
+"pages_ok": 3,
+"error": ""
+},
+"https://elevateyourgame.ca": {
+"emails": [
+"elevateyourgame.basketballcamps@gmail.com",
+"elevateyourgame.clubteams@gmail.com",
+"elevateyourgame.hoopsnights@gmail.com",
+"elevateyourgame.info@gmail.com",
+"elevateyourgame.privatetraining@gmail.com"
+],
+"phones": [],
+"socials": [
+"FB @ElevateBask",
+"FB @elevateyourgame",
+"IG @elevatebask",
+"IG @pureshooting"
+],
+"pages_ok": 3,
+"error": ""
+},
+"https://www.gryphonsbasketball.net": {
+"emails": [],
+"phones": [],
+"socials": [],
+"pages_ok": 0,
+"error": "URLError: <urlopen error [Errno 8] nodename nor servname provided, or not known>"
+},
+"https://www.impacthoops.ca": {
+"emails": [
+"info@impacthoops.ca"
+],
+"phones": [
+"7788085170"
+],
+"socials": [
+"FB @impacthoops",
+"IG @impacthoops"
+],
+"pages_ok": 1,
+"error": ""
+},
+"https://www.inspirebasketballclub.com": {
+"emails": [],
+"phones": [],
+"socials": [],
+"pages_ok": 0,
+"error": "URLError: <urlopen error [Errno 8] nodename nor servname provided, or not known>"
+},
+"https://www.futurebounce.ca": {
+"emails": [],
+"phones": [],
+"socials": [
+"FB @2008",
+"IG @futurebounce.ca",
+"IG @futurebouncebasketball"
+],
+"pages_ok": 1,
+"error": ""
+},
+"https://www.jrbasketballclub.com": {
+"emails": [],
+"phones": [],
+"socials": [],
+"pages_ok": 0,
+"error": "URLError: <urlopen error [Errno 8] nodename nor servname provided, or not known>"
+},
+"https://www.goodwinhoops.com": {
+"emails": [],
+"phones": [],
+"socials": [
+"FB @2008",
+"IG @gwhoops"
+],
+"pages_ok": 1,
+"error": ""
+},
+"https://www.ktbpt.com": {
+"emails": [],
+"phones": [],
+"socials": [],
+"pages_ok": 0,
+"error": "URLError: <urlopen error [Errno 8] nodename nor servname provided, or not known>"
+},
+"https://www.fundamentalsbc.com": {
+"emails": [],
+"phones": [
+"6046702322"
+],
+"socials": [],
+"pages_ok": 1,
+"error": ""
+},
+"https://kamloopskingscourt.leagueapps.com": {
+"emails": [],
+"phones": [],
+"socials": [],
+"pages_ok": 6,
+"error": ""
+},
+"https://l2gbasketball.ca": {
+"emails": [],
+"phones": [],
+"socials": [],
+"pages_ok": 6,
+"error": ""
+},
+"https://twitter.com/machoopsbball": {
+"emails": [],
+"phones": [],
+"socials": [
+"FB @machoopsbball"
+],
+"pages_ok": 2,
+"error": ""
+},
+"http://www.journeybasketball.ca": {
+"emails": [
+"journeybasketball2020@gmail.com"
+],
+"phones": [],
+"socials": [
+"FB @2008",
+"FB @journeybasketball2020",
+"IG @journey_basketball"
+],
+"pages_ok": 4,
+"error": ""
+},
+"https://www.facebook.com/MoreHeartBasketball": {
+"emails": [],
+"phones": [],
+"socials": [
+"FB @MoreHeartBasketball"
+],
+"pages_ok": 2,
+"error": ""
+},
+"https://nwsportsclub.ca": {
+"emails": [
+"info@indiantypefoundry.com",
+"lemonad@jovanny.ru"
+],
+"phones": [],
+"socials": [
+"FB @nwsportsclub",
+"FB @page",
+"IG @nw_sports_club"
+],
+"pages_ok": 1,
+"error": ""
+},
+"https://meccasports.ca": {
+"emails": [
+"angelo@meccasports.ca"
+],
+"phones": [],
+"socials": [
+"IG @meccasports_vancouver"
+],
+"pages_ok": 1,
+"error": ""
+},
+"https://www.facebook.com/p/Merritt-Youth-Basketball-Association-100054551556129": {
+"emails": [],
+"phones": [],
+"socials": [
+"FB @contactus"
+],
+"pages_ok": 6,
+"error": ""
+},
+"https://gocascades.ca/sports/jr-cascades": {
+"emails": [],
+"phones": [],
+"socials": [
+"FB @UFVCascades",
+"FB @intent",
+"IG @ufvcascades"
+],
+"pages_ok": 1,
+"error": ""
+},
+"https://hustlebasketball.ca": {
+"emails": [],
+"phones": [
+"6049072024"
+],
+"socials": [
+"FB @hustlebasketballfamily",
+"IG @squamishhustlebasketball"
+],
+"pages_ok": 6,
+"error": ""
+},
+"https://www.newwestbasketball.com": {
+"emails": [
+"info@newwestbasketball.com"
+],
+"phones": [],
+"socials": [
+"FB @2008",
+"FB @NEWWESTELITE",
+"IG @nwelitebball"
+],
+"pages_ok": 3,
+"error": ""
+},
+"https://www.nighthoops.ca": {
+"emails": [
+"info@nighthoops.ca"
+],
+"phones": [],
+"socials": [
+"FB @nighthoops",
+"IG @nighthoops"
+],
+"pages_ok": 3,
+"error": ""
+},
+"https://www.cowichanvalleybasketball.com": {
+"emails": [
+"hello@nextlevelbasketballacademy.ca"
+],
+"phones": [],
+"socials": [
+"FB @NextLevelSportsAcademy",
+"IG @cowichanvalleybasketball"
+],
+"pages_ok": 3,
+"error": ""
+},
+"https://northlangleybasketball.ca": {
+"emails": [
+"admin@northlangleybasketball.ca"
+],
+"phones": [],
+"socials": [],
+"pages_ok": 3,
+"error": ""
+},
+"https://northernbounce.com": {
+"emails": [
+"hoops@northernbounce.com",
+"northernbouncekamloops@gmail.com"
+],
+"phones": [],
+"socials": [
+"FB @2008"
+],
+"pages_ok": 1,
+"error": ""
+},
+"https://www.open-court.ca": {
+"emails": [],
+"phones": [],
+"socials": [],
+"pages_ok": 0,
+"error": "URLError: <urlopen error [Errno 8] nodename nor servname provided, or not known>"
+},
+"http://finishstrongbasketball.ca": {
+"emails": [
+"team@finishstrongbasketball.ca"
+],
+"phones": [],
+"socials": [],
+"pages_ok": 5,
+"error": ""
+},
+"https://www.facebook.com/North-Vancouver-Basketball-Club-1401374406740781": {
+"emails": [],
+"phones": [],
+"socials": [],
+"pages_ok": 2,
+"error": ""
+},
+"https://nwsportsclub.ca/ballers-basketball": {
+"emails": [
+"info@indiantypefoundry.com",
+"lemonad@jovanny.ru"
+],
+"phones": [],
+"socials": [
+"FB @nwsportsclub",
+"FB @page",
+"IG @nw_sports_club"
+],
+"pages_ok": 1,
+"error": ""
+},
+"https://missionbasketball.ca": {
+"emails": [
+"info@missionbasketball.ca"
+],
+"phones": [],
+"socials": [
+"IG @missionbcbasketball"
+],
+"pages_ok": 5,
+"error": ""
+},
+"https://www.northsideattack.com": {
+"emails": [
+"info@northsideattack.com",
+"nsattackathletics@gmail.com"
+],
+"phones": [],
+"socials": [
+"FB @2008",
+"FB @northsideattack",
+"IG @northsideattack"
+],
+"pages_ok": 3,
+"error": ""
+},
+"https://nelsonhoops.com": {
+"emails": [
+"nelsonyouthbasketball@gmail.com"
+],
+"phones": [],
+"socials": [],
+"pages_ok": 2,
+"error": ""
+},
+"https://www.richmondsportsacademy.com": {
+"emails": [],
+"phones": [],
+"socials": [],
+"pages_ok": 0,
+"error": "URLError: <urlopen error [Errno 8] nodename nor servname provided, or not known>"
+},
+"https://www.riseupball.com": {
+"emails": [],
+"phones": [],
+"socials": [],
+"pages_ok": 0,
+"error": "URLError: <urlopen error [Errno 8] nodename nor servname provided, or not known>"
+},
+"http://www.pgminorbasketball.com": {
+"emails": [
+"pgminorbasketball@gmail.com"
+],
+"phones": [],
+"socials": [],
+"pages_ok": 1,
+"error": ""
+},
+"https://rexsports.ca": {
+"emails": [
+"dylan@rexsports.ca",
+"hello@rexsports.ca",
+"jordan@rexsports.ca"
+],
+"phones": [],
+"socials": [
+"FB @rexsportsvictoria",
+"IG @RexSportsVictoria",
+"IG @rexsports_"
+],
+"pages_ok": 1,
+"error": ""
+},
+"https://www.rookiessc.ca": {
+"emails": [],
+"phones": [],
+"socials": [],
+"pages_ok": 0,
+"error": "HTTPError: HTTP Error 404: Not Found"
+},
+"https://northsideattack.com": {
+"emails": [
+"info@northsideattack.com",
+"nsattackathletics@gmail.com"
+],
+"phones": [],
+"socials": [
+"FB @2008",
+"FB @northsideattack",
+"IG @northsideattack"
+],
+"pages_ok": 3,
+"error": ""
+},
+"https://www.sevenfoldbasketball.ca": {
+"emails": [],
+"phones": [],
+"socials": [],
+"pages_ok": 0,
+"error": "URLError: <urlopen error [Errno 8] nodename nor servname provided, or not known>"
+},
+"https://www.revolutionbasketballclub.com": {
+"emails": [
+"revolutionbball@gmail.com"
+],
+"phones": [],
+"socials": [],
+"pages_ok": 3,
+"error": ""
+},
+"https://www.rootssportsclub.ca": {
+"emails": [],
+"phones": [],
+"socials": [],
+"pages_ok": 1,
+"error": ""
+},
+"https://www.instagram.com/pursuitsportsclub": {
+"emails": [],
+"phones": [],
+"socials": [
+"IG @pursuitsportsclub"
+],
+"pages_ok": 6,
+"error": ""
+},
+"https://playmakersbball.com": {
+"emails": [
+"playmakersbballtraining@gmail.com"
+],
+"phones": [],
+"socials": [
+"FB @2008",
+"IG @playmakersbballtraining"
+],
+"pages_ok": 2,
+"error": ""
+},
+"https://saltspringbasketball.ca": {
+"emails": [
+"micah@micahrich.com",
+"saltspringbasketball@gmail.com"
+],
+"phones": [],
+"socials": [],
+"pages_ok": 1,
+"error": ""
+},
+"https://www.saanichpeninsulabasketball.com": {
+"emails": [
+"support@saanichpeninsulabasketball.com"
+],
+"phones": [],
+"socials": [
+"FB @spabafb",
+"IG @spaba2026"
+],
+"pages_ok": 2,
+"error": ""
+},
+"https://smithperformancebasketball.com": {
+"emails": [],
+"phones": [],
+"socials": [],
+"pages_ok": 6,
+"error": ""
+},
+"https://rebelsrebellesbasketball.com": {
+"emails": [
+"rebelsrebelles@gmail.com"
+],
+"phones": [],
+"socials": [],
+"pages_ok": 6,
+"error": ""
+},
+"https://www.facebook.com/slammajammabasketball": {
+"emails": [],
+"phones": [],
+"socials": [
+"FB @slammajammabasketball"
+],
+"pages_ok": 2,
+"error": ""
+},
+"https://www.facebook.com/ShootingStarsBall": {
+"emails": [],
+"phones": [],
+"socials": [
+"FB @ShootingStarsBall"
+],
+"pages_ok": 2,
+"error": ""
+},
+"https://www.splashbballbc.com": {
+"emails": [],
+"phones": [],
+"socials": [],
+"pages_ok": 0,
+"error": "URLError: <urlopen error [Errno 8] nodename nor servname provided, or not known>"
+},
+"https://squamishyouthbasketball.ca": {
+"emails": [],
+"phones": [],
+"socials": [],
+"pages_ok": 0,
+"error": "URLError: <urlopen error [Errno 8] nodename nor servname provided, or not known>"
+},
+"https://www.sookebasketballclub.com": {
+"emails": [],
+"phones": [],
+"socials": [],
+"pages_ok": 3,
+"error": ""
+},
+"https://www.southdeltabasketball.org": {
+"emails": [],
+"phones": [],
+"socials": [],
+"pages_ok": 2,
+"error": ""
+},
+"https://www.surreyrebelsbasketball.com": {
+"emails": [
+"info.surreyrebelsbasketball@gmail.com"
+],
+"phones": [],
+"socials": [],
+"pages_ok": 1,
+"error": ""
+},
+"https://southlangleybasketball.com": {
+"emails": [
+"kstewart@sd35.bc.ca"
+],
+"phones": [],
+"socials": [
+"FB @WordPresscom"
+],
+"pages_ok": 4,
+"error": ""
+},
+"https://www.terrace.ca/parks-recreation/sports-clubs": {
+"emails": [
+"hkresch@citywest.ca",
+"joe.dominguez@cmsd.bc.ca",
+"nwca2023@gmail.com",
+"office@tysa.ca",
+"president@terraceadulthockey.ca"
+],
+"phones": [
+"2506356311",
+"2506384777"
+],
+"socials": [
+"FB @CityofTerrace",
+"FB @cityofterrace"
+],
+"pages_ok": 1,
+"error": ""
+},
+"http://www.triplethreatbasketball.ca": {
+"emails": [],
+"phones": [],
+"socials": [],
+"pages_ok": 0,
+"error": "URLError: <urlopen error [Errno 8] nodename nor servname provided, or not known>"
+},
+"https://www.tayahoops.com": {
+"emails": [],
+"phones": [],
+"socials": [],
+"pages_ok": 1,
+"error": ""
+},
+"https://tcnorthbasketball.com": {
+"emails": [
+"luciano@latinotype.com"
+],
+"phones": [],
+"socials": [
+"FB @TCNBasketball",
+"FB @TCNorthBasketball",
+"IG @tcnorthbasketball"
+],
+"pages_ok": 1,
+"error": ""
+},
+"http://www.basketball.bc.ca/snyb-home": {
+"emails": [
+"info@basketball.bc.ca"
+],
+"phones": [],
+"socials": [
+"FB @basketballbc",
+"IG @basketballbc"
+],
+"pages_ok": 6,
+"error": ""
+},
+"https://vancouveraces.com": {
+"emails": [
+"vancouveracesbballclub@gmail.com"
+],
+"phones": [],
+"socials": [
+"FB @WordPresscom",
+"IG @vancouveracesbasketball",
+"IG @vancouveracesbball"
+],
+"pages_ok": 2,
+"error": ""
+},
+"https://playsport.com/thundernationbasketball_ag_cf54630b": {
+"emails": [
+"thundernationhoops@gmail.com"
+],
+"phones": [],
+"socials": [
+"FB @playsportdotcom",
+"IG @playsportaustralia"
+],
+"pages_ok": 3,
+"error": ""
+},
+"https://www.facebook.com/vernonminorbasketball": {
+"emails": [],
+"phones": [],
+"socials": [
+"FB @vernonminorbasketball"
+],
+"pages_ok": 2,
+"error": ""
+},
+"https://sites.google.com/view/viccityhoops": {
+"emails": [],
+"phones": [],
+"socials": [],
+"pages_ok": 1,
+"error": ""
+},
+"https://www.wctraining.ca": {
+"emails": [],
+"phones": [],
+"socials": [],
+"pages_ok": 0,
+"error": "URLError: <urlopen error [Errno 8] nodename nor servname provided, or not known>"
+},
+"https://www.warriorsgirlsbasketball.ca": {
+"emails": [],
+"phones": [],
+"socials": [],
+"pages_ok": 1,
+"error": ""
+},
+"https://svibasketball.com": {
+"emails": [
+"westcott@shaw.ca"
+],
+"phones": [
+"2365087879",
+"2503889507",
+"2503889807"
+],
+"socials": [],
+"pages_ok": 1,
+"error": ""
+},
+"https://vichowlers.ca": {
+"emails": [
+"office@vichowlers.ca"
+],
+"phones": [],
+"socials": [],
+"pages_ok": 2,
+"error": ""
+},
+"https://www.westcoastbasketball.com": {
+"emails": [
+"info@westcoastbasketball.com"
+],
+"phones": [],
+"socials": [
+"FB @westcoastbasketballclub",
+"IG @westcoastbasketball"
+],
+"pages_ok": 1,
+"error": ""
+},
+"https://www.whistleryouthbasketball.com": {
+"emails": [],
+"phones": [],
+"socials": [],
+"pages_ok": 0,
+"error": "URLError: <urlopen error [Errno 8] nodename nor servname provided, or not known>"
+},
+"https://altonabasketball.com": {
+"emails": [],
+"phones": [],
+"socials": [],
+"pages_ok": 0,
+"error": "URLError: <urlopen error [Errno 8] nodename nor servname provided, or not known>"
+},
+"https://www.facebook.com/vancitysc": {
+"emails": [],
+"phones": [],
+"socials": [
+"FB @vancitysc"
+],
+"pages_ok": 2,
+"error": ""
+},
+"https://westkhoops.ca": {
+"emails": [
+"westkhoops@gmail.com"
+],
+"phones": [],
+"socials": [
+"FB @westkhoops",
+"IG @westkhoops"
+],
+"pages_ok": 6,
+"error": ""
+},
+"https://www.atlasbasketball.com": {
+"emails": [
+"atlasbball@gmail.com"
+],
+"phones": [],
+"socials": [
+"FB @2008"
+],
+"pages_ok": 3,
+"error": ""
+},
+"https://www.instagram.com/204elite": {
+"emails": [],
+"phones": [],
+"socials": [
+"IG @204elite"
+],
+"pages_ok": 6,
+"error": ""
+},
+"https://www.juniorbisonboys.ca": {
+"emails": [],
+"phones": [],
+"socials": [],
+"pages_ok": 0,
+"error": "URLError: <urlopen error [Errno 8] nodename nor servname provided, or not known>"
+},
+"https://www.bigcountrybasketball.com": {
+"emails": [],
+"phones": [],
+"socials": [],
+"pages_ok": 0,
+"error": "HTTPError: HTTP Error 404: Not Found"
+},
+"https://www.ignitecanadabasketball.com": {
+"emails": [],
+"phones": [],
+"socials": [],
+"pages_ok": 0,
+"error": "HTTPError: HTTP Error 404: Not Found"
+},
+"http://www.southeaststormbasketball.com": {
+"emails": [],
+"phones": [],
+"socials": [],
+"pages_ok": 0,
+"error": "URLError: <urlopen error [Errno 8] nodename nor servname provided, or not known>"
+},
+"https://www.facebook.com/winklerbasketballclub": {
+"emails": [],
+"phones": [],
+"socials": [
+"FB @winklerbasketballclub"
+],
+"pages_ok": 2,
+"error": ""
+},
+"https://www.vancouversportsclub.ca": {
+"emails": [
+"info@vancouversportsclub.ca"
+],
+"phones": [],
+"socials": [
+"FB @Vancouversportsclub",
+"FB @vansportsclub",
+"IG @vansportsclub"
+],
+"pages_ok": 3,
+"error": ""
+},
+"https://www.facebook.com/prairieelitebasketball": {
+"emails": [],
+"phones": [],
+"socials": [
+"FB @prairieelitebasketball"
+],
+"pages_ok": 2,
+"error": ""
+},
+"https://www.westshorebasketball.com": {
+"emails": [
+"bball.westshore@gmail.com",
+"westshore.bball@gmail.com"
+],
+"phones": [],
+"socials": [
+"FB @Westshore-Basketball-Association-5736928",
+"FB @Westshorebasketball",
+"IG @bball.westshore",
+"IG @westshore.bball"
+],
+"pages_ok": 2,
+"error": ""
+},
+"https://www.instagram.com/juniorbisons": {
+"emails": [],
+"phones": [],
+"socials": [
+"IG @juniorbisons"
+],
+"pages_ok": 6,
+"error": ""
+},
+"http://vgba.ca": {
+"emails": [
+"info@vgba.ca"
+],
+"phones": [],
+"socials": [
+"FB @vgba604",
+"IG @vgba604"
+],
+"pages_ok": 3,
+"error": ""
+},
+"http://www.winnipegwolves.com": {
+"emails": [
+"dpokrant@retsd.mb.ca",
+"mjriley14@gmail.com",
+"rsbanmann@gmail.com",
+"winnipegwolves@gmail.com"
+],
+"phones": [],
+"socials": [],
+"pages_ok": 1,
+"error": ""
+},
+"https://www.winnipegblizzardsbasketball.ca": {
+"emails": [
+"winnipegblizzards@gmail.com"
+],
+"phones": [],
+"socials": [
+"FB @winnipeg.blizzards",
+"FB @wpgblizzards",
+"IG @winnipegblizzards"
+],
+"pages_ok": 1,
+"error": ""
+},
+"https://winklerminorbasketball.weebly.com": {
+"emails": [
+"winklerminorbasketball@gmail.com"
+],
+"phones": [],
+"socials": [],
+"pages_ok": 3,
+"error": ""
+},
+"https://wesmen.ca/sports/2024/6/25/winnipeg-junior-wesmen.aspx": {
+"emails": [
+"al.cox@uwinnipeg.ca"
+],
+"phones": [],
+"socials": [
+"FB @WesmenAthletics"
+],
+"pages_ok": 1,
+"error": ""
+},
+"https://www.facebook.com/506Shamrocks": {
+"emails": [],
+"phones": [],
+"socials": [],
+"pages_ok": 2,
+"error": ""
+},
+"https://legacypreparatorybasketballacademy.ca": {
+"emails": [
+"info@legacypba.com"
+],
+"phones": [],
+"socials": [
+"IG @legacyprepbasketballacademy"
+],
+"pages_ok": 1,
+"error": ""
+},
+"https://www.instagram.com/worldclasshoopers": {
+"emails": [],
+"phones": [],
+"socials": [
+"IG @worldclasshoopers"
+],
+"pages_ok": 6,
+"error": ""
+},
+"https://506elite.com": {
+"emails": [],
+"phones": [],
+"socials": [],
+"pages_ok": 6,
+"error": ""
+},
+"https://basketballdieppe.ca": {
+"emails": [],
+"phones": [],
+"socials": [],
+"pages_ok": 2,
+"error": ""
+},
+"https://hamptonminorbasketball.com": {
+"emails": [],
+"phones": [],
+"socials": [
+"FB @hamptonminorbasketball",
+"IG @hampton_minor_basketball"
+],
+"pages_ok": 1,
+"error": ""
+},
+"https://chaosbasketball.ca": {
+"emails": [
+"chaoswinnipeg@gmail.com",
+"info@mysite.com"
+],
+"phones": [],
+"socials": [
+"IG @chaosbball"
+],
+"pages_ok": 2,
+"error": ""
+},
+"https://www.facebook.com/groups/222366587892722": {
+"emails": [],
+"phones": [],
+"socials": [
+"FB @recover"
+],
+"pages_ok": 2,
+"error": ""
+},
+"https://www.facebook.com/groups/390133675984191": {
+"emails": [],
+"phones": [],
+"socials": [
+"FB @recover"
+],
+"pages_ok": 2,
+"error": ""
+},
+"https://www.facebook.com/share/1CY9UV55im/?mibextid=wwXIfr": {
+"emails": [],
+"phones": [],
+"socials": [],
+"pages_ok": 6,
+"error": ""
+},
+"https://themwba.ca/teams/port-city-fog": {
+"emails": [],
+"phones": [],
+"socials": [],
+"pages_ok": 6,
+"error": ""
+},
+"https://themwba.ca/2025/03/24/junior-freeze-becomes-reality": {
+"emails": [],
+"phones": [],
+"socials": [],
+"pages_ok": 6,
+"error": ""
+},
+"https://www.facebook.com/groups/4191807610851414": {
+"emails": [],
+"phones": [],
+"socials": [],
+"pages_ok": 2,
+"error": ""
+},
+"https://www.lancasterhoops.com": {
+"emails": [],
+"phones": [],
+"socials": [],
+"pages_ok": 6,
+"error": ""
+},
+"https://www.facebook.com/p/Fredericton-Jr-Freeze-Girls-Basketball-Team-61574570303956": {
+"emails": [],
+"phones": [],
+"socials": [
+"FB @contactus"
+],
+"pages_ok": 6,
+"error": ""
+},
+"https://www.frederictonfusion.com": {
+"emails": [
+"info@frederictonfusion.com"
+],
+"phones": [],
+"socials": [
+"FB @frederictonfusionbasketball",
+"FB @https",
+"IG @frederictonfusionbasketball"
+],
+"pages_ok": 6,
+"error": ""
+},
+"https://kvba.ca": {
+"emails": [
+"info@kvba.ca"
+],
+"phones": [],
+"socials": [
+"FB @KVBAKennebecasisValleyBasketballAssociat"
+],
+"pages_ok": 3,
+"error": ""
+},
+"https://www.rmba.ca": {
+"emails": [],
+"phones": [],
+"socials": [
+"FB @RMBA1",
+"FB @riverviewminorbasketball",
+"IG @riverviewminorbasketball"
+],
+"pages_ok": 1,
+"error": ""
+},
+"https://rvba.ca": {
+"emails": [],
+"phones": [],
+"socials": [
+"IG @rivervalley.basketball"
+],
+"pages_ok": 4,
+"error": ""
+},
+"https://www.facebook.com/groups/928493714005177": {
+"emails": [],
+"phones": [],
+"socials": [],
+"pages_ok": 2,
+"error": ""
+},
+"https://www.facebook.com/St.Georgebasketball": {
+"emails": [],
+"phones": [],
+"socials": [
+"FB @St.Georgebasketball"
+],
+"pages_ok": 2,
+"error": ""
+},
+"http://pemba.pointstreaksites.com/view/pemba": {
+"emails": [],
+"phones": [],
+"socials": [],
+"pages_ok": 0,
+"error": "redirects to vendor marketing site: https://stacksports.com/"
+},
+"http://www.woodstockminorbasketball.com": {
+"emails": [],
+"phones": [],
+"socials": [],
+"pages_ok": 0,
+"error": "URLError: <urlopen error [Errno 8] nodename nor servname provided, or not known>"
+},
+"https://leagues.teamlinkt.com/miramichiriverhoops": {
+"emails": [],
+"phones": [],
+"socials": [],
+"pages_ok": 4,
+"error": ""
+},
+"https://www.facebook.com/groups/673711246067744": {
+"emails": [],
+"phones": [],
+"socials": [
+"FB @recover"
+],
+"pages_ok": 2,
+"error": ""
+},
+"https://www.cbseeds.ca": {
+"emails": [],
+"phones": [],
+"socials": [],
+"pages_ok": 0,
+"error": "URLError: <urlopen error [Errno 8] nodename nor servname provided, or not known>"
+},
+"https://central-athletics.square.site": {
+"emails": [
+"centralathletics@hotmail.com"
+],
+"phones": [],
+"socials": [],
+"pages_ok": 1,
+"error": ""
+},
+"https://www.surgebasketball.com": {
+"emails": [
+"support@webador.com"
+],
+"phones": [],
+"socials": [],
+"pages_ok": 1,
+"error": ""
+},
+"https://ganderminorbasketball.ca": {
+"emails": [],
+"phones": [],
+"socials": [],
+"pages_ok": 0,
+"error": "URLError: <urlopen error [SSL: SSLV3_ALERT_HANDSHAKE_FAILURE] ssl/tls alert hand"
+},
+"https://www.facebook.com/CornerBrookMinorBasketball": {
+"emails": [],
+"phones": [],
+"socials": [
+"FB @CornerBrookMinorBasketball"
+],
+"pages_ok": 2,
+"error": ""
+},
+"https://www.yfc-elite-basketball-association.ca": {
+"emails": [
+"support@webador.com"
+],
+"phones": [],
+"socials": [
+"FB @YFCEliteBasketball",
+"IG @yfcelitebasketball"
+],
+"pages_ok": 3,
+"error": ""
+},
+"https://mun.ca/grenfellcampus/student-life/athletics--recreation/grenfell-warriors-youth-camps----summer-programs": {
+"emails": [
+"bmarsden@mun.ca"
+],
+"phones": [],
+"socials": [
+"FB @MemorialUniversity",
+"FB @memorialu",
+"IG @memorialuniversity"
+],
+"pages_ok": 1,
+"error": ""
+},
+"https://avalonbasketball.com/709-programs/blog-post-title-three-7l8bn-4jgt7-zykn5": {
+"emails": [
+"director@709basketball.com"
+],
+"phones": [],
+"socials": [
+"FB @2008"
+],
+"pages_ok": 1,
+"error": ""
+},
+"https://salisburybasketball.ca": {
+"emails": [
+"info@salisburybasketball.ca",
+"secretary@salisburybasketball.ca"
+],
+"phones": [],
+"socials": [
+"FB @salisburybasketball",
+"FB @salisburyhoops",
+"IG @salisburybasketball"
+],
+"pages_ok": 2,
+"error": ""
+},
+"https://www.shorebasketballnl.com": {
+"emails": [],
+"phones": [],
+"socials": [],
+"pages_ok": 0,
+"error": "URLError: <urlopen error [Errno 8] nodename nor servname provided, or not known>"
+},
+"https://www.rockelite.ca": {
+"emails": [],
+"phones": [],
+"socials": [],
+"pages_ok": 0,
+"error": "URLError: <urlopen error [Errno 8] nodename nor servname provided, or not known>"
+},
+"https://torbayminorbasketball.ca": {
+"emails": [],
+"phones": [],
+"socials": [],
+"pages_ok": 0,
+"error": "URLError: <urlopen error [Errno 8] nodename nor servname provided, or not known>"
+},
+"https://www.acadiaminorbasketball.ca": {
+"emails": [],
+"phones": [],
+"socials": [],
+"pages_ok": 0,
+"error": "URLError: <urlopen error [Errno 8] nodename nor servname provided, or not known>"
+},
+"https://www.raincitynl.com": {
+"emails": [
+"hello@raincitynl.com"
+],
+"phones": [],
+"socials": [
+"FB @raincitynl",
+"IG @raincitynl"
+],
+"pages_ok": 1,
+"error": ""
+},
+"https://svba.ca": {
+"emails": [],
+"phones": [],
+"socials": [],
+"pages_ok": 0,
+"error": "HTTPError: HTTP Error 503: Service Unavailable"
+},
+"https://www.facebook.com/northriverrec": {
+"emails": [],
+"phones": [],
+"socials": [],
+"pages_ok": 2,
+"error": ""
+},
+"http://mountpearlbasketball.com": {
+"emails": [],
+"phones": [],
+"socials": [],
+"pages_ok": 0,
+"error": "URLError: <urlopen error [Errno 8] nodename nor servname provided, or not known>"
+},
+"https://sites.google.com/view/amherstminorbasketball": {
+"emails": [],
+"phones": [],
+"socials": [
+"FB @AmherstMinorBasketball"
+],
+"pages_ok": 2,
+"error": ""
+},
+"https://playfinder.ca/Org/AntBkblAMBB": {
+"emails": [
+"antigonishbasketball@gmail.com"
+],
+"phones": [],
+"socials": [
+"FB @AntigonishBball",
+"FB @AntigonishMinorBasketball",
+"IG @antigonishminorbasketball",
+"IG @playfindercup"
+],
+"pages_ok": 1,
+"error": ""
+},
+"https://www.facebook.com/groups/383677184448811": {
+"emails": [],
+"phones": [],
+"socials": [
+"FB @recover"
+],
+"pages_ok": 2,
+"error": ""
+},
+"https://www.facebook.com/BasetballAssociationofKentville": {
+"emails": [],
+"phones": [],
+"socials": [
+"FB @BasetballAssociationofKentville"
+],
+"pages_ok": 2,
+"error": ""
+},
+"https://www.axebasketball.ca": {
+"emails": [
+"axebasketballclub@gmail.com"
+],
+"phones": [],
+"socials": [
+"FB @2008",
+"FB @AxeBasketballClub"
+],
+"pages_ok": 2,
+"error": ""
+},
+"https://linktr.ee/basketballcb": {
+"emails": [
+"hello@basketballcapebreton.com"
+],
+"phones": [],
+"socials": [
+"FB @BasketballCB",
+"IG @BasketballCapeBreton"
+],
+"pages_ok": 1,
+"error": ""
+},
+"https://bedfordeagles.ca": {
+"emails": [],
+"phones": [],
+"socials": [
+"IG @bedford.eagles.basketball"
+],
+"pages_ok": 1,
+"error": ""
+},
+"https://www.facebook.com/profile.php?id=61565000000000": {
+"emails": [],
+"phones": [],
+"socials": [],
+"pages_ok": 6,
+"error": ""
+},
+"https://www.bedfordeagles.ca": {
+"emails": [],
+"phones": [],
+"socials": [
+"IG @bedford.eagles.basketball"
+],
+"pages_ok": 1,
+"error": ""
+},
+"https://sites.google.com/view/cbdreambasketball/home": {
+"emails": [],
+"phones": [],
+"socials": [],
+"pages_ok": 1,
+"error": ""
+},
+"http://dartmouthceltics.ca": {
+"emails": [],
+"phones": [],
+"socials": [],
+"pages_ok": 1,
+"error": ""
+},
+"https://basketball.southburnabymetroclub.com": {
+"emails": [
+"basketball.jennifercagampan@gmail.com",
+"info@sbmcbasketball.com",
+"president@sbmcbasketball.com",
+"registrar@sbmcbasketball.com"
+],
+"phones": [],
+"socials": [
+"IG @sbmc_eagles"
+],
+"pages_ok": 3,
+"error": ""
+},
+"https://www.facebook.com/CumberlandCrushers": {
+"emails": [],
+"phones": [],
+"socials": [
+"FB @CumberlandCrushers"
+],
+"pages_ok": 2,
+"error": ""
+},
+"https://www.facebook.com/groups/69056384036": {
+"emails": [],
+"phones": [],
+"socials": [
+"FB @recover"
+],
+"pages_ok": 2,
+"error": ""
+},
+"https://www.facebook.com/nswheelchairbasketball": {
+"emails": [],
+"phones": [],
+"socials": [
+"FB @nswheelchairbasketball",
+"FB @recover"
+],
+"pages_ok": 2,
+"error": ""
+},
+"https://highlevelbasketball.org": {
+"emails": [
+"dgt@c-ntr-l.org"
+],
+"phones": [],
+"socials": [
+"IG @high.level.basketball"
+],
+"pages_ok": 1,
+"error": ""
+},
+"https://tricountytigers.ca": {
+"emails": [],
+"phones": [],
+"socials": [],
+"pages_ok": 6,
+"error": ""
+},
+"https://www.expressbasketball.ca": {
+"emails": [
+"info.expressbasketball@gmail.com"
+],
+"phones": [],
+"socials": [
+"IG @express.basketball"
+],
+"pages_ok": 6,
+"error": ""
+},
+"https://fiftyforfree.com/programs/halifax": {
+"emails": [],
+"phones": [],
+"socials": [
+"FB @FiftyForFree",
+"IG @fiftyforfree"
+],
+"pages_ok": 1,
+"error": ""
+},
+"https://www.facebook.com/groups/359820744477615": {
+"emails": [],
+"phones": [],
+"socials": [],
+"pages_ok": 2,
+"error": ""
+},
+"https://www.sportsengine.com/org/kentville-wildcats-basketball": {
+"emails": [],
+"phones": [],
+"socials": [
+"IG @nbcsportsengine"
+],
+"pages_ok": 1,
+"error": ""
+},
+"https://fallriverrebels.com": {
+"emails": [
+"registrar@fallriverrebels.com"
+],
+"phones": [],
+"socials": [
+"FB @FallRiverRebelsBasketball",
+"FB @https"
+],
+"pages_ok": 6,
+"error": ""
+},
+"https://www.jrmountiesbasketball.ca": {
+"emails": [
+"jrmountiesbasketball@gmail.com"
+],
+"phones": [],
+"socials": [],
+"pages_ok": 3,
+"error": ""
+},
+"https://kmbagators.wixsite.com/kmba": {
+"emails": [
+"kmbagators@gmail.com"
+],
+"phones": [],
+"socials": [
+"FB @KMBA-Basketball-103080638784791"
+],
+"pages_ok": 2,
+"error": ""
+},
+"https://www.hhbball.com": {
+"emails": [
+"hhbasketballclub@gmail.com"
+],
+"phones": [],
+"socials": [
+"FB @HurricanesMBA",
+"IG @halifaxhurricanesmba"
+],
+"pages_ok": 6,
+"error": ""
+},
+"https://www.facebook.com/people/Kingston-Greenwood-Minor-Basketball-Club/100063571598747": {
+"emails": [],
+"phones": [],
+"socials": [],
+"pages_ok": 1,
+"error": ""
+},
+"https://www.instagram.com/north_preston_bulls": {
+"emails": [],
+"phones": [],
+"socials": [
+"IG @north_preston_bulls"
+],
+"pages_ok": 6,
+"error": ""
+},
+"https://www.facebook.com/qcbasketball": {
+"emails": [],
+"phones": [],
+"socials": [
+"FB @qcbasketball",
+"FB @recover"
+],
+"pages_ok": 2,
+"error": ""
+},
+"https://www.facebook.com/groups/ShelburneCountyBasketball": {
+"emails": [],
+"phones": [],
+"socials": [
+"FB @recover"
+],
+"pages_ok": 2,
+"error": ""
+},
+"https://www.thunderselects.ca": {
+"emails": [
+"info@thunderselects.ca"
+],
+"phones": [
+"9024714023"
+],
+"socials": [
+"FB @ThunderSelects",
+"FB @ThunderSelectsBasketball",
+"IG @thunder.selects"
+],
+"pages_ok": 1,
+"error": ""
+},
+"http://www.jrmarauders.com": {
+"emails": [],
+"phones": [],
+"socials": [],
+"pages_ok": 1,
+"error": ""
+},
+"https://www.facebook.com/profile.php?id=61557417235365": {
+"emails": [],
+"phones": [],
+"socials": [],
+"pages_ok": 6,
+"error": ""
+},
+"https://www.pictoucountylightning.com": {
+"emails": [],
+"phones": [],
+"socials": [
+"FB @pclightning"
+],
+"pages_ok": 6,
+"error": ""
+},
+"https://www.prospectbulls.ca": {
+"emails": [
+"prospectbulls1@gmail.com"
+],
+"phones": [],
+"socials": [
+"FB @ProspectBulls",
+"FB @https"
+],
+"pages_ok": 6,
+"error": ""
+},
+"http://westendsteelers.com": {
+"emails": [],
+"phones": [],
+"socials": [
+"FB @westendsteelers"
+],
+"pages_ok": 1,
+"error": ""
+},
+"https://www.sackvillestorm.com": {
+"emails": [],
+"phones": [],
+"socials": [
+"FB @SackvilleStorm",
+"FB @smbasocial",
+"IG @smbasocial"
+],
+"pages_ok": 6,
+"error": ""
+},
+"https://416basketball.com": {
+"emails": [],
+"phones": [],
+"socials": [],
+"pages_ok": 0,
+"error": "URLError: <urlopen error [Errno 8] nodename nor servname provided, or not known>"
+},
+"https://4qt.ca": {
+"emails": [],
+"phones": [],
+"socials": [],
+"pages_ok": 0,
+"error": "URLError: <urlopen error [Errno 8] nodename nor servname provided, or not known>"
+},
+"https://www.facebook.com/yarmouthminorbasketball": {
+"emails": [],
+"phones": [],
+"socials": [
+"FB @recover",
+"FB @yarmouthminorbasketball"
+],
+"pages_ok": 2,
+"error": ""
+},
+"https://shootingstarbasketball.ca": {
+"emails": [
+"registrarssba@gmail.com"
+],
+"phones": [],
+"socials": [
+"FB @https",
+"FB @shootingstarbballwindsorns",
+"IG @shootingstarbasketball_"
+],
+"pages_ok": 6,
+"error": ""
+},
+"https://slambasketball.ca": {
+"emails": [
+"information@slambasketball.ca"
+],
+"phones": [],
+"socials": [
+"FB @SLAMBasketball1",
+"FB @St-Margarets-Bay-Basketball-SLAM-4785022",
+"IG @slambasketball1"
+],
+"pages_ok": 6,
+"error": ""
+},
+"https://www.abcbasketball.ca": {
+"emails": [],
+"phones": [],
+"socials": [],
+"pages_ok": 3,
+"error": ""
+},
+"https://alphaelitesportsgroup.com": {
+"emails": [
+"alphaelitesportsgroup@gmail.com",
+"contact@alphaelitesportsgroup.com"
+],
+"phones": [
+"6476189295"
+],
+"socials": [
+"FB @2008",
+"FB @aeghoops",
+"IG @alphaelitesportsgroup"
+],
+"pages_ok": 1,
+"error": ""
+},
+"https://www.instagram.com/atsprep": {
+"emails": [],
+"phones": [],
+"socials": [],
+"pages_ok": 6,
+"error": ""
+},
+"https://www.360btg.com": {
+"emails": [
+"admin@rumibasketball.com",
+"director@360btg.com"
+],
+"phones": [
+"2893880328"
+],
+"socials": [],
+"pages_ok": 2,
+"error": ""
+},
+"https://www.facebook.com/allstarballers705": {
+"emails": [],
+"phones": [],
+"socials": [],
+"pages_ok": 2,
+"error": ""
+},
+"https://www.valleypridebasketball.ca": {
+"emails": [],
+"phones": [],
+"socials": [],
+"pages_ok": 0,
+"error": "URLError: <urlopen error [Errno 8] nodename nor servname provided, or not known>"
+},
+"https://algomathunderbirds.ca/sports/2017/3/23/junior-thunderbirds-programs.aspx": {
+"emails": [
+"jrthunderbirdsbasketball@gmail.com"
+],
+"phones": [],
+"socials": [
+"FB @algomatbirds",
+"FB @algomathunderbirds",
+"IG @algomathunderbirds"
+],
+"pages_ok": 1,
+"error": ""
+},
+"https://www.ancastermagic.ca": {
+"emails": [
+"ancastermagic@gmail.com"
+],
+"phones": [],
+"socials": [
+"FB @AncasterMagic",
+"IG @ancaster.magic"
+],
+"pages_ok": 3,
+"error": ""
+},
+"https://anchor-sports-club.square.site": {
+"emails": [
+"hi@mystore.com"
+],
+"phones": [],
+"socials": [],
+"pages_ok": 3,
+"error": ""
+},
+"https://www.tricityvipers.ca": {
+"emails": [],
+"phones": [],
+"socials": [],
+"pages_ok": 6,
+"error": ""
+},
+"https://aurora.specialolympicsontario.ca/programs/basketball": {
+"emails": [
+"aurora.manager.basketball@specialolympicsontario.ca"
+],
+"phones": [],
+"socials": [],
+"pages_ok": 1,
+"error": ""
+},
+"http://ancastermagic.pointstreaksites.com/view/ancastermagic/home-page-657": {
+"emails": [],
+"phones": [],
+"socials": [],
+"pages_ok": 0,
+"error": "redirects to vendor marketing site: https://stacksports.com/"
+},
+"https://www.instagram.com/b1cewbb": {
+"emails": [],
+"phones": [],
+"socials": [
+"IG @b1cewbb"
+],
+"pages_ok": 6,
+"error": ""
+},
+"https://www.basketballtillsonburg.com": {
+"emails": [],
+"phones": [],
+"socials": [],
+"pages_ok": 1,
+"error": ""
+},
+"https://ball905rep.com": {
+"emails": [],
+"phones": [],
+"socials": [],
+"pages_ok": 6,
+"error": ""
+},
+"https://www.spiritsbasketball.net": {
+"emails": [],
+"phones": [],
+"socials": [],
+"pages_ok": 0,
+"error": "URLError: <urlopen error [Errno 8] nodename nor servname provided, or not known>"
+},
+"https://www.facebook.com/BAYAN-BASKETBALL-127016123984566": {
+"emails": [],
+"phones": [],
+"socials": [
+"FB @bayanbasketball",
+"FB @recover"
+],
+"pages_ok": 2,
+"error": ""
+},
+"https://barriebuccaneers.com": {
+"emails": [],
+"phones": [],
+"socials": [
+"IG @barriebuccaneers"
+],
+"pages_ok": 3,
+"error": ""
+},
+"https://www.bgclondon.ca": {
+"emails": [
+"info@bgclondon.ca"
+],
+"phones": [
+"5194329306",
+"5194349114"
+],
+"socials": [
+"FB @2008",
+"FB @BGC.LDN",
+"IG @bgc__london"
+],
+"pages_ok": 2,
+"error": ""
+},
+"https://www.instagram.com/become1wbb": {
+"emails": [],
+"phones": [],
+"socials": [
+"IG @become1wbb"
+],
+"pages_ok": 6,
+"error": ""
+},
+"https://www.blessedsacramentcs.com": {
+"emails": [
+"blessedsacrament@archtoronto.org",
+"blessedsacramentcspc@gmail.com",
+"karl.leitmann@tcdsb.org",
+"katherine.banfield@tcdsb.org",
+"shawna.campbell@tcdsb.org"
+],
+"phones": [
+"4163935226",
+"4163935809",
+"4164812256"
+],
+"socials": [],
+"pages_ok": 2,
+"error": ""
+},
+"https://blessedsacramentbasketball.ca": {
+"emails": [],
+"phones": [],
+"socials": [],
+"pages_ok": 0,
+"error": "HTTPError: HTTP Error 403: Forbidden"
+},
+"http://www.bounceelite.ca/home": {
+"emails": [],
+"phones": [],
+"socials": [],
+"pages_ok": 0,
+"error": "URLError: <urlopen error [Errno 8] nodename nor servname provided, or not known>"
+},
+"https://www.brampton.ca/EN/residents/Recreation/Community-Centres/pages/cassie-campbell.aspx": {
+"emails": [
+"mara.lanz@brampton.ca"
+],
+"phones": [
+"9058404041"
+],
+"socials": [
+"FB @CityBrampton",
+"IG @citybrampton"
+],
+"pages_ok": 1,
+"error": ""
+},
+"https://www.blessedsacramentbasketball.ca/#": {
+"emails": [],
+"phones": [],
+"socials": [],
+"pages_ok": 0,
+"error": "HTTPError: HTTP Error 403: Forbidden"
+},
+"https://bgcottawa.my.site.com": {
+"emails": [
+"bgc_ottawa@00dau000008lu2reae.org.force.com"
+],
+"phones": [],
+"socials": [],
+"pages_ok": 1,
+"error": ""
+},
+"https://www.blitzbasketball.net": {
+"emails": [
+"blitzbasketballinfo@gmail.com"
+],
+"phones": [
+"9058071438"
+],
+"socials": [
+"FB @ancasterblitz",
+"IG @blitzbasketball"
+],
+"pages_ok": 2,
+"error": ""
+},
+"https://www.brantfordcyo.ca": {
+"emails": [
+"cyohawks@gmail.com",
+"info@yourbaseballsite.com"
+],
+"phones": [],
+"socials": [],
+"pages_ok": 2,
+"error": ""
+},
+"https://www.instagram.com/borntostandout_elite": {
+"emails": [],
+"phones": [],
+"socials": [
+"IG @borntostandout_elite"
+],
+"pages_ok": 6,
+"error": ""
+},
+"https://burlingtonhoopsacademy.com (down)": {
+"emails": [],
+"phones": [],
+"socials": [],
+"pages_ok": 0,
+"error": "InvalidURL: URL can't contain control characters. 'burlingtonhoopsacademy.com (dow"
+},
+"http://www.brantfordcyo.ca": {
+"emails": [
+"cyohawks@gmail.com",
+"info@yourbaseballsite.com"
+],
+"phones": [],
+"socials": [],
+"pages_ok": 2,
+"error": ""
+},
+"https://bukharibasketball.com": {
+"emails": [
+"coach@bukharibasketball.com"
+],
+"phones": [
+"2898795221",
+"6475550000"
+],
+"socials": [
+"IG @bukharibasketball"
+],
+"pages_ok": 1,
+"error": ""
+},
+"https://cadouganelite.com": {
+"emails": [],
+"phones": [],
+"socials": [],
+"pages_ok": 0,
+"error": "URLError: <urlopen error [Errno 8] nodename nor servname provided, or not known>"
+},
+"https://brantfordcyo.ca": {
+"emails": [
+"cyohawks@gmail.com",
+"info@yourbaseballsite.com"
+],
+"phones": [],
+"socials": [],
+"pages_ok": 2,
+"error": ""
+},
+"https://www.capitalxbasketball.com": {
+"emails": [],
+"phones": [],
+"socials": [],
+"pages_ok": 0,
+"error": "URLError: <urlopen error [Errno 8] nodename nor servname provided, or not known>"
+},
+"https://chs.hwcdsb.ca": {
+"emails": [
+"chs@hwcdsb.ca"
+],
+"phones": [
+"9055223581"
+],
+"socials": [],
+"pages_ok": 1,
+"error": ""
+},
+"https://www.cambridgeathletic.com": {
+"emails": [],
+"phones": [],
+"socials": [],
+"pages_ok": 1,
+"error": ""
+},
+"https://ballmatics.com": {
+"emails": [
+"info@qsla.ca"
+],
+"phones": [],
+"socials": [
+"FB @quantum_sla",
+"FB @quantumsla",
+"IG @ballmatics",
+"IG @ballmaticsacademy"
+],
+"pages_ok": 2,
+"error": ""
+},
+"http://www.nikebounce.com/home": {
+"emails": [],
+"phones": [],
+"socials": [],
+"pages_ok": 0,
+"error": "URLError: <urlopen error [Errno 8] nodename nor servname provided, or not known>"
+},
+"https://cwceltics.ca": {
+"emails": [],
+"phones": [],
+"socials": [],
+"pages_ok": 0,
+"error": "HTTPError: HTTP Error 503: Service Unavailable"
+},
+"https://quinte.totalsportsmedia.ca/directory/belleville-spirits-boys-basketball": {
+"emails": [
+"boysbellevillespirits@gmail.com"
+],
+"phones": [],
+"socials": [
+"FB @Spirits-Boys-Basketball-114555459951282",
+"FB @TSportsQuinte",
+"FB @TotalSportsQuinte",
+"FB @tsportsquinte"
+],
+"pages_ok": 6,
+"error": ""
+},
+"https://www.burloakbasketball.com": {
+"emails": [],
+"phones": [],
+"socials": [],
+"pages_ok": 2,
+"error": ""
+},
+"https://cmeelitebasketball.com": {
+"emails": [],
+"phones": [],
+"socials": [],
+"pages_ok": 0,
+"error": "URLError: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify fai"
+},
+"https://www.canelite.ca": {
+"emails": [],
+"phones": [],
+"socials": [],
+"pages_ok": 0,
+"error": "HTTPError: HTTP Error 404: Not Found"
+},
+"http://www.ckatt.org": {
+"emails": [],
+"phones": [],
+"socials": [],
+"pages_ok": 0,
+"error": "HTTPError: HTTP Error 404: Not Found"
+},
+"https://cornwallbasketball.com": {
+"emails": [],
+"phones": [],
+"socials": [],
+"pages_ok": 6,
+"error": ""
+},
+"https://winnipegsportinstitute.com": {
+"emails": [
+"nicholas@evolvebasketball.ca"
+],
+"phones": [],
+"socials": [],
+"pages_ok": 1,
+"error": ""
+},
+"https://coltsprep.com": {
+"emails": [],
+"phones": [],
+"socials": [
+"IG @coltsprepwbb"
+],
+"pages_ok": 1,
+"error": ""
+},
+"https://www.crestwood.on.ca": {
+"emails": [],
+"phones": [],
+"socials": [
+"FB @crestwoodprep",
+"IG @crestwoodpreparatory"
+],
+"pages_ok": 2,
+"error": ""
+},
+"https://www.instagram.com/cooksville2030": {
+"emails": [],
+"phones": [],
+"socials": [
+"IG @cooksville2030"
+],
+"pages_ok": 6,
+"error": ""
+},
+"https://codeprep.ca": {
+"emails": [],
+"phones": [],
+"socials": [
+"FB @CODESportsAcad1",
+"IG @codesportsacademy"
+],
+"pages_ok": 3,
+"error": ""
+},
+"https://www.countyclippers.ca": {
+"emails": [],
+"phones": [],
+"socials": [
+"FB @countyclippers",
+"IG @countyclippers"
+],
+"pages_ok": 1,
+"error": ""
+},
+"http://www.collingwoodtrailblazers.ca": {
+"emails": [],
+"phones": [],
+"socials": [
+"FB @Collingwoodtrailblazers",
+"FB @wethewood",
+"IG @cwoodblazers"
+],
+"pages_ok": 5,
+"error": ""
+},
+"https://durhamcrossoverbasketball.weebly.com": {
+"emails": [],
+"phones": [],
+"socials": [],
+"pages_ok": 1,
+"error": ""
+},
+"https://eastyorkbasketball.com": {
+"emails": [],
+"phones": [],
+"socials": [
+"IG @eastyorkbasketball"
+],
+"pages_ok": 5,
+"error": ""
+},
+"https://durhambasketballclub.com": {
+"emails": [],
+"phones": [],
+"socials": [],
+"pages_ok": 6,
+"error": ""
+},
+"https://dragonsbasketball.sportsengine-prelive.com/home": {
+"emails": [],
+"phones": [],
+"socials": [],
+"pages_ok": 0,
+"error": "HTTPError: HTTP Error 404: Not Found"
+},
+"https://etobicokebasketball.com": {
+"emails": [],
+"phones": [],
+"socials": [],
+"pages_ok": 0,
+"error": "HTTPError: HTTP Error 503: Service Unavailable"
+},
+"https://elginwildcatsbasketball.weebly.com": {
+"emails": [],
+"phones": [],
+"socials": [],
+"pages_ok": 1,
+"error": ""
+},
+"https://escadron.com": {
+"emails": [],
+"phones": [],
+"socials": [],
+"pages_ok": 0,
+"error": "HTTPError: HTTP Error 403: Forbidden"
+},
+"https://eobahoops.com": {
+"emails": [],
+"phones": [],
+"socials": [
+"FB @EOBAhoops",
+"IG @eobahoops"
+],
+"pages_ok": 3,
+"error": ""
+},
+"http://deepbasketball.com": {
+"emails": [
+"info@deepbasketball.com"
+],
+"phones": [],
+"socials": [
+"IG @deepbasketballclub"
+],
+"pages_ok": 3,
+"error": ""
+},
+"https://www.excelhoops.com": {
+"emails": [],
+"phones": [],
+"socials": [],
+"pages_ok": 0,
+"error": "HTTPError: HTTP Error 404: Not Found"
+},
+"https://brantfordcyogirls.com": {
+"emails": [],
+"phones": [],
+"socials": [
+"FB @BrantfordCYOGirlsBball",
+"FB @bcyogirlsbball",
+"FB @harmonylodge115",
+"IG @brantfordcyogirls"
+],
+"pages_ok": 4,
+"error": ""
+},
+"https://fullcirclebasketballacademy.com": {
+"emails": [],
+"phones": [],
+"socials": [],
+"pages_ok": 0,
+"error": "URLError: <urlopen error [Errno 8] nodename nor servname provided, or not known>"
+},
+"http://www.flamboroughfirebasketball.com": {
+"emails": [],
+"phones": [],
+"socials": [],
+"pages_ok": 1,
+"error": ""
+},
+"https://factorybasketballacademy.com": {
+"emails": [
+"info@factorybasketballacademy.com"
+],
+"phones": [],
+"socials": [
+"FB @BasketballFactoryParis",
+"IG @bballfactoryinc"
+],
+"pages_ok": 3,
+"error": ""
+},
+"https://www.fbadurham.org": {
+"emails": [
+"chan7930@rogers.com",
+"elipardinas@gmail.com",
+"georgelalata@rogers.com",
+"mailo@rogers.com",
+"racedillo2@hotmail.com"
+],
+"phones": [],
+"socials": [
+"IG @fbadurham"
+],
+"pages_ok": 2,
+"error": ""
+},
+"https://www.tcdsb.org/schools/fatherhenrycarr": {
+"emails": [],
+"phones": [],
+"socials": [],
+"pages_ok": 1,
+"error": ""
+},
+"http://game6sportsacademy.com": {
+"emails": [],
+"phones": [],
+"socials": [],
+"pages_ok": 6,
+"error": ""
+},
+"http://basketball.trojka.ca/Home": {
+"emails": [
+"kk.trojka@gmail.com"
+],
+"phones": [],
+"socials": [
+"FB @kktrojka",
+"IG @troykabc"
+],
+"pages_ok": 2,
+"error": ""
+},
+"https://www.gatorsbasketballacademy.com": {
+"emails": [
+"contacgatorsacademy@gmail.com",
+"contactgatorsacademy@gmail.com",
+"henry@gatorsbasketballacademy.com",
+"markhamgators@yahoo.com",
+"markhamgatorsdevelopment@gmail.com"
+],
+"phones": [
+"6478869561"
+],
+"socials": [
+"FB @gatorsbasketballacademy",
+"FB @gatorsbasketballacademyhttps",
+"IG @gatorsacademy",
+"IG @gatorselitecanada"
+],
+"pages_ok": 2,
+"error": ""
+},
+"https://www.tcdsb.org/schools/fatherjohnredmond": {
+"emails": [],
+"phones": [],
+"socials": [],
+"pages_ok": 1,
+"error": ""
+},
+"https://tcdsb.org/o/fatherhenrycarr": {
+"emails": [],
+"phones": [],
+"socials": [],
+"pages_ok": 1,
+"error": ""
+},
+"https://www.instagram.com/g2s_gamechangers": {
+"emails": [],
+"phones": [],
+"socials": [
+"IG @g2s_gamechangers"
+],
+"pages_ok": 6,
+"error": ""
+},
+"https://www.grassrootscanada.org/home": {
+"emails": [],
+"phones": [],
+"socials": [],
+"pages_ok": 0,
+"error": "URLError: <urlopen error [Errno 61] Connection refused>"
+},
+"https://www.girlsplaytoo.ca/aau": {
+"emails": [],
+"phones": [],
+"socials": [],
+"pages_ok": 0,
+"error": "HTTPError: HTTP Error 404: Not Found"
+},
+"http://vipersbasketball.ca": {
+"emails": [
+"anapbm@gmail.com",
+"team@latofonts.com"
+],
+"phones": [],
+"socials": [
+"FB @1530786967172215",
+"FB @viperswbball",
+"IG @viperswheelchairbball"
+],
+"pages_ok": 1,
+"error": ""
+},
+"https://greatersudburybasketball.com": {
+"emails": [],
+"phones": [],
+"socials": [
+"FB @61564858859184",
+"IG @greatersudburybasketball"
+],
+"pages_ok": 2,
+"error": ""
+},
+"https://glorycanball.com": {
+"emails": [
+"glorycanball@gmail.com"
+],
+"phones": [],
+"socials": [],
+"pages_ok": 2,
+"error": ""
+},
+"https://gbunited.ca": {
+"emails": [],
+"phones": [],
+"socials": [
+"IG @gbuclub"
+],
+"pages_ok": 1,
+"error": ""
+},
+"https://www.guelphbasketball.com": {
+"emails": [
+"administration@guelphbasketball.com",
+"development@guelphbasketball.com",
+"treasurer@guelphbasketball.com"
+],
+"phones": [],
+"socials": [
+"FB @guelphbasketball"
+],
+"pages_ok": 3,
+"error": ""
+},
+"https://www.instagram.com/gtelite_basketball": {
+"emails": [],
+"phones": [],
+"socials": [],
+"pages_ok": 6,
+"error": ""
+},
+"https://fundamentalsfirstba.com": {
+"emails": [],
+"phones": [],
+"socials": [
+"FB @FLU216",
+"IG @da_flu"
+],
+"pages_ok": 2,
+"error": ""
+},
+"http://www.haltonbasketball.com": {
+"emails": [],
+"phones": [],
+"socials": [
+"IG @underdogathletics30"
+],
+"pages_ok": 1,
+"error": ""
+},
+"https://haltonhills.specialolympicsontario.ca": {
+"emails": [
+"hh@specialolympicsontario.ca",
+"hhaquaticswaves@specialolympicsontario.ca",
+"hhbbguardians@specialolympicsontario.ca",
+"hhcurlingactonrocks@specialolympicsontario.ca",
+"hhfhgalaxy@specialolympicsontario.ca"
+],
+"phones": [],
+"socials": [],
+"pages_ok": 3,
+"error": ""
+},
+"https://www.hbabasketball.ca": {
+"emails": [
+"info@hbabasketball.ca"
+],
+"phones": [],
+"socials": [
+"IG @hba_hamilton.basketball.assoc"
+],
+"pages_ok": 3,
+"error": ""
+},
+"https://hamiltonceltics.ca": {
+"emails": [],
+"phones": [],
+"socials": [],
+"pages_ok": 6,
+"error": ""
+},
+"https://stachamilton.ca/programs/stac-basketball": {
+"emails": [],
+"phones": [],
+"socials": [],
+"pages_ok": 6,
+"error": ""
+},
+"https://www.guelphknights.ca": {
+"emails": [
+"info@guelphknights.ca"
+],
+"phones": [],
+"socials": [
+"FB @GuelphCYObasketball",
+"FB @guelphknights1",
+"IG @guelphknightsbasketball"
+],
+"pages_ok": 4,
+"error": ""
+},
+"https://hoopherelite.com": {
+"emails": [],
+"phones": [],
+"socials": [],
+"pages_ok": 6,
+"error": ""
+},
+"https://www.transwaybasketball.com": {
+"emails": [
+"info@transwaybasketball.com"
+],
+"phones": [],
+"socials": [
+"FB @2008",
+"IG @transway.basketball"
+],
+"pages_ok": 3,
+"error": ""
+},
+"https://hqcanada.net": {
+"emails": [],
+"phones": [],
+"socials": [],
+"pages_ok": 0,
+"error": "URLError: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify fai"
+},
+"http://huronlakers.on.ca": {
+"emails": [],
+"phones": [],
+"socials": [],
+"pages_ok": 0,
+"error": "URLError: <urlopen error [Errno 8] nodename nor servname provided, or not known>"
+},
+"https://hoopsforher.ca": {
+"emails": [
+"contact@sansoxygen.com"
+],
+"phones": [],
+"socials": [
+"IG @hoopsforher"
+],
+"pages_ok": 1,
+"error": ""
+},
+"https://www.intercitysaintseliteclub.com/teams/?u=INTER-CITYSAINTS&s=basketball": {
+"emails": [],
+"phones": [],
+"socials": [],
+"pages_ok": 0,
+"error": "URLError: <urlopen error [Errno 8] nodename nor servname provided, or not known>"
+},
+"https://hoopsallstar.ca": {
+"emails": [
+"alex.maxwell@hoopsallstar.ca",
+"erin.moffat@hoopsallstar.ca",
+"james.grant@hoopsallstar.ca",
+"keith.sharpe@hoopsallstar.ca",
+"trish.kehn@hoopsallstar.ca"
+],
+"phones": [],
+"socials": [],
+"pages_ok": 2,
+"error": ""
+},
+"https://academy.h5f.ca": {
+"emails": [
+"h5academy@h5f.ca"
+],
+"phones": [],
+"socials": [
+"IG @high5academy"
+],
+"pages_ok": 4,
+"error": ""
+},
+"https://www.instagram.com/hoopzonebasketball": {
+"emails": [],
+"phones": [],
+"socials": [
+"IG @hoopzonebasketball"
+],
+"pages_ok": 6,
+"error": ""
+},
+"https://kainosbasketball.com": {
+"emails": [],
+"phones": [],
+"socials": [],
+"pages_ok": 6,
+"error": ""
+},
+"https://www.tcdsb.org/o/jamescardinalmcguigan": {
+"emails": [],
+"phones": [],
+"socials": [],
+"pages_ok": 1,
+"error": ""
+},
+"https://tcdsb.org/o/jamescardinalmcguigan": {
+"emails": [],
+"phones": [],
+"socials": [],
+"pages_ok": 1,
+"error": ""
+},
+"https://www.kanatabasketball.ca": {
+"emails": [
+"info@kanatabasketball.ca"
+],
+"phones": [],
+"socials": [
+"FB @ONL_Basketball",
+"FB @kanatabasketball",
+"IG @OttawaNextLevel"
+],
+"pages_ok": 3,
+"error": ""
+},
+"http://kanatabasketball.ca": {
+"emails": [
+"info@kanatabasketball.ca"
+],
+"phones": [],
+"socials": [
+"FB @ONL_Basketball",
+"FB @kanatabasketball",
+"IG @OttawaNextLevel"
+],
+"pages_ok": 3,
+"error": ""
+},
+"https://www.kemptvillewarriors.ca": {
+"emails": [],
+"phones": [],
+"socials": [
+"IG @kemptvillewarriors"
+],
+"pages_ok": 3,
+"error": ""
+},
+"https://www.kawarthabasketball.ca": {
+"emails": [],
+"phones": [],
+"socials": [],
+"pages_ok": 3,
+"error": ""
+},
+"https://www.kidballers.com": {
+"emails": [],
+"phones": [
+"4165871149"
+],
+"socials": [],
+"pages_ok": 1,
+"error": ""
+},
+"https://linktr.ee/londonroyalsbasketball": {
+"emails": [
+"executive@londonroyals.ca",
+"finance@londonroyals.ca"
+],
+"phones": [],
+"socials": [],
+"pages_ok": 1,
+"error": ""
+},
+"https://www.londonbasketballclub.ca": {
+"emails": [],
+"phones": [],
+"socials": [
+"FB @londonbasketballclub",
+"IG @londonthunderbasketball"
+],
+"pages_ok": 1,
+"error": ""
+},
+"https://www.londoncyobasketball.com": {
+"emails": [],
+"phones": [],
+"socials": [
+"FB @londoncyo",
+"IG @londoncyobasketball"
+],
+"pages_ok": 1,
+"error": ""
+},
+"https://www.huntsvillehurricanes.ca": {
+"emails": [
+"huntsvillehurricanesbasketball@gmail.com"
+],
+"phones": [],
+"socials": [
+"FB @HuntsvilleHurricanesBall"
+],
+"pages_ok": 2,
+"error": ""
+},
+"https://www.ibsabasketball.com": {
+"emails": [
+"info@ibsabasketball.com"
+],
+"phones": [],
+"socials": [
+"FB @ibsabasketball",
+"IG @ibsabasketball"
+],
+"pages_ok": 4,
+"error": ""
+},
+"https://lindsaywildcats.com": {
+"emails": [
+"info@lindsaywildcats.com",
+"lindsaywildcatsbasketball@gmail.com"
+],
+"phones": [],
+"socials": [
+"FB @2008",
+"FB @LindsayWildcatsBasketballAssociation",
+"IG @lindsaywildcats"
+],
+"pages_ok": 3,
+"error": ""
+},
+"https://www.maltonsting.com": {
+"emails": [
+"info@maltonsting.com",
+"maltonsting.bc@gmail.com"
+],
+"phones": [],
+"socials": [
+"FB @2008",
+"IG @maltonsting.bc"
+],
+"pages_ok": 3,
+"error": ""
+},
+"https://junglecourts.com": {
+"emails": [
+"info@junglecourts.com"
+],
+"phones": [],
+"socials": [
+"IG @junglecourts"
+],
+"pages_ok": 3,
+"error": ""
+},
+"https://www.msbastorm.com": {
+"emails": [
+"msbastorm@gmail.com"
+],
+"phones": [],
+"socials": [
+"IG @msbastorm"
+],
+"pages_ok": 2,
+"error": ""
+},
+"https://mcelite.clubcentral.com": {
+"emails": [
+"mcelitebball@gmail.com"
+],
+"phones": [],
+"socials": [],
+"pages_ok": 6,
+"error": ""
+},
+"http://knightsbasketball.ca": {
+"emails": [],
+"phones": [],
+"socials": [],
+"pages_ok": 0,
+"error": "URLError: <urlopen error [Errno 8] nodename nor servname provided, or not known>"
+},
+"https://maplebasketball.ca": {
+"emails": [],
+"phones": [
+"6476770220"
+],
+"socials": [
+"IG @maple_basketball_ca"
+],
+"pages_ok": 3,
+"error": ""
+},
+"https://www.klswampdonkeys.com": {
+"emails": [
+"jodi.ryan@dsb1.ca",
+"larouche0704@gmail.com",
+"lindsaybballmaclean@gmail.com",
+"marc.larouche@dsb1.ca",
+"todd.turner@dsb1.ca"
+],
+"phones": [],
+"socials": [
+"IG @phoenix.bulldogs.template"
+],
+"pages_ok": 2,
+"error": ""
+},
+"http://www.motionballsports.ca": {
+"emails": [],
+"phones": [],
+"socials": [],
+"pages_ok": 0,
+"error": "HTTPError: HTTP Error 403: Forbidden"
+},
+"https://momentumsportsgroup.ca": {
+"emails": [
+"admin@momentumsportsgroup.ca",
+"info@momentumsportsgroup.ca"
+],
+"phones": [],
+"socials": [
+"IG @momentumsportsgta"
+],
+"pages_ok": 2,
+"error": ""
+},
+"https://www.midlandwaves.ca": {
+"emails": [],
+"phones": [],
+"socials": [
+"FB @MidlandWaves",
+"IG @midlandwaves"
+],
+"pages_ok": 6,
+"error": ""
+},
+"https://mumbabasketball.ca": {
+"emails": [],
+"phones": [
+"6479456945"
+],
+"socials": [
+"FB @mumbabasketball",
+"IG @mumbabasketball"
+],
+"pages_ok": 4,
+"error": ""
+},
+"https://www.nextgenerationbasketballclub.com": {
+"emails": [
+"info@nextgenerationbasketballclub.com"
+],
+"phones": [],
+"socials": [
+"FB @nextgenbasketballclub",
+"IG @nxt_generation_basketball"
+],
+"pages_ok": 3,
+"error": ""
+},
+"https://www.nepeanbluedevils.ca": {
+"emails": [
+"generalmanager@nepeanbluedevils.ca"
+],
+"phones": [],
+"socials": [
+"FB @NepeanBlueDevilsBasketballAssociation"
+],
+"pages_ok": 6,
+"error": ""
+},
+"http://www.newhorizonbasketball.com": {
+"emails": [
+"info@newhorizonbasketball.com"
+],
+"phones": [],
+"socials": [
+"FB @NewHorizonBasketballAcademy",
+"IG @newhorizonbasketball"
+],
+"pages_ok": 2,
+"error": ""
+},
+"http://www.niagararangers.com": {
+"emails": [],
+"phones": [],
+"socials": [],
+"pages_ok": 0,
+"error": "URLError: <urlopen error [Errno 8] nodename nor servname provided, or not known>"
+},
+"https://www.mumbabasketball.ca": {
+"emails": [],
+"phones": [
+"6479456945"
+],
+"socials": [
+"FB @mumbabasketball",
+"IG @mumbabasketball"
+],
+"pages_ok": 4,
+"error": ""
+},
+"https://www.niagaraapexbasketball.ca/home": {
+"emails": [],
+"phones": [],
+"socials": [
+"FB @2008",
+"FB @NiagaraApexBasketball",
+"FB @niagaraapex",
+"IG @niagaraapex"
+],
+"pages_ok": 1,
+"error": ""
+},
+"https://norfolkyouthbasketball.ca": {
+"emails": [],
+"phones": [],
+"socials": [
+"FB @norfolkyouthbasketball",
+"IG @norfolkyba"
+],
+"pages_ok": 1,
+"error": ""
+},
+"https://niagaraprepbasketball.com": {
+"emails": [],
+"phones": [],
+"socials": [],
+"pages_ok": 6,
+"error": ""
+},
+"https://nextmanup.ca": {
+"emails": [
+"xmanupbasketball@gmail.com"
+],
+"phones": [],
+"socials": [
+"IG @xmanupbasketball"
+],
+"pages_ok": 1,
+"error": ""
+},
+"https://forms.gle/iDvhsbGGs38zYVac9 (registration form)": {
+"emails": [],
+"phones": [],
+"socials": [],
+"pages_ok": 0,
+"error": "InvalidURL: URL can't contain control characters. '/iDvhsbGGs38zYVac9 (registratio"
+},
+"https://niagarabasketballacademy.com": {
+"emails": [
+"dpicton@niagarabasketballacademy.com",
+"info@niagarabasketballacademy.com"
+],
+"phones": [],
+"socials": [
+"FB @CoachPicton",
+"FB @NiagaraGirlsBasketballAcademy",
+"FB @coachpicton"
+],
+"pages_ok": 3,
+"error": ""
+},
+"https://www.northbaybasketball.com": {
+"emails": [],
+"phones": [],
+"socials": [],
+"pages_ok": 1,
+"error": ""
+},
+"http://www.naismithbasketball.ca": {
+"emails": [],
+"phones": [],
+"socials": [
+"FB @NaismithBasketballAssociation",
+"FB @https",
+"IG @naismithbasketballassociation"
+],
+"pages_ok": 6,
+"error": ""
+},
+"https://www.northumberlandbasketball.ca": {
+"emails": [],
+"phones": [
+"7804268681"
+],
+"socials": [
+"FB @lmba2k"
+],
+"pages_ok": 1,
+"error": ""
+},
+"https://kingnationbasketball.com": {
+"emails": [
+"contact@kingnationbasketball.com",
+"vidal@kingnationbasketball.com"
+],
+"phones": [],
+"socials": [],
+"pages_ok": 1,
+"error": ""
+},
+"https://www.nypaa.ca/index.html": {
+"emails": [],
+"phones": [],
+"socials": [
+"FB @NYPAA"
+],
+"pages_ok": 1,
+"error": ""
+},
+"https://www.vytis.ca": {
+"emails": [],
+"phones": [],
+"socials": [
+"FB @vytisbball",
+"IG @canadaelite_wbb",
+"IG @oakvillevytis"
+],
+"pages_ok": 5,
+"error": ""
+},
+"http://www.haldimandhuskies.ca": {
+"emails": [
+"info@haldimandhuskies.ca"
+],
+"phones": [],
+"socials": [],
+"pages_ok": 3,
+"error": ""
+},
+"https://ottawashootingstars.com": {
+"emails": [
+"gm@ottawashootingstars.com",
+"info@ottawashootingstars.com"
+],
+"phones": [],
+"socials": [
+"FB @OttawaShootingStars",
+"IG @ottawashootingstars"
+],
+"pages_ok": 2,
+"error": ""
+},
+"https://ottawasouthbasketball.ca": {
+"emails": [
+"gm@ottawasouthbasketball.ca"
+],
+"phones": [],
+"socials": [
+"FB @OttawaSouthBasketballAssociation",
+"IG @ottawasouthbasketball"
+],
+"pages_ok": 6,
+"error": ""
+},
+"https://ocwsa.wordpress.com": {
+"emails": [],
+"phones": [],
+"socials": [
+"FB @OCWSA",
+"FB @WordPresscom"
+],
+"pages_ok": 4,
+"error": ""
+},
+"https://orangevillehawks.ca": {
+"emails": [
+"gverner47@outlook.com",
+"orangevillehawksbasketball@gmail.com"
+],
+"phones": [],
+"socials": [
+"FB @hawksoville",
+"FB @orangevillehawks",
+"IG @orangevillehawks"
+],
+"pages_ok": 3,
+"error": ""
+},
+"https://www.orionbasketball.com": {
+"emails": [],
+"phones": [],
+"socials": [
+"FB @Orion-Basketball-674878476221006",
+"IG @londonorionbasketball"
+],
+"pages_ok": 3,
+"error": ""
+},
+"https://www.facebook.com/owensoundminorbasketball": {
+"emails": [],
+"phones": [],
+"socials": [],
+"pages_ok": 2,
+"error": ""
+},
+"https://oxfordattackbasketball.ca": {
+"emails": [
+"padfieldt@gmail.com"
+],
+"phones": [],
+"socials": [
+"FB @OxfordAttackBasketball",
+"IG @oxfordattack"
+],
+"pages_ok": 2,
+"error": ""
+},
+"https://jr-nba.webflow.io/programs/peneteng-midland-basketball-association-fall": {
+"emails": [],
+"phones": [],
+"socials": [],
+"pages_ok": 0,
+"error": "HTTPError: HTTP Error 404: Not Found"
+},
+"http://orillialakers.com": {
+"emails": [],
+"phones": [],
+"socials": [
+"FB @orillialakersyouthbasketball",
+"IG @orillialakers"
+],
+"pages_ok": 6,
+"error": ""
+},
+"https://www.peterboroughcitybasketball.com": {
+"emails": [
+"info@peterboroughcitybasketball.com"
+],
+"phones": [],
+"socials": [
+"FB @pborobasketball",
+"IG @peterboroughcitybasketball"
+],
+"pages_ok": 1,
+"error": ""
+},
+"http://www.stingersbasketball.com": {
+"emails": [
+"stingersbasketball99@gmail.com"
+],
+"phones": [],
+"socials": [
+"FB @psstingersbasketballclub",
+"IG @stingersbasketball"
+],
+"pages_ok": 5,
+"error": ""
+},
+"https://polarisprep.com": {
+"emails": [
+"polarisprepacademy@gmail.com"
+],
+"phones": [],
+"socials": [
+"IG @polarisprepmbb"
+],
+"pages_ok": 2,
+"error": ""
+},
+"http://www.pbaa.ca": {
+"emails": [
+"info@pbaa.ca"
+],
+"phones": [],
+"socials": [
+"FB @PBAAca",
+"IG @pbaalions"
+],
+"pages_ok": 5,
+"error": ""
+},
+"https://prescottrussellbasketballclub.teamsnapsites.com": {
+"emails": [
+"prbcrocketsbball@gmail.com"
+],
+"phones": [],
+"socials": [
+"FB @rocketsbasketball",
+"IG @prbcrockets"
+],
+"pages_ok": 1,
+"error": ""
+},
+"https://prolificsportsacademy.com": {
+"emails": [
+"team@prolificsportsacademy.com"
+],
+"phones": [
+"5875836644"
+],
+"socials": [
+"FB @2008",
+"FB @PSAprep",
+"IG @psaprep"
+],
+"pages_ok": 1,
+"error": ""
+},
+"https://redmondredhawks.com": {
+"emails": [
+"coachwwilliams@gmail.com",
+"fourpointbasketball@gmail.com",
+"info@indiantypefoundry.com",
+"ray.chateau@humber.ca"
+],
+"phones": [],
+"socials": [
+"FB @redmondosba",
+"IG @redmondosba"
+],
+"pages_ok": 1,
+"error": ""
+},
+"https://prbcrockets.ca": {
+"emails": [
+"prbcrocketsbball@gmail.com"
+],
+"phones": [],
+"socials": [
+"FB @rocketsbasketball",
+"IG @prbcrockets"
+],
+"pages_ok": 5,
+"error": ""
+},
+"http://riversidefalconsbasketball.com": {
+"emails": [],
+"phones": [],
+"socials": [],
+"pages_ok": 0,
+"error": "URLError: <urlopen error [Errno 8] nodename nor servname provided, or not known>"
+},
+"https://www.riseupleague.com": {
+"emails": [
+"support@riseupleague.com"
+],
+"phones": [],
+"socials": [
+"IG @riseup.leagues"
+],
+"pages_ok": 2,
+"error": ""
+},
+"https://reddotbasketball.ca": {
+"emails": [],
+"phones": [],
+"socials": [],
+"pages_ok": 1,
+"error": ""
+},
+"https://sbabasketball.ca": {
+"emails": [
+"angelamoncada@sbablues.ca",
+"chrisbarron@sbablues.ca",
+"christopherdennis@sbablues.ca",
+"coachbensanders@sbablues.ca",
+"coachbrianbreedy@sbablues.ca"
+],
+"phones": [
+"4165517554"
+],
+"socials": [
+"FB @sbabball",
+"IG @sbabball"
+],
+"pages_ok": 2,
+"error": ""
+},
+"https://sisterskeeper.ca": {
+"emails": [],
+"phones": [],
+"socials": [],
+"pages_ok": 6,
+"error": ""
+},
+"https://skillzbasketballlab.com": {
+"emails": [],
+"phones": [],
+"socials": [],
+"pages_ok": 6,
+"error": ""
+},
+"https://v3prepbasketball.ca": {
+"emails": [],
+"phones": [],
+"socials": [],
+"pages_ok": 6,
+"error": ""
+},
+"https://sc-academy.ca": {
+"emails": [
+"info@sc-academy.ca"
+],
+"phones": [],
+"socials": [
+"IG @_scacademy"
+],
+"pages_ok": 3,
+"error": ""
+},
+"https://www.southtorontobasketball.com": {
+"emails": [],
+"phones": [],
+"socials": [],
+"pages_ok": 0,
+"error": "URLError: <urlopen error [Errno 8] nodename nor servname provided, or not known>"
+},
+"https://swfacademy.com": {
+"emails": [],
+"phones": [],
+"socials": [],
+"pages_ok": 0,
+"error": "URLError: <urlopen error [Errno 8] nodename nor servname provided, or not known>"
+},
+"https://southwestacademy.ca": {
+"emails": [],
+"phones": [],
+"socials": [
+"FB @2008",
+"IG @swacademywbb"
+],
+"pages_ok": 2,
+"error": ""
+},
+"http://ottawaelite.org": {
+"emails": [],
+"phones": [],
+"socials": [
+"FB @OttawaElite",
+"IG @ottawa_elite"
+],
+"pages_ok": 6,
+"error": ""
+},
+"https://leagues.teamlinkt.com/smithsfallsbasketball": {
+"emails": [
+"smithsfallsstorm@gmail.com"
+],
+"phones": [
+"6139783829"
+],
+"socials": [
+"FB @sfstormball",
+"FB @smithsfallsstorm",
+"IG @smithsfallsstorm"
+],
+"pages_ok": 3,
+"error": ""
+},
+"https://www.breakersbasketball.ca": {
+"emails": [
+"smuskokabreakers@gmail.com"
+],
+"phones": [],
+"socials": [
+"FB @breakersbball",
+"FB @southmuskokabreakers",
+"IG @southmuskokabreakers"
+],
+"pages_ok": 4,
+"error": ""
+},
+"https://www.stfrancisphoenix.com": {
+"emails": [],
+"phones": [
+"9056461452",
+"9056462002"
+],
+"socials": [
+"FB @stfphoenix",
+"IG @stfphoenix"
+],
+"pages_ok": 2,
+"error": ""
+},
+"https://ottawacapitalsjuel.com": {
+"emails": [],
+"phones": [],
+"socials": [
+"FB @OttawaCapitalsJUEL",
+"IG @ottawacapitalsjuel"
+],
+"pages_ok": 6,
+"error": ""
+},
+"https://www.scnyb.com": {
+"emails": [],
+"phones": [],
+"socials": [],
+"pages_ok": 0,
+"error": "HTTPError: HTTP Error 503: Service Unavailable"
+},
+"https://stratfordbasketball.com": {
+"emails": [
+"info@stratfordbasketball.com",
+"president@stratfordbasketball.com",
+"secretary@stratfordbasketball.com",
+"tim.doherty14@gmail.com",
+"treasurer@stratfordbasketball.com"
+],
+"phones": [],
+"socials": [
+"FB @StratfordOBA"
+],
+"pages_ok": 2,
+"error": ""
+},
+"http://cyobball.com/index.html": {
+"emails": [
+"frank.keltos@gmail.com",
+"gerrymcilhone@gmail.com"
+],
+"phones": [],
+"socials": [
+"FB @CYOBBALLCOM"
+],
+"pages_ok": 1,
+"error": ""
+},
+"https://www.steelcityslam.ca": {
+"emails": [],
+"phones": [],
+"socials": [
+"IG @steelcityslam"
+],
+"pages_ok": 3,
+"error": ""
+},
+"https://sports.torontochinese.ca": {
+"emails": [
+"kids@torontochinese.ca"
+],
+"phones": [
+"4164500826"
+],
+"socials": [],
+"pages_ok": 1,
+"error": ""
+},
+"http://www.breakdownbasketball.ca": {
+"emails": [],
+"phones": [],
+"socials": [],
+"pages_ok": 0,
+"error": "URLError: <urlopen error [Errno 8] nodename nor servname provided, or not known>"
+},
+"https://stlawrencelightning.ca": {
+"emails": [],
+"phones": [],
+"socials": [
+"FB @juel_stl",
+"IG @stlawrencejuel"
+],
+"pages_ok": 2,
+"error": ""
+},
+"https://www.sudburyjam.com": {
+"emails": [],
+"phones": [],
+"socials": [],
+"pages_ok": 6,
+"error": ""
+},
+"https://strathroyspirit.com": {
+"emails": [],
+"phones": [],
+"socials": [],
+"pages_ok": 2,
+"error": ""
+},
+"https://www.tecumsehsaintsbasketball.com": {
+"emails": [],
+"phones": [],
+"socials": [
+"FB @TecumsehSaintsBasketball"
+],
+"pages_ok": 1,
+"error": ""
+},
+"https://www.thecollectiveelite.ca": {
+"emails": [
+"info@thecollectiveelite.ca"
+],
+"phones": [],
+"socials": [
+"FB @thecollectiveelite",
+"IG @thecollectiveelite"
+],
+"pages_ok": 1,
+"error": ""
+},
+"https://www.thebasketballclub.ca": {
+"emails": [],
+"phones": [],
+"socials": [],
+"pages_ok": 1,
+"error": ""
+},
+"https://conglomeratebasketball.com": {
+"emails": [],
+"phones": [],
+"socials": [],
+"pages_ok": 6,
+"error": ""
+},
+"https://www.instagram.com/teamiconicbasketball": {
+"emails": [],
+"phones": [],
+"socials": [
+"IG @teamiconicbasketball"
+],
+"pages_ok": 6,
+"error": ""
+},
+"https://stachamilton.ca": {
+"emails": [],
+"phones": [],
+"socials": [],
+"pages_ok": 6,
+"error": ""
+},
+"https://www.facebook.com/jrwolvestbay": {
+"emails": [],
+"phones": [],
+"socials": [],
+"pages_ok": 2,
+"error": ""
+},
+"https://thornhillbasketball.ca": {
+"emails": [],
+"phones": [
+"6475576737"
+],
+"socials": [
+"IG @thornhillbball"
+],
+"pages_ok": 4,
+"error": ""
+},
+"https://tbblaze.teamsnapsites.com": {
+"emails": [
+"rthomso2@lakeheadu.ca",
+"tbayblazebasketball123@gmail.com"
+],
+"phones": [],
+"socials": [
+"FB @Thunder-Bay-Blaze-Basketball-73467940991",
+"FB @tbayblazeball"
+],
+"pages_ok": 3,
+"error": ""
+},
+"https://www.time2hoop.ca": {
+"emails": [],
+"phones": [],
+"socials": [],
+"pages_ok": 1,
+"error": ""
+},
+"http://torontocityelite.com/view/torontocityelite": {
+"emails": [],
+"phones": [],
+"socials": [],
+"pages_ok": 6,
+"error": ""
+},
+"https://www.temiskamingthunder.ca": {
+"emails": [],
+"phones": [
+"7055443981"
+],
+"socials": [],
+"pages_ok": 2,
+"error": ""
+},
+"https://tcba.torontochinese.ca/about-league": {
+"emails": [
+"tcba@torontochinese.ca"
+],
+"phones": [],
+"socials": [
+"IG @chinesesportassociation"
+],
+"pages_ok": 2,
+"error": ""
+},
+"https://torontowolves.ca": {
+"emails": [],
+"phones": [],
+"socials": [
+"IG @torontowolvesbasketball"
+],
+"pages_ok": 2,
+"error": ""
+},
+"https://www.triplebalance.ca": {
+"emails": [
+"info@triplebalance.ca"
+],
+"phones": [
+"7804268681"
+],
+"socials": [
+"FB @TripleBalance",
+"FB @triple.balance.3",
+"FB @triplebalance",
+"IG @triplebalancebasketball"
+],
+"pages_ok": 1,
+"error": ""
+},
+"https://www.hometeamsonline.com/teams/?u=TIMMINSSELECTS&s=basketball": {
+"emails": [],
+"phones": [],
+"socials": [
+"FB @TSelects"
+],
+"pages_ok": 6,
+"error": ""
+},
+"https://undergroundbasketballclub.ca": {
+"emails": [],
+"phones": [],
+"socials": [],
+"pages_ok": 0,
+"error": "URLError: <urlopen error [Errno 8] nodename nor servname provided, or not known>"
+},
+"https://tcbasketball.com": {
+"emails": [],
+"phones": [],
+"socials": [
+"FB @tcsoldiersbball",
+"FB @tricountyt"
+],
+"pages_ok": 3,
+"error": ""
+},
+"https://www.uxbridgespartanbasketball.com": {
+"emails": [
+"admin@uxbridgebasketball.com"
+],
+"phones": [
+"7804268681"
+],
+"socials": [
+"FB @uxbridgebasketball",
+"IG @uxbridgespartanbasketball"
+],
+"pages_ok": 1,
+"error": ""
+},
+"https://waterloowolverines.com": {
+"emails": [],
+"phones": [],
+"socials": [],
+"pages_ok": 0,
+"error": "URLError: <urlopen error [Errno 8] nodename nor servname provided, or not known>"
+},
+"http://www.wellandminorbasketball.ca": {
+"emails": [],
+"phones": [],
+"socials": [],
+"pages_ok": 0,
+"error": "URLError: <urlopen error [Errno 8] nodename nor servname provided, or not known>"
+},
+"https://tcspinners.wixsite.com/twincityspinners": {
+"emails": [
+"kwspinners@gmail.com"
+],
+"phones": [],
+"socials": [],
+"pages_ok": 2,
+"error": ""
+},
+"https://tricityba.com": {
+"emails": [],
+"phones": [],
+"socials": [
+"FB @tricitybasketball",
+"IG @tricityba"
+],
+"pages_ok": 6,
+"error": ""
+},
+"http://www.whitbysaints.com": {
+"emails": [],
+"phones": [],
+"socials": [],
+"pages_ok": 0,
+"error": "URLError: <urlopen error [Errno 8] nodename nor servname provided, or not known>"
+},
+"https://www.whitbywildcatsports.ca": {
+"emails": [],
+"phones": [],
+"socials": [],
+"pages_ok": 0,
+"error": "URLError: <urlopen error [Errno 8] nodename nor servname provided, or not known>"
+},
+"https://whitbywildcatbasketball.com": {
+"emails": [],
+"phones": [],
+"socials": [],
+"pages_ok": 0,
+"error": "URLError: <urlopen error [Errno 8] nodename nor servname provided, or not known>"
+},
+"https://linktr.ee/westunitedprepacademy": {
+"emails": [],
+"phones": [],
+"socials": [
+"IG @westunitedprepacademy"
+],
+"pages_ok": 1,
+"error": ""
+},
+"https://www.wpasuns.com": {
+"emails": [],
+"phones": [],
+"socials": [],
+"pages_ok": 0,
+"error": "URLError: <urlopen error [Errno 8] nodename nor servname provided, or not known>"
+},
+"https://wpasuns.com": {
+"emails": [],
+"phones": [],
+"socials": [],
+"pages_ok": 0,
+"error": "URLError: <urlopen error [Errno 8] nodename nor servname provided, or not known>"
+},
+"https://www.facebook.com/WallaceburgAirhawks": {
+"emails": [],
+"phones": [],
+"socials": [
+"FB @WallaceburgAirhawks",
+"FB @recover"
+],
+"pages_ok": 2,
+"error": ""
+},
+"https://www.yorkregionelite.com": {
+"emails": [],
+"phones": [],
+"socials": [],
+"pages_ok": 0,
+"error": "URLError: <urlopen error [Errno 8] nodename nor servname provided, or not known>"
+},
+"https://wigginselite.com": {
+"emails": [],
+"phones": [],
+"socials": [],
+"pages_ok": 6,
+"error": ""
+},
+"https://yrbl.ca": {
+"emails": [],
+"phones": [],
+"socials": [],
+"pages_ok": 6,
+"error": ""
+},
+"https://www.facebook.com/bgcsummerside": {
+"emails": [],
+"phones": [],
+"socials": [
+"FB @bgcsummerside",
+"FB @recover"
+],
+"pages_ok": 2,
+"error": ""
+},
+"https://yvybasketball.com": {
+"emails": [
+"john@doe.com",
+"yvybball@gmail.com"
+],
+"phones": [],
+"socials": [
+"IG @youvsyoubasketballtraining",
+"IG @yvyelitebasketball"
+],
+"pages_ok": 5,
+"error": ""
+},
+"http://performancegroupbasketball.com": {
+"emails": [
+"thepgba@gmail.com"
+],
+"phones": [],
+"socials": [
+"FB @The-Performance-Group-Basketball-Associa",
+"FB @tpgbasketball",
+"IG @tpgbasketball"
+],
+"pages_ok": 1,
+"error": ""
+},
+"http://www.northshoreospreys.ca": {
+"emails": [],
+"phones": [],
+"socials": [],
+"pages_ok": 1,
+"error": ""
+},
+"https://www.facebook.com/EastPrinceStingBasketball": {
+"emails": [],
+"phones": [],
+"socials": [
+"FB @EastPrinceStingBasketball",
+"FB @recover"
+],
+"pages_ok": 2,
+"error": ""
+},
+"http://stratfordfoxes.ca": {
+"emails": [],
+"phones": [],
+"socials": [],
+"pages_ok": 0,
+"error": "URLError: <urlopen error [Errno 8] nodename nor servname provided, or not known>"
+},
+"https://zonebasketball.ca": {
+"emails": [
+"eben@eyebytes.com",
+"zonebasketball@outlook.com"
+],
+"phones": [],
+"socials": [
+"FB @zone.basketball.academy",
+"IG @zone_basketball_academy"
+],
+"pages_ok": 1,
+"error": ""
+},
+"https://www.facebook.com/sourisminorbasketball": {
+"emails": [],
+"phones": [],
+"socials": [
+"FB @recover",
+"FB @sourisminorbasketball"
+],
+"pages_ok": 2,
+"error": ""
+},
+"http://westottawabasketball.com": {
+"emails": [
+"wobachiefreferee@gmail.com",
+"wobacompetitive@gmail.com"
+],
+"phones": [],
+"socials": [
+"FB @WestOttawaBasketball",
+"IG @westottawabasketball"
+],
+"pages_ok": 6,
+"error": ""
+},
+"https://www.facebook.com/pages/category/Community/Kensington-Noreasters-Basketball-1665784420326120": {
+"emails": [],
+"phones": [],
+"socials": [
+"FB @recover"
+],
+"pages_ok": 6,
+"error": ""
+},
+"http://tigersbasketball.ca": {
+"emails": [],
+"phones": [],
+"socials": [],
+"pages_ok": 0,
+"error": "URLError: <urlopen error [Errno 8] nodename nor servname provided, or not known>"
+},
+"https://champsmtlbasketball.com": {
+"emails": [],
+"phones": [],
+"socials": [],
+"pages_ok": 6,
+"error": ""
+},
+"https://www.facebook.com/profile.php?id=100076065697206": {
+"emails": [],
+"phones": [],
+"socials": [],
+"pages_ok": 6,
+"error": ""
+},
+"https://basketball.exposureevents.com/organizations/27817/montreal-prospects-basketball": {
+"emails": [],
+"phones": [],
+"socials": [
+"FB @exposurebasketballevents",
+"IG @mtl_prospects"
+],
+"pages_ok": 1,
+"error": ""
+},
+"https://www.atelier803.ca": {
+"emails": [
+"info@atelier803.ca"
+],
+"phones": [],
+"socials": [
+"FB @Elated-Themes-1889004714470831",
+"FB @ElatedThemes",
+"FB @team.thetford.basketball",
+"IG @elatedthemes"
+],
+"pages_ok": 2,
+"error": ""
+},
+"https://www.basketballgatineau.com": {
+"emails": [],
+"phones": [],
+"socials": [],
+"pages_ok": 1,
+"error": ""
+},
+"http://www.basketlaval.ca": {
+"emails": [],
+"phones": [
+"5144645203"
+],
+"socials": [
+"FB @basketballlaval",
+"IG @basketlaval"
+],
+"pages_ok": 1,
+"error": ""
+},
+"https://www.prospectball.com": {
+"emails": [],
+"phones": [],
+"socials": [
+"FB @ProspectBall",
+"FB @prospectballsports",
+"IG @prospectball_skal"
+],
+"pages_ok": 2,
+"error": ""
+},
+"https://www.basketballrn.ca": {
+"emails": [
+"basketballrouynnoranda@gmail.com"
+],
+"phones": [],
+"socials": [
+"FB @basketballrouynnoranda"
+],
+"pages_ok": 1,
+"error": ""
+},
+"https://aslouis.qc.ca/programmes/basketball": {
+"emails": [],
+"phones": [
+"4187672200",
+"4188455121"
+],
+"socials": [
+"FB @Acad",
+"FB @academiesaintlouis",
+"IG @academiesaintlouis"
+],
+"pages_ok": 1,
+"error": ""
+},
+"https://onemorebasketball.com": {
+"emails": [],
+"phones": [],
+"socials": [
+"IG @onemore.basketball"
+],
+"pages_ok": 6,
+"error": ""
+},
+"https://www.ecolebbemonkam.com": {
+"emails": [
+"ecolebbemonkam1@gmail.com"
+],
+"phones": [],
+"socials": [
+"FB @ecolebbemonkam",
+"IG @ecolebbemonkam"
+],
+"pages_ok": 2,
+"error": ""
+},
+"https://www.facebook.com/team.thetford.basketball": {
+"emails": [],
+"phones": [],
+"socials": [
+"FB @recover",
+"FB @team.thetford.basketball"
+],
+"pages_ok": 2,
+"error": ""
+},
+"https://reginaballersbasketball.com": {
+"emails": [
+"2012teams@reginaballersbasketball.com",
+"2013teams@reginaballersbasketball.com",
+"2014teams@reginaballersbasketball.com",
+"info@reginaballersbasketball.com",
+"micah@micahrich.com"
+],
+"phones": [],
+"socials": [
+"FB @100850119432868"
+],
+"pages_ok": 1,
+"error": ""
+},
+"https://ssfblizzard.com": {
+"emails": [],
+"phones": [],
+"socials": [
+"FB @SSF1952",
+"FB @seminairesaintfrancois",
+"IG @seminairesaintfrancois"
+],
+"pages_ok": 6,
+"error": ""
+},
+"https://www.instagram.com/306.heat.basketball": {
+"emails": [],
+"phones": [],
+"socials": [
+"IG @306.heat.basketball"
+],
+"pages_ok": 6,
+"error": ""
+},
+"https://sites.google.com/view/fn-basketball/home": {
+"emails": [
+"firstnationsbasketball@gmail.com"
+],
+"phones": [],
+"socials": [],
+"pages_ok": 1,
+"error": ""
+},
+"http://torontotriplethreat.com": {
+"emails": [
+"tttbasketballclub@gmail.com"
+],
+"phones": [],
+"socials": [
+"FB @tttbasketballclub",
+"IG @tttbasketballclub"
+],
+"pages_ok": 4,
+"error": ""
+},
+"https://misfitsbasketball.com": {
+"emails": [],
+"phones": [],
+"socials": [],
+"pages_ok": 2,
+"error": ""
+},
+"https://www.instagram.com/houndsvillehoops": {
+"emails": [],
+"phones": [],
+"socials": [
+"IG @houndsvillehoops"
+],
+"pages_ok": 6,
+"error": ""
+},
+"https://www.facebook.com/groups/1728174240798337": {
+"emails": [],
+"phones": [],
+"socials": [
+"FB @recover"
+],
+"pages_ok": 2,
+"error": ""
+},
+"https://www.facebook.com/p/Estevan-Club-Basketball-61571698045768": {
+"emails": [],
+"phones": [],
+"socials": [
+"FB @recover"
+],
+"pages_ok": 6,
+"error": ""
+},
+"https://www.instagram.com/yqr.novaelite": {
+"emails": [],
+"phones": [],
+"socials": [
+"IG @yqr.novaelite"
+],
+"pages_ok": 6,
+"error": ""
+},
+"https://www.facebook.com/people/Humboldt-Minor-Basketball-Association": {
+"emails": [],
+"phones": [],
+"socials": [],
+"pages_ok": 5,
+"error": ""
+},
+"https://www.facebook.com/onelovebasketball": {
+"emails": [],
+"phones": [],
+"socials": [
+"FB @onelovebasketball",
+"FB @recover"
+],
+"pages_ok": 2,
+"error": ""
+},
+"https://www.facebook.com/thunderbball306": {
+"emails": [],
+"phones": [],
+"socials": [
+"FB @recover",
+"FB @thunderbball306"
+],
+"pages_ok": 2,
+"error": ""
+},
+"https://www.myrosewood.ca/basketball.html": {
+"emails": [
+"saskatoonminorbasketball@gmail.com",
+"smba4712@gmail.com"
+],
+"phones": [],
+"socials": [
+"FB @MyRosewoodCA",
+"FB @myrosewoodca"
+],
+"pages_ok": 1,
+"error": ""
+},
+"https://www.facebook.com/p/Spartans-Club-Basketball-100063684334994": {
+"emails": [],
+"phones": [],
+"socials": [
+"FB @recover"
+],
+"pages_ok": 6,
+"error": ""
+},
+"https://saskatoonslam.com": {
+"emails": [
+"saskatoonslam@gmail.com",
+"saskatoonslamtourney@gmail.com"
+],
+"phones": [],
+"socials": [
+"FB @WordPresscom",
+"IG @saskatoonslambasketballclub"
+],
+"pages_ok": 3,
+"error": ""
+},
+"https://www.ourstonebridge.ca": {
+"emails": [
+"ourstonebridge.info@gmail.com"
+],
+"phones": [],
+"socials": [],
+"pages_ok": 1,
+"error": ""
+},
+"https://www.facebook.com/stuttersteps.bball": {
+"emails": [],
+"phones": [],
+"socials": [
+"FB @recover",
+"FB @stuttersteps.bball"
+],
+"pages_ok": 2,
+"error": ""
+},
+"https://riseabovebasketballacademy.ca": {
+"emails": [],
+"phones": [],
+"socials": [
+"FB @riseabovebasketballacademygp"
+],
+"pages_ok": 2,
+"error": ""
+},
+"https://app.teamlinkt.com/register/go/saskatoonshadowbasketballclub/73399": {
+"emails": [
+"shadowbasketball@shaw.ca"
+],
+"phones": [],
+"socials": [],
+"pages_ok": 6,
+"error": ""
+},
+"https://www.swiftcurrentsurge.ca": {
+"emails": [
+"scminorbasketball@gmail.com"
+],
+"phones": [],
+"socials": [],
+"pages_ok": 3,
+"error": ""
+},
+"https://www.basketballexperience.ca": {
+"emails": [],
+"phones": [],
+"socials": [],
+"pages_ok": 1,
+"error": ""
+},
+"https://www.yxeelitebasketball.com": {
+"emails": [
+"info@yxeelitebasketball.com"
+],
+"phones": [],
+"socials": [],
+"pages_ok": 1,
+"error": ""
+},
+"https://www.uprepbasketball.com": {
+"emails": [
+"info@uprepbasketball.com"
+],
+"phones": [],
+"socials": [
+"FB @2008",
+"FB @uprepcanada",
+"IG @uprepcanada"
+],
+"pages_ok": 3,
+"error": ""
+},
+"https://smbayxe.ca": {
+"emails": [],
+"phones": [
+"3062494712"
+],
+"socials": [
+"FB @Saskatoon-Minor-Basketball-Association-S",
+"FB @minorSaskatoon",
+"IG @smba_saskatoon"
+],
+"pages_ok": 6,
+"error": ""
+},
+"https://www.patrojonquiere.org/activites/activites-sportives/basketball": {
+"emails": [
+"bienvenue@patrojonquiere.org",
+"sports@patrojonquiere.org"
+],
+"phones": [
+"4185427536"
+],
+"socials": [
+"FB @PatrodeJonquiere",
+"IG @patrojonq"
+],
+"pages_ok": 1,
+"error": ""
+},
+"http://www.goballyk.com": {
+"emails": [
+"goballyk@gmail.com"
+],
+"phones": [],
+"socials": [
+"FB @2008",
+"IG @goballyk"
+],
+"pages_ok": 2,
+"error": ""
+},
+"https://www.nunavutbasketball.ca": {
+"emails": [
+"nunavutbasketball@outlook.com"
+],
+"phones": [],
+"socials": [],
+"pages_ok": 3,
+"error": ""
+},
+"https://www.facebook.com/p/Weyburn-Youth-Basketball-100068064164988": {
+"emails": [],
+"phones": [],
+"socials": [
+"FB @recover"
+],
+"pages_ok": 6,
+"error": ""
+},
+"https://www.wolfpack-basketball.com": {
+"emails": [
+"wolfpack.bball@northwestel.net"
+],
+"phones": [],
+"socials": [
+"FB @2008",
+"FB @CoachTBrady",
+"FB @WolfPackYukon"
+],
+"pages_ok": 3,
+"error": ""
+},
+"https://www.instagram.com/futuresbasketballnwt": {
+"emails": [],
+"phones": [],
+"socials": [
+"IG @futuresbasketballnwt"
+],
+"pages_ok": 6,
+"error": ""
+},
+"https://www.ykravensbasketball.com": {
+"emails": [
+"info@ykravensbasketball.com",
+"support@webador.com"
+],
+"phones": [],
+"socials": [
+"IG @embed.js",
+"IG @ykravensbasketball"
+],
+"pages_ok": 3,
+"error": ""
+},
+"https://basketballyukon.ca": {
+"emails": [
+"admin@basketballyukon.ca"
+],
+"phones": [],
+"socials": [],
+"pages_ok": 1,
+"error": ""
+},
+"https://silverspringcommunity.ca/programs/basketball": {
+"emails": [
+"basketball@silverspringcommunity.ca"
+],
+"phones": [],
+"socials": [
+"FB @Saskatoon-Minor-Basketball-Association-S",
+"FB @SilverspringCommunityAssociation"
+],
+"pages_ok": 1,
+"error": ""
+},
+"https://www.pmbabasketball.com": {
+"emails": [],
+"phones": [],
+"socials": [],
+"pages_ok": 0,
+"error": "URLError: <urlopen error timed out>"
+}
+}

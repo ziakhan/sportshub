@@ -1,0 +1,367 @@
+{
+ "batch": 8,
+ "investigated_at": "2026-08-14",
+ "results": [
+  {
+   "club": "MT Elite",
+   "found": false,
+   "email": "", "phone": "", "social": "", "website": "", "contact_person": "",
+   "evidence_url": "https://cybl.ca/",
+   "searched": ["\"MT Elite\" basketball Ontario CYBL", "cybl.ca team list"],
+   "notes": "Confirmed as a current CYBL member team (listed on cybl.ca), but no independent website, social handle, phone or email found for the club itself. Only the league's own contact exists (info@cybl.ca, 416-906-6593), which is not club-specific."
+  },
+  {
+   "club": "MVP Basketball Academy",
+   "found": false,
+   "email": "", "phone": "", "social": "", "website": "", "contact_person": "",
+   "evidence_url": "https://basketball.exposureevents.com/264611/phoenix-basketball-spring-league-2026/teams",
+   "searched": ["\"MVP Basketball Academy\" Ontario Phoenix League contact", "facebook.com/p/MVP-Basketball-Academy-100087496585115"],
+   "notes": "Confirmed fielding a Boys U16 team in the Phoenix League. A Facebook page named 'MVP Basketball Academy' exists (facebook.com/p/MVP-Basketball-Academy-100087496585115/) but its city/region could not be verified and it lists no email or phone, so not reported as a confirmed match. Only the league organizer's contact was found (Jeremiah, phxbasketball1@gmail.com / 647-764-6473), which is the league, not this club."
+  },
+  {
+   "club": "Maple Basketball",
+   "found": true,
+   "email": "", "phone": "6476770220", "social": "Instagram @maple_basketball_ca", "website": "maplebasketball.ca", "contact_person": "",
+   "evidence_url": "https://www.maplebasketball.ca/",
+   "searched": ["\"Maple Basketball\" Ontario club CYBL OBL contact"],
+   "notes": "Confirmed non-profit REP club based in Maple/Vaughan, ON, member of Canada Basketball and Ontario Basketball Association (OBA). Matches CYBL/OBL leagues in input. No email listed on site."
+  },
+  {
+   "club": "Momentum",
+   "found": false,
+   "email": "", "phone": "", "social": "", "website": "", "contact_person": "",
+   "evidence_url": "",
+   "searched": ["site:facebook.com \"Momentum\" basketball Ontario youth club", "facebook.com/momentum.sports.group/", "cybl.ca team list"],
+   "notes": "Confirmed as a current CYBL member team via cybl.ca, but too generic a name to safely match to a specific website/social account. A 'Momentum Sports Group' Facebook page (Toronto) surfaced, but its description references OBL Division 1 (not CYBL) and no contact info could be extracted from the page — not reported to avoid misattribution."
+  },
+  {
+   "club": "Monstarz Elite",
+   "found": false,
+   "email": "", "phone": "", "social": "", "website": "", "contact_person": "",
+   "evidence_url": "https://basketball.exposureevents.com/264611/phoenix-basketball-spring-league-2026/teams",
+   "searched": ["\"Monstarz Elite\" basketball Ontario contact", "peel-elite-basketball-monstars.com", "usamateurbasketball.com/index.php/teams/17695"],
+   "notes": "Confirmed fielding Boys U18/U17/U16/U15 teams in the Phoenix League. IMPORTANT: 'Peel Elite Basketball Monstars' (Brampton, women's program, peelelite.basketball@gmail.com) is a DIFFERENT organization (name spelled 'Monstars' not 'Monstarz', women's program not youth boys) — deliberately not reported as a match. usamateurbasketball.com lists a 'Monstarz Elite' team but states it does not release team contact info. No club-level contact found."
+  },
+  {
+   "club": "NBD G-Elite",
+   "found": false,
+   "email": "", "phone": "", "social": "", "website": "", "contact_person": "",
+   "evidence_url": "https://eobahoops.com/about",
+   "searched": ["\"NBD G-Elite\" basketball Ottawa OR Ontario EOBA", "eobahoops.com/about member list"],
+   "notes": "EOBA's published list of member-club board reps (Brockville, Ottawa Shooting Stars, Nepean Blue Devils, Cornwall, Upper Valley, Kingston Impact, BGCO, PRBC, GCBA, WOBA, OSBA, ONL, Kemptville, Clippers, Naismith, Belleville) does not include NBD G-Elite. No separate site or social found."
+  },
+  {
+   "club": "NDL",
+   "found": false,
+   "email": "", "phone": "", "social": "", "website": "", "contact_person": "",
+   "evidence_url": "",
+   "searched": ["\"NDL\" basketball Ontario NPH-D1", "ndlbasketball.ca / ndlbasketball.com domain check"],
+   "notes": "No matching website or social handle found. Guessed domains (ndlbasketball.ca, ndlbasketball.com) do not resolve."
+  },
+  {
+   "club": "NDL Basketball",
+   "found": false,
+   "email": "", "phone": "", "social": "", "website": "", "contact_person": "",
+   "evidence_url": "",
+   "searched": ["\"NDL Basketball\" Ontario GTA contact email", "ndlbasketball.ca / ndlbasketball.com domain check"],
+   "notes": "Likely the same organization as the 'NDL' entry above (GTA, NPH-affiliated). No contact info found either way."
+  },
+  {
+   "club": "NOBAT",
+   "found": true,
+   "email": "", "phone": "", "social": "Instagram @nobat.canada / Facebook NobatBasketballLeague", "website": "", "contact_person": "",
+   "evidence_url": "https://www.instagram.com/nobat.canada/",
+   "searched": ["\"NOBAT\" basketball Ontario Phoenix League", "facebook.com/NobatBasketballLeague", "phoenix league team list"],
+   "notes": "MODERATE CONFIDENCE: 'NOBAT Basketball League' is a Filipino-community basketball league/club based in Toronto/North York, ON (640 Lawrence Ave W). A team called 'NOBAT' is separately confirmed playing Boys U16/U15 in the Phoenix League. Could not fully verify these are the same entity, and no email or phone was found for either. Reported with this caveat rather than omitted, since the name/city/sport all line up."
+  },
+  {
+   "club": "NSE Select Academy",
+   "found": true,
+   "email": "", "phone": "", "social": "Instagram @nseselect", "website": "", "contact_person": "",
+   "evidence_url": "https://www.instagram.com/nseselect/",
+   "searched": ["\"NSE Select Academy\" basketball Ontario NJC contact", "instagram.com/novastarselite (affiliate link)", "instagram.com/nseselect"],
+   "notes": "MODERATE CONFIDENCE: @nseselect is listed as an 'Affiliate' in Nova Stars Elite's (@novastarselite, GTA) Instagram bio, and both accounts share the same registration Google Form link (forms.gle/iDvhsbGGs38zYVac9). @nseselect's own bio doesn't explicitly say 'Academy' or 'Ontario', so this is a plausible but not certain match for 'NSE Select Academy'."
+  },
+  {
+   "club": "New Horizon Basketball",
+   "found": true,
+   "email": "info@newhorizonbasketball.com", "phone": "4165536040", "social": "Instagram @newhorizonbasketball / Facebook NewHorizonBasketballAcademy", "website": "newhorizonbasketball.com", "contact_person": "",
+   "evidence_url": "https://www.newhorizonbasketball.com/contact",
+   "searched": ["\"New Horizon Basketball\" Ontario ORBL contact email"],
+   "notes": "Confirmed GTA-based org (Markham, Whitby, Uxbridge, Clarington locations) with Skills Academy/House League/Rep/Girls Academy programs. Direct ORBL affiliation not explicitly stated on the contact page but name/region/sport all match input."
+  },
+  {
+   "club": "New Wave Basketball",
+   "found": false,
+   "email": "", "phone": "", "social": "", "website": "", "contact_person": "",
+   "evidence_url": "",
+   "searched": ["\"New Wave Basketball\" Ontario GTA NPH contact", "newwavebasketball.com"],
+   "notes": "newwavebasketball.com exists but is a parked/expired domain (redirects to a GoDaddy-style 'lander' page) — confirmed NOT the real club, so not reported. No other lead found."
+  },
+  {
+   "club": "Next Man Up",
+   "found": true,
+   "email": "xmanupbasketball@gmail.com", "phone": "", "social": "Instagram @xmanupbasketball / TikTok @xmanupbasketball", "website": "nextmanup.ca", "contact_person": "",
+   "evidence_url": "https://www.nextmanup.ca/",
+   "searched": ["\"Next Man Up\" basketball Ontario Hoop City contact"],
+   "notes": "Confirmed Scarborough, ON youth basketball program (address: 36 Griselda Crescent, Scarborough, ON M1G 3P6). Runs Boys Basketball Program and Lady Phenoms (2026-27). Matches Hoop City League per input."
+  },
+  {
+   "club": "Nexus Wolves",
+   "found": true,
+   "email": "", "phone": "", "social": "Instagram @nexusbasketball", "website": "", "contact_person": "",
+   "evidence_url": "https://www.instagram.com/nexusbasketball/",
+   "searched": ["\"Nexus Wolves\" basketball Ontario Hoop City contact"],
+   "notes": "Nexus Wolves Basketball Club, based in the Region of Peel, ON. Also has a YouTube channel (Nexus Wolves Basketball Club). No email/phone found."
+  },
+  {
+   "club": "No Look Dime",
+   "found": false,
+   "email": "", "phone": "", "social": "", "website": "", "contact_person": "",
+   "evidence_url": "",
+   "searched": ["\"No Look Dime\" basketball Toronto Big League contact", "\"No Look Dime\" basketball team Toronto instagram OR facebook"],
+   "notes": "No matching club found. Searches surfaced only unrelated 'Dime' academies/clubs (Dime Basketball Academy, Dime Academy Basketball) that do not match this name."
+  },
+  {
+   "club": "North Region Crazy Catz",
+   "found": true,
+   "email": "Nick.NRBA@gmail.com", "phone": "6475193983", "social": "Instagram/Facebook/Twitter @nrba2 (toronto.nrba)", "website": "tonrba.com", "contact_person": "Nick Biagini (North Region Basketball Association)",
+   "evidence_url": "https://tonrba.com/contact/",
+   "searched": ["\"North Region Crazy Catz\" basketball Ontario ORBL", "tonrba.com/contact/"],
+   "notes": "'Crazy Catz' (U10/U12 teams) is a program of the North Region Basketball Association (NRBA), Toronto, ON. Additional NRBA contacts: Joe Gagliardi 416-996-9883 / gagaj@rogers.com; Susie Dipetta 416-476-6011 / susiedipettanrba@gmail.com. Contact given is for the parent association, not a Crazy-Catz-specific line."
+  },
+  {
+   "club": "Northern Hoops",
+   "found": false,
+   "email": "", "phone": "", "social": "", "website": "", "contact_person": "",
+   "evidence_url": "https://basketball.exposureevents.com/264611/phoenix-basketball-spring-league-2026/teams",
+   "searched": ["\"Northern Hoops\" basketball Ontario Phoenix League contact", "\"Northern Hoops\" basketball club Ontario instagram OR facebook"],
+   "notes": "Confirmed fielding Boys U15/U13/U12 teams in the Phoenix League, but no independent club website/social/contact found. Only the league organizer's contact exists (not club-specific)."
+  },
+  {
+   "club": "Nova Stars Elite",
+   "found": true,
+   "email": "", "phone": "", "social": "Instagram @novastarselite", "website": "forms.gle/iDvhsbGGs38zYVac9 (registration form)", "contact_person": "",
+   "evidence_url": "https://www.instagram.com/novastarselite/",
+   "searched": ["\"Nova Stars Elite\" basketball Ontario GTA contact"],
+   "notes": "Bio: 'The GTA's #1' development program, REP/AAU/Skill Training/Camps. Affiliate: @nseselect. No email/phone in bio."
+  },
+  {
+   "club": "OBC",
+   "found": false,
+   "email": "", "phone": "", "social": "", "website": "", "contact_person": "",
+   "evidence_url": "",
+   "searched": ["\"OBC\" basketball club Toronto Big League contact", "oakvillebasketball.com/contact-us/"],
+   "notes": "Too ambiguous an abbreviation to safely resolve. 'Oakville Basketball Club' (admin@oakvillebasketball.com, 905-469-1855) also goes by 'OBC', but its page makes no mention of Toronto Big League, and OBC could equally be a different organization — not reported to avoid attaching the wrong club's contact info to this record."
+  },
+  {
+   "club": "Ontario Elite",
+   "found": false,
+   "email": "", "phone": "", "social": "", "website": "", "contact_person": "",
+   "evidence_url": "",
+   "searched": ["\"Ontario Elite\" basketball club OBL contact email"],
+   "notes": "Only Ontario Basketball Association / OBL general contact info surfaced (obl@basketball.on.ca); no page or account for a specific 'Ontario Elite' club was found."
+  },
+  {
+   "club": "Overcomers",
+   "found": false,
+   "email": "", "phone": "", "social": "", "website": "", "contact_person": "",
+   "evidence_url": "https://eobahoops.com/about",
+   "searched": ["\"Overcomers\" basketball Ontario EOBA contact", "eobahoops.com/about member list"],
+   "notes": "Not among the EOBA board-rep clubs listed on eobahoops.com/about. No separate site/social found."
+  },
+  {
+   "club": "P13 Academy",
+   "found": false,
+   "email": "", "phone": "", "social": "", "website": "", "contact_person": "",
+   "evidence_url": "",
+   "searched": ["\"P13 Academy\" basketball Ontario Hoop City contact"],
+   "notes": "No matching club found; Hoop City League's own site does not list a member-club roster."
+  },
+  {
+   "club": "Point 36",
+   "found": false,
+   "email": "", "phone": "", "social": "", "website": "", "contact_person": "",
+   "evidence_url": "",
+   "searched": ["\"Point 36\" basketball Durham York Ontario club"],
+   "notes": "No matching club found. Search surfaced unrelated Durham-region clubs (Durham Basketball Club, Durham City Basketball Association) that do not match this name — not reported."
+  },
+  {
+   "club": "Quantum Sports Academy",
+   "found": true,
+   "email": "info@qsla.ca", "phone": "4168555572", "social": "Instagram @quantum_mbb", "website": "qsla.org", "contact_person": "",
+   "evidence_url": "https://qsla.org/contact-us/",
+   "searched": ["\"Quantum Sports Academy\" basketball Ontario Toronto Big League contact", "quantumsportsacademy.ca"],
+   "notes": "Parent organization is QSLA (Quantum Sports & Learning Association), 950 Dupont St, Toronto, ON M6H 1Z2 — a non-profit basketball/math-literacy program, official MLSE LaunchPad partner, whose basketball program competes as 'Quantum Sports Academy' / '@quantum_mbb' (Toronto Big League per input). quantumsportsacademy.ca returned no fetchable content."
+  },
+  {
+   "club": "RSB",
+   "found": true,
+   "email": "rsbelite@gmail.com", "phone": "2899810564", "social": "Instagram @rsb_elite", "website": "rsbassociation.ca", "contact_person": "",
+   "evidence_url": "https://www.rsbassociation.ca/",
+   "searched": ["\"RSB\" basketball Ontario CYBL contact", "rsbassociation.ca raw fetch (schema.org confirms SportsOrganization/Basketball, sameAs instagram.com/rsb_elite)"],
+   "notes": "rsbassociation.ca's own structured data confirms it is a Basketball SportsOrganization linked to Instagram @rsb_elite, corroborating the rsbelite@gmail.com / 289-981-0564 contact found via search. Also listed as 'RSB Association' on CYBL and OBA Provincials team pages."
+  },
+  {
+   "club": "RWI",
+   "found": true,
+   "email": "info@qsla.ca", "phone": "4168555572", "social": "Threads/TikTok @rwibasketball", "website": "qsla.org/team/rwi-kings/", "contact_person": "",
+   "evidence_url": "https://qsla.org/team/rwi-kings/",
+   "searched": ["\"RWI\" basketball Ontario Hoop City contact"],
+   "notes": "'RWI Kings' is a team fielded under QSLA (same parent org as 'Quantum Sports Academy' above), competing in Hoop City League (U13/U14) per input. Contact given is the parent org's."
+  },
+  {
+   "club": "Raiders Basketball",
+   "found": false,
+   "email": "", "phone": "", "social": "", "website": "", "contact_person": "",
+   "evidence_url": "",
+   "searched": ["\"Raiders Basketball\" Ontario GTA NPH Showcase contact"],
+   "notes": "Confirmed as a team name in the NPH Showcase League, but only the league organizer's contact was found (Kevin Phillip, kevin@northpolehoops.com) — not club-specific, so not reported as this club's contact."
+  },
+  {
+   "club": "Red Dot",
+   "found": true,
+   "email": "", "phone": "2893803797", "social": "Instagram @reddotbasketball", "website": "reddotbasketball.ca", "contact_person": "",
+   "evidence_url": "https://www.reddotbasketball.ca/contactreddot",
+   "searched": ["\"Red Dot\" basketball Ontario Hoop City OR Phoenix contact"],
+   "notes": "Red Dot Basketball, Markham ON (7B-7634 Woodbine Ave). Likely the same club as the 'Red Dot Basketball' entry in this batch (both Markham-based, same site) — input lists this one under Hoop City League specifically, which the site itself does not explicitly confirm."
+  },
+  {
+   "club": "Red Dot Basketball",
+   "found": true,
+   "email": "", "phone": "2893803797", "social": "Instagram @reddotbasketball", "website": "reddotbasketball.ca", "contact_person": "",
+   "evidence_url": "https://www.reddotbasketball.ca/contactreddot",
+   "searched": ["\"Red Dot Basketball\" Markham contact", "phoenix league team list (Red Dot Basketball not found in Phoenix roster)"],
+   "notes": "Same club/contact as the 'Red Dot' entry above. Note: this club did NOT appear on the Phoenix League's team roster page when checked, so the 'Phoenix League' affiliation in input could not be independently confirmed — flagged, not withheld, since the club itself is real and well-documented."
+  },
+  {
+   "club": "Red Rush BK",
+   "found": false,
+   "email": "", "phone": "", "social": "", "website": "", "contact_person": "",
+   "evidence_url": "",
+   "searched": ["\"Red Rush\" basketball Ontario CYBL contact", "facebook.com/redrushbasketball/ (raw meta fetch)"],
+   "notes": "Confirmed as a current CYBL member team, but the only 'Red Rush Basketball' Facebook page found describes itself as 'a grassroots leadership, skills & life development program' — matching a Montreal Community Cares program description almost verbatim, suggesting it may be a Montreal-based namesake rather than this Ontario CYBL club. Not reported due to this mismatch risk."
+  },
+  {
+   "club": "Remix (Remix Elite / Remix / Remix Onyx / Remix Gold)",
+   "found": false,
+   "email": "", "phone": "", "social": "", "website": "", "contact_person": "",
+   "evidence_url": "https://basketball.exposureevents.com/264611/phoenix-basketball-spring-league-2026/teams",
+   "searched": ["\"Remix Elite\" basketball Ontario Phoenix League contact"],
+   "notes": "Confirmed 'Remix Junior Elite' (Boys U16) and 'Remix Varsity' (Boys U15) play in the Phoenix League, but no club-level website/social/contact found beyond the league organizer."
+  },
+  {
+   "club": "Rising Stars",
+   "found": true,
+   "email": "info@ottawashootingstars.com", "phone": "", "social": "", "website": "ottawashootingstars.com", "contact_person": "",
+   "evidence_url": "https://ottawashootingstars.com/club-policies/",
+   "searched": ["\"Rising Stars\" basketball Ontario EOBA contact"],
+   "notes": "'Rising Stars – High Performance (Boys and Girls)' is a program of Ottawa Shooting Stars Basketball; both are explicitly named as EOBA members on the club's own policies page, matching input's EOBA league."
+  },
+  {
+   "club": "Rockets",
+   "found": true,
+   "email": "prbcrocketsbball@gmail.com", "phone": "", "social": "Facebook facebook.com/rocketsbasketball / Instagram @prbcrockets", "website": "prbcrockets.ca", "contact_person": "",
+   "evidence_url": "https://prescottrussellbasketballclub.teamsnapsites.com/",
+   "searched": ["\"Rockets\" basketball club Ottawa OR \"Eastern Ontario\" EOBA contact"],
+   "notes": "Prescott Russell Basketball Club (PRBC) 'Rockets', Embrun, ON (PO Box 1244, Embrun PO). Confirmed as an EOBA / Ontario Basketball Association member, matching input's 'EOBA Competitive Season 2025-26'."
+  },
+  {
+   "club": "Royal Crown",
+   "found": true,
+   "email": "admissions@royalcrownschool.com", "phone": "4165190476", "social": "X/Twitter @royalcrownball", "website": "royalcrownschool.com", "contact_person": "Head Coach Mike De Giorgio (basketball program)",
+   "evidence_url": "https://www.royalcrownschool.com/contact-us",
+   "searched": ["\"Royal Crown\" basketball Toronto Big League contact", "\"Royal Crown\" basketball Toronto 4620 Finch phone email contact"],
+   "notes": "Royal Crown School/Academy, 4620 Finch Ave E, Toronto (Scarborough), ON M1S 4G2 — an OSBA/NPA prep basketball program. Contact given (admissions@) is the school's general line, not a basketball-program-specific address; ask for the basketball program or Coach Mike De Giorgio."
+  },
+  {
+   "club": "Serious Basketball",
+   "found": false,
+   "email": "", "phone": "", "social": "", "website": "", "contact_person": "",
+   "evidence_url": "https://cybl.ca/",
+   "searched": ["\"Serious Basketball\" Ontario CYBL contact"],
+   "notes": "Confirmed as a current CYBL member team via cybl.ca, but no independent website, social handle, or contact found."
+  },
+  {
+   "club": "Shelbourne Shock",
+   "found": false,
+   "email": "", "phone": "", "social": "", "website": "", "contact_person": "",
+   "evidence_url": "",
+   "searched": ["\"Shelbourne Shock\" basketball Ontario Phoenix League", "phoenix league team list (not present)"],
+   "notes": "Did not appear on the Phoenix League team roster page when checked, and no separate website/social found. Search surfaced only an unrelated 'St Thomas Shock' team."
+  },
+  {
+   "club": "Silver Knights",
+   "found": true,
+   "email": "ysskbc@gmail.com", "phone": "4168951730", "social": "Facebook York South Silver Knights Basketball Club", "website": "silverknightsbasketball.com", "contact_person": "",
+   "evidence_url": "https://www.silverknightsbasketball.com/contact/",
+   "searched": ["\"Silver Knights\" basketball Ontario club contact"],
+   "notes": "York South Silver Knights Basketball, Richmond Hill, ON (230 Shaftsbury Ave). Additional emails on file: rbaumgartner@rogers.com, jason.ysskhl@gmail.com. Input's 'Coalition' league affiliation could not be independently confirmed on the club site, but this is the only significant 'Silver Knights' basketball club in the Ontario youth space."
+  },
+  {
+   "club": "Sisters Keeper Basketball",
+   "found": true,
+   "email": "", "phone": "4169108507", "social": "Instagram @sisterskeeperto / Facebook SistersKeeperto", "website": "sisterskeeper.ca", "contact_person": "Coach Cash",
+   "evidence_url": "https://www.instagram.com/sisterskeeperto/",
+   "searched": ["\"Sisters Keeper Basketball\" Ontario contact", "sisterskeeper.ca (JS-rendered, no content retrievable)"],
+   "notes": "'My Brother's & Sisters Keeper Youth Org', Toronto, ON — girls' basketball development program (NPH Showcase Girls per input). Phone found is a personal coach contact (Coach Cash), used because no club-level line was available."
+  },
+  {
+   "club": "Stags",
+   "found": true,
+   "email": "inquiry@miltonstags.com", "phone": "2894291114", "social": "", "website": "miltonstags.com", "contact_person": "",
+   "evidence_url": "https://www.miltonstags.com/elite/",
+   "searched": ["\"Stags\" basketball Ontario Coalition league contact"],
+   "notes": "Milton Stags Basketball Club (Milton, ON, 2015 Pan Am Blvd), not-for-profit since the early 2000s, Canada Basketball VERIFIED. Referred to simply as 'Stags' and runs an 'S-Elite' AAU program. Input's 'Coalition' league not independently confirmed on-site."
+  },
+  {
+   "club": "TLB",
+   "found": false,
+   "email": "", "phone": "", "social": "", "website": "", "contact_person": "",
+   "evidence_url": "",
+   "searched": ["\"TLB\" basketball Ontario Coalition league contact (search budget exhausted before this could be run)"],
+   "notes": "Could not distinguish from 'TLB Elite' (separate entry, GTA, IG @tlb_elite_basketball) with available evidence — not merged without confirmation they are the same club. No independent contact found for 'TLB' alone."
+  },
+  {
+   "club": "TLB Elite",
+   "found": true,
+   "email": "", "phone": "", "social": "Instagram @tlb_elite_basketball", "website": "", "contact_person": "",
+   "evidence_url": "https://www.instagram.com/tlb_elite_basketball/",
+   "searched": ["instagram.com/tlb_elite_basketball (bio not retrievable via fetch)"],
+   "notes": "Social handle was already known from input; could not retrieve additional bio text, email, phone, or website via this pass (Instagram profile did not return readable content)."
+  },
+  {
+   "club": "TNP",
+   "found": false,
+   "email": "", "phone": "", "social": "", "website": "", "contact_person": "",
+   "evidence_url": "",
+   "searched": ["\"TNP\" basketball Toronto Big League contact (search budget exhausted before this could be run)", "basketball.exposureevents.com/organizations/31370/toronto-big-league (roster listings disabled)"],
+   "notes": "Toronto Big League's own team-roster page was disabled ('Listings are disabled for the moment') when checked, and the session's web-search budget was exhausted before an alternate query could be run. No contact found."
+  },
+  {
+   "club": "TNT",
+   "found": false,
+   "email": "", "phone": "", "social": "", "website": "", "contact_person": "",
+   "evidence_url": "",
+   "searched": ["basketball.exposureevents.com/organizations/31370/toronto-big-league (roster listings disabled)"],
+   "notes": "Same limitation as TNP: Toronto Big League roster page was disabled and web-search budget was exhausted before this club could be searched directly. No contact found."
+  },
+  {
+   "club": "TPG",
+   "found": true,
+   "email": "thepgba@gmail.com", "phone": "6475019805", "social": "Instagram/Twitter @tpgbasketball", "website": "performancegroupbasketball.com", "contact_person": "Alfred Brown (Co-Founder/President), Elvis Dennis (Co-Founder/Senior Head Coach)",
+   "evidence_url": "https://performancegroupbasketball.com/",
+   "searched": ["\"TPG Basketball\" performancegroupbasketball Ontario contact"],
+   "notes": "'The Performance Group Basketball Association' (TPG), Brampton, ON. Also reachable via Coach Elvis at 416-875-9324. Matches CYBL/Phoenix League per input."
+  },
+  {
+   "club": "Team Breakdown",
+   "found": false,
+   "email": "", "phone": "", "social": "", "website": "", "contact_person": "",
+   "evidence_url": "https://cybl.ca/",
+   "searched": ["\"Team Breakdown\" basketball CYBL Ontario (via cybl.ca team list)"],
+   "notes": "Confirmed as a current CYBL member team via cybl.ca, but no independent website, social handle, or contact found."
+  }
+ ],
+ "summary": {"total": 45, "with_email": 12, "with_phone": 13, "with_any_contact": 21, "not_found": 24}
+}

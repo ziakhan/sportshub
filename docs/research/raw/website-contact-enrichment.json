@@ -1,0 +1,5050 @@
+{
+ "fetched": "2026-08-14",
+ "method": "homepage + conventional contact paths, mailto:/tel:/social extraction",
+ "sites_attempted_this_run": 576,
+ "sites_in_cache": 534,
+ "sites_reachable": 442,
+ "clubs_enriched": 399,
+ "clubs": [
+  {
+   "club": "Airdrie Minor Basketball Association (AMBA)",
+   "province": "Alberta",
+   "city": "Airdrie",
+   "website": "https://airdriebasketball.ca",
+   "email": "info@airdriebasketball.ca",
+   "phone": "",
+   "all_emails": [],
+   "social": "FB @airdrieminorbasketball; IG @airdrieminorbasketball",
+   "evidence_url": "https://airdriebasketball.ca"
+  },
+  {
+   "club": "Bow River South Basketball Association",
+   "province": "Alberta",
+   "city": "Calgary",
+   "website": "https://bowriverbasketball.com",
+   "email": "president@bowriverbasketball.com",
+   "phone": "",
+   "all_emails": [],
+   "social": "FB @BowRiverSouthBasketball; IG @bowriverbasketball",
+   "evidence_url": "https://bowriverbasketball.com"
+  },
+  {
+   "club": "CADA Sports (CADA Red Storm)",
+   "province": "Alberta",
+   "city": "Edmonton",
+   "website": "https://www.cadasports.com/",
+   "email": "info@cadasports.com",
+   "phone": "",
+   "all_emails": [
+    "info@cadasports.com"
+   ],
+   "social": "FB @CADAyouth; IG @cadayouth",
+   "evidence_url": "https://www.cadasports.com"
+  },
+  {
+   "club": "Calgary Basketball Academy (CBA)",
+   "province": "Alberta",
+   "city": "Calgary",
+   "website": "https://calgarybasketball.ca",
+   "email": "info@calgarybasketball.ca",
+   "phone": "",
+   "all_emails": [],
+   "social": "FB @cbacalgary; IG @_c_b_a_",
+   "evidence_url": "https://calgarybasketball.ca"
+  },
+  {
+   "club": "Calgary Northwest Basketball Association (CNWB)",
+   "province": "Alberta",
+   "city": "Calgary",
+   "website": "https://cnwb.ca",
+   "email": "calgarynwbasketball@gmail.com",
+   "phone": "",
+   "all_emails": [],
+   "social": "IG @calgarynwbasketball",
+   "evidence_url": "https://cnwb.ca"
+  },
+  {
+   "club": "Calgary Thunder Basketball Club",
+   "province": "Alberta",
+   "city": "Calgary",
+   "website": "http://thunderbasketball.ca/",
+   "email": "registrar@thunderbasketball.ca",
+   "phone": "",
+   "all_emails": [
+    "registrar@thunderbasketball.ca"
+   ],
+   "social": "FB @ncbcthunder",
+   "evidence_url": "http://thunderbasketball.ca"
+  },
+  {
+   "club": "Capital City Basketball Academy",
+   "province": "Alberta",
+   "city": "Edmonton",
+   "website": "https://www.capcitybballacademy.ca/",
+   "email": "craig.frizzell@hotmail.com",
+   "phone": "",
+   "all_emails": [
+    "craig.frizzell@hotmail.com"
+   ],
+   "social": "",
+   "evidence_url": "https://www.capcitybballacademy.ca"
+  },
+  {
+   "club": "Edson Minor Basketball (Edson Raiders)",
+   "province": "Alberta",
+   "city": "Edson",
+   "website": "http://www.edsonminorbasketball.com/",
+   "email": "edsonminorbasketball@gmail.com",
+   "phone": "",
+   "all_emails": [
+    "edsonminorbasketball@gmail.com"
+   ],
+   "social": "FB @EdsonMinorBasketball",
+   "evidence_url": "http://www.edsonminorbasketball.com"
+  },
+  {
+   "club": "EJ Ballers — Ballers League Camrose",
+   "province": "Alberta",
+   "city": "Camrose",
+   "website": "https://ejballers.com/index.php/ballers-league-camrose/",
+   "email": "info@ejballers.com",
+   "phone": "",
+   "all_emails": [
+    "coach@ejballers.com",
+    "info@ejballers.com"
+   ],
+   "social": "FB @ejballers; IG @ejballers",
+   "evidence_url": "https://ejballers.com/index.php/ballers-league-camrose"
+  },
+  {
+   "club": "HYPE Hoops Basketball Club (Hype Hoops and Athletics)",
+   "province": "Alberta",
+   "city": "Red Deer",
+   "website": "https://hypehoops.ca/",
+   "email": "reid@hypehoops.ca",
+   "phone": "",
+   "all_emails": [
+    "reid@hypehoops.ca"
+   ],
+   "social": "FB @hypehoops.ca; IG @hypehoops.ca",
+   "evidence_url": "https://hypehoops.ca"
+  },
+  {
+   "club": "ICONS Basketball Club",
+   "province": "Alberta",
+   "city": "Calgary",
+   "website": "https://iconsbasketball.ca/",
+   "email": "admin@iconsbasketball.ca",
+   "phone": "",
+   "all_emails": [
+    "admin@iconsbasketball.ca"
+   ],
+   "social": "",
+   "evidence_url": "https://iconsbasketball.ca"
+  },
+  {
+   "club": "Junior Bears Basketball Club (University of Alberta)",
+   "province": "Alberta",
+   "city": "Edmonton",
+   "website": "https://bearsandpandas.ca/sports/2020/10/21/junior-bears-basketball-club.aspx",
+   "email": "",
+   "phone": "",
+   "all_emails": [],
+   "social": "FB @UABWrestling; FB @UAPandasHockey; FB @University-of-Alberta-Pandas-Tennis-1200; FB @University-of-Alberta-Track-Field-103652",
+   "evidence_url": "https://bearsandpandas.ca/sports/2020/10/21/junior-bears-basketball-club.aspx"
+  },
+  {
+   "club": "Leduc & County Basketball Association (LCBA / Leduc Lightning)",
+   "province": "Alberta",
+   "city": "Leduc",
+   "website": "https://www.leduclightning.com/",
+   "email": "communications@leduclightning.com",
+   "phone": "",
+   "all_emails": [
+    "communications@leduclightning.com"
+   ],
+   "social": "IG @leduccommunitybasketball",
+   "evidence_url": "https://www.leduclightning.com"
+  },
+  {
+   "club": "Legacy Athletics / ITD Panthers Basketball Club",
+   "province": "Alberta",
+   "city": "Edmonton",
+   "website": "https://www.legacyathletics.ca/",
+   "email": "info@legacyathletics.ca",
+   "phone": "",
+   "all_emails": [
+    "info@legacyathletics.ca"
+   ],
+   "social": "FB @2008; FB @Legacy-Athletics-103502618601049; IG @genesis.yeg; IG @legacyathleticsbasketball",
+   "evidence_url": "https://www.legacyathletics.ca"
+  },
+  {
+   "club": "Legends Basketball (YYC)",
+   "province": "Alberta",
+   "city": "Calgary",
+   "website": "https://www.facebook.com/legendsbasketball.yyc/",
+   "email": "darryl.movefree@gmail.com",
+   "phone": "",
+   "all_emails": [],
+   "social": "FB @legendsbasketball.yyc",
+   "evidence_url": "https://www.facebook.com/legendsbasketball.yyc"
+  },
+  {
+   "club": "Lethbridge Cougars Basketball Club",
+   "province": "Alberta",
+   "city": "Lethbridge",
+   "website": "https://lethbridgecougars.ca/lcbc/",
+   "email": "",
+   "phone": "403-393-4871",
+   "all_emails": [],
+   "social": "",
+   "evidence_url": "https://lethbridgecougars.ca/lcbc"
+  },
+  {
+   "club": "Lethbridge Minor Basketball Association (LMBA)",
+   "province": "Alberta",
+   "city": "Lethbridge",
+   "website": "https://lethbridgebasketball.ca/",
+   "email": "lethbridgebasketball@gmail.com",
+   "phone": "",
+   "all_emails": [
+    "battle.lmba@gmail.com",
+    "lethbridgebasketball@gmail.com",
+    "lethbridgeminorbasketball@gmail.com"
+   ],
+   "social": "FB @2008; FB @LMBALethbridge; IG @lethbridgebasketball",
+   "evidence_url": "https://lethbridgebasketball.ca"
+  },
+  {
+   "club": "Lloydminster Minor Basketball Association (a.k.a. Lloydminster Youth Basketball Inc.)",
+   "province": "Alberta",
+   "city": "Lloydminster",
+   "website": "https://www.facebook.com/p/Lloydminster-Minor-Basketball-Association-61558519229133/",
+   "email": "",
+   "phone": "306-307-8788",
+   "all_emails": [],
+   "social": "FB @contactus; FB @lloydyouthbasketball",
+   "evidence_url": "https://www.facebook.com/p/Lloydminster-Minor-Basketball-Association-61558519229133"
+  },
+  {
+   "club": "Lloydminster Youth Basketball Club Ltd.",
+   "province": "Alberta",
+   "city": "Lloydminster",
+   "website": "https://www.facebook.com/lloydyouthbasketball/",
+   "email": "",
+   "phone": "306-307-8788",
+   "all_emails": [],
+   "social": "FB @lloydyouthbasketball",
+   "evidence_url": "https://www.facebook.com/lloydyouthbasketball"
+  },
+  {
+   "club": "Making Hoops Basketball Club",
+   "province": "Alberta",
+   "city": "Fort McMurray",
+   "website": "https://www.facebook.com/MakinHoopsClub/",
+   "email": "",
+   "phone": "(780) 370-5437",
+   "all_emails": [],
+   "social": "FB @MakinHoopsClub",
+   "evidence_url": "https://www.facebook.com/MakinHoopsClub"
+  },
+  {
+   "club": "Morinville Youth Basketball Association (MYBA)",
+   "province": "Alberta",
+   "city": "Morinville",
+   "website": "http://www.morinvilleyouthbasketball.com/",
+   "email": "ask.myba@gmail.com",
+   "phone": "",
+   "all_emails": [
+    "ask.myba@gmail.com"
+   ],
+   "social": "FB @morinvilleyouthbasketball; IG @morinvilleyouthbasketball",
+   "evidence_url": "http://www.morinvilleyouthbasketball.com"
+  },
+  {
+   "club": "North East Basketball Association (NEBA)",
+   "province": "Alberta",
+   "city": "Edmonton",
+   "website": "http://northeastbasketball.com/",
+   "email": "info@northeastbasketball.com",
+   "phone": "",
+   "all_emails": [
+    "info@northeastbasketball.com"
+   ],
+   "social": "FB @North-East-Basketball-Association-164858",
+   "evidence_url": "http://northeastbasketball.com"
+  },
+  {
+   "club": "Northwest Zone Basketball Association (NWBA/NWZBA)",
+   "province": "Alberta",
+   "city": "Edmonton",
+   "website": "http://northwestbasketball.ca/",
+   "email": "info@northwestbasketball.ca",
+   "phone": "",
+   "all_emails": [
+    "info@northwestbasketball.ca"
+   ],
+   "social": "IG @nwbballyeg",
+   "evidence_url": "http://northwestbasketball.ca"
+  },
+  {
+   "club": "Parkland Community Basketball League (Parkland Pride)",
+   "province": "Alberta",
+   "city": "Spruce Grove",
+   "website": "http://www.parklandbasketball.ca/",
+   "email": "info@parklandbasketball.ca",
+   "phone": "",
+   "all_emails": [
+    "info@parklandbasketball.ca"
+   ],
+   "social": "FB @bballpride; IG @parklandbasketball",
+   "evidence_url": "http://www.parklandbasketball.ca"
+  },
+  {
+   "club": "Prolific Sports Academy (PSA Prep)",
+   "province": "Alberta",
+   "city": "Calgary",
+   "website": "https://prolificsportsacademy.com/",
+   "email": "Team@prolificsportsacademy.com",
+   "phone": "403-860-0062",
+   "all_emails": [
+    "team@prolificsportsacademy.com"
+   ],
+   "social": "FB @2008; FB @PSAprep; IG @psaprep",
+   "evidence_url": "https://prolificsportsacademy.com"
+  },
+  {
+   "club": "Respect Basketball",
+   "province": "Alberta",
+   "city": "Calgary",
+   "website": "https://www.respectbasketball.ca",
+   "email": "respectbball@gmail.com",
+   "phone": "",
+   "all_emails": [
+    "respectbball@gmail.com"
+   ],
+   "social": "FB @respectbballyyc; IG @respectbball",
+   "evidence_url": "https://www.respectbasketball.ca"
+  },
+  {
+   "club": "Rise Above Basketball Academy",
+   "province": "Alberta",
+   "city": "Grande Prairie",
+   "website": "https://riseabovebasketballacademy.ca/",
+   "email": "riseabovebasketballacademyltd@gmail.com",
+   "phone": "780-512-6699",
+   "all_emails": [],
+   "social": "FB @riseabovebasketballacademygp",
+   "evidence_url": "https://riseabovebasketballacademy.ca"
+  },
+  {
+   "club": "Rocky Rapids Basketball Club",
+   "province": "Alberta",
+   "city": "Rocky Mountain House",
+   "website": "https://www.rockyrapidsbball.com/",
+   "email": "rapidsbball@gmail.com",
+   "phone": "",
+   "all_emails": [
+    "rapidsbball@gmail.com"
+   ],
+   "social": "FB @rockyrapids",
+   "evidence_url": "https://www.rockyrapidsbball.com"
+  },
+  {
+   "club": "South Calgary Community Basketball Association (SoCal / SCCBA)",
+   "province": "Alberta",
+   "city": "Calgary",
+   "website": "https://sccba.ca",
+   "email": "admin@sccba.ca",
+   "phone": "",
+   "all_emails": [
+    "admin@sccba.ca"
+   ],
+   "social": "FB @southcalgarycommunitybasketballassociati; IG @southcalgarybasketball",
+   "evidence_url": "https://sccba.ca"
+  },
+  {
+   "club": "South Stoney Basketball Association (Bobcats)",
+   "province": "Alberta",
+   "city": "Calgary",
+   "website": "https://southstoneybasketball.com",
+   "email": "president@southstoneybasketball.com",
+   "phone": "",
+   "all_emails": [
+    "coacheval@southstoneybasketball.com",
+    "facilities@southstoneybasketball.com",
+    "johndoe@gmail.com",
+    "president@southstoneybasketball.com",
+    "registrar@southstoneybasketball.com"
+   ],
+   "social": "FB @2008",
+   "evidence_url": "https://southstoneybasketball.com"
+  },
+  {
+   "club": "Southwest Basketball Association (SWBA)",
+   "province": "Alberta",
+   "city": "Edmonton",
+   "website": "https://southwestbasketball.com/",
+   "email": "info@southwestbasketball.com",
+   "phone": "",
+   "all_emails": [
+    "info@southwestbasketball.com"
+   ],
+   "social": "FB @swzyba; IG @swzyba",
+   "evidence_url": "https://southwestbasketball.com"
+  },
+  {
+   "club": "St. Albert SLAM Youth Basketball Association",
+   "province": "Alberta",
+   "city": "St. Albert",
+   "website": "https://www.stalbertslam.com/",
+   "email": "admin@stalbertslam.com",
+   "phone": "",
+   "all_emails": [],
+   "social": "FB @https; IG @st.albertslam",
+   "evidence_url": "https://www.stalbertslam.com"
+  },
+  {
+   "club": "St. Albert SLAM Youth Development Basketball",
+   "province": "Alberta",
+   "city": "St. Albert",
+   "website": "https://www.stalbertslam.com/",
+   "email": "President@stalbertslam.com",
+   "phone": "",
+   "all_emails": [],
+   "social": "FB @https; IG @st.albertslam",
+   "evidence_url": "https://www.stalbertslam.com"
+  },
+  {
+   "club": "The Perimeter Basketball Academy",
+   "province": "Alberta",
+   "city": "Red Deer",
+   "website": "https://www.perimeterbasketballacademy.ca/",
+   "email": "perimeter.basketball.academy@gmail.com",
+   "phone": "",
+   "all_emails": [
+    "perimeter.basketball.academy@gmail.com"
+   ],
+   "social": "FB @theperimeterbasketballacademy; IG @perimeterbasketballacademy",
+   "evidence_url": "https://www.perimeterbasketballacademy.ca"
+  },
+  {
+   "club": "West Elite Basketball Association (WEBA)",
+   "province": "Alberta",
+   "city": "Edmonton",
+   "website": "https://sites.google.com/view/west-elite-basketball/home",
+   "email": "westelitebasketball@gmail.com",
+   "phone": "",
+   "all_emails": [],
+   "social": "FB @thegrindsession",
+   "evidence_url": "https://sites.google.com/view/west-elite-basketball/home"
+  },
+  {
+   "club": "Wolfpack Club Basketball",
+   "province": "Alberta",
+   "city": "Chestermere",
+   "website": "https://www.instagram.com/wolfpackclubbasketball/",
+   "email": "",
+   "phone": "(213) 986-9582",
+   "all_emails": [],
+   "social": "IG @wolfpackclubbasketball",
+   "evidence_url": "https://www.instagram.com/wolfpackclubbasketball"
+  },
+  {
+   "club": "Wolves Athletic Club (Jr. Wolves Basketball / Free Play for Kids)",
+   "province": "Alberta",
+   "city": "Edmonton",
+   "website": "https://www.wolvesathleticclub.com/",
+   "email": "wolves@freeplayforkids.com",
+   "phone": "",
+   "all_emails": [
+    "info@yourbaseballsite.com",
+    "wolves@freeplayforkids.com"
+   ],
+   "social": "FB @freeplayforkidsyeg; IG @wolves.athleticclub",
+   "evidence_url": "https://www.wolvesathleticclub.com"
+  },
+  {
+   "club": "Abbotsford Basketball Association (ABA)",
+   "province": "British Columbia",
+   "city": "Abbotsford",
+   "website": "https://abbotsfordbasketball.com/",
+   "email": "info@abbotsfordbasketball.com",
+   "phone": "",
+   "all_emails": [
+    "info@abbotsfordbasketball.com"
+   ],
+   "social": "FB @AbbotsfordBasketballAssociation; FB @abbotsfordbasketballassociation; IG @abbotsfordbasketball; IG @abbotsfordmbl",
+   "evidence_url": "https://abbotsfordbasketball.com"
+  },
+  {
+   "club": "Academy Basketball",
+   "province": "British Columbia",
+   "city": "Vancouver",
+   "website": "https://www.academybasketball.com",
+   "email": "",
+   "phone": "778.835.3632",
+   "all_emails": [],
+   "social": "FB @VancouverBasketballAcademy; IG @academy.basketball; IG @vancouverbasketballacademy",
+   "evidence_url": "https://www.academybasketball.com"
+  },
+  {
+   "club": "AIM Basketball",
+   "province": "British Columbia",
+   "city": "Burnaby",
+   "website": "https://www.facebook.com/aimbball/",
+   "email": "",
+   "phone": "",
+   "all_emails": [],
+   "social": "FB @aimbball",
+   "evidence_url": "https://www.facebook.com/aimbball"
+  },
+  {
+   "club": "Athelite Basketball",
+   "province": "British Columbia",
+   "city": "Surrey",
+   "website": "http://www.athelitebasketball.com",
+   "email": "info@athelitebasketball.com",
+   "phone": "",
+   "all_emails": [
+    "info@athelitebasketball.com"
+   ],
+   "social": "FB @athelitebball; IG @athelitebball",
+   "evidence_url": "http://www.athelitebasketball.com"
+  },
+  {
+   "club": "BC Swish Basketball Club",
+   "province": "British Columbia",
+   "city": "Coquitlam",
+   "website": "https://bcswishbasketballclub.com/",
+   "email": "bcswishbasketballclub@gmail.com",
+   "phone": "",
+   "all_emails": [
+    "bcswishbasketballclub@gmail.com"
+   ],
+   "social": "FB @BC-SWISH-Basketball-Club-165120167166107; FB @CatchShootSWISH; IG @bcswishbasketball",
+   "evidence_url": "https://bcswishbasketballclub.com"
+  },
+  {
+   "club": "BC United Basketball Club",
+   "province": "British Columbia",
+   "city": "North Vancouver",
+   "website": "https://www.bcunitedbasketball.com",
+   "email": "info@bcunitedbasketball.com",
+   "phone": "",
+   "all_emails": [
+    "info@bcunitedbasketball.com",
+    "techteam@bcunitedbasketball.com"
+   ],
+   "social": "FB @bcunitedhoops; IG @bcunitedhoops",
+   "evidence_url": "https://www.bcunitedbasketball.com"
+  },
+  {
+   "club": "Beyond Basketball",
+   "province": "British Columbia",
+   "city": "Duncan (Cowichan Valley)",
+   "website": "https://beyondbasketball.ca/",
+   "email": "beyondbasketballcvi@gmail.com",
+   "phone": "",
+   "all_emails": [],
+   "social": "IG @beyondbasketballco",
+   "evidence_url": "https://beyondbasketball.ca"
+  },
+  {
+   "club": "Born2Grind Athletics",
+   "province": "British Columbia",
+   "city": "Pitt Meadows",
+   "website": "https://born2grindathletics.com/",
+   "email": "tomas@born2grindathletics.com",
+   "phone": "",
+   "all_emails": [
+    "tomas@born2grindathletics.com"
+   ],
+   "social": "IG @born2grind_athletics",
+   "evidence_url": "https://born2grindathletics.com"
+  },
+  {
+   "club": "Bulkley Valley Basketball Society",
+   "province": "British Columbia",
+   "city": "Smithers",
+   "website": "https://www.bvbasketball.ca",
+   "email": "clubbasketballbv@gmail.com",
+   "phone": "",
+   "all_emails": [
+    "basketballbv@gmail.com",
+    "clubbasketballbv@gmail.com"
+   ],
+   "social": "FB @RedDogLogging; FB @staggeredpeakscontracting",
+   "evidence_url": "https://www.bvbasketball.ca"
+  },
+  {
+   "club": "Carnarvon Ball Club — Basketball Division (Carnarvon Basketball Club)",
+   "province": "British Columbia",
+   "city": "Victoria",
+   "website": "https://carnarvon.ca/basketball",
+   "email": "carnarvonvpbasketball@gmail.com",
+   "phone": "",
+   "all_emails": [
+    "carnarvon11ucoordinator@gmail.com",
+    "carnarvon13ucoordinator@gmail.com",
+    "carnarvon15ucoordinator@gmail.com",
+    "carnarvon18ucoorinator@gmail.com",
+    "carnarvon5ucoordinator@gmail.com"
+   ],
+   "social": "FB @carnarvonballclub; IG @carnarvonballclub",
+   "evidence_url": "https://carnarvon.ca/basketball"
+  },
+  {
+   "club": "Community Elite",
+   "province": "British Columbia",
+   "city": "Richmond",
+   "website": "https://www.community-elite.com/",
+   "email": "cmntyelite@gmail.com",
+   "phone": "",
+   "all_emails": [
+    "cmntyelite@gmail.com"
+   ],
+   "social": "FB @2008; IG @communityelite_; IG @luxury_rentals_yvr",
+   "evidence_url": "https://www.community-elite.com"
+  },
+  {
+   "club": "Community Elite",
+   "province": "British Columbia",
+   "city": "Vancouver",
+   "website": "http://www.community-elite.com",
+   "email": "cmntyelite@gmail.com",
+   "phone": "",
+   "all_emails": [
+    "cmntyelite@gmail.com"
+   ],
+   "social": "FB @2008; IG @communityelite_; IG @luxury_rentals_yvr",
+   "evidence_url": "http://www.community-elite.com"
+  },
+  {
+   "club": "DC Wildcats Basketball Club",
+   "province": "British Columbia",
+   "city": "Dawson Creek",
+   "website": "https://www.facebook.com/DCWildcatsBasketball/",
+   "email": "dcwildcatsbasketball@gmail.com",
+   "phone": "",
+   "all_emails": [],
+   "social": "FB @DCWildcatsBasketball",
+   "evidence_url": "https://www.facebook.com/DCWildcatsBasketball"
+  },
+  {
+   "club": "DD Nation Basketball",
+   "province": "British Columbia",
+   "city": "Langley",
+   "website": "https://www.facebook.com/DDNationVentures",
+   "email": "",
+   "phone": "",
+   "all_emails": [],
+   "social": "FB @DDNationVentures",
+   "evidence_url": "https://www.facebook.com/DDNationVentures"
+  },
+  {
+   "club": "Dime Valley Basketball",
+   "province": "British Columbia",
+   "city": "Courtenay (Comox Valley; also serves Campbell River, Oceanside, Powell River)",
+   "website": "https://www.dimevalleybasketball.ca/",
+   "email": "dimevalleybasketball@gmail.com",
+   "phone": "",
+   "all_emails": [
+    "dimevalleybasketball@gmail.com"
+   ],
+   "social": "FB @2008; FB @dimevalleybasketball; IG @dimevalleybasketball",
+   "evidence_url": "https://www.dimevalleybasketball.ca"
+  },
+  {
+   "club": "DRIVE Basketball",
+   "province": "British Columbia",
+   "city": "Surrey",
+   "website": "https://drivebasketball.com/",
+   "email": "",
+   "phone": "604-670-4340",
+   "all_emails": [],
+   "social": "FB @DRIVE.Basketball; FB @DRIVEBasketball; IG @drivebasketball",
+   "evidence_url": "https://drivebasketball.com"
+  },
+  {
+   "club": "Dynamite Basketball",
+   "province": "British Columbia",
+   "city": "Vancouver",
+   "website": "https://www.dynamitebasketball.com",
+   "email": "",
+   "phone": "",
+   "all_emails": [],
+   "social": "IG @dynamitebasketball",
+   "evidence_url": "https://www.dynamitebasketball.com"
+  },
+  {
+   "club": "ELEVATE Basketball",
+   "province": "British Columbia",
+   "city": "Langley",
+   "website": "https://elevateyourgame.ca/",
+   "email": "elevateyourgame.info@gmail.com",
+   "phone": "",
+   "all_emails": [
+    "elevateyourgame.basketballcamps@gmail.com",
+    "elevateyourgame.clubteams@gmail.com",
+    "elevateyourgame.hoopsnights@gmail.com",
+    "elevateyourgame.info@gmail.com",
+    "elevateyourgame.privatetraining@gmail.com"
+   ],
+   "social": "FB @ElevateBask; FB @elevateyourgame; IG @elevatebask; IG @pureshooting",
+   "evidence_url": "https://elevateyourgame.ca"
+  },
+  {
+   "club": "ELEVATE Basketball Inc.",
+   "province": "British Columbia",
+   "city": "Surrey (South Surrey / White Rock)",
+   "website": "http://elevateyourgame.ca",
+   "email": "elevateyourgame.info@gmail.com",
+   "phone": "",
+   "all_emails": [
+    "elevateyourgame.basketballcamps@gmail.com",
+    "elevateyourgame.clubteams@gmail.com",
+    "elevateyourgame.hoopsnights@gmail.com",
+    "elevateyourgame.info@gmail.com",
+    "elevateyourgame.privatetraining@gmail.com"
+   ],
+   "social": "FB @ElevateBask; FB @elevateyourgame; IG @elevatebask; IG @pureshooting",
+   "evidence_url": "http://elevateyourgame.ca"
+  },
+  {
+   "club": "Eli Pasquale Basketball / Champions Academy",
+   "province": "British Columbia",
+   "city": "Victoria",
+   "website": "https://www.elipasquale.com/",
+   "email": "",
+   "phone": "(250) 592-4038",
+   "all_emails": [],
+   "social": "IG @elipasqualebasketball",
+   "evidence_url": "https://www.elipasquale.com"
+  },
+  {
+   "club": "F.O.R.M. Basketball",
+   "province": "British Columbia",
+   "city": "Vancouver",
+   "website": "https://formbasketball.com",
+   "email": "coaches@formbasketball.com",
+   "phone": "",
+   "all_emails": [
+    "amkryukov@gmail.com",
+    "coaches@formbasketball.com",
+    "jonpinhorn.typedesign@gmail.com",
+    "socialmedia@formbasketball.com"
+   ],
+   "social": "FB @FORMBasketball; FB @formbasketball; IG @f.o.r.m._basketball",
+   "evidence_url": "https://formbasketball.com"
+  },
+  {
+   "club": "Finish Strong Basketball",
+   "province": "British Columbia",
+   "city": "Vancouver",
+   "website": "http://finishstrongbasketball.ca",
+   "email": "team@finishstrongbasketball.ca",
+   "phone": "",
+   "all_emails": [
+    "team@finishstrongbasketball.ca"
+   ],
+   "social": "",
+   "evidence_url": "http://finishstrongbasketball.ca"
+  },
+  {
+   "club": "Flight Basketball (Flight Basketball Academy)",
+   "province": "British Columbia",
+   "city": "Victoria",
+   "website": "https://www.flightbasketball.ca/",
+   "email": "Info@flightbasketball.ca",
+   "phone": "",
+   "all_emails": [
+    "info@flightbasketball.ca"
+   ],
+   "social": "FB @Flightbballvic; FB @flightbasketballvictoria; IG @flightbasketballvictoria",
+   "evidence_url": "https://www.flightbasketball.ca"
+  },
+  {
+   "club": "Fort St. John Basketball Association (FSJ Flight Basketball)",
+   "province": "British Columbia",
+   "city": "Fort St. John",
+   "website": "https://fsjflight.ca/",
+   "email": "info@fsjflight.ca",
+   "phone": "",
+   "all_emails": [
+    "community@fsjflight.ca",
+    "competitive@fsjflight.ca",
+    "facilities@fsjflight.ca",
+    "info@fsjflight.ca",
+    "registrar@fsjflight.ca"
+   ],
+   "social": "FB @FSJClubBasketball; IG @fsj_flight_basketball_club",
+   "evidence_url": "https://fsjflight.ca"
+  },
+  {
+   "club": "Fraser Valley Unity Ball",
+   "province": "British Columbia",
+   "city": "",
+   "website": "https://www.facebook.com/fvbball/",
+   "email": "jackiecraven7@gmail.com",
+   "phone": "",
+   "all_emails": [],
+   "social": "FB @fvbball",
+   "evidence_url": "https://www.facebook.com/fvbball"
+  },
+  {
+   "club": "Fundamentals Basketball Club (Fundamentals BC)",
+   "province": "British Columbia",
+   "city": "Surrey",
+   "website": "https://www.fundamentalsbc.com/",
+   "email": "",
+   "phone": "6046702322",
+   "all_emails": [],
+   "social": "",
+   "evidence_url": "https://www.fundamentalsbc.com"
+  },
+  {
+   "club": "Fundamentals BC (Fundamentals Basketball Club)",
+   "province": "British Columbia",
+   "city": "Surrey",
+   "website": "https://www.fundamentalsbc.com/",
+   "email": "",
+   "phone": "6046702322",
+   "all_emails": [],
+   "social": "",
+   "evidence_url": "https://www.fundamentalsbc.com"
+  },
+  {
+   "club": "Future Bounce Basketball",
+   "province": "British Columbia",
+   "city": "Vancouver",
+   "website": "https://www.futurebounce.ca",
+   "email": "futurebouncebasketball@gmail.com",
+   "phone": "",
+   "all_emails": [],
+   "social": "FB @2008; IG @futurebounce.ca; IG @futurebouncebasketball",
+   "evidence_url": "https://www.futurebounce.ca"
+  },
+  {
+   "club": "Goodwin Hoops (GW Hoops)",
+   "province": "British Columbia",
+   "city": "Kelowna",
+   "website": "https://www.goodwinhoops.com/",
+   "email": "dani@goodwinhoops.com",
+   "phone": "",
+   "all_emails": [],
+   "social": "FB @2008; IG @gwhoops",
+   "evidence_url": "https://www.goodwinhoops.com"
+  },
+  {
+   "club": "GW Hoops (GoodWin Hoops)",
+   "province": "British Columbia",
+   "city": "Kelowna",
+   "website": "https://www.goodwinhoops.com/",
+   "email": "dani@goodwinhoops.com",
+   "phone": "",
+   "all_emails": [],
+   "social": "FB @2008; IG @gwhoops",
+   "evidence_url": "https://www.goodwinhoops.com"
+  },
+  {
+   "club": "Hustle Basketball (Sea to Sky)",
+   "province": "British Columbia",
+   "city": "Squamish",
+   "website": "https://hustlebasketball.ca/",
+   "email": "",
+   "phone": "604-907-2024",
+   "all_emails": [],
+   "social": "FB @hustlebasketballfamily; IG @squamishhustlebasketball",
+   "evidence_url": "https://hustlebasketball.ca"
+  },
+  {
+   "club": "Impact Hoops",
+   "province": "British Columbia",
+   "city": "Langley",
+   "website": "https://www.impacthoops.ca/",
+   "email": "info@impacthoops.ca",
+   "phone": "778-808-5170",
+   "all_emails": [
+    "info@impacthoops.ca"
+   ],
+   "social": "FB @impacthoops; IG @impacthoops",
+   "evidence_url": "https://www.impacthoops.ca"
+  },
+  {
+   "club": "Journey Basketball",
+   "province": "British Columbia",
+   "city": "Vancouver",
+   "website": "http://www.journeybasketball.ca",
+   "email": "journeybasketball2020@gmail.com",
+   "phone": "",
+   "all_emails": [
+    "journeybasketball2020@gmail.com"
+   ],
+   "social": "FB @2008; FB @journeybasketball2020; IG @journey_basketball",
+   "evidence_url": "http://www.journeybasketball.ca"
+  },
+  {
+   "club": "JR Cascades Basketball (UFV)",
+   "province": "British Columbia",
+   "city": "Abbotsford",
+   "website": "https://gocascades.ca/sports/jr-cascades",
+   "email": "",
+   "phone": "604-504-7441",
+   "all_emails": [],
+   "social": "FB @UFVCascades; FB @intent; IG @ufvcascades",
+   "evidence_url": "https://gocascades.ca/sports/jr-cascades"
+  },
+  {
+   "club": "MacHoops Basketball",
+   "province": "British Columbia",
+   "city": "Richmond",
+   "website": "https://twitter.com/machoopsbball",
+   "email": "landondy_11@yahoo.com",
+   "phone": "",
+   "all_emails": [],
+   "social": "FB @machoopsbball",
+   "evidence_url": "https://twitter.com/machoopsbball"
+  },
+  {
+   "club": "Mecca Sports Basketball",
+   "province": "British Columbia",
+   "city": "Richmond",
+   "website": "https://meccasports.ca",
+   "email": "angelo@meccasports.ca",
+   "phone": "",
+   "all_emails": [
+    "angelo@meccasports.ca"
+   ],
+   "social": "IG @meccasports_vancouver",
+   "evidence_url": "https://meccasports.ca"
+  },
+  {
+   "club": "Merritt Youth Basketball Association",
+   "province": "British Columbia",
+   "city": "Merritt",
+   "website": "https://www.facebook.com/p/Merritt-Youth-Basketball-Association-100054551556129/",
+   "email": "",
+   "phone": "",
+   "all_emails": [],
+   "social": "FB @contactus",
+   "evidence_url": "https://www.facebook.com/p/Merritt-Youth-Basketball-Association-100054551556129"
+  },
+  {
+   "club": "Mission Basketball",
+   "province": "British Columbia",
+   "city": "Mission",
+   "website": "https://missionbasketball.ca/",
+   "email": "info@missionbasketball.ca",
+   "phone": "",
+   "all_emails": [
+    "info@missionbasketball.ca"
+   ],
+   "social": "IG @missionbcbasketball",
+   "evidence_url": "https://missionbasketball.ca"
+  },
+  {
+   "club": "More Heart Basketball",
+   "province": "British Columbia",
+   "city": "Vancouver",
+   "website": "https://www.facebook.com/MoreHeartBasketball/",
+   "email": "",
+   "phone": "",
+   "all_emails": [],
+   "social": "FB @MoreHeartBasketball",
+   "evidence_url": "https://www.facebook.com/MoreHeartBasketball"
+  },
+  {
+   "club": "N.W. Sports Club Society (Ballers Basketball)",
+   "province": "British Columbia",
+   "city": "Port Coquitlam",
+   "website": "https://nwsportsclub.ca",
+   "email": "sassanrakhshani@yahoo.com",
+   "phone": "",
+   "all_emails": [
+    "info@indiantypefoundry.com",
+    "lemonad@jovanny.ru"
+   ],
+   "social": "FB @nwsportsclub; FB @page; IG @nw_sports_club",
+   "evidence_url": "https://nwsportsclub.ca"
+  },
+  {
+   "club": "Nelson Hoops Association",
+   "province": "British Columbia",
+   "city": "Nelson",
+   "website": "https://nelsonhoops.com",
+   "email": "nelsonyouthbasketball@gmail.com",
+   "phone": "",
+   "all_emails": [
+    "nelsonyouthbasketball@gmail.com"
+   ],
+   "social": "",
+   "evidence_url": "https://nelsonhoops.com"
+  },
+  {
+   "club": "New West Elite Basketball",
+   "province": "British Columbia",
+   "city": "New Westminster",
+   "website": "https://www.newwestbasketball.com/",
+   "email": "info@newwestbasketball.com",
+   "phone": "",
+   "all_emails": [
+    "info@newwestbasketball.com"
+   ],
+   "social": "FB @2008; FB @NEWWESTELITE; IG @nwelitebball",
+   "evidence_url": "https://www.newwestbasketball.com"
+  },
+  {
+   "club": "Next Level Basketball (NextLevel Sports Academy / Cowichan Valley Basketball)",
+   "province": "British Columbia",
+   "city": "Duncan",
+   "website": "https://www.cowichanvalleybasketball.com/",
+   "email": "sandeep@nextlevelbasketballacademy.ca",
+   "phone": "",
+   "all_emails": [
+    "hello@nextlevelbasketballacademy.ca"
+   ],
+   "social": "FB @NextLevelSportsAcademy; IG @cowichanvalleybasketball",
+   "evidence_url": "https://www.cowichanvalleybasketball.com"
+  },
+  {
+   "club": "Night Hoops Basketball Society",
+   "province": "British Columbia",
+   "city": "Vancouver",
+   "website": "https://www.nighthoops.ca/",
+   "email": "info@nighthoops.ca",
+   "phone": "",
+   "all_emails": [
+    "info@nighthoops.ca"
+   ],
+   "social": "FB @nighthoops; IG @nighthoops",
+   "evidence_url": "https://www.nighthoops.ca"
+  },
+  {
+   "club": "North Langley Basketball Association (NLBA)",
+   "province": "British Columbia",
+   "city": "Langley",
+   "website": "https://northlangleybasketball.ca",
+   "email": "admin@northlangleybasketball.ca",
+   "phone": "",
+   "all_emails": [
+    "admin@northlangleybasketball.ca"
+   ],
+   "social": "",
+   "evidence_url": "https://northlangleybasketball.ca"
+  },
+  {
+   "club": "Northern Bounce Sports Academy",
+   "province": "British Columbia",
+   "city": "Prince George (HQ) + Kamloops division",
+   "website": "https://northernbounce.com/",
+   "email": "hoops@northernbounce.com",
+   "phone": "",
+   "all_emails": [
+    "hoops@northernbounce.com",
+    "northernbouncekamloops@gmail.com"
+   ],
+   "social": "FB @2008",
+   "evidence_url": "https://northernbounce.com"
+  },
+  {
+   "club": "Northside Attack Athletics",
+   "province": "British Columbia",
+   "city": "Burnaby",
+   "website": "https://northsideattack.com",
+   "email": "info@northsideattack.com",
+   "phone": "",
+   "all_emails": [
+    "info@northsideattack.com",
+    "nsattackathletics@gmail.com"
+   ],
+   "social": "FB @2008; FB @northsideattack; IG @northsideattack",
+   "evidence_url": "https://northsideattack.com"
+  },
+  {
+   "club": "Northside Attack Athletics",
+   "province": "British Columbia",
+   "city": "Pitt Meadows",
+   "website": "https://www.northsideattack.com/",
+   "email": "nsattackathletics@gmail.com",
+   "phone": "",
+   "all_emails": [
+    "info@northsideattack.com",
+    "nsattackathletics@gmail.com"
+   ],
+   "social": "FB @2008; FB @northsideattack; IG @northsideattack",
+   "evidence_url": "https://www.northsideattack.com"
+  },
+  {
+   "club": "NV Ballers Basketball Club (N.W. Sports Club Society)",
+   "province": "British Columbia",
+   "city": "North Vancouver",
+   "website": "https://nwsportsclub.ca/ballers-basketball",
+   "email": "info@indiantypefoundry.com",
+   "phone": "",
+   "all_emails": [
+    "info@indiantypefoundry.com",
+    "lemonad@jovanny.ru"
+   ],
+   "social": "FB @nwsportsclub; FB @page; IG @nw_sports_club",
+   "evidence_url": "https://nwsportsclub.ca/ballers-basketball"
+  },
+  {
+   "club": "PlayMakers Basketball",
+   "province": "British Columbia",
+   "city": "Richmond",
+   "website": "https://playmakersbball.com",
+   "email": "playmakersbballtraining@gmail.com",
+   "phone": "",
+   "all_emails": [
+    "playmakersbballtraining@gmail.com"
+   ],
+   "social": "FB @2008; IG @playmakersbballtraining",
+   "evidence_url": "https://playmakersbball.com"
+  },
+  {
+   "club": "Prince George Minor Basketball Association (PGMBA)",
+   "province": "British Columbia",
+   "city": "Prince George",
+   "website": "http://www.pgminorbasketball.com/",
+   "email": "pgminorbasketball@gmail.com",
+   "phone": "",
+   "all_emails": [
+    "pgminorbasketball@gmail.com"
+   ],
+   "social": "",
+   "evidence_url": "http://www.pgminorbasketball.com"
+  },
+  {
+   "club": "Pursuit Sports Club",
+   "province": "British Columbia",
+   "city": "Vancouver",
+   "website": "https://www.instagram.com/pursuitsportsclub/",
+   "email": "",
+   "phone": "",
+   "all_emails": [],
+   "social": "IG @pursuitsportsclub",
+   "evidence_url": "https://www.instagram.com/pursuitsportsclub"
+  },
+  {
+   "club": "Rebels-Rebelles Basketball Association (Royal Oak)",
+   "province": "British Columbia",
+   "city": "Saanich (Royal Oak)",
+   "website": "https://rebelsrebellesbasketball.com/",
+   "email": "rebelsrebelles@gmail.com",
+   "phone": "",
+   "all_emails": [
+    "rebelsrebelles@gmail.com"
+   ],
+   "social": "",
+   "evidence_url": "https://rebelsrebellesbasketball.com"
+  },
+  {
+   "club": "Revolution Basketball Club",
+   "province": "British Columbia",
+   "city": "Abbotsford",
+   "website": "https://www.revolutionbasketballclub.com",
+   "email": "revolutionbball@gmail.com",
+   "phone": "604-788-7084",
+   "all_emails": [
+    "revolutionbball@gmail.com"
+   ],
+   "social": "",
+   "evidence_url": "https://www.revolutionbasketballclub.com"
+  },
+  {
+   "club": "Revolution Basketball Club",
+   "province": "British Columbia",
+   "city": "Maple Ridge",
+   "website": "https://www.revolutionbasketballclub.com/",
+   "email": "revolutionbball@gmail.com",
+   "phone": "",
+   "all_emails": [
+    "revolutionbball@gmail.com"
+   ],
+   "social": "",
+   "evidence_url": "https://www.revolutionbasketballclub.com"
+  },
+  {
+   "club": "Rex Sports (youth basketball division)",
+   "province": "British Columbia",
+   "city": "Victoria",
+   "website": "https://rexsports.ca/",
+   "email": "hello@rexsports.ca",
+   "phone": "",
+   "all_emails": [
+    "dylan@rexsports.ca",
+    "hello@rexsports.ca",
+    "jordan@rexsports.ca"
+   ],
+   "social": "FB @rexsportsvictoria; IG @RexSportsVictoria; IG @rexsports_",
+   "evidence_url": "https://rexsports.ca"
+  },
+  {
+   "club": "Saanich Peninsula Amateur Basketball Association (SPABA)",
+   "province": "British Columbia",
+   "city": "Saanich Peninsula (Sidney / Brentwood Bay / North Saanich)",
+   "website": "https://www.saanichpeninsulabasketball.com/",
+   "email": "support@saanichpeninsulabasketball.com",
+   "phone": "",
+   "all_emails": [
+    "support@saanichpeninsulabasketball.com"
+   ],
+   "social": "FB @spabafb; IG @spaba2026",
+   "evidence_url": "https://www.saanichpeninsulabasketball.com"
+  },
+  {
+   "club": "Salt Spring Basketball Association",
+   "province": "British Columbia",
+   "city": "Salt Spring Island",
+   "website": "https://saltspringbasketball.ca/",
+   "email": "saltspringbasketball@gmail.com",
+   "phone": "",
+   "all_emails": [
+    "micah@micahrich.com",
+    "saltspringbasketball@gmail.com"
+   ],
+   "social": "",
+   "evidence_url": "https://saltspringbasketball.ca"
+  },
+  {
+   "club": "Shooting Stars Basketball",
+   "province": "British Columbia",
+   "city": "Richmond",
+   "website": "https://www.facebook.com/ShootingStarsBall/",
+   "email": "",
+   "phone": "604-347-5151",
+   "all_emails": [],
+   "social": "FB @ShootingStarsBall",
+   "evidence_url": "https://www.facebook.com/ShootingStarsBall"
+  },
+  {
+   "club": "Slamma Jamma Future Crusaders (Slamma Jamma Girls Basketball Club)",
+   "province": "British Columbia",
+   "city": "Lower Mainland (Fraser River/Fraser Valley/Vancouver-Coastal regions)",
+   "website": "https://www.facebook.com/slammajammabasketball/",
+   "email": "stephenrbeauchamp@gmail.com",
+   "phone": "",
+   "all_emails": [],
+   "social": "FB @slammajammabasketball",
+   "evidence_url": "https://www.facebook.com/slammajammabasketball"
+  },
+  {
+   "club": "Slamma Jamma Future Crusaders (Slamma Jamma Girls Basketball Club)",
+   "province": "British Columbia",
+   "city": "Surrey",
+   "website": "https://www.facebook.com/slammajammabasketball/",
+   "email": "",
+   "phone": "",
+   "all_emails": [],
+   "social": "FB @slammajammabasketball",
+   "evidence_url": "https://www.facebook.com/slammajammabasketball"
+  },
+  {
+   "club": "South Burnaby Metro Club (SBMC) Basketball",
+   "province": "British Columbia",
+   "city": "Burnaby",
+   "website": "https://basketball.southburnabymetroclub.com/",
+   "email": "basketball.jennifercagampan@gmail.com",
+   "phone": "",
+   "all_emails": [
+    "basketball.jennifercagampan@gmail.com",
+    "info@sbmcbasketball.com",
+    "president@sbmcbasketball.com",
+    "registrar@sbmcbasketball.com"
+   ],
+   "social": "IG @sbmc_eagles",
+   "evidence_url": "https://basketball.southburnabymetroclub.com"
+  },
+  {
+   "club": "South Langley Basketball Association",
+   "province": "British Columbia",
+   "city": "Langley",
+   "website": "https://southlangleybasketball.com/",
+   "email": "kstewart@sd35.bc.ca",
+   "phone": "",
+   "all_emails": [
+    "kstewart@sd35.bc.ca"
+   ],
+   "social": "FB @WordPresscom",
+   "evidence_url": "https://southlangleybasketball.com"
+  },
+  {
+   "club": "South Vancouver Island Basketball Association (SVIBA)",
+   "province": "British Columbia",
+   "city": "Victoria",
+   "website": "https://svibasketball.com/",
+   "email": "westcott@shaw.ca",
+   "phone": "2365087879",
+   "all_emails": [
+    "westcott@shaw.ca"
+   ],
+   "social": "",
+   "evidence_url": "https://svibasketball.com"
+  },
+  {
+   "club": "Steve Nash Youth Basketball — Nanaimo",
+   "province": "British Columbia",
+   "city": "Nanaimo",
+   "website": "http://www.basketball.bc.ca/snyb-home",
+   "email": "info@basketball.bc.ca",
+   "phone": "",
+   "all_emails": [
+    "info@basketball.bc.ca"
+   ],
+   "social": "FB @basketballbc; IG @basketballbc",
+   "evidence_url": "http://www.basketball.bc.ca/snyb-home"
+  },
+  {
+   "club": "Steve Nash Youth Basketball — Powell River",
+   "province": "British Columbia",
+   "city": "Powell River",
+   "website": "http://www.basketball.bc.ca/snyb-home",
+   "email": "info@basketball.bc.ca",
+   "phone": "",
+   "all_emails": [
+    "info@basketball.bc.ca"
+   ],
+   "social": "FB @basketballbc; IG @basketballbc",
+   "evidence_url": "http://www.basketball.bc.ca/snyb-home"
+  },
+  {
+   "club": "Surrey Rebels Basketball Association",
+   "province": "British Columbia",
+   "city": "Surrey",
+   "website": "https://www.surreyrebelsbasketball.com/",
+   "email": "info.surreyrebelsbasketball@gmail.com",
+   "phone": "",
+   "all_emails": [
+    "info.surreyrebelsbasketball@gmail.com"
+   ],
+   "social": "",
+   "evidence_url": "https://www.surreyrebelsbasketball.com"
+  },
+  {
+   "club": "TC North Basketball Academy",
+   "province": "British Columbia",
+   "city": "Coquitlam",
+   "website": "https://tcnorthbasketball.com",
+   "email": "luciano@latinotype.com",
+   "phone": "",
+   "all_emails": [
+    "luciano@latinotype.com"
+   ],
+   "social": "FB @TCNBasketball; FB @TCNorthBasketball; IG @tcnorthbasketball",
+   "evidence_url": "https://tcnorthbasketball.com"
+  },
+  {
+   "club": "Terrace Youth Basketball",
+   "province": "British Columbia",
+   "city": "Terrace",
+   "website": "https://www.terrace.ca/parks-recreation/sports-clubs",
+   "email": "hkresch@citywest.ca",
+   "phone": "250-635-6531 ext 8017",
+   "all_emails": [
+    "hkresch@citywest.ca",
+    "joe.dominguez@cmsd.bc.ca",
+    "nwca2023@gmail.com",
+    "office@tysa.ca",
+    "president@terraceadulthockey.ca"
+   ],
+   "social": "FB @CityofTerrace; FB @cityofterrace",
+   "evidence_url": "https://www.terrace.ca/parks-recreation/sports-clubs"
+  },
+  {
+   "club": "Thunder Nation Basketball",
+   "province": "British Columbia",
+   "city": "Victoria",
+   "website": "https://playsport.com/thundernationbasketball_ag_cf54630b",
+   "email": "thundernationhoops@gmail.com",
+   "phone": "",
+   "all_emails": [
+    "thundernationhoops@gmail.com"
+   ],
+   "social": "FB @playsportdotcom; IG @playsportaustralia",
+   "evidence_url": "https://playsport.com/thundernationbasketball_ag_cf54630b"
+  },
+  {
+   "club": "Vancouver Aces Basketball",
+   "province": "British Columbia",
+   "city": "Vancouver",
+   "website": "https://vancouveraces.com",
+   "email": "vancouveracesbballclub@gmail.com",
+   "phone": "",
+   "all_emails": [
+    "vancouveracesbballclub@gmail.com"
+   ],
+   "social": "FB @WordPresscom; IG @vancouveracesbasketball; IG @vancouveracesbball",
+   "evidence_url": "https://vancouveraces.com"
+  },
+  {
+   "club": "Vancouver Girls Basketball Association (VGBA)",
+   "province": "British Columbia",
+   "city": "Vancouver",
+   "website": "http://vgba.ca",
+   "email": "info@vgba.ca",
+   "phone": "",
+   "all_emails": [
+    "info@vgba.ca"
+   ],
+   "social": "FB @vgba604; IG @vgba604",
+   "evidence_url": "http://vgba.ca"
+  },
+  {
+   "club": "Vancouver Sports Club (VSC)",
+   "province": "British Columbia",
+   "city": "Surrey",
+   "website": "https://www.vancouversportsclub.ca/",
+   "email": "info@vancouversportsclub.ca",
+   "phone": "",
+   "all_emails": [
+    "info@vancouversportsclub.ca"
+   ],
+   "social": "FB @Vancouversportsclub; FB @vansportsclub; IG @vansportsclub",
+   "evidence_url": "https://www.vancouversportsclub.ca"
+  },
+  {
+   "club": "Vernon Minor Basketball Association (VMBA)",
+   "province": "British Columbia",
+   "city": "Vernon",
+   "website": "https://www.facebook.com/vernonminorbasketball/",
+   "email": "",
+   "phone": "",
+   "all_emails": [],
+   "social": "FB @vernonminorbasketball",
+   "evidence_url": "https://www.facebook.com/vernonminorbasketball"
+  },
+  {
+   "club": "Vic Howlers Basketball",
+   "province": "British Columbia",
+   "city": "Victoria",
+   "website": "https://vichowlers.ca/",
+   "email": "office@vichowlers.ca",
+   "phone": "",
+   "all_emails": [
+    "office@vichowlers.ca"
+   ],
+   "social": "",
+   "evidence_url": "https://vichowlers.ca"
+  },
+  {
+   "club": "West Coast Basketball",
+   "province": "British Columbia",
+   "city": "Surrey",
+   "website": "https://www.westcoastbasketball.com",
+   "email": "info@westcoastbasketball.com",
+   "phone": "",
+   "all_emails": [
+    "info@westcoastbasketball.com"
+   ],
+   "social": "FB @westcoastbasketballclub; IG @westcoastbasketball",
+   "evidence_url": "https://www.westcoastbasketball.com"
+  },
+  {
+   "club": "West Kelowna Youth Basketball Association (West K Hoops)",
+   "province": "British Columbia",
+   "city": "West Kelowna",
+   "website": "https://westkhoops.ca/",
+   "email": "westkhoops@gmail.com",
+   "phone": "",
+   "all_emails": [
+    "westkhoops@gmail.com"
+   ],
+   "social": "FB @westkhoops; IG @westkhoops",
+   "evidence_url": "https://westkhoops.ca"
+  },
+  {
+   "club": "Westshore Basketball (Westshore Basketball Association)",
+   "province": "British Columbia",
+   "city": "Langford",
+   "website": "https://www.westshorebasketball.com/",
+   "email": "westshore.bball@gmail.com",
+   "phone": "",
+   "all_emails": [
+    "bball.westshore@gmail.com",
+    "westshore.bball@gmail.com"
+   ],
+   "social": "FB @Westshore-Basketball-Association-5736928; FB @Westshorebasketball; IG @bball.westshore; IG @westshore.bball",
+   "evidence_url": "https://www.westshorebasketball.com"
+  },
+  {
+   "club": "Yuva Sports Club",
+   "province": "British Columbia",
+   "city": "Vancouver",
+   "website": "https://www.facebook.com/vancitysc/",
+   "email": "yuvasc2018@gmail.com",
+   "phone": "",
+   "all_emails": [],
+   "social": "FB @vancitysc",
+   "evidence_url": "https://www.facebook.com/vancitysc"
+  },
+  {
+   "club": "204 Elite Basketball Club",
+   "province": "Manitoba",
+   "city": "Winnipeg",
+   "website": "https://www.instagram.com/204elite/",
+   "email": "204elite@gmail.com",
+   "phone": "",
+   "all_emails": [],
+   "social": "IG @204elite",
+   "evidence_url": "https://www.instagram.com/204elite"
+  },
+  {
+   "club": "Atlas Basketball",
+   "province": "Manitoba",
+   "city": "Winnipeg",
+   "website": "https://www.atlasbasketball.com",
+   "email": "atlasbball@gmail.com",
+   "phone": "",
+   "all_emails": [
+    "atlasbball@gmail.com"
+   ],
+   "social": "FB @2008",
+   "evidence_url": "https://www.atlasbasketball.com"
+  },
+  {
+   "club": "Junior Bisons Thompson",
+   "province": "Manitoba",
+   "city": "Thompson",
+   "website": "https://www.instagram.com/juniorbisons/",
+   "email": "",
+   "phone": "",
+   "all_emails": [],
+   "social": "IG @juniorbisons",
+   "evidence_url": "https://www.instagram.com/juniorbisons"
+  },
+  {
+   "club": "Legacy Preparatory Basketball Academy (incl. Junior Legacy Basketball)",
+   "province": "Manitoba",
+   "city": "Winnipeg",
+   "website": "https://legacypreparatorybasketballacademy.ca/",
+   "email": "mkraus.legacyprep@gmail.com",
+   "phone": "",
+   "all_emails": [
+    "info@legacypba.com"
+   ],
+   "social": "IG @legacyprepbasketballacademy",
+   "evidence_url": "https://legacypreparatorybasketballacademy.ca"
+  },
+  {
+   "club": "Prairie Elite Basketball Academy",
+   "province": "Manitoba",
+   "city": "Winkler",
+   "website": "https://www.facebook.com/prairieelitebasketball/",
+   "email": "prairieelitebasketballacademy@gmail.com",
+   "phone": "",
+   "all_emails": [],
+   "social": "FB @prairieelitebasketball",
+   "evidence_url": "https://www.facebook.com/prairieelitebasketball"
+  },
+  {
+   "club": "Winkler Basketball Club",
+   "province": "Manitoba",
+   "city": "Winkler",
+   "website": "https://www.facebook.com/winklerbasketballclub/",
+   "email": "winklerbasketballclub@gmail.com",
+   "phone": "",
+   "all_emails": [],
+   "social": "FB @winklerbasketballclub",
+   "evidence_url": "https://www.facebook.com/winklerbasketballclub"
+  },
+  {
+   "club": "Winkler Minor Basketball (WMBB)",
+   "province": "Manitoba",
+   "city": "Winkler",
+   "website": "https://winklerminorbasketball.weebly.com/",
+   "email": "winklerminorbasketball@gmail.com",
+   "phone": "",
+   "all_emails": [
+    "winklerminorbasketball@gmail.com"
+   ],
+   "social": "",
+   "evidence_url": "https://winklerminorbasketball.weebly.com"
+  },
+  {
+   "club": "Winnipeg Blizzards Basketball Club",
+   "province": "Manitoba",
+   "city": "Winnipeg",
+   "website": "https://www.winnipegblizzardsbasketball.ca",
+   "email": "winnipegblizzards@gmail.com",
+   "phone": "",
+   "all_emails": [
+    "winnipegblizzards@gmail.com"
+   ],
+   "social": "FB @winnipeg.blizzards; FB @wpgblizzards; IG @winnipegblizzards",
+   "evidence_url": "https://www.winnipegblizzardsbasketball.ca"
+  },
+  {
+   "club": "Winnipeg Chaos (Chaos Basketball Club)",
+   "province": "Manitoba",
+   "city": "Winnipeg",
+   "website": "https://chaosbasketball.ca/",
+   "email": "chaoswinnipeg@gmail.com",
+   "phone": "",
+   "all_emails": [
+    "chaoswinnipeg@gmail.com",
+    "info@mysite.com"
+   ],
+   "social": "IG @chaosbball",
+   "evidence_url": "https://chaosbasketball.ca"
+  },
+  {
+   "club": "Winnipeg Junior Wesmen Basketball (University of Winnipeg)",
+   "province": "Manitoba",
+   "city": "Winnipeg",
+   "website": "https://wesmen.ca/sports/2024/6/25/winnipeg-junior-wesmen.aspx",
+   "email": "al.cox@uwinnipeg.ca",
+   "phone": "",
+   "all_emails": [
+    "al.cox@uwinnipeg.ca"
+   ],
+   "social": "FB @WesmenAthletics",
+   "evidence_url": "https://wesmen.ca/sports/2024/6/25/winnipeg-junior-wesmen.aspx"
+  },
+  {
+   "club": "Winnipeg Wolves Basketball Club",
+   "province": "Manitoba",
+   "city": "Winnipeg",
+   "website": "http://www.winnipegwolves.com",
+   "email": "winnipegwolves@gmail.com",
+   "phone": "",
+   "all_emails": [
+    "dpokrant@retsd.mb.ca",
+    "mjriley14@gmail.com",
+    "rsbanmann@gmail.com",
+    "winnipegwolves@gmail.com"
+   ],
+   "social": "",
+   "evidence_url": "http://www.winnipegwolves.com"
+  },
+  {
+   "club": "World Class Hoopers",
+   "province": "Manitoba",
+   "city": "Winnipeg",
+   "website": "https://www.instagram.com/worldclasshoopers/",
+   "email": "worldclasshoopers@gmail.com",
+   "phone": "",
+   "all_emails": [],
+   "social": "IG @worldclasshoopers",
+   "evidence_url": "https://www.instagram.com/worldclasshoopers"
+  },
+  {
+   "club": "Central Carleton Basketball Association (CCBA)",
+   "province": "New Brunswick",
+   "city": "Hartland",
+   "website": "https://www.facebook.com/groups/222366587892722/",
+   "email": "",
+   "phone": "",
+   "all_emails": [],
+   "social": "FB @recover",
+   "evidence_url": "https://www.facebook.com/groups/222366587892722"
+  },
+  {
+   "club": "Fredericton Jr Freeze",
+   "province": "New Brunswick",
+   "city": "Fredericton",
+   "website": "https://www.facebook.com/p/Fredericton-Jr-Freeze-Girls-Basketball-Team-61574570303956/",
+   "email": "",
+   "phone": "",
+   "all_emails": [],
+   "social": "FB @contactus",
+   "evidence_url": "https://www.facebook.com/p/Fredericton-Jr-Freeze-Girls-Basketball-Team-61574570303956"
+  },
+  {
+   "club": "Fredericton Youth Basketball Association (Fredericton Fusion)",
+   "province": "New Brunswick",
+   "city": "Fredericton",
+   "website": "https://www.frederictonfusion.com/",
+   "email": "info@frederictonfusion.com",
+   "phone": "",
+   "all_emails": [
+    "info@frederictonfusion.com"
+   ],
+   "social": "FB @frederictonfusionbasketball; FB @https; IG @frederictonfusionbasketball",
+   "evidence_url": "https://www.frederictonfusion.com"
+  },
+  {
+   "club": "Hampton Minor Basketball Association (HMBA)",
+   "province": "New Brunswick",
+   "city": "Hampton",
+   "website": "https://hamptonminorbasketball.com/",
+   "email": "hamptonminorbasketball@gmail.com",
+   "phone": "",
+   "all_emails": [],
+   "social": "FB @hamptonminorbasketball; IG @hampton_minor_basketball",
+   "evidence_url": "https://hamptonminorbasketball.com"
+  },
+  {
+   "club": "Harvey Minor Basketball Association",
+   "province": "New Brunswick",
+   "city": "Harvey Station",
+   "website": "https://www.facebook.com/groups/390133675984191/",
+   "email": "",
+   "phone": "",
+   "all_emails": [],
+   "social": "FB @recover",
+   "evidence_url": "https://www.facebook.com/groups/390133675984191"
+  },
+  {
+   "club": "Kennebecasis Valley Basketball Association (KVBA)",
+   "province": "New Brunswick",
+   "city": "Quispamsis/Rothesay",
+   "website": "https://kvba.ca/",
+   "email": "president@kvba.ca",
+   "phone": "",
+   "all_emails": [
+    "info@kvba.ca"
+   ],
+   "social": "FB @KVBAKennebecasisValleyBasketballAssociat",
+   "evidence_url": "https://kvba.ca"
+  },
+  {
+   "club": "River Valley Basketball Association (RVBA)",
+   "province": "New Brunswick",
+   "city": "Grand Bay-Westfield",
+   "website": "https://rvba.ca/",
+   "email": "",
+   "phone": "(506) 738-1086",
+   "all_emails": [],
+   "social": "IG @rivervalley.basketball",
+   "evidence_url": "https://rvba.ca"
+  },
+  {
+   "club": "Riverview Minor Basketball Association (RMBA)",
+   "province": "New Brunswick",
+   "city": "Riverview",
+   "website": "https://www.rmba.ca/",
+   "email": "rmbaexec@gmail.com",
+   "phone": "",
+   "all_emails": [],
+   "social": "FB @RMBA1; FB @riverviewminorbasketball; IG @riverviewminorbasketball",
+   "evidence_url": "https://www.rmba.ca"
+  },
+  {
+   "club": "Salisbury Petitcodiac Minor Basketball Association (SPMBA)",
+   "province": "New Brunswick",
+   "city": "Salisbury",
+   "website": "https://salisburybasketball.ca/",
+   "email": "info@salisburybasketball.ca",
+   "phone": "",
+   "all_emails": [
+    "info@salisburybasketball.ca",
+    "secretary@salisburybasketball.ca"
+   ],
+   "social": "FB @salisburybasketball; FB @salisburyhoops; IG @salisburybasketball",
+   "evidence_url": "https://salisburybasketball.ca"
+  },
+  {
+   "club": "South West Regional Minor Basketball Association",
+   "province": "New Brunswick",
+   "city": "St. George",
+   "website": "https://www.facebook.com/St.Georgebasketball/",
+   "email": "",
+   "phone": "",
+   "all_emails": [],
+   "social": "FB @St.Georgebasketball",
+   "evidence_url": "https://www.facebook.com/St.Georgebasketball"
+  },
+  {
+   "club": "St. Stephen Minor Basketball Association (SSBA)",
+   "province": "New Brunswick",
+   "city": "St. Stephen",
+   "website": "https://www.facebook.com/groups/673711246067744/",
+   "email": "",
+   "phone": "",
+   "all_emails": [],
+   "social": "FB @recover",
+   "evidence_url": "https://www.facebook.com/groups/673711246067744"
+  },
+  {
+   "club": "Surge Basketball (Saint John Surge)",
+   "province": "New Brunswick",
+   "city": "Rothesay",
+   "website": "https://www.surgebasketball.com/",
+   "email": "surgebasketballacademy@hotmail.com",
+   "phone": "",
+   "all_emails": [
+    "support@webador.com"
+   ],
+   "social": "",
+   "evidence_url": "https://www.surgebasketball.com"
+  },
+  {
+   "club": "YFC Elite Basketball Association",
+   "province": "New Brunswick",
+   "city": "Fredericton",
+   "website": "https://www.yfc-elite-basketball-association.ca/",
+   "email": "yfc.elite.basketball@gmail.com",
+   "phone": "",
+   "all_emails": [
+    "support@webador.com"
+   ],
+   "social": "FB @YFCEliteBasketball; IG @yfcelitebasketball",
+   "evidence_url": "https://www.yfc-elite-basketball-association.ca"
+  },
+  {
+   "club": "Central Athletics",
+   "province": "Newfoundland & Labrador",
+   "city": "Grand Falls-Windsor",
+   "website": "https://central-athletics.square.site",
+   "email": "centralathletics@hotmail.com",
+   "phone": "",
+   "all_emails": [
+    "centralathletics@hotmail.com"
+   ],
+   "social": "",
+   "evidence_url": "https://central-athletics.square.site"
+  },
+  {
+   "club": "Corner Brook Shooting Stars Basketball Club",
+   "province": "Newfoundland & Labrador",
+   "city": "Corner Brook",
+   "website": "https://www.facebook.com/CornerBrookMinorBasketball/",
+   "email": "",
+   "phone": "",
+   "all_emails": [],
+   "social": "FB @CornerBrookMinorBasketball",
+   "evidence_url": "https://www.facebook.com/CornerBrookMinorBasketball"
+  },
+  {
+   "club": "Grenfell Jr Warriors (Grenfell Warriors Junior/Youth Basketball, Memorial University Grenfell Campus)",
+   "province": "Newfoundland & Labrador",
+   "city": "Corner Brook",
+   "website": "https://mun.ca/grenfellcampus/student-life/athletics--recreation/grenfell-warriors-youth-camps----summer-programs/",
+   "email": "bmarsden@mun.ca",
+   "phone": "",
+   "all_emails": [
+    "bmarsden@mun.ca"
+   ],
+   "social": "FB @MemorialUniversity; FB @memorialu; IG @memorialuniversity",
+   "evidence_url": "https://mun.ca/grenfellcampus/student-life/athletics--recreation/grenfell-warriors-youth-camps----summer-programs"
+  },
+  {
+   "club": "Grenfell Junior Warriors (Grenfell Campus Athletics youth basketball)",
+   "province": "Newfoundland & Labrador",
+   "city": "Corner Brook",
+   "website": "https://mun.ca/grenfellcampus/student-life/athletics--recreation/grenfell-warriors-youth-camps----summer-programs/",
+   "email": "bmarsden@mun.ca",
+   "phone": "",
+   "all_emails": [
+    "bmarsden@mun.ca"
+   ],
+   "social": "FB @MemorialUniversity; FB @memorialu; IG @memorialuniversity",
+   "evidence_url": "https://mun.ca/grenfellcampus/student-life/athletics--recreation/grenfell-warriors-youth-camps----summer-programs"
+  },
+  {
+   "club": "Outer Cove Basketball",
+   "province": "Newfoundland & Labrador",
+   "city": "Outer Cove",
+   "website": "https://avalonbasketball.com/709-programs/blog-post-title-three-7l8bn-4jgt7-zykn5",
+   "email": "admin@709basketball.com",
+   "phone": "",
+   "all_emails": [
+    "director@709basketball.com"
+   ],
+   "social": "FB @2008",
+   "evidence_url": "https://avalonbasketball.com/709-programs/blog-post-title-three-7l8bn-4jgt7-zykn5"
+  },
+  {
+   "club": "Rain City Athletics",
+   "province": "Newfoundland & Labrador",
+   "city": "St. John's",
+   "website": "https://www.raincitynl.com",
+   "email": "hello@raincitynl.com",
+   "phone": "",
+   "all_emails": [
+    "hello@raincitynl.com"
+   ],
+   "social": "FB @raincitynl; IG @raincitynl",
+   "evidence_url": "https://www.raincitynl.com"
+  },
+  {
+   "club": "Amherst Minor Basketball Association (AMBA)",
+   "province": "Nova Scotia",
+   "city": "Amherst",
+   "website": "https://sites.google.com/view/amherstminorbasketball",
+   "email": "amherstminorbasketball@gmail.com",
+   "phone": "",
+   "all_emails": [],
+   "social": "FB @AmherstMinorBasketball",
+   "evidence_url": "https://sites.google.com/view/amherstminorbasketball"
+  },
+  {
+   "club": "Annapolis County Athletics",
+   "province": "Nova Scotia",
+   "city": "Annapolis County",
+   "website": "https://www.facebook.com/groups/383677184448811/",
+   "email": "steveyoung902@gmail.com",
+   "phone": "",
+   "all_emails": [],
+   "social": "FB @recover",
+   "evidence_url": "https://www.facebook.com/groups/383677184448811"
+  },
+  {
+   "club": "Antigonish Minor Basketball Association (AMBA)",
+   "province": "Nova Scotia",
+   "city": "Antigonish",
+   "website": "https://playfinder.ca/Org/AntBkblAMBB",
+   "email": "antigonishbasketball@gmail.com",
+   "phone": "",
+   "all_emails": [
+    "antigonishbasketball@gmail.com"
+   ],
+   "social": "FB @AntigonishBball; FB @AntigonishMinorBasketball; IG @antigonishminorbasketball; IG @playfindercup",
+   "evidence_url": "https://playfinder.ca/Org/AntBkblAMBB"
+  },
+  {
+   "club": "Axe Basketball Club",
+   "province": "Nova Scotia",
+   "city": "Kentville (serves Hantsport to New Minas corridor)",
+   "website": "https://www.axebasketball.ca/",
+   "email": "axebasketballclub@gmail.com",
+   "phone": "",
+   "all_emails": [
+    "axebasketballclub@gmail.com"
+   ],
+   "social": "FB @2008; FB @AxeBasketballClub",
+   "evidence_url": "https://www.axebasketball.ca"
+  },
+  {
+   "club": "Axe Basketball Club",
+   "province": "Nova Scotia",
+   "city": "Wolfville",
+   "website": "https://www.axebasketball.ca/",
+   "email": "axebasketballclub@gmail.com",
+   "phone": "",
+   "all_emails": [
+    "axebasketballclub@gmail.com"
+   ],
+   "social": "FB @2008; FB @AxeBasketballClub",
+   "evidence_url": "https://www.axebasketball.ca"
+  },
+  {
+   "club": "Basketball Association of Kentville",
+   "province": "Nova Scotia",
+   "city": "Kentville",
+   "website": "https://www.facebook.com/BasetballAssociationofKentville/",
+   "email": "shotclock2016@gmail.com",
+   "phone": "",
+   "all_emails": [],
+   "social": "FB @BasetballAssociationofKentville",
+   "evidence_url": "https://www.facebook.com/BasetballAssociationofKentville"
+  },
+  {
+   "club": "Basketball Cape Breton",
+   "province": "Nova Scotia",
+   "city": "Sydney / Glace Bay (CBRM)",
+   "website": "https://linktr.ee/basketballcb",
+   "email": "Summer2026@basketballcapebreton.com",
+   "phone": "",
+   "all_emails": [
+    "hello@basketballcapebreton.com"
+   ],
+   "social": "FB @BasketballCB; IG @BasketballCapeBreton",
+   "evidence_url": "https://linktr.ee/basketballcb"
+  },
+  {
+   "club": "Bedford Eagles Minor Basketball Association (Bedford Minor Basketball Association)",
+   "province": "Nova Scotia",
+   "city": "Bedford",
+   "website": "https://bedfordeagles.ca/",
+   "email": "bmbaregistrar@gmail.com",
+   "phone": "",
+   "all_emails": [],
+   "social": "IG @bedford.eagles.basketball",
+   "evidence_url": "https://bedfordeagles.ca"
+  },
+  {
+   "club": "Bedford Minor Basketball Association (Bedford Eagles)",
+   "province": "Nova Scotia",
+   "city": "Bedford",
+   "website": "https://www.bedfordeagles.ca/",
+   "email": "bmbaregistration@gmail.com",
+   "phone": "",
+   "all_emails": [],
+   "social": "IG @bedford.eagles.basketball",
+   "evidence_url": "https://www.bedfordeagles.ca"
+  },
+  {
+   "club": "Colchester Basketball Association",
+   "province": "Nova Scotia",
+   "city": "Truro",
+   "website": "https://www.facebook.com/groups/69056384036/",
+   "email": "cba.trurobball@gmail.com",
+   "phone": "",
+   "all_emails": [],
+   "social": "FB @recover",
+   "evidence_url": "https://www.facebook.com/groups/69056384036"
+  },
+  {
+   "club": "Cumberland Crushers Basketball Club",
+   "province": "Nova Scotia",
+   "city": "",
+   "website": "https://www.facebook.com/CumberlandCrushers/",
+   "email": "ortizalanm38@gmail.com",
+   "phone": "",
+   "all_emails": [],
+   "social": "FB @CumberlandCrushers",
+   "evidence_url": "https://www.facebook.com/CumberlandCrushers"
+  },
+  {
+   "club": "Express Basketball Club (BNS registry: Express Basketball Academy)",
+   "province": "Nova Scotia",
+   "city": "Halifax (Spryfield)",
+   "website": "https://www.expressbasketball.ca/",
+   "email": "info.expressbasketball@gmail.com",
+   "phone": "",
+   "all_emails": [
+    "info.expressbasketball@gmail.com"
+   ],
+   "social": "IG @express.basketball",
+   "evidence_url": "https://www.expressbasketball.ca"
+  },
+  {
+   "club": "Fall River Rebels Basketball Association (Fall River Basketball Association)",
+   "province": "Nova Scotia",
+   "city": "Fall River",
+   "website": "https://fallriverrebels.com/",
+   "email": "president@fallriverrebels.com",
+   "phone": "",
+   "all_emails": [
+    "registrar@fallriverrebels.com"
+   ],
+   "social": "FB @FallRiverRebelsBasketball; FB @https",
+   "evidence_url": "https://fallriverrebels.com"
+  },
+  {
+   "club": "Fifty for Free Community Youth Initiative (Halifax program)",
+   "province": "Nova Scotia",
+   "city": "Halifax",
+   "website": "https://fiftyforfree.com/programs/halifax/",
+   "email": "info@fiftyforfree.com",
+   "phone": "",
+   "all_emails": [],
+   "social": "FB @FiftyForFree; IG @fiftyforfree",
+   "evidence_url": "https://fiftyforfree.com/programs/halifax"
+  },
+  {
+   "club": "Halifax Hurricanes Minor Basketball Club",
+   "province": "Nova Scotia",
+   "city": "Halifax",
+   "website": "https://www.hhbball.com/",
+   "email": "hhbasketballclub@gmail.com",
+   "phone": "",
+   "all_emails": [
+    "hhbasketballclub@gmail.com"
+   ],
+   "social": "FB @HurricanesMBA; IG @halifaxhurricanesmba",
+   "evidence_url": "https://www.hhbball.com"
+  },
+  {
+   "club": "Halifax Wheelchair Basketball Club",
+   "province": "Nova Scotia",
+   "city": "Halifax",
+   "website": "https://www.facebook.com/nswheelchairbasketball/",
+   "email": "HWCBBC@gmail.com",
+   "phone": "",
+   "all_emails": [],
+   "social": "FB @nswheelchairbasketball; FB @recover",
+   "evidence_url": "https://www.facebook.com/nswheelchairbasketball"
+  },
+  {
+   "club": "High Level Basketball",
+   "province": "Nova Scotia",
+   "city": "Halifax",
+   "website": "https://highlevelbasketball.org/",
+   "email": "dgt@c-ntr-l.org",
+   "phone": "",
+   "all_emails": [
+    "dgt@c-ntr-l.org"
+   ],
+   "social": "IG @high.level.basketball",
+   "evidence_url": "https://highlevelbasketball.org"
+  },
+  {
+   "club": "Junior Mounties Basketball Club",
+   "province": "Nova Scotia",
+   "city": "Amherst (Cumberland NS – Westmorland NB border region; trains around Sackville NB)",
+   "website": "https://www.jrmountiesbasketball.ca/",
+   "email": "jrmountiesbasketball@gmail.com",
+   "phone": "",
+   "all_emails": [
+    "jrmountiesbasketball@gmail.com"
+   ],
+   "social": "",
+   "evidence_url": "https://www.jrmountiesbasketball.ca"
+  },
+  {
+   "club": "Kentville Wildcats Basketball",
+   "province": "Nova Scotia",
+   "city": "Kentville",
+   "website": "https://www.sportsengine.com/org/kentville-wildcats-basketball",
+   "email": "",
+   "phone": "",
+   "all_emails": [],
+   "social": "IG @nbcsportsengine",
+   "evidence_url": "https://www.sportsengine.com/org/kentville-wildcats-basketball"
+  },
+  {
+   "club": "Kings Minor Basketball Association (KMBA Gators)",
+   "province": "Nova Scotia",
+   "city": "Berwick / Coldbrook (western Kings County)",
+   "website": "https://kmbagators.wixsite.com/kmba",
+   "email": "tanya.berry@gbstech.com",
+   "phone": "902-678-8466",
+   "all_emails": [
+    "kmbagators@gmail.com"
+   ],
+   "social": "FB @KMBA-Basketball-103080638784791",
+   "evidence_url": "https://kmbagators.wixsite.com/kmba"
+  },
+  {
+   "club": "Kings Minor Basketball Association (KMBA Gators)",
+   "province": "Nova Scotia",
+   "city": "Coldbrook/Berwick area (serves Coldbrook, Cambridge, Somerset, Berwick)",
+   "website": "https://kmbagators.wixsite.com/kmba",
+   "email": "kmbagators@gmail.com",
+   "phone": "902-678-8466",
+   "all_emails": [
+    "kmbagators@gmail.com"
+   ],
+   "social": "FB @KMBA-Basketball-103080638784791",
+   "evidence_url": "https://kmbagators.wixsite.com/kmba"
+  },
+  {
+   "club": "North Preston Minor Basketball (North Preston Bulls)",
+   "province": "Nova Scotia",
+   "city": "North Preston",
+   "website": "https://www.instagram.com/north_preston_bulls/",
+   "email": "northprestonbulls@gmail.com",
+   "phone": "",
+   "all_emails": [],
+   "social": "IG @north_preston_bulls",
+   "evidence_url": "https://www.instagram.com/north_preston_bulls"
+  },
+  {
+   "club": "Pictou County Lightning (Pictou County Basketball Association)",
+   "province": "Nova Scotia",
+   "city": "New Glasgow / Pictou County",
+   "website": "https://www.pictoucountylightning.com/",
+   "email": "hislopjw@gmail.com",
+   "phone": "",
+   "all_emails": [],
+   "social": "FB @pclightning",
+   "evidence_url": "https://www.pictoucountylightning.com"
+  },
+  {
+   "club": "Prospect Road Basketball Association (Prospect Bulls)",
+   "province": "Nova Scotia",
+   "city": "Prospect Road area (Halifax)",
+   "website": "https://www.prospectbulls.ca/",
+   "email": "prospectbulls1@gmail.com",
+   "phone": "",
+   "all_emails": [
+    "prospectbulls1@gmail.com"
+   ],
+   "social": "FB @ProspectBulls; FB @https",
+   "evidence_url": "https://www.prospectbulls.ca"
+  },
+  {
+   "club": "Queens County Basketball Association (Queens County Bears)",
+   "province": "Nova Scotia",
+   "city": "Liverpool (Region of Queens)",
+   "website": "https://www.facebook.com/qcbasketball/",
+   "email": "gerryfaber@hotmail.com",
+   "phone": "",
+   "all_emails": [],
+   "social": "FB @qcbasketball; FB @recover",
+   "evidence_url": "https://www.facebook.com/qcbasketball"
+  },
+  {
+   "club": "Sackville Minor Basketball Association (Sackville Storm)",
+   "province": "Nova Scotia",
+   "city": "Lower Sackville",
+   "website": "https://www.sackvillestorm.com/",
+   "email": "president@sackvillestorm.com",
+   "phone": "",
+   "all_emails": [],
+   "social": "FB @SackvilleStorm; FB @smbasocial; IG @smbasocial",
+   "evidence_url": "https://www.sackvillestorm.com"
+  },
+  {
+   "club": "Shelburne County Basketball Association",
+   "province": "Nova Scotia",
+   "city": "Shelburne / Shelburne County",
+   "website": "https://www.facebook.com/groups/ShelburneCountyBasketball/",
+   "email": "beth.shelburnebasketball@gmail.com",
+   "phone": "",
+   "all_emails": [],
+   "social": "FB @recover",
+   "evidence_url": "https://www.facebook.com/groups/ShelburneCountyBasketball"
+  },
+  {
+   "club": "Shooting Star Basketball Association (SSBA)",
+   "province": "Nova Scotia",
+   "city": "Windsor (West Hants)",
+   "website": "https://shootingstarbasketball.ca/",
+   "email": "shootingstar@shootingstarbasketball.ca",
+   "phone": "",
+   "all_emails": [
+    "registrarssba@gmail.com"
+   ],
+   "social": "FB @https; FB @shootingstarbballwindsorns; IG @shootingstarbasketball_",
+   "evidence_url": "https://shootingstarbasketball.ca"
+  },
+  {
+   "club": "St. Margaret's Bay SLAM Basketball",
+   "province": "Nova Scotia",
+   "city": "Tantallon / St. Margaret's Bay",
+   "website": "https://slambasketball.ca/",
+   "email": "information@slambasketball.ca",
+   "phone": "",
+   "all_emails": [
+    "information@slambasketball.ca"
+   ],
+   "social": "FB @SLAMBasketball1; FB @St-Margarets-Bay-Basketball-SLAM-4785022; IG @slambasketball1",
+   "evidence_url": "https://slambasketball.ca"
+  },
+  {
+   "club": "Thunder Selects Basketball (Halifax Thunder)",
+   "province": "Nova Scotia",
+   "city": "Halifax",
+   "website": "https://www.thunderselects.ca/",
+   "email": "info@thunderselects.ca",
+   "phone": "902-471-4023",
+   "all_emails": [
+    "info@thunderselects.ca"
+   ],
+   "social": "FB @ThunderSelects; FB @ThunderSelectsBasketball; IG @thunder.selects",
+   "evidence_url": "https://www.thunderselects.ca"
+  },
+  {
+   "club": "West End Steelers Basketball",
+   "province": "Nova Scotia",
+   "city": "Halifax (west end)",
+   "website": "http://westendsteelers.com/",
+   "email": "president@westendsteelers.com",
+   "phone": "",
+   "all_emails": [],
+   "social": "FB @westendsteelers",
+   "evidence_url": "http://westendsteelers.com"
+  },
+  {
+   "club": "Yarmouth County Minor Basketball",
+   "province": "Nova Scotia",
+   "city": "Yarmouth",
+   "website": "https://www.facebook.com/yarmouthminorbasketball/",
+   "email": "yarmouthminorbasketball@gmail.com",
+   "phone": "",
+   "all_emails": [],
+   "social": "FB @recover; FB @yarmouthminorbasketball",
+   "evidence_url": "https://www.facebook.com/yarmouthminorbasketball"
+  },
+  {
+   "club": "360 Beyond The Game (360BTG)",
+   "province": "Ontario",
+   "city": "Oshawa/Whitby/Ajax",
+   "website": "https://www.360btg.com/",
+   "email": "via website",
+   "phone": "289-388-0328",
+   "all_emails": [
+    "admin@rumibasketball.com",
+    "director@360btg.com"
+   ],
+   "social": "",
+   "evidence_url": "https://www.360btg.com"
+  },
+  {
+   "club": "360 Beyond The Game (360BTG)",
+   "province": "Ontario",
+   "city": "Oshawa/Whitby/Clarington/Ajax/Pickering",
+   "website": "https://www.360btg.com/",
+   "email": "admin@rumibasketball.com",
+   "phone": "2893880328",
+   "all_emails": [
+    "admin@rumibasketball.com",
+    "director@360btg.com"
+   ],
+   "social": "",
+   "evidence_url": "https://www.360btg.com"
+  },
+  {
+   "club": "360BTG (Basketball & Soccer)",
+   "province": "Ontario",
+   "city": "Oshawa / Whitby / Clarington / Ajax / Pickering",
+   "website": "https://www.360btg.com/",
+   "email": "director@360btg.com",
+   "phone": "2893880328",
+   "all_emails": [
+    "admin@rumibasketball.com",
+    "director@360btg.com"
+   ],
+   "social": "",
+   "evidence_url": "https://www.360btg.com"
+  },
+  {
+   "club": "Algoma Jr. Thunderbirds",
+   "province": "Ontario",
+   "city": "",
+   "website": "https://algomathunderbirds.ca/sports/2017/3/23/junior-thunderbirds-programs.aspx",
+   "email": "jrthunderbirdsbasketball@gmail.com",
+   "phone": "",
+   "all_emails": [
+    "jrthunderbirdsbasketball@gmail.com"
+   ],
+   "social": "FB @algomatbirds; FB @algomathunderbirds; IG @algomathunderbirds",
+   "evidence_url": "https://algomathunderbirds.ca/sports/2017/3/23/junior-thunderbirds-programs.aspx"
+  },
+  {
+   "club": "Alpha Elite Sports Group",
+   "province": "Ontario",
+   "city": "Toronto ON",
+   "website": "alphaelitesportsgroup.com",
+   "email": "contact@alphaelitesportsgroup.com",
+   "phone": "6476189295",
+   "all_emails": [
+    "alphaelitesportsgroup@gmail.com",
+    "contact@alphaelitesportsgroup.com"
+   ],
+   "social": "FB @2008; FB @aeghoops; IG @alphaelitesportsgroup",
+   "evidence_url": "https://alphaelitesportsgroup.com"
+  },
+  {
+   "club": "Alpha Elite Sports Group",
+   "province": "Ontario",
+   "city": "Toronto ON",
+   "website": "alphaelitesportsgroup.com",
+   "email": "contact@alphaelitesportsgroup.com",
+   "phone": "6476189295",
+   "all_emails": [
+    "alphaelitesportsgroup@gmail.com",
+    "contact@alphaelitesportsgroup.com"
+   ],
+   "social": "FB @2008; FB @aeghoops; IG @alphaelitesportsgroup",
+   "evidence_url": "https://alphaelitesportsgroup.com"
+  },
+  {
+   "club": "Ancaster Blitz",
+   "province": "Ontario",
+   "city": "Ancaster",
+   "website": "https://www.blitzbasketball.net/",
+   "email": "blitzbasketballinfo@gmail.com",
+   "phone": "9058071438",
+   "all_emails": [
+    "blitzbasketballinfo@gmail.com"
+   ],
+   "social": "FB @ancasterblitz; IG @blitzbasketball",
+   "evidence_url": "https://www.blitzbasketball.net"
+  },
+  {
+   "club": "Ancaster Magic Basketball",
+   "province": "Ontario",
+   "city": "Ancaster",
+   "website": "https://www.ancastermagic.ca/",
+   "email": "ancastermagic@gmail.com",
+   "phone": "",
+   "all_emails": [
+    "ancastermagic@gmail.com"
+   ],
+   "social": "FB @AncasterMagic; IG @ancaster.magic",
+   "evidence_url": "https://www.ancastermagic.ca"
+  },
+  {
+   "club": "Ancaster Magic Basketball",
+   "province": "Ontario",
+   "city": "Hamilton (Ancaster)",
+   "website": "https://www.ancastermagic.ca/",
+   "email": "ancastermagic@gmail.com",
+   "phone": "",
+   "all_emails": [
+    "ancastermagic@gmail.com"
+   ],
+   "social": "FB @AncasterMagic; IG @ancaster.magic",
+   "evidence_url": "https://www.ancastermagic.ca"
+  },
+  {
+   "club": "Anchor Sports Club",
+   "province": "Ontario",
+   "city": "",
+   "website": "https://anchor-sports-club.square.site/",
+   "email": "anchorsports17@gmail.com",
+   "phone": "",
+   "all_emails": [
+    "hi@mystore.com"
+   ],
+   "social": "",
+   "evidence_url": "https://anchor-sports-club.square.site"
+  },
+  {
+   "club": "Aurora Dunks Basketball (Special Olympics Ontario)",
+   "province": "Ontario",
+   "city": "Aurora",
+   "website": "https://aurora.specialolympicsontario.ca/programs/basketball",
+   "email": "aurora.manager.basketball@specialolympicsontario.ca",
+   "phone": "",
+   "all_emails": [
+    "aurora.manager.basketball@specialolympicsontario.ca"
+   ],
+   "social": "",
+   "evidence_url": "https://aurora.specialolympicsontario.ca/programs/basketball"
+  },
+  {
+   "club": "B1CE London (Become One Canada Elite)",
+   "province": "Ontario",
+   "city": "London ON",
+   "website": "https://www.instagram.com/b1cewbb/",
+   "email": "",
+   "phone": "",
+   "all_emails": [],
+   "social": "IG @b1cewbb",
+   "evidence_url": "https://www.instagram.com/b1cewbb"
+  },
+  {
+   "club": "Ballmatics Academy",
+   "province": "Ontario",
+   "city": "",
+   "website": "https://ballmatics.com/",
+   "email": "info@qsla.ca",
+   "phone": "",
+   "all_emails": [
+    "info@qsla.ca"
+   ],
+   "social": "FB @quantum_sla; FB @quantumsla; IG @ballmatics; IG @ballmaticsacademy",
+   "evidence_url": "https://ballmatics.com"
+  },
+  {
+   "club": "Barrie Buccaneers BC",
+   "province": "Ontario",
+   "city": "Barrie ON",
+   "website": "barriebuccaneers.com",
+   "email": "info@barriebuccaneers.com",
+   "phone": "",
+   "all_emails": [],
+   "social": "IG @barriebuccaneers",
+   "evidence_url": "https://barriebuccaneers.com"
+  },
+  {
+   "club": "BAYAN Basketball",
+   "province": "Ontario",
+   "city": "",
+   "website": "https://www.facebook.com/BAYAN-BASKETBALL-127016123984566/",
+   "email": "",
+   "phone": "",
+   "all_emails": [],
+   "social": "FB @bayanbasketball; FB @recover",
+   "evidence_url": "https://www.facebook.com/BAYAN-BASKETBALL-127016123984566"
+  },
+  {
+   "club": "BC Trojka",
+   "province": "Ontario",
+   "city": "",
+   "website": "http://basketball.trojka.ca/Home/",
+   "email": "kk.trojka@gmail.com",
+   "phone": "",
+   "all_emails": [
+    "kk.trojka@gmail.com"
+   ],
+   "social": "FB @kktrojka; IG @troykabc",
+   "evidence_url": "http://basketball.trojka.ca/Home"
+  },
+  {
+   "club": "Become One Women's BBall",
+   "province": "Ontario",
+   "city": "",
+   "website": "https://www.instagram.com/become1wbb/",
+   "email": "",
+   "phone": "",
+   "all_emails": [],
+   "social": "IG @become1wbb",
+   "evidence_url": "https://www.instagram.com/become1wbb"
+  },
+  {
+   "club": "Belleville",
+   "province": "Ontario",
+   "city": "Belleville",
+   "website": "https://eobahoops.com/",
+   "email": "jrnbabelleville@gmail.com",
+   "phone": "6139623240",
+   "all_emails": [],
+   "social": "FB @EOBAhoops; IG @eobahoops",
+   "evidence_url": "https://eobahoops.com"
+  },
+  {
+   "club": "Belleville Spirits Boys Basketball",
+   "province": "Ontario",
+   "city": "Belleville",
+   "website": "https://quinte.totalsportsmedia.ca/directory/belleville-spirits-boys-basketball/",
+   "email": "boysbellevillespirits@gmail.com",
+   "phone": "",
+   "all_emails": [
+    "boysbellevillespirits@gmail.com"
+   ],
+   "social": "FB @Spirits-Boys-Basketball-114555459951282; FB @TSportsQuinte; FB @TotalSportsQuinte; FB @tsportsquinte",
+   "evidence_url": "https://quinte.totalsportsmedia.ca/directory/belleville-spirits-boys-basketball"
+  },
+  {
+   "club": "BGC London",
+   "province": "Ontario",
+   "city": "London",
+   "website": "https://www.bgclondon.ca/",
+   "email": "info@bgclondon.ca",
+   "phone": "5194329306",
+   "all_emails": [
+    "info@bgclondon.ca"
+   ],
+   "social": "FB @2008; FB @BGC.LDN; IG @bgc__london",
+   "evidence_url": "https://www.bgclondon.ca"
+  },
+  {
+   "club": "BGC Ottawa (Boys and Girls Club of Ottawa)",
+   "province": "Ontario",
+   "city": "Ottawa",
+   "website": "https://bgcottawa.my.site.com/",
+   "email": "bgc_ottawa@00dau000008lu2reae.org.force.com",
+   "phone": "",
+   "all_emails": [
+    "bgc_ottawa@00dau000008lu2reae.org.force.com"
+   ],
+   "social": "",
+   "evidence_url": "https://bgcottawa.my.site.com"
+  },
+  {
+   "club": "Blessed Sacrament",
+   "province": "Ontario",
+   "city": "Toronto",
+   "website": "https://www.blessedsacramentcs.com/",
+   "email": "blessedsacrament@archtoronto.org",
+   "phone": "4163935226",
+   "all_emails": [
+    "blessedsacrament@archtoronto.org",
+    "blessedsacramentcspc@gmail.com",
+    "karl.leitmann@tcdsb.org",
+    "katherine.banfield@tcdsb.org",
+    "shawna.campbell@tcdsb.org"
+   ],
+   "social": "",
+   "evidence_url": "https://www.blessedsacramentcs.com"
+  },
+  {
+   "club": "Blitz Basketball",
+   "province": "Ontario",
+   "city": "Hamilton (Ancaster)",
+   "website": "https://www.blitzbasketball.net/",
+   "email": "blitzbasketballinfo@gmail.com",
+   "phone": "905-807-1438",
+   "all_emails": [
+    "blitzbasketballinfo@gmail.com"
+   ],
+   "social": "FB @ancasterblitz; IG @blitzbasketball",
+   "evidence_url": "https://www.blitzbasketball.net"
+  },
+  {
+   "club": "Born 2 Stand Out (BTSO)",
+   "province": "Ontario",
+   "city": "Toronto/North York ON",
+   "website": "https://www.instagram.com/borntostandout_elite/",
+   "email": "",
+   "phone": "",
+   "all_emails": [],
+   "social": "IG @borntostandout_elite",
+   "evidence_url": "https://www.instagram.com/borntostandout_elite"
+  },
+  {
+   "club": "Brampton Community Services – Cassie Campbell Community Centre (basketball programs)",
+   "province": "Ontario",
+   "city": "Brampton",
+   "website": "https://www.brampton.ca/EN/residents/Recreation/Community-Centres/pages/cassie-campbell.aspx",
+   "email": "mara.lanz@brampton.ca",
+   "phone": "9058404041",
+   "all_emails": [
+    "mara.lanz@brampton.ca"
+   ],
+   "social": "FB @CityBrampton; IG @citybrampton",
+   "evidence_url": "https://www.brampton.ca/EN/residents/Recreation/Community-Centres/pages/cassie-campbell.aspx"
+  },
+  {
+   "club": "Brantford Boys CYO (Hawks)",
+   "province": "Ontario",
+   "city": "Brantford ON",
+   "website": "brantfordcyo.ca",
+   "email": "cyohawks@gmail.com; brantfordcyoboys@gmail.com",
+   "phone": "",
+   "all_emails": [
+    "cyohawks@gmail.com",
+    "info@yourbaseballsite.com"
+   ],
+   "social": "",
+   "evidence_url": "https://brantfordcyo.ca"
+  },
+  {
+   "club": "Brantford Boys CYO Hawks Basketball",
+   "province": "Ontario",
+   "city": "Brantford",
+   "website": "https://www.brantfordcyo.ca/",
+   "email": "brantfordcyoboys@gmail.com",
+   "phone": "",
+   "all_emails": [
+    "cyohawks@gmail.com",
+    "info@yourbaseballsite.com"
+   ],
+   "social": "",
+   "evidence_url": "https://www.brantfordcyo.ca"
+  },
+  {
+   "club": "Brantford CYO Boys",
+   "province": "Ontario",
+   "city": "Brantford",
+   "website": "http://www.brantfordcyo.ca/",
+   "email": "brantfordcyoboys@gmail.com",
+   "phone": "",
+   "all_emails": [
+    "cyohawks@gmail.com",
+    "info@yourbaseballsite.com"
+   ],
+   "social": "",
+   "evidence_url": "http://www.brantfordcyo.ca"
+  },
+  {
+   "club": "Brantford CYO Girls",
+   "province": "Ontario",
+   "city": "Brantford",
+   "website": "https://brantfordcyogirls.com/",
+   "email": "brantfordcyogirls@outlook.com",
+   "phone": "",
+   "all_emails": [],
+   "social": "FB @BrantfordCYOGirlsBball; FB @bcyogirlsbball; FB @harmonylodge115; IG @brantfordcyogirls",
+   "evidence_url": "https://brantfordcyogirls.com"
+  },
+  {
+   "club": "Brantford Hawks",
+   "province": "Ontario",
+   "city": "Brantford",
+   "website": "brantfordcyo.ca",
+   "email": "brantfordcyoboys@gmail.com",
+   "phone": "(519) 756-9035",
+   "all_emails": [
+    "cyohawks@gmail.com",
+    "info@yourbaseballsite.com"
+   ],
+   "social": "",
+   "evidence_url": "https://brantfordcyo.ca"
+  },
+  {
+   "club": "Bukhari Titans",
+   "province": "Ontario",
+   "city": "",
+   "website": "bukharibasketball.com",
+   "email": "coach@bukharibasketball.com",
+   "phone": "12898795221",
+   "all_emails": [
+    "coach@bukharibasketball.com"
+   ],
+   "social": "IG @bukharibasketball",
+   "evidence_url": "https://bukharibasketball.com"
+  },
+  {
+   "club": "Cathedral High School",
+   "province": "Ontario",
+   "city": "Hamilton",
+   "website": "https://chs.hwcdsb.ca/",
+   "email": "[email protected]",
+   "phone": "905-522-3581",
+   "all_emails": [
+    "chs@hwcdsb.ca"
+   ],
+   "social": "",
+   "evidence_url": "https://chs.hwcdsb.ca"
+  },
+  {
+   "club": "Cathedral HS (Gaels)",
+   "province": "Ontario",
+   "city": "Hamilton ON",
+   "website": "chs.hwcdsb.ca",
+   "email": "chs@hwcdsb.ca",
+   "phone": "905-522-3581",
+   "all_emails": [
+    "chs@hwcdsb.ca"
+   ],
+   "social": "",
+   "evidence_url": "https://chs.hwcdsb.ca"
+  },
+  {
+   "club": "Central Canada Prep (Winnipeg Sport Inst)",
+   "province": "Ontario",
+   "city": "Winnipeg MB",
+   "website": "winnipegsportinstitute.com",
+   "email": "info@winnipegsportinstitute.com; nicholas@",
+   "phone": "",
+   "all_emails": [
+    "nicholas@evolvebasketball.ca"
+   ],
+   "social": "",
+   "evidence_url": "https://winnipegsportinstitute.com"
+  },
+  {
+   "club": "CODE",
+   "province": "Ontario",
+   "city": "",
+   "website": "codeprep.ca",
+   "email": "info@codeprep.ca",
+   "phone": "",
+   "all_emails": [],
+   "social": "FB @CODESportsAcad1; IG @codesportsacademy",
+   "evidence_url": "https://codeprep.ca"
+  },
+  {
+   "club": "Collingwood Trailblazers",
+   "province": "Ontario",
+   "city": "Collingwood",
+   "website": "http://www.collingwoodtrailblazers.ca/",
+   "email": "",
+   "phone": "",
+   "all_emails": [],
+   "social": "FB @Collingwoodtrailblazers; FB @wethewood; IG @cwoodblazers",
+   "evidence_url": "http://www.collingwoodtrailblazers.ca"
+  },
+  {
+   "club": "Colts Prep",
+   "province": "Ontario",
+   "city": "Markham/Unionville ON",
+   "website": "coltsprep.com",
+   "email": "info@coltsprep.com",
+   "phone": "",
+   "all_emails": [],
+   "social": "IG @coltsprepwbb",
+   "evidence_url": "https://coltsprep.com"
+  },
+  {
+   "club": "Cooksville We>Me 2030",
+   "province": "Ontario",
+   "city": "Mississauga ON",
+   "website": "https://www.instagram.com/cooksville2030/",
+   "email": "",
+   "phone": "",
+   "all_emails": [],
+   "social": "IG @cooksville2030",
+   "evidence_url": "https://www.instagram.com/cooksville2030"
+  },
+  {
+   "club": "County Clippers",
+   "province": "Ontario",
+   "city": "Eli Carlone, rep",
+   "website": "https://www.countyclippers.ca/",
+   "email": "info@countyclippers.ca",
+   "phone": "",
+   "all_emails": [],
+   "social": "FB @countyclippers; IG @countyclippers",
+   "evidence_url": "https://www.countyclippers.ca"
+  },
+  {
+   "club": "Crestwood Prep",
+   "province": "Ontario",
+   "city": "Toronto",
+   "website": "https://www.crestwood.on.ca/",
+   "email": "",
+   "phone": "416-391-1441",
+   "all_emails": [],
+   "social": "FB @crestwoodprep; IG @crestwoodpreparatory",
+   "evidence_url": "https://www.crestwood.on.ca"
+  },
+  {
+   "club": "DEEP Basketball",
+   "province": "Ontario",
+   "city": "Burlington",
+   "website": "http://deepbasketball.com/",
+   "email": "info@deepbasketball.com",
+   "phone": "",
+   "all_emails": [
+    "info@deepbasketball.com"
+   ],
+   "social": "IG @deepbasketballclub",
+   "evidence_url": "http://deepbasketball.com"
+  },
+  {
+   "club": "Durham Gators Basketball",
+   "province": "Ontario",
+   "city": "Durham Region ON",
+   "website": "www.gatorsbasketballacademy.com",
+   "email": "contactgatorsacademy@gmail.com",
+   "phone": "647-283-1873",
+   "all_emails": [
+    "contacgatorsacademy@gmail.com",
+    "contactgatorsacademy@gmail.com",
+    "henry@gatorsbasketballacademy.com",
+    "markhamgators@yahoo.com",
+    "markhamgatorsdevelopment@gmail.com"
+   ],
+   "social": "FB @gatorsbasketballacademy; FB @gatorsbasketballacademyhttps; IG @gatorsacademy; IG @gatorselitecanada",
+   "evidence_url": "https://www.gatorsbasketballacademy.com"
+  },
+  {
+   "club": "East York Basketball",
+   "province": "Ontario",
+   "city": "Toronto (East/Beaches)",
+   "website": "https://eastyorkbasketball.com/",
+   "email": "info@eastyorkbasketball.com",
+   "phone": "",
+   "all_emails": [],
+   "social": "IG @eastyorkbasketball",
+   "evidence_url": "https://eastyorkbasketball.com"
+  },
+  {
+   "club": "Eastern Ontario Basketball League (EOBL)",
+   "province": "Ontario",
+   "city": "Eastern Ontario (Ottawa area)",
+   "website": "https://eobahoops.com/",
+   "email": "",
+   "phone": "",
+   "all_emails": [],
+   "social": "FB @EOBAhoops; IG @eobahoops",
+   "evidence_url": "https://eobahoops.com"
+  },
+  {
+   "club": "F.O.R.M. Basketball Academy",
+   "province": "Ontario",
+   "city": "Scarborough",
+   "website": "https://formbasketball.com/",
+   "email": "via website",
+   "phone": "",
+   "all_emails": [
+    "amkryukov@gmail.com",
+    "coaches@formbasketball.com",
+    "jonpinhorn.typedesign@gmail.com",
+    "socialmedia@formbasketball.com"
+   ],
+   "social": "FB @FORMBasketball; FB @formbasketball; IG @f.o.r.m._basketball",
+   "evidence_url": "https://formbasketball.com"
+  },
+  {
+   "club": "Factory Basketball Academy",
+   "province": "Ontario",
+   "city": "",
+   "website": "https://factorybasketballacademy.com/",
+   "email": "info@factorybasketballacademy.com",
+   "phone": "",
+   "all_emails": [
+    "info@factorybasketballacademy.com"
+   ],
+   "social": "FB @BasketballFactoryParis; IG @bballfactoryinc",
+   "evidence_url": "https://factorybasketballacademy.com"
+  },
+  {
+   "club": "Filipino Basketball Association of Durham (FBAD)",
+   "province": "Ontario",
+   "city": "",
+   "website": "https://www.fbadurham.org/",
+   "email": "chan7930@rogers.com",
+   "phone": "",
+   "all_emails": [
+    "chan7930@rogers.com",
+    "elipardinas@gmail.com",
+    "georgelalata@rogers.com",
+    "mailo@rogers.com",
+    "racedillo2@hotmail.com"
+   ],
+   "social": "IG @fbadurham",
+   "evidence_url": "https://www.fbadurham.org"
+  },
+  {
+   "club": "Fundamentals First BA",
+   "province": "Ontario",
+   "city": "Burlington/Halton ON",
+   "website": "https://fundamentalsfirstba.com/",
+   "email": "(form only)",
+   "phone": "",
+   "all_emails": [],
+   "social": "FB @FLU216; IG @da_flu",
+   "evidence_url": "https://fundamentalsfirstba.com"
+  },
+  {
+   "club": "G2S Game Changers",
+   "province": "Ontario",
+   "city": "GTA/North York",
+   "website": "https://www.instagram.com/g2s_gamechangers/",
+   "email": "",
+   "phone": "",
+   "all_emails": [],
+   "social": "IG @g2s_gamechangers",
+   "evidence_url": "https://www.instagram.com/g2s_gamechangers"
+  },
+  {
+   "club": "Gators",
+   "province": "Ontario",
+   "city": "",
+   "website": "https://www.gatorsbasketballacademy.com/",
+   "email": "contactgatorsacademy@gmail.com",
+   "phone": "6478869561",
+   "all_emails": [
+    "contacgatorsacademy@gmail.com",
+    "contactgatorsacademy@gmail.com",
+    "henry@gatorsbasketballacademy.com",
+    "markhamgators@yahoo.com",
+    "markhamgatorsdevelopment@gmail.com"
+   ],
+   "social": "FB @gatorsbasketballacademy; FB @gatorsbasketballacademyhttps; IG @gatorsacademy; IG @gatorselitecanada",
+   "evidence_url": "https://www.gatorsbasketballacademy.com"
+  },
+  {
+   "club": "Gators Basketball",
+   "province": "Ontario",
+   "city": "",
+   "website": "https://www.gatorsbasketballacademy.com/",
+   "email": "contactgatorsacademy@gmail.com",
+   "phone": "6478869561",
+   "all_emails": [
+    "contacgatorsacademy@gmail.com",
+    "contactgatorsacademy@gmail.com",
+    "henry@gatorsbasketballacademy.com",
+    "markhamgators@yahoo.com",
+    "markhamgatorsdevelopment@gmail.com"
+   ],
+   "social": "FB @gatorsbasketballacademy; FB @gatorsbasketballacademyhttps; IG @gatorsacademy; IG @gatorselitecanada",
+   "evidence_url": "https://www.gatorsbasketballacademy.com"
+  },
+  {
+   "club": "Gators Basketball Academy",
+   "province": "Ontario",
+   "city": "Markham/Durham/Richmond Hill",
+   "website": "https://www.gatorsbasketballacademy.com/",
+   "email": "via website",
+   "phone": "(647) 206-3730",
+   "all_emails": [
+    "contacgatorsacademy@gmail.com",
+    "contactgatorsacademy@gmail.com",
+    "henry@gatorsbasketballacademy.com",
+    "markhamgators@yahoo.com",
+    "markhamgatorsdevelopment@gmail.com"
+   ],
+   "social": "FB @gatorsbasketballacademy; FB @gatorsbasketballacademyhttps; IG @gatorsacademy; IG @gatorselitecanada",
+   "evidence_url": "https://www.gatorsbasketballacademy.com"
+  },
+  {
+   "club": "Gators Elite",
+   "province": "Ontario",
+   "city": "",
+   "website": "https://www.gatorsbasketballacademy.com/",
+   "email": "contactgatorsacademy@gmail.com",
+   "phone": "6472831873",
+   "all_emails": [
+    "contacgatorsacademy@gmail.com",
+    "contactgatorsacademy@gmail.com",
+    "henry@gatorsbasketballacademy.com",
+    "markhamgators@yahoo.com",
+    "markhamgatorsdevelopment@gmail.com"
+   ],
+   "social": "FB @gatorsbasketballacademy; FB @gatorsbasketballacademyhttps; IG @gatorsacademy; IG @gatorselitecanada",
+   "evidence_url": "https://www.gatorsbasketballacademy.com"
+  },
+  {
+   "club": "GBU (Gwillimbury United)",
+   "province": "Ontario",
+   "city": "E/W Gwillimbury-Newmarket ON",
+   "website": "gbunited.ca",
+   "email": "",
+   "phone": "",
+   "all_emails": [],
+   "social": "IG @gbuclub",
+   "evidence_url": "https://gbunited.ca"
+  },
+  {
+   "club": "Glory Basketball",
+   "province": "Ontario",
+   "city": "",
+   "website": "glorycanball.com",
+   "email": "glorycanball@gmail.com",
+   "phone": "",
+   "all_emails": [
+    "glorycanball@gmail.com"
+   ],
+   "social": "",
+   "evidence_url": "https://glorycanball.com"
+  },
+  {
+   "club": "Golden Horseshoe Disabled Sports Association (Vipers Wheelchair Basketball)",
+   "province": "Ontario",
+   "city": "Burlington",
+   "website": "http://vipersbasketball.ca/",
+   "email": "info@vipersbasketball.ca",
+   "phone": "",
+   "all_emails": [
+    "anapbm@gmail.com",
+    "team@latofonts.com"
+   ],
+   "social": "FB @1530786967172215; FB @viperswbball; IG @viperswheelchairbball",
+   "evidence_url": "http://vipersbasketball.ca"
+  },
+  {
+   "club": "Greater Sudbury Basketball Association",
+   "province": "Ontario",
+   "city": "Greater Sudbury",
+   "website": "https://greatersudburybasketball.com/",
+   "email": "info@greatersudburybasketball.com",
+   "phone": "",
+   "all_emails": [],
+   "social": "FB @61564858859184; IG @greatersudburybasketball",
+   "evidence_url": "https://greatersudburybasketball.com"
+  },
+  {
+   "club": "Guelph Knights",
+   "province": "Ontario",
+   "city": "Guelph",
+   "website": "https://www.guelphknights.ca/",
+   "email": "info@guelphknights.ca",
+   "phone": "",
+   "all_emails": [
+    "info@guelphknights.ca"
+   ],
+   "social": "FB @GuelphCYObasketball; FB @guelphknights1; IG @guelphknightsbasketball",
+   "evidence_url": "https://www.guelphknights.ca"
+  },
+  {
+   "club": "Guelph Youth Basketball Association",
+   "province": "Ontario",
+   "city": "Guelph",
+   "website": "https://www.guelphbasketball.com/",
+   "email": "administration@guelphbasketball.com",
+   "phone": "",
+   "all_emails": [
+    "administration@guelphbasketball.com",
+    "development@guelphbasketball.com",
+    "treasurer@guelphbasketball.com"
+   ],
+   "social": "FB @guelphbasketball",
+   "evidence_url": "https://www.guelphbasketball.com"
+  },
+  {
+   "club": "Gwillimbury Basketball United",
+   "province": "Ontario",
+   "city": "East Gwillimbury",
+   "website": "gbunited.ca",
+   "email": "",
+   "phone": "",
+   "all_emails": [],
+   "social": "IG @gbuclub",
+   "evidence_url": "https://gbunited.ca"
+  },
+  {
+   "club": "Gwillimbury United (GBU)",
+   "province": "Ontario",
+   "city": "E/W Gwillimbury-Newmarket ON",
+   "website": "gbunited.ca",
+   "email": "",
+   "phone": "",
+   "all_emails": [],
+   "social": "IG @gbuclub",
+   "evidence_url": "https://gbunited.ca"
+  },
+  {
+   "club": "H5 Academy",
+   "province": "Ontario",
+   "city": "Toronto (725 Bathurst)",
+   "website": "academy.h5f.ca",
+   "email": "h5academy@h5f.ca",
+   "phone": "",
+   "all_emails": [
+    "h5academy@h5f.ca"
+   ],
+   "social": "IG @high5academy",
+   "evidence_url": "https://academy.h5f.ca"
+  },
+  {
+   "club": "Haldimand Huskies",
+   "province": "Ontario",
+   "city": "Caledonia",
+   "website": "http://www.haldimandhuskies.ca/",
+   "email": "info@haldimandhuskies.ca",
+   "phone": "",
+   "all_emails": [
+    "info@haldimandhuskies.ca"
+   ],
+   "social": "",
+   "evidence_url": "http://www.haldimandhuskies.ca"
+  },
+  {
+   "club": "Halton Basketball Club",
+   "province": "Ontario",
+   "city": "Halton Hills (Georgetown) — exact municipal boundary not confirmed on page",
+   "website": "http://www.haltonbasketball.com/",
+   "email": "info@haltonbasketball.com",
+   "phone": "",
+   "all_emails": [],
+   "social": "IG @underdogathletics30",
+   "evidence_url": "http://www.haltonbasketball.com"
+  },
+  {
+   "club": "Halton Hills Guardian Coed Basketball Club (Special Olympics Ontario)",
+   "province": "Ontario",
+   "city": "Georgetown",
+   "website": "https://haltonhills.specialolympicsontario.ca/",
+   "email": "haltonhills.cc@specialolympicsontario.ca",
+   "phone": "",
+   "all_emails": [
+    "hh@specialolympicsontario.ca",
+    "hhaquaticswaves@specialolympicsontario.ca",
+    "hhbbguardians@specialolympicsontario.ca",
+    "hhcurlingactonrocks@specialolympicsontario.ca",
+    "hhfhgalaxy@specialolympicsontario.ca"
+   ],
+   "social": "",
+   "evidence_url": "https://haltonhills.specialolympicsontario.ca"
+  },
+  {
+   "club": "Hamilton Basketball Association (HBA)",
+   "province": "Ontario",
+   "city": "Hamilton",
+   "website": "https://www.hbabasketball.ca/",
+   "email": "info@hbabasketball.ca",
+   "phone": "",
+   "all_emails": [
+    "info@hbabasketball.ca"
+   ],
+   "social": "IG @hba_hamilton.basketball.assoc",
+   "evidence_url": "https://www.hbabasketball.ca"
+  },
+  {
+   "club": "Hamilton JUEL",
+   "province": "Ontario",
+   "city": "Hamilton",
+   "website": "https://www.transwaybasketball.com/",
+   "email": "info@transwayBasketball.com",
+   "phone": "",
+   "all_emails": [
+    "info@transwaybasketball.com"
+   ],
+   "social": "FB @2008; IG @transway.basketball",
+   "evidence_url": "https://www.transwaybasketball.com"
+  },
+  {
+   "club": "Hamilton Transway Basketball",
+   "province": "Ontario",
+   "city": "Hamilton",
+   "website": "https://www.transwaybasketball.com/",
+   "email": "info@transwaybasketball.com",
+   "phone": "",
+   "all_emails": [
+    "info@transwaybasketball.com"
+   ],
+   "social": "FB @2008; IG @transway.basketball",
+   "evidence_url": "https://www.transwaybasketball.com"
+  },
+  {
+   "club": "HOOPS All-Star Basketball Inc.",
+   "province": "Ontario",
+   "city": "Sarnia",
+   "website": "https://hoopsallstar.ca/",
+   "email": "hoops.office@hoopsallstar.ca",
+   "phone": "",
+   "all_emails": [
+    "alex.maxwell@hoopsallstar.ca",
+    "erin.moffat@hoopsallstar.ca",
+    "james.grant@hoopsallstar.ca",
+    "keith.sharpe@hoopsallstar.ca",
+    "trish.kehn@hoopsallstar.ca"
+   ],
+   "social": "",
+   "evidence_url": "https://hoopsallstar.ca"
+  },
+  {
+   "club": "Hoops For Her",
+   "province": "Ontario",
+   "city": "",
+   "website": "https://hoopsforher.ca/",
+   "email": "contact@sansoxygen.com",
+   "phone": "",
+   "all_emails": [
+    "contact@sansoxygen.com"
+   ],
+   "social": "IG @hoopsforher",
+   "evidence_url": "https://hoopsforher.ca"
+  },
+  {
+   "club": "Hoopzone Knights",
+   "province": "Ontario",
+   "city": "North York ON",
+   "website": "https://www.instagram.com/hoopzonebasketball",
+   "email": "",
+   "phone": "",
+   "all_emails": [],
+   "social": "IG @hoopzonebasketball",
+   "evidence_url": "https://www.instagram.com/hoopzonebasketball"
+  },
+  {
+   "club": "Huntsville Hurricanes",
+   "province": "Ontario",
+   "city": "Huntsville",
+   "website": "https://www.huntsvillehurricanes.ca/",
+   "email": "huntsvillehurricanesbasketball@gmail.com",
+   "phone": "",
+   "all_emails": [
+    "huntsvillehurricanesbasketball@gmail.com"
+   ],
+   "social": "FB @HuntsvilleHurricanesBall",
+   "evidence_url": "https://www.huntsvillehurricanes.ca"
+  },
+  {
+   "club": "IBSA Basketball",
+   "province": "Ontario",
+   "city": "Hamilton",
+   "website": "https://www.ibsabasketball.com/",
+   "email": "info@ibsabasketball.com",
+   "phone": "877-897-1033",
+   "all_emails": [
+    "info@ibsabasketball.com"
+   ],
+   "social": "FB @ibsabasketball; IG @ibsabasketball",
+   "evidence_url": "https://www.ibsabasketball.com"
+  },
+  {
+   "club": "Jungle Prep (Jungle Courts)",
+   "province": "Ontario",
+   "city": "Pickering ON",
+   "website": "junglecourts.com",
+   "email": "info@junglecourts.com",
+   "phone": "",
+   "all_emails": [
+    "info@junglecourts.com"
+   ],
+   "social": "IG @junglecourts",
+   "evidence_url": "https://junglecourts.com"
+  },
+  {
+   "club": "Kanata Selects",
+   "province": "Ontario",
+   "city": "Kanata (Ottawa)",
+   "website": "https://www.kanatabasketball.ca/",
+   "email": "info@kanatabasketball.ca",
+   "phone": "",
+   "all_emails": [
+    "info@kanatabasketball.ca"
+   ],
+   "social": "FB @ONL_Basketball; FB @kanatabasketball; IG @OttawaNextLevel",
+   "evidence_url": "https://www.kanatabasketball.ca"
+  },
+  {
+   "club": "Kanata Youth Basketball Association (Ottawa Next Level)",
+   "province": "Ontario",
+   "city": "Ottawa (Kanata)",
+   "website": "http://kanatabasketball.ca/",
+   "email": "info@kanatabasketball.ca",
+   "phone": "",
+   "all_emails": [
+    "info@kanatabasketball.ca"
+   ],
+   "social": "FB @ONL_Basketball; FB @kanatabasketball; IG @OttawaNextLevel",
+   "evidence_url": "http://kanatabasketball.ca"
+  },
+  {
+   "club": "Kemptville",
+   "province": "Ontario",
+   "city": "Kemptville",
+   "website": "https://www.kemptvillewarriors.ca/",
+   "email": "info@kemptvillewarriors.ca",
+   "phone": "",
+   "all_emails": [],
+   "social": "IG @kemptvillewarriors",
+   "evidence_url": "https://www.kemptvillewarriors.ca"
+  },
+  {
+   "club": "Kemptville Warriors",
+   "province": "Ontario",
+   "city": "",
+   "website": "https://www.kemptvillewarriors.ca/",
+   "email": "info@kemptvillewarriors.ca",
+   "phone": "",
+   "all_emails": [],
+   "social": "IG @kemptvillewarriors",
+   "evidence_url": "https://www.kemptvillewarriors.ca"
+  },
+  {
+   "club": "Kid Ballers (Durham Region Basketball)",
+   "province": "Ontario",
+   "city": "",
+   "website": "https://www.kidballers.com/",
+   "email": "",
+   "phone": "4165871149",
+   "all_emails": [],
+   "social": "",
+   "evidence_url": "https://www.kidballers.com"
+  },
+  {
+   "club": "Lindsay Wildcats",
+   "province": "Ontario",
+   "city": "Lindsay",
+   "website": "https://lindsaywildcats.com/",
+   "email": "info@lindsaywildcats.com",
+   "phone": "",
+   "all_emails": [
+    "info@lindsaywildcats.com",
+    "lindsaywildcatsbasketball@gmail.com"
+   ],
+   "social": "FB @2008; FB @LindsayWildcatsBasketballAssociation; IG @lindsaywildcats",
+   "evidence_url": "https://lindsaywildcats.com"
+  },
+  {
+   "club": "London Basketball Club",
+   "province": "Ontario",
+   "city": "London",
+   "website": "https://www.londonbasketballclub.ca/",
+   "email": "",
+   "phone": "",
+   "all_emails": [],
+   "social": "FB @londonbasketballclub; IG @londonthunderbasketball",
+   "evidence_url": "https://www.londonbasketballclub.ca"
+  },
+  {
+   "club": "London CYO",
+   "province": "Ontario",
+   "city": "London",
+   "website": "https://www.londoncyobasketball.com/",
+   "email": "via website",
+   "phone": "",
+   "all_emails": [],
+   "social": "FB @londoncyo; IG @londoncyobasketball",
+   "evidence_url": "https://www.londoncyobasketball.com"
+  },
+  {
+   "club": "London Royals",
+   "province": "Ontario",
+   "city": "London",
+   "website": "https://linktr.ee/londonroyalsbasketball",
+   "email": "executive@londonroyals.ca",
+   "phone": "",
+   "all_emails": [
+    "executive@londonroyals.ca",
+    "finance@londonroyals.ca"
+   ],
+   "social": "",
+   "evidence_url": "https://linktr.ee/londonroyalsbasketball"
+  },
+  {
+   "club": "Malton Sting Basketball Club",
+   "province": "Ontario",
+   "city": "Mississauga (Malton)",
+   "website": "https://www.maltonsting.com/",
+   "email": "maltonsting.bc@gmail.com",
+   "phone": "",
+   "all_emails": [
+    "info@maltonsting.com",
+    "maltonsting.bc@gmail.com"
+   ],
+   "social": "FB @2008; IG @maltonsting.bc",
+   "evidence_url": "https://www.maltonsting.com"
+  },
+  {
+   "club": "Maple Basketball",
+   "province": "Ontario",
+   "city": "",
+   "website": "maplebasketball.ca",
+   "email": "",
+   "phone": "6476770220",
+   "all_emails": [],
+   "social": "IG @maple_basketball_ca",
+   "evidence_url": "https://maplebasketball.ca"
+  },
+  {
+   "club": "Markham Unionville Minor Basketball Association (MUMBA)",
+   "province": "Ontario",
+   "city": "Markham",
+   "website": "https://www.mumbabasketball.ca/",
+   "email": "",
+   "phone": "(647) 535-6747",
+   "all_emails": [],
+   "social": "FB @mumbabasketball; IG @mumbabasketball",
+   "evidence_url": "https://www.mumbabasketball.ca"
+  },
+  {
+   "club": "Markham-Stouffville Basketball Academy (MSBA STORM)",
+   "province": "Ontario",
+   "city": "Markham/Stouffville",
+   "website": "https://www.msbastorm.com/",
+   "email": "msbastorm@gmail.com",
+   "phone": "",
+   "all_emails": [
+    "msbastorm@gmail.com"
+   ],
+   "social": "IG @msbastorm",
+   "evidence_url": "https://www.msbastorm.com"
+  },
+  {
+   "club": "MBA Basketball",
+   "province": "Ontario",
+   "city": "",
+   "website": "https://mumbabasketball.ca/",
+   "email": "",
+   "phone": "647-945-6945",
+   "all_emails": [],
+   "social": "FB @mumbabasketball; IG @mumbabasketball",
+   "evidence_url": "https://mumbabasketball.ca"
+  },
+  {
+   "club": "MC Elite Basketball",
+   "province": "Ontario",
+   "city": "Toronto ON",
+   "website": "mcelite.clubcentral.com",
+   "email": "mcelitebball@gmail.com",
+   "phone": "",
+   "all_emails": [
+    "mcelitebball@gmail.com"
+   ],
+   "social": "",
+   "evidence_url": "https://mcelite.clubcentral.com"
+  },
+  {
+   "club": "Midland Waves Basketball Association",
+   "province": "Ontario",
+   "city": "Midland",
+   "website": "https://www.midlandwaves.ca/",
+   "email": "",
+   "phone": "",
+   "all_emails": [],
+   "social": "FB @MidlandWaves; IG @midlandwaves",
+   "evidence_url": "https://www.midlandwaves.ca"
+  },
+  {
+   "club": "Mile of Gold Basketball Club",
+   "province": "Ontario",
+   "city": "",
+   "website": "https://www.klswampdonkeys.com/",
+   "email": "jodi.ryan@dsb1.ca",
+   "phone": "",
+   "all_emails": [
+    "jodi.ryan@dsb1.ca",
+    "larouche0704@gmail.com",
+    "lindsaybballmaclean@gmail.com",
+    "marc.larouche@dsb1.ca",
+    "todd.turner@dsb1.ca"
+   ],
+   "social": "IG @phoenix.bulldogs.template",
+   "evidence_url": "https://www.klswampdonkeys.com"
+  },
+  {
+   "club": "Momentum Basketball",
+   "province": "Ontario",
+   "city": "Toronto (Don Mills)",
+   "website": "https://momentumsportsgroup.ca/",
+   "email": "info@momentumsportsgroup.ca",
+   "phone": "(416) 357-4636",
+   "all_emails": [
+    "admin@momentumsportsgroup.ca",
+    "info@momentumsportsgroup.ca"
+   ],
+   "social": "IG @momentumsportsgta",
+   "evidence_url": "https://momentumsportsgroup.ca"
+  },
+  {
+   "club": "Momentum Sports Group",
+   "province": "Ontario",
+   "city": "",
+   "website": "https://momentumsportsgroup.ca/",
+   "email": "admin@momentumsportsgroup.ca",
+   "phone": "",
+   "all_emails": [
+    "admin@momentumsportsgroup.ca",
+    "info@momentumsportsgroup.ca"
+   ],
+   "social": "IG @momentumsportsgta",
+   "evidence_url": "https://momentumsportsgroup.ca"
+  },
+  {
+   "club": "MUMBA (Markham Unionville Minor BA) — \"MUMBA Mentality\"/MBA prep",
+   "province": "Ontario",
+   "city": "Markham ON",
+   "website": "mumbabasketball.ca",
+   "email": "basil@mumbabasketball.ca",
+   "phone": "647-945-6945",
+   "all_emails": [],
+   "social": "FB @mumbabasketball; IG @mumbabasketball",
+   "evidence_url": "https://mumbabasketball.ca"
+  },
+  {
+   "club": "Naismith Basketball Association",
+   "province": "Ontario",
+   "city": "Eastern Ontario (Ottawa area)",
+   "website": "http://www.naismithbasketball.ca/",
+   "email": "",
+   "phone": "",
+   "all_emails": [],
+   "social": "FB @NaismithBasketballAssociation; FB @https; IG @naismithbasketballassociation",
+   "evidence_url": "http://www.naismithbasketball.ca"
+  },
+  {
+   "club": "Nepean Blue Devils",
+   "province": "Ontario",
+   "city": "Nepean",
+   "website": "https://www.nepeanbluedevils.ca/",
+   "email": "generalmanager@nepeanbluedevils.ca",
+   "phone": "",
+   "all_emails": [
+    "generalmanager@nepeanbluedevils.ca"
+   ],
+   "social": "FB @NepeanBlueDevilsBasketballAssociation",
+   "evidence_url": "https://www.nepeanbluedevils.ca"
+  },
+  {
+   "club": "New Horizon Basketball Academy",
+   "province": "Ontario",
+   "city": "",
+   "website": "http://www.newhorizonbasketball.com",
+   "email": "info@newhorizonbasketball.com",
+   "phone": "",
+   "all_emails": [
+    "info@newhorizonbasketball.com"
+   ],
+   "social": "FB @NewHorizonBasketballAcademy; IG @newhorizonbasketball",
+   "evidence_url": "http://www.newhorizonbasketball.com"
+  },
+  {
+   "club": "Next Generation Basketball",
+   "province": "Ontario",
+   "city": "",
+   "website": "https://www.nextgenerationbasketballclub.com/",
+   "email": "info@nextgenerationbasketballclub.com",
+   "phone": "",
+   "all_emails": [
+    "info@nextgenerationbasketballclub.com"
+   ],
+   "social": "FB @nextgenbasketballclub; IG @nxt_generation_basketball",
+   "evidence_url": "https://www.nextgenerationbasketballclub.com"
+  },
+  {
+   "club": "Next Man Up",
+   "province": "Ontario",
+   "city": "",
+   "website": "nextmanup.ca",
+   "email": "xmanupbasketball@gmail.com",
+   "phone": "",
+   "all_emails": [
+    "xmanupbasketball@gmail.com"
+   ],
+   "social": "IG @xmanupbasketball",
+   "evidence_url": "https://nextmanup.ca"
+  },
+  {
+   "club": "Niagara Apex Basketball",
+   "province": "Ontario",
+   "city": "Niagara Region (serves St. Catharines / Niagara Falls area)",
+   "website": "https://www.niagaraapexbasketball.ca/home",
+   "email": "info@niagaraapexbasketball.ca",
+   "phone": "",
+   "all_emails": [],
+   "social": "FB @2008; FB @NiagaraApexBasketball; FB @niagaraapex; IG @niagaraapex",
+   "evidence_url": "https://www.niagaraapexbasketball.ca/home"
+  },
+  {
+   "club": "Niagara Girls Basketball Academy (NGBA)",
+   "province": "Ontario",
+   "city": "Niagara Region",
+   "website": "https://niagarabasketballacademy.com/",
+   "email": "dpicton@niagarabasketballacademy.com",
+   "phone": "",
+   "all_emails": [
+    "dpicton@niagarabasketballacademy.com",
+    "info@niagarabasketballacademy.com"
+   ],
+   "social": "FB @CoachPicton; FB @NiagaraGirlsBasketballAcademy; FB @coachpicton",
+   "evidence_url": "https://niagarabasketballacademy.com"
+  },
+  {
+   "club": "Norfolk Youth Basketball Association",
+   "province": "Ontario",
+   "city": "Simcoe",
+   "website": "https://norfolkyouthbasketball.ca/",
+   "email": "norfolkyba@gmail.com",
+   "phone": "519-427-3899",
+   "all_emails": [],
+   "social": "FB @norfolkyouthbasketball; IG @norfolkyba",
+   "evidence_url": "https://norfolkyouthbasketball.ca"
+  },
+  {
+   "club": "Norfolk Youth Basketball Association",
+   "province": "Ontario",
+   "city": "Waterford / Norfolk County",
+   "website": "https://norfolkyouthbasketball.ca/",
+   "email": "norfolkyba@gmail.com",
+   "phone": "519-427-3899",
+   "all_emails": [],
+   "social": "FB @norfolkyouthbasketball; IG @norfolkyba",
+   "evidence_url": "https://norfolkyouthbasketball.ca"
+  },
+  {
+   "club": "Norfolk Youth Basketball Association",
+   "province": "Ontario",
+   "city": "Simcoe (Norfolk County)",
+   "website": "https://norfolkyouthbasketball.ca/",
+   "email": "norfolkyba@gmail.com",
+   "phone": "",
+   "all_emails": [],
+   "social": "FB @norfolkyouthbasketball; IG @norfolkyba",
+   "evidence_url": "https://norfolkyouthbasketball.ca"
+  },
+  {
+   "club": "North York Pinoy Athletic Association (North York Aquilas)",
+   "province": "Ontario",
+   "city": "",
+   "website": "https://www.nypaa.ca/index.html",
+   "email": "",
+   "phone": "",
+   "all_emails": [],
+   "social": "FB @NYPAA",
+   "evidence_url": "https://www.nypaa.ca/index.html"
+  },
+  {
+   "club": "Northern Kings",
+   "province": "Ontario",
+   "city": "",
+   "website": "https://kingnationbasketball.com/",
+   "email": "contact@kingnationbasketball.com",
+   "phone": "",
+   "all_emails": [
+    "contact@kingnationbasketball.com",
+    "vidal@kingnationbasketball.com"
+   ],
+   "social": "",
+   "evidence_url": "https://kingnationbasketball.com"
+  },
+  {
+   "club": "Northumberland Minor Basketball Association (formerly Lakeshore Minor Basketball Association, rebranded 2022)",
+   "province": "Ontario",
+   "city": "Cobourg (house league Saturdays at Cobourg Collegiate Institute)",
+   "website": "https://www.northumberlandbasketball.ca/",
+   "email": "",
+   "phone": "7804268681",
+   "all_emails": [],
+   "social": "FB @lmba2k",
+   "evidence_url": "https://www.northumberlandbasketball.ca"
+  },
+  {
+   "club": "Oakville Vytis Basketball Association",
+   "province": "Ontario",
+   "city": "Oakville ON",
+   "website": "https://www.vytis.ca/",
+   "email": "(contact form)",
+   "phone": "",
+   "all_emails": [],
+   "social": "FB @vytisbball; IG @canadaelite_wbb; IG @oakvillevytis",
+   "evidence_url": "https://www.vytis.ca"
+  },
+  {
+   "club": "Orangeville Hawks",
+   "province": "Ontario",
+   "city": "Orangeville",
+   "website": "https://orangevillehawks.ca/",
+   "email": "orangevillehawksbasketball@gmail.com",
+   "phone": "",
+   "all_emails": [
+    "gverner47@outlook.com",
+    "orangevillehawksbasketball@gmail.com"
+   ],
+   "social": "FB @hawksoville; FB @orangevillehawks; IG @orangevillehawks",
+   "evidence_url": "https://orangevillehawks.ca"
+  },
+  {
+   "club": "Orillia Lakers Youth Basketball Association/Club",
+   "province": "Ontario",
+   "city": "Orillia",
+   "website": "http://orillialakers.com/",
+   "email": "",
+   "phone": "",
+   "all_emails": [],
+   "social": "FB @orillialakersyouthbasketball; IG @orillialakers",
+   "evidence_url": "http://orillialakers.com"
+  },
+  {
+   "club": "Orillia Youth Basketball Association (Lakers)",
+   "province": "Ontario",
+   "city": "Orillia",
+   "website": "http://orillialakers.com/",
+   "email": "",
+   "phone": "",
+   "all_emails": [],
+   "social": "FB @orillialakersyouthbasketball; IG @orillialakers",
+   "evidence_url": "http://orillialakers.com"
+  },
+  {
+   "club": "Orion Basketball",
+   "province": "Ontario",
+   "city": "London",
+   "website": "https://www.orionbasketball.com/",
+   "email": "via website",
+   "phone": "",
+   "all_emails": [],
+   "social": "FB @Orion-Basketball-674878476221006; IG @londonorionbasketball",
+   "evidence_url": "https://www.orionbasketball.com"
+  },
+  {
+   "club": "Ottawa Capitals JUEL",
+   "province": "Ontario",
+   "city": "Ottawa ON",
+   "website": "ottawacapitalsjuel.com",
+   "email": "capitalregionjuel@gmail.com",
+   "phone": "",
+   "all_emails": [],
+   "social": "FB @OttawaCapitalsJUEL; IG @ottawacapitalsjuel",
+   "evidence_url": "https://ottawacapitalsjuel.com"
+  },
+  {
+   "club": "Ottawa Elite",
+   "province": "Ontario",
+   "city": "Ottawa",
+   "website": "http://ottawaelite.org/",
+   "email": "OYBAOttawaElite@gmail.com",
+   "phone": "",
+   "all_emails": [],
+   "social": "FB @OttawaElite; IG @ottawa_elite",
+   "evidence_url": "http://ottawaelite.org"
+  },
+  {
+   "club": "Ottawa Shooting Stars",
+   "province": "Ontario",
+   "city": "Ottawa",
+   "website": "https://ottawashootingstars.com/",
+   "email": "info@ottawashootingstars.com",
+   "phone": "",
+   "all_emails": [
+    "gm@ottawashootingstars.com",
+    "info@ottawashootingstars.com"
+   ],
+   "social": "FB @OttawaShootingStars; IG @ottawashootingstars",
+   "evidence_url": "https://ottawashootingstars.com"
+  },
+  {
+   "club": "Ottawa South Basketball Association",
+   "province": "Ontario",
+   "city": "Ottawa (South)",
+   "website": "https://ottawasouthbasketball.ca/",
+   "email": "gm@ottawasouthbasketball.ca",
+   "phone": "",
+   "all_emails": [
+    "gm@ottawasouthbasketball.ca"
+   ],
+   "social": "FB @OttawaSouthBasketballAssociation; IG @ottawasouthbasketball",
+   "evidence_url": "https://ottawasouthbasketball.ca"
+  },
+  {
+   "club": "Ottawa-Carleton Wheelchair Sports Association",
+   "province": "Ontario",
+   "city": "Ottawa",
+   "website": "https://ocwsa.wordpress.com/",
+   "email": "ocwsa.info@gmail.com",
+   "phone": "",
+   "all_emails": [],
+   "social": "FB @OCWSA; FB @WordPresscom",
+   "evidence_url": "https://ocwsa.wordpress.com"
+  },
+  {
+   "club": "Oxford Attack",
+   "province": "Ontario",
+   "city": "",
+   "website": "https://oxfordattackbasketball.ca/",
+   "email": "padfieldt@gmail.com",
+   "phone": "",
+   "all_emails": [
+    "padfieldt@gmail.com"
+   ],
+   "social": "FB @OxfordAttackBasketball; IG @oxfordattack",
+   "evidence_url": "https://oxfordattackbasketball.ca"
+  },
+  {
+   "club": "Parry Sound Stingers",
+   "province": "Ontario",
+   "city": "Parry Sound",
+   "website": "http://www.stingersbasketball.com/",
+   "email": "stingersbasketball99@gmail.com",
+   "phone": "",
+   "all_emails": [
+    "stingersbasketball99@gmail.com"
+   ],
+   "social": "FB @psstingersbasketballclub; IG @stingersbasketball",
+   "evidence_url": "http://www.stingersbasketball.com"
+  },
+  {
+   "club": "Peterborough City Basketball Club",
+   "province": "Ontario",
+   "city": "Peterborough",
+   "website": "https://www.peterboroughcitybasketball.com",
+   "email": "info@peterboroughcitybasketball.com",
+   "phone": "",
+   "all_emails": [
+    "info@peterboroughcitybasketball.com"
+   ],
+   "social": "FB @pborobasketball; IG @peterboroughcitybasketball",
+   "evidence_url": "https://www.peterboroughcitybasketball.com"
+  },
+  {
+   "club": "Phillips Basketball & Academics Academy (North York Lions)",
+   "province": "Ontario",
+   "city": "",
+   "website": "http://www.pbaa.ca/",
+   "email": "info@PBAA.ca",
+   "phone": "",
+   "all_emails": [
+    "info@pbaa.ca"
+   ],
+   "social": "FB @PBAAca; IG @pbaalions",
+   "evidence_url": "http://www.pbaa.ca"
+  },
+  {
+   "club": "Polaris Prep",
+   "province": "Ontario",
+   "city": "Burlington",
+   "website": "https://polarisprep.com/",
+   "email": "polarisprepacademy@gmail.com",
+   "phone": "",
+   "all_emails": [
+    "polarisprepacademy@gmail.com"
+   ],
+   "social": "IG @polarisprepmbb",
+   "evidence_url": "https://polarisprep.com"
+  },
+  {
+   "club": "PRBC",
+   "province": "Ontario",
+   "city": "unconfirmed abbreviation (possibly Prescott-Russell Basketball Club)",
+   "website": "https://prbcrockets.ca/",
+   "email": "prbcrocketsbball@gmail.com",
+   "phone": "",
+   "all_emails": [
+    "prbcrocketsbball@gmail.com"
+   ],
+   "social": "FB @rocketsbasketball; IG @prbcrockets",
+   "evidence_url": "https://prbcrockets.ca"
+  },
+  {
+   "club": "Prescott Russell Basketball Club",
+   "province": "Ontario",
+   "city": "Russell",
+   "website": "https://prescottrussellbasketballclub.teamsnapsites.com/",
+   "email": "prbcrocketsbball@gmail.com",
+   "phone": "",
+   "all_emails": [
+    "prbcrocketsbball@gmail.com"
+   ],
+   "social": "FB @rocketsbasketball; IG @prbcrockets",
+   "evidence_url": "https://prescottrussellbasketballclub.teamsnapsites.com"
+  },
+  {
+   "club": "Prince Edward County Clippers",
+   "province": "Ontario",
+   "city": "Prince Edward County",
+   "website": "https://www.countyclippers.ca/",
+   "email": "info@countyclippers.ca",
+   "phone": "",
+   "all_emails": [],
+   "social": "FB @countyclippers; IG @countyclippers",
+   "evidence_url": "https://www.countyclippers.ca"
+  },
+  {
+   "club": "Prolific Sports Academy (PSA Prep)",
+   "province": "Ontario",
+   "city": "Calgary AB",
+   "website": "prolificsportsacademy.com",
+   "email": "Team@prolificsportsacademy.com",
+   "phone": "5875836644",
+   "all_emails": [
+    "team@prolificsportsacademy.com"
+   ],
+   "social": "FB @2008; FB @PSAprep; IG @psaprep",
+   "evidence_url": "https://prolificsportsacademy.com"
+  },
+  {
+   "club": "Redmond Basketball (Father John Redmond CSS)",
+   "province": "Ontario",
+   "city": "Toronto (Etobicoke)",
+   "website": "https://redmondredhawks.com/",
+   "email": "fourpointbasketball@gmail.com",
+   "phone": "",
+   "all_emails": [
+    "coachwwilliams@gmail.com",
+    "fourpointbasketball@gmail.com",
+    "info@indiantypefoundry.com",
+    "ray.chateau@humber.ca"
+   ],
+   "social": "FB @redmondosba; IG @redmondosba",
+   "evidence_url": "https://redmondredhawks.com"
+  },
+  {
+   "club": "Redmond Redhawks OSBA (Father John Redmond CSS)",
+   "province": "Ontario",
+   "city": "Toronto (Etobicoke) ON",
+   "website": "redmondredhawks.com",
+   "email": "fourpointbasketball@gmail.com",
+   "phone": "",
+   "all_emails": [
+    "coachwwilliams@gmail.com",
+    "fourpointbasketball@gmail.com",
+    "info@indiantypefoundry.com",
+    "ray.chateau@humber.ca"
+   ],
+   "social": "FB @redmondosba; IG @redmondosba",
+   "evidence_url": "https://redmondredhawks.com"
+  },
+  {
+   "club": "RiseUp League",
+   "province": "Ontario",
+   "city": "Brampton/Vaughan/Markham/Mississauga/Niagara",
+   "website": "https://www.riseupleague.com/",
+   "email": "via website",
+   "phone": "",
+   "all_emails": [
+    "support@riseupleague.com"
+   ],
+   "social": "IG @riseup.leagues",
+   "evidence_url": "https://www.riseupleague.com"
+  },
+  {
+   "club": "Rising Stars",
+   "province": "Ontario",
+   "city": "",
+   "website": "ottawashootingstars.com",
+   "email": "info@ottawashootingstars.com",
+   "phone": "",
+   "all_emails": [
+    "gm@ottawashootingstars.com",
+    "info@ottawashootingstars.com"
+   ],
+   "social": "FB @OttawaShootingStars; IG @ottawashootingstars",
+   "evidence_url": "https://ottawashootingstars.com"
+  },
+  {
+   "club": "Rockets",
+   "province": "Ontario",
+   "city": "",
+   "website": "prbcrockets.ca",
+   "email": "prbcrocketsbball@gmail.com",
+   "phone": "",
+   "all_emails": [
+    "prbcrocketsbball@gmail.com"
+   ],
+   "social": "FB @rocketsbasketball; IG @prbcrockets",
+   "evidence_url": "https://prbcrockets.ca"
+  },
+  {
+   "club": "SBA (Scarborough BA / Blues)",
+   "province": "Ontario",
+   "city": "Scarborough ON",
+   "website": "sbabasketball.ca",
+   "email": "info@sbablues.ca",
+   "phone": "416-551-7554",
+   "all_emails": [
+    "angelamoncada@sbablues.ca",
+    "chrisbarron@sbablues.ca",
+    "christopherdennis@sbablues.ca",
+    "coachbensanders@sbablues.ca",
+    "coachbrianbreedy@sbablues.ca"
+   ],
+   "social": "FB @sbabball; IG @sbabball",
+   "evidence_url": "https://sbabasketball.ca"
+  },
+  {
+   "club": "SBA Blues",
+   "province": "Ontario",
+   "city": "Scarborough",
+   "website": "https://sbabasketball.ca/",
+   "email": "lisa@sbablues.ca",
+   "phone": "4165517554",
+   "all_emails": [
+    "angelamoncada@sbablues.ca",
+    "chrisbarron@sbablues.ca",
+    "christopherdennis@sbablues.ca",
+    "coachbensanders@sbablues.ca",
+    "coachbrianbreedy@sbablues.ca"
+   ],
+   "social": "FB @sbabball; IG @sbabball",
+   "evidence_url": "https://sbabasketball.ca"
+  },
+  {
+   "club": "SC Academy",
+   "province": "Ontario",
+   "city": "",
+   "website": "https://sc-academy.ca",
+   "email": "info@sc-academy.ca",
+   "phone": "",
+   "all_emails": [
+    "info@sc-academy.ca"
+   ],
+   "social": "IG @_scacademy",
+   "evidence_url": "https://sc-academy.ca"
+  },
+  {
+   "club": "Scarborough Basketball Assn (SBA/Blues)",
+   "province": "Ontario",
+   "city": "Scarborough ON",
+   "website": "sbabasketball.ca",
+   "email": "info@sbablues.ca; ola@sbabasketball.ca",
+   "phone": "416-551-7554",
+   "all_emails": [
+    "angelamoncada@sbablues.ca",
+    "chrisbarron@sbablues.ca",
+    "christopherdennis@sbablues.ca",
+    "coachbensanders@sbablues.ca",
+    "coachbrianbreedy@sbablues.ca"
+   ],
+   "social": "FB @sbabball; IG @sbabball",
+   "evidence_url": "https://sbabasketball.ca"
+  },
+  {
+   "club": "Scarborough Basketball Association",
+   "province": "Ontario",
+   "city": "Scarborough",
+   "website": "https://sbabasketball.ca/",
+   "email": "via website",
+   "phone": "(416) 551-7554",
+   "all_emails": [
+    "angelamoncada@sbablues.ca",
+    "chrisbarron@sbablues.ca",
+    "christopherdennis@sbablues.ca",
+    "coachbensanders@sbablues.ca",
+    "coachbrianbreedy@sbablues.ca"
+   ],
+   "social": "FB @sbabball; IG @sbabball",
+   "evidence_url": "https://sbabasketball.ca"
+  },
+  {
+   "club": "Scarborough Basketball Association (SBA)",
+   "province": "Ontario",
+   "city": "Toronto (Scarborough)",
+   "website": "https://sbabasketball.ca/",
+   "email": "angelamoncada@sbablues.ca",
+   "phone": "4165517554",
+   "all_emails": [
+    "angelamoncada@sbablues.ca",
+    "chrisbarron@sbablues.ca",
+    "christopherdennis@sbablues.ca",
+    "coachbensanders@sbablues.ca",
+    "coachbrianbreedy@sbablues.ca"
+   ],
+   "social": "FB @sbabball; IG @sbabball",
+   "evidence_url": "https://sbabasketball.ca"
+  },
+  {
+   "club": "Scarborough Basketball Association (SBA)",
+   "province": "Ontario",
+   "city": "Scarborough",
+   "website": "https://sbabasketball.ca/",
+   "email": "via website",
+   "phone": "(416) 551-7554",
+   "all_emails": [
+    "angelamoncada@sbablues.ca",
+    "chrisbarron@sbablues.ca",
+    "christopherdennis@sbablues.ca",
+    "coachbensanders@sbablues.ca",
+    "coachbrianbreedy@sbablues.ca"
+   ],
+   "social": "FB @sbabball; IG @sbabball",
+   "evidence_url": "https://sbabasketball.ca"
+  },
+  {
+   "club": "Scarborough Blues (SBA)",
+   "province": "Ontario",
+   "city": "Scarborough",
+   "website": "https://sbabasketball.ca/",
+   "email": "lisa@sbablues.ca",
+   "phone": "4165517554",
+   "all_emails": [
+    "angelamoncada@sbablues.ca",
+    "chrisbarron@sbablues.ca",
+    "christopherdennis@sbablues.ca",
+    "coachbensanders@sbablues.ca",
+    "coachbrianbreedy@sbablues.ca"
+   ],
+   "social": "FB @sbabball; IG @sbabball",
+   "evidence_url": "https://sbabasketball.ca"
+  },
+  {
+   "club": "Smith Falls Hawks",
+   "province": "Ontario",
+   "city": "Smiths Falls",
+   "website": "https://leagues.teamlinkt.com/smithsfallsbasketball",
+   "email": "smithsfallsstorm@gmail.com",
+   "phone": "613-978-3829",
+   "all_emails": [
+    "smithsfallsstorm@gmail.com"
+   ],
+   "social": "FB @sfstormball; FB @smithsfallsstorm; IG @smithsfallsstorm",
+   "evidence_url": "https://leagues.teamlinkt.com/smithsfallsbasketball"
+  },
+  {
+   "club": "Smiths Falls",
+   "province": "Ontario",
+   "city": "Smiths Falls",
+   "website": "https://leagues.teamlinkt.com/smithsfallsbasketball",
+   "email": "smithsfallsstorm@gmail.com",
+   "phone": "613-978-3829",
+   "all_emails": [
+    "smithsfallsstorm@gmail.com"
+   ],
+   "social": "FB @sfstormball; FB @smithsfallsstorm; IG @smithsfallsstorm",
+   "evidence_url": "https://leagues.teamlinkt.com/smithsfallsbasketball"
+  },
+  {
+   "club": "South Muskoka Breakers",
+   "province": "Ontario",
+   "city": "",
+   "website": "https://www.breakersbasketball.ca/",
+   "email": "smuskokabreakers@gmail.com",
+   "phone": "",
+   "all_emails": [
+    "smuskokabreakers@gmail.com"
+   ],
+   "social": "FB @breakersbball; FB @southmuskokabreakers; IG @southmuskokabreakers",
+   "evidence_url": "https://www.breakersbasketball.ca"
+  },
+  {
+   "club": "Southwest Academy Prep",
+   "province": "Ontario",
+   "city": "London ON",
+   "website": "southwestacademy.ca",
+   "email": "(form only)",
+   "phone": "",
+   "all_emails": [],
+   "social": "FB @2008; IG @swacademywbb",
+   "evidence_url": "https://southwestacademy.ca"
+  },
+  {
+   "club": "St. Catharines CYO Rebels",
+   "province": "Ontario",
+   "city": "St Catharines",
+   "website": "http://cyobball.com/index.html",
+   "email": "Gerrymcilhone@gmail.com",
+   "phone": "",
+   "all_emails": [
+    "frank.keltos@gmail.com",
+    "gerrymcilhone@gmail.com"
+   ],
+   "social": "FB @CYOBBALLCOM",
+   "evidence_url": "http://cyobball.com/index.html"
+  },
+  {
+   "club": "St. Francis",
+   "province": "Ontario",
+   "city": "St. Catharines",
+   "website": "https://www.stfrancisphoenix.com/",
+   "email": "",
+   "phone": "905-646-2002",
+   "all_emails": [],
+   "social": "FB @stfphoenix; IG @stfphoenix",
+   "evidence_url": "https://www.stfrancisphoenix.com"
+  },
+  {
+   "club": "St. Lawrence Lightning (JUEL)",
+   "province": "Ontario",
+   "city": "Brockville/Kingston ON",
+   "website": "stlawrencelightning.ca",
+   "email": "(via kingstonimpact.ca)",
+   "phone": "",
+   "all_emails": [],
+   "social": "FB @juel_stl; IG @stlawrencejuel",
+   "evidence_url": "https://stlawrencelightning.ca"
+  },
+  {
+   "club": "Steel City Slam",
+   "province": "Ontario",
+   "city": "",
+   "website": "https://www.steelcityslam.ca/",
+   "email": "",
+   "phone": "",
+   "all_emails": [],
+   "social": "IG @steelcityslam",
+   "evidence_url": "https://www.steelcityslam.ca"
+  },
+  {
+   "club": "Stratford Basketball Association",
+   "province": "Ontario",
+   "city": "Stratford",
+   "website": "https://stratfordbasketball.com/",
+   "email": "info@stratfordbasketball.com",
+   "phone": "",
+   "all_emails": [
+    "info@stratfordbasketball.com",
+    "president@stratfordbasketball.com",
+    "secretary@stratfordbasketball.com",
+    "tim.doherty14@gmail.com",
+    "treasurer@stratfordbasketball.com"
+   ],
+   "social": "FB @StratfordOBA",
+   "evidence_url": "https://stratfordbasketball.com"
+  },
+  {
+   "club": "Stratford Revolution",
+   "province": "Ontario",
+   "city": "Stratford",
+   "website": "https://stratfordbasketball.com/",
+   "email": "info@stratfordbasketball.com",
+   "phone": "",
+   "all_emails": [
+    "info@stratfordbasketball.com",
+    "president@stratfordbasketball.com",
+    "secretary@stratfordbasketball.com",
+    "tim.doherty14@gmail.com",
+    "treasurer@stratfordbasketball.com"
+   ],
+   "social": "FB @StratfordOBA",
+   "evidence_url": "https://stratfordbasketball.com"
+  },
+  {
+   "club": "TC Sports",
+   "province": "Ontario",
+   "city": "",
+   "website": "https://sports.torontochinese.ca/",
+   "email": "kids@torontochinese.ca",
+   "phone": "4164500826",
+   "all_emails": [
+    "kids@torontochinese.ca"
+   ],
+   "social": "",
+   "evidence_url": "https://sports.torontochinese.ca"
+  },
+  {
+   "club": "Team Iconic",
+   "province": "Ontario",
+   "city": "",
+   "website": "https://www.instagram.com/teamiconicbasketball/",
+   "email": "",
+   "phone": "",
+   "all_emails": [],
+   "social": "IG @teamiconicbasketball",
+   "evidence_url": "https://www.instagram.com/teamiconicbasketball"
+  },
+  {
+   "club": "Tecumseh Saints Basketball Association",
+   "province": "Ontario",
+   "city": "Tecumseh",
+   "website": "https://www.tecumsehsaintsbasketball.com/",
+   "email": "admin@TecumsehSaintsBasketball.com",
+   "phone": "",
+   "all_emails": [],
+   "social": "FB @TecumsehSaintsBasketball",
+   "evidence_url": "https://www.tecumsehsaintsbasketball.com"
+  },
+  {
+   "club": "Temiskaming Thunder",
+   "province": "Ontario",
+   "city": "",
+   "website": "https://www.temiskamingthunder.ca/",
+   "email": "",
+   "phone": "7055443981",
+   "all_emails": [],
+   "social": "",
+   "evidence_url": "https://www.temiskamingthunder.ca"
+  },
+  {
+   "club": "The Collective Elite Basketball Association",
+   "province": "Ontario",
+   "city": "",
+   "website": "https://www.thecollectiveelite.ca/",
+   "email": "info@thecollectiveelite.ca",
+   "phone": "",
+   "all_emails": [
+    "info@thecollectiveelite.ca"
+   ],
+   "social": "FB @thecollectiveelite; IG @thecollectiveelite",
+   "evidence_url": "https://www.thecollectiveelite.ca"
+  },
+  {
+   "club": "The Performance Group (TPG) Basketball Association",
+   "province": "Ontario",
+   "city": "Brampton",
+   "website": "http://performancegroupbasketball.com/",
+   "email": "via website",
+   "phone": "(647) 501-9805",
+   "all_emails": [
+    "thepgba@gmail.com"
+   ],
+   "social": "FB @The-Performance-Group-Basketball-Associa; FB @tpgbasketball; IG @tpgbasketball",
+   "evidence_url": "http://performancegroupbasketball.com"
+  },
+  {
+   "club": "Thornhill Basketball Association",
+   "province": "Ontario",
+   "city": "Thornhill",
+   "website": "https://thornhillbasketball.ca/",
+   "email": "",
+   "phone": "6475576737",
+   "all_emails": [],
+   "social": "IG @thornhillbball",
+   "evidence_url": "https://thornhillbasketball.ca"
+  },
+  {
+   "club": "Thornhill Thunder (Thornhill BA)",
+   "province": "Ontario",
+   "city": "Thornhill/Vaughan ON",
+   "website": "thornhillbasketball.ca",
+   "email": "",
+   "phone": "647-557-6737",
+   "all_emails": [],
+   "social": "IG @thornhillbball",
+   "evidence_url": "https://thornhillbasketball.ca"
+  },
+  {
+   "club": "Thunder Bay Blaze",
+   "province": "Ontario",
+   "city": "Thunder Bay",
+   "website": "https://tbblaze.teamsnapsites.com/",
+   "email": "tbayblazebasketball123@gmail.com",
+   "phone": "",
+   "all_emails": [
+    "rthomso2@lakeheadu.ca",
+    "tbayblazebasketball123@gmail.com"
+   ],
+   "social": "FB @Thunder-Bay-Blaze-Basketball-73467940991; FB @tbayblazeball",
+   "evidence_url": "https://tbblaze.teamsnapsites.com"
+  },
+  {
+   "club": "Timmins Selects",
+   "province": "Ontario",
+   "city": "Timmins",
+   "website": "https://www.hometeamsonline.com/teams/?u=TIMMINSSELECTS&s=basketball",
+   "email": "timminsselects@gmail.com",
+   "phone": "",
+   "all_emails": [],
+   "social": "FB @TSelects",
+   "evidence_url": "https://www.hometeamsonline.com/teams/?u=TIMMINSSELECTS&s=basketball"
+  },
+  {
+   "club": "Toronto Chinese Basketball Association (TCBL/TCBA)",
+   "province": "Ontario",
+   "city": "Toronto/Markham",
+   "website": "https://tcba.torontochinese.ca/about-league/",
+   "email": "tcba@torontochinese.ca",
+   "phone": "",
+   "all_emails": [
+    "tcba@torontochinese.ca"
+   ],
+   "social": "IG @chinesesportassociation",
+   "evidence_url": "https://tcba.torontochinese.ca/about-league"
+  },
+  {
+   "club": "Toronto Triple Threat",
+   "province": "Ontario",
+   "city": "Toronto",
+   "website": "http://torontotriplethreat.com/",
+   "email": "triple.threat@sympatico.ca",
+   "phone": "",
+   "all_emails": [
+    "tttbasketballclub@gmail.com"
+   ],
+   "social": "FB @tttbasketballclub; IG @tttbasketballclub",
+   "evidence_url": "http://torontotriplethreat.com"
+  },
+  {
+   "club": "Toronto Wolves Basketball Club",
+   "province": "Ontario",
+   "city": "Toronto",
+   "website": "https://torontowolves.ca/",
+   "email": "",
+   "phone": "705-626-5187",
+   "all_emails": [],
+   "social": "IG @torontowolvesbasketball",
+   "evidence_url": "https://torontowolves.ca"
+  },
+  {
+   "club": "TPG Basketball",
+   "province": "Ontario",
+   "city": "Brampton",
+   "website": "http://performancegroupbasketball.com/",
+   "email": "thepgba@gmail.com",
+   "phone": "",
+   "all_emails": [
+    "thepgba@gmail.com"
+   ],
+   "social": "FB @The-Performance-Group-Basketball-Associa; FB @tpgbasketball; IG @tpgbasketball",
+   "evidence_url": "http://performancegroupbasketball.com"
+  },
+  {
+   "club": "Transway Basketball Club",
+   "province": "Ontario",
+   "city": "Hamilton",
+   "website": "https://www.transwaybasketball.com/",
+   "email": "info@transwaybasketball.com",
+   "phone": "",
+   "all_emails": [
+    "info@transwaybasketball.com"
+   ],
+   "social": "FB @2008; IG @transway.basketball",
+   "evidence_url": "https://www.transwaybasketball.com"
+  },
+  {
+   "club": "Tri-City Prep BA",
+   "province": "Ontario",
+   "city": "K-W-Cambridge/Guelph ON",
+   "website": "tricityba.com",
+   "email": "",
+   "phone": "",
+   "all_emails": [],
+   "social": "FB @tricitybasketball; IG @tricityba",
+   "evidence_url": "https://tricityba.com"
+  },
+  {
+   "club": "Tri-County Thunder",
+   "province": "Ontario",
+   "city": "Kitchener-Waterloo/Guelph/Brampton (Tri-County)",
+   "website": "https://tcbasketball.com/",
+   "email": "",
+   "phone": "",
+   "all_emails": [],
+   "social": "FB @tcsoldiersbball; FB @tricountyt",
+   "evidence_url": "https://tcbasketball.com"
+  },
+  {
+   "club": "Triple Balance",
+   "province": "Ontario",
+   "city": "Scarborough + Durham",
+   "website": "https://www.triplebalance.ca/",
+   "email": "Info@triplebalance.ca",
+   "phone": "7804268681",
+   "all_emails": [
+    "info@triplebalance.ca"
+   ],
+   "social": "FB @TripleBalance; FB @triple.balance.3; FB @triplebalance; IG @triplebalancebasketball",
+   "evidence_url": "https://www.triplebalance.ca"
+  },
+  {
+   "club": "Triple Balance Academy",
+   "province": "Ontario",
+   "city": "",
+   "website": "https://www.triplebalance.ca",
+   "email": "info@triplebalance.ca",
+   "phone": "7804268681",
+   "all_emails": [
+    "info@triplebalance.ca"
+   ],
+   "social": "FB @TripleBalance; FB @triple.balance.3; FB @triplebalance; IG @triplebalancebasketball",
+   "evidence_url": "https://www.triplebalance.ca"
+  },
+  {
+   "club": "Twin City Spinners Wheelchair Basketball",
+   "province": "Ontario",
+   "city": "Kitchener-Waterloo",
+   "website": "https://tcspinners.wixsite.com/twincityspinners",
+   "email": "kwspinners@gmail.com",
+   "phone": "",
+   "all_emails": [
+    "kwspinners@gmail.com"
+   ],
+   "social": "",
+   "evidence_url": "https://tcspinners.wixsite.com/twincityspinners"
+  },
+  {
+   "club": "Uxbridge Spartan Basketball Association (USBA)",
+   "province": "Ontario",
+   "city": "Uxbridge",
+   "website": "https://www.uxbridgespartanbasketball.com/",
+   "email": "admin@uxbridgebasketball.com",
+   "phone": "7804268681",
+   "all_emails": [
+    "admin@uxbridgebasketball.com"
+   ],
+   "social": "FB @uxbridgebasketball; IG @uxbridgespartanbasketball",
+   "evidence_url": "https://www.uxbridgespartanbasketball.com"
+  },
+  {
+   "club": "Wallaceburg Airhawks",
+   "province": "Ontario",
+   "city": "",
+   "website": "https://www.facebook.com/WallaceburgAirhawks",
+   "email": "airhawkstreasurer@gmail.com",
+   "phone": "",
+   "all_emails": [],
+   "social": "FB @WallaceburgAirhawks; FB @recover",
+   "evidence_url": "https://www.facebook.com/WallaceburgAirhawks"
+  },
+  {
+   "club": "West Ottawa Basketball Association (Hornets)",
+   "province": "Ontario",
+   "city": "Ottawa (West)",
+   "website": "http://westottawabasketball.com/",
+   "email": "westottawabasketball@gmail.com",
+   "phone": "",
+   "all_emails": [
+    "wobachiefreferee@gmail.com",
+    "wobacompetitive@gmail.com"
+   ],
+   "social": "FB @WestOttawaBasketball; IG @westottawabasketball",
+   "evidence_url": "http://westottawabasketball.com"
+  },
+  {
+   "club": "West United Prep",
+   "province": "Ontario",
+   "city": "city unconfirmed",
+   "website": "linktr.ee/westunitedprepacademy",
+   "email": "westunitedprepacademy@gmail.com",
+   "phone": "",
+   "all_emails": [],
+   "social": "IG @westunitedprepacademy",
+   "evidence_url": "https://linktr.ee/westunitedprepacademy"
+  },
+  {
+   "club": "West United Prep Academy",
+   "province": "Ontario",
+   "city": "Halton (Oakville/Burlington) ON",
+   "website": "linktr.ee/westunitedprepacademy",
+   "email": "westunitedprepacademy@gmail.com",
+   "phone": "",
+   "all_emails": [],
+   "social": "IG @westunitedprepacademy",
+   "evidence_url": "https://linktr.ee/westunitedprepacademy"
+  },
+  {
+   "club": "WOBA",
+   "province": "Ontario",
+   "city": "West Ottawa",
+   "website": "http://westottawabasketball.com/",
+   "email": "wobacompetitive@gmail.com",
+   "phone": "",
+   "all_emails": [
+    "wobachiefreferee@gmail.com",
+    "wobacompetitive@gmail.com"
+   ],
+   "social": "FB @WestOttawaBasketball; IG @westottawabasketball",
+   "evidence_url": "http://westottawabasketball.com"
+  },
+  {
+   "club": "YvY Elite",
+   "province": "Ontario",
+   "city": "Waterloo/Kitchener/Guelph",
+   "website": "https://yvybasketball.com/",
+   "email": "yvybball@gmail.com",
+   "phone": "",
+   "all_emails": [
+    "john@doe.com",
+    "yvybball@gmail.com"
+   ],
+   "social": "IG @youvsyoubasketballtraining; IG @yvyelitebasketball",
+   "evidence_url": "https://yvybasketball.com"
+  },
+  {
+   "club": "BGC Prince County - Summerside Club (Boys & Girls Club)",
+   "province": "Prince Edward Island",
+   "city": "Summerside",
+   "website": "https://www.facebook.com/bgcsummerside/",
+   "email": "",
+   "phone": "",
+   "all_emails": [],
+   "social": "FB @bgcsummerside; FB @recover",
+   "evidence_url": "https://www.facebook.com/bgcsummerside"
+  },
+  {
+   "club": "East Prince Sting Minor Basketball Association (EPMBA)",
+   "province": "Prince Edward Island",
+   "city": "Summerside",
+   "website": "https://www.facebook.com/EastPrinceStingBasketball/",
+   "email": "epmbasting@hotmail.ca",
+   "phone": "",
+   "all_emails": [],
+   "social": "FB @EastPrinceStingBasketball; FB @recover",
+   "evidence_url": "https://www.facebook.com/EastPrinceStingBasketball"
+  },
+  {
+   "club": "Kensington Nor'easters Minor Basketball Association",
+   "province": "Prince Edward Island",
+   "city": "Kensington",
+   "website": "https://www.facebook.com/pages/category/Community/Kensington-Noreasters-Basketball-1665784420326120/",
+   "email": "",
+   "phone": "",
+   "all_emails": [],
+   "social": "FB @recover",
+   "evidence_url": "https://www.facebook.com/pages/category/Community/Kensington-Noreasters-Basketball-1665784420326120"
+  },
+  {
+   "club": "Souris Slammers Minor Basketball Association (Souris Minor Basketball)",
+   "province": "Prince Edward Island",
+   "city": "Souris",
+   "website": "https://www.facebook.com/sourisminorbasketball/",
+   "email": "sourisminorbasketball@gmail.com",
+   "phone": "",
+   "all_emails": [],
+   "social": "FB @recover; FB @sourisminorbasketball",
+   "evidence_url": "https://www.facebook.com/sourisminorbasketball"
+  },
+  {
+   "club": "Académie de Basketball Zone / Zone Basketball Academy",
+   "province": "Quebec",
+   "city": "Greater Montréal",
+   "website": "https://zonebasketball.ca/",
+   "email": "zonebasketball@outlook.com",
+   "phone": "",
+   "all_emails": [
+    "eben@eyebytes.com",
+    "zonebasketball@outlook.com"
+   ],
+   "social": "FB @zone.basketball.academy; IG @zone_basketball_academy",
+   "evidence_url": "https://zonebasketball.ca"
+  },
+  {
+   "club": "Académie Saint-Louis — programme Études-sports Basketball",
+   "province": "Quebec",
+   "city": "Québec",
+   "website": "https://aslouis.qc.ca/programmes/basketball/",
+   "email": "",
+   "phone": "418-845-5121",
+   "all_emails": [],
+   "social": "FB @Acad; FB @academiesaintlouis; IG @academiesaintlouis",
+   "evidence_url": "https://aslouis.qc.ca/programmes/basketball"
+  },
+  {
+   "club": "Atelier 803 (formerly L'Académie de basketball de Thetford Mines; teams brand: Team Thetford Basketball)",
+   "province": "Quebec",
+   "city": "Thetford Mines (Saint-Joseph-de-Coleraine)",
+   "website": "https://www.atelier803.ca/",
+   "email": "info@atelier803.ca",
+   "phone": "",
+   "all_emails": [
+    "info@atelier803.ca"
+   ],
+   "social": "FB @Elated-Themes-1889004714470831; FB @ElatedThemes; FB @team.thetford.basketball; IG @elatedthemes",
+   "evidence_url": "https://www.atelier803.ca"
+  },
+  {
+   "club": "Basketball Rouyn-Noranda",
+   "province": "Quebec",
+   "city": "Rouyn-Noranda",
+   "website": "https://www.basketballrn.ca/",
+   "email": "basketballrouynnoranda@gmail.com",
+   "phone": "",
+   "all_emails": [
+    "basketballrouynnoranda@gmail.com"
+   ],
+   "social": "FB @basketballrouynnoranda",
+   "evidence_url": "https://www.basketballrn.ca"
+  },
+  {
+   "club": "Montreal Prospects Basketball",
+   "province": "Quebec",
+   "city": "Montréal (east end: Montréal-Nord, St-Léonard, Anjou, Pointe-aux-Trembles)",
+   "website": "https://basketball.exposureevents.com/organizations/27817/montreal-prospects-basketball",
+   "email": "",
+   "phone": "514-616-5819",
+   "all_emails": [],
+   "social": "FB @exposurebasketballevents; IG @mtl_prospects",
+   "evidence_url": "https://basketball.exposureevents.com/organizations/27817/montreal-prospects-basketball"
+  },
+  {
+   "club": "Nobel Élite (Association Basketball Laval — 'Laval Nobel' program)",
+   "province": "Quebec",
+   "city": "Laval",
+   "website": "http://www.basketlaval.ca/",
+   "email": "",
+   "phone": "5144645203",
+   "all_emails": [],
+   "social": "FB @basketballlaval; IG @basketlaval",
+   "evidence_url": "http://www.basketlaval.ca"
+  },
+  {
+   "club": "One More Basketball",
+   "province": "Quebec",
+   "city": "Québec City",
+   "website": "https://onemorebasketball.com/",
+   "email": "onemorebasketball1@gmail.com",
+   "phone": "",
+   "all_emails": [],
+   "social": "IG @onemore.basketball",
+   "evidence_url": "https://onemorebasketball.com"
+  },
+  {
+   "club": "Patro de Jonquière (basketball program)",
+   "province": "Quebec",
+   "city": "Saguenay (Jonquière)",
+   "website": "https://www.patrojonquiere.org/activites/activites-sportives/basketball/",
+   "email": "bienvenue@patrojonquiere.org",
+   "phone": "418-542-7536 ext. 117",
+   "all_emails": [
+    "bienvenue@patrojonquiere.org",
+    "sports@patrojonquiere.org"
+   ],
+   "social": "FB @PatrodeJonquiere; IG @patrojonq",
+   "evidence_url": "https://www.patrojonquiere.org/activites/activites-sportives/basketball"
+  },
+  {
+   "club": "Prospectball",
+   "province": "Quebec",
+   "city": "Lévis",
+   "website": "https://www.prospectball.com/",
+   "email": "",
+   "phone": "(418) 930-7525",
+   "all_emails": [],
+   "social": "FB @ProspectBall; FB @prospectballsports; IG @prospectball_skal",
+   "evidence_url": "https://www.prospectball.com"
+  },
+  {
+   "club": "Séminaire Saint-François (Blizzard)",
+   "province": "Quebec",
+   "city": "Saint-Augustin-de-Desmaures QC",
+   "website": "ssfblizzard.com",
+   "email": "",
+   "phone": "418-872-0611",
+   "all_emails": [],
+   "social": "FB @SSF1952; FB @seminairesaintfrancois; IG @seminairesaintfrancois",
+   "evidence_url": "https://ssfblizzard.com"
+  },
+  {
+   "club": "Team Thetford Basketball (Académie de basketball de Thetford)",
+   "province": "Quebec",
+   "city": "Thetford Mines (Saint-Joseph-de-Coleraine)",
+   "website": "https://www.facebook.com/team.thetford.basketball/",
+   "email": "info@atelier803.ca",
+   "phone": "",
+   "all_emails": [],
+   "social": "FB @recover; FB @team.thetford.basketball",
+   "evidence_url": "https://www.facebook.com/team.thetford.basketball"
+  },
+  {
+   "club": "École de basketball Éric Monkam (EBEM)",
+   "province": "Quebec",
+   "city": "Québec City",
+   "website": "https://www.ecolebbemonkam.com/",
+   "email": "ecolebbemonkam1@gmail.com",
+   "phone": "",
+   "all_emails": [
+    "ecolebbemonkam1@gmail.com"
+   ],
+   "social": "FB @ecolebbemonkam; IG @ecolebbemonkam",
+   "evidence_url": "https://www.ecolebbemonkam.com"
+  },
+  {
+   "club": "306 Heat",
+   "province": "Saskatchewan",
+   "city": "Regina",
+   "website": "https://www.instagram.com/306.heat.basketball/",
+   "email": "",
+   "phone": "",
+   "all_emails": [],
+   "social": "IG @306.heat.basketball",
+   "evidence_url": "https://www.instagram.com/306.heat.basketball"
+  },
+  {
+   "club": "Ballers Basketball Club (Regina Ballers)",
+   "province": "Saskatchewan",
+   "city": "Regina",
+   "website": "https://reginaballersbasketball.com",
+   "email": "info@reginaballersbasketball.com",
+   "phone": "",
+   "all_emails": [
+    "2012teams@reginaballersbasketball.com",
+    "2013teams@reginaballersbasketball.com",
+    "2014teams@reginaballersbasketball.com",
+    "info@reginaballersbasketball.com",
+    "micah@micahrich.com"
+   ],
+   "social": "FB @100850119432868",
+   "evidence_url": "https://reginaballersbasketball.com"
+  },
+  {
+   "club": "Estevan Club Basketball (Estevan Grizzlies)",
+   "province": "Saskatchewan",
+   "city": "Estevan",
+   "website": "https://www.facebook.com/p/Estevan-Club-Basketball-61571698045768/",
+   "email": "estevanclubbasketball@gmail.com",
+   "phone": "",
+   "all_emails": [],
+   "social": "FB @recover",
+   "evidence_url": "https://www.facebook.com/p/Estevan-Club-Basketball-61571698045768"
+  },
+  {
+   "club": "FN Basketball (First Nations Basketball)",
+   "province": "Saskatchewan",
+   "city": "Regina",
+   "website": "https://sites.google.com/view/fn-basketball/home",
+   "email": "firstnationsbasketball@gmail.com",
+   "phone": "",
+   "all_emails": [
+    "firstnationsbasketball@gmail.com"
+   ],
+   "social": "",
+   "evidence_url": "https://sites.google.com/view/fn-basketball/home"
+  },
+  {
+   "club": "Houndsville Hoops",
+   "province": "Saskatchewan",
+   "city": "Saskatoon",
+   "website": "https://www.instagram.com/houndsvillehoops/",
+   "email": "houndsvillehoops@gmail.com",
+   "phone": "",
+   "all_emails": [],
+   "social": "IG @houndsvillehoops",
+   "evidence_url": "https://www.instagram.com/houndsvillehoops"
+  },
+  {
+   "club": "Moose Jaw Ballers (MJ Ballers)",
+   "province": "Saskatchewan",
+   "city": "Moose Jaw",
+   "website": "https://www.facebook.com/groups/1728174240798337/",
+   "email": "mjballers18@gmail.com",
+   "phone": "",
+   "all_emails": [],
+   "social": "FB @recover",
+   "evidence_url": "https://www.facebook.com/groups/1728174240798337"
+  },
+  {
+   "club": "Moose Jaw Spartans (Spartans Club Basketball)",
+   "province": "Saskatchewan",
+   "city": "Moose Jaw",
+   "website": "https://www.facebook.com/p/Spartans-Club-Basketball-100063684334994/",
+   "email": "mjspartans17@gmail.com",
+   "phone": "",
+   "all_emails": [],
+   "social": "FB @recover",
+   "evidence_url": "https://www.facebook.com/p/Spartans-Club-Basketball-100063684334994"
+  },
+  {
+   "club": "Nova Elite Basketball Club",
+   "province": "Saskatchewan",
+   "city": "Regina",
+   "website": "https://www.instagram.com/yqr.novaelite/",
+   "email": "mericbauda@gmail.com",
+   "phone": "",
+   "all_emails": [],
+   "social": "IG @yqr.novaelite",
+   "evidence_url": "https://www.instagram.com/yqr.novaelite"
+  },
+  {
+   "club": "One Love Basketball Inc.",
+   "province": "Saskatchewan",
+   "city": "Saskatoon",
+   "website": "https://www.facebook.com/onelovebasketball/",
+   "email": "",
+   "phone": "",
+   "all_emails": [],
+   "social": "FB @onelovebasketball; FB @recover",
+   "evidence_url": "https://www.facebook.com/onelovebasketball"
+  },
+  {
+   "club": "PA Thunder Basketball Club",
+   "province": "Saskatchewan",
+   "city": "Prince Albert",
+   "website": "https://www.facebook.com/thunderbball306/",
+   "email": "thunderbasketball.sk@gmail.com",
+   "phone": "",
+   "all_emails": [],
+   "social": "FB @recover; FB @thunderbball306",
+   "evidence_url": "https://www.facebook.com/thunderbball306"
+  },
+  {
+   "club": "Rise Above Basketball",
+   "province": "Saskatchewan",
+   "city": "Regina",
+   "website": "https://riseabovebasketballacademy.ca",
+   "email": "kev@riseabovebasketball.ca",
+   "phone": "",
+   "all_emails": [],
+   "social": "FB @riseabovebasketballacademygp",
+   "evidence_url": "https://riseabovebasketballacademy.ca"
+  },
+  {
+   "club": "Rosewood Community Association — Youth Basketball",
+   "province": "Saskatchewan",
+   "city": "Saskatoon",
+   "website": "https://www.myrosewood.ca/basketball.html",
+   "email": "info@myrosewood.ca",
+   "phone": "",
+   "all_emails": [
+    "saskatoonminorbasketball@gmail.com",
+    "smba4712@gmail.com"
+   ],
+   "social": "FB @MyRosewoodCA; FB @myrosewoodca",
+   "evidence_url": "https://www.myrosewood.ca/basketball.html"
+  },
+  {
+   "club": "Saskatoon Minor Basketball Association (SMBA)",
+   "province": "Saskatchewan",
+   "city": "Saskatoon",
+   "website": "https://smbayxe.ca",
+   "email": "",
+   "phone": "(306) 249-4712",
+   "all_emails": [],
+   "social": "FB @Saskatoon-Minor-Basketball-Association-S; FB @minorSaskatoon; IG @smba_saskatoon",
+   "evidence_url": "https://smbayxe.ca"
+  },
+  {
+   "club": "Saskatoon Shadow Basketball Club",
+   "province": "Saskatchewan",
+   "city": "Saskatoon",
+   "website": "https://app.teamlinkt.com/register/go/saskatoonshadowbasketballclub/73399",
+   "email": "shadowbasketball@shaw.ca",
+   "phone": "",
+   "all_emails": [
+    "shadowbasketball@shaw.ca"
+   ],
+   "social": "",
+   "evidence_url": "https://app.teamlinkt.com/register/go/saskatoonshadowbasketballclub/73399"
+  },
+  {
+   "club": "Saskatoon SLAM Basketball",
+   "province": "Saskatchewan",
+   "city": "Saskatoon",
+   "website": "https://saskatoonslam.com",
+   "email": "saskatoonslam@gmail.com",
+   "phone": "",
+   "all_emails": [
+    "saskatoonslam@gmail.com",
+    "saskatoonslamtourney@gmail.com"
+   ],
+   "social": "FB @WordPresscom; IG @saskatoonslambasketballclub",
+   "evidence_url": "https://saskatoonslam.com"
+  },
+  {
+   "club": "Silverspring Community Association — Basketball",
+   "province": "Saskatchewan",
+   "city": "Saskatoon",
+   "website": "https://silverspringcommunity.ca/programs/basketball/",
+   "email": "basketball@silverspringcommunity.ca",
+   "phone": "",
+   "all_emails": [
+    "basketball@silverspringcommunity.ca"
+   ],
+   "social": "FB @Saskatoon-Minor-Basketball-Association-S; FB @SilverspringCommunityAssociation",
+   "evidence_url": "https://silverspringcommunity.ca/programs/basketball"
+  },
+  {
+   "club": "Stonebridge Community Association — Basketball",
+   "province": "Saskatchewan",
+   "city": "Saskatoon",
+   "website": "https://www.ourstonebridge.ca/",
+   "email": "ourstonebridge.programs@gmail.com",
+   "phone": "",
+   "all_emails": [
+    "ourstonebridge.info@gmail.com"
+   ],
+   "social": "",
+   "evidence_url": "https://www.ourstonebridge.ca"
+  },
+  {
+   "club": "Stutter Steps Basketball",
+   "province": "Saskatchewan",
+   "city": "Saskatoon",
+   "website": "https://www.facebook.com/stuttersteps.bball/",
+   "email": "stuttersteps.adrian@gmail.com",
+   "phone": "",
+   "all_emails": [],
+   "social": "FB @recover; FB @stuttersteps.bball",
+   "evidence_url": "https://www.facebook.com/stuttersteps.bball"
+  },
+  {
+   "club": "Swift Current Minor Basketball (Swift Current Surge)",
+   "province": "Saskatchewan",
+   "city": "Swift Current",
+   "website": "https://www.swiftcurrentsurge.ca/",
+   "email": "scminorbasketball@gmail.com",
+   "phone": "",
+   "all_emails": [
+    "scminorbasketball@gmail.com"
+   ],
+   "social": "",
+   "evidence_url": "https://www.swiftcurrentsurge.ca"
+  },
+  {
+   "club": "UPREP Canada (University Prep Canada Basketball Club)",
+   "province": "Saskatchewan",
+   "city": "Saskatoon",
+   "website": "https://www.uprepbasketball.com",
+   "email": "info@uprepbasketball.com",
+   "phone": "",
+   "all_emails": [
+    "info@uprepbasketball.com"
+   ],
+   "social": "FB @2008; FB @uprepcanada; IG @uprepcanada",
+   "evidence_url": "https://www.uprepbasketball.com"
+  },
+  {
+   "club": "Weyburn Youth Basketball",
+   "province": "Saskatchewan",
+   "city": "Weyburn",
+   "website": "https://www.facebook.com/p/Weyburn-Youth-Basketball-100068064164988/",
+   "email": "h.souledge@gmail.com",
+   "phone": "",
+   "all_emails": [],
+   "social": "FB @recover",
+   "evidence_url": "https://www.facebook.com/p/Weyburn-Youth-Basketball-100068064164988"
+  },
+  {
+   "club": "YXE Elite Basketball Club",
+   "province": "Saskatchewan",
+   "city": "Saskatoon",
+   "website": "https://www.yxeelitebasketball.com",
+   "email": "info@yxeelitebasketball.com",
+   "phone": "",
+   "all_emails": [
+    "info@yxeelitebasketball.com"
+   ],
+   "social": "",
+   "evidence_url": "https://www.yxeelitebasketball.com"
+  },
+  {
+   "club": "Basketball Yukon",
+   "province": "Territories (YT/NWT/NU)",
+   "city": "Whitehorse",
+   "website": "https://basketballyukon.ca",
+   "email": "admin@basketballyukon.ca",
+   "phone": "",
+   "all_emails": [
+    "admin@basketballyukon.ca"
+   ],
+   "social": "",
+   "evidence_url": "https://basketballyukon.ca"
+  },
+  {
+   "club": "GO Ball (Girls Only Basketball)",
+   "province": "Territories (YT/NWT/NU)",
+   "city": "Yellowknife",
+   "website": "http://www.goballyk.com",
+   "email": "GOBallyk@gmail.com",
+   "phone": "",
+   "all_emails": [
+    "goballyk@gmail.com"
+   ],
+   "social": "FB @2008; IG @goballyk",
+   "evidence_url": "http://www.goballyk.com"
+  },
+  {
+   "club": "Nunavut Basketball Association (NUBA)",
+   "province": "Territories (YT/NWT/NU)",
+   "city": "Iqaluit",
+   "website": "https://www.nunavutbasketball.ca",
+   "email": "nunavutbasketball@outlook.com",
+   "phone": "",
+   "all_emails": [
+    "nunavutbasketball@outlook.com"
+   ],
+   "social": "",
+   "evidence_url": "https://www.nunavutbasketball.ca"
+  },
+  {
+   "club": "U14 Futures Jr. High Performance Program (Futures Basketball NWT)",
+   "province": "Territories (YT/NWT/NU)",
+   "city": "Yellowknife",
+   "website": "https://www.instagram.com/futuresbasketballnwt/",
+   "email": "bnwttd1@gmail.com",
+   "phone": "",
+   "all_emails": [],
+   "social": "IG @futuresbasketballnwt",
+   "evidence_url": "https://www.instagram.com/futuresbasketballnwt"
+  },
+  {
+   "club": "Wolf Pack Basketball Club",
+   "province": "Territories (YT/NWT/NU)",
+   "city": "Whitehorse",
+   "website": "https://www.wolfpack-basketball.com",
+   "email": "wolfpack.bball@northwestel.net",
+   "phone": "",
+   "all_emails": [
+    "wolfpack.bball@northwestel.net"
+   ],
+   "social": "FB @2008; FB @CoachTBrady; FB @WolfPackYukon",
+   "evidence_url": "https://www.wolfpack-basketball.com"
+  },
+  {
+   "club": "Yellowknife Ravens Basketball Club",
+   "province": "Territories (YT/NWT/NU)",
+   "city": "Yellowknife",
+   "website": "https://www.ykravensbasketball.com",
+   "email": "info@ykravensbasketball.com",
+   "phone": "",
+   "all_emails": [
+    "info@ykravensbasketball.com",
+    "support@webador.com"
+   ],
+   "social": "IG @embed.js; IG @ykravensbasketball",
+   "evidence_url": "https://www.ykravensbasketball.com"
+  }
+ ]
+}
