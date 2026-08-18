@@ -1413,11 +1413,9 @@ function ZoomBadge({ onZoom }: { onZoom: () => void }) {
 function SlideImage({
   slide,
   active,
-  onZoom,
 }: {
   slide: (typeof SCREEN_SLIDES)[number]
   active: boolean
-  onZoom: () => void
 }) {
   if (slide.key === "chat") {
     return (
@@ -1600,7 +1598,7 @@ function SlideZoom({
 
       {hint && canTakeover && (
         <p className="pointer-events-none absolute bottom-16 left-1/2 z-[95] -translate-x-1/2 whitespace-nowrap rounded-full bg-ink-950/85 px-4 py-2 text-[13px] font-semibold text-white ring-1 ring-white/30">
-          Touch the screen to read at your own pace
+          Touch to pause. Scroll to read.
         </p>
       )}
 
@@ -1712,7 +1710,7 @@ function Screenshots() {
                     </div>
                     <div className="flex min-h-0 flex-col items-center">
                       <div className="flex h-[56dvh] max-h-[860px] min-h-[340px] items-center justify-center md:h-[78dvh]">
-                        <SlideImage slide={slide} active={i === active} onZoom={() => setZoom(i)} />
+                        <SlideImage slide={slide} active={i === active} />
                       </div>
                       <button
                         type="button"
