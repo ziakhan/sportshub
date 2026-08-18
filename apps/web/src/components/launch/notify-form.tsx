@@ -1,5 +1,6 @@
 "use client"
 
+import Link from "next/link"
 import { useEffect, useState } from "react"
 import { trackEvent } from "@/components/launch/launch-tracker"
 
@@ -13,6 +14,8 @@ import { trackEvent } from "@/components/launch/launch-tracker"
  */
 
 const DONE_KEY = "sh1-launch-notified"
+
+const IDENTITIES = ["Player", "Parent", "Club", "League", "Referee", "Trainer", "Media"] as const
 
 export function useAlreadyNotified(): boolean {
   const [done, setDone] = useState(false)
@@ -35,6 +38,9 @@ export function NotifyForm({
   className,
   blocked = false,
   onBlocked,
+  identityAfter = false,
+  finePrint = false,
+  clubNudgeHref,
 }: {
   /** Recorded with the row: "landing" | "landing-claim" | "demo:<slug>" */
   source: string
@@ -50,8 +56,17 @@ export function NotifyForm({
    *  submit stops with a message and the caller highlights its picker. */
   blocked?: boolean
   onBlocked?: () => void
+  /** Capture first, identify after (owner 2026-08-18): the form stays a slim
+   *  field + button; the identity pills appear on the DONE card as a one-tap
+   *  enrichment. A second POST with the same contact just updates the row. */
+  identityAfter?: boolean
+  /** CASL micro-line under the button: purpose + opt-out + privacy link. */
+  finePrint?: boolean
+  /** Where "find and claim it" points when someone picks Club after joining. */
+  clubNudgeHref?: string
 }) {
   const [contact, setContact] = useState("")
+  const [picked, setPicked] = useState<string | null>(null)
   const [website, setWebsite] = useState("")
   const [state, setState] = useState<"idle" | "sending" | "done" | "error">("idle")
   const [error, setError] = useState("")
@@ -97,15 +112,68 @@ export function NotifyForm({
 
   const dark = tone === "dark"
 
+  async function pickIdentity(id: string) {
+    setPicked(id)
+    try {
+      await fetch("/api/launch/notify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ contact, identity: id, source }),
+      })
+    } catch {
+      /* quiet: the row already exists, identity is enrichment */
+    }
+  }
+
   if (state === "done") {
+    if (identityAfter && !picked) {
+      return (
+        <div
+          className={`rounded-xl px-4 py-3.5 ${
+            dark ? "bg-white/10 text-white" : "bg-court-50 text-court-800 ring-1 ring-court-200"
+          } ${className ?? ""}`}
+        >
+          <p className="text-[15px] font-semibold">
+            You&apos;re on the list. One quick thing: which are you?
+          </p>
+          <div className="mt-2.5 flex flex-wrap gap-1.5">
+            {IDENTITIES.map((id) => (
+              <button
+                key={id}
+                type="button"
+                onClick={() => void pickIdentity(id)}
+                className={`cursor-pointer rounded-full px-3 py-1.5 text-[13.5px] font-semibold transition-colors ${
+                  dark
+                    ? "bg-white/10 text-white/85 ring-1 ring-white/25 hover:bg-white/20"
+                    : "bg-white text-ink-700 ring-1 ring-ink-200 hover:bg-ink-50"
+                }`}
+              >
+                {id}
+              </button>
+            ))}
+          </div>
+        </div>
+      )
+    }
     return (
-      <p
+      <div
         className={`rounded-xl px-4 py-3 text-[15px] font-semibold ${
           dark ? "bg-white/10 text-white" : "bg-court-50 text-court-700 ring-1 ring-court-200"
         } ${className ?? ""}`}
       >
         You&apos;re on the list. We&apos;ll reach you when it opens.
-      </p>
+        {picked === "Club" && clubNudgeHref && (
+          <p className={`mt-1.5 text-[14px] font-normal ${dark ? "text-gold-100" : "text-ink-600"}`}>
+            Run a club? It may already be listed.{" "}
+            <a
+              href={clubNudgeHref}
+              className={`font-semibold underline underline-offset-2 ${dark ? "text-gold-400" : "text-gold-600"}`}
+            >
+              Find it and claim it
+            </a>
+          </p>
+        )}
+      </div>
     )
   }
 
@@ -133,16 +201,16 @@ export function NotifyForm({
           value={contact}
           onChange={(e) => setContact(e.target.value)}
           placeholder="you@example.com or (416) 555-0134"
-          className={`min-w-0 flex-1 rounded-xl px-4 py-3 text-base focus:outline-none focus:ring-2 ${
+          className={`min-w-0 flex-1 rounded-lg border-2 bg-white px-4 py-3 text-base text-ink-950 placeholder:text-ink-400 focus:outline-none ${
             dark
-              ? "border-0 bg-white text-ink-950 shadow-lg ring-1 ring-white/30 placeholder:text-ink-400 focus:ring-gold-400"
-              : "border border-ink-200 bg-white text-ink-950 placeholder:text-ink-400 focus:border-gold-500/60 focus:ring-gold-500/30"
+              ? "border-white/40 shadow-lg focus:border-gold-400"
+              : "border-ink-300 focus:border-gold-500"
           }`}
         />
         <button
           type="submit"
           disabled={state === "sending"}
-          className={`cursor-pointer rounded-xl px-6 py-3 text-base font-bold transition-colors focus:outline-none focus-visible:ring-2 disabled:opacity-60 ${
+          className={`cursor-pointer rounded-full px-6 py-3 text-base font-bold transition-colors focus:outline-none focus-visible:ring-2 disabled:opacity-60 ${
             buttonClassName ??
             (dark
               ? "bg-gold-500 text-ink-950 shadow-lg hover:bg-gold-400 focus-visible:ring-white"
@@ -154,6 +222,14 @@ export function NotifyForm({
       </div>
       {error && (
         <p className={`mt-2 text-[14px] ${dark ? "text-gold-100" : "text-hoop-700"}`}>{error}</p>
+      )}
+      {finePrint && (
+        <p className={`mt-2 text-[12.5px] ${dark ? "text-white/55" : "text-ink-400"}`}>
+          Only launch news, nothing else. Unsubscribe anytime.{" "}
+          <Link href="/legal/privacy" className="underline underline-offset-2">
+            Privacy
+          </Link>
+        </p>
       )}
     </form>
   )

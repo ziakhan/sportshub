@@ -26,7 +26,7 @@ export function BrandWordmark({
   const s = SIZES[size]
   const sports = variant === "reverse" ? "text-white" : "text-ink-950"
   const hub =
-    variant === "reverse" ? "text-play-300" : variant === "mono" ? "text-ink-950" : "text-play-600"
+    variant === "reverse" ? "text-play-600" : variant === "mono" ? "text-ink-950" : "text-play-600"
   return (
     <span className={`font-display inline-flex font-extrabold tracking-tight ${s.text}`}>
       <span className={sports}>Sports</span>

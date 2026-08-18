@@ -37,12 +37,12 @@ const SLOGANS: { key: string; node: React.ReactNode; sub: React.ReactNode }[] = 
     key: "one-app",
     node: (
       <>
-        Youth basketball. <span className="text-white md:text-gold-400">All of it.</span> <OneBox /> app.
+        Youth basketball. <span className="text-play-400 md:text-gold-400">All of it.</span> <OneBox /> app.
       </>
     ),
     sub: (
       <>
-        Registration to final buzzer, <span className="text-white md:text-gold-400 font-semibold">one login</span>.
+        Registration to final buzzer, <span className="text-play-400 md:text-gold-400 font-semibold">one login</span>.
       </>
     ),
   },
@@ -50,12 +50,12 @@ const SLOGANS: { key: string; node: React.ReactNode; sub: React.ReactNode }[] = 
     key: "discover",
     node: (
       <>
-        Discover the <span className="text-white md:text-gold-400">clubs and programs</span> around you.
+        Discover the <span className="text-play-400 md:text-gold-400">clubs and programs</span> around you.
       </>
     ),
     sub: (
       <>
-        1,325 Canadian clubs <span className="text-white md:text-gold-400 font-semibold">already listed</span>, with their programs and cities.
+        1,325 Canadian clubs <span className="text-play-400 md:text-gold-400 font-semibold">already listed</span>, with their programs and cities.
       </>
     ),
   },
@@ -68,7 +68,7 @@ const SLOGANS: { key: string; node: React.ReactNode; sub: React.ReactNode }[] = 
     ),
     sub: (
       <>
-        Jersey sizes, numbers and payment collected <span className="text-white md:text-gold-400 font-semibold">the moment a family accepts</span>.
+        Jersey sizes, numbers and payment collected <span className="text-play-400 md:text-gold-400 font-semibold">the moment a family accepts</span>.
       </>
     ),
   },
@@ -76,12 +76,12 @@ const SLOGANS: { key: string; node: React.ReactNode; sub: React.ReactNode }[] = 
     key: "payments",
     node: (
       <>
-        Payment plans <span className="text-white md:text-gold-400">run themselves</span>.
+        Payment plans <span className="text-play-400 md:text-gold-400">run themselves</span>.
       </>
     ),
     sub: (
       <>
-        The deposit at signup, the installments <span className="text-white md:text-gold-400 font-semibold">on their own dates, automatically</span>.
+        The deposit at signup, the installments <span className="text-play-400 md:text-gold-400 font-semibold">on their own dates, automatically</span>.
       </>
     ),
   },
@@ -94,7 +94,7 @@ const SLOGANS: { key: string; node: React.ReactNode; sub: React.ReactNode }[] = 
     ),
     sub: (
       <>
-        Both kids, every practice and game, <span className="text-white md:text-gold-400 font-semibold">one phone</span>.
+        Both kids, every practice and game, <span className="text-play-400 md:text-gold-400 font-semibold">one phone</span>.
       </>
     ),
   },
@@ -107,7 +107,7 @@ const SLOGANS: { key: string; node: React.ReactNode; sub: React.ReactNode }[] = 
     ),
     sub: (
       <>
-        Every calendar and phone updates <span className="text-white md:text-gold-400 font-semibold">instantly</span>. Nobody makes calls.
+        Every calendar and phone updates <span className="text-play-400 md:text-gold-400 font-semibold">instantly</span>. Nobody makes calls.
       </>
     ),
   },
@@ -120,7 +120,7 @@ const SLOGANS: { key: string; node: React.ReactNode; sub: React.ReactNode }[] = 
     ),
     sub: (
       <>
-        Score, box score, play by play. <span className="text-white md:text-gold-400 font-semibold">No refresh, it just moves</span>.
+        Score, box score, play by play. <span className="text-play-400 md:text-gold-400 font-semibold">No refresh, it just moves</span>.
       </>
     ),
   },
@@ -128,12 +128,12 @@ const SLOGANS: { key: string; node: React.ReactNode; sub: React.ReactNode }[] = 
     key: "potg",
     node: (
       <>
-        Full stats, and a <span className="text-white md:text-gold-400">Player of the Game</span>.
+        Full stats, and a <span className="text-play-400 md:text-gold-400">Player of the Game</span>.
       </>
     ),
     sub: (
       <>
-        Every tap at the scorer&apos;s table folds into the box score <span className="text-white md:text-gold-400 font-semibold">instantly</span>.
+        Every tap at the scorer&apos;s table folds into the box score <span className="text-play-400 md:text-gold-400 font-semibold">instantly</span>.
       </>
     ),
   },
@@ -146,7 +146,7 @@ const SLOGANS: { key: string; node: React.ReactNode; sub: React.ReactNode }[] = 
     ),
     sub: (
       <>
-        Recaps <span className="text-white md:text-gold-400 font-semibold">write themselves</span> from the official scoring record.
+        Recaps <span className="text-play-400 md:text-gold-400 font-semibold">write themselves</span> from the official scoring record.
       </>
     ),
   },
@@ -159,7 +159,7 @@ const SLOGANS: { key: string; node: React.ReactNode; sub: React.ReactNode }[] = 
     ),
     sub: (
       <>
-        A whole season generated <span className="text-white md:text-gold-400 font-semibold">in seconds</span>, conflicts already handled.
+        A whole season generated <span className="text-play-400 md:text-gold-400 font-semibold">in seconds</span>, conflicts already handled.
       </>
     ),
   },
@@ -167,12 +167,12 @@ const SLOGANS: { key: string; node: React.ReactNode; sub: React.ReactNode }[] = 
     key: "already-built",
     node: (
       <>
-        Registration to final buzzer, <span className="text-white md:text-gold-400">already built</span>.
+        Registration to final buzzer, <span className="text-play-400 md:text-gold-400">already built</span>.
       </>
     ),
     sub: (
       <>
-        Team entry, approvals, rosters and fees, <span className="text-white md:text-gold-400 font-semibold">ready the day you sign in</span>.
+        Team entry, approvals, rosters and fees, <span className="text-play-400 md:text-gold-400 font-semibold">ready the day you sign in</span>.
       </>
     ),
   },
@@ -185,7 +185,7 @@ const SLOGANS: { key: string; node: React.ReactNode; sub: React.ReactNode }[] = 
     ),
     sub: (
       <>
-        Updated <span className="text-white md:text-gold-400 font-semibold">the moment a final goes in</span>, tiebreakers included.
+        Updated <span className="text-play-400 md:text-gold-400 font-semibold">the moment a final goes in</span>, tiebreakers included.
       </>
     ),
   },
@@ -198,14 +198,12 @@ const SLOGANS: { key: string; node: React.ReactNode; sub: React.ReactNode }[] = 
     ),
     sub: (
       <>
-        Reminders go out <span className="text-white md:text-gold-400 font-semibold">automatically</span> until every signature is in.
+        Reminders go out <span className="text-play-400 md:text-gold-400 font-semibold">automatically</span> until every signature is in.
       </>
     ),
   },
 ]
 
-const IDENTITIES = ["Player", "Parent", "Club", "League", "Referee", "Trainer", "Media"] as const
-type Identity = (typeof IDENTITIES)[number]
 
 /* Audience pill tones on light cards: parents indigo, clubs orange, leagues green. */
 const PILL_TONES: Record<DemoAudience, string> = {
@@ -337,7 +335,7 @@ function ClaimSearch() {
       <label htmlFor="hp-club-search" className="sr-only">
         Search clubs
       </label>
-      <div className="flex items-center gap-3 rounded-xl bg-ink-50 px-4 py-3.5 ring-1 ring-ink-200 focus-within:ring-2 focus-within:ring-gold-500/60">
+      <div className="flex items-center gap-3 rounded-lg border-2 border-ink-300 bg-white px-4 py-3.5 focus-within:border-gold-500">
         <svg viewBox="0 0 20 20" fill="none" aria-hidden="true" className="h-5 w-5 shrink-0 text-ink-400">
           <circle cx="9" cy="9" r="6" stroke="currentColor" strokeWidth="2" />
           <path d="M13.5 13.5L18 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
@@ -347,7 +345,7 @@ function ClaimSearch() {
           type="text"
           value={q}
           onChange={(e) => setQ(e.target.value)}
-          placeholder="Search your club&apos;s name or city"
+          placeholder="Search your club by name or city"
           className="min-w-0 flex-1 border-0 bg-transparent text-base text-ink-950 placeholder:text-ink-400 focus:outline-none"
         />
       </div>
@@ -383,6 +381,27 @@ function ClaimSearch() {
       </ul>
     </div>
   )
+}
+
+/** Touch swipe for the carousels (owner 2026-08-18: swiping must actually
+ *  work once the arrows leave mobile). Returns handlers to spread. */
+function useSwipeNav(onPrev: () => void, onNext: () => void, onAny?: () => void) {
+  const startX = useRef<number | null>(null)
+  return {
+    onTouchStart: (e: React.TouchEvent) => {
+      startX.current = e.touches[0]?.clientX ?? null
+    },
+    onTouchEnd: (e: React.TouchEvent) => {
+      if (startX.current == null) return
+      const dx = (e.changedTouches[0]?.clientX ?? startX.current) - startX.current
+      startX.current = null
+      if (Math.abs(dx) > 45) {
+        onAny?.()
+        if (dx > 0) onPrev()
+        else onNext()
+      }
+    },
+  }
 }
 
 /** Arrow keys drive whichever carousel is on screen, no focus needed. */
@@ -472,11 +491,13 @@ function CheckIcon({ className }: { className?: string }) {
 
 function Hero() {
   const { active, goTo } = useSloganRotation(SLOGANS.length)
-  const [identity, setIdentity] = useState<Identity | null>(null)
-  const [identityWarn, setIdentityWarn] = useState(false)
   const heroRef = useRef<HTMLDivElement>(null)
   useArrowNav(
     heroRef,
+    () => goTo(active - 1),
+    () => goTo(active + 1)
+  )
+  const heroSwipe = useSwipeNav(
     () => goTo(active - 1),
     () => goTo(active + 1)
   )
@@ -501,7 +522,7 @@ function Hero() {
         </nav>
       </header>
 
-      <div ref={heroRef}
+      <div ref={heroRef} {...heroSwipe}
         className="hp-rise relative mx-auto flex w-full max-w-6xl flex-1 flex-col items-center justify-center px-5 py-10 text-center">
         <p className="flex items-center justify-center gap-3 text-2xl font-bold uppercase tracking-[0.18em] text-gold-400 max-md:text-lg sm:text-3xl">
           <span className="h-2.5 w-2.5 rounded-full bg-gold-400 max-md:hidden motion-safe:animate-pulse" aria-hidden="true" />
@@ -596,74 +617,20 @@ function Hero() {
         </div>
 
         <div id="notify" className="mt-8 w-full max-w-xl max-md:rounded-3xl max-md:bg-white max-md:px-4 max-md:py-5 max-md:shadow-2xl md:mt-10">
-          <p className="mb-3 text-center text-lg font-bold text-ink-950 md:hidden">Get one message at launch.</p>
-          <fieldset className="relative">
-            <legend className="mb-3 w-full text-center text-[15px] font-semibold text-white/70 max-md:text-ink-700">
-              I&apos;m here as a <span className="font-normal text-white/45 max-md:text-ink-400">(pick one)</span>
-            </legend>
-            {identityWarn && !identity && (
-              <span className="absolute -top-2 left-1/2 z-20 flex -translate-x-1/2 -translate-y-full flex-col items-center">
-                <span className="whitespace-nowrap rounded-xl bg-gold-500 px-3.5 py-1.5 text-[14px] font-bold text-ink-950 shadow-lg">
-                  Please select one.
-                </span>
-                <span className="h-0 w-0 border-x-8 border-t-8 border-x-transparent border-t-gold-500" />
-              </span>
-            )}
-            <div className="flex flex-wrap justify-center gap-2">
-              {IDENTITIES.map((id) => (
-                <button
-                  key={id}
-                  type="button"
-                  aria-pressed={identity === id}
-                  onClick={() => {
-                    setIdentity(identity === id ? null : id)
-                    setIdentityWarn(false)
-                  }}
-                  className={`cursor-pointer rounded-full px-4 py-2 text-[15px] font-semibold transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-gold-400 ${
-                    identity === id
-                      ? "bg-gold-500 text-ink-950"
-                      : "bg-white/10 text-white/85 ring-1 ring-white/20 hover:bg-white/15 max-md:bg-ink-50 max-md:text-ink-700 max-md:ring-ink-200 max-md:hover:bg-ink-100"
-                  }`}
-                >
-                  {id}
-                </button>
-              ))}
-            </div>
-          </fieldset>
-
+          <p className="mb-3 text-center text-lg font-bold text-ink-950 md:hidden">Save your spot.</p>
           <div className="md:hidden">
             <NotifyForm
               source="landing"
-              identity={identity ?? undefined}
+              identityAfter
+              finePrint
+              clubNudgeHref="#claim"
               buttonClassName="bg-gold-500 text-ink-950 shadow-lg hover:bg-gold-400 focus-visible:ring-gold-600"
-              className="mt-4"
-              blocked={!identity}
-              onBlocked={() => setIdentityWarn(true)}
             />
           </div>
           <div className="hidden md:block">
-            <NotifyForm
-              source="landing"
-              identity={identity ?? undefined}
-              tone="dark"
-              className="mt-4"
-              blocked={!identity}
-              onBlocked={() => setIdentityWarn(true)}
-            />
+            <p className="mb-3 text-center text-[17px] font-semibold text-white/85">Save your spot.</p>
+            <NotifyForm source="landing" identityAfter finePrint clubNudgeHref="#claim" tone="dark" />
           </div>
-
-          <p className="mt-3 text-[13px] text-white/55 max-md:text-ink-500">
-            We&apos;ll reach you about the launch and nothing else. Unsubscribe anytime.
-          </p>
-
-          {identity === "Club" && (
-            <p className="mt-3 rounded-lg bg-gold-500/15 px-4 py-2.5 text-[14px] text-gold-100 ring-1 ring-gold-400/30 max-md:bg-gold-100/70 max-md:text-ink-700 max-md:ring-gold-300">
-              Run a club? It may already be listed here.{" "}
-              <a href="#claim" className="font-semibold text-gold-400 underline underline-offset-2 max-md:text-gold-600">
-                Find it below
-              </a>
-            </p>
-          )}
         </div>
 
         <Link
@@ -1430,6 +1397,22 @@ function Screenshots() {
     () => goTo(active - 1),
     () => goTo(active + 1)
   )
+  /* Peek layout: on phones each slide is 88% wide so the next one shows its
+     edge — the "there is more" signal that needs no words. */
+  const [mobile, setMobile] = useState(false)
+  useEffect(() => {
+    const m = window.matchMedia("(max-width: 767px)")
+    const sync = () => setMobile(m.matches)
+    sync()
+    m.addEventListener("change", sync)
+    return () => m.removeEventListener("change", sync)
+  }, [])
+  const [swiped, setSwiped] = useState(false)
+  const slideSwipe = useSwipeNav(
+    () => goTo(active - 1),
+    () => goTo(active + 1),
+    () => setSwiped(true)
+  )
 
   return (
     <CourtBackdrop
@@ -1467,16 +1450,21 @@ function Screenshots() {
             </svg>
           </button>
 
-          <div className="h-full overflow-hidden">
+          <div className="h-full overflow-hidden" {...slideSwipe}>
+            {!swiped && (
+              <span className="pointer-events-none absolute bottom-2 right-3 z-30 rounded-full bg-ink-950/70 px-3 py-1 text-[12px] font-semibold text-white motion-safe:animate-pulse md:hidden">
+                Swipe
+              </span>
+            )}
             <div
               className="flex h-full transition-transform duration-500 ease-out motion-reduce:transition-none"
-              style={{ transform: `translateX(-${active * 100}%)` }}
+              style={{ transform: `translateX(-${active * (mobile ? 88 : 100)}%)` }}
             >
               {SCREEN_SLIDES.map((slide, i) => (
                 <div
                   key={slide.key}
                   aria-hidden={i !== active}
-                  className="flex h-full w-full shrink-0 items-center justify-center px-4 md:px-16"
+                  className="flex h-full w-full shrink-0 items-center justify-center px-4 max-md:w-[88%] max-md:pr-2 md:px-16"
                 >
                   <div className="flex h-full w-full flex-col items-center justify-center gap-4 md:flex-row md:gap-12">
                     <div className="max-w-md text-center md:text-left">
@@ -1627,6 +1615,7 @@ function ClaimYourClub() {
                 source="landing-claim"
                 identity="Club"
                 buttonLabel="Tell me first"
+                finePrint
                 className="mt-3 max-w-lg"
               />
             </div>
@@ -1643,6 +1632,7 @@ function ClaimYourClub() {
               identity="Club"
               buttonLabel="Tell me first"
               tone="dark"
+              finePrint
               className="mt-3 max-w-lg"
             />
           </div>
