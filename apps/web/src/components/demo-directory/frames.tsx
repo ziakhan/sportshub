@@ -517,6 +517,11 @@ export function SceneStage({
   const [panel, setPanel] = useState({ w: 0, h: 0 })
   /** Phone pair on a phone: which handset is on screen, 0 left or 1 right. */
   const [side, setSide] = useState<0 | 1>(0)
+  /* A viewer's tab tap HOLDS until the story itself moves to the other
+     phone (owner bug 2026-08-18: the follow effect re-asserted the scripted
+     side every beat, killing any manual peek within seconds). */
+  const manualSideRef = useRef<0 | 1 | null>(null)
+  const lastAutoSideRef = useRef<0 | 1>(0)
   const rate = useDemoRate()
 
   useEffect(() => {
@@ -661,6 +666,8 @@ export function SceneStage({
   useEffect(() => {
     if (!solo) return
     if (!pairLive) {
+      manualSideRef.current = null
+      lastAutoSideRef.current = 0
       setSide(0)
       return
     }
@@ -668,9 +675,16 @@ export function SceneStage({
     if (!stage || !focusTarget) return
     const el = stage.querySelector<HTMLElement>(`[data-demo-target="${focusTarget}"]`)
     const frame = el?.closest<HTMLElement>("[data-demo-frame]")
-    const which = frame?.dataset.demoFrame
-    if (which === "left") setSide(0)
-    else if (which === "right") setSide(1)
+    const which = frame?.dataset.demoFrame === "right" ? 1 : frame?.dataset.demoFrame === "left" ? 0 : null
+    if (which === null) return
+    if (which !== lastAutoSideRef.current) {
+      // The story moved phones: the show takes the wheel back.
+      lastAutoSideRef.current = which
+      manualSideRef.current = null
+      setSide(which)
+    } else if (manualSideRef.current === null) {
+      setSide(which)
+    }
   }, [solo, pairLive, focusTarget, beatKey, stageRef])
 
   /* ── The frames ───────────────────────────────────────────────────────── */
@@ -809,7 +823,11 @@ export function SceneStage({
                   role="tab"
                   aria-selected={side === i}
                   disabled={!armed}
-                  onClick={() => setSide(i === 1 ? 1 : 0)}
+                  onClick={() => {
+                    const pick = i === 1 ? 1 : 0
+                    manualSideRef.current = pick
+                    setSide(pick)
+                  }}
                   className={cn(
                     "relative min-w-0 flex-1 truncate rounded-full px-3 py-1.5 text-[14px] font-semibold transition-colors",
                     "after:absolute after:inset-x-0 after:top-1/2 after:h-11 after:-translate-y-1/2 after:content-['']",
