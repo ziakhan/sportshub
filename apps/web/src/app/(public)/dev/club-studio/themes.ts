@@ -240,7 +240,7 @@ export const SECTIONS: SectionDef[] = [
   { key: "about", label: "About", hint: "Who you are, in your words", zones: ["main"], source: "written" },
   { key: "announcements", label: "Announcements", hint: "Posts you publish", zones: ["main", "rail"], source: "written" },
   { key: "programs", label: "Open programs", hint: "Tryouts, camps, house leagues", zones: ["main"], source: "auto" },
-  { key: "teams", label: "Teams", hint: "Every team you run", zones: ["main"], source: "auto" },
+  { key: "teams", label: "Teams by age", hint: "Grouped by age band, with what is open", zones: ["main"], source: "auto" },
   { key: "schedule", label: "Schedule and scores", hint: "Recent and upcoming games", zones: ["main"], source: "auto" },
   { key: "news", label: "News and highlights", hint: "Recaps of your games", zones: ["main"], source: "auto" },
   { key: "reviews", label: "Reviews", hint: "What families say", zones: ["main"], source: "auto" },

@@ -228,8 +228,58 @@ function FakeSection({
         <div className="rounded-lg bg-white/95 px-3 py-1.5 text-[11px] font-bold" style={{ color: accent }}>Register</div>
       </div>
     )
-  else if (k === "programs" || k === "teams")
-    body = <div className={`grid gap-2 ${compact ? "grid-cols-2" : "grid-cols-3"}`}>{["U12 Boys", "U14 Girls", "Spring Camp", "House League", "U16 Boys", "Skills"].slice(0, compact ? 4 : 6).map(tile)}</div>
+  else if (k === "programs")
+    body = <div className={`grid gap-2 ${compact ? "grid-cols-2" : "grid-cols-3"}`}>{["Spring Camp", "House League", "Skills", "March Break"].slice(0, compact ? 4 : 4).map(tile)}</div>
+  else if (k === "teams")
+    /* Grouped by age band, not a flat list of team records. The unit is the thing
+       a parent actually has: a kid of a certain age. Status is what they came for,
+       and absence ("not running") is information a list cannot express. */
+    body = (
+      <div className="space-y-1">
+        {(
+          [
+            ["Grade 8", 2, "open"],
+            ["Grade 9", 3, "on"],
+            ["Grade 10", 2, "full"],
+            ["Grade 11", 0, "none"],
+          ] as Array<[string, number, "open" | "on" | "full" | "none"]>
+        ).map(([band, n, state]) => {
+          const chip =
+            state === "open"
+              ? { label: "Tryouts open", bg: accent, fg: "#fff" }
+              : state === "on"
+                ? { label: "Season underway", bg: `${accent}22`, fg: accent }
+                : state === "full"
+                  ? { label: "Roster full", bg: "transparent", fg: theme.inkMuted }
+                  : { label: "Not running", bg: "transparent", fg: theme.inkMuted }
+          return (
+            <div
+              key={band}
+              className="flex items-center gap-2 px-2.5 py-2"
+              style={{
+                background: state === "none" ? "transparent" : theme.bg,
+                border: `1px solid ${state === "none" ? "transparent" : theme.border}`,
+                borderRadius: Math.max(radius - 4, 2),
+                opacity: state === "none" ? 0.55 : 1,
+              }}
+            >
+              <span className="text-[11.5px] font-semibold" style={{ color: state === "none" ? theme.inkMuted : theme.ink }}>
+                {band}
+              </span>
+              <span className="text-[10.5px]" style={{ color: theme.inkMuted }}>
+                {n > 0 ? `${n} ${n === 1 ? "team" : "teams"}` : "—"}
+              </span>
+              <span
+                className="ml-auto whitespace-nowrap px-2 py-0.5 text-[9.5px] font-bold"
+                style={{ background: chip.bg, color: chip.fg, borderRadius: 999 }}
+              >
+                {chip.label}
+              </span>
+            </div>
+          )
+        })}
+      </div>
+    )
   else if (k === "schedule")
     body = (
       <div className="space-y-1.5">
