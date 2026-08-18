@@ -480,54 +480,57 @@ function Lens({ color, label }: { color: string; label: string }) {
 }
 
 function AgendaRow({ row, time, rsvp }: { row: Row; time: string; rsvp: string }) {
-  const edge = row.kind === "game" ? "#e0821e" : "var(--brand, #1a73e8)"
+  /* `PRODUCT` my-calendar.tsx KIND_CARD/KIND_EDGE + agenda-list.tsx date
+     tile, at handset scale. Games carry the energy tint, practices stay
+     white, cancelled rows dim exactly like the real agenda. */
+  const card = row.kind === "game" ? "bg-energy-soft/60 border-ink-100" : "bg-white border-ink-100"
+  const edge = row.kind === "game" ? "var(--energy)" : "var(--brand)"
+  const kidDot = row.who === "son" ? "var(--brand, #4f46e5)" : "#e0821e"
   return (
-    <div
-      data-demo-target={row.cancelled ? "row-cancelled" : row.id}
-      className={cn(
-        "flex gap-2 rounded-xl border bg-white px-2 py-0.5 transition-colors duration-300 motion-reduce:transition-none",
-        row.cancelled ? "border-ink-200" : "border-ink-200"
-      )}
-      style={{ borderLeft: `4px solid ${row.cancelled ? "#c9ced6" : edge}` }}
-    >
-      <span className="w-[34px] shrink-0 text-center">
-        <span className="text-ink-900 block text-[17px] font-extrabold leading-none tabular-nums">
-          {row.day}
-        </span>
-        <span className="text-ink-400 block text-[14px] font-bold uppercase leading-tight">
+    <div data-demo-target={row.cancelled ? "row-cancelled" : row.id} className="flex items-start gap-2">
+      <span className="bg-ink-100/70 text-ink-700 flex h-[42px] w-[42px] shrink-0 flex-col items-center justify-center rounded-xl">
+        <span className="text-[18px] font-extrabold leading-none tabular-nums">{row.day}</span>
+        <span className="text-ink-400 mt-0.5 text-[9px] font-semibold uppercase leading-none">
           {row.weekday}
         </span>
       </span>
-      <span className="min-w-0 flex-1">
-        <span className="flex items-center gap-1.5">
-          <span
-            className={cn(
-              "text-[14px] font-bold leading-tight tabular-nums",
-              row.cancelled ? "text-ink-400 line-through" : "text-ink-700"
-            )}
-          >
-            {time}
-          </span>
-          {row.cancelled && <StatusChip tone="hoop">Cancelled</StatusChip>}
-        </span>
-        <span
+      <div
+        className={cn(
+          "min-w-0 flex-1 rounded-xl border border-l-4 px-2.5 py-1.5 transition-colors duration-300 motion-reduce:transition-none",
+          card,
+          row.cancelled && "opacity-60"
+        )}
+        style={{ borderLeftColor: row.cancelled ? "#c9ced6" : edge }}
+      >
+        <p className="text-ink-950 text-[14px] font-extrabold leading-tight tabular-nums">
+          <span className={cn(row.cancelled && "line-through")}>{time}</span>
+          {row.cancelled && (
+            <span className="ml-1.5 rounded-full bg-red-50 px-1.5 py-0.5 align-[1px] text-[9px] font-bold uppercase text-red-600">
+              Cancelled
+            </span>
+          )}
+        </p>
+        <p
           className={cn(
-            "block truncate text-[15px] font-bold leading-tight",
-            row.cancelled ? "text-ink-400 line-through" : "text-ink-900"
+            "truncate text-[14px] font-bold leading-tight",
+            row.cancelled ? "text-ink-400" : "text-ink-900"
           )}
         >
+          <span
+            aria-hidden="true"
+            className="mr-1 inline-block h-1.5 w-1.5 rounded-full align-[2px]"
+            style={{ background: kidDot }}
+          />
           {row.title}
-        </span>
-        <span className="text-ink-500 block truncate text-[14px] font-medium leading-tight">
-          {row.where}
-        </span>
+        </p>
+        <p className="text-ink-600 truncate text-[12.5px] leading-tight">{row.where}</p>
 
         {row.id === "row-sat" && (
           <span
             data-demo-target="rsvp"
-            className="border-ink-100 mt-0.5 flex items-center gap-1.5 border-t pt-0.5"
+            className="border-ink-100 mt-1 flex items-center gap-1.5 border-t pt-1"
           >
-            <span className="text-ink-400 shrink-0 text-[14px] font-semibold">{SON}</span>
+            <span className="text-ink-400 shrink-0 text-[12.5px] font-semibold">{SON}</span>
             <span className="flex gap-1">
               <Pill id="rsvp-going" label="✓ Going" on={rsvp === "going"} tone="court" />
               <Pill label="? Maybe" on={false} tone="gold" />
@@ -535,7 +538,7 @@ function AgendaRow({ row, time, rsvp }: { row: Row; time: string; rsvp: string }
             </span>
           </span>
         )}
-      </span>
+      </div>
     </div>
   )
 }
@@ -555,14 +558,14 @@ function Pill({
     tone === "court"
       ? "border-court-600 bg-court-600 text-white"
       : tone === "gold"
-        ? "border-amber-500 bg-amber-500 text-white"
+        ? "border-gold-500 bg-gold-500 text-white"
         : "border-red-600 bg-red-600 text-white"
   return (
     <span
       data-demo-target={id}
       className={cn(
-        "rounded-full border px-2 py-0.5 text-[14px] font-bold",
-        on ? active : "border-ink-300 text-ink-600 bg-white"
+        "rounded-full border px-2 py-0.5 text-[12.5px] font-semibold",
+        on ? active : "border-ink-200 bg-white text-ink-500"
       )}
     >
       {label}
@@ -709,16 +712,21 @@ function PayRow({
 
 /** The waiver reminder, `lib/waivers/reminders.ts`. */
 function WaiverNotice() {
+  /* `PRODUCT` notifications/page.tsx: unread = play tint + border + dot. */
   return (
     <div className="space-y-2">
       <p className="text-ink-900 text-[17px] font-extrabold">Notifications</p>
       <div
         data-demo-target="w-notif"
-        className="border-hoop-300 live-pop rounded-2xl border bg-white px-3 py-2.5"
+        className="border-play-200 bg-play-50/30 shadow-soft live-pop rounded-2xl border p-3"
       >
-        <p className="text-hoop-800 text-[15px] font-bold">{WAIVER_TITLE}</p>
-        <p className="text-ink-700 mt-1 text-[14px] font-medium leading-snug">{WAIVER_MSG}</p>
-        <span data-demo-target="w-open" className="text-play-700 mt-2 block text-[15px] font-bold">
+        <div className="flex items-center gap-2">
+          <p className="text-ink-900 text-[14px] font-semibold">{WAIVER_TITLE}</p>
+          <span className="bg-play-500 h-2 w-2 shrink-0 rounded-full" />
+        </div>
+        <p className="text-ink-600 mt-0.5 text-[13px] leading-snug">{WAIVER_MSG}</p>
+        <p className="text-ink-400 mt-1 text-[11.5px]">2 minutes ago</p>
+        <span data-demo-target="w-open" className="text-play-700 mt-1.5 block text-[14px] font-bold">
           Tap to sign →
         </span>
       </div>
