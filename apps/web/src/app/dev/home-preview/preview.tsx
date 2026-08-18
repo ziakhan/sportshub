@@ -1573,24 +1573,27 @@ function SlideZoom({
         </svg>
       </button>
 
-      <div className="min-h-0 flex-1" {...stageTouch}>
+      <div
+        className="flex min-h-0 flex-1 items-center justify-center px-1.5 pb-1"
+        style={{ paddingTop: "max(0.5rem, env(safe-area-inset-top))" }}
+        {...stageTouch}
+      >
         {slide.key === "chat" ? (
-          <div className="flex h-full items-center justify-center">
-            <ChatPhone active fit={{ h: 0.96, w: 1 }} />
-          </div>
+          <ChatPhone active fit={{ h: 0.9, w: 0.97 }} />
         ) : slide.tour ? (
-          <GuidedShot
-            segments={slide.tour}
-            alt={slide.alt}
-            active
-            manual={manual}
-            fill
-            pinBottom={manual ? undefined : slide.pinBottom}
-          />
+          <div className="flex h-full justify-center rounded-[2rem] bg-ink-900 p-2 shadow-2xl ring-1 ring-white/15">
+            <GuidedShot
+              segments={slide.tour}
+              alt={slide.alt}
+              active
+              manual={manual}
+              pinBottom={manual ? undefined : slide.pinBottom}
+            />
+          </div>
         ) : (
-          <div className="h-full w-full overflow-y-auto overscroll-contain bg-white">
+          <div className="h-full w-full overflow-y-auto overscroll-contain rounded-xl">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={slide.src as string} alt={slide.alt ?? ""} className="w-full" />
+            <img src={slide.src as string} alt={slide.alt ?? ""} className="w-full rounded-xl" />
           </div>
         )}
       </div>
@@ -1601,7 +1604,7 @@ function SlideZoom({
         </p>
       )}
 
-      <div className="pointer-events-none absolute inset-x-0 z-[95] flex items-center justify-center gap-2" style={{ bottom: "max(0.9rem, env(safe-area-inset-bottom))" }} role="tablist" aria-label="Screens">
+      <div className="flex shrink-0 items-center justify-center gap-2 pt-1.5" style={{ paddingBottom: "max(0.8rem, env(safe-area-inset-bottom))" }} role="tablist" aria-label="Screens">
         {SCREEN_SLIDES.map((sl, i) => (
           <button
             key={sl.key}
@@ -1609,8 +1612,8 @@ function SlideZoom({
             onClick={() => onNav(i)}
             aria-label={`Screen ${i + 1}`}
             aria-current={i === index}
-            className={`pointer-events-auto h-2.5 cursor-pointer rounded-full shadow-[0_0_6px_rgba(0,0,0,0.55)] transition-all ${
-              i === index ? "w-7 bg-gold-400" : "w-2.5 bg-white/50"
+            className={`h-2.5 cursor-pointer rounded-full transition-all ${
+              i === index ? "w-7 bg-gold-400" : "w-2.5 bg-white/35"
             }`}
           />
         ))}
