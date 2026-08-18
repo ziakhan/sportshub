@@ -443,6 +443,33 @@
     opacity: 1;
   }
 }
+/* Demo directory: an OS push banner dropping in from the top of a handset,
+   with the slight overshoot the real notification shade has. */
+.demo-banner-in {
+  animation: demo-banner-in 0.55s cubic-bezier(0.2, 0.9, 0.3, 1.05) both;
+}
+@keyframes demo-banner-in {
+  from {
+    transform: translateY(-140%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+/* Demo directory: a signature being drawn. A real pen takes about a second,
+   so the stroke reveals over one. */
+.demo-sign-draw {
+  stroke-dasharray: 420;
+  stroke-dashoffset: 420;
+  animation: demo-sign-draw 1.1s ease-out 0.15s forwards;
+}
+@keyframes demo-sign-draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
 /* Demo directory sync pulses (game-day story, owner law 2026-08-15): when a
    value changes on the console, the element that changed on the PHONE flashes.
    Green for a made shot or a score going up, red for a foul, amber for

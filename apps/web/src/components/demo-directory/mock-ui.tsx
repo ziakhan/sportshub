@@ -2515,6 +2515,17 @@ export function MockEndCard({
  *  R6 Balloons are rare. A callout exists only to say what the screen
  *     cannot show (the invisible consequence, the why). Never narrate the
  *     visible, and never park a balloon over the thing being demonstrated.
+ *  R7 COMPLETE conversions only (owner 2026-08-19, after a half-converted
+ *     your-week): every screen a story touches is held to R1–R6, and every
+ *     flow runs to its REAL end state — a signing ends on "Signed and
+ *     recorded", a payment on its receipt. A demo that trails off before
+ *     the submit press is a defect, not a draft.
+ *  R8 When the product reaches someone through the OS, simulate the OS:
+ *     a push is an iOS-style banner dropping from the top of the handset
+ *     (globals.css .demo-banner-in) and tapping it navigates; directions
+ *     open a maps-app takeover. OS chrome is drawn as chrome, and never
+ *     invents product UI (your-week-story.tsx PushBanner / MapsTakeover
+ *     are the exemplars).
  * ═══════════════════════════════════════════════════════════════════════ */
 
 /** Calendar entry, mirrored 1:1 from calendar/my-calendar.tsx (KIND_CARD /

@@ -2,18 +2,19 @@
 
 import type { ReactNode } from "react"
 import { cn } from "@/components/ui/cn"
-import { Btn, StatusChip } from "../scene-kit"
+import { StatusChip } from "../scene-kit"
 import type { DemoBeat, DemoScript } from "../types"
 
 /**
- * "Your week", rebuilt 2026-08-16 to the gold standard set by the season
- * story, the schedule-change demo, the waivers demo, game day, the referees
- * demo, the roster story, the money picture and the loop story.
+ * "Your week", rebuilt 2026-08-16 to the gold standard, and completed
+ * 2026-08-19 to the realism standard (mock-ui.tsx R1–R6) on the owner's
+ * ruling: EVERY screen to real anatomy, every interaction to its end state.
+ * The 08-18 cut converted the agenda and stopped; the game page, venue page,
+ * home, payments and signing were still flat placeholder panels. No screen in
+ * this file is a placeholder now.
  *
- * ONE LIFE-SIZE HANDSET. `OWNER` the brief: "life-size phone". So the stage is
- * a single 390 logical handset at scale 1.0 on a computer, and the whole
- * handset inside the viewport on a phone. Nothing else is on the stage,
- * because nothing else is in this story.
+ * ONE LIFE-SIZE HANDSET. `OWNER` the brief: "life-size phone". A single 390
+ * logical handset; nothing else is on the stage.
  *
  * THE WEEK IS REAL, EVERY ROW OF IT. `DB` Jordan Reyes has two children at
  * Toronto Lords: Darius (#37, Grade 9) and Danielle (#20, Grade 10 Girls).
@@ -25,46 +26,51 @@ import type { DemoBeat, DemoScript } from "../types"
  *   Thu 20, 7:00 p.m.  Darius's practice, The Playground
  *   Sat 22, 9:00 a.m.  Oakville Panthers vs Toronto Lords Grade 9, Court 1
  *
- * Not one of those was invented, including the cancelled Monday. And Tuesday's
- * practice is the SAME practice the everyone-in-the-loop demo moves, which is
- * why the change chapter here shows it arriving on her phone: the two demos
- * are two ends of one event.
+ * Not one of those was invented, including the cancelled Monday. Tuesday's
+ * practice is the SAME practice the everyone-in-the-loop demo moves.
  *
- * THE INVENTED PLACEMENT IS PUNCHED, NOT STAGED. The 2026-08-15 cut put a fee
- * installment and an unsigned waiver INSIDE the week list, as rows between the
- * practices. That placement was flagged to the owner and never ruled, and the
- * product does not do it: `MyCalendarItem` has no waiver or fee field, and
- * `my-contexts.ts`'s `actionsDue` (offers, payments, RSVPs, chats, referee
- * offers) has no waiver field at all. So this cut stages the REAL surfaces a
- * fee and a waiver reach a guardian on. Punch 1 in
- * `docs/roadmap/your-week-numbers.md`.
+ * TRUTH TO THE PRODUCT, SCREEN BY SCREEN (R1: classes copied, files cited):
+ *   · the week is `app/(platform)/calendar/my-calendar.tsx` AGENDA view;
+ *     the tap-a-row popover is `components/calendar/item-popover.tsx`
+ *     (fixed inset-0 bg-black/30, white rounded-2xl p-4 shadow-xl card,
+ *     "Open game page →" as the bordered block button, verbatim);
+ *   · the game page is `app/(public)/live/[gameId]/components/score-hero.tsx`
+ *     in its PRE-GAME phone composition: navy stage gradient, league line
+ *     with the gold link, the tipoff strip where LIVE would sit, one
+ *     full-width row per team (crest `components/ui/crest.tsx` dark surface
+ *     = bg-white/10 ring-white/15, font-condensed 42px tabular score, 0–0
+ *     before tip-off), venue as the muted small-caps link. Below it,
+ *     `pregame-rosters.tsx` (live-view.tsx:250 renders it pre-game);
+ *   · the venue page is `app/(public)/venues/[venueId]/page.tsx`: SmartBack,
+ *     font-condensed uppercase h1, address, "Get directions →" in play-600,
+ *     the map card, the Courts card with court-500 dots. The map tile and the
+ *     maps-app takeover are hand-authored SVG standing in for the Google
+ *     embed and the OS maps app — OS chrome, not product UI;
+ *   · home is `app/(public)/page.tsx` signed-in: the navy greeting card
+ *     ("Your hub" gold eyebrow, "Welcome back"), then
+ *     `home-personal-band.tsx`: "Needs your attention" with the payments
+ *     card in its REAL gold tone (border-gold-200 bg-gold-50 text-gold-800,
+ *     line 41), then the "Your week" white card with day-group headers;
+ *   · payments is `app/(platform)/payments/page.tsx`: play-chip eyebrow,
+ *     font-condensed "My payments", the open-items line, the "Payment plan"
+ *     panel with divide-y rows and Paid/Upcoming badges (STATUS_LABEL);
+ *   · the waiver reminder is `lib/waivers/reminders.ts` copy, delivered as
+ *     an iOS-style push banner over the payments screen (owner 2026-08-19:
+ *     "simulate a notification coming from the top like a real phone");
+ *   · signing is `app/(public)/waivers/sign/[token]/page.tsx` + sign-form.tsx:
+ *     org eyebrow, title, "For {player} · renews yearly", the ink-50 document
+ *     strip, name field, relationship chips, the signature pad
+ *     ("Draw with your finger or mouse"), the confirm checkbox, the play-600
+ *     "Sign and submit" button, and the REAL success state — court-50 check
+ *     circle, "Signed and recorded", the on-file line. The demo does not end
+ *     until that success state is on screen.
  *
- * NO CONFESSIONS ON CAMERA (sweep, 2026-08-16). The 08-16 cut ended the last
- * chapter on a `punch` beat that told the viewer, in a balloon, that neither
- * the fee nor the waiver is in the week list and that putting them there is a
- * change the product has not made. It also called the three taps to a map
- * "further away than it should be", and five mock panels carried a narrator's
- * line rather than product copy. All of it is gone. What the product does is
- * shown; what it does not do stays in this file and the numbers sheet, which is
- * where the product backlog reads it.
- *
- * TWO MORE THINGS THE PREVIOUS CUT INVENTED AND THIS ONE DOES NOT:
- *   · a gold "Moved" badge and an amber pulse on a changed row. The real
- *     agenda just re-renders the same row with the new time on its next poll.
- *   · "Get directions" on the RSVP sheet. Directions live on the VENUE page,
- *     which is three taps from the row, and the demo walks those three taps
- *     instead of pretending there is one.
- *
- * TRUTH TO THE PRODUCT, SCREEN BY SCREEN:
- *   · the week is `app/(platform)/calendar/my-calendar.tsx` in its AGENDA
- *     view, which a phone is forced into, with `components/calendar/agenda-list.tsx`
- *     drawing the month header and the date rail;
- *   · the RSVP pills are `components/calendar/rsvp-control.tsx`, verbatim;
- *   · the venue page and its directions link are `app/(public)/venues/[venueId]/page.tsx`;
- *   · the fee card is `app/(public)/home-personal-band.tsx`, "Needs your attention";
- *   · the plan is `app/(platform)/payments/page.tsx`, "Payment plan";
- *   · the waiver notification is `lib/waivers/reminders.ts` and the signing
- *     page is `app/(public)/waivers/sign/[token]/page.tsx`.
+ * INVENTED-CONTENT LEDGER (everything not read from the DB):
+ *   · Darius's two roster-mates and their modest stat lines: the seed names
+ *     teammates from its BOY_NAMES/LAST_NAMES pools per reset, so "Kai
+ *     Thompson" and "Marcus Osei" are pool names, not fixtures;
+ *   · the maps takeover's "12 min drive" — OS chrome, not product data;
+ *   · the waiver excerpt paraphrases Rowan's Law requirements in three lines.
  */
 
 /* ── Cast, all read out of the seeded world ──────────────────────────────── */
@@ -170,24 +176,25 @@ const OWING = 447.5
 const WAIVER = "Concussion Code of Conduct (Rowan's Law)"
 const LEAGUE = "NPH Summer League"
 
-/**
- * `PRODUCT` `my-calendar.tsx` lines 47 to 51. The page's subtitle, "Every game,
- * practice and event across all your teams · answer Going or Can't go right
- * here", is real and is NOT drawn: at 390 it takes three lines of the handset's
- * 508, and the demo would rather spend them on the week itself.
- */
+/** `PRODUCT` `my-calendar.tsx` page title. */
 const CAL_TITLE = "My Calendar"
-/** `PRODUCT` `home-personal-band.tsx` lines 36 to 42 and 87 to 89. */
+/** `PRODUCT` `home-personal-band.tsx` lines 39 to 41 and 87 to 89. */
 const BAND_HEADING = "Needs your attention"
 const BAND_TITLE = "1 payment due"
 const BAND_DETAIL = "View and pay"
-/** `PRODUCT` `payments/page.tsx` lines 66 to 69 and 72 to 115. */
-const PAY_HEAD = `1 open item · $${OWING.toFixed(2)} outstanding.`
+/** `PRODUCT` `payments/page.tsx` line 68: `${open.length} open items, …`. */
+const PAY_HEAD = `2 open items, $${OWING.toFixed(2)} outstanding.`
 /** `PRODUCT` `lib/waivers/reminders.ts` lines 164 to 166. */
 const WAIVER_TITLE = "Waiver still unsigned"
 const WAIVER_MSG = `${LEAGUE}: ${DAUGHTER} can't play until you sign "${WAIVER}". Tap to sign, it takes a minute.`
 
 const money = (n: number) => `$${n.toFixed(2)}`
+
+/** `PRODUCT` score-hero.tsx line 105: the navy stage, lit from above. */
+const STAGE_BG = {
+  backgroundImage:
+    "radial-gradient(120% 150% at 50% -20%, rgba(255,255,255,0.10) 0%, transparent 60%), linear-gradient(135deg, #16233a, #0b1628)",
+}
 
 /* ── Pacing ──────────────────────────────────────────────────────────────── */
 
@@ -302,6 +309,7 @@ export const yourWeekStory: DemoScript = {
       cursor: "directions",
       press: true,
       set: { directions: true },
+      hold: 2600,
     }),
 
     /* ── 4. Plans change ──────────────────────────────────────────────── */
@@ -332,9 +340,9 @@ export const yourWeekStory: DemoScript = {
     paced({
       id: "home",
       chapter: "owed",
-      caption: "Two things are owed this week, and both arrive on their own surface.",
+      caption: "Two things are owed this week. The first is waiting on the home screen.",
       set: { view: "home" },
-      emphasize: "band",
+      emphasize: "band-card",
     }),
     paced({
       id: "pay",
@@ -345,25 +353,58 @@ export const yourWeekStory: DemoScript = {
       set: { view: "payments" },
     }),
     paced({
-      id: "waiver-notif",
+      id: "plan",
       chapter: "owed",
-      caption: "The waiver arrives as a push of its own.",
-      set: { view: "waiver" },
-      emphasize: "w-notif",
+      caption: "Half paid, two installments open. The same page her card pays from.",
+      emphasize: "pay-plan",
     }),
     paced({
-      id: "sign",
+      id: "waiver-notif",
       chapter: "owed",
-      caption: "Signing it is a minute on the same phone.",
+      caption: "The second arrives the way phones deliver urgent things.",
+      set: { banner: true },
+      hold: 2800,
+    }),
+    paced({
+      id: "sign-open",
+      chapter: "owed",
+      caption: "Tapping it opens the signing page.",
       cursor: "w-open",
       press: true,
-      set: { view: "sign" },
+      set: { view: "sign", banner: false },
+    }),
+    paced({
+      id: "sign-fill",
+      chapter: "owed",
+      caption: "Her name, her relationship to Danielle.",
+      set: { signFill: true },
+    }),
+    paced({
+      id: "sign-draw",
+      chapter: "owed",
+      caption: "And a signature, drawn with a finger.",
+      set: { signDraw: true },
+      hold: 2400,
+    }),
+    paced({
+      id: "submit",
+      chapter: "owed",
+      caption: "Sign and submit.",
+      cursor: "sign-submit",
+      press: true,
+      set: { signed: true },
+    }),
+    paced({
+      id: "signed",
+      chapter: "owed",
+      caption: "Recorded, timestamped, on file with the league before the weekend.",
+      hold: 3000,
     }),
     paced({
       id: "end",
       chapter: "owed",
       caption:
-        "Two children, one week, one screen, an answer that survives a change, and the two things she owes on the surfaces they arrive on.",
+        "Two children, one week, one screen, an answer that survives a change, and both debts settled where they arrived.",
       hold: 4400,
       set: { view: "week", moved: true, endCard: true },
     }),
@@ -381,6 +422,10 @@ export const yourWeekStory: DemoScript = {
             rsvp={get<string>("rsvp", "")}
             moved={get("moved", false)}
             directions={get("directions", false)}
+            banner={get("banner", false)}
+            signFill={get("signFill", false)}
+            signDraw={get("signDraw", false)}
+            signed={get("signed", false)}
           />
           {get("endCard", false) && <EndCard />}
         </div>
@@ -397,34 +442,44 @@ function Phone({
   rsvp,
   moved,
   directions,
+  banner,
+  signFill,
+  signDraw,
+  signed,
 }: {
   view: string
   rsvp: string
   moved: boolean
   directions: boolean
+  banner: boolean
+  signFill: boolean
+  signDraw: boolean
+  signed: boolean
 }) {
   return (
-    <div className="flex h-full flex-col bg-[#f6f7f9]">
+    <div className="relative flex h-full flex-col bg-[#f6f7f9]">
       <div className="flex items-baseline gap-2 bg-[#0b1628] px-4 pb-2.5 pt-2 text-white">
         <p className="text-[15px] font-bold leading-tight">{PARENT}</p>
         <p className="text-[14px] font-medium text-white/60">Parent · two players</p>
       </div>
 
-      <div key={view} className="demo-fade-in min-h-0 flex-1 overflow-hidden px-3 py-2.5">
-        {view === "week" && <Week rsvp={rsvp} moved={moved} />}
-        {view === "popover" && <Popover />}
+      <div key={view} className="demo-fade-in relative min-h-0 flex-1 overflow-hidden">
+        {(view === "week" || view === "popover") && <Week rsvp={rsvp} moved={moved} />}
         {view === "game" && <GamePage />}
-        {view === "venue" && <VenuePage directions={directions} />}
-        {view === "home" && <HomeBand />}
+        {view === "venue" && <VenuePage />}
+        {view === "home" && <HomeScreen />}
         {view === "payments" && <Payments />}
-        {view === "waiver" && <WaiverNotice />}
-        {view === "sign" && <SignPage />}
+        {view === "sign" && <SignPage fill={signFill} drawn={signDraw} signed={signed} />}
       </div>
 
+      {/* Overlays sit at handset level: the real item popover and the OS maps
+          app cover the whole screen (item-popover.tsx is fixed inset-0). */}
+      {view === "popover" && <PopoverOverlay rsvp={rsvp} />}
+      {view === "venue" && directions && <MapsTakeover />}
+      {banner && <PushBanner />}
+
       <TabBar
-        active={
-          view === "home" ? "Home" : view === "payments" || view === "sign" ? "Home" : "Calendar"
-        }
+        active={view === "home" || view === "payments" || view === "sign" ? "Home" : "Calendar"}
       />
     </div>
   )
@@ -433,13 +488,12 @@ function Phone({
 /** `/calendar` in the agenda view a phone is forced into. */
 function Week({ rsvp, moved }: { rsvp: string; moved: boolean }) {
   return (
-    <div className="flex h-full flex-col">
+    <div className="flex h-full flex-col px-3 py-2.5">
       <p className="text-ink-900 shrink-0 text-[17px] font-extrabold">{CAL_TITLE}</p>
 
       {/* Composition: the agenda's "AUGUST 2026" month header is real and is
           not drawn here. The week is one month long and the handset's 508
-          would rather spend those pixels on the Saturday game's RSVP row.
-          Declared in section H of the numbers sheet. */}
+          would rather spend those pixels on the Saturday game's RSVP row. */}
       <div data-demo-target="lenses" className="mt-1 flex shrink-0 flex-wrap gap-1">
         <Lens color="var(--brand, #1a73e8)" label={`${SON} · Grade 9`} />
         <Lens color="#e0821e" label={`${DAUGHTER} · Grade 10 Girls`} />
@@ -565,111 +619,291 @@ function Pill({
   )
 }
 
-/** `my-calendar.tsx`'s item popover. */
-function Popover() {
+/** `components/calendar/item-popover.tsx` over the dimmed agenda, verbatim. */
+function PopoverOverlay({ rsvp }: { rsvp: string }) {
   const row = WEEK[4]
   return (
-    <div className="space-y-2">
-      <p className="text-ink-900 text-[17px] font-extrabold leading-tight">
-        Game · {row.title}
-      </p>
-      <div className="border-ink-200 rounded-2xl border bg-white px-3 py-2.5">
-        <p className="text-ink-900 text-[15px] font-bold tabular-nums">
-          Sat, Aug 22 · {row.time}
-        </p>
-        <p className="text-ink-500 mt-0.5 text-[14px] font-medium">{row.where}</p>
-        <p className="text-ink-400 mt-1.5 text-[14px] font-semibold">{SON} · Going</p>
-        <span data-demo-target="open-game" className="text-play-700 mt-2 block text-[15px] font-bold">
-          Open game page →
-        </span>
+    <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/30 p-4">
+      <div className="live-pop w-full rounded-2xl bg-white p-4 shadow-xl">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <p className="text-ink-900 text-[14px] font-bold">Game — {row.title}</p>
+            <p className="text-ink-500 mt-0.5 text-[12px]">
+              Sat Aug 22, 9:00 AM · {SON_TEAM} · {GYM}
+            </p>
+          </div>
+          <span aria-hidden="true" className="text-ink-400 -mr-1 -mt-1 px-1 text-lg leading-none">
+            ×
+          </span>
+        </div>
+        <div className="mt-3 flex items-center gap-1.5">
+          <span className="text-ink-400 shrink-0 text-[12.5px] font-semibold">{SON}</span>
+          <span className="flex gap-1">
+            <Pill label="✓ Going" on={rsvp === "going"} tone="court" />
+            <Pill label="? Maybe" on={false} tone="gold" />
+            <Pill label="✕ Can't go" on={false} tone="hoop" />
+          </span>
+        </div>
+        <div className="mt-3">
+          <span
+            data-demo-target="open-game"
+            className="border-ink-200 text-ink-800 block rounded-xl border px-3 py-2 text-center text-[13.5px] font-bold"
+          >
+            Open game page →
+          </span>
+        </div>
       </div>
     </div>
   )
 }
 
-/** `/live/[gameId]`, the public game page. */
+/* ── The game page, pre-game ─────────────────────────────────────────────── */
+
+/** `score-hero.tsx` phone rows + `crest.tsx` dark surface. */
+function HeroCrest({ mono }: { mono: string }) {
+  return (
+    <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-white/10 text-[13px] font-bold text-white/80 shadow-lg ring-1 ring-inset ring-white/15">
+      {mono}
+    </span>
+  )
+}
+
+function HeroTeamRow({ mono, name }: { mono: string; name: string }) {
+  return (
+    <div className="flex items-center gap-3">
+      <HeroCrest mono={mono} />
+      <p className="min-w-0 flex-1 truncate text-[14.5px] font-semibold leading-tight text-white">
+        {name}
+      </p>
+      <p className="font-condensed min-w-[40px] text-right text-[34px] font-semibold leading-none tracking-[-0.01em] text-white tabular-nums">
+        0
+      </p>
+    </div>
+  )
+}
+
+function RosterRow({ n, name, gp, ppg, rpg }: { n: number; name: string; gp: number; ppg: string; rpg: string }) {
+  return (
+    <tr className="border-ink-50 border-t">
+      <td className="text-ink-900 whitespace-nowrap py-1.5 pl-3 pr-2 text-[13px] font-semibold">
+        <span className="text-ink-500 mr-1.5 font-normal tabular-nums">#{n}</span>
+        {name}
+      </td>
+      <td className="text-ink-700 px-1 text-right text-[13px] tabular-nums">{gp}</td>
+      <td className="text-ink-700 px-1 text-right text-[13px] tabular-nums">{ppg}</td>
+      <td className="text-ink-700 px-1 pr-3 text-right text-[13px] tabular-nums">{rpg}</td>
+    </tr>
+  )
+}
+
+/** `/live/[gameId]` before tip-off: tipoff strip, 0–0, rosters below. */
 function GamePage() {
   return (
-    <div className="space-y-2">
-      <div className="rounded-2xl bg-[#0b1628] px-3 py-3 text-white">
-        <p className="text-[14px] font-bold uppercase tracking-[0.1em] text-white/60">
-          {LEAGUE} · Sat, Aug 22
+    <div className="flex h-full flex-col">
+      <div className="shrink-0 px-3 pb-3 pt-2.5 text-white" style={STAGE_BG}>
+        <p className="text-center text-[10.5px] font-semibold uppercase tracking-[0.16em] text-white/55">
+          <span className="text-gold-400">{LEAGUE}</span> · Summer 2026
         </p>
-        <p className="mt-1 text-[17px] font-extrabold leading-tight">Oakville Panthers Grade 9</p>
-        <p className="text-[17px] font-extrabold leading-tight">{SON_TEAM}</p>
-        <p className="mt-1.5 text-[14px] font-semibold text-white/70">9:00 AM</p>
-        <p className="mt-1.5 text-[15px] font-bold">
-          <span data-demo-target="venue-link" className="text-gold-400 underline">
+        <p className="mt-2 text-center text-[10.5px] font-medium uppercase tracking-[0.14em] text-white/55">
+          Sat, Aug 22, 9:00 AM
+        </p>
+        <div className="mt-2 space-y-1.5">
+          <HeroTeamRow mono="OP" name="Oakville Panthers Grade 9" />
+          <HeroTeamRow mono="TL" name={SON_TEAM} />
+        </div>
+        <p className="mt-2 text-center text-[10.5px] font-medium uppercase tracking-[0.14em] text-white/55">
+          <span data-demo-target="venue-link" className="underline decoration-white/40 underline-offset-2">
             {GYM}
           </span>
-          <span className="text-white/60"> · Court 1</span>
+          <span> · Court 1</span>
         </p>
       </div>
+
+      {/* `pregame-rosters.tsx`: the panel + stat table the page shows pre-game. */}
+      <div className="min-h-0 flex-1 overflow-hidden px-3 py-2.5">
+        <section className="border-ink-100 overflow-hidden rounded-2xl border bg-white">
+          <div className="border-ink-100 border-b px-3 py-2">
+            <h3 className="text-ink-800 text-[10px] font-bold uppercase tracking-[0.18em]">
+              {SON_TEAM}
+            </h3>
+          </div>
+          <table className="w-full text-left">
+            <thead className="text-ink-500 text-[10px] uppercase tracking-wide">
+              <tr>
+                <th className="py-1.5 pl-3 pr-2 font-bold">Player</th>
+                <th className="px-1 text-right font-bold">GP</th>
+                <th className="px-1 text-right font-bold">PPG</th>
+                <th className="px-1 pr-3 text-right font-bold">RPG</th>
+              </tr>
+            </thead>
+            <tbody>
+              <RosterRow n={4} name="Kai Thompson" gp={4} ppg="12.3" rpg="3.8" />
+              <RosterRow n={23} name="Marcus Osei" gp={4} ppg="10.8" rpg="5.1" />
+              <RosterRow n={37} name={`${SON} Reyes`} gp={4} ppg="9.5" rpg="4.2" />
+            </tbody>
+          </table>
+        </section>
+      </div>
     </div>
   )
 }
 
-/** `/venues/[venueId]`. */
-function VenuePage({ directions }: { directions: boolean }) {
+/* ── The venue page ──────────────────────────────────────────────────────── */
+
+/** Hand-authored map tile: stands in for the page's Google embed. */
+function MapArt({ className, pin = true }: { className?: string; pin?: boolean }) {
   return (
-    <div className="space-y-2">
-      <p className="text-ink-900 text-[17px] font-extrabold">{GYM}</p>
-      <div className="border-ink-200 rounded-2xl border bg-white px-3 py-2.5">
-        <p className="text-ink-800 text-[15px] font-semibold">{GYM_ADDRESS}</p>
-        <span data-demo-target="directions" className="text-play-700 mt-2 block text-[15px] font-bold">
-          Get directions →
+    <svg viewBox="0 0 390 240" className={className} preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+      <rect width="390" height="240" fill="#e9ecef" />
+      <rect x="-10" y="-10" width="150" height="96" rx="10" fill="#dce8d8" />
+      <rect x="292" y="152" width="110" height="98" rx="10" fill="#dce8d8" />
+      <rect x="188" y="52" width="40" height="26" rx="3" fill="#dcdfe4" />
+      <rect x="236" y="58" width="30" height="20" rx="3" fill="#dcdfe4" />
+      <rect x="86" y="150" width="44" height="28" rx="3" fill="#dcdfe4" />
+      <rect x="210" y="160" width="34" height="24" rx="3" fill="#dcdfe4" />
+      <path d="M0 118 H390" stroke="#ffffff" strokeWidth="13" />
+      <path d="M0 36 H390" stroke="#ffffff" strokeWidth="6" />
+      <path d="M168 0 V240" stroke="#ffffff" strokeWidth="9" />
+      <path d="M302 0 V240" stroke="#ffffff" strokeWidth="6" />
+      <path d="M58 118 V240" stroke="#ffffff" strokeWidth="6" />
+      <text x="12" y="111" fontSize="10.5" fill="#8a919b" fontFamily="ui-sans-serif, system-ui">
+        Century Dr
+      </text>
+      {pin && (
+        <g>
+          <ellipse cx="195" cy="134" rx="10" ry="3.5" fill="rgba(0,0,0,0.14)" />
+          <path
+            d="M195 100c-9.4 0-17 7.6-17 17 0 12.4 17 27 17 27s17-14.6 17-27c0-9.4-7.6-17-17-17z"
+            fill="#e5493d"
+          />
+          <circle cx="195" cy="117" r="5.5" fill="#ffffff" />
+        </g>
+      )}
+    </svg>
+  )
+}
+
+/** `/venues/[venueId]`: back link, condensed h1, address, map, courts. */
+function VenuePage() {
+  return (
+    <div className="h-full overflow-hidden px-3 py-2.5">
+      <p className="text-ink-500 text-[12px] font-semibold">← All venues</p>
+      <h1 className="font-condensed text-ink-950 mt-1.5 text-[24px] font-bold uppercase leading-none tracking-wide">
+        {GYM}
+      </h1>
+      <p className="text-ink-600 mt-1 text-[13px]">{GYM_ADDRESS}</p>
+      <span
+        data-demo-target="directions"
+        className="text-play-600 mt-1.5 inline-block text-[13.5px] font-semibold"
+      >
+        Get directions →
+      </span>
+      <div className="border-ink-100 mt-2 overflow-hidden rounded-2xl border">
+        <MapArt className="block h-[136px] w-full" />
+      </div>
+      <div className="border-ink-100 shadow-soft mt-2.5 rounded-2xl border bg-white p-3">
+        <h2 className="text-ink-900 text-[11px] font-semibold uppercase tracking-wide">Courts</h2>
+        <ul className="mt-1.5 space-y-1">
+          <li className="text-ink-800 flex items-center gap-2 text-[13px]">
+            <span className="bg-court-500 h-1.5 w-1.5 rounded-full" />
+            Court 1
+          </li>
+        </ul>
+      </div>
+    </div>
+  )
+}
+
+/** The OS maps app taking the screen — chrome, not product UI. */
+function MapsTakeover() {
+  return (
+    <div className="demo-fade-in absolute inset-0 z-20 flex flex-col bg-[#e9ecef]">
+      <MapArt className="min-h-0 w-full flex-1" />
+      <div className="shrink-0 rounded-t-[18px] bg-white px-4 pb-4 pt-2.5 shadow-[0_-8px_24px_rgba(11,22,40,0.16)]">
+        <div className="bg-ink-200 mx-auto h-1 w-9 rounded-full" />
+        <p className="text-ink-950 mt-2.5 text-[16px] font-bold">{GYM}</p>
+        <p className="text-ink-500 mt-0.5 text-[13px]">{GYM_ADDRESS} · 12 min drive</p>
+        <span className="mt-2.5 inline-flex items-center rounded-full bg-[#2f7cf6] px-4 py-2 text-[13.5px] font-bold text-white">
+          Directions
         </span>
       </div>
-      {directions && (
-        <div className="border-court-200 bg-court-50 live-pop rounded-2xl border px-3 py-2.5">
-          <p className="text-court-800 text-[15px] font-bold">Maps</p>
-          <p className="text-court-700 mt-0.5 text-[14px] font-semibold leading-snug">
-            {GYM_ADDRESS}
-          </p>
-        </div>
-      )}
     </div>
   )
 }
 
-/** `/`, the signed-in home band. */
-function HomeBand() {
+/* ── Home, signed in ─────────────────────────────────────────────────────── */
+
+function HomeDay({ label }: { label: string }) {
   return (
-    <div className="space-y-2">
-      <p className="text-ink-900 text-[17px] font-extrabold">Home</p>
-      <p data-demo-target="band" className="text-ink-500 text-[14px] font-bold uppercase tracking-[0.08em]">
+    <div className="bg-ink-50/60 text-ink-500 px-3 py-1 text-[10px] font-semibold uppercase tracking-wide">
+      {label}
+    </div>
+  )
+}
+
+function HomeRow({ time, title, meta }: { time: string; title: string; meta: string }) {
+  return (
+    <div className="flex items-center gap-2.5 px-3 py-2">
+      <span className="text-ink-950 w-[52px] shrink-0 text-[13px] font-semibold tabular-nums">
+        {time}
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="text-ink-900 block truncate text-[13px] font-medium">{title}</span>
+        <span className="text-ink-600 block truncate text-[12px]">{meta}</span>
+      </span>
+    </div>
+  )
+}
+
+/** `/` signed in: greeting card, the attention band, the week card. */
+function HomeScreen() {
+  return (
+    <div className="h-full overflow-hidden bg-[#faf8f4] px-3 py-2.5">
+      <div className="shadow-soft relative overflow-hidden rounded-[20px] p-4 text-white" style={STAGE_BG}>
+        <p className="text-gold-400 text-[9.5px] font-black uppercase tracking-[0.22em]">Your hub</p>
+        <h1 className="font-display mt-1 text-[19px] font-black tracking-[-0.02em]">
+          Welcome back, Jordan
+        </h1>
+        <p className="text-ink-200 mt-0.5 text-[12px]">
+          Your week, your teams and the scores that matter to you.
+        </p>
+      </div>
+
+      <p className="text-ink-600 mt-3 text-[10.5px] font-semibold uppercase tracking-[0.16em]">
         {BAND_HEADING}
       </p>
+      {/* `home-personal-band.tsx` line 41: payments card, gold tone. */}
       <div
         data-demo-target="band-card"
-        className="border-hoop-300 bg-hoop-50/60 rounded-2xl border px-3 py-2.5"
+        className="border-gold-200 bg-gold-50 text-gold-800 mt-1.5 rounded-2xl border p-3.5"
       >
-        <p className="text-hoop-800 text-[17px] font-extrabold">{BAND_TITLE}</p>
-        <p className="text-hoop-700 mt-0.5 text-[15px] font-bold">{BAND_DETAIL}</p>
+        <p className="text-[13.5px] font-semibold">{BAND_TITLE}</p>
+        <p className="mt-0.5 text-[12px] opacity-90">{BAND_DETAIL}</p>
+      </div>
+
+      <div className="mt-3 flex items-baseline justify-between">
+        <p className="text-ink-600 text-[10.5px] font-semibold uppercase tracking-[0.16em]">
+          Your week
+        </p>
+        <span className="text-play-700 text-[11px] font-semibold">Full calendar →</span>
+      </div>
+      <div className="border-ink-100 divide-ink-50 shadow-soft mt-1.5 divide-y overflow-hidden rounded-2xl border bg-white">
+        <HomeDay label="Tomorrow" />
+        <HomeRow time="8:00pm" title="Practice" meta={`${SON} · ${SON_TEAM} · ${GYM}`} />
+        <HomeDay label="Wednesday, Aug 19" />
+        <HomeRow time="6:30pm" title="Practice" meta={`${DAUGHTER} · ${DAU_TEAM} · ${GYM}`} />
+        <HomeDay label="Saturday, Aug 22" />
+        <HomeRow
+          time="9:00am"
+          title="vs Oakville Panthers Grade 9"
+          meta={`${SON} · ${SON_TEAM} · ${GYM}`}
+        />
       </div>
     </div>
   )
 }
 
-/** `/payments`, "My payments". */
-function Payments() {
-  return (
-    <div className="space-y-2">
-      <p className="text-ink-900 text-[17px] font-extrabold">My payments</p>
-      <p className="text-ink-600 text-[15px] font-semibold">{PAY_HEAD}</p>
-      <p className="text-ink-400 text-[14px] font-bold uppercase tracking-[0.08em]">Payment plan</p>
-      <div className="space-y-1">
-        <PayRow label="Deposit" when="Paid at signup" amount={PER} status="Paid" />
-        <PayRow label="Installment 1" when="Apr 13" amount={PER} status="Paid" />
-        <PayRow label="Installment 2" when="May 1" amount={PER} status="Upcoming" />
-        <PayRow label="Installment 3" when="Jun 1" amount={PER} status="Upcoming" />
-      </div>
-      <p className="text-ink-500 text-[14px] font-medium leading-snug">
-        Summer 2026 season fee · {DAU_TEAM}
-      </p>
-    </div>
-  )
-}
+/* ── Payments ────────────────────────────────────────────────────────────── */
 
 function PayRow({
   label,
@@ -682,69 +916,223 @@ function PayRow({
   amount: number
   status: "Paid" | "Upcoming"
 }) {
-  const paid = status === "Paid"
   return (
-    <div
-      className={cn(
-        "flex items-center gap-2 rounded-xl border bg-white px-2.5 py-1.5",
-        paid ? "border-court-200 bg-court-50/50" : "border-ink-200"
-      )}
-    >
-      <span className="min-w-0">
-        <span className="text-ink-900 block text-[15px] font-bold">{label}</span>
-        <span className="text-ink-500 block text-[14px] font-medium">{when}</span>
-      </span>
-      <span className="text-ink-900 ml-auto shrink-0 text-[15px] font-bold tabular-nums">
-        {money(amount)}
-      </span>
-      <StatusChip tone={paid ? "court" : "neutral"}>{status}</StatusChip>
-    </div>
+    <li className="flex items-center justify-between gap-2 py-1">
+      <div className="min-w-0">
+        <p className="text-ink-800 truncate text-[13px] font-medium">{label}</p>
+        <p className="text-ink-400 text-[11px]">{when}</p>
+      </div>
+      <div className="flex shrink-0 items-center gap-2">
+        <span className="text-ink-800 text-[13px] font-semibold tabular-nums">{money(amount)}</span>
+        <StatusChip tone={status === "Paid" ? "court" : "neutral"}>{status}</StatusChip>
+      </div>
+    </li>
   )
 }
 
-/** The waiver reminder, `lib/waivers/reminders.ts`. */
-function WaiverNotice() {
-  /* `PRODUCT` notifications/page.tsx: unread = play tint + border + dot. */
+/** `/payments`: eyebrow chip, condensed h1, the plan panel with its rows. */
+function Payments() {
   return (
-    <div className="space-y-2">
-      <p className="text-ink-900 text-[17px] font-extrabold">Notifications</p>
-      <div
-        data-demo-target="w-notif"
-        className="border-play-200 bg-play-50/30 shadow-soft live-pop rounded-2xl border p-3"
-      >
-        <div className="flex items-center gap-2">
-          <p className="text-ink-900 text-[14px] font-semibold">{WAIVER_TITLE}</p>
-          <span className="bg-play-500 h-2 w-2 shrink-0 rounded-full" />
-        </div>
-        <p className="text-ink-600 mt-0.5 text-[13px] leading-snug">{WAIVER_MSG}</p>
-        <p className="text-ink-400 mt-1 text-[11.5px]">2 minutes ago</p>
-        <span data-demo-target="w-open" className="text-play-700 mt-1.5 block text-[14px] font-bold">
-          Tap to sign →
+    <div className="h-full space-y-2 overflow-hidden bg-[#faf8f4] px-3 py-2">
+      <p className="text-ink-500 text-[12px] font-semibold">← Account</p>
+      <div className="border-ink-100 shadow-soft rounded-2xl border bg-white p-3">
+        <span className="border-play-100 bg-play-50 text-play-600 inline-flex rounded-full border px-2.5 py-0.5 text-[9.5px] font-semibold uppercase tracking-[0.18em]">
+          Payments
         </span>
+        <h1 className="font-condensed text-ink-950 mt-1 text-[20px] font-bold uppercase leading-none tracking-wide">
+          My payments
+        </h1>
+        <p className="text-ink-500 mt-1 text-[12px]">{PAY_HEAD}</p>
+      </div>
+
+      <div data-demo-target="pay-plan" className="border-ink-100 shadow-soft rounded-2xl border bg-white p-3">
+        <div className="flex items-baseline justify-between">
+          <h2 className="text-ink-800 text-[11px] font-bold uppercase tracking-[0.18em]">
+            Payment plan
+          </h2>
+          <span className="text-play-600 text-[11px] font-semibold">Manage cards →</span>
+        </div>
+        <p className="text-ink-400 text-[10.5px]">
+          Summer 2026 season fee · {DAUGHTER} · {DAU_TEAM}
+        </p>
+        <ul className="divide-ink-100 mt-0.5 divide-y">
+          <PayRow label="Deposit" when="Paid at signup" amount={PER} status="Paid" />
+          <PayRow label="Installment 1" when="Apr 13, 2026" amount={PER} status="Paid" />
+          <PayRow label="Installment 2" when="May 1, 2026" amount={PER} status="Upcoming" />
+          <PayRow label="Installment 3" when="Jun 1, 2026" amount={PER} status="Upcoming" />
+        </ul>
+        <p className="text-ink-400 mt-1 text-[10px] leading-snug">
+          Scheduled payments charge automatically to your default card.
+        </p>
       </div>
     </div>
   )
 }
 
-/** `/waivers/sign/[token]`, a public token page. */
-function SignPage() {
+/* ── The push, the signing, the receipt ──────────────────────────────────── */
+
+/** The app icon on the banner: navy tile, gold ball. Hand-authored SVG. */
+function AppIcon({ className }: { className?: string }) {
   return (
-    <div className="space-y-2">
-      <p className="text-ink-400 text-[14px] font-bold uppercase tracking-[0.1em]">{LEAGUE}</p>
-      <p className="text-ink-900 text-[17px] font-extrabold leading-tight">{WAIVER}</p>
-      <div className="border-ink-200 rounded-2xl border bg-white px-3 py-2.5">
-        <p className="text-ink-600 text-[14px] font-medium leading-snug">
-          Required · renews every year · version 1
-        </p>
-        <p className="text-ink-800 mt-1.5 text-[14px] font-medium leading-snug">
-          I acknowledge that I have reviewed the concussion code of conduct with {DAUGHTER}.
-        </p>
-        <div className="border-ink-300 mt-2 h-[54px] rounded-xl border border-dashed bg-white" />
-        <p className="text-ink-400 mt-1 text-[14px] font-medium">Sign with your finger</p>
+    <svg viewBox="0 0 36 36" className={className} aria-hidden="true">
+      <rect width="36" height="36" rx="8.5" fill="#0b1628" />
+      <circle cx="18" cy="18" r="9" fill="#f59e0b" />
+      <path
+        d="M9 18h18M18 9v18M11.6 11.6c3.4 3 9.4 3 12.8 0M11.6 24.4c3.4-3 9.4-3 12.8 0"
+        stroke="#0b1628"
+        strokeWidth="1.4"
+        fill="none"
+      />
+    </svg>
+  )
+}
+
+/** An iOS-style push dropping from the top of the handset. */
+function PushBanner() {
+  return (
+    <div data-demo-target="w-notif" className="demo-banner-in absolute left-1.5 right-1.5 top-1.5 z-30">
+      <div
+        data-demo-target="w-open"
+        className="rounded-[18px] border border-black/5 bg-white/95 p-2.5 shadow-[0_10px_30px_rgba(11,22,40,0.28)] backdrop-blur"
+      >
+        <div className="flex items-start gap-2.5">
+          <AppIcon className="h-9 w-9 shrink-0" />
+          <div className="min-w-0 flex-1">
+            <div className="flex items-baseline justify-between gap-2">
+              <p className="text-ink-400 text-[10px] font-semibold uppercase tracking-[0.06em]">
+                SportsHub One
+              </p>
+              <p className="text-ink-400 text-[10px]">now</p>
+            </div>
+            <p className="text-ink-950 text-[13px] font-semibold leading-tight">{WAIVER_TITLE}</p>
+            <p className="text-ink-600 line-clamp-2 text-[12px] leading-snug">{WAIVER_MSG}</p>
+          </div>
+        </div>
       </div>
-      <Btn tone="court" size="sm">
-        Sign and finish
-      </Btn>
+    </div>
+  )
+}
+
+/** `/waivers/sign/[token]` + sign-form.tsx, through to its success state. */
+function SignPage({ fill, drawn, signed }: { fill: boolean; drawn: boolean; signed: boolean }) {
+  if (signed) {
+    /* sign-form.tsx lines 60 to 84, the real "done" render. */
+    return (
+      <div className="flex h-full items-center bg-[#faf8f4] px-3 py-2.5">
+        <div className="border-ink-100 w-full rounded-[20px] border bg-white p-6 text-center shadow-xl">
+          <div className="bg-court-50 text-court-600 live-pop mx-auto grid h-14 w-14 place-items-center rounded-2xl">
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              className="h-7 w-7"
+              aria-hidden="true"
+            >
+              <path d="M20 6 9 17l-5-5" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </div>
+          <h2 className="text-ink-950 mt-3 text-[17px] font-bold">Signed and recorded</h2>
+          <p className="text-ink-600 mt-2 text-[13px] leading-relaxed">
+            Thank you. {LEAGUE} now has your signed copy on file for {DAUGHTER}. You can close this
+            page.
+          </p>
+        </div>
+      </div>
+    )
+  }
+  return (
+    <div className="h-full overflow-hidden bg-[#faf8f4] px-3 py-2">
+      <div className="border-ink-100 overflow-hidden rounded-[20px] border bg-white shadow-xl">
+        <div className="border-ink-100 border-b px-3.5 py-2">
+          <p className="text-play-600 text-[9.5px] font-bold uppercase tracking-[2px]">{LEAGUE}</p>
+          <h1 className="text-ink-950 mt-0.5 text-[15px] font-bold leading-tight">{WAIVER}</h1>
+          <p className="text-ink-500 mt-0.5 text-[11.5px]">
+            For <span className="text-ink-700 font-semibold">{DAUGHTER} Reyes</span> · renews yearly
+          </p>
+        </div>
+        <div className="border-ink-100 bg-ink-50 border-b px-3.5 py-1.5">
+          <p className="text-ink-700 line-clamp-2 text-[11px] leading-relaxed">
+            Rowan&apos;s Law requires every athlete and a parent or guardian to review Ontario&apos;s
+            concussion awareness resources and this league&apos;s Concussion Code of Conduct before
+            play. By signing, you confirm you have reviewed both with your athlete…
+          </p>
+        </div>
+        <div className="space-y-1.5 px-3.5 py-2">
+          <div>
+            <p className="text-ink-700 text-[11.5px] font-semibold">Your full name</p>
+            <div
+              className={cn(
+                "border-ink-200 mt-0.5 rounded-xl border px-2.5 py-1 text-[13px]",
+                fill ? "text-ink-950" : "text-ink-400"
+              )}
+            >
+              {fill ? PARENT : "First and last name"}
+            </div>
+          </div>
+          <div>
+            <p className="text-ink-700 text-[11.5px] font-semibold">Relationship to player</p>
+            <div className="mt-0.5 flex gap-1.5">
+              {["Parent", "Guardian", "Other"].map((r) => (
+                <span
+                  key={r}
+                  className={cn(
+                    "rounded-full border px-2.5 py-0.5 text-[11.5px] font-semibold",
+                    fill && r === "Parent"
+                      ? "border-play-500 bg-play-50 text-play-700"
+                      : "border-ink-200 bg-white text-ink-500"
+                  )}
+                >
+                  {r}
+                </span>
+              ))}
+            </div>
+          </div>
+          <div>
+            <div className="flex items-baseline justify-between">
+              <p className="text-ink-700 text-[11.5px] font-semibold">Signature</p>
+              <p className="text-ink-400 text-[9.5px]">Draw with your finger or mouse</p>
+            </div>
+            <div className="border-ink-200 mt-0.5 h-[46px] overflow-hidden rounded-xl border bg-white">
+              {drawn && (
+                <svg viewBox="0 0 300 54" className="h-full w-full" aria-hidden="true">
+                  <path
+                    className="demo-sign-draw"
+                    d="M22 40 C30 16 40 12 42 24 C44 36 36 42 50 34 C64 26 60 18 74 28 C82 34 92 22 100 30 C112 42 118 18 132 28 C140 34 150 26 162 32 C180 40 196 24 214 32 C230 38 246 28 262 34"
+                    fill="none"
+                    stroke="#1b2a4a"
+                    strokeWidth="2.2"
+                    strokeLinecap="round"
+                  />
+                </svg>
+              )}
+            </div>
+          </div>
+          <div className="text-ink-700 flex items-start gap-2 text-[10.5px] leading-snug">
+            <span
+              className={cn(
+                "mt-0.5 grid h-3.5 w-3.5 shrink-0 place-items-center rounded border text-[9px] font-bold",
+                drawn ? "border-play-600 bg-play-600 text-white" : "border-ink-300 bg-white"
+              )}
+            >
+              {drawn ? "✓" : ""}
+            </span>
+            <p>
+              I have read and understood this document, and I confirm that I am authorized to sign
+              it for {DAUGHTER}.
+            </p>
+          </div>
+          <span
+            data-demo-target="sign-submit"
+            className={cn(
+              "block w-full rounded-xl bg-play-600 px-4 py-2 text-center text-[13px] font-bold text-white",
+              !drawn && "opacity-40"
+            )}
+          >
+            Sign and submit
+          </span>
+        </div>
+      </div>
     </div>
   )
 }
@@ -775,9 +1163,9 @@ function EndCard(): ReactNode {
         </p>
         <h3 className="font-display mt-2 text-[26px] font-extrabold leading-tight">Your week</h3>
         <p className="mt-3 text-[15px] leading-relaxed text-white/75">
-          A real week for two real children: four practices, one of them already cancelled, a
-          Saturday game answered in one tap, an address three taps away, and a practice that moved
-          without asking her the same question twice.
+          A real week for two real children: four practices, one already cancelled, a Saturday game
+          answered in one tap, an address three taps away, a practice that moved without asking her
+          twice, and a waiver signed before the weekend.
         </p>
         <p className="mt-4 text-[14px] font-semibold text-white/50">Next: claim your club</p>
       </div>
