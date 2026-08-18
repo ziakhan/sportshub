@@ -133,7 +133,7 @@ function DemoIntro({
        edge to edge instead of floating as a card, and the type runs a size
        up across the board. */
     <div className="flex flex-1 items-stretch">
-      <div className="relative isolate flex w-full flex-col justify-center overflow-hidden rounded-2xl border border-ink-100 bg-white px-7 py-8 shadow-xl sm:px-14 sm:py-10 lg:px-20">
+      <div className="relative isolate flex w-full flex-col justify-center overflow-hidden rounded-2xl border border-ink-100 bg-white px-5 py-6 shadow-xl sm:px-14 sm:py-10 lg:px-20">
         {/* House motif: the amber arc, not decoration for its own sake. */}
         <span
           aria-hidden="true"
@@ -165,10 +165,15 @@ function DemoIntro({
             <span className="text-[15px] font-semibold tabular-nums text-ink-500">
               {demo.durationLabel}
             </span>
+            {(chapters.length > 0 || demo.chapterCount > 0) && (
+              <span className="text-[15px] font-semibold text-ink-500 md:hidden">
+                · {chapters.length || demo.chapterCount} chapters
+              </span>
+            )}
             {demo.audiences.map((a) => (
               <span
                 key={a}
-                className="rounded-full border border-ink-200 bg-ink-50 px-3 py-1 text-[15px] font-semibold text-ink-600"
+                className="hidden rounded-full border border-ink-200 bg-ink-50 px-3 py-1 text-[15px] font-semibold text-ink-600 md:inline-flex"
               >
                 {AUDIENCE_LABELS[a]}
               </span>
@@ -179,62 +184,16 @@ function DemoIntro({
             {demo.title}
           </h1>
 
-          <p className="mt-4 max-w-[68ch] text-[20px] font-semibold leading-relaxed text-ink-800">
+          <p className="mt-4 hidden max-w-[68ch] text-[20px] font-semibold leading-relaxed text-ink-800 md:block">
             {demo.promise}
           </p>
 
-          <ul className="mt-6 space-y-2.5">
-            {bullets.map((b) => (
-              <li key={b} className="flex items-start gap-3">
-                <span
-                  aria-hidden="true"
-                  className="mt-[7px] h-2 w-2 shrink-0 rounded-full bg-gold-500"
-                />
-                <span className="max-w-[74ch] text-[17.5px] leading-relaxed text-ink-600">{b}</span>
-              </li>
-            ))}
-          </ul>
-
-          <div className="mt-7 border-t border-ink-100 pt-5">
-            <p className="text-[15px] font-bold uppercase tracking-[0.14em] text-ink-400">
-              {playable ? "Chapters" : "Planned chapters"}
-            </p>
-            {chapters.length === 0 ? (
-              <p className="mt-2.5 text-[17px] leading-relaxed text-ink-500">
-                The running order for this one is still being written.
-              </p>
-            ) : (
-              <ol className="mt-3 flex flex-wrap items-center gap-x-2.5 gap-y-2">
-                {chapters.map((title, i) => (
-                  <li key={title} className="flex items-center gap-2.5">
-                    {i > 0 && (
-                      <span aria-hidden="true" className="text-[15px] text-ink-300">
-                        /
-                      </span>
-                    )}
-                    <span className="flex items-center gap-2">
-                      <span
-                        className={cn(
-                          "flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[14px] font-bold tabular-nums",
-                          playable ? "bg-gold-500/15 text-gold-600" : "bg-ink-100 text-ink-400"
-                        )}
-                      >
-                        {i + 1}
-                      </span>
-                      <span className="text-[17px] font-semibold text-ink-800">{title}</span>
-                    </span>
-                  </li>
-                ))}
-              </ol>
-            )}
-          </div>
-
           {playable ? (
-            <div className="mt-8 flex flex-wrap items-center gap-5">
+            <div className="mt-5 flex flex-wrap items-center gap-5 md:mt-7">
               <button
                 type="button"
                 onClick={onPlay}
-                className="inline-flex items-center gap-3 rounded-2xl bg-gold-500 px-8 py-4 text-[17px] font-bold text-ink-950 outline-none transition-transform duration-200 hover:-translate-y-0.5 focus-visible:ring-2 focus-visible:ring-ink-950/40 motion-reduce:transform-none"
+                className="inline-flex items-center justify-center gap-3 rounded-2xl bg-gold-500 px-8 py-4 text-[17px] font-bold text-ink-950 outline-none transition-transform duration-200 hover:-translate-y-0.5 focus-visible:ring-2 focus-visible:ring-ink-950/40 motion-reduce:transform-none max-md:w-full"
               >
                 <span className="flex h-7 w-7 items-center justify-center rounded-full bg-ink-950/10">
                   <svg viewBox="0 0 24 24" className="h-4 w-4 fill-current" aria-hidden="true">
@@ -243,7 +202,7 @@ function DemoIntro({
                 </span>
                 Play the demo
               </button>
-              <p className="text-[15px] font-medium text-ink-500">
+              <p className="hidden text-[15px] font-medium text-ink-500 md:block">
                 Pause, step and jump between chapters once it starts. Nothing here needs an account.
               </p>
             </div>
@@ -276,6 +235,52 @@ function DemoIntro({
               )}
             </div>
           )}
+
+          <ul className="mt-6 max-md:mt-5 space-y-2.5">
+            {bullets.map((b) => (
+              <li key={b} className="flex items-start gap-3">
+                <span
+                  aria-hidden="true"
+                  className="mt-[7px] h-2 w-2 shrink-0 rounded-full bg-gold-500"
+                />
+                <span className="max-w-[74ch] text-[17.5px] leading-relaxed text-ink-600">{b}</span>
+              </li>
+            ))}
+          </ul>
+
+          <div className="mt-7 hidden border-t border-ink-100 pt-5 md:block">
+            <p className="text-[15px] font-bold uppercase tracking-[0.14em] text-ink-400">
+              {playable ? "Chapters" : "Planned chapters"}
+            </p>
+            {chapters.length === 0 ? (
+              <p className="mt-2.5 text-[17px] leading-relaxed text-ink-500">
+                The running order for this one is still being written.
+              </p>
+            ) : (
+              <ol className="mt-3 flex flex-wrap items-center gap-x-2.5 gap-y-2">
+                {chapters.map((title, i) => (
+                  <li key={title} className="flex items-center gap-2.5">
+                    {i > 0 && (
+                      <span aria-hidden="true" className="text-[15px] text-ink-300">
+                        /
+                      </span>
+                    )}
+                    <span className="flex items-center gap-2">
+                      <span
+                        className={cn(
+                          "flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[14px] font-bold tabular-nums",
+                          playable ? "bg-gold-500/15 text-gold-600" : "bg-ink-100 text-ink-400"
+                        )}
+                      >
+                        {i + 1}
+                      </span>
+                      <span className="text-[17px] font-semibold text-ink-800">{title}</span>
+                    </span>
+                  </li>
+                ))}
+              </ol>
+            )}
+          </div>
 
           <IntroNotifyAsk slug={demo.slug} />
         </div>
