@@ -1064,11 +1064,15 @@ function GuidedShot({
   alt,
   active,
   pinBottom,
+  manual = false,
 }: {
   segments: { src: string; start?: number | "end"; travel?: number; returnTo?: number }[]
   alt: string
   active: boolean
   pinBottom?: string
+  /** One-way handoff (owner 2026-08-18): true stops the choreography and
+   *  hands the frame to native scrolling at the current position. */
+  manual?: boolean
 }) {
   const [seg, setSeg] = useState(0)
   const [y, setY] = useState(0)
@@ -1081,7 +1085,7 @@ function GuidedShot({
     setSeg(0)
     setY(0)
     setPrev(null)
-    if (!active) return
+    if (!active || manual) return
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return
     let cancelled = false
 
@@ -1149,11 +1153,21 @@ function GuidedShot({
     return () => {
       cancelled = true
     }
-  }, [active, segments])
+  }, [active, manual, segments])
+
+  /* Entering manual mode: same frame, same position, your thumb drives. */
+  useEffect(() => {
+    if (manual && frameRef.current) frameRef.current.scrollTop = yRef.current
+  }, [manual])
 
   return (
-    <div ref={frameRef} className="relative aspect-[390/844] h-full w-auto overflow-hidden rounded-[1.9rem] bg-white">
-      {prev && (
+    <div
+      ref={frameRef}
+      className={`relative aspect-[390/844] h-full w-auto rounded-[1.9rem] bg-white ${
+        manual ? "overflow-y-auto overscroll-contain" : "overflow-hidden"
+      }`}
+    >
+      {!manual && prev && (
         // eslint-disable-next-line @next/next/no-img-element
         <img
           src={prev.src}
@@ -1169,7 +1183,7 @@ function GuidedShot({
         src={segments[seg].src}
         alt={alt}
         className="hp-xfade relative w-full"
-        style={{ transform: `translateY(-${y}px)` }}
+        style={manual ? undefined : { transform: `translateY(-${y}px)` }}
       />
       {pinBottom && (
         // eslint-disable-next-line @next/next/no-img-element
@@ -1428,54 +1442,11 @@ function SlideImage({
   )
 }
 
-/** Full-screen reader (owner 2026-08-18: the captures are too small to read
- *  on a phone). Everything else disappears; the capture scrolls freely at
- *  full width; the X brings the page back. */
-function SlideZoom({
-  slide,
-  onClose,
-}: {
-  slide: (typeof SCREEN_SLIDES)[number]
-  onClose: () => void
-}) {
-  useEffect(() => {
-    const prev = document.body.style.overflow
-    document.body.style.overflow = "hidden"
-    return () => {
-      document.body.style.overflow = prev
-    }
-  }, [])
-  return (
-    <div
-      className="fixed inset-0 z-[90] overflow-y-auto overscroll-contain bg-ink-950/95"
-      onClick={onClose}
-    >
-      <button
-        type="button"
-        onClick={onClose}
-        aria-label="Close full screen"
-        className="fixed right-4 top-4 z-[95] flex h-11 w-11 cursor-pointer items-center justify-center rounded-full bg-white/15 text-white ring-1 ring-white/40"
-      >
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" className="h-5 w-5">
-          <path d="M6 6l12 12M18 6L6 18" strokeLinecap="round" />
-        </svg>
-      </button>
-      <div className="mx-auto max-w-[440px] px-3 pb-16 pt-14" onClick={(e) => e.stopPropagation()}>
-        {slide.key === "chat" ? (
-          <div className="flex justify-center">
-            <ChatPhone active fit={{ h: 0.8, w: 0.94 }} />
-          </div>
-        ) : (
-          (slide.tour ?? [{ src: slide.src as string }]).map((seg) => (
-            /* eslint-disable-next-line @next/next/no-img-element */
-            <img key={seg.src} src={seg.src} alt={slide.alt ?? ""} className="mb-3 w-full rounded-2xl" />
-          ))
-        )}
-      </div>
-    </div>
-  )
-}
-
+/** Full-screen show (owner 2026-08-18 v2): the SAME living slide, near
+ *  full viewport. Swipe left/right moves between screens; the moment a thumb
+ *  scrolls the capture, the choreography stops and native scrolling takes
+ *  over (one-way, per the old scripted-scroll lesson). */
+let zoomHintShown = false
 function SlideImageStatic({ slide }: { slide: (typeof SCREEN_SLIDES)[number] }) {
   if (slide.frame === "phone") {
     return (
@@ -1515,6 +1486,116 @@ function SlideImageStatic({ slide }: { slide: (typeof SCREEN_SLIDES)[number] }) 
   )
 }
 
+function SlideZoom({
+  index,
+  onNav,
+  onClose,
+}: {
+  index: number
+  onNav: (i: number) => void
+  onClose: () => void
+}) {
+  const slide = SCREEN_SLIDES[index]
+  const [manual, setManual] = useState(false)
+  const [hint, setHint] = useState(!zoomHintShown)
+  const touchRef = useRef<{ x: number; y: number } | null>(null)
+
+  useEffect(() => {
+    setManual(false)
+  }, [index])
+  useEffect(() => {
+    const prev = document.body.style.overflow
+    document.body.style.overflow = "hidden"
+    return () => {
+      document.body.style.overflow = prev
+    }
+  }, [])
+  useEffect(() => {
+    if (!hint) return
+    zoomHintShown = true
+    const t = setTimeout(() => setHint(false), 4500)
+    return () => clearTimeout(t)
+  }, [hint])
+
+  const swipe = useSwipeNav(
+    () => onNav(index - 1),
+    () => onNav(index + 1)
+  )
+
+  const canTakeover = !!slide.tour
+  const stageTouch = {
+    onTouchStart: (e: React.TouchEvent) => {
+      touchRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY }
+    },
+    onTouchMove: (e: React.TouchEvent) => {
+      if (!canTakeover || manual || !touchRef.current) return
+      const dx = Math.abs(e.touches[0].clientX - touchRef.current.x)
+      const dy = Math.abs(e.touches[0].clientY - touchRef.current.y)
+      if (dy > 12 && dy > dx) {
+        setManual(true)
+        setHint(false)
+      }
+    },
+  }
+
+  return (
+    <div className="fixed inset-0 z-[90] flex flex-col bg-ink-950/95" {...swipe}>
+      <button
+        type="button"
+        onClick={onClose}
+        aria-label="Close full screen"
+        className="fixed right-4 top-4 z-[95] flex h-11 w-11 cursor-pointer items-center justify-center rounded-full bg-white/15 text-white ring-1 ring-white/40"
+      >
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" className="h-5 w-5">
+          <path d="M6 6l12 12M18 6L6 18" strokeLinecap="round" />
+        </svg>
+      </button>
+
+      <div className="flex min-h-0 flex-1 items-center justify-center px-3 pb-2 pt-14" {...stageTouch}>
+        {slide.key === "chat" ? (
+          <ChatPhone active fit={{ h: 0.78, w: 0.94 }} />
+        ) : slide.tour ? (
+          <div className="flex h-full max-h-[82dvh] justify-center rounded-[2.4rem] bg-ink-900 p-2.5 shadow-2xl ring-1 ring-white/10">
+            <GuidedShot
+              segments={slide.tour}
+              alt={slide.alt}
+              active
+              manual={manual}
+              pinBottom={manual ? undefined : slide.pinBottom}
+            />
+          </div>
+        ) : (
+          <div className="max-h-[82dvh] w-full overflow-y-auto overscroll-contain rounded-2xl">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={slide.src as string} alt={slide.alt ?? ""} className="w-full rounded-2xl" />
+          </div>
+        )}
+      </div>
+
+      {hint && canTakeover && (
+        <p className="pointer-events-none absolute bottom-16 left-1/2 z-[95] -translate-x-1/2 whitespace-nowrap rounded-full bg-ink-950/85 px-4 py-2 text-[13px] font-semibold text-white ring-1 ring-white/30">
+          Touch the screen to read at your own pace
+        </p>
+      )}
+
+      <div className="flex shrink-0 items-center justify-center gap-2 pb-5" role="tablist" aria-label="Screens">
+        {SCREEN_SLIDES.map((sl, i) => (
+          <button
+            key={sl.key}
+            type="button"
+            onClick={() => onNav(i)}
+            aria-label={`Screen ${i + 1}`}
+            aria-current={i === index}
+            className={`h-2.5 cursor-pointer rounded-full transition-all ${
+              i === index ? "w-7 bg-gold-400" : "w-2.5 bg-white/30"
+            }`}
+          />
+        ))}
+      </div>
+    </div>
+  )
+}
+
 function Screenshots() {
   const { active, goTo } = useSloganRotation(SCREEN_SLIDES.length, 30000)
   const sliderRef = useRef<HTMLDivElement>(null)
@@ -1539,7 +1620,7 @@ function Screenshots() {
     () => goTo(active + 1),
     () => setSwiped(true)
   )
-  const [zoom, setZoom] = useState<(typeof SCREEN_SLIDES)[number] | null>(null)
+  const [zoom, setZoom] = useState<number | null>(null)
 
   return (
     <CourtBackdrop
@@ -1602,8 +1683,20 @@ function Screenshots() {
                         {slide.caption}
                       </p>
                     </div>
-                    <div className="flex h-[60dvh] max-h-[860px] min-h-[360px] items-center justify-center md:h-[78dvh]">
-                      <SlideImage slide={slide} active={i === active} onZoom={() => setZoom(slide)} />
+                    <div className="flex min-h-0 flex-col items-center">
+                      <div className="flex h-[56dvh] max-h-[860px] min-h-[340px] items-center justify-center md:h-[78dvh]">
+                        <SlideImage slide={slide} active={i === active} onZoom={() => setZoom(i)} />
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setZoom(i)}
+                        className="mt-2.5 flex cursor-pointer items-center gap-2 rounded-full bg-ink-950/70 px-4 py-1.5 text-[13px] font-semibold text-white ring-1 ring-white/30 md:hidden"
+                      >
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="h-4 w-4">
+                          <path d="M9 3H3v6M15 3h6v6M9 21H3v-6M15 21h6v-6" strokeLinecap="round" strokeLinejoin="round" />
+                        </svg>
+                        Full screen
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -1638,7 +1731,13 @@ function Screenshots() {
           ))}
         </div>
       </div>
-      {zoom && <SlideZoom slide={zoom} onClose={() => setZoom(null)} />}
+      {zoom !== null && (
+        <SlideZoom
+          index={zoom}
+          onNav={(i) => setZoom(((i % SCREEN_SLIDES.length) + SCREEN_SLIDES.length) % SCREEN_SLIDES.length)}
+          onClose={() => setZoom(null)}
+        />
+      )}
     </CourtBackdrop>
   )
 }
