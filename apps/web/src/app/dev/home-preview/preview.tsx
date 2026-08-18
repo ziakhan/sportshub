@@ -1392,24 +1392,6 @@ function ChatPhone({
   )
 }
 
-function ZoomBadge({ onZoom }: { onZoom: () => void }) {
-  return (
-    <button
-      type="button"
-      onClick={(e) => {
-        e.stopPropagation()
-        onZoom()
-      }}
-      aria-label="View full screen"
-      className="absolute bottom-3 right-3 z-10 flex h-10 w-10 cursor-pointer items-center justify-center rounded-full bg-ink-950/75 text-white ring-1 ring-white/40 md:hidden"
-    >
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="h-5 w-5">
-        <path d="M9 3H3v6M15 3h6v6M9 21H3v-6M15 21h6v-6" strokeLinecap="round" strokeLinejoin="round" />
-      </svg>
-    </button>
-  )
-}
-
 function SlideImage({
   slide,
   active,
@@ -1418,37 +1400,17 @@ function SlideImage({
   active: boolean
 }) {
   if (slide.key === "chat") {
-    return (
-      <div className="relative cursor-zoom-in" onClick={onZoom}>
-        <ChatPhone active={active} />
-        <ZoomBadge onZoom={onZoom} />
-      </div>
-    )
+    return <ChatPhone active={active} />
   }
   if (slide.frame === "phone" && slide.tour) {
     return (
-      <div
-        className="relative flex h-full w-auto cursor-zoom-in justify-center rounded-[2.4rem] bg-ink-900 p-3 shadow-2xl ring-1 ring-white/10"
-        onClick={onZoom}
-      >
+      <div className="relative flex h-full w-auto justify-center rounded-[2.4rem] bg-ink-900 p-3 shadow-2xl ring-1 ring-white/10">
         <GuidedShot segments={slide.tour} alt={slide.alt} active={active} pinBottom={slide.pinBottom} />
-        <ZoomBadge onZoom={onZoom} />
       </div>
     )
   }
-  return (
-    <div className="relative h-full w-full cursor-zoom-in" onClick={onZoom}>
-      <SlideImageStatic slide={slide} />
-      <ZoomBadge onZoom={onZoom} />
-    </div>
-  )
+  return <SlideImageStatic slide={slide} />
 }
-
-/** Full-screen show (owner 2026-08-18 v2): the SAME living slide, near
- *  full viewport. Swipe left/right moves between screens; the moment a thumb
- *  scrolls the capture, the choreography stops and native scrolling takes
- *  over (one-way, per the old scripted-scroll lesson). */
-let zoomHintShown = false
 function SlideImageStatic({ slide }: { slide: (typeof SCREEN_SLIDES)[number] }) {
   if (slide.frame === "phone") {
     return (
@@ -1488,6 +1450,7 @@ function SlideImageStatic({ slide }: { slide: (typeof SCREEN_SLIDES)[number] }) 
   )
 }
 
+let zoomHintShown = false
 function SlideZoom({
   index,
   onNav,
