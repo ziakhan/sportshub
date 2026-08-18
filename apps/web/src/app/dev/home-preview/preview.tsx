@@ -37,12 +37,12 @@ const SLOGANS: { key: string; node: React.ReactNode; sub: React.ReactNode }[] = 
     key: "one-app",
     node: (
       <>
-        Youth basketball. <span className="text-gold-400">All of it.</span> <OneBox /> app.
+        Youth basketball. <span className="text-white md:text-gold-400">All of it.</span> <OneBox /> app.
       </>
     ),
     sub: (
       <>
-        Registration to final buzzer, <span className="text-gold-400 font-semibold">one login</span>.
+        Registration to final buzzer, <span className="text-white md:text-gold-400 font-semibold">one login</span>.
       </>
     ),
   },
@@ -50,12 +50,12 @@ const SLOGANS: { key: string; node: React.ReactNode; sub: React.ReactNode }[] = 
     key: "discover",
     node: (
       <>
-        Discover the <span className="text-gold-400">clubs and programs</span> around you.
+        Discover the <span className="text-white md:text-gold-400">clubs and programs</span> around you.
       </>
     ),
     sub: (
       <>
-        1,325 Canadian clubs <span className="text-gold-400 font-semibold">already listed</span>, with their programs and cities.
+        1,325 Canadian clubs <span className="text-white md:text-gold-400 font-semibold">already listed</span>, with their programs and cities.
       </>
     ),
   },
@@ -68,7 +68,7 @@ const SLOGANS: { key: string; node: React.ReactNode; sub: React.ReactNode }[] = 
     ),
     sub: (
       <>
-        Jersey sizes, numbers and payment collected <span className="text-gold-400 font-semibold">the moment a family accepts</span>.
+        Jersey sizes, numbers and payment collected <span className="text-white md:text-gold-400 font-semibold">the moment a family accepts</span>.
       </>
     ),
   },
@@ -76,12 +76,12 @@ const SLOGANS: { key: string; node: React.ReactNode; sub: React.ReactNode }[] = 
     key: "payments",
     node: (
       <>
-        Payment plans <span className="text-gold-400">run themselves</span>.
+        Payment plans <span className="text-white md:text-gold-400">run themselves</span>.
       </>
     ),
     sub: (
       <>
-        The deposit at signup, the installments <span className="text-gold-400 font-semibold">on their own dates, automatically</span>.
+        The deposit at signup, the installments <span className="text-white md:text-gold-400 font-semibold">on their own dates, automatically</span>.
       </>
     ),
   },
@@ -94,7 +94,7 @@ const SLOGANS: { key: string; node: React.ReactNode; sub: React.ReactNode }[] = 
     ),
     sub: (
       <>
-        Both kids, every practice and game, <span className="text-gold-400 font-semibold">one phone</span>.
+        Both kids, every practice and game, <span className="text-white md:text-gold-400 font-semibold">one phone</span>.
       </>
     ),
   },
@@ -107,7 +107,7 @@ const SLOGANS: { key: string; node: React.ReactNode; sub: React.ReactNode }[] = 
     ),
     sub: (
       <>
-        Every calendar and phone updates <span className="text-gold-400 font-semibold">instantly</span>. Nobody makes calls.
+        Every calendar and phone updates <span className="text-white md:text-gold-400 font-semibold">instantly</span>. Nobody makes calls.
       </>
     ),
   },
@@ -120,7 +120,7 @@ const SLOGANS: { key: string; node: React.ReactNode; sub: React.ReactNode }[] = 
     ),
     sub: (
       <>
-        Score, box score, play by play. <span className="text-gold-400 font-semibold">No refresh, it just moves</span>.
+        Score, box score, play by play. <span className="text-white md:text-gold-400 font-semibold">No refresh, it just moves</span>.
       </>
     ),
   },
@@ -128,12 +128,12 @@ const SLOGANS: { key: string; node: React.ReactNode; sub: React.ReactNode }[] = 
     key: "potg",
     node: (
       <>
-        Full stats, and a <span className="text-gold-400">Player of the Game</span>.
+        Full stats, and a <span className="text-white md:text-gold-400">Player of the Game</span>.
       </>
     ),
     sub: (
       <>
-        Every tap at the scorer&apos;s table folds into the box score <span className="text-gold-400 font-semibold">instantly</span>.
+        Every tap at the scorer&apos;s table folds into the box score <span className="text-white md:text-gold-400 font-semibold">instantly</span>.
       </>
     ),
   },
@@ -146,7 +146,7 @@ const SLOGANS: { key: string; node: React.ReactNode; sub: React.ReactNode }[] = 
     ),
     sub: (
       <>
-        Recaps <span className="text-gold-400 font-semibold">write themselves</span> from the official scoring record.
+        Recaps <span className="text-white md:text-gold-400 font-semibold">write themselves</span> from the official scoring record.
       </>
     ),
   },
@@ -159,7 +159,7 @@ const SLOGANS: { key: string; node: React.ReactNode; sub: React.ReactNode }[] = 
     ),
     sub: (
       <>
-        A whole season generated <span className="text-gold-400 font-semibold">in seconds</span>, conflicts already handled.
+        A whole season generated <span className="text-white md:text-gold-400 font-semibold">in seconds</span>, conflicts already handled.
       </>
     ),
   },
@@ -167,12 +167,12 @@ const SLOGANS: { key: string; node: React.ReactNode; sub: React.ReactNode }[] = 
     key: "already-built",
     node: (
       <>
-        Registration to final buzzer, <span className="text-gold-400">already built</span>.
+        Registration to final buzzer, <span className="text-white md:text-gold-400">already built</span>.
       </>
     ),
     sub: (
       <>
-        Team entry, approvals, rosters and fees, <span className="text-gold-400 font-semibold">ready the day you sign in</span>.
+        Team entry, approvals, rosters and fees, <span className="text-white md:text-gold-400 font-semibold">ready the day you sign in</span>.
       </>
     ),
   },
@@ -185,7 +185,7 @@ const SLOGANS: { key: string; node: React.ReactNode; sub: React.ReactNode }[] = 
     ),
     sub: (
       <>
-        Updated <span className="text-gold-400 font-semibold">the moment a final goes in</span>, tiebreakers included.
+        Updated <span className="text-white md:text-gold-400 font-semibold">the moment a final goes in</span>, tiebreakers included.
       </>
     ),
   },
@@ -198,7 +198,7 @@ const SLOGANS: { key: string; node: React.ReactNode; sub: React.ReactNode }[] = 
     ),
     sub: (
       <>
-        Reminders go out <span className="text-gold-400 font-semibold">automatically</span> until every signature is in.
+        Reminders go out <span className="text-white md:text-gold-400 font-semibold">automatically</span> until every signature is in.
       </>
     ),
   },
@@ -319,7 +319,7 @@ function ClaimSearch() {
     const handle = window.setTimeout(async () => {
       try {
         const res = await fetch(
-          `/api/clubs/public?limit=${query ? 6 : 3}${query ? `&q=${encodeURIComponent(query)}` : ""}`
+          `/api/clubs/public?limit=${query ? 6 : 3}${query ? `&q=${encodeURIComponent(query)}` : "&unclaimed=1"}`
         )
         if (!res.ok) return
         const data = await res.json()
@@ -482,13 +482,13 @@ function Hero() {
   )
 
   return (
-    <CourtBackdrop variant="navy" floor="planks" intensity="immersive" className="flex min-h-[100dvh] flex-col" contentClassName="flex flex-1 flex-col">
+    <CourtBackdrop variant="navy" floor="planks" intensity="immersive" className="hp-flat-navy flex min-h-[100dvh] flex-col" contentClassName="flex flex-1 flex-col">
       <header className="mx-auto flex w-full max-w-6xl items-center justify-between px-5 pt-6">
         <BrandWordmark size="xl" variant="reverse" />
         <nav className="flex items-center gap-6">
           <Link
             href="/demos"
-            className="text-[15px] font-semibold text-white/80 transition-colors hover:text-white"
+            className="hidden text-[15px] font-semibold text-white/80 transition-colors hover:text-white md:inline"
           >
             Watch the demos
           </Link>
@@ -503,8 +503,8 @@ function Hero() {
 
       <div ref={heroRef}
         className="hp-rise relative mx-auto flex w-full max-w-6xl flex-1 flex-col items-center justify-center px-5 py-10 text-center">
-        <p className="flex items-center gap-3 text-2xl font-bold uppercase tracking-[0.18em] text-gold-400 sm:text-3xl">
-          <span className="h-2.5 w-2.5 rounded-full bg-gold-400 motion-safe:animate-pulse" aria-hidden="true" />
+        <p className="flex items-center justify-center gap-3 text-2xl font-bold uppercase tracking-[0.18em] text-gold-400 max-md:text-lg sm:text-3xl">
+          <span className="h-2.5 w-2.5 rounded-full bg-gold-400 max-md:hidden motion-safe:animate-pulse" aria-hidden="true" />
           Launching this fall
         </p>
 
@@ -512,7 +512,7 @@ function Hero() {
           type="button"
           onClick={() => goTo(active - 1)}
           aria-label="Previous line"
-          className="absolute inset-y-0 left-0 z-20 flex w-10 cursor-pointer items-center justify-center text-white/40 transition-colors hover:bg-white/5 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-gold-400 sm:w-14 lg:w-16"
+          className="absolute inset-y-0 left-0 z-20 hidden md:flex w-10 cursor-pointer items-center justify-center text-white/40 transition-colors hover:bg-white/5 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-gold-400 sm:w-14 lg:w-16"
         >
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" className="h-9 w-9 lg:h-12 lg:w-12">
             <path d="m15 5-7 7 7 7" strokeLinecap="round" strokeLinejoin="round" />
@@ -522,7 +522,7 @@ function Hero() {
           type="button"
           onClick={() => goTo(active + 1)}
           aria-label="Next line"
-          className="absolute inset-y-0 right-0 z-20 flex w-10 cursor-pointer items-center justify-center text-white/40 transition-colors hover:bg-white/5 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-gold-400 sm:w-14 lg:w-16"
+          className="absolute inset-y-0 right-0 z-20 hidden md:flex w-10 cursor-pointer items-center justify-center text-white/40 transition-colors hover:bg-white/5 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-gold-400 sm:w-14 lg:w-16"
         >
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" className="h-9 w-9 lg:h-12 lg:w-12">
             <path d="m9 5 7 7-7 7" strokeLinecap="round" strokeLinejoin="round" />
@@ -549,7 +549,7 @@ function Hero() {
 
         </div>
 
-        <div className="mt-5 flex items-center gap-2" role="tablist" aria-label="Slogans">
+        <div className="mt-5 hidden items-center gap-2 md:flex" role="tablist" aria-label="Slogans">
           {SLOGANS.map((s, i) => (
             <button
               key={s.key}
@@ -580,10 +580,26 @@ function Hero() {
           ))}
         </p>
 
-        <div id="notify" className="mt-10 w-full max-w-xl">
+        <div className="mt-4 flex items-center gap-2 md:hidden" role="tablist" aria-label="Slogans">
+          {SLOGANS.map((s, i) => (
+            <button
+              key={s.key}
+              type="button"
+              onClick={() => goTo(i)}
+              aria-label={`Line ${i + 1}`}
+              aria-current={i === active}
+              className={`h-2 cursor-pointer rounded-full transition-all ${
+                i === active ? "w-6 bg-gold-400" : "w-2 bg-white/25"
+              }`}
+            />
+          ))}
+        </div>
+
+        <div id="notify" className="mt-8 w-full max-w-xl max-md:rounded-3xl max-md:bg-white max-md:px-4 max-md:py-5 max-md:shadow-2xl md:mt-10">
+          <p className="mb-3 text-center text-lg font-bold text-ink-950 md:hidden">Get one message at launch.</p>
           <fieldset className="relative">
-            <legend className="mb-3 w-full text-center text-[15px] font-semibold text-white/70">
-              I&apos;m here as a <span className="font-normal text-white/45">(pick one)</span>
+            <legend className="mb-3 w-full text-center text-[15px] font-semibold text-white/70 max-md:text-ink-700">
+              I&apos;m here as a <span className="font-normal text-white/45 max-md:text-ink-400">(pick one)</span>
             </legend>
             {identityWarn && !identity && (
               <span className="absolute -top-2 left-1/2 z-20 flex -translate-x-1/2 -translate-y-full flex-col items-center">
@@ -606,7 +622,7 @@ function Hero() {
                   className={`cursor-pointer rounded-full px-4 py-2 text-[15px] font-semibold transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-gold-400 ${
                     identity === id
                       ? "bg-gold-500 text-ink-950"
-                      : "bg-white/10 text-white/85 ring-1 ring-white/20 hover:bg-white/15"
+                      : "bg-white/10 text-white/85 ring-1 ring-white/20 hover:bg-white/15 max-md:bg-ink-50 max-md:text-ink-700 max-md:ring-ink-200 max-md:hover:bg-ink-100"
                   }`}
                 >
                   {id}
@@ -615,23 +631,35 @@ function Hero() {
             </div>
           </fieldset>
 
-          <NotifyForm
-            source="landing"
-            identity={identity ?? undefined}
-            tone="dark"
-            className="mt-4"
-            blocked={!identity}
-            onBlocked={() => setIdentityWarn(true)}
-          />
+          <div className="md:hidden">
+            <NotifyForm
+              source="landing"
+              identity={identity ?? undefined}
+              buttonClassName="bg-gold-500 text-ink-950 shadow-lg hover:bg-gold-400 focus-visible:ring-gold-600"
+              className="mt-4"
+              blocked={!identity}
+              onBlocked={() => setIdentityWarn(true)}
+            />
+          </div>
+          <div className="hidden md:block">
+            <NotifyForm
+              source="landing"
+              identity={identity ?? undefined}
+              tone="dark"
+              className="mt-4"
+              blocked={!identity}
+              onBlocked={() => setIdentityWarn(true)}
+            />
+          </div>
 
-          <p className="mt-3 text-[13px] text-white/55">
+          <p className="mt-3 text-[13px] text-white/55 max-md:text-ink-500">
             We&apos;ll reach you about the launch and nothing else. Unsubscribe anytime.
           </p>
 
           {identity === "Club" && (
-            <p className="mt-3 rounded-lg bg-gold-500/15 px-4 py-2.5 text-[14px] text-gold-100 ring-1 ring-gold-400/30">
+            <p className="mt-3 rounded-lg bg-gold-500/15 px-4 py-2.5 text-[14px] text-gold-100 ring-1 ring-gold-400/30 max-md:bg-gold-100/70 max-md:text-ink-700 max-md:ring-gold-300">
               Run a club? It may already be listed here.{" "}
-              <a href="#claim" className="font-semibold text-gold-400 underline underline-offset-2">
+              <a href="#claim" className="font-semibold text-gold-400 underline underline-offset-2 max-md:text-gold-600">
                 Find it below
               </a>
             </p>
@@ -640,7 +668,7 @@ function Hero() {
 
         <Link
           href="/demos"
-          className="mt-9 inline-flex cursor-pointer items-center gap-3 rounded-2xl border-2 border-white/25 bg-white/10 px-10 py-4 text-xl font-bold text-white transition-colors hover:border-white/40 hover:bg-white/15 focus:outline-none focus-visible:ring-2 focus-visible:ring-gold-400"
+          className="mt-8 inline-flex cursor-pointer items-center gap-3 rounded-2xl border-2 border-white/25 max-md:w-full max-md:justify-center md:mt-9 bg-white/10 px-10 py-4 text-xl font-bold text-white transition-colors hover:border-white/40 hover:bg-white/15 focus:outline-none focus-visible:ring-2 focus-visible:ring-gold-400"
         >
           <span className="flex h-8 w-8 items-center justify-center rounded-full bg-gold-500">
             <svg viewBox="0 0 24 24" className="ml-0.5 h-4 w-4 fill-ink-950" aria-hidden="true">
@@ -658,8 +686,8 @@ function Hero() {
 
 function ReplacesStory() {
   return (
-    <section className="bg-white py-14 sm:py-16">
-      <div className="mx-auto grid w-full max-w-6xl items-start gap-12 px-5 lg:grid-cols-2">
+    <section className="bg-white py-14 max-md:bg-[#faf6ef] sm:py-16">
+      <div className="mx-auto grid w-full max-w-6xl items-start gap-12 px-5 max-md:gap-8 lg:grid-cols-2">
         <div>
           <p className="text-[13px] font-bold uppercase tracking-[0.14em] text-hoop-600">Today</p>
           <h2 className="mt-2 text-4xl font-bold tracking-tight text-ink-950 sm:text-5xl">
@@ -672,33 +700,36 @@ function ReplacesStory() {
             {THE_PILE.map((item) => (
               <li
                 key={item}
-                className="rounded-full bg-ink-100 px-4 py-2 text-[15px] font-medium text-ink-600 line-through decoration-ink-400/60"
+                className="rounded-full bg-ink-100 px-4 py-2 text-[15px] font-medium text-ink-600 line-through decoration-ink-400/60 max-md:px-2.5 max-md:py-1 max-md:text-[12px]"
               >
                 {item}
               </li>
             ))}
           </ul>
-          <p className="mt-7 text-lg font-semibold text-ink-950">
+          <p className="mt-7 text-lg font-semibold text-ink-950 max-md:mt-3 max-md:text-[15px] max-md:font-medium max-md:text-ink-600">
             They each do a piece. Nobody does the whole thing.
           </p>
         </div>
 
-        <div className="rounded-2xl bg-ink-950 p-8 shadow-xl sm:p-10">
+        <div className="rounded-2xl bg-ink-950 p-8 shadow-xl max-md:p-5 sm:p-10">
           <div className="flex items-center justify-between">
             <h3 className="text-2xl font-bold text-white"><OneBox /> app</h3>
             <span className="rounded-full bg-gold-500 px-3 py-1 text-[13px] font-bold uppercase tracking-wide text-ink-950">
               All of it
             </span>
           </div>
-          <ul className="mt-6 space-y-3.5">
+          <p className="mt-3 text-[14px] text-white/60 md:hidden">
+            &ldquo;Complete&rdquo; isn&apos;t a slogan here. It&apos;s a checklist.
+          </p>
+          <ul className="mt-6 space-y-3.5 max-md:mt-4 max-md:grid max-md:grid-cols-2 max-md:gap-x-3 max-md:gap-y-2.5 max-md:space-y-0">
             {THE_CHECKLIST.map((item) => (
-              <li key={item} className="flex items-center gap-3 text-base text-white/90">
-                <CheckIcon className="h-5 w-5 shrink-0 text-gold-400" />
+              <li key={item} className="flex items-center gap-3 text-base text-white/90 max-md:gap-2 max-md:text-[13px]">
+                <CheckIcon className="h-5 w-5 shrink-0 text-gold-400 max-md:h-4 max-md:w-4" />
                 {item}
               </li>
             ))}
           </ul>
-          <p className="mt-8 border-t border-white/10 pt-6 text-base text-white/60">
+          <p className="mt-8 border-t border-white/10 pt-6 text-base text-white/60 max-md:hidden">
             &ldquo;Complete&rdquo; isn&apos;t a slogan here. It&apos;s a checklist.
           </p>
         </div>
@@ -816,7 +847,7 @@ function CompareTable() {
 
 function EverybodyConnects() {
   return (
-    <section className="border-y border-ink-100 bg-ink-50 py-10">
+    <section className="border-y border-ink-100 bg-ink-50 py-10 max-md:border-0 max-md:bg-[#faf6ef] max-md:pt-0">
       <div className="mx-auto w-full max-w-5xl px-5 text-center">
         <div className="relative mx-auto hidden max-w-4xl items-start justify-between sm:flex">
           <div
@@ -832,17 +863,7 @@ function EverybodyConnects() {
           ))}
         </div>
 
-        <ul className="mx-auto flex max-w-xs flex-col gap-3 text-left sm:hidden">
-          {PARTS.map((p) => (
-            <li key={p.role} className="flex items-baseline gap-3">
-              <span className="h-2 w-2 shrink-0 translate-y-[-1px] rounded-full bg-gold-500" />
-              <span className="text-[15px] font-bold text-ink-950">{p.role}</span>
-              <span className="text-[14px] text-ink-500">{p.does}</span>
-            </li>
-          ))}
-        </ul>
-
-        <p className="mx-auto mt-8 max-w-2xl text-lg leading-relaxed text-ink-700">
+        <p className="mx-auto mt-8 max-w-2xl text-lg leading-relaxed text-ink-700 max-md:mt-0">
           Nobody runs the whole season alone, and nobody has to. Everybody does their part, and
           everything connects.
         </p>
@@ -883,12 +904,12 @@ const SCREEN_SLIDES: {
     tour: [{ src: "/home-preview/tours/discover.jpg", travel: 1500 }],
     title: (
       <>
-        Discover the <span className="text-gold-400">clubs and programs</span> around you.
+        Discover the <span className="md:text-gold-400">clubs and programs</span> around you.
       </>
     ),
     caption: (
       <>
-        Tryouts, camps, house leagues and training, <span className="text-gold-400">near you</span>.
+        Tryouts, camps, house leagues and training, <span className="md:text-gold-400">near you</span>.
       </>
     ),
     src: "/home-preview/shots/discover-clubs-phone.png",
@@ -901,12 +922,12 @@ const SCREEN_SLIDES: {
     tour: [{ src: "/home-preview/tours/payments.jpg" }],
     title: (
       <>
-        Payment plans <span className="text-gold-400">run themselves</span>.
+        Payment plans <span className="md:text-gold-400">run themselves</span>.
       </>
     ),
     caption: (
       <>
-        A deposit at signup, the rest <span className="text-gold-400">on their own dates</span>, every one receipted.
+        A deposit at signup, the rest <span className="md:text-gold-400">on their own dates</span>, every one receipted.
       </>
     ),
     src: "/home-preview/shots/parent-payments-phone.png",
@@ -922,12 +943,12 @@ const SCREEN_SLIDES: {
     ],
     title: (
       <>
-        The <span className="text-gold-400">family week</span>, on one phone.
+        The <span className="md:text-gold-400">family week</span>, on one phone.
       </>
     ),
     caption: (
       <>
-        Practices, games, and the RSVP <span className="text-gold-400">right on the row</span>.
+        Practices, games, and the RSVP <span className="md:text-gold-400">right on the row</span>.
       </>
     ),
     src: "/home-preview/shots/parent-calendar-phone.png",
@@ -950,7 +971,7 @@ const SCREEN_SLIDES: {
     ),
     caption: (
       <>
-        Coaches and parents in one place, and a poll <span className="text-gold-400">settles Saturday&apos;s pizza</span>.
+        Coaches and parents in one place, and a poll <span className="md:text-gold-400">settles Saturday&apos;s pizza</span>.
       </>
     ),
     src: "/home-preview/shots/parent-team-chat-phone.png",
@@ -972,7 +993,7 @@ const SCREEN_SLIDES: {
     ),
     caption: (
       <>
-        One game, the whole page: the scorecard, the leaders, then <span className="text-gold-400">Team stats and Play-by-play</span>.
+        One game, the whole page: the scorecard, the leaders, then <span className="md:text-gold-400">Team stats and Play-by-play</span>.
       </>
     ),
     src: "/home-preview/shots/game-live-scorecard-phone.png",
@@ -985,12 +1006,12 @@ const SCREEN_SLIDES: {
     tour: [{ src: "/home-preview/tours/recap.jpg", travel: 1400 }],
     title: (
       <>
-        Every game gets a <span className="text-gold-400">recap</span>.
+        Every game gets a <span className="md:text-gold-400">recap</span>.
       </>
     ),
     caption: (
       <>
-        Written from the official scoring record, with a <span className="text-gold-400">Player of the Game</span>.
+        Written from the official scoring record, with a <span className="md:text-gold-400">Player of the Game</span>.
       </>
     ),
     src: "/home-preview/news-recap-phone.png",
@@ -1008,7 +1029,7 @@ const SCREEN_SLIDES: {
     ),
     caption: (
       <>
-        Finals, milestones and Player of the Game cards, <span className="text-gold-400">made to share</span>.
+        Finals, milestones and Player of the Game cards, <span className="md:text-gold-400">made to share</span>.
       </>
     ),
     src: "/home-preview/shots/social-feed-phone.png",
@@ -1026,7 +1047,7 @@ const SCREEN_SLIDES: {
     ),
     caption: (
       <>
-        Every player gets a page: <span className="text-gold-400">season stats</span>, games, and their moments.
+        Every player gets a page: <span className="md:text-gold-400">season stats</span>, games, and their moments.
       </>
     ),
     src: "/home-preview/shots/social-player-page-phone.png",
@@ -1042,7 +1063,7 @@ const SCREEN_SLIDES: {
     ),
     caption: (
       <>
-        Finals go in, <span className="text-gold-400">the table moves on its own</span>. The league side lives on the big screen.
+        Finals go in, <span className="md:text-gold-400">the table moves on its own</span>. The league side lives on the big screen.
       </>
     ),
     src: "/home-preview/league-desktop.png",
@@ -1415,19 +1436,22 @@ function Screenshots() {
       variant="navy"
       floor="planks"
       intensity="immersive"
-      className="flex min-h-[100dvh] flex-col"
+      className="hp-flat-white flex min-h-[100dvh] flex-col"
       contentClassName="flex flex-1 flex-col"
     >
       <div className="mx-auto flex min-h-0 w-full max-w-6xl flex-1 flex-col px-5 pb-4 pt-6">
         <div className="text-center">
-          <p className="text-[13px] font-bold uppercase tracking-[0.14em] text-gold-400">
+          <p className="text-[13px] font-bold uppercase tracking-[0.14em] text-gold-400 max-md:text-gold-600">
             Straight from the app
           </p>
-          <h2 className="mt-2 text-4xl font-bold tracking-tight text-white sm:text-5xl">
+          <h2 className="mt-2 text-4xl font-bold tracking-tight text-white max-md:text-ink-950 sm:text-5xl">
             What it looks like.
           </h2>
-          <p className="mx-auto mt-2 max-w-xl text-lg text-white/70">
+          <p className="mx-auto mt-2 max-w-xl text-lg text-white/70 max-md:hidden">
             These are screenshots, not mockups. Slide through.
+          </p>
+          <p className="mx-auto mt-1 max-w-xl text-[15px] text-ink-500 md:hidden">
+            Screenshots, not mockups.
           </p>
         </div>
 
@@ -1436,7 +1460,7 @@ function Screenshots() {
             type="button"
             onClick={() => goTo(active - 1)}
             aria-label="Previous screen"
-            className="absolute inset-y-0 left-0 z-20 flex w-10 cursor-pointer items-center justify-center text-white/45 transition-colors hover:bg-white/5 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-gold-400 sm:w-14"
+            className="absolute inset-y-0 left-0 z-20 hidden md:flex w-10 cursor-pointer items-center justify-center text-white/45 transition-colors hover:bg-white/5 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-gold-400 sm:w-14"
           >
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" className="h-10 w-10 lg:h-14 lg:w-14">
               <path d="m15 5-7 7 7 7" strokeLinecap="round" strokeLinejoin="round" />
@@ -1452,18 +1476,18 @@ function Screenshots() {
                 <div
                   key={slide.key}
                   aria-hidden={i !== active}
-                  className="flex h-full w-full shrink-0 items-center justify-center px-12 sm:px-16"
+                  className="flex h-full w-full shrink-0 items-center justify-center px-4 md:px-16"
                 >
                   <div className="flex h-full w-full flex-col items-center justify-center gap-4 md:flex-row md:gap-12">
                     <div className="max-w-md text-center md:text-left">
-                      <h3 className="text-balance text-2xl font-bold leading-tight tracking-tight text-white sm:text-4xl lg:text-[44px]">
+                      <h3 className="text-balance text-2xl font-bold leading-tight tracking-tight text-white max-md:text-ink-950 sm:text-4xl lg:text-[44px]">
                         {slide.title}
                       </h3>
-                      <p className="mx-auto mt-4 max-w-md text-[17px] font-semibold leading-relaxed text-white/90 md:mx-0 sm:text-[19px]">
+                      <p className="mx-auto mt-4 max-w-md text-[17px] font-semibold leading-relaxed text-white/90 max-md:mt-1.5 max-md:line-clamp-1 max-md:text-[15px] max-md:font-normal max-md:text-ink-600 md:mx-0 sm:text-[19px]">
                         {slide.caption}
                       </p>
                     </div>
-                    <div className="flex h-[56dvh] max-h-[860px] min-h-[360px] items-center justify-center md:h-[78dvh]">
+                    <div className="flex h-[60dvh] max-h-[860px] min-h-[360px] items-center justify-center md:h-[78dvh]">
                       <SlideImage slide={slide} active={i === active} />
                     </div>
                   </div>
@@ -1476,7 +1500,7 @@ function Screenshots() {
             type="button"
             onClick={() => goTo(active + 1)}
             aria-label="Next screen"
-            className="absolute inset-y-0 right-0 z-20 flex w-10 cursor-pointer items-center justify-center text-white/45 transition-colors hover:bg-white/5 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-gold-400 sm:w-14"
+            className="absolute inset-y-0 right-0 z-20 hidden md:flex w-10 cursor-pointer items-center justify-center text-white/45 transition-colors hover:bg-white/5 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-gold-400 sm:w-14"
           >
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" className="h-10 w-10 lg:h-14 lg:w-14">
               <path d="m9 5 7 7-7 7" strokeLinecap="round" strokeLinejoin="round" />
@@ -1493,7 +1517,7 @@ function Screenshots() {
               aria-label={`Screen ${i + 1}`}
               aria-current={i === active}
               className={`h-2.5 cursor-pointer rounded-full transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-gold-400 ${
-                i === active ? "w-7 bg-gold-400" : "w-2.5 bg-white/25 hover:bg-white/45"
+                i === active ? "w-7 bg-gold-500" : "w-2.5 bg-white/25 max-md:bg-ink-200 hover:bg-white/45"
               }`}
             />
           ))}
@@ -1577,32 +1601,51 @@ function DemoCards() {
 
 function ClaimYourClub() {
   return (
-    <CourtBackdrop variant="daylight" floor="planks" intensity="band">
+    <CourtBackdrop variant="daylight" floor="planks" intensity="band" className="hp-flat-navy">
       <section id="claim" className="mx-auto w-full max-w-6xl px-5 py-12 sm:py-14">
-        <div className="grid grid-cols-1 items-center gap-12 lg:grid-cols-2">
+        <div className="grid grid-cols-1 items-center gap-12 max-md:gap-6 lg:grid-cols-2">
           <div className="min-w-0">
-            <p className="text-[13px] font-bold uppercase tracking-[0.14em] text-hoop-600">
+            <p className="text-[13px] font-bold uppercase tracking-[0.14em] text-hoop-600 max-md:text-gold-400">
               For clubs
             </p>
-            <h2 className="mt-2 text-4xl font-bold tracking-tight text-ink-950 sm:text-5xl">
+            <h2 className="mt-2 text-4xl font-bold tracking-tight text-ink-950 max-md:text-white sm:text-5xl">
               Claim your club before launch.
             </h2>
-            <p className="mt-5 max-w-lg text-lg leading-relaxed text-ink-700">
+            <p className="mt-5 max-w-lg text-lg leading-relaxed text-ink-700 max-md:hidden">
               We imported 1,325 Canadian club listings so families can find them. If one of them
               is yours, claiming it is free: you get the page, the brand and the tools.
             </p>
-            <p className="mt-7 text-[15px] font-semibold text-ink-950">
-              We&apos;re launching this fall. Be the first to know:
+            <p className="mt-2 text-[15px] leading-relaxed text-white/80 md:hidden">
+              1,325 Canadian clubs are already listed. Yours is probably one of them, and
+              claiming it is free.
+            </p>
+            <div className="max-md:hidden">
+              <p className="mt-7 text-[15px] font-semibold text-ink-950">
+                We&apos;re launching this fall. Be the first to know:
+              </p>
+              <NotifyForm
+                source="landing-claim"
+                identity="Club"
+                buttonLabel="Tell me first"
+                className="mt-3 max-w-lg"
+              />
+            </div>
+          </div>
+
+          <ClaimSearch />
+
+          <div className="md:hidden">
+            <p className="text-[15px] font-semibold text-white/90">
+              Or just be first to know:
             </p>
             <NotifyForm
               source="landing-claim"
               identity="Club"
               buttonLabel="Tell me first"
+              tone="dark"
               className="mt-3 max-w-lg"
             />
           </div>
-
-          <ClaimSearch />
         </div>
       </section>
     </CourtBackdrop>
@@ -1642,39 +1685,6 @@ function Footer() {
   )
 }
 
-/* ── Preview-only notes (not part of the page) ───────────────────────────── */
-
-function PreviewNotes() {
-  return (
-    <aside className="border-t-4 border-dashed border-gold-500 bg-gold-50 py-10">
-      <div className="mx-auto w-full max-w-4xl px-5">
-        <p className="text-[13px] font-bold uppercase tracking-[0.14em] text-gold-600">
-          Preview notes · this strip is not part of the page
-        </p>
-        <ul className="mt-4 list-disc space-y-3 pl-5 text-[15px] leading-relaxed text-ink-700">
-          <li>
-            <span className="font-semibold">The capture is live now:</span> every form on this
-            page and the ask inside the demo player store real rows (email or phone, detected
-            server side) with the honeypot and rate limit in front. Nothing else is wired.
-          </li>
-          <li>
-            The screenshots are real captures from the running app. Signup buttons are hidden in
-            them, the way the launch build will hide them. Easy to recapture any time with
-            scripts/demo/capture-home-shots.mjs.
-          </li>
-          <li>
-            The browser frame shows ysportshub.com and swaps to whatever domain you pick.
-          </li>
-          <li>
-            Everything on this page is wired now: the forms store real rows, the claim search
-            hits the live directory, and Claim it opens the real claim flow.
-          </li>
-        </ul>
-      </div>
-    </aside>
-  )
-}
-
 /* ── Page ────────────────────────────────────────────────────────────────── */
 
 const PREVIEW_CSS = `
@@ -1697,6 +1707,14 @@ const PREVIEW_CSS = `
         @keyframes hp-tap { 0% { transform: scale(0.4); opacity: 0; } 30% { transform: scale(1); opacity: 1; } 100% { transform: scale(1.5); opacity: 0; } }
         @keyframes hp-bubble { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes hp-xfade { from { opacity: 0; } to { opacity: 1; } }
+        /* Mobile design pass (owner 2026-08-18): the court art is desktop
+           drama; phones get flat grounds and a clear section rhythm. */
+        @media (max-width: 767px) {
+          .hp-flat-navy > div[aria-hidden="true"] { display: none; }
+          .hp-flat-navy { background-color: #0b1628; }
+          .hp-flat-white > div[aria-hidden="true"] { display: none; }
+          .hp-flat-white { background-color: #ffffff; }
+        }
       `
 
 export function HomePreview() {
@@ -1711,7 +1729,6 @@ export function HomePreview() {
       <EverybodyConnects />
       <DemoCards />
       <Footer />
-      <PreviewNotes />
     </main>
   )
 }

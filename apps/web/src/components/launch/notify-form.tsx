@@ -30,6 +30,7 @@ export function NotifyForm({
   source,
   identity,
   tone = "light",
+  buttonClassName,
   buttonLabel = "Keep me posted",
   className,
   blocked = false,
@@ -42,6 +43,9 @@ export function NotifyForm({
   tone?: "light" | "dark"
   buttonLabel?: string
   className?: string
+  /** Replaces the tone-derived submit-button colours (the hero's white card
+   *  wants gold on light, without changing every other light form). */
+  buttonClassName?: string
   /** The hero requires an identity pick (owner 2026-08-17): when true,
    *  submit stops with a message and the caller highlights its picker. */
   blocked?: boolean
@@ -139,9 +143,10 @@ export function NotifyForm({
           type="submit"
           disabled={state === "sending"}
           className={`cursor-pointer rounded-xl px-6 py-3 text-base font-bold transition-colors focus:outline-none focus-visible:ring-2 disabled:opacity-60 ${
-            dark
+            buttonClassName ??
+            (dark
               ? "bg-gold-500 text-ink-950 shadow-lg hover:bg-gold-400 focus-visible:ring-white"
-              : "bg-ink-950 text-white hover:bg-ink-800 focus-visible:ring-gold-500"
+              : "bg-ink-950 text-white hover:bg-ink-800 focus-visible:ring-gold-500")
           }`}
         >
           {state === "sending" ? "One moment" : buttonLabel}

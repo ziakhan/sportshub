@@ -38,7 +38,7 @@ export default function SignUpPage({
         <div className="border-ink-100 shadow-panel w-full rounded-[30px] border bg-white/95 p-8 backdrop-blur-xl sm:p-10">
           <div className="mb-6 text-center">
             <div className="border-hoop-100 bg-hoop-50 text-hoop-600 mb-3 inline-flex rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em]">
-              Launching this fall
+              Invite-only until launch
             </div>
           </div>
           <h1 className="text-ink-950 mb-2 text-center text-[2rem] font-bold leading-tight">

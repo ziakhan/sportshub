@@ -21,6 +21,17 @@ export async function GET(request: NextRequest) {
 
     const where: any = {
       status: { in: ["ACTIVE", "UNCLAIMED"] },
+      // Census imports are only public once reviewed; merged-away rows never are.
+      publishedAt: { not: null },
+      mergedIntoId: null,
+    }
+
+    // The landing's claim box suggests clubs BEFORE anyone types; those
+    // suggestions must be claimABLE (owner 2026-08-18: the seed worlds
+    // adopted big listings, so a plain size sort was showcasing clubs that
+    // are already taken). Search results still include everything.
+    if (request.nextUrl.searchParams.get("unclaimed") === "1") {
+      where.status = "UNCLAIMED"
     }
 
     if (q.length >= 2) {

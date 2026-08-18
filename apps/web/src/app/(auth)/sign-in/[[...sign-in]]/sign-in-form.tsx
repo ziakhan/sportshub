@@ -217,6 +217,15 @@ export function SignInForm({
               </div>
             </div>
 
+            {!signupsOpen && (
+              <div className="border-gold-200 bg-gold-50 text-ink-700 mb-5 rounded-2xl border p-3 text-center text-sm font-medium">
+                SportsHub is invite-only until launch.{" "}
+                <Link href="/" className="text-play-600 font-semibold underline">
+                  Join the list
+                </Link>
+              </div>
+            )}
+
             <h1 className="text-ink-950 mb-2 text-center text-3xl font-bold">Sign in</h1>
             <p className="text-ink-500 mb-6 text-center text-sm">
               Your games, schedules, and teams are right where you left them.
