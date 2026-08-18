@@ -109,7 +109,7 @@ export interface DemoEntry {
 export const DEMOS: DemoEntry[] = [
   {
     slug: "roster-story",
-    title: "Build a team, fill the roster",
+    title: "From tryouts to a full team",
     promise:
       "A club builds next season's team on a phone, posts a tryout, and one accept collects the sizes, the jersey number and a payment plan the club never has to chase.",
     description:
@@ -140,7 +140,7 @@ export const DEMOS: DemoEntry[] = [
   },
   {
     slug: "everyone-in-the-loop",
-    title: "Everyone in the loop",
+    title: "Team messages, polls and instant updates",
     promise:
       "A coach moves one practice in two presses, every family on the roster is told by push, bell and email, and the question and the tournament are both settled in the open.",
     description:
@@ -165,7 +165,7 @@ export const DEMOS: DemoEntry[] = [
   },
   {
     slug: "season-planned-to-published",
-    title: "A season, planned to published",
+    title: "Planning a full league season",
     promise:
       "A real league of 146 teams: the last entries answered with their fees, a home court plus floater gyms you never have to book, a board that catches the weekend booked one court short, and one publish that fills every calendar.",
     description:
@@ -195,7 +195,7 @@ export const DEMOS: DemoEntry[] = [
   },
   {
     slug: "schedule-change",
-    title: "A game moves, and everyone knows",
+    title: "When a game moves, every phone updates instantly",
     promise:
       "A league moves one game and cancels another, and every family, coach and club owner on both rosters is told automatically, by notification and by email.",
     description:
@@ -218,7 +218,7 @@ export const DEMOS: DemoEntry[] = [
   },
   {
     slug: "game-day",
-    title: "Game day, on two phones",
+    title: "Scoring a game live, watching it live",
     promise:
       "A real league game kept on the scorer's phone, live on a father's phone the whole way, through the referee's signature and the paper scoresheet.",
     description:
@@ -247,7 +247,7 @@ export const DEMOS: DemoEntry[] = [
   },
   {
     slug: "claim-your-club",
-    title: "Claim your club and make it yours",
+    title: "Claim your club's page",
     promise:
       "A real unclaimed listing found by name, claimed with a code that only ever goes to the contact already on file, corrected on the way in, and turned into the club's own page the same afternoon.",
     description:
@@ -272,7 +272,7 @@ export const DEMOS: DemoEntry[] = [
   },
   {
     slug: "your-week",
-    title: "Your week",
+    title: "A family's week in the app",
     promise:
       "One phone, two children, and a real week from a real database: four practices, one already cancelled, a Saturday game answered in a tap, and a change that does not ask her the same question twice.",
     description:
@@ -302,7 +302,7 @@ export const DEMOS: DemoEntry[] = [
   },
   {
     slug: "players-season",
-    title: "The player's season",
+    title: "A player's page and stats",
     promise:
       "Every game, stat line, highlight and award on one page a kid is proud to share.",
     description:
@@ -323,7 +323,7 @@ export const DEMOS: DemoEntry[] = [
   },
   {
     slug: "money-picture",
-    title: "The money picture",
+    title: "Fees, payments and who has paid",
     promise:
       "Every dollar a real club is owed on one screen, one family's plan opened underneath it, cash taken at the door and recorded, and a reminder nobody has to remember to send.",
     description:
@@ -354,7 +354,7 @@ export const DEMOS: DemoEntry[] = [
   },
   {
     slug: "standings-to-playoffs",
-    title: "Standings to playoffs",
+    title: "Standings and playoff brackets",
     promise:
       "A real division's last weekend: a forfeit recorded honestly, a final signed at the table, a tie decided by a written rule, and a bracket where every team in the grade gets a game.",
     description:
@@ -382,7 +382,7 @@ export const DEMOS: DemoEntry[] = [
   },
   {
     slug: "team-drops-out",
-    title: "A team drops out",
+    title: "When a team drops out mid-season",
     promise:
       "A club asks out of a drawn season, the league approves it, ten games come off by themselves, and the teams left short get exactly the games they were missing.",
     description:
@@ -412,7 +412,7 @@ export const DEMOS: DemoEntry[] = [
   },
   {
     slug: "the-referees",
-    title: "The referees",
+    title: "Referees: booking, games and pay",
     promise:
       "A league books a whole Saturday to its referee pool at a stated rate, the first one to answer gets every game in the window, and his schedule, his pay and his calendar fill themselves.",
     description:
