@@ -154,6 +154,71 @@ export function accentFor(theme: Theme, accent: Accent): string {
   return theme.surface === "daylight" ? accent.onLight : accent.onDark
 }
 
+/* -------------------------------------------------------------- look, beyond
+ * the theme. A theme sets the ground; these four axes are what let two clubs on
+ * the SAME theme look nothing alike. Every option is designed, so range costs us
+ * no risk of an ugly page.
+ */
+
+export interface HeaderStyle {
+  key: string
+  label: string
+  blurb: string
+  /** Photo is used, but never required. Every style has a no-photo answer. */
+  usesPhoto: boolean
+}
+
+export const HEADER_STYLES: HeaderStyle[] = [
+  { key: "banner", label: "Wide banner", blurb: "A photo across the top, crest overlapping.", usesPhoto: true },
+  { key: "split", label: "Split", blurb: "Photo on one side, your name and call to action on the other.", usesPhoto: true },
+  { key: "immersive", label: "Full bleed", blurb: "Photo fills the screen, name over it.", usesPhoto: true },
+  { key: "crest", label: "Crest first", blurb: "Big crest on your colour. No photo needed.", usesPhoto: false },
+  { key: "plain", label: "Name only", blurb: "Quiet band of colour. Fastest to load.", usesPhoto: false },
+]
+
+/** How much of the club's colour the page actually uses. */
+export const INTENSITIES = [
+  { key: "subtle", label: "Subtle", blurb: "Colour on accents only" },
+  { key: "balanced", label: "Balanced", blurb: "Colour on headings and buttons" },
+  { key: "bold", label: "Bold", blurb: "Colour fills sections" },
+] as const
+export type Intensity = (typeof INTENSITIES)[number]["key"]
+
+/** Corner language. Reads as a different brand instantly. */
+export const SHAPES = [
+  { key: "sharp", label: "Sharp", radius: 2 },
+  { key: "soft", label: "Soft", radius: 12 },
+  { key: "round", label: "Round", radius: 22 },
+] as const
+export type ShapeKey = (typeof SHAPES)[number]["key"]
+
+export const DENSITIES = [
+  { key: "airy", label: "Airy", pad: 18, gap: 16 },
+  { key: "normal", label: "Normal", pad: 12, gap: 12 },
+  { key: "tight", label: "Tight", pad: 8, gap: 8 },
+] as const
+export type DensityKey = (typeof DENSITIES)[number]["key"]
+
+/**
+ * Image handling (owner 2026-08-18): "somebody's not gonna be able to give the
+ * images that you want ... make it flexible so people don't have to create custom
+ * content and somehow fit an image or stretch it, crop it."
+ *
+ * So: accept ANY image at ANY aspect ratio. Never state a required size. The club
+ * marks the spot that matters and we crop around that focal point at every
+ * breakpoint. If they have no usable photo at all, the crest and plain header
+ * styles are designed to look finished without one.
+ */
+export interface ImageState {
+  /** null = they have no photo, and that is a supported answer, not a gap. */
+  present: boolean
+  /** Focal point in percent of the natural image, not of any rendered crop. */
+  focalX: number
+  focalY: number
+  /** What they actually uploaded, so the preview can show honest cropping. */
+  naturalAspect: number
+}
+
 /* ------------------------------------------------------------------ sections */
 
 export type Zone = "main" | "rail"

@@ -12,18 +12,26 @@
  * something you cannot see.
  */
 
-import { useMemo, useState } from "react"
+import { useMemo, useRef, useState } from "react"
 import {
   THEMES,
   ACCENTS,
   SECTIONS,
   DEFAULT_SECTIONS,
   SECTION_BY_KEY,
+  HEADER_STYLES,
+  INTENSITIES,
+  SHAPES,
+  DENSITIES,
   accentFor,
   type Theme,
   type Accent,
   type SectionState,
   type Zone,
+  type Intensity,
+  type ShapeKey,
+  type DensityKey,
+  type ImageState,
 } from "./themes"
 
 /* ---------------------------------------------------------------- icons (SVG) */
@@ -80,6 +88,62 @@ const Icon = {
       <path d="M11 18.6h2" strokeLinecap="round" />
     </svg>
   ),
+  grip: (p: { className?: string }) => (
+    <svg viewBox="0 0 24 24" fill="currentColor" className={p.className} aria-hidden="true">
+      <circle cx="9" cy="6" r="1.5" /><circle cx="15" cy="6" r="1.5" />
+      <circle cx="9" cy="12" r="1.5" /><circle cx="15" cy="12" r="1.5" />
+      <circle cx="9" cy="18" r="1.5" /><circle cx="15" cy="18" r="1.5" />
+    </svg>
+  ),
+  image: (p: { className?: string }) => (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className={p.className} aria-hidden="true">
+      <rect x="3" y="4.5" width="18" height="15" rx="2" />
+      <circle cx="8.5" cy="9.5" r="1.6" />
+      <path d="m4 17 4.8-4.4a1.8 1.8 0 0 1 2.4 0L20 20" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  ),
+  target: (p: { className?: string }) => (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className={p.className} aria-hidden="true">
+      <circle cx="12" cy="12" r="7.5" /><circle cx="12" cy="12" r="2.2" />
+      <path d="M12 2v3M12 19v3M2 12h3M19 12h3" strokeLinecap="round" />
+    </svg>
+  ),
+}
+
+/** One row of curated choices. Used for every "look" axis. */
+function Choices<T extends string>({
+  value,
+  onChange,
+  options,
+  accent,
+}: {
+  value: T
+  onChange: (v: T) => void
+  options: ReadonlyArray<{ key: T; label: string; blurb?: string }>
+  accent: string
+}) {
+  return (
+    <div className="flex flex-wrap gap-1.5">
+      {options.map((o) => {
+        const on = o.key === value
+        return (
+          <button
+            key={o.key}
+            type="button"
+            onClick={() => onChange(o.key)}
+            aria-pressed={on}
+            title={o.blurb}
+            className={`min-h-[36px] cursor-pointer rounded-lg px-3 text-[12px] font-medium transition-colors duration-200 ${
+              on ? "text-white" : "bg-white/[0.07] text-white/65 hover:bg-white/15"
+            }`}
+            style={on ? { background: accent } : undefined}
+          >
+            {o.label}
+          </button>
+        )
+      })}
+    </div>
+  )
 }
 
 /* ------------------------------------------------------------------- helpers */
@@ -113,6 +177,9 @@ function FakeSection({
   active,
   onPick,
   compact,
+  radius,
+  pad,
+  intensity,
 }: {
   k: string
   theme: Theme
@@ -120,13 +187,20 @@ function FakeSection({
   active: boolean
   onPick: () => void
   compact: boolean
+  radius: number
+  pad: number
+  intensity: Intensity
 }) {
   const def = SECTION_BY_KEY[k]
+  /* Intensity decides how far the club's colour reaches: accents only, headings
+     too, or the section ground itself. */
+  const headTinted = intensity !== "subtle"
+  const filled = intensity === "bold"
   const head = (t: string) => (
     <h4
       className="mb-2.5 text-[15px] font-semibold"
       style={{
-        color: theme.ink,
+        color: headTinted ? accent : theme.ink,
         fontFamily: theme.headingFont,
         textTransform: theme.headingCase === "upper" ? "uppercase" : "none",
         letterSpacing: theme.headingCase === "upper" ? theme.headingTracking : undefined,
@@ -231,10 +305,12 @@ function FakeSection({
       type="button"
       onClick={onPick}
       aria-label={`Edit ${def?.label ?? k}`}
-      className="group relative w-full cursor-pointer rounded-xl p-3 text-left transition-colors duration-200"
+      className="group relative w-full cursor-pointer text-left transition-colors duration-200"
       style={{
-        background: theme.panel,
+        background: filled ? `linear-gradient(160deg, ${accent}14, ${theme.panel} 55%)` : theme.panel,
         border: `1px solid ${active ? accent : theme.border}`,
+        borderRadius: radius,
+        padding: pad,
         boxShadow: active ? `0 0 0 2px ${accent}44` : undefined,
       }}
     >
@@ -250,6 +326,137 @@ function FakeSection({
   )
 }
 
+/* ----------------------------------------------------------- the club header */
+
+/**
+ * Five header styles, one rule: the photo is never required and never stretched.
+ * It is always `object-fit: cover` anchored at the club's focal point, so a square
+ * phone snap and a wide banner both crop correctly at every breakpoint.
+ */
+function ClubHeader({
+  style,
+  theme,
+  accent,
+  compact,
+  showPhoto,
+  focal,
+  radius,
+}: {
+  style: string
+  theme: Theme
+  accent: string
+  compact: boolean
+  showPhoto: boolean
+  focal: string
+  radius: number
+}) {
+  const name = (size: string, onColour = false) => (
+    <div
+      className={`truncate font-bold ${size}`}
+      style={{
+        color: onColour ? "#fff" : theme.ink,
+        fontFamily: theme.headingFont,
+        textTransform: theme.headingCase === "upper" ? "uppercase" : "none",
+        letterSpacing: theme.headingTracking,
+      }}
+    >
+      Mississauga Storm
+    </div>
+  )
+  const sub = (onColour = false) => (
+    <div className="truncate text-[11.5px]" style={{ color: onColour ? "rgba(255,255,255,0.85)" : theme.inkMuted }}>
+      Youth basketball since 2009
+    </div>
+  )
+  const crest = (size: number) => (
+    <div
+      className="grid shrink-0 place-items-center font-black text-white shadow-lg"
+      style={{
+        background: accent,
+        width: size,
+        height: size,
+        borderRadius: radius + 6,
+        border: `3px solid ${theme.panel}`,
+        fontSize: size * 0.26,
+      }}
+    >
+      MS
+    </div>
+  )
+  /* The stand-in photo. object-position carries the focal point. */
+  const photo = (h: string | number) => (
+    <div className="relative w-full overflow-hidden" style={{ height: h }}>
+      <div
+        className="absolute inset-0"
+        style={{
+          background: `linear-gradient(135deg, ${accent}, ${accent}22 60%, #0b1729)`,
+          backgroundPosition: focal,
+          backgroundSize: "cover",
+        }}
+      />
+      <span className="absolute bottom-1 right-2 text-[9px] text-white/40">focal {focal}</span>
+    </div>
+  )
+
+  if (style === "immersive") {
+    return (
+      <div className="relative">
+        {showPhoto ? photo(compact ? 190 : 260) : <div style={{ height: compact ? 150 : 210, background: `linear-gradient(135deg, ${accent}, ${accent}66)` }} />}
+        <div className="absolute inset-0" style={{ background: "linear-gradient(to top, rgba(0,0,0,0.72), rgba(0,0,0,0.06) 60%)" }} />
+        <div className="absolute bottom-0 left-0 right-0 flex items-end gap-3 p-4">
+          {crest(compact ? 46 : 58)}
+          <div className="min-w-0 pb-0.5">{name(compact ? "text-[17px]" : "text-[23px]", true)}{sub(true)}</div>
+        </div>
+      </div>
+    )
+  }
+
+  if (style === "split") {
+    return (
+      <div className={compact ? "" : "flex"}>
+        <div className={compact ? "" : "w-[46%] shrink-0"}>
+          {showPhoto ? photo(compact ? 130 : 180) : <div style={{ height: compact ? 90 : 180, background: `linear-gradient(135deg, ${accent}, ${accent}55)` }} />}
+        </div>
+        <div className="flex flex-1 flex-col justify-center gap-2 p-4">
+          <div className="flex items-center gap-2.5">{crest(compact ? 40 : 48)}<div className="min-w-0">{name(compact ? "text-[16px]" : "text-[20px]")}{sub()}</div></div>
+          <div className="inline-flex w-fit px-3 py-1.5 text-[11px] font-bold text-white" style={{ background: accent, borderRadius: radius }}>
+            Register for tryouts
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  if (style === "crest") {
+    return (
+      <div className="flex flex-col items-center gap-2 px-4 py-6 text-center" style={{ background: `linear-gradient(160deg, ${accent}1f, transparent)` }}>
+        {crest(compact ? 62 : 78)}
+        <div className="min-w-0">{name(compact ? "text-[18px]" : "text-[24px]")}{sub()}</div>
+      </div>
+    )
+  }
+
+  if (style === "plain") {
+    return (
+      <div className="flex items-center gap-3 px-4 py-4" style={{ borderBottom: `3px solid ${accent}` }}>
+        {crest(compact ? 40 : 46)}
+        <div className="min-w-0">{name(compact ? "text-[16px]" : "text-[20px]")}{sub()}</div>
+      </div>
+    )
+  }
+
+  /* banner (default) */
+  return (
+    <>
+      {showPhoto ? photo(compact ? 96 : 128) : <div style={{ height: compact ? 72 : 96, background: `linear-gradient(120deg, ${accent}, ${accent}55)` }} />}
+      <div className={`flex items-end gap-3 px-4 pb-3 ${compact ? "-mt-7" : "-mt-9"}`}>
+        {crest(compact ? 56 : 68)}
+        <div className="min-w-0 pb-1">{name(compact ? "text-[16px]" : "text-[21px]")}{sub()}</div>
+      </div>
+    </>
+  )
+}
+
 /* ------------------------------------------------------------------ the page */
 
 export function ClubStudio() {
@@ -260,10 +467,54 @@ export function ClubStudio() {
   const [active, setActive] = useState<string | null>(null)
   const [dirty, setDirty] = useState(false)
 
+  // "Look" axes — two clubs on the same theme should not look alike.
+  const [header, setHeader] = useState(HEADER_STYLES[0].key)
+  const [intensity, setIntensity] = useState<Intensity>("balanced")
+  const [shape, setShape] = useState<ShapeKey>("soft")
+  const [density, setDensity] = useState<DensityKey>("normal")
+
+  // Whatever image they happen to have. 2.6 is a wide banner, 0.8 a phone photo.
+  const [image, setImage] = useState<ImageState>({ present: true, focalX: 50, focalY: 38, naturalAspect: 1.5 })
+
+  // Drag reorder. The arrow buttons stay as the keyboard path — drag alone is
+  // not operable without a pointer, which fails accessibility outright.
+  const [dragKey, setDragKey] = useState<string | null>(null)
+  const [overKey, setOverKey] = useState<string | null>(null)
+  const focalRef = useRef<HTMLButtonElement | null>(null)
+
   const theme = THEMES.find((t) => t.key === themeKey)!
   const accentDef = ACCENTS.find((a) => a.key === accentKey)!
   const accent = accentFor(theme, accentDef)
   const compact = device === "phone"
+  const radius = SHAPES.find((s) => s.key === shape)!.radius
+  const dens = DENSITIES.find((d) => d.key === density)!
+  const headerDef = HEADER_STYLES.find((h) => h.key === header)!
+  const showPhoto = headerDef.usesPhoto && image.present
+
+  function reorder(from: string, to: string) {
+    setSections((s) => {
+      const a = s.find((x) => x.key === from)
+      const b = s.find((x) => x.key === to)
+      if (!a || !b || a.zone !== b.zone) return s
+      const peers = s.filter((x) => x.zone === a.zone).sort((x, y) => x.order - y.order)
+      const without = peers.filter((x) => x.key !== from)
+      const at = without.findIndex((x) => x.key === to)
+      without.splice(at < 0 ? without.length : at, 0, a)
+      const orders = new Map(without.map((x, i) => [x.key, i + 1]))
+      return s.map((x) => (orders.has(x.key) ? { ...x, order: orders.get(x.key)! } : x))
+    })
+    setDirty(true)
+  }
+
+  function setFocal(e: React.MouseEvent<HTMLButtonElement>) {
+    const r = e.currentTarget.getBoundingClientRect()
+    setImage((i) => ({
+      ...i,
+      focalX: Math.round(((e.clientX - r.left) / r.width) * 100),
+      focalY: Math.round(((e.clientY - r.top) / r.height) * 100),
+    }))
+    setDirty(true)
+  }
 
   const visible = useMemo(
     () => (z: Zone) => sections.filter((s) => s.zone === z && s.visible).sort((a, b) => a.order - b.order),
@@ -380,7 +631,109 @@ export function ClubStudio() {
             </div>
           </Group>
 
-          <Group title="Sections" caption="Click any section in the preview to jump here. Sections marked auto fill themselves.">
+          <Group title="Header" caption="How the top of your page looks. Two of these need no photo at all.">
+            <div className="grid grid-cols-1 gap-1.5">
+              {HEADER_STYLES.map((h) => {
+                const on = h.key === header
+                return (
+                  <button
+                    key={h.key}
+                    type="button"
+                    onClick={() => { setHeader(h.key); setDirty(true) }}
+                    aria-pressed={on}
+                    className={`flex cursor-pointer items-center gap-2.5 rounded-lg border px-2.5 py-2 text-left transition-colors duration-200 ${
+                      on ? "border-white/60 bg-white/10" : "border-white/12 hover:border-white/30"
+                    }`}
+                  >
+                    <span className="grid h-8 w-11 shrink-0 place-items-center overflow-hidden rounded" style={{ background: theme.bg, border: `1px solid ${theme.border}` }}>
+                      {h.key === "banner" && <span className="h-3 w-full" style={{ background: accent }} />}
+                      {h.key === "split" && <span className="flex h-full w-full"><span className="w-1/2" style={{ background: accent }} /></span>}
+                      {h.key === "immersive" && <span className="h-full w-full" style={{ background: accent }} />}
+                      {h.key === "crest" && <span className="h-4 w-4 rounded-md" style={{ background: accent }} />}
+                      {h.key === "plain" && <span className="h-1.5 w-7 rounded-full" style={{ background: accent }} />}
+                    </span>
+                    <span className="min-w-0">
+                      <span className="block text-[12px] font-semibold">{h.label}</span>
+                      <span className="block text-[10.5px] leading-snug text-white/50">{h.blurb}</span>
+                    </span>
+                  </button>
+                )
+              })}
+            </div>
+          </Group>
+
+          <Group title="Your photo" caption="Any photo, any shape. We never ask for a size. Mark what matters and we keep it in frame everywhere.">
+            <label className="mb-2.5 flex cursor-pointer items-center gap-2 text-[12px] text-white/70">
+              <input
+                type="checkbox"
+                checked={image.present}
+                onChange={(e) => { setImage((i) => ({ ...i, present: e.target.checked })); setDirty(true) }}
+                className="h-4 w-4 cursor-pointer accent-current"
+                style={{ accentColor: accent }}
+              />
+              I have a photo to use
+            </label>
+
+            {image.present ? (
+              <>
+                <button
+                  ref={focalRef}
+                  type="button"
+                  onClick={setFocal}
+                  aria-label="Set the important part of your photo"
+                  className="relative block w-full cursor-crosshair overflow-hidden rounded-lg border border-white/15"
+                  style={{ aspectRatio: String(image.naturalAspect) }}
+                >
+                  {/* stand-in for their upload; the point is the framing, not the art */}
+                  <span className="absolute inset-0" style={{ background: `linear-gradient(135deg, ${accent}, ${accent}22 60%, #0b1729)` }} />
+                  <span className="absolute inset-0 grid place-items-center text-[10.5px] font-medium text-white/50">their photo</span>
+                  <span
+                    className="pointer-events-none absolute h-7 w-7 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white shadow-lg"
+                    style={{ left: `${image.focalX}%`, top: `${image.focalY}%`, boxShadow: `0 0 0 3px ${accent}` }}
+                  />
+                </button>
+                <p className="mt-2 flex items-start gap-1.5 text-[11px] leading-relaxed text-white/45">
+                  <Icon.target className="mt-0.5 h-3 w-3 shrink-0" />
+                  Click the part that matters. Nothing gets stretched, and the crop follows that point on every screen.
+                </p>
+                <div className="mt-2.5">
+                  <div className="mb-1.5 text-[10.5px] text-white/45">Try a different shape of photo</div>
+                  <Choices
+                    value={String(image.naturalAspect) as string}
+                    onChange={(v) => { setImage((i) => ({ ...i, naturalAspect: Number(v) })); setDirty(true) }}
+                    options={[
+                      { key: "2.6", label: "Wide" },
+                      { key: "1.5", label: "Standard" },
+                      { key: "1", label: "Square" },
+                      { key: "0.8", label: "Phone" },
+                    ]}
+                    accent={accent}
+                  />
+                </div>
+              </>
+            ) : (
+              <p className="rounded-lg bg-white/[0.06] p-2.5 text-[11.5px] leading-relaxed text-white/55">
+                No photo is a fine answer. Crest first and Name only are built to look finished without one.
+              </p>
+            )}
+          </Group>
+
+          <Group title="Feel" caption="Same theme, different club. These four make the biggest difference.">
+            <div className="space-y-3">
+              {[
+                { label: "Colour", value: intensity, set: (v: string) => { setIntensity(v as Intensity); setDirty(true) }, options: INTENSITIES },
+                { label: "Corners", value: shape, set: (v: string) => { setShape(v as ShapeKey); setDirty(true) }, options: SHAPES },
+                { label: "Spacing", value: density, set: (v: string) => { setDensity(v as DensityKey); setDirty(true) }, options: DENSITIES },
+              ].map((row) => (
+                <div key={row.label}>
+                  <div className="mb-1.5 text-[10.5px] font-medium text-white/45">{row.label}</div>
+                  <Choices value={row.value as string} onChange={row.set} options={row.options as any} accent={accent} />
+                </div>
+              ))}
+            </div>
+          </Group>
+
+          <Group title="Sections" caption="Drag to reorder, or use the arrows. The eye hides a section without removing it.">
             <ul className="space-y-1">
               {(["main", "rail"] as Zone[]).map((zone) => (
                 <li key={zone}>
@@ -398,10 +751,34 @@ export function ClubStudio() {
                         return (
                           <li
                             key={s.key}
-                            className={`flex items-center gap-1 rounded-lg px-2 py-1.5 transition-colors duration-200 ${
+                            draggable
+                            onDragStart={(e) => { setDragKey(s.key); e.dataTransfer.effectAllowed = "move" }}
+                            onDragEnd={() => { setDragKey(null); setOverKey(null) }}
+                            onDragOver={(e) => {
+                              if (!dragKey || dragKey === s.key) return
+                              const src = sections.find((x) => x.key === dragKey)
+                              if (src?.zone !== s.zone) return // reordering is within a column
+                              e.preventDefault()
+                              e.dataTransfer.dropEffect = "move"
+                              setOverKey(s.key)
+                            }}
+                            onDragLeave={() => setOverKey((k) => (k === s.key ? null : k))}
+                            onDrop={(e) => {
+                              e.preventDefault()
+                              if (dragKey && dragKey !== s.key) reorder(dragKey, s.key)
+                              setDragKey(null); setOverKey(null)
+                            }}
+                            className={`flex items-center gap-1 rounded-lg px-1 py-1.5 transition-colors duration-200 ${
                               on ? "bg-white/12" : "hover:bg-white/[0.06]"
-                            }`}
+                            } ${dragKey === s.key ? "opacity-40" : ""}`}
+                            style={overKey === s.key ? { boxShadow: `inset 0 2px 0 ${accent}` } : undefined}
                           >
+                            <span
+                              aria-hidden="true"
+                              className="flex h-9 w-5 shrink-0 cursor-grab items-center justify-center text-white/25 transition-colors duration-200 hover:text-white/60 active:cursor-grabbing"
+                            >
+                              <Icon.grip className="h-3.5 w-3.5" />
+                            </span>
                             <button
                               type="button"
                               onClick={() => toggle(s.key)}
@@ -469,33 +846,19 @@ export function ClubStudio() {
             className={`mx-auto overflow-hidden rounded-2xl shadow-2xl transition-all duration-300 ${compact ? "max-w-[400px]" : "max-w-[1000px]"}`}
             style={{ background: theme.bg, border: `1px solid ${theme.border}` }}
           >
-            {/* club header — replaces SportsHub chrome with theirs */}
+            {/* club header — replaces SportsHub chrome with theirs.
+                The photo is object-fit cover positioned at the focal point, so any
+                aspect ratio works and nothing is ever stretched. */}
             <div className="relative">
-              <div className="h-24 sm:h-32" style={{ background: `linear-gradient(120deg, ${accent}, ${accent}55)` }} />
-              <div className={`flex items-end gap-3 px-4 pb-3 ${compact ? "-mt-7" : "-mt-9"}`}>
-                <div
-                  className="grid shrink-0 place-items-center rounded-2xl text-[17px] font-black text-white shadow-lg"
-                  style={{ background: accent, width: compact ? 56 : 68, height: compact ? 56 : 68, border: `3px solid ${theme.panel}` }}
-                >
-                  MS
-                </div>
-                <div className="min-w-0 pb-1">
-                  <div
-                    className={`truncate font-bold ${compact ? "text-[16px]" : "text-[21px]"}`}
-                    style={{
-                      color: theme.ink,
-                      fontFamily: theme.headingFont,
-                      textTransform: theme.headingCase === "upper" ? "uppercase" : "none",
-                      letterSpacing: theme.headingTracking,
-                    }}
-                  >
-                    Mississauga Storm
-                  </div>
-                  <div className="truncate text-[11.5px]" style={{ color: theme.inkMuted }}>
-                    Youth basketball since 2009
-                  </div>
-                </div>
-              </div>
+              <ClubHeader
+                style={header}
+                theme={theme}
+                accent={accent}
+                compact={compact}
+                showPhoto={showPhoto}
+                focal={`${image.focalX}% ${image.focalY}%`}
+                radius={radius}
+              />
               {/* their nav, built from visible sections */}
               <div className="flex gap-4 overflow-x-auto border-t px-4 py-2 text-[11.5px]" style={{ borderColor: theme.border }}>
                 {visible("main").slice(0, 6).map((s, i) => (
@@ -507,15 +870,15 @@ export function ClubStudio() {
             </div>
 
             {/* body */}
-            <div className={`gap-3 p-3 ${compact ? "flex flex-col" : "flex"}`} style={{ fontFamily: theme.bodyFont }}>
-              <div className="min-w-0 flex-1 space-y-3">
+            <div className={compact ? "flex flex-col" : "flex"} style={{ fontFamily: theme.bodyFont, gap: dens.gap, padding: dens.gap }}>
+              <div className="min-w-0 flex-1" style={{ display: "flex", flexDirection: "column", gap: dens.gap }}>
                 {visible("main").map((s) => (
-                  <FakeSection key={s.key} k={s.key} theme={theme} accent={accent} compact={compact} active={active === s.key} onPick={() => setActive(s.key)} />
+                  <FakeSection key={s.key} k={s.key} theme={theme} accent={accent} compact={compact} radius={radius} pad={dens.pad} intensity={intensity} active={active === s.key} onPick={() => setActive(s.key)} />
                 ))}
               </div>
-              <div className={`space-y-3 ${compact ? "" : "w-[240px] shrink-0"}`}>
+              <div className={compact ? "" : "w-[240px] shrink-0"} style={{ display: "flex", flexDirection: "column", gap: dens.gap }}>
                 {visible("rail").map((s) => (
-                  <FakeSection key={s.key} k={s.key} theme={theme} accent={accent} compact={compact} active={active === s.key} onPick={() => setActive(s.key)} />
+                  <FakeSection key={s.key} k={s.key} theme={theme} accent={accent} compact={compact} radius={radius} pad={dens.pad} intensity={intensity} active={active === s.key} onPick={() => setActive(s.key)} />
                 ))}
               </div>
             </div>
