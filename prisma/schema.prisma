@@ -432,20 +432,27 @@ model TenantBranding {
   // `theme` owns surface, type and neutrals; `accentKey` is the club's one free
   // choice and carries an on-light and an on-dark value so the same pick stays
   // legible on every theme.
-  theme       String @default("home-court")
-  accentKey   String @default("royal")
-  headerStyle String @default("banner") // banner | split | immersive | crest | plain
-  intensity   String @default("balanced") // subtle | balanced | bold
-  shape       String @default("soft") // sharp | soft | round
-  density     String @default("normal") // airy | normal | tight
+  //
+  // NULLABLE WITH NO DEFAULT, deliberately. A column default would erase the
+  // difference between "never opened the studio" and "opened it and chose the
+  // default", and those must stay distinguishable: 1,655 clubs already picked a
+  // primaryColor, and an unset accent has to keep honouring it rather than
+  // silently repainting them all royal blue. resolveTheme() supplies the
+  // presentation defaults instead, where they belong.
+  theme       String? // home-court | hardwood | night-game | varsity | clean-sheet | community
+  accentKey   String? // royal | red | gold | green | orange | purple | teal | maroon | sky | slate
+  headerStyle String? // banner | split | immersive | crest | plain
+  intensity   String? // subtle | balanced | bold
+  shape       String? // sharp | soft | round
+  density     String? // airy | normal | tight
 
   // Owner 2026-08-18: "make it flexible so people don't have to create custom
   // content and somehow fit an image or stretch it, crop it." We never state a
   // required size. Any aspect is accepted and the club marks the part that
   // matters; this focal point drives object-fit cover at every breakpoint, so
   // nothing is ever stretched. Percentages of the natural image, not of a crop.
-  bannerFocalX Int @default(50)
-  bannerFocalY Int @default(50)
+  bannerFocalX Int? // percent of the natural image; null = centre
+  bannerFocalY Int?
 
   // Customizable public page ("your website"): brand + layout.
   // Images stored as compressed data URLs (@db.Text) — no external blob infra.

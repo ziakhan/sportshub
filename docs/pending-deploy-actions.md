@@ -165,6 +165,8 @@ Every new column has a default (`theme` = `home-court`, `accentKey` = `royal`, f
 
 `/club/<slug>` returns 200 and the page ships `--club-bg`, `--club-panel`, `--club-ink`, `--club-radius` alongside the existing `--brand*` variables.
 
+**⚠️ Revised 2026-08-18 — the columns are NULLABLE WITH NO DEFAULT.** The first cut gave them defaults, which stamped all 1,812 branding rows with `accentKey = "royal"`. That erased the difference between "never opened the studio" and "chose royal", so the 1,655 clubs holding a custom `primaryColor` would have been silently repainted. A default is wrong for any column where *unset* has to mean *keep the old behaviour*. If a box copy of the earlier schema exists, `UPDATE "TenantBranding" SET theme=NULL, "accentKey"=NULL, "headerStyle"=NULL, intensity=NULL, shape=NULL, density=NULL, "bannerFocalX"=NULL, "bannerFocalY"=NULL;` before deploying.
+
 **Status:** ⛔ NOT APPLIED to box or Neon. Local only.
 
 <!-- Future entries below. Each entry: linked code change → why-before-deploy → step-by-step commands → verification → status flip ✅ when applied. -->

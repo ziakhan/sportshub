@@ -129,10 +129,11 @@ export default async function ClubProfilePage({ params }: { params: { slug: stri
   // neutrals; the club's accent is its one free choice. A club that never opened
   // the studio resolves to the default theme with its existing primaryColor, so
   // this changes nothing for the 1,392 imported listings until someone edits.
-  const look = resolveTheme({
-    ...(branding as any),
-    primaryColor: primary ?? undefined,
-  })
+  // `accent` already encodes the owner's 2026-08-14 rule: a club's colour runs
+  // only when it claimed its page and picked something, otherwise everyone wears
+  // the same navy. Feed THAT through, not the raw primaryColor, so an unclaimed
+  // listing keeps its neutral instead of being repainted the default accent.
+  const look = resolveTheme({ ...(branding as any), primaryColor: accent })
   const data: ClubPageData = {
     club,
     currency: club.currency,
