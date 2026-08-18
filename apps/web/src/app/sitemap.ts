@@ -30,6 +30,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         // the sitemap too.
         where: {
           status: { in: ["ACTIVE", "UNCLAIMED"] },
+      // Census imports are only public once reviewed; merged-away rows never are.
+      publishedAt: { not: null },
+      mergedIntoId: null,
           OR: [
             { status: "ACTIVE" },
             { description: { not: null } },

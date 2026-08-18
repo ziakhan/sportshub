@@ -27,7 +27,10 @@ export async function GET() {
       // Guest-home parity (native-parity-v2): the SAME scoreboard + stats the
       // web homepage renders
       getScoreboardGames(),
-      prisma.tenant.count({ where: { status: { in: ["ACTIVE", "UNCLAIMED"] } } }),
+      prisma.tenant.count({ where: { status: { in: ["ACTIVE", "UNCLAIMED"] },
+      // Census imports are only public once reviewed; merged-away rows never are.
+      publishedAt: { not: null },
+      mergedIntoId: null } }),
       prisma.team.count(),
       prisma.tryout.count({ where: { isPublished: true, isPublic: true } }),
     ])

@@ -27,6 +27,13 @@ export type AuditAction =
   | "CLUB_PLAN_CHANGE"
   | "CLUB_OWNERSHIP_TRANSFER"
   | "CLUB_FEATURE"
+  // Club lifecycle tool (2026-08-15): the census import made ~1,700 clubs
+  // editable by admins, so every hand-edit, publish and merge is recorded.
+  | "CLUB_EDIT"
+  | "CLUB_PUBLISH"
+  | "CLUB_UNPUBLISH"
+  | "CLUB_MERGE"
+  | "CLUB_MERGE_UNDO"
   | "CLUB_UNFEATURE"
   // Manual roster + game operations — the escape hatches leave a trail
   | "ROSTER_PLAYER_ADD"

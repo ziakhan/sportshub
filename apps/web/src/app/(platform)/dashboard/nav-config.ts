@@ -205,6 +205,7 @@ export function buildNavSections({
         { label: "Launch", href: "/dashboard/admin/launch", icon: "play" },
         { label: "Users", href: "/dashboard/admin/users", icon: "users" },
         { label: "Clubs", href: "/dashboard/admin/clubs", icon: "club" },
+        { label: "Club review", href: "/dashboard/admin/clubs/lifecycle", icon: "club" },
         { label: "Leagues", href: "/manage/leagues", icon: "star" },
         { label: "Claims", href: "/dashboard/admin/claims", icon: "clipboard" },
         { label: "Payments", href: "/dashboard/admin/payments", icon: "card" },

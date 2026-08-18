@@ -254,6 +254,10 @@ export async function getClubProfile(
     include: { branding: true },
   })
   if (!tenant || (tenant.status !== "ACTIVE" && tenant.status !== "UNCLAIMED")) return null
+  // An unreviewed census import has no public page yet, and a club that was
+  // merged into another must not keep its own — otherwise the duplicate stays
+  // reachable by URL after an admin has resolved it.
+  if (!(tenant as any).publishedAt || (tenant as any).mergedIntoId) return null
 
   const userId = opts.userId ?? null
   // Visibility policy ("Gate + moderate"): FLAGGED reviews stay publicly
