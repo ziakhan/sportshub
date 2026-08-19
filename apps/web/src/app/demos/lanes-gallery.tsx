@@ -345,7 +345,7 @@ export function DemoLanesGallery({
           ) : (
             <div className="mt-6 space-y-6">
               {/* ── The flagship, once, for everyone ─────────────────────── */}
-              {showFlagship && <FlagshipCard demo={flagship} />}
+              {showFlagship && <FlagshipSection demo={flagship} />}
 
               {/* ── The bounded lanes ────────────────────────────────────── */}
               {lanes.map(({ lane, path, also }) => (
@@ -396,48 +396,97 @@ function SearchField({
   )
 }
 
-/** The one loud card: navy stage, gold play, "for everyone". */
-function FlagshipCard({ demo }: { demo: DemoEntry }) {
+/** A hand-authored basketball mark for the everyone section's tile. */
+function BallMark({ className }: { className?: string }) {
   return (
-    <Link
-      href={`/demos/${demo.slug}`}
-      className={cn(
-        "group relative isolate flex flex-col gap-4 overflow-hidden rounded-[28px] p-6 text-white sm:flex-row sm:items-center sm:gap-6 sm:p-7",
-        "shadow-soft outline-none transition-all duration-200",
-        "hover:-translate-y-0.5 hover:shadow-lg",
-        "focus-visible:ring-2 focus-visible:ring-gold-500",
-        "motion-reduce:transform-none motion-reduce:transition-none"
-      )}
-      style={{
-        backgroundImage:
-          "radial-gradient(120% 150% at 50% -20%, rgba(255,255,255,0.10) 0%, transparent 60%), linear-gradient(135deg, #16233a, #0b1628)",
-      }}
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.8}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+      className={className}
     >
-      <span className="min-w-0 flex-1">
-        <span className="flex flex-wrap items-center gap-2">
-          <span className="rounded-full bg-gold-500 px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-[0.1em] text-ink-950">
-            The big one
+      <circle cx="12" cy="12" r="8.5" />
+      <path d="M3.5 12h17M12 3.5v17" strokeWidth="1.3" />
+      <path d="M6 6c3.3 3.3 8.7 3.3 12 0M6 18c3.3-3.3 8.7-3.3 12 0" strokeWidth="1.3" />
+    </svg>
+  )
+}
+
+/**
+ * The flagship, in the SAME grammar as everything else (owner 2026-08-19:
+ * the navy band read as a page header, not a demo). A bounded gold-tinted
+ * section like the audience sections, holding one ordinary white demo card
+ * whose leading tile is a gold play button in the slot where the numbered
+ * cards carry their number.
+ */
+function FlagshipSection({ demo }: { demo: DemoEntry }) {
+  return (
+    <section
+      aria-labelledby="lane-everyone"
+      className="rounded-[28px] bg-gold-50/50 p-4 ring-1 ring-gold-200 sm:p-6"
+    >
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+        <span className="grid h-11 w-11 place-items-center rounded-2xl bg-white text-gold-600 ring-1 ring-gold-200">
+          <BallMark className="h-5 w-5" />
+        </span>
+        <div className="min-w-0">
+          <h2
+            id="lane-everyone"
+            className="font-display text-[22px] font-extrabold tracking-tight sm:text-[25px]"
+          >
+            For everyone
+          </h2>
+          <p className="text-[14px] text-ink-600">
+            The one to watch whichever seat is yours.{" "}
+            <span className="whitespace-nowrap font-bold uppercase tracking-[0.1em] text-ink-400">
+              1 demo · {shortDuration(demo.durationLabel)}
+            </span>
+          </p>
+        </div>
+      </div>
+
+      <div className="mt-4">
+        <Link
+          href={`/demos/${demo.slug}`}
+          className={cn(
+            "group flex items-start gap-4 rounded-2xl bg-white p-4 ring-1 ring-ink-100 sm:gap-5 sm:p-5",
+            "shadow-sm outline-none transition-all duration-200",
+            "hover:-translate-y-0.5 hover:shadow-lg hover:ring-gold-500/60",
+            "focus-visible:ring-2 focus-visible:ring-gold-500",
+            "motion-reduce:transform-none motion-reduce:transition-none"
+          )}
+        >
+          <span
+            className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-gold-500 text-ink-950 transition-colors group-hover:bg-gold-400"
+            aria-hidden="true"
+          >
+            <svg viewBox="0 0 24 24" fill="currentColor" className="ml-0.5 h-4 w-4">
+              <path d="M8 5v14l11-7z" />
+            </svg>
           </span>
-          <span className="text-[12px] font-bold uppercase tracking-[0.16em] text-white/55">
-            For everyone · {shortDuration(demo.durationLabel)}
+          <span className="min-w-0 flex-1">
+            <span className="flex flex-wrap items-center gap-x-2.5 gap-y-1">
+              <span className="text-[12px] font-bold uppercase tracking-[0.16em] text-ink-400">
+                {shortDuration(demo.durationLabel)}
+              </span>
+              <span className="rounded-full bg-gold-500 px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-[0.1em] text-ink-950">
+                The big one
+              </span>
+            </span>
+            <span className="font-display mt-1 block text-[19px] font-bold leading-tight transition-colors group-hover:text-play-700 sm:text-[21px]">
+              {demo.title}
+            </span>
+            <span className="mt-1 block text-[14px] leading-relaxed text-ink-500">
+              {WATCH_LINES[demo.slug]}
+            </span>
           </span>
-        </span>
-        <span className="font-display mt-2 block text-[24px] font-extrabold leading-tight sm:text-[28px]">
-          {demo.title}
-        </span>
-        <span className="mt-1.5 block max-w-2xl text-[15px] leading-relaxed text-white/75">
-          {WATCH_LINES[demo.slug]}
-        </span>
-      </span>
-      <span
-        className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-gold-500 text-ink-950 transition-colors group-hover:bg-gold-400"
-        aria-hidden="true"
-      >
-        <svg viewBox="0 0 24 24" fill="currentColor" className="ml-1 h-6 w-6">
-          <path d="M8 5v14l11-7z" />
-        </svg>
-      </span>
-    </Link>
+        </Link>
+      </div>
+    </section>
   )
 }
 
