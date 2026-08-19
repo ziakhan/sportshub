@@ -19,6 +19,16 @@ import type { ReactNode } from "react"
  *  slot is reserved from the first frame and the phone slides into it. */
 export type StageMode = "desktop" | "split" | "phone"
 
+export type DemoRoleTone = "club" | "league" | "parent" | "referee"
+
+/**
+ * Who is driving a surface, for the role bug and the caption pill (owner
+ * 2026-08-19: a story that says CLUB while the parent is accepting an offer
+ * is mislabelling half its own beats). `desktop` and `phone` are the two
+ * surfaces a split story hands off between.
+ */
+export type DemoActor = "desktop" | "phone"
+
 export interface DemoChapter {
   id: string
   /** Shown on the jump chip. Keep it to three or four words. */
@@ -50,6 +60,14 @@ export interface DemoBeat {
   hold: number
   /** Switches the stage layout from this beat onward. */
   stage?: StageMode
+  /**
+   * Who acts from this beat onward. STICKY: one annotation at each handoff
+   * carries until the next, so a whole parent stretch is one line. A plain
+   * `stage: "desktop" | "phone"` switch implies the same thing on its own;
+   * this exists for `split`, where both surfaces are on screen and the layout
+   * says nothing about who is driving.
+   */
+  actor?: DemoActor
   /**
    * Address shown in the browser chrome from this beat onward. A story that
    * moves between workspace screens has to move the address bar with them, or
@@ -127,6 +145,14 @@ export interface DemoRenderContext {
 export interface DemoScript {
   chapters: DemoChapter[]
   beats: DemoBeat[]
+  /**
+   * What each surface IS in this story — "Club" at the desk, "Parent" on the
+   * phone. When set, the player's role bug and caption pill follow the active
+   * actor instead of wearing one static label for the whole story. Absent,
+   * the runner's per-demo role shows throughout, which is right for every
+   * single-surface demo.
+   */
+  roles?: Partial<Record<DemoActor, { label: string; tone: DemoRoleTone }>>
   /** Layout before any beat sets its own. */
   initialStage: StageMode
   /**

@@ -325,6 +325,10 @@ export const moneyStory: DemoScript = {
   desktopUrl: "/clubs/toronto-lords/payments",
   context: CTX_PAY,
   initialStage: "desktop",
+  roles: {
+    desktop: { label: "Club", tone: "club" },
+    phone: { label: "Parent", tone: "parent" },
+  },
   chapters: [
     { id: "stands", title: "Every dollar owed" },
     { id: "charges", title: "What it charges" },
@@ -432,6 +436,7 @@ export const moneyStory: DemoScript = {
     /* ── 4. The reminder ──────────────────────────────────────────────── */
     paced({
       id: "remind",
+      actor: "phone", // the reminders on her phone
       chapter: "remind",
       caption: "This is what her phone got while it was owed.",
       stage: "split",
@@ -457,6 +462,7 @@ export const moneyStory: DemoScript = {
     /* ── 5. Cash at the door ──────────────────────────────────────────── */
     paced({
       id: "door",
+      actor: "desktop", // the club records the cash
       chapter: "door",
       caption: "She hands over the rest in cash at the gym.",
       cursor: "record-btn",
@@ -501,6 +507,7 @@ export const moneyStory: DemoScript = {
     }),
     paced({
       id: "receipt-land",
+      actor: "phone", // the receipt reaches her
       chapter: "door",
       caption: "A receipt on her phone and in her inbox, from one press on a table.",
       set: { banner: false, receipt: true },

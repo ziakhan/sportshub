@@ -372,6 +372,10 @@ export const scheduleChangeStory: DemoScript = {
   desktopUrl: "/manage/leagues/nph-summer/seasons/summer-2026/manage?tab=schedule",
   context: CTX,
   initialStage: "desktop",
+  roles: {
+    desktop: { label: "League", tone: "league" },
+    phone: { label: "Parent", tone: "parent" },
+  },
   chapters: [
     { id: "move", title: "The move" },
     { id: "knows", title: "Everyone knows" },
@@ -439,6 +443,7 @@ export const scheduleChangeStory: DemoScript = {
     /* ── 2. Everyone knows ────────────────────────────────────────────── */
     paced({
       id: "phone-in",
+      actor: "phone", // the change reaches her
       chapter: "knows",
       caption: `${PARENT} has two children in this league, and both play this weekend.`,
       stage: "split",
@@ -470,6 +475,7 @@ export const scheduleChangeStory: DemoScript = {
     }),
     paced({
       id: "who",
+      actor: "desktop", // the fan-out card is the league's action
       chapter: "knows",
       caption: "The same change reached everybody attached to that game.",
       /* The strip stops naming a product screen, because this card is not

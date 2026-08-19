@@ -941,6 +941,13 @@ export const gameDayStory: DemoScript = {
   scenePhones: true,
   desktopUrl: URL_SCORE,
   initialStage: "desktop",
+  /* This story WEAVES: the table writes and the parent's page updates. The
+     table is the actor while scoring; the annotated phone beats are where the
+     story turns to what the parent is holding. */
+  roles: {
+    desktop: { label: "Scorer's table", tone: "referee" },
+    phone: { label: "Parent", tone: "parent" },
+  },
   chapters: [
     { id: "tipoff", title: "Before tip-off" },
     { id: "scoring", title: "Two taps a play" },
@@ -1060,6 +1067,7 @@ export const gameDayStory: DemoScript = {
        row, and the single four-beat run is the subs drawer. */
     paced({
       id: "phone-arrives",
+      actor: "phone", // not in the building, opens the link
       chapter: "scoring",
       caption: `${PARENT} is not in the building. He opens the game from the link on the schedule.`,
       stage: "split",
@@ -1069,6 +1077,7 @@ export const gameDayStory: DemoScript = {
     }),
     paced({
       id: "start-press",
+      actor: "desktop",
       chapter: "scoring",
       caption: "The table starts the game.",
       cursor: "start-game",
@@ -1076,6 +1085,7 @@ export const gameDayStory: DemoScript = {
     }),
     land({
       id: "tip-off",
+      actor: "phone", // the page he is holding goes live
       chapter: "scoring",
       caption: "Tip-off, and the page he is holding goes live on its own.",
       emphasize: "waiting-card",
@@ -1085,6 +1095,7 @@ export const gameDayStory: DemoScript = {
     }),
     paced({
       id: "arm-two",
+      actor: "desktop",
       chapter: "scoring",
       caption: "Tap an action, then a player. Either order works.",
       cursor: "act-2",
@@ -1108,6 +1119,7 @@ export const gameDayStory: DemoScript = {
     }),
     paced({
       id: "to-plays",
+      actor: "phone", // he wants every play
       chapter: "scoring",
       caption: "He wants every play, not only the score.",
       cursor: "phone-tab-plays",
@@ -1115,6 +1127,7 @@ export const gameDayStory: DemoScript = {
     }),
     paced({
       id: "assist-press",
+      actor: "desktop", // back at the table
       chapter: "scoring",
       caption: "Back at the table, the console is asking who assisted.",
       cursor: "assist-18",
@@ -1191,6 +1204,7 @@ export const gameDayStory: DemoScript = {
     }),
     land({
       id: "land-foul",
+      actor: "phone", // red on the other phone
       chapter: "scoring",
       caption: "Red on the other phone.",
       emphasize: "fresh-play",
@@ -1202,6 +1216,7 @@ export const gameDayStory: DemoScript = {
        would read as an interruption rather than as alternation. */
     paced({
       id: "subs-open",
+      actor: "desktop",
       chapter: "scoring",
       caption: "Substitutions get their own drawer, because a swap is two decisions.",
       cursor: "subs-away",
@@ -1312,6 +1327,7 @@ export const gameDayStory: DemoScript = {
     }),
     paced({
       id: "to-game",
+      actor: "phone", // the spectator tour: leaders, box, plays
       chapter: "family",
       caption: "The rest of the game lives under the scoreboard.",
       cursor: "phone-tab-game",
@@ -1484,6 +1500,7 @@ export const gameDayStory: DemoScript = {
     }),
     land({
       id: "pin",
+      actor: "desktop", // the referee signs at the table
       chapter: "buzzer",
       caption: "A PIN, checked against the referee's own account.",
       emphasize: "approval-pin",

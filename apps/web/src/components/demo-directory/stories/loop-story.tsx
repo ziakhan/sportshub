@@ -263,6 +263,13 @@ export const loopStory: DemoScript = {
   scenePhones: true,
   desktopUrl: "/teams/lords-grade-9/calendar",
   initialStage: "desktop",
+  /* Who is driving (owner 2026-08-19): the desk is the COACH's calendar, the
+     handset is the parent's — except for the two beats where the story shows
+     the coach's own phone, annotated back to the coach explicitly. */
+  roles: {
+    desktop: { label: "Coach", tone: "club" },
+    phone: { label: "Parent", tone: "parent" },
+  },
   chapters: [
     { id: "change", title: "The change" },
     { id: "phones", title: "Every phone" },
@@ -346,6 +353,7 @@ export const loopStory: DemoScript = {
     /* ── 2. Every phone ───────────────────────────────────────────────── */
     paced({
       id: "arrive",
+      actor: "phone", // the parent still has the old time
       chapter: "phones",
       caption: `${PARENT} is one of those ${GUARDIANS} guardians, and still has the old time.`,
       stage: "split",
@@ -412,6 +420,7 @@ export const loopStory: DemoScript = {
     }),
     paced({
       id: "asked",
+      actor: "desktop", // the coach's OWN phone — coach, not parent
       chapter: "thread",
       caption: "On the coach's phone it arrives with who she is written under her name.",
       set: { asked: true },
@@ -467,6 +476,7 @@ export const loopStory: DemoScript = {
     }),
     paced({
       id: "weekend-one",
+      actor: "phone", // the parent answers the poll
       chapter: "poll",
       caption: "Two weekends work for them.",
       cursor: "p-opt-w2",
@@ -497,6 +507,7 @@ export const loopStory: DemoScript = {
     }),
     paced({
       id: "coach-count",
+      actor: "desktop", // the count moves on the coach's phone
       chapter: "poll",
       caption: "On the coach's phone the count moves.",
       emphasize: "c-opt-yes",

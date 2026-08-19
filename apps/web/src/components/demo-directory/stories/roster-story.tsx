@@ -268,6 +268,12 @@ export const rosterStory: DemoScript = {
   scenePhones: true,
   desktopUrl: "/clubs/toronto-lords/teams",
   initialStage: "desktop",
+  /* The two hands in this story. The player's role bug follows the actor
+     annotations below instead of saying CLUB while a parent accepts an offer. */
+  roles: {
+    desktop: { label: "Club", tone: "club" },
+    phone: { label: "Parent", tone: "parent" },
+  },
   chapters: [
     { id: "team", title: "Build the team" },
     { id: "tryout", title: "Post the tryout" },
@@ -410,6 +416,7 @@ export const rosterStory: DemoScript = {
     }),
     paced({
       id: "open-listing",
+      actor: "phone",
       chapter: "family",
       caption: `${PARENT} has two children at this club. She opens it.`,
       cursor: "p-tryout-card",
@@ -450,6 +457,7 @@ export const rosterStory: DemoScript = {
     /* ── 4. The offer, accepted ───────────────────────────────────────── */
     paced({
       id: "signups",
+      actor: "desktop",
       chapter: "offer",
       caption:
         "Tryout night is over. Five players signed up, each one carrying the guardian who signed them up.",
@@ -505,6 +513,7 @@ export const rosterStory: DemoScript = {
     }),
     paced({
       id: "push",
+      actor: "phone",
       chapter: "offer",
       caption: "Hers arrives the way a phone delivers things.",
       set: { banner: true },

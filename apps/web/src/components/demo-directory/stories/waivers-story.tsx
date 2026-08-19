@@ -415,6 +415,10 @@ export const waiversStory: DemoScript = {
   desktopUrl: "/manage/leagues/nph-summer/waivers",
   context: CTX_LIBRARY,
   initialStage: "desktop",
+  roles: {
+    desktop: { label: "League", tone: "league" },
+    phone: { label: "Parent", tone: "parent" },
+  },
   chapters: [
     { id: "doc", title: "One document" },
     { id: "sign", title: "A minute on a phone" },
@@ -527,6 +531,7 @@ export const waiversStory: DemoScript = {
     /* ── 2. A minute on a phone ───────────────────────────────────────── */
     paced({
       id: "email",
+      actor: "phone", // the parent signs from here to the ack
       chapter: "sign",
       caption: "This is what the league sent him, in the app he reads mail in.",
       stage: "split",

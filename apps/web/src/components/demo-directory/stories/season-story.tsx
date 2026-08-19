@@ -594,6 +594,10 @@ export const seasonStory: DemoScript = {
   desktopUrl: "/manage/leagues/nph-showcase/seasons/fall-winter-2026-27/manage?tab=overview",
   context: CTX_OVERVIEW,
   initialStage: "desktop",
+  roles: {
+    desktop: { label: "League", tone: "league" },
+    phone: { label: "Parent", tone: "parent" },
+  },
   chapters: [
     { id: "entries", title: "Teams come in" },
     { id: "buildings", title: "The buildings" },
@@ -1063,6 +1067,7 @@ export const seasonStory: DemoScript = {
     }),
     paced({
       id: "phone-in",
+      actor: "phone", // her phone, before the publish
       chapter: "publish",
       caption: "On Priya's phone, Jordan's practices are already there.",
       stage: "split",
@@ -1071,6 +1076,7 @@ export const seasonStory: DemoScript = {
     }),
     paced({
       id: "publish",
+      actor: "desktop", // the league presses publish
       chapter: "publish",
       caption: "One press, once, when the league is ready.",
       cursor: "publish",
@@ -1101,6 +1107,7 @@ export const seasonStory: DemoScript = {
     }),
     paced({
       id: "tap-push",
+      actor: "phone", // her calendar fills
       chapter: "publish",
       caption: "It opens the team's own calendar.",
       cursor: "push-open",

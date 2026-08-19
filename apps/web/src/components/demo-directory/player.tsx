@@ -70,9 +70,6 @@ function activeTarget(beat: DemoBeat | undefined): string | undefined {
 const TOUCH_44 =
   "max-sm:after:absolute max-sm:after:inset-x-0 max-sm:after:top-1/2 max-sm:after:h-11 max-sm:after:-translate-y-1/2 max-sm:after:content-['']"
 
-/** Session flag for the one-time keyboard hint. */
-const HINT_KEY = "sportshub.demo.spacehint"
-
 /** The transport buttons: real buttons, 44px tall, on every screen size. */
 const TRANSPORT =
   "inline-flex min-h-[44px] items-center justify-center gap-2 rounded-full px-4 text-[14px] font-bold outline-none transition-colors focus-visible:ring-2 focus-visible:ring-court-600 focus-visible:ring-offset-1 disabled:opacity-40 motion-reduce:transition-none"
@@ -123,8 +120,6 @@ export function DemoPlayer({
   const [playing, setPlaying] = useState(autoStart)
   const [elapsed, setElapsed] = useState(0)
   const [done, setDone] = useState(false)
-  /* The keyboard hint is a one-time read, so the session remembers it. */
-  const [hint, setHint] = useState(false)
 
   const rootRef = useRef<HTMLDivElement>(null)
   const stageRef = useRef<HTMLDivElement>(null)
@@ -259,24 +254,19 @@ export function DemoPlayer({
     setPlaying(!reduced)
   }, [reduced])
 
-  /* The hint appears once per session, and pressing the key it teaches is
-     what retires it. */
-  useEffect(() => {
-    try {
-      if (window.sessionStorage.getItem(HINT_KEY)) return
-    } catch {
-      /* private browsing: the hint simply shows again next time */
-    }
-    setHint(true)
-  }, [])
-
-  const retireHint = useCallback(() => {
-    setHint(false)
-    try {
-      window.sessionStorage.setItem(HINT_KEY, "1")
-    } catch {
-      /* nothing to remember it with */
-    }
+  const [flash, setFlash] = useState<"pause" | "play" | null>(null)
+  const flashTimer = useRef<number | null>(null)
+  const pressOrigin = useRef<{ x: number; y: number } | null>(null)
+  useEffect(
+    () => () => {
+      if (flashTimer.current) window.clearTimeout(flashTimer.current)
+    },
+    []
+  )
+  const pulse = useCallback((kind: "pause" | "play") => {
+    if (flashTimer.current) window.clearTimeout(flashTimer.current)
+    setFlash(kind)
+    flashTimer.current = window.setTimeout(() => setFlash(null), 700)
   }, [])
 
   /**
@@ -296,9 +286,12 @@ export function DemoPlayer({
 
       if (e.key === " " || e.key === "Spacebar") {
         e.preventDefault()
-        retireHint()
         if (done) restart()
-        else if (!reduced) setPlaying((p) => !p)
+        else if (!reduced)
+          setPlaying((p) => {
+            pulse(p ? "pause" : "play")
+            return !p
+          })
       } else if (e.key === "ArrowRight") {
         e.preventDefault()
         jumpTo(index + 1)
@@ -309,7 +302,31 @@ export function DemoPlayer({
     }
     window.addEventListener("keydown", onKey)
     return () => window.removeEventListener("keydown", onKey)
-  }, [done, reduced, restart, jumpTo, index, retireHint])
+  }, [done, reduced, restart, jumpTo, index, pulse])
+
+  /**
+   * The active actor, resolved by replaying the handoff signals up to the
+   * current beat: an explicit `actor` wins; a hard stage switch to one
+   * surface implies its own actor; `split` says nothing and keeps whoever
+   * was already driving. Jump-safe by construction — the walk starts from
+   * the beginning every time, so chapter 3 answers the same whether chapter
+   * 2 was watched or skipped.
+   */
+  const activeActor = useMemo(() => {
+    const init = script.initialStage
+    let actor: "desktop" | "phone" | null =
+      init === "phone" ? "phone" : init === "desktop" ? "desktop" : null
+    for (let i = 0; i <= index && i < beats.length; i++) {
+      const b = beats[i]
+      if (b.stage === "phone") actor = "phone"
+      else if (b.stage === "desktop") actor = "desktop"
+      if (b.actor) actor = b.actor
+    }
+    return actor
+  }, [index, beats, script.initialStage])
+  const surfaceRole = (activeActor && script.roles?.[activeActor]) || null
+  const activeRole = surfaceRole?.label ?? role
+  const activeTone = surfaceRole?.tone ?? roleTone
 
   const chapterOf = (i: number) => beats[i]?.chapter
   const activeChapter = chapterOf(index)
@@ -328,8 +345,130 @@ export function DemoPlayer({
   /* The overlay pack, built once and handed to whichever stage is presenting:
      the hand, the ring, the balloon and the toast all measure against the same
      `stageRef`, so neither presentation has its own choreography. */
+  /**
+   * Stage click = pause/resume (owner 2026-08-19, UX-reviewed).
+   *
+   * The YouTube interaction without the YouTube chrome: the viewer's eyes are
+   * on the stage, so the pause is where they are already looking, and the
+   * persistent transport top-left stays as the DISCOVERABLE, accessible
+   * control (gesture-alternative: a gesture never replaces a visible button).
+   *
+   * Three guards keep the click from doing something the viewer did not mean:
+   *  - a ~10px movement threshold, so panning a scene on a phone is never
+   *    read as a tap (drag-threshold);
+   *  - clicks on real controls inside the stage (a phone switcher, a link)
+   *    are ignored rather than doubled into a pause;
+   *  - reduced motion and the end card disable it entirely, matching the
+   *    transport's own disabled states.
+   * The centre glyph flashes on every toggle so the state change is confirmed
+   * at the point of gaze (press-feedback), then fades fully (opacity-threshold).
+   */
+  /**
+   * The launch cue (owner 2026-08-19, second pass). The first pass taught the
+   * stage click behind the SAME session flag as the old keyboard chip, so
+   * anyone who had ever paused was never taught — the owner opened a demo and
+   * saw nothing. Teaching the surface is not a one-shot: the cue now shows on
+   * EVERY launch, the way YouTube shows its state glyph on every video, and
+   * costs three seconds of corner-of-the-eye at most.
+   *
+   * Two cues, one visual language, both pointer-events-none:
+   *  - at launch: the centred translucent PAUSE glyph with one caption line,
+   *    self-fading by ~3.4s;
+   *  - on hover (any hover device, all the time): the same glyph, showing the
+   *    action a click would take right now — pause while playing, play while
+   *    paused. Touch devices have no hover; the launch cue plus the caption
+   *    line under the stage carry them.
+   */
+  const [launchCue, setLaunchCue] = useState(true)
+  useEffect(() => {
+    const t = window.setTimeout(() => setLaunchCue(false), 3400)
+    return () => window.clearTimeout(t)
+  }, [])
+
+  /**
+   * Idle fade (owner 2026-08-19): a resting cursor is someone WATCHING, and
+   * the glyph must not sit over the story they are watching. Any movement
+   * counts as renewed intent and brings it back. State flips only at the two
+   * edges — the ref carries the current value so the pointermove storm never
+   * causes a render, and the timer is the only thing that ever re-renders.
+   */
+  const [cursorLive, setCursorLive] = useState(false)
+  const cursorLiveRef = useRef(false)
+  const idleTimer = useRef<number | null>(null)
+  useEffect(
+    () => () => {
+      if (idleTimer.current) window.clearTimeout(idleTimer.current)
+    },
+    []
+  )
+  const wake = useCallback(() => {
+    if (!cursorLiveRef.current) {
+      cursorLiveRef.current = true
+      setCursorLive(true)
+    }
+    if (idleTimer.current) window.clearTimeout(idleTimer.current)
+    idleTimer.current = window.setTimeout(() => {
+      cursorLiveRef.current = false
+      setCursorLive(false)
+    }, 2200)
+  }, [])
+
+  const stagePress = {
+    onPointerDown: (e: React.PointerEvent) => {
+      pressOrigin.current = { x: e.clientX, y: e.clientY }
+    },
+    onPointerMove: wake,
+    onPointerEnter: wake,
+    onPointerLeave: () => {
+      if (idleTimer.current) window.clearTimeout(idleTimer.current)
+      cursorLiveRef.current = false
+      setCursorLive(false)
+    },
+    onPointerUp: (e: React.PointerEvent) => {
+      const o = pressOrigin.current
+      pressOrigin.current = null
+      if (!o || done || reduced) return
+      if (Math.hypot(e.clientX - o.x, e.clientY - o.y) > 10) return // a drag is a pan
+      const t = e.target as HTMLElement | null
+      if (t?.closest("button, a, [role='button']")) return // real controls stay real
+      setPlaying((prev) => {
+        pulse(prev ? "pause" : "play")
+        return !prev
+      })
+    },
+  }
+
+  /* Solid, full-strength role colours for the stage bug. The caption pill
+     below the stage keeps its pastel voice; the bug is IDENTITY and has to
+     survive being glanced at over a busy mock UI. Gold takes ink text —
+     white on gold fails contrast. */
+  const BUG_TONES: Record<string, string> = {
+    club: "bg-court-600 text-white",
+    league: "bg-play-600 text-white",
+    parent: "bg-hoop-500 text-white",
+    referee: "bg-gold-500 text-ink-950",
+  }
+
   const overlays = (
     <>
+      {/* Who is driving, ON the thing being watched (owner 2026-08-19): the
+          broadcast bug. Keyed by role so any future per-beat handoff remounts
+          it and the pulse announces the change; today it also pulses once at
+          launch, which is the introduction. */}
+      <div
+        key={`bug-${activeRole}`}
+        className="pointer-events-none absolute left-2.5 top-2.5 z-40 sm:left-3 sm:top-3"
+      >
+        <span
+          className={cn(
+            "demo-rolebug flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-[11px] font-black uppercase tracking-[0.14em] shadow-lg",
+            BUG_TONES[activeTone] ?? BUG_TONES.club
+          )}
+        >
+          <span className="h-1.5 w-1.5 rounded-full bg-current opacity-80 motion-safe:animate-pulse" />
+          {activeRole}
+        </span>
+      </div>
       <AnimatedCursor
         stageRef={stageRef}
         target={beat?.cursor}
@@ -362,6 +501,65 @@ export function DemoPlayer({
           centred on the part of the scene the keyhole is showing rather than on
           the whole composed region. The stage publishes that window as CSS
           variables; a computer never sets them and gets `inset-x-0`. */}
+      {launchCue && !reduced && !done && (
+        <div className="pointer-events-none absolute inset-0 z-40 flex flex-col items-center justify-center gap-3">
+          <span className="demo-launchcue flex h-[4.5rem] w-[4.5rem] items-center justify-center rounded-full bg-ink-950/70 text-white shadow-xl backdrop-blur-sm">
+            <svg viewBox="0 0 24 24" className="h-8 w-8 fill-current" aria-hidden="true">
+              <rect x="6" y="5" width="4" height="14" rx="1" />
+              <rect x="14" y="5" width="4" height="14" rx="1" />
+            </svg>
+          </span>
+          <span className="demo-launchcue bg-ink-950/70 rounded-full px-3.5 py-1.5 text-[13px] font-semibold text-white backdrop-blur-sm">
+            <span className="sm:hidden">Tap anywhere to pause</span>
+            <span className="hidden sm:inline">Click anywhere or press Space to pause</span>
+          </span>
+        </div>
+      )}
+      {/* The YouTube hover: whenever the pointer is over the stage, the glyph
+          for what a click would DO right now. Hover devices only, by media
+          feature rather than viewport width, and never while the launch cue or
+          the click flash already owns the centre. */}
+      {!reduced && !done && !launchCue && !flash && (
+        <div
+          className={cn(
+            "pointer-events-none absolute inset-0 z-30 hidden items-center justify-center opacity-0 transition-opacity [@media(hover:hover)]:flex",
+            cursorLive
+              ? "duration-200 group-hover:opacity-100" // movement: prompt arrival
+              : "duration-700" // rest: a slow, quiet exit that clears the stage
+          )}
+        >
+          <span className="flex h-14 w-14 items-center justify-center rounded-full bg-ink-950/55 text-white backdrop-blur-[2px]">
+            {playing ? (
+              <svg viewBox="0 0 24 24" className="h-6 w-6 fill-current" aria-hidden="true">
+                <rect x="6" y="5" width="4" height="14" rx="1" />
+                <rect x="14" y="5" width="4" height="14" rx="1" />
+              </svg>
+            ) : (
+              <svg viewBox="0 0 24 24" className="ml-0.5 h-6 w-6 fill-current" aria-hidden="true">
+                <path d="M8 5v14l11-7z" />
+              </svg>
+            )}
+          </span>
+        </div>
+      )}
+      {/* State flash at the point of gaze. Purely confirmatory; the live
+          state is always readable on the transport button top-left. */}
+      {flash && !reduced && (
+        <div className="pointer-events-none absolute inset-0 z-50 flex items-center justify-center">
+          <span className="demo-flash flex h-16 w-16 items-center justify-center rounded-full bg-ink-950/75 text-white backdrop-blur-sm">
+            {flash === "pause" ? (
+              <svg viewBox="0 0 24 24" className="h-7 w-7 fill-current" aria-hidden="true">
+                <rect x="6" y="5" width="4" height="14" rx="1" />
+                <rect x="14" y="5" width="4" height="14" rx="1" />
+              </svg>
+            ) : (
+              <svg viewBox="0 0 24 24" className="ml-1 h-7 w-7 fill-current" aria-hidden="true">
+                <path d="M8 5v14l11-7z" />
+              </svg>
+            )}
+          </span>
+        </div>
+      )}
       {beat?.toast && !reduced && (
         <div
           className="pointer-events-none absolute top-4 z-40 flex justify-center"
@@ -400,13 +598,96 @@ export function DemoPlayer({
     >
       <DemoOverlayStyles />
 
-      {/* Chapter jumps. The transport itself lives under the stage now, with
-          the progress bar between them, so the top of the player is nothing
-          but a way to skip to a part of the story.
-          The phone padding is not decoration: a sideways scroller CLIPS in
-          both axes, so without it the 44px touch overlay on each chip would
-          be cut back to the chip's own 29px. */}
-      <div className="mb-2 flex w-full min-w-0 flex-nowrap items-center gap-1.5 overflow-x-auto py-2 sm:mb-3 sm:flex-wrap sm:overflow-x-visible sm:py-0">
+      {/* Every control in ONE place, above the stage (owner 2026-08-19). The
+          transport used to sit below the caption at the very bottom of the
+          player, which on most laptops is below the fold: you either watched
+          the story or knew where the buttons were, not both, and jumping
+          between them meant looking away from the stage. Back/Pause/Next now
+          LEAD the row, top left, with the chapter chips beside them — the eye
+          holds the controls and the stage in a single glance and nothing is
+          ever cut off the bottom of the frame.
+          The phone padding on the chip scroller is not decoration: a sideways
+          scroller CLIPS in both axes, so without it the 44px touch overlay on
+          each chip would be cut back to the chip's own 29px. */}
+      <div className="mb-2 flex w-full min-w-0 flex-wrap items-center gap-2 sm:mb-3">
+        {!done && (
+          <div className="flex shrink-0 items-center gap-1.5">
+            <button
+              type="button"
+              onClick={() => jumpTo(index - 1)}
+              disabled={index === 0}
+              aria-label="Back"
+              className={cn(TRANSPORT, "border-ink-200 text-ink-700 border bg-white hover:bg-ink-50")}
+            >
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.6"
+                aria-hidden="true"
+                className="h-3.5 w-3.5"
+              >
+                <path d="M14 6l-6 6 6 6" />
+              </svg>
+              Back
+            </button>
+            <button
+              type="button"
+              onClick={() => setPlaying((p) => !p)}
+              disabled={reduced}
+              aria-pressed={!playing}
+              aria-label={playing ? "Pause" : "Play"}
+              className={cn(
+                TRANSPORT,
+                reduced
+                  ? "bg-ink-100 text-ink-400"
+                  : playing
+                    ? "bg-court-600 text-white"
+                    : "bg-ink-900 text-white"
+              )}
+            >
+              {playing ? (
+                <>
+                  <svg viewBox="0 0 24 24" className="h-3.5 w-3.5 fill-current" aria-hidden="true">
+                    <rect x="6" y="5" width="4" height="14" rx="1" />
+                    <rect x="14" y="5" width="4" height="14" rx="1" />
+                  </svg>
+                  Pause
+                </>
+              ) : (
+                <>
+                  <svg viewBox="0 0 24 24" className="h-3.5 w-3.5 fill-current" aria-hidden="true">
+                    <path d="M8 5v14l11-7z" />
+                  </svg>
+                  Play
+                </>
+              )}
+            </button>
+            <button
+              type="button"
+              onClick={() => jumpTo(index + 1)}
+              disabled={index >= beats.length - 1}
+              aria-label="Next"
+              className={cn(TRANSPORT, "border-ink-200 text-ink-700 border bg-white hover:bg-ink-50")}
+            >
+              Next
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.6"
+                aria-hidden="true"
+                className="h-3.5 w-3.5"
+              >
+                <path d="M10 6l6 6-6 6" />
+              </svg>
+            </button>
+          </div>
+        )}
+        {/* Two kinds of control share this row — the transport DOES, the chips
+            GO TO. One hairline keeps them two groups instead of seven pills. */}
+        {!done && <span aria-hidden="true" className="bg-ink-200 hidden h-6 w-px shrink-0 sm:block" />}
+        <div className="flex min-w-0 flex-1 flex-nowrap items-center gap-1.5 overflow-x-auto py-2 sm:flex-wrap sm:overflow-x-visible sm:py-0">
         {chapters.map((c, ci) => {
           const first = beats.findIndex((b) => b.chapter === c.id)
           const active = c.id === activeChapter
@@ -419,7 +700,7 @@ export function DemoPlayer({
                 "relative shrink-0 rounded-full px-3 py-1 text-[14px] font-semibold transition-colors",
                 TOUCH_44,
                 active
-                  ? "bg-court-50 text-court-700 ring-court-200 ring-1 ring-inset"
+                  ? "bg-[color:var(--brand,#1a73e8)] text-white shadow-sm"
                   : "text-ink-500 hover:bg-ink-100 bg-white"
               )}
             >
@@ -427,6 +708,7 @@ export function DemoPlayer({
             </button>
           )
         })}
+        </div>
       </div>
 
       {/* Progress */}
@@ -439,6 +721,7 @@ export function DemoPlayer({
 
       {/* Stage. Two presentations, one set of overlays: the cursor, the ring,
           the callout and the toast measure against `stageRef` either way. */}
+      <div {...stagePress} className={cn("group", !done && !reduced && "cursor-pointer")}>
       {scene ? (
         <SceneStage
           mode={stage === "desktop" ? "wide" : "duo"}
@@ -472,19 +755,30 @@ export function DemoPlayer({
           {overlays}
         </SplitStage>
       )}
+      </div>
 
       {/* One line for phones, and what it says depends on what the stage did.
           A scene keeps its authored size and pans, so the line is an
           invitation. A framed story still scales its browser window down, so
           the line is still an apology. A phone-only demo, and the handset pair
           with its own switcher, have nothing to explain. */}
-      {!script.soloPhone && !script.scenePhones && (
-        <p className="text-ink-400 mt-2 text-[14px] font-medium sm:hidden">
-          {scene
-            ? "Swipe sideways to look around."
-            : "The desktop screen is scaled down to fit your phone. Turn it sideways, or open this on a laptop, to read every detail."}
-        </p>
-      )}
+      {/* The tap affordance is invisible by nature, so it is SAID on phones
+          (owner 2026-08-19: the feature must be known, not discovered by
+          accident). Under reduced motion pause is disabled, so the line
+          stays silent about it rather than promising a dead control. */}
+      <p className="text-ink-400 mt-2 text-[14px] font-medium sm:hidden">
+        {script.soloPhone || script.scenePhones
+          ? reduced
+            ? null
+            : "Tap the demo to pause or resume."
+          : scene
+            ? reduced
+              ? "Swipe sideways to look around."
+              : "Swipe sideways to look around. Tap the demo to pause."
+            : reduced
+              ? "The desktop screen is scaled down to fit your phone. Turn it sideways, or open this on a laptop, to read every detail."
+              : "The desktop screen is scaled down to fit your phone. Turn it sideways to read every detail, and tap the demo to pause."}
+      </p>
 
       {/* Caption. ONE VOICE (owner ruling 2026-08-16): when the beat explains
           itself at the point of action, the bar under the stage stops talking
@@ -492,8 +786,8 @@ export function DemoPlayer({
           sentence, because there the caption IS the narration. */}
       <div className="mt-2.5 sm:mt-4">
         <StepCaption
-          role={role}
-          roleTone={roleTone}
+          role={activeRole}
+          roleTone={activeTone}
           chapterTitle={chapters.find((c) => c.id === activeChapter)?.title}
           quiet={Boolean(beat?.callout) && !reduced}
         >
@@ -503,10 +797,10 @@ export function DemoPlayer({
         </StepCaption>
       </div>
 
-      {/* The transport: Back, Pause and Next, as real buttons with real touch
-          targets, and the same three things the keyboard does. When the story
-          runs out they are replaced by one calm card. */}
-      {done ? (
+      {/* End of story. The transport lives at the top of the player now; the
+          only thing that ever renders down here is the closing card, where the
+          stage has gone quiet and attention is free for one calm invitation. */}
+      {done && (
         <div className="border-ink-200 mt-3 flex flex-wrap items-center gap-3 rounded-2xl border bg-white px-4 py-3">
           <p className="text-ink-700 text-[15px] font-semibold">That is the whole story.</p>
           <div className="ml-auto flex flex-wrap items-center gap-2">
@@ -535,92 +829,6 @@ export function DemoPlayer({
               All demos
             </Link>
           </div>
-        </div>
-      ) : (
-        <div className="mt-1.5 flex items-center gap-2 sm:mt-2">
-          <button
-            type="button"
-            onClick={() => jumpTo(index - 1)}
-            disabled={index === 0}
-            aria-label="Back"
-            className={cn(TRANSPORT, "border-ink-200 text-ink-700 border bg-white hover:bg-ink-50")}
-          >
-            <svg
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2.6"
-              aria-hidden="true"
-              className="h-3.5 w-3.5"
-            >
-              <path d="M14 6l-6 6 6 6" />
-            </svg>
-            Back
-          </button>
-
-          <button
-            type="button"
-            onClick={() => {
-              retireHint()
-              setPlaying((p) => !p)
-            }}
-            disabled={reduced}
-            aria-pressed={!playing}
-            aria-label={playing ? "Pause" : "Play"}
-            className={cn(
-              TRANSPORT,
-              reduced ? "bg-ink-100 text-ink-400" : playing ? "bg-court-600 text-white" : "bg-ink-900 text-white"
-            )}
-          >
-            {playing ? (
-              <>
-                <svg viewBox="0 0 24 24" className="h-3.5 w-3.5 fill-current" aria-hidden="true">
-                  <rect x="6" y="5" width="4" height="14" rx="1" />
-                  <rect x="14" y="5" width="4" height="14" rx="1" />
-                </svg>
-                Pause
-              </>
-            ) : (
-              <>
-                <svg viewBox="0 0 24 24" className="h-3.5 w-3.5 fill-current" aria-hidden="true">
-                  <path d="M8 5v14l11-7z" />
-                </svg>
-                Play
-              </>
-            )}
-          </button>
-
-          <button
-            type="button"
-            onClick={() => jumpTo(index + 1)}
-            disabled={index >= beats.length - 1}
-            aria-label="Next"
-            className={cn(TRANSPORT, "border-ink-200 text-ink-700 border bg-white hover:bg-ink-50")}
-          >
-            Next
-            <svg
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2.6"
-              aria-hidden="true"
-              className="h-3.5 w-3.5"
-            >
-              <path d="M10 6l6 6-6 6" />
-            </svg>
-          </button>
-
-          {hint && !reduced && (
-            <span className="border-ink-200 text-ink-500 hidden rounded-full border bg-white px-3 py-1 text-[14px] font-semibold sm:inline">
-              Space to pause
-            </span>
-          )}
-
-          <p className="text-ink-400 ml-auto hidden text-[14px] font-medium sm:block">
-            {reduced
-              ? "Motion is reduced on this device, so each step shows its finished screen."
-              : "Jump to any chapter above. Nothing here needs an account."}
-          </p>
         </div>
       )}
     </div>
