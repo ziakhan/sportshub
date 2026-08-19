@@ -24,6 +24,7 @@ import { CourtBackdrop } from "@/components/ui"
 import { NotifyForm } from "@/components/launch/notify-form"
 import { BrandWordmark } from "@/components/brand/wordmark"
 import { DEMOS, type DemoAudience } from "@/app/demos/registry"
+import { HeroScenes } from "./hero-scenes"
 
 /* Rotating hero slogans in the owner's priority order (2026-08-17), each with
    its own accent the way the product home page colours "All of it." in gold.
@@ -1964,6 +1965,10 @@ export function HomePreview() {
     <main className="bg-white">
       <style dangerouslySetInnerHTML={{ __html: PREVIEW_CSS }} />
       <Hero />
+      {/* Hero B, the scene version (owner A/B, 2026-08-19). Additive on
+          purpose: Hero A above is untouched, both live on the page so they can
+          be read back to back and shown to other people before one is cut. */}
+      <HeroScenes />
       <Screenshots />
       <ClaimYourClub />
       <ReplacesStory />
