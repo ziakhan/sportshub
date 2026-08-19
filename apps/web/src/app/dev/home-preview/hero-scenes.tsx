@@ -2,7 +2,7 @@
 
 import Image from "next/image"
 import Link from "next/link"
-import { useEffect, useRef, useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 import { NotifyForm } from "@/components/launch/notify-form"
 import { BrandWordmark } from "@/components/brand/wordmark"
 import { CourtBackdrop } from "@/components/ui/court-backdrop"
@@ -10,270 +10,407 @@ import { CourtBackdrop } from "@/components/ui/court-backdrop"
 /**
  * Hero B — the scene hero (2026-08-19, owner-requested A/B).
  *
- * Sits directly under the existing hero on the same page so the two can be
- * read back to back and shown to other people. NOTHING IS REMOVED: Hero A is
- * untouched and this is purely additive until the owner picks one.
+ * v2 after the owner's review of v1, which he was right to call sloppy:
+ *   · no left/right arrows and no pause, so a reader could not drive it
+ *   · 6s rotation moved on before an artifact could be read
+ *   · the "phone" was a 212x300 box, which is not a phone shape, so the
+ *     capture inside it read as distorted
+ *   · the handle chip truncated on a phone, cutting off the handle, which was
+ *     the one thing that scene exists to show
+ *   · artifacts were thin: a bare stat row, a bare list. The creatives they
+ *     came from were full cards with headers, meta lines and context, and the
+ *     hero versions had been stripped to nothing
  *
- * WHY IT EXISTS. Hero A rotates fourteen slogans of text at 4.2s, which is
- * 59 seconds to see them all when a visitor gives a hero about ten. It also
- * asserts without evidence: the proof lives in the Screenshots section, a
- * full screen below the claim it proves. The social creatives landed harder
- * because each pairs ONE claim with ONE artifact in the same eyeful, so this
- * hero does that: seven scenes, four pains and two prides and the thesis, each
- * carrying the artifact that makes it true.
+ * The fix that matters most is CONTEXT. A stat line floating in a box is not
+ * evidence of anything; the same stat line inside a live game, under a score
+ * and a running clock with a Player of the Game badge on it, is the product.
+ * Every artifact now sits in the surface it really lives on.
  *
- * NOT IMAGES. Every artifact here is live DOM, not a PNG of the creative. The
- * creatives are 4:5 because Instagram is; a hero is wide and short on desktop
- * and tall and narrow on a phone, so only the markup transfers, never the
- * layout. Real text keeps reflowing and stays indexable, and the LCP element
- * stays type rather than a bitmap. The one bitmap is the live-game screenshot
- * in scene 5, which is a real product capture and the point of that scene.
- *
- * DESKTOP is text left, artifact right. PHONES stack, and every artifact
- * carries a compact mode (fewer chat bubbles, fewer ladder rungs) because the
- * mobile hero is already full. The open question the owner is judging: on a
- * phone the artifact pushes the signup form down, and that is a conversion
- * trade no layout can argue away.
+ * Still not images. Artifacts are live DOM ported from the creatives' markup,
+ * so text reflows and indexes and the LCP element stays type. The one bitmap
+ * is the real product capture in the family scene, which is the point of it.
  */
 
-/* ── Artifacts ───────────────────────────────────────────────────────────── */
+/* ── Shared artifact chrome ──────────────────────────────────────────────── */
 
-/** s1 — the pile of things a club is paying for instead. */
-function PileArtifact() {
-  const rows = [
-    { name: "Registration spreadsheet", cut: true },
-    { name: "Team chat app", cut: true },
-    { name: "Live scoring app", cut: true },
-    { name: "E-transfer chasing", cut: true },
-    { name: "A website builder", cut: true },
-  ]
+function Card({
+  children,
+  className = "",
+}: {
+  children: React.ReactNode
+  className?: string
+}) {
   return (
-    <ArtifactCard>
-      <div className="space-y-2">
-        {rows.map((r, i) => (
-          <div
-            key={r.name}
-            /* Compact mode: the last two rows are desktop-only. */
-            className={`flex items-center gap-3 rounded-xl border border-white/12 bg-white/5 px-4 py-2.5 ${
-              i >= 3 ? "max-md:hidden" : ""
-            }`}
-          >
-            <span className="text-[15px] font-bold text-live-500">&times;</span>
-            <span className="text-[15px] font-medium text-white/60 line-through decoration-live-500/50">
-              {r.name}
-            </span>
-          </div>
-        ))}
-        <div className="flex items-center gap-3 rounded-xl bg-hoop-500 px-4 py-2.5">
-          <span className="text-[15px] font-bold text-white">&#10003;</span>
-          <span className="text-[15px] font-bold text-white">One app</span>
-        </div>
-      </div>
-    </ArtifactCard>
+    <div
+      className={`w-full max-w-[380px] overflow-hidden rounded-2xl border border-white/14 bg-gradient-to-br from-[#18263f] to-[#0c1526] shadow-[0_40px_90px_-30px_rgba(0,0,0,0.9)] md:max-w-[460px] ${className}`}
+    >
+      {children}
+    </div>
   )
 }
 
-/** s18 — the group chat spiral after a team drops out. */
+/** The strip every product card carries, so an artifact reads as a screen. */
+function CardHead({ left, right }: { left: React.ReactNode; right?: React.ReactNode }) {
+  return (
+    <div className="flex items-center gap-3 border-b border-white/10 bg-white/[0.06] px-4 py-2.5 md:px-5 md:py-3">
+      <span className="text-[12px] font-bold uppercase tracking-[0.16em] text-white/45 md:text-[13px]">
+        {left}
+      </span>
+      {right ? <span className="ml-auto">{right}</span> : null}
+    </div>
+  )
+}
+
+function LivePill() {
+  return (
+    <span className="inline-flex items-center gap-1.5 rounded-full border border-live-500/50 bg-live-500/15 px-2.5 py-1 text-[11px] font-bold uppercase tracking-[0.12em] text-[#ff9ba3]">
+      <span className="h-1.5 w-1.5 rounded-full bg-live-500" />
+      Live
+    </span>
+  )
+}
+
+/* ── 1 · Clubs: the pile, with what each one costs ───────────────────────── */
+
+function PileArtifact() {
+  const rows = [
+    { name: "Registration + payments", note: "$79 / mo", phone: true },
+    { name: "Team chat and RSVPs", note: "$8 / team", phone: true },
+    { name: "Live scoring and stats", note: "$300 / yr", phone: true },
+    { name: "Website builder", note: "$25 / mo" },
+    { name: "The spreadsheet", note: "Free, and it shows" },
+  ]
+  return (
+    <Card>
+      <CardHead left="What you pay for now" />
+      <div className="space-y-2 p-4 md:p-5">
+        {rows.map((r) => (
+          <div
+            key={r.name}
+            className={`flex items-center gap-3 rounded-xl border border-white/10 bg-white/[0.04] px-3.5 py-2.5 md:px-4 md:py-3 ${
+              r.phone ? "" : "max-md:hidden"
+            }`}
+          >
+            <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-live-500/20 text-[13px] font-bold text-live-500">
+              &times;
+            </span>
+            <span className="min-w-0 flex-1 truncate text-[14px] font-semibold text-white/70 line-through decoration-live-500/45 md:text-[15px]">
+              {r.name}
+            </span>
+            <span className="shrink-0 text-[12px] font-semibold text-white/35 md:text-[13px]">
+              {r.note}
+            </span>
+          </div>
+        ))}
+        <div className="flex items-center gap-3 rounded-xl bg-hoop-500 px-3.5 py-3 shadow-lg md:px-4">
+          <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-white/25 text-[13px] font-bold text-white">
+            &#10003;
+          </span>
+          <span className="flex-1 text-[15px] font-extrabold text-white md:text-[16px]">
+            One app
+          </span>
+          <span className="text-[12px] font-bold uppercase tracking-wide text-white/80">
+            One login
+          </span>
+        </div>
+      </div>
+    </Card>
+  )
+}
+
+/* ── 2 · Parents: the group chat spiral ──────────────────────────────────── */
+
 function ChatArtifact() {
   return (
-    <ArtifactCard padded={false}>
-      <div className="flex items-center gap-3 border-b border-white/10 bg-white/5 px-5 py-3">
+    <Card>
+      <div className="flex items-center gap-3 border-b border-white/10 bg-white/[0.06] px-4 py-3 md:px-5">
         <span className="flex h-8 w-8 items-center justify-center rounded-full bg-white/15 text-[12px] font-bold text-white">
           G9
         </span>
-        <span className="text-[15px] font-bold text-white">Grade 9 Parents</span>
-        <span className="ml-auto text-[13px] text-white/40">23 members</span>
+        <span className="min-w-0">
+          <span className="block truncate text-[15px] font-bold text-white">Grade 9 Parents</span>
+          <span className="block text-[12px] text-white/40">23 members</span>
+        </span>
+        <span className="ml-auto shrink-0 text-[11px] font-semibold uppercase tracking-wide text-white/30">
+          Sat 8:41
+        </span>
       </div>
-      <div className="flex flex-col gap-2 px-5 py-4">
-        <Bubble>A team pulled out, so the whole weekend changed</Bubble>
-        <Bubble me>Is Saturday still on?</Bubble>
-        <Bubble className="max-md:hidden">I heard 2pm now. Or 4?</Bubble>
-        <Bubble>
+      <div className="flex flex-col gap-2 p-4 md:p-5">
+        <Bubble time="8:41">A team pulled out, so the whole weekend changed</Bubble>
+        <Bubble me time="8:44">Is Saturday still on?</Bubble>
+        <Bubble time="9:02" hideOnPhone>
+          I heard 2pm now. Or 4?
+        </Bubble>
+        <Bubble time="9:15">
           <span className="inline-flex items-center gap-2">
-            <span className="flex h-6 w-6 items-center justify-center rounded bg-court-600 text-[9px] font-bold text-white">
+            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded bg-court-600 text-[9px] font-bold text-white">
               XLS
             </span>
-            schedule_FINAL_v4.xlsx
+            <span className="truncate">schedule_FINAL_v4.xlsx</span>
           </span>
         </Bubble>
-        <Bubble>that&rsquo;s the old one sorry</Bubble>
+        <Bubble time="9:16">that&rsquo;s the old one sorry</Bubble>
       </div>
-    </ArtifactCard>
+    </Card>
   )
 }
 
 function Bubble({
   children,
   me,
-  className = "",
+  time,
+  hideOnPhone,
 }: {
   children: React.ReactNode
   me?: boolean
-  className?: string
+  time?: string
+  hideOnPhone?: boolean
 }) {
   return (
     <span
-      className={`max-w-[85%] rounded-2xl border px-4 py-2.5 text-[14px] leading-snug ${
+      className={`max-w-[88%] rounded-2xl border px-3.5 py-2.5 text-[14px] leading-snug md:text-[15px] ${
         me
-          ? "self-end border-play-300/30 bg-play-600/30 text-white/90"
-          : "border-white/10 bg-white/8 text-white/85"
-      } ${className}`}
+          ? "self-end border-play-300/30 bg-play-600/30 text-white/92"
+          : "border-white/10 bg-white/[0.07] text-white/85"
+      } ${hideOnPhone ? "max-md:hidden" : ""}`}
     >
       {children}
+      {time ? (
+        <span className="mt-1 block text-[10px] font-medium text-white/30">{time}</span>
+      ) : null}
     </span>
   )
 }
 
-/** s9 — the stat line, no faces, name as an unconsented card renders it. */
-function StatlineArtifact() {
-  const stats = [
-    { v: "21", k: "Pts", hero: true },
-    { v: "7", k: "Reb" },
-    { v: "4", k: "Ast" },
-    { v: "3", k: "Stl" },
-  ]
+/* ── 3 · Players: the stat line WHERE IT LIVES, inside a live game ───────── */
+
+function LiveStatlineArtifact() {
   return (
-    <ArtifactCard>
-      <div className="flex items-center gap-5">
-        <span className="font-display text-[64px] font-extrabold leading-none tracking-tight text-transparent [-webkit-text-stroke:2.5px_theme(colors.gold.500)]">
-          23
-        </span>
-        <span>
-          <span className="block text-[26px] font-extrabold tracking-tight text-white">
-            Jayden T.
+    <Card>
+      <CardHead left="NPH Summer League" right={<LivePill />} />
+
+      {/* Scoreboard */}
+      <div className="border-b border-white/10 px-4 py-3.5 md:px-5">
+        <div className="flex items-center gap-3">
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-play-600 text-[13px] font-extrabold text-white">
+            F
           </span>
-          <span className="mt-1 block text-[14px] font-semibold text-white/50">
-            Grade 10 Boys &middot; vs Huskies
+          <span className="flex-1 text-[17px] font-bold text-white md:text-[18px]">Force</span>
+          <span className="text-[30px] font-extrabold leading-none tabular-nums text-gold-300 md:text-[34px]">
+            62
           </span>
-        </span>
+        </div>
+        <div className="mt-2.5 flex items-center gap-3">
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-hoop-500 text-[13px] font-extrabold text-white">
+            H
+          </span>
+          <span className="flex-1 text-[17px] font-bold text-white md:text-[18px]">Huskies</span>
+          <span className="text-[30px] font-extrabold leading-none tabular-nums text-white md:text-[34px]">
+            58
+          </span>
+        </div>
+        <p className="mt-2.5 text-[12px] font-semibold uppercase tracking-[0.14em] text-white/35">
+          Q4 &middot; 2:14 &middot; Haber Recreation Centre
+        </p>
       </div>
-      <div className="mt-5 flex justify-between border-t border-white/12 pt-4">
-        {stats.map((s) => (
-          <span key={s.k} className="text-center">
+
+      {/* The player card, in the game it came from */}
+      <div className="bg-gold-500/[0.07] px-4 py-4 md:px-5">
+        <span className="inline-flex items-center gap-2 rounded-full bg-gold-500 px-3 py-1 text-[11px] font-extrabold uppercase tracking-[0.12em] text-ink-950">
+          <svg viewBox="0 0 24 24" className="h-3 w-3 fill-ink-950" aria-hidden="true">
+            <path d="M12 2l2.9 6.1 6.6.9-4.8 4.7 1.2 6.6L12 17.2 6.1 20.3l1.2-6.6L2.5 9l6.6-.9z" />
+          </svg>
+          Player of the Game
+        </span>
+        <div className="mt-3 flex items-center gap-3.5">
+          <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl border-2 border-gold-500 text-[24px] font-extrabold tabular-nums text-gold-300 md:h-16 md:w-16 md:text-[28px]">
+            23
+          </span>
+          <span className="min-w-0">
+            <span className="block truncate text-[19px] font-extrabold tracking-tight text-white md:text-[21px]">
+              Jayden T.
+            </span>
+            <span className="mt-0.5 block text-[13px] font-semibold text-white/45">
+              Grade 10 Boys &middot; #23 Guard
+            </span>
+          </span>
+        </div>
+        <div className="mt-3.5 grid grid-cols-4 gap-1.5">
+          {[
+            ["21", "Pts", true],
+            ["7", "Reb", false],
+            ["4", "Ast", false],
+            ["3", "Stl", false],
+          ].map(([v, k, hero]) => (
             <span
-              className={`block text-[38px] font-extrabold leading-none tabular-nums ${
-                s.hero ? "text-gold-300" : "text-white"
-              }`}
+              key={k as string}
+              className="rounded-lg border border-white/10 bg-white/[0.05] py-2 text-center"
             >
-              {s.v}
+              <span
+                className={`block text-[22px] font-extrabold leading-none tabular-nums md:text-[24px] ${
+                  hero ? "text-gold-300" : "text-white"
+                }`}
+              >
+                {v as string}
+              </span>
+              <span className="mt-1 block text-[10px] font-bold uppercase tracking-[0.14em] text-white/40">
+                {k as string}
+              </span>
             </span>
-            <span className="mt-1.5 block text-[12px] font-bold uppercase tracking-[0.18em] text-white/40">
-              {s.k}
-            </span>
-          </span>
-        ))}
+          ))}
+        </div>
       </div>
-    </ArtifactCard>
+    </Card>
   )
 }
 
-/** s17 — the burden ladder, which is what the scheduler actually prices. */
+/* ── 4 · Leagues: the burden ladder ──────────────────────────────────────── */
+
 function LadderArtifact() {
-  const rungs: { what: string; verdict: string; tone: string; compactHide?: boolean }[] = [
+  const rungs: {
+    what: string
+    verdict: string
+    tone: "best" | "ok" | "bad" | "no"
+    hideOnPhone?: boolean
+  }[] = [
     { what: "Two to four slots between games", verdict: "Target", tone: "best" },
-    { what: "Only one slot to rest", verdict: "Costs", tone: "ok", compactHide: true },
-    { what: "A five-slot wait, or back a second day", verdict: "Same cost", tone: "bad", compactHide: true },
+    { what: "Only one slot to rest", verdict: "Costs", tone: "ok", hideOnPhone: true },
+    { what: "A five-slot wait, or back a second day", verdict: "Same cost", tone: "bad" },
     { what: "Two games in a row", verdict: "Not allowed", tone: "no" },
   ]
-  const tones: Record<string, string> = {
+  const tone: Record<string, string> = {
     best: "border-court-600/45 bg-court-600/10",
-    ok: "border-white/14 bg-white/5",
-    bad: "border-gold-500/40 bg-gold-500/8",
-    no: "border-live-500/50 bg-live-500/10",
+    ok: "border-white/14 bg-white/[0.05]",
+    bad: "border-gold-500/40 bg-gold-500/10",
+    no: "border-live-500/50 bg-live-500/12",
   }
-  const chips: Record<string, string> = {
+  const chip: Record<string, string> = {
     best: "bg-court-600 text-white",
     ok: "bg-white/15 text-white/80",
     bad: "bg-gold-500 text-ink-950",
     no: "bg-live-500 text-white",
   }
   return (
-    <ArtifactCard>
-      <div className="space-y-2">
+    <Card>
+      <CardHead left="What a weekend costs a team" />
+      <div className="space-y-2 p-4 md:p-5">
         {rungs.map((r) => (
           <div
             key={r.what}
-            className={`flex items-center gap-3 rounded-xl border px-4 py-3 ${tones[r.tone]} ${
-              r.compactHide ? "max-md:hidden" : ""
+            className={`flex items-center gap-3 rounded-xl border px-3.5 py-3 md:px-4 ${tone[r.tone]} ${
+              r.hideOnPhone ? "max-md:hidden" : ""
             }`}
           >
-            <span className="text-[14px] font-semibold leading-snug text-white/88">{r.what}</span>
+            <span className="min-w-0 flex-1 text-[14px] font-semibold leading-snug text-white/90 md:text-[15px]">
+              {r.what}
+            </span>
             <span
-              className={`ml-auto shrink-0 rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.12em] ${chips[r.tone]}`}
+              className={`shrink-0 rounded-full px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-[0.1em] md:text-[11px] ${chip[r.tone]}`}
             >
               {r.verdict}
             </span>
           </div>
         ))}
+        <p className="pt-1 text-[12px] leading-snug text-white/40 md:text-[13px]">
+          And each one costs more on a team that already carried one.
+        </p>
       </div>
-    </ArtifactCard>
+    </Card>
   )
 }
 
-/** s15 — the real live game capture. The one bitmap, and the point of it. */
-function LiveGameArtifact() {
+/* ── 5 · Family: the real capture, in a phone-shaped phone ───────────────── */
+
+function PhoneArtifact({ src, alt }: { src: string; alt: string }) {
+  /* v1 framed this at 212x300, which is not a phone shape and made the
+     capture read as distorted. The frame now holds a real 390:844 ratio and
+     simply crops lower down, so it is a phone with its screen cut off rather
+     than a squashed rectangle. */
   return (
-    <div className="mx-auto w-[212px] rounded-[2rem] border border-white/14 bg-ink-950 p-2 shadow-2xl md:w-[268px]">
-      <div className="relative h-[300px] overflow-hidden rounded-[1.5rem] bg-white md:h-[400px]">
+    <div className="mx-auto w-[198px] rounded-[2rem] border border-white/15 bg-ink-950 p-1.5 shadow-[0_40px_90px_-28px_rgba(0,0,0,0.95)] md:w-[304px] md:rounded-[2.6rem] md:p-2.5">
+      <div className="relative aspect-[390/620] overflow-hidden rounded-[1.6rem] bg-white md:rounded-[2rem]">
         <Image
-          src="/shots/phone-game.png"
-          alt="Live game screen with the score, the clock and scoring by period"
+          src={src}
+          alt={alt}
           width={780}
           height={1688}
-          className="w-full"
-          priority={false}
+          className="absolute left-0 top-0 w-full"
         />
-        <span className="pointer-events-none absolute inset-x-0 bottom-0 h-12 bg-gradient-to-b from-transparent to-white" />
+        <span className="pointer-events-none absolute inset-x-0 bottom-0 h-16 bg-gradient-to-b from-transparent to-white" />
       </div>
     </div>
   )
 }
 
-/** s10 — the handle, which is the page a player puts in their own bio. */
-function HandleArtifact() {
+/* ── 6 · Players: the page, not a chip ───────────────────────────────────── */
+
+function PlayerPageArtifact() {
   return (
-    <div className="flex flex-col items-center gap-4 md:items-start">
-      <span className="inline-flex max-w-full items-center rounded-full bg-ink-950 px-6 py-4 shadow-2xl ring-1 ring-white/15">
-        <span className="truncate text-[17px] font-semibold text-white/45 md:text-[20px]">
-          sportshubone.com/p/
+    <Card>
+      {/* The URL is the point of this scene, so it never truncates. */}
+      <div className="flex items-center gap-2 border-b border-white/10 bg-black/30 px-3 py-2.5 md:px-4">
+        <span className="flex gap-1">
+          <span className="h-2 w-2 rounded-full bg-white/20" />
+          <span className="h-2 w-2 rounded-full bg-white/20" />
+          <span className="h-2 w-2 rounded-full bg-white/20" />
         </span>
-        <span className="text-[19px] font-extrabold tracking-tight text-gold-300 md:text-[22px]">
-          jaydent
+        <span className="ml-1 min-w-0 flex-1 rounded-md bg-white/[0.07] px-2.5 py-1 text-[11px] font-semibold text-white/45 md:text-[13px]">
+          sportshubone.com/p/<span className="font-extrabold text-gold-300">jaydent</span>
         </span>
-      </span>
-      <div className="flex flex-wrap justify-center gap-2 md:justify-start">
-        {["Every box score", "Season averages", "Player of the Game"].map((c) => (
-          <span
-            key={c}
-            className="rounded-full border border-white/15 bg-white/5 px-3.5 py-1.5 text-[13px] font-semibold text-white/70"
-          >
-            {c}
+      </div>
+
+      <div className="px-4 py-4 md:px-5">
+        <div className="flex items-center gap-3.5">
+          <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-play-600 text-[20px] font-extrabold text-white md:h-16 md:w-16">
+            23
           </span>
-        ))}
+          <span className="min-w-0">
+            <span className="block truncate text-[19px] font-extrabold tracking-tight text-white md:text-[22px]">
+              Jayden T.
+            </span>
+            <span className="mt-0.5 block text-[13px] font-semibold text-gold-300">@jaydent</span>
+            <span className="mt-0.5 block truncate text-[12px] text-white/40">
+              North York Force &middot; Grade 10
+            </span>
+          </span>
+        </div>
+
+        <div className="mt-4 grid grid-cols-3 gap-2">
+          {[
+            ["14.2", "PPG"],
+            ["5.1", "RPG"],
+            ["3.4", "APG"],
+          ].map(([v, k]) => (
+            <span
+              key={k}
+              className="rounded-xl border border-white/10 bg-white/[0.05] py-2.5 text-center"
+            >
+              <span className="block text-[20px] font-extrabold leading-none tabular-nums text-white md:text-[22px]">
+                {v}
+              </span>
+              <span className="mt-1 block text-[10px] font-bold uppercase tracking-[0.14em] text-white/40">
+                {k}
+              </span>
+            </span>
+          ))}
+        </div>
+
+        <p className="mt-4 text-[11px] font-bold uppercase tracking-[0.16em] text-white/35">
+          Last game
+        </p>
+        <div className="mt-2 flex items-center gap-3 rounded-xl border border-white/10 bg-white/[0.04] px-3.5 py-2.5">
+          <span className="text-[13px] font-bold text-white">vs Huskies</span>
+          <span className="text-[13px] font-semibold text-white/50">W 62-58</span>
+          <span className="ml-auto text-[13px] font-extrabold tabular-nums text-gold-300">
+            21 PTS
+          </span>
+        </div>
       </div>
-    </div>
+    </Card>
   )
 }
 
-function ArtifactCard({
-  children,
-  padded = true,
-}: {
-  children: React.ReactNode
-  padded?: boolean
-}) {
-  return (
-    <div
-      className={`w-full max-w-[420px] overflow-hidden rounded-2xl border border-white/12 bg-gradient-to-br from-[#16233d] to-[#0d1729] shadow-2xl ${
-        padded ? "p-5" : ""
-      }`}
-    >
-      {children}
-    </div>
-  )
-}
-
-/* ── The scenes ──────────────────────────────────────────────────────────── */
+/* ── Scenes ──────────────────────────────────────────────────────────────── */
 
 interface Scene {
   key: string
@@ -313,11 +450,15 @@ const SCENES: Scene[] = [
     eyebrow: "For players",
     title: (
       <>
-        Your name in the <span className="text-gold-300">box score</span>.
+        Some nights <span className="text-gold-300">it&rsquo;s you</span>.
       </>
     ),
-    sub: <>Counted at the table while you play. Yours to post before you get to the car.</>,
-    artifact: <StatlineArtifact />,
+    sub: (
+      <>
+        Counted at the scorer&rsquo;s table while you play, and posted before you reach the car.
+      </>
+    ),
+    artifact: <LiveStatlineArtifact />,
   },
   {
     key: "burden",
@@ -328,10 +469,7 @@ const SCENES: Scene[] = [
       </>
     ),
     sub: (
-      <>
-        Every wait, early start and second trip is priced, and it costs more on a team that already
-        carried one.
-      </>
+      <>Every wait, early start and second trip is priced, team by team, before a game is placed.</>
     ),
     artifact: <LadderArtifact />,
   },
@@ -343,8 +481,8 @@ const SCENES: Scene[] = [
         Grandma is <span className="text-gold-300">three provinces away</span>.
       </>
     ),
-    sub: <>She sees the three the second it drops.</>,
-    artifact: <LiveGameArtifact />,
+    sub: <>She sees the three the second it drops. No account, no app store.</>,
+    artifact: <PhoneArtifact src="/shots/phone-game.png" alt="The live game screen" />,
   },
   {
     key: "handle",
@@ -355,7 +493,7 @@ const SCENES: Scene[] = [
       </>
     ),
     sub: <>Put it in your bio. Send it to a coach. It updates itself every time you play.</>,
-    artifact: <HandleArtifact />,
+    artifact: <PlayerPageArtifact />,
   },
   {
     key: "thesis",
@@ -367,35 +505,69 @@ const SCENES: Scene[] = [
       </>
     ),
     sub: <>Every seat in the gym, on one login and one database.</>,
-    artifact: null,
+    artifact: <PhoneArtifact src="/shots/phone-home.png" alt="The app home screen" />,
   },
 ]
 
-const ROTATE_MS = 6000
+/** 10s, not 6s. An artifact has to be readable before it is replaced. */
+const ROTATE_MS = 10000
 
 export function HeroScenes() {
   const [active, setActive] = useState(0)
-  const [paused, setPaused] = useState(false)
+  const [playing, setPlaying] = useState(true)
   const rootRef = useRef<HTMLDivElement>(null)
 
-  const go = (i: number) => {
-    setPaused(true)
-    setActive(((i % SCENES.length) + SCENES.length) % SCENES.length)
-  }
+  const go = useCallback((next: number) => {
+    setActive((i) => {
+      const n = typeof next === "number" ? next : i
+      return ((n % SCENES.length) + SCENES.length) % SCENES.length
+    })
+  }, [])
 
-  /* Auto-advance until the reader touches it, then it is theirs. Longer than
-     Hero A's 4.2s because a scene carries an artifact to read, not one line. */
+  /** Any deliberate move stops autoplay: the reader has taken over. */
+  const drive = useCallback(
+    (next: number) => {
+      setPlaying(false)
+      go(next)
+    },
+    [go]
+  )
+
   useEffect(() => {
-    if (paused) return
+    if (!playing) return
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return
-    const t = window.setInterval(
-      () => setActive((i) => (i + 1) % SCENES.length),
-      ROTATE_MS
-    )
+    const t = window.setInterval(() => setActive((i) => (i + 1) % SCENES.length), ROTATE_MS)
     return () => window.clearInterval(t)
-  }, [paused])
+  }, [playing])
 
-  /* Swipe, matching Hero A's gesture so a phone comparison is like for like. */
+  /* Arrow keys, but only while this hero is the thing on screen. */
+  useEffect(() => {
+    const el = rootRef.current
+    if (!el) return
+    let inView = false
+    const io = new IntersectionObserver(([e]) => (inView = e.intersectionRatio > 0.4), {
+      threshold: [0, 0.4, 1],
+    })
+    io.observe(el)
+    const onKey = (e: KeyboardEvent) => {
+      if (!inView) return
+      const t = e.target as HTMLElement | null
+      if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.isContentEditable)) return
+      if (e.key === "ArrowLeft") {
+        e.preventDefault()
+        drive(active - 1)
+      } else if (e.key === "ArrowRight") {
+        e.preventDefault()
+        drive(active + 1)
+      }
+    }
+    window.addEventListener("keydown", onKey)
+    return () => {
+      io.disconnect()
+      window.removeEventListener("keydown", onKey)
+    }
+  }, [active, drive])
+
   const touch = useRef<{ x: number; y: number } | null>(null)
   const swipe = {
     onTouchStart: (e: React.TouchEvent) => {
@@ -406,7 +578,7 @@ export function HeroScenes() {
       if (!s) return
       const dx = e.changedTouches[0].clientX - s.x
       const dy = e.changedTouches[0].clientY - s.y
-      if (Math.abs(dx) > 48 && Math.abs(dx) > Math.abs(dy)) go(active + (dx < 0 ? 1 : -1))
+      if (Math.abs(dx) > 44 && Math.abs(dx) > Math.abs(dy)) drive(active + (dx < 0 ? 1 : -1))
       touch.current = null
     },
   }
@@ -421,15 +593,13 @@ export function HeroScenes() {
       className="hp-flat-navy flex min-h-[100dvh] flex-col"
       contentClassName="flex flex-1 flex-col"
     >
-      {/* Labelled on purpose: this is a comparison surface, and whoever the
-          owner shows it to should know which one they are looking at. */}
       <div className="border-b border-white/10 bg-gold-500/10 px-5 py-2 text-center">
         <span className="text-[12px] font-bold uppercase tracking-[0.16em] text-gold-300">
           Hero B &middot; scene version
         </span>
       </div>
 
-      <header className="mx-auto flex w-full max-w-6xl items-center justify-between px-5 pt-6">
+      <header className="mx-auto flex w-full max-w-6xl items-center justify-between px-5 pt-5">
         <BrandWordmark size="xl" variant="reverse" />
         <nav className="flex items-center gap-6">
           <Link
@@ -450,53 +620,82 @@ export function HeroScenes() {
       <div
         ref={rootRef}
         {...swipe}
-        className="mx-auto flex w-full max-w-6xl flex-1 flex-col justify-center px-5 py-8 [touch-action:pan-y]"
+        className="relative mx-auto flex w-full max-w-6xl flex-1 flex-col justify-center px-5 py-6 [touch-action:pan-y]"
       >
-        <div className="grid items-center gap-8 md:grid-cols-[1.1fr_0.9fr] md:gap-12">
-          {/* Claim */}
+        {/* Full-height arrows, matching Hero A's affordance. */}
+        <button
+          type="button"
+          onClick={() => drive(active - 1)}
+          aria-label="Previous scene"
+          className="absolute inset-y-0 left-0 z-20 hidden w-10 cursor-pointer items-center justify-center text-white/40 transition-colors hover:bg-white/5 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-gold-400 md:flex lg:w-14"
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" className="h-9 w-9">
+            <path d="m15 5-7 7 7 7" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </button>
+        <button
+          type="button"
+          onClick={() => drive(active + 1)}
+          aria-label="Next scene"
+          className="absolute inset-y-0 right-0 z-20 hidden w-10 cursor-pointer items-center justify-center text-white/40 transition-colors hover:bg-white/5 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-gold-400 md:flex lg:w-14"
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" className="h-9 w-9">
+            <path d="m9 5 7 7-7 7" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </button>
+
+        <div className="grid items-center gap-6 md:grid-cols-[1fr_minmax(0,460px)] md:gap-12 md:px-12">
           <div className="text-center md:text-left">
-            <p className="text-[13px] font-bold uppercase tracking-[0.18em] text-gold-400">
+            <p className="text-[12px] font-bold uppercase tracking-[0.18em] text-gold-400 md:text-[13px]">
               {scene.eyebrow}
             </p>
-            <h2 className="mt-3 text-balance text-[34px] font-bold leading-[1.06] tracking-tight text-white sm:text-5xl lg:text-[56px]">
+            <h2 className="mt-2.5 text-balance text-[30px] font-bold leading-[1.07] tracking-tight text-white sm:text-[42px] lg:text-[52px]">
               {scene.title}
             </h2>
-            <p className="mx-auto mt-4 max-w-xl text-[17px] font-medium leading-relaxed text-white/70 md:mx-0 sm:text-[21px]">
+            <p className="mx-auto mt-3.5 max-w-lg text-[16px] font-medium leading-relaxed text-white/70 md:mx-0 md:text-[19px]">
               {scene.sub}
             </p>
           </div>
-
-          {/* Proof */}
-          {scene.artifact ? (
-            <div className="flex justify-center md:justify-end">{scene.artifact}</div>
-          ) : (
-            <div aria-hidden="true" className="hidden md:block" />
-          )}
+          <div className="flex justify-center md:justify-end">{scene.artifact}</div>
         </div>
 
-        {/* Dots */}
-        <div
-          className="mt-7 flex items-center justify-center gap-2 md:justify-start"
-          role="tablist"
-          aria-label="Scenes"
-        >
-          {SCENES.map((s, i) => (
-            <button
-              key={s.key}
-              type="button"
-              onClick={() => go(i)}
-              aria-label={`Scene ${i + 1}`}
-              aria-current={i === active}
-              className={`h-2.5 cursor-pointer rounded-full transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-gold-400 ${
-                i === active ? "w-7 bg-gold-400" : "w-2.5 bg-white/25 hover:bg-white/45"
-              }`}
-            />
-          ))}
+        {/* Dots plus an explicit pause, so autoplay is never something that
+            just happens to you. */}
+        <div className="mt-5 flex items-center justify-center gap-3 md:mt-6 md:justify-start md:px-12">
+          <button
+            type="button"
+            onClick={() => setPlaying((p) => !p)}
+            aria-label={playing ? "Pause the scenes" : "Play the scenes"}
+            className="flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-full border border-white/25 text-white/70 transition-colors hover:border-white/50 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-gold-400"
+          >
+            {playing ? (
+              <svg viewBox="0 0 24 24" className="h-3.5 w-3.5 fill-current" aria-hidden="true">
+                <path d="M6 4h4v16H6zM14 4h4v16h-4z" />
+              </svg>
+            ) : (
+              <svg viewBox="0 0 24 24" className="ml-0.5 h-3.5 w-3.5 fill-current" aria-hidden="true">
+                <path d="M8 5v14l11-7z" />
+              </svg>
+            )}
+          </button>
+          <div className="flex items-center gap-2" role="tablist" aria-label="Scenes">
+            {SCENES.map((s, i) => (
+              <button
+                key={s.key}
+                type="button"
+                onClick={() => drive(i)}
+                aria-label={`Scene ${i + 1}`}
+                aria-current={i === active}
+                className={`h-2.5 cursor-pointer rounded-full transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-gold-400 ${
+                  i === active ? "w-7 bg-gold-400" : "w-2.5 bg-white/25 hover:bg-white/45"
+                }`}
+              />
+            ))}
+          </div>
         </div>
 
-        {/* The ask, identical to Hero A so the comparison is about the hero. */}
-        <div className="mt-7 w-full max-w-xl max-md:rounded-3xl max-md:bg-white max-md:px-4 max-md:py-5 max-md:shadow-2xl">
-          <p className="mb-3 text-center text-lg font-bold text-ink-950 md:hidden">
+        <div className="mt-5 w-full max-w-xl max-md:rounded-3xl max-md:bg-white max-md:px-4 max-md:py-4 max-md:shadow-2xl md:mt-6 md:px-12">
+          <p className="mb-2.5 text-center text-[17px] font-bold text-ink-950 md:hidden">
             Save your spot.
           </p>
           <div className="md:hidden">
@@ -509,8 +708,14 @@ export function HeroScenes() {
             />
           </div>
           <div className="hidden md:block">
-            <p className="mb-3 text-[17px] font-semibold text-white/85">Save your spot.</p>
-            <NotifyForm source="landing-hero-b" identityAfter finePrint clubNudgeHref="#claim" tone="dark" />
+            <p className="mb-2.5 text-[17px] font-semibold text-white/85">Save your spot.</p>
+            <NotifyForm
+              source="landing-hero-b"
+              identityAfter
+              finePrint
+              clubNudgeHref="#claim"
+              tone="dark"
+            />
           </div>
         </div>
       </div>
