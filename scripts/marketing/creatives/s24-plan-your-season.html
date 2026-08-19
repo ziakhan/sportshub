@@ -1,0 +1,138 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&family=Work+Sans:wght@400;500;600;700&family=Barlow+Condensed:wght@600;700;800&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="_brand.css" />
+<!--
+  LEAGUES · PLAN THE SEASON (2026-08-19).
+
+  The set had s17, which argues FAIRNESS (the burden ladder). This one argues
+  the PROCESS, which is the thing an operator actually pictures when they
+  imagine switching: what do I have to do, and how long does it take.
+
+  MINUTES, NOT SECONDS. Owner's standing correction: "15 seconds" describes
+  the generate button, not the job. The planning is real work — gyms,
+  weekends, settings — so the card says minutes and puts the number on the
+  OUTPUT, where it is true.
+
+  THE PUNCHLINE IS THE THIRD STEP. A league operator's dread is the data
+  entry: hundreds of teams, rosters, contacts, all typed or imported. They
+  never do it. Clubs enter their season, then register their own teams under
+  it, so the third input is not work at all. That is why step 3 is styled as
+  a result rather than a task.
+
+  The payoff does NOT repeat it. A first pass read "You never type a team.
+  The clubs submit their own", which says the same thing as step 3's own
+  value and wrapped with one orphaned word. It now covers the other half of
+  the owner's point — no import either — in six words.
+
+  The chips are the three constraints the scheduler actually enforces, from
+  lib/scheduler-v2/ledger.ts: back-to-backs are forbidden-tier and gated to
+  zero, long waits are priced, and early and late finishes are spread rather
+  than dumped on one team.
+-->
+<style>
+  .stage { gap: 28px; padding: 50px 56px 234px; }
+
+  .flow {
+    flex: none;
+    width: 100%;
+    max-width: 860px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    text-align: left;
+  }
+
+  .step {
+    display: flex;
+    align-items: center;
+    gap: 22px;
+    border-radius: 20px;
+    padding: 20px 26px;
+    border: 1.5px solid rgba(255, 255, 255, 0.16);
+    background: rgba(255, 255, 255, 0.06);
+  }
+  .step .n {
+    flex: none; width: 46px; height: 46px; border-radius: 13px;
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--display); font-weight: 800; font-size: 23px;
+    background: rgba(255, 255, 255, 0.14); color: #ffffff;
+  }
+  .step .t {
+    flex: 1; min-width: 0;
+    font-family: var(--display); font-weight: 700; font-size: 31px; color: #ffffff;
+    letter-spacing: -0.01em;
+  }
+  .step .v {
+    flex: none; font-family: var(--body); font-size: 24px; font-weight: 600;
+    color: rgba(255, 255, 255, 0.45);
+  }
+
+  /* Step three is not a task. It is the thing that already happened. */
+  .step.free { border-color: rgba(61, 220, 151, 0.45); background: rgba(61, 220, 151, 0.1); }
+  .step.free .n { background: var(--court-600); }
+  .step.free .v { color: #6ee7b7; font-weight: 700; }
+
+  .out {
+    display: flex; align-items: center; justify-content: center; gap: 20px;
+    border-radius: 20px; padding: 22px 26px; margin-top: 4px;
+    background: var(--gold-500); color: var(--ink-950);
+    box-shadow: 0 26px 60px -22px rgba(245, 158, 11, 0.6);
+  }
+  .out .big {
+    font-family: var(--condensed); font-weight: 800; font-size: 52px; line-height: 1;
+    letter-spacing: 0.01em;
+  }
+  .out .lbl { font-family: var(--display); font-weight: 800; font-size: 31px; letter-spacing: -0.01em; }
+
+  h1 { font-size: 74px; line-height: 1.05; }
+  h1 .hit { color: var(--gold-300); }
+</style>
+</head>
+<body>
+<div class="stage dark">
+  <span class="eyebrow">For leagues</span>
+
+  <div class="flow">
+    <div class="step">
+      <span class="n">1</span>
+      <span class="t">Pick your gyms</span>
+      <span class="v">12 venues</span>
+    </div>
+    <div class="step">
+      <span class="n">2</span>
+      <span class="t">Pick your weekends</span>
+      <span class="v">14 dates</span>
+    </div>
+    <div class="step free">
+      <span class="n">3</span>
+      <span class="t">Teams arrive on their own</span>
+      <span class="v">Clubs submit them</span>
+    </div>
+    <div class="out">
+      <span class="big">Minutes</span>
+      <span class="lbl">and the season is scheduled</span>
+    </div>
+  </div>
+
+  <h1>Two things from you.<br /><span class="hit">A whole season back</span>.</h1>
+
+  <div class="chips">
+    <span>No back-to-backs</span>
+    <span>No long waits</span>
+    <span>Early and late shared</span>
+  </div>
+
+  <p class="payoff">No importing. No typing. <em>Not one team.</em></p>
+
+  <div class="footer-brand">
+    <span class="wm"><span class="s">Sports</span><span class="h">Hub</span><span class="one">ONE</span></span>
+    <span class="domain">sportshubone.com</span>
+  </div>
+</div>
+<script>const m = location.hash.replace("#", ""); if (m) document.body.classList.add(m);</script>
+</body>
+</html>
