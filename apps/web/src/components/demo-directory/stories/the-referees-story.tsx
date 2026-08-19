@@ -2,108 +2,150 @@
 
 import type { ReactNode } from "react"
 import { cn } from "@/components/ui/cn"
-import { Btn, Chip, ConsoleTabs, Panel, StatusChip } from "../scene-kit"
+import { TypeText } from "../motion"
 import type { DemoBeat, DemoScript } from "../types"
+import { AppIcon } from "./your-week-story"
 
 /**
- * "The referees" (scenario audit C3, and the homepage demo's lost referees
- * scene, which A0 named as the reason to build this).
+ * "The referees", rebuilt 2026-08-19 to the realism standard (mock-ui.tsx
+ * R1–R8) over the 2026-08-16 gold-standard cut.
  *
- * Referees are a league's second biggest cost centre after gyms, and the only
- * one nobody has ever shown them software for. This demo runs the whole loop
- * on real rows: the league keeps a pool, books a DAY rather than a game,
- * broadcasts it to the pool at a per-game rate, and the first referee to
- * accept is assigned to every game inside the window automatically. Then it
- * turns the camera around to his phone, which is where his schedule, his
- * rate and his own calendar live.
+ * WHAT THE 08-16 CUT GOT RIGHT AND KEPT: the shape of the story. A league
+ * books a DAY rather than a game, broadcasts it to a pool at a stated
+ * per-game rate, and the first referee to answer is assigned every game
+ * inside the window. Then the camera turns to his phone, and the last
+ * chapter is the league's side of the money. None of that moved.
  *
- * Built to the gold standard set by `season-story.tsx`,
- * `schedule-change-story.tsx` and `waivers-story.tsx` on 2026-08-16, to the
- * same three laws:
+ * WHAT CHANGED IS FIDELITY. The 08-16 cut drew the league desk out of the
+ * demo kit's own primitives (`scene-kit.tsx` Panel / Btn / Chip /
+ * ConsoleTabs) rather than out of the real console, split the one Referees
+ * tab into two invented screens, and finished the referee's phone on a line
+ * the product never writes. Every screen below is now the real component's
+ * markup, the tab is ONE page filmed in its real scroll positions, and every
+ * flow runs to the state the product really lands on.
  *
- *   1. PRESENTATION (audit D2). Focused working REGIONS composed at 1160
- *      logical, rendered at scale 1.0, no browser chrome and no site header.
- *      When the phone joins the console is composed NARROWER (900) rather
- *      than scaled down, and the handset arrives life size at 390 logical.
- *      `scripts/demo/readability-audit.mjs` is the gate: nothing under 14px.
- *   2. PACING. Stop, explain, act. Every dwell is computed from the balloon's
- *      own word count, and a beat carrying a balloon silences the caption bar.
- *   3. EVERY NUMBER DERIVED. The pool, the certifications, the rates, the
- *      declared availability, the shift, its window, the eight games it
- *      covers and the settlement rows are read out of the local seeded
- *      database, and every one is written down with its source in
- *      `docs/roadmap/the-referees-numbers.md`.
+ * TRUTH TO THE PRODUCT, SCREEN BY SCREEN (R1: classes copied, files cited):
+ *   · the console shell is `manage/leagues/[id]/seasons/[seasonId]/manage/
+ *     page.tsx`: SmartBack, the condensed uppercase h1 carrying the SEASON
+ *     label, the league name under it, the status Badge, then the flat
+ *     nine-tab row (`-mb-px`, play-600 underline on the selected one);
+ *   · the desk is `manage/components/referees-tab.tsx`, ALL FOUR of its
+ *     panels on one page in their real order: "Book a referee for a session
+ *     day" with its own sentence and its `SHIFT_PRESETS`, "Offers", "League
+ *     referee pool" with its count pill and its add-a-referee search, and
+ *     the "Referee settlements" card. `panelClass` and `inputClass` come from
+ *     `manage/components/types.ts`, `PanelHeader` and `Badge` from
+ *     `components/ui`;
+ *   · the two comboboxes are `components/ui/brand-listbox.tsx` (44px trigger,
+ *     chevron that rotates, the portal panel with its 44px options, the
+ *     amber check on the selected one, and the upward flip the component
+ *     performs when there is under 280px below it). Their option LABELS are
+ *     the real ones: `referees-tab.tsx` line 299 writes the referee's fee and
+ *     that day's availability into the option text;
+ *   · the time fields are `components/ui/date-time-picker.tsx` in `mode="time"`;
+ *   · the post-send confirmation is the route's own sentence, `referees-tab.tsx`
+ *     line 191: "Offer broadcast to N referees, first to accept gets the day";
+ *   · the push is `api/leagues/[id]/referee-requests/route.ts` lines 172 to 176
+ *     word for word, delivered as an iOS banner with the approved app mark (R8);
+ *   · the referee's inbox is `app/(platform)/referee/requests/page.tsx`, down
+ *     to the "first accept wins" pill, the quoted message, the pay sentence,
+ *     the court-tinted confirmation with its "Open My games" link, and the
+ *     "Your booked shifts" section the accept really produces;
+ *   · his schedule is `app/(platform)/referee/page.tsx` in BOTH states: the
+ *     real empty state before the booking ("No games on your schedule yet")
+ *     and "Coming up (8)" with the real game rows after it;
+ *   · his calendar is `app/(platform)/calendar/page.tsx` + `my-calendar.tsx`
+ *     in the agenda view, through `components/calendar/agenda-list.tsx`
+ *     (sticky month header, 60px date tile) with `KIND_CARD` / `KIND_EDGE`
+ *     on the cards, and `components/calendar/add-to-phone.tsx` for the
+ *     subscribe control and its "Opening Apple Calendar…" panel;
+ *   · the ICS titles are `api/calendar/[token]/route.ts` line 165;
+ *   · the bottom bar is `components/nav/bottom-tabs.tsx`: icon over label,
+ *     the active tab in its energy capsule, and "My Games" as the referee's
+ *     context tab (`contextTab`, line 88).
  *
- * THE PHONE IS NOT A FABRICATION, AND THAT MATTERS HERE. The audit's D table
- * allows fabricating a handset composition of a desktop screen, but this demo
- * does not need the allowance: `/referee` and `/referee/requests` are
- * responsive web pages that a referee reaches from the app's own MOBILE
- * bottom tab bar (`components/nav/bottom-tabs.tsx` line 88 puts "My Games" ->
- * `/referee` in the bar whenever `shape.isRefereeing`), and the native app
- * ships the same screen at `apps/mobile/src/app/(tabs)/referee.tsx`. The
- * referee's half of this story is a phone surface the product already has.
+ * DELIBERATE DEPARTURES, ALL DECLARED:
+ *   · EM DASHES BECOME MIDDOTS. The product writes "Weekend 10 — Sat, Aug 8",
+ *     "accepted — Mike Ferreira", "Offer broadcast to N referees — first to",
+ *     "Officiating — X vs Y" and "Paid per game officiated — accepting means".
+ *     The house copy rule bans em-dashes on screen, so each is a middot here.
+ *     The EN dashes are kept exactly as the product writes them: the shift
+ *     presets really read "Morning 6h (9–3)" and a window really reads
+ *     "09:00–15:00".
+ *   · COMPOSITION, NOT INVENTION. The pane is 1160x600 (900 while the phone
+ *     is on stage) and the real Referees tab is about 1000px tall, so it
+ *     scrolls inside the pane exactly as it does in a browser rather than
+ *     being squeezed. The session-day list shows three of the season's days
+ *     and the settlements card four of its six rows.
+ *   · The requests page's right-hand link pair ("My games", "My profile →")
+ *     is dropped on the handset: the real header is `flex items-center
+ *     justify-between` with no wrap, and at 390 it crushes the title. The
+ *     path to My games is taken the way the product offers it after an
+ *     accept, through the confirmation's own "Open My games" link.
+ *   · THE INVENTED SUMMARY STRIP IS GONE. The 08-16 cut ended the desk on a
+ *     "The day just booked / 8 games / $400 / 0 by hand" band. The product
+ *     raises no such panel; the arithmetic belongs on the end card.
+ *   · No toasts anywhere. Every action in this story has real product
+ *     feedback (the note banner, the offer Badge, the confirmation, the
+ *     Confirmed pill), and a toast on top of one is demo chrome.
  *
- * TRUTH TO THE PRODUCT, SCREEN BY SCREEN:
- *   · the league desk is `manage/components/referees-tab.tsx`: the
- *     book-a-day panel with its three shift presets, the broadcast option
- *     "All league referees (first accept wins)", the $/game field, the pool
- *     rows with certification, games refereed, rate and availability badge,
- *     and the settlements panel with its own sentence;
- *   · the referee's inbox is `/referee/requests`, down to the "first accept
- *     wins" pill and the sentence under a priced offer;
- *   · the accept confirmation is the product's own, both branches;
- *   · "My games" is `/referee/page.tsx`: "Coming up (N)", the date line, the
- *     matchup, the venue and court, and the rate in green;
- *   · the calendar feed line is `api/calendar/[token]/route.ts` line 165.
+ * INVENTED-CONTENT LEDGER (everything not read from the seeded world, which
+ * `docs/roadmap/the-referees-numbers.md` documents row by row):
+ *   · the two neighbouring session days in the day list (Aug 1 and Aug 15)
+ *     follow the season's weekly cadence; only Weekend 10 · Sat, Aug 8 is
+ *     the row this demo books;
+ *   · the iOS Calendar takeover is OS chrome, hand-authored, not product UI.
  *
- * FOUR THINGS THE PRODUCT CANNOT HONESTLY SHOW, AND THEY ARE NOT STAGED.
- * All four are punch items in the numbers sheet, section F:
- *   1. NO MONEY MOVES. A settlement is a confirm flag, not a payout. The
- *      demo says so on the settlement card rather than implying a transfer.
- *   2. NO BLACKOUTS. Availability is positive windows only, so a referee
- *      cannot say when he is NOT free.
- *   3. THE NATIVE APP HIDES THE RATE. Its referee screen carries no $/game,
- *      which the web pages do. The demo films the web phone surface and the
- *      gap is written down.
- *   4. NO REFEREE-ONLY CALENDAR FEED. Officiating events ride the one
- *      personal feed, so the demo shows exactly that and claims nothing more.
+ * FOUR THINGS THE PRODUCT CANNOT HONESTLY SHOW, AND THEY ARE NOT STAGED
+ * (numbers sheet section F): no money moves on a settlement, availability is
+ * positive windows only with no blackout, the native referee screen carries
+ * no rate, and officiating rides the one personal calendar feed rather than
+ * a referee-only one. The demo claims none of the four.
  */
 
 /* ── Cast, all read out of the seeded world ──────────────────────────────── */
 
 const LEAGUE = "NPH Summer League"
 const SEASON = "Summer 2026"
-const CTX_DESK = `${LEAGUE} · ${SEASON} · Referees`
+/** `DB` Season.status IN_PROGRESS. `PRODUCT` `manage/page.tsx` STATUS_LABELS. */
+const SEASON_STATUS = "In Progress"
+const CTX = `${LEAGUE} · ${SEASON} · Referees`
 
 /** The day being booked. `DB` SeasonSessionDay 073ce624, Sat 8 August 2026. */
 const DAY = "Sat, Aug 8"
-const SESSION = "Weekend 10 · Aug 8"
-/** `PRODUCT` the middle shift preset, `referees-tab.tsx` SHIFT_PRESETS. */
-const SHIFT = "09:00 – 15:00"
-const PRESET = "Morning 6h (9–3)"
+const SESSION = "Weekend 10"
+/** `PRODUCT` `referees-tab.tsx` line 86: `${session.label} — ${EEE, MMM d}`. */
+const DAY_OPTION = `${SESSION} · ${DAY}`
+/** `PRODUCT` the offer list's own window format, `${startTime}–${endTime}`. */
+const WINDOW = "09:00–15:00"
+/** `PRODUCT` `SHIFT_PRESETS`, verbatim, en dashes and all. */
+const PRESETS = ["Full day (9–6)", "Morning 6h (9–3)", "Afternoon (12–6)"]
+const PRESET = PRESETS[1]
 const RATE = 50
 
+/** The referee whose phone this is. `DB` summer-ref-mike@sportshub.demo. */
+const REF = "Mike Ferreira"
+
 /**
- * The league's pool. `DB` three `LeagueReferee` rows on this league, each with
- * a `RefereeProfile`. The row text is the product's own format: certification,
- * then "Self-declared" when no document is on file, then games refereed, then
- * the rate. All three hold a sign-off PIN, so none carries the "no sign-off
- * PIN" flag the product would otherwise add.
+ * The league's pool. `DB` three `LeagueReferee` rows, each with a
+ * `RefereeProfile`. The row text is the product's own order (`referees-tab.tsx`
+ * lines 400 to 407): certification, "Self-declared" when no document is on
+ * file, games refereed, rate. All three hold a sign-off PIN, so none carries
+ * the "no sign-off PIN" flag the product would otherwise append, and none has
+ * uploaded a certificate, so none carries a Verified badge.
  */
 const POOL = [
-  { name: "Mike Ferreira", cert: "Level 3", games: 40, fee: RATE, availability: "available" },
-  { name: "Sarah Whitlock", cert: "Level 2", games: 57, fee: RATE, availability: "available" },
+  { id: "pool-mike", name: REF, cert: "Level 3", games: 40, fee: RATE, avail: "available" },
+  { id: "pool-sarah", name: "Sarah Whitlock", cert: "Level 2", games: 57, fee: RATE, avail: "available" },
   {
+    id: "pool-james",
     name: "James Okonkwo",
     cert: "Level 3",
     games: 74,
     fee: RATE,
-    availability: "no availability set",
+    avail: "no availability set",
   },
 ] as const
-
-/** The referee whose phone this is. `DB` summer-ref-mike@sportshub.demo. */
-const REF = "Mike Ferreira"
 
 /**
  * The offer's message. `DB` verbatim from the seeded `RefereeSessionRequest`;
@@ -112,62 +154,108 @@ const REF = "Mike Ferreira"
 const MESSAGE = "Saturday morning block · three courts running at the Playground."
 
 /**
- * The games the accept assigns. `DB` eight games on that session day, every
- * one published, seven tipping at 9:00 and one at 10:30, so all eight fall
- * inside the 09:00 to 15:00 window `inShiftWindow` tests.
+ * The games the accept assigns. `DB` eight published games on that session
+ * day, seven tipping at 9:00 and one at 10:30, so all eight fall inside the
+ * 09:00 to 15:00 window `inShiftWindow` tests. Four are drawn; the product's
+ * own "Coming up (8)" header carries the true count and the list scrolls.
  */
 const GAMES = [
-  { at: "9:00 AM", home: "Toronto Lords Grade 9", away: "West United Prep Grade 9", where: "The Playground · Court 1" },
-  { at: "9:00 AM", home: "CKATT Basketball Grade 9", away: "Oakville Panthers Grade 9", where: "The Playground · Court 2" },
-  { at: "9:00 AM", home: "Kings Court Basketball Grade 9", away: "Mississauga Monarchs Grade 9", where: "The Playground · Court 3" },
-  { at: "10:30 AM", home: "Burlington Force Grade 10", away: "North Toronto Huskies Grade 10", where: "The Playground · Court 1" },
+  {
+    at: "9:00 AM",
+    home: "Toronto Lords Grade 9",
+    away: "West United Prep Grade 9",
+    venue: "The Playground",
+    court: "Court 1",
+  },
+  {
+    at: "9:00 AM",
+    home: "CKATT Basketball Grade 9",
+    away: "Oakville Panthers Grade 9",
+    venue: "The Playground",
+    court: "Court 2",
+  },
+  {
+    at: "9:00 AM",
+    home: "Kings Court Basketball Grade 9",
+    away: "Mississauga Monarchs Grade 9",
+    venue: "The Playground",
+    court: "Court 3",
+  },
+  {
+    at: "9:00 AM",
+    home: "Burlington Force Grade 9",
+    away: "North Toronto Huskies Grade 9",
+    venue: "Haber Recreation Centre",
+    court: "Court 1",
+  },
 ]
-/**
- * How many of the eight the handset draws. The real list scrolls; the scene
- * does not, so the screen shows three and says how many are behind them, with
- * the product's own "Coming up (8)" header carrying the true count.
- */
-const GAMES_SHOWN = 3
-/** `DB` the full count on that day. The list scrolls; the header says eight. */
+/** `DB` the eighth game on that day, the only one that tips after nine. */
+const LATE_GAME = {
+  at: "10:30 AM",
+  home: "Burlington Force Grade 10",
+  away: "North Toronto Huskies Grade 10",
+  venue: "The Playground",
+  court: "Court 1",
+}
+/** `DB` the full count on that day. */
 const GAME_COUNT = 8
 /** `ARITH` eight games at the agreed rate. */
 const DAY_PAY = GAME_COUNT * RATE
 
-/** `PRODUCT` `referee/requests/page.tsx` lines 74 to 80, the accept branch. */
+/** `PRODUCT` `referees-tab.tsx` line 191, em-dash to middot. */
+const SENT_NOTE = `Offer broadcast to ${POOL.length} referees · first to accept gets the day.`
+/** `PRODUCT` `referee/requests/page.tsx` lines 76 to 80, the assigned branch. */
 const ACCEPTED_NOTE = `You're booked: assigned to ${GAME_COUNT} games that day. See them in My games.`
-/** `PRODUCT` the same lines, the branch this demo does NOT take, and why. */
-const UNPUBLISHED_NOTE =
-  "You're booked. The league hasn't published that day's schedule yet, so your games will appear in My games when it goes out."
-/** `PRODUCT` `referee/requests/page.tsx` lines 197 to 200. */
+/* The same lines carry a SECOND branch, and this demo does not take it:
+   "You're booked. The league hasn't published that day's schedule yet, so your
+   games will appear in My games when it goes out." It fires when
+   `gamesAssigned` is 0. `DB` all eight of that day's games are published, so
+   the counted branch above is the honest one, and the `drafts` beat says out
+   loud why the other branch exists. */
+/** `PRODUCT` `referee/requests/page.tsx` lines 202 to 204, em-dash to middot. */
 const PAY_TERMS =
   "Paid per game officiated · accepting means agreeing to this rate. Games are tallied after the session and confirmed by the league before settlement."
 
+/** `PRODUCT` `api/leagues/[id]/referee-requests/route.ts` lines 172 to 176. */
+const PUSH_TITLE = `${LEAGUE} needs a referee`
+const PUSH_BODY = `${DAY} (${SESSION}), ${WINDOW}. First to accept gets the day. "${MESSAGE}"`
+
 /** `PRODUCT` `api/calendar/[token]/route.ts` line 165, em-dash to middot. */
 const ICS_TITLE = (g: (typeof GAMES)[number]) => `Officiating · ${g.home} vs ${g.away}`
+/** `DB` Venue c805d634. `PRODUCT` the feed joins venue name and address. */
+const ICS_WHERE = "The Playground, 952 Century Dr, Burlington"
 
 /**
  * The settlements. `DB` six `RefereeSettlement` rows on this league, three per
  * session date, four games each at $50. The 11 July set is CONFIRMED and the
  * 25 July set is PENDING_CONFIRM, which is exactly the pair of states the
- * panel is built to show.
+ * card is built to show. Four of the six fit the 600 logical box; the two left
+ * off are Sarah's and James's confirmed 11 July rows.
  */
 const SETTLEMENTS = [
-  { name: "Mike Ferreira", date: "Jul 25", games: 4, rate: RATE, total: 200, confirmed: false },
+  { name: REF, date: "Jul 25", games: 4, rate: RATE, total: 200, confirmed: false },
   { name: "Sarah Whitlock", date: "Jul 25", games: 4, rate: RATE, total: 200, confirmed: false },
   { name: "James Okonkwo", date: "Jul 25", games: 4, rate: RATE, total: 200, confirmed: false },
-  { name: "Mike Ferreira", date: "Jul 11", games: 4, rate: RATE, total: 200, confirmed: true },
+  { name: REF, date: "Jul 11", games: 4, rate: RATE, total: 200, confirmed: true },
 ]
-/* The sixth and seventh rows (Sarah and James on 11 July, both CONFIRMED) are
-   real and left off: the scene is a 600 logical box, and one confirmed row is
-   enough to show the state the pending ones are heading for. */
+
+/**
+ * Where the pane sits for each part of the tab. The real page is about a
+ * thousand logical pixels tall and the stage gives it under four hundred, so
+ * it scrolls the way a browser scrolls it. The narrow figure is the same
+ * landmark once the phone is on stage and the region is composed at 900.
+ */
+const SCROLL = { top: 0, pool: 424, offersNarrow: 336, settle: 790 }
 
 /* ── Pacing ──────────────────────────────────────────────────────────────── */
 
 function paced(b: Omit<DemoBeat, "hold"> & { hold?: number }): DemoBeat {
   if (b.hold) return b as DemoBeat
-  const arrive = b.cursor ? 620 : 220
-  const settle = 500
-  const read = b.callout ? b.callout.trim().split(/\s+/).length * 180 + 900 : 2400
+  /* Human pace (owner 2026-08-19): people click, then click again. Long
+     reads only where a balloon earns one. Copied from your-week-story. */
+  const arrive = b.cursor ? 620 : 180
+  const settle = 400
+  const read = b.callout ? b.callout.trim().split(/\s+/).length * 140 + 700 : 1200
   return { ...b, hold: Math.round(arrive + read + (b.callout ? settle : 0)) }
 }
 
@@ -176,7 +264,7 @@ function paced(b: Omit<DemoBeat, "hold"> & { hold?: number }): DemoBeat {
 export const theRefereesStory: DemoScript = {
   presentation: "scene",
   desktopUrl: "/manage/leagues/nph-summer/seasons/summer-2026/manage?tab=referees",
-  context: CTX_DESK,
+  context: CTX,
   initialStage: "desktop",
   chapters: [
     { id: "book", title: "The league books a day" },
@@ -185,22 +273,16 @@ export const theRefereesStory: DemoScript = {
     { id: "pay", title: "What the day pays" },
   ],
 
+  /* ENGINE LAW, obeyed everywhere below: a beat's `set` applies at its START,
+     so a press whose own patch removes its target deletes the thing the cursor
+     is flying at. Every press is its own beat; the landing is the next one. */
   beats: [
     /* ── 1. The league books a day ────────────────────────────────────── */
     paced({
       id: "open",
       chapter: "book",
       caption: "Referees have their own tab in the league console.",
-      emphasize: "pool-panel",
-      callout: "The pool is a list the league keeps, with a rate against each name.",
-    }),
-    paced({
-      id: "pool",
-      chapter: "book",
-      caption: "Every row carries what a booker needs.",
-      emphasize: "pool-rows",
-      callout:
-        "Certification, whether it is self-declared, how many games they have worked, and their own rate.",
+      emphasize: "book-panel",
     }),
     paced({
       id: "day",
@@ -208,86 +290,144 @@ export const theRefereesStory: DemoScript = {
       caption: "The league books a DAY, not a game.",
       cursor: "book-day",
       press: true,
-      set: { dayPicked: true },
-      callout:
-        "Pick the session day and the pool answers with who is free, from availability they declared themselves.",
+    }),
+    paced({
+      id: "day-open",
+      chapter: "book",
+      caption: "Every day the season runs.",
+      set: { dayOpen: true },
+    }),
+    paced({
+      id: "day-pick",
+      chapter: "book",
+      caption: "The second Saturday in August.",
+      cursor: "day-opt",
+      press: true,
+    }),
+    paced({
+      id: "day-land",
+      chapter: "book",
+      caption: "One day chosen, and the pool answers it.",
+      set: { dayPicked: true, dayOpen: false },
+    }),
+    paced({
+      id: "pool",
+      chapter: "book",
+      caption: "The pool is a list the league keeps, and every row carries a rate.",
+      set: { scroll: SCROLL.pool },
+      emphasize: "pool-rows",
     }),
     paced({
       id: "avail",
       chapter: "book",
       caption: "Two have said they can work it. One has never said anything.",
-      emphasize: "pool-rows",
-      callout: "The third shows as silent rather than unavailable, because he has not answered.",
+      emphasize: "pool-james",
+      callout: "He has not answered, and the product refuses to read a blank as a no.",
     }),
     paced({
       id: "shift",
       chapter: "book",
       caption: "The shift is one press.",
+      set: { scroll: SCROLL.top },
       cursor: "preset-morning",
       press: true,
-      set: { shiftSet: true },
-      callout: "Nine to three. Every game that tips inside that window becomes theirs.",
     }),
     paced({
-      id: "broadcast",
+      id: "shift-land",
+      chapter: "book",
+      caption: "Nine to three.",
+      set: { shiftSet: true },
+      emphasize: "shift-field",
+      callout: "Every game that tips inside that window is what the accept will assign.",
+    }),
+    paced({
+      id: "sendto",
       chapter: "book",
       caption: "It does not have to go to one person.",
       cursor: "send-to",
       press: true,
-      set: { broadcast: true },
-      callout: "Send it to the whole pool and let the first one who says yes have the day.",
+    }),
+    paced({
+      id: "sendto-open",
+      chapter: "book",
+      caption: "Every referee in the pool, with that day's answer beside the name.",
+      set: { targetOpen: true },
+      emphasize: "target-list",
+      callout: "The other two see the offer close the moment somebody takes it.",
+    }),
+    paced({
+      id: "sendto-pick",
+      chapter: "book",
+      caption: "So it goes to all three.",
+      cursor: "target-all",
+      press: true,
     }),
     paced({
       id: "rate",
       chapter: "book",
-      caption: "The rate is on the offer, so accepting is agreeing to it.",
+      caption: "The rate goes on the offer.",
+      set: { targetOpen: false },
       cursor: "rate-field",
       type: { key: "rateTyped", text: `${RATE}` },
-      set: { rateShown: true },
-      callout: "The rate is part of the offer, so accepting it settles the price.",
+      callout: "Accepting is agreeing to the rate, so the price is settled before anyone arrives.",
+    }),
+    paced({
+      id: "message",
+      chapter: "book",
+      caption: "And a line about the morning.",
+      cursor: "msg-field",
+      type: { key: "msgTyped", text: MESSAGE },
+      hold: 4200,
     }),
     paced({
       id: "send",
       chapter: "book",
-      caption: "Sent.",
+      caption: "Send it.",
       cursor: "send-offer",
       press: true,
-      toast: `Offer sent · ${DAY} · ${SHIFT} · $${RATE}/game`,
+    }),
+    paced({
+      id: "sent",
+      chapter: "book",
+      caption: "One offer, three phones, and no follow-up to make.",
       set: { sent: true },
-      callout: "One offer, three phones, and no follow-up to make.",
+      emphasize: "sent-note",
     }),
 
     /* ── 2. First accept wins ─────────────────────────────────────────── */
     paced({
       id: "phone-in",
       chapter: "accept",
-      caption: `It lands on ${REF}'s phone, where he keeps his shifts.`,
+      caption: `On ${REF}'s phone, his schedule is still empty.`,
       stage: "split",
-      emphasize: "phone-offers",
-      callout: "This is his own screen in the app, where his shifts live.",
-      set: { phoneView: "offers" },
+      set: { phoneView: "games" },
+      emphasize: "phone-empty",
+    }),
+    paced({
+      id: "push",
+      chapter: "accept",
+      caption: "The offer arrives the way a phone delivers things.",
+      set: { banner: true },
+      hold: 3000,
+    }),
+    paced({
+      id: "push-tap",
+      chapter: "accept",
+      caption: "He opens it.",
+      cursor: "push-open",
+      press: true,
+    }),
+    paced({
+      id: "push-land",
+      chapter: "accept",
+      caption: "His own shift inbox.",
+      set: { phoneView: "requests", banner: false },
     }),
     paced({
       id: "offer",
       chapter: "accept",
-      caption: "The offer says the league, the day, the hours and the money.",
+      caption: "The league, the day, the hours, the money and the terms are all on the card.",
       emphasize: "offer-card",
-      callout: "The league, the day, the hours and the money are all on the card.",
-    }),
-    paced({
-      id: "wins",
-      chapter: "accept",
-      caption: "The card says the offer is open to the pool.",
-      emphasize: "offer-wins",
-      callout: "First accept wins, and the other two see the offer close.",
-    }),
-    paced({
-      id: "terms",
-      chapter: "accept",
-      caption: "The rate comes with the terms attached.",
-      emphasize: "offer-terms",
-      callout:
-        "Paid per game officiated, tallied after the session, confirmed before settlement.",
     }),
     paced({
       id: "accept",
@@ -295,56 +435,87 @@ export const theRefereesStory: DemoScript = {
       caption: "He takes it.",
       cursor: "accept-btn",
       press: true,
-      set: { accepted: true, phoneView: "booked" },
-      callout: `Accepting assigns him to all ${GAME_COUNT} games in the window. He picks none of them by hand.`,
+    }),
+    paced({
+      id: "booked",
+      chapter: "accept",
+      caption: "Booked, and the offer becomes a shift.",
+      set: { accepted: true },
+      emphasize: "accept-note",
+      callout: `Accepting assigned him to all ${GAME_COUNT} games inside the window. He picked none of them.`,
     }),
     paced({
       id: "league-side",
       chapter: "accept",
       caption: "The league finds out without being asked.",
+      set: { scroll: SCROLL.offersNarrow },
       emphasize: "offer-row",
-      callout: "The offer row answers itself: accepted, and by whom.",
+      callout: "Nobody phoned the league, and the other two referees' offer closed in the same moment.",
     }),
 
     /* ── 3. His games, his calendar ───────────────────────────────────── */
     paced({
+      id: "open-games",
+      chapter: "his",
+      caption: "The confirmation offers the way to the schedule it just made.",
+      cursor: "open-mygames",
+      press: true,
+    }),
+    paced({
       id: "mygames",
       chapter: "his",
-      caption: "The booking becomes a schedule.",
-      set: { phoneView: "games" },
+      caption: "Eight games, next one first.",
+      set: { phoneView: "games", scroll: SCROLL.top },
       emphasize: "phone-games",
-      callout: "Eight games, next one first, on his own My games tab.",
     }),
     paced({
       id: "card",
       chapter: "his",
-      caption: "Each one says the day, the floor and what it pays.",
+      caption: "Each card says the day, the floor, the matchup and what it pays.",
       emphasize: "game-1",
-      callout: "The court is on the card, not just the building.",
     }),
     paced({
       id: "drafts",
       chapter: "his",
       caption: "Only games the league has actually published are ever on this list.",
       emphasize: "phone-games",
-      callout: "A draft game is the operator's private copy, so it never reaches a referee.",
+      callout: "A draft game is the league's private copy, so it never reaches a referee.",
     }),
     paced({
-      id: "calendar",
+      id: "cal-tap",
       chapter: "his",
-      caption: "Then the calendar subscription.",
+      caption: "Then his own calendar.",
+      cursor: "tab-calendar",
+      press: true,
+    }),
+    paced({
+      id: "cal-land",
+      chapter: "his",
+      caption: "The officiating is on it already.",
       set: { phoneView: "calendar" },
+      emphasize: "cal-agenda",
+    }),
+    paced({
+      id: "add",
+      chapter: "his",
+      caption: "One control puts it in the calendar app he already uses.",
       cursor: "add-phone",
       press: true,
-      callout: "One subscription, and his officiating goes into the calendar he already uses.",
     }),
     paced({
-      id: "ics",
+      id: "add-land",
       chapter: "his",
-      caption: "Every assignment, in his own calendar app, updating itself.",
-      emphasize: "ics-list",
+      caption: "Subscribe once.",
+      set: { addOpen: true },
+      emphasize: "add-panel",
+    }),
+    paced({
+      id: "os",
+      chapter: "his",
+      caption: "And his Saturday fills itself in.",
+      set: { osCal: true },
+      hold: 3600,
       callout: "It is a live feed, so a cancelled or moved game corrects itself.",
-      set: { subscribed: true },
     }),
 
     /* ── 4. What the day pays ─────────────────────────────────────────── */
@@ -353,11 +524,8 @@ export const theRefereesStory: DemoScript = {
       chapter: "pay",
       caption: "After the session, the league already knows what it owes.",
       stage: "desktop",
-      context: `${LEAGUE} · ${SEASON} · Referees`,
-      set: { settleView: true },
+      set: { scroll: SCROLL.settle, osCal: false, addOpen: false },
       emphasize: "settle-panel",
-      callout:
-        "Tallied per referee per session day, at the rate they agreed to on accepting.",
     }),
     paced({
       id: "confirm",
@@ -365,8 +533,13 @@ export const theRefereesStory: DemoScript = {
       caption: "The league checks the tally and confirms it.",
       cursor: "settle-confirm",
       press: true,
-      toast: `Settled · ${REF} · Jul 25 · $200`,
+    }),
+    paced({
+      id: "confirmed",
+      chapter: "pay",
+      caption: "Confirmed, at the rate on the offer he accepted.",
       set: { confirmed: true },
+      emphasize: "settle-row",
       callout: "Confirming stores the number, so nobody recounts games in October.",
     }),
     paced({
@@ -374,7 +547,7 @@ export const theRefereesStory: DemoScript = {
       chapter: "pay",
       caption:
         "One day booked, one referee, eight games assigned from that accept, and the day's total on the record.",
-      hold: 4200,
+      hold: 4400,
       set: { endCard: true },
     }),
   ],
@@ -382,39 +555,42 @@ export const theRefereesStory: DemoScript = {
   /* ── Render ────────────────────────────────────────────────────────── */
 
   render: ({ get, typingKey }) => {
-    const settleView = get("settleView", false)
-
     const desktop = (
-      <div className="relative flex h-full flex-col">
-        <div
-          key={settleView ? "settle" : "desk"}
-          className="demo-fade-in flex min-h-0 flex-1 flex-col"
-        >
-          {settleView ? (
-            <SettlementsScreen confirmed={get("confirmed", false)} />
-          ) : (
-            <RefereeDesk
+      /* `globals.css` body: white, lit by two faint corner radials. */
+      <div
+        className="relative flex h-full flex-col bg-white"
+        style={{
+          backgroundImage:
+            "radial-gradient(circle at top left, rgba(99, 102, 241, 0.05), transparent 22%), radial-gradient(circle at top right, rgba(242, 78, 30, 0.04), transparent 18%)",
+        }}
+      >
+        <Console>
+          <Pane offset={get("scroll", 0)}>
+            <RefereesTab
+              dayOpen={get("dayOpen", false)}
               dayPicked={get("dayPicked", false)}
               shiftSet={get("shiftSet", false)}
-              broadcast={get("broadcast", false)}
-              rateShown={get("rateShown", false)}
+              targetOpen={get("targetOpen", false)}
               rateTyped={get<string>("rateTyped", "")}
-              typing={typingKey === "rateTyped"}
+              msgTyped={get<string>("msgTyped", "")}
+              typingKey={typingKey}
               sent={get("sent", false)}
               accepted={get("accepted", false)}
-              narrow={get<string>("phoneView", "") !== ""}
+              confirmed={get("confirmed", false)}
             />
-          )}
-        </div>
+          </Pane>
+        </Console>
         {get("endCard", false) && <EndCard />}
       </div>
     )
 
     const phone = (
-      <RefPhone
-        view={get<string>("phoneView", "offers")}
+      <Phone
+        view={get<string>("phoneView", "games")}
         accepted={get("accepted", false)}
-        subscribed={get("subscribed", false)}
+        banner={get("banner", false)}
+        addOpen={get("addOpen", false)}
+        osCal={get("osCal", false)}
       />
     )
 
@@ -422,532 +598,986 @@ export const theRefereesStory: DemoScript = {
   },
 }
 
-/* ── The league's referee desk ───────────────────────────────────────────── */
+/* ═══════════════════════════════════════════════════════════════════════════
+ * SHARED PRIMITIVES, copied from the product's own kit
+ * ═══════════════════════════════════════════════════════════════════════════ */
 
-function RefereeDesk({
-  dayPicked,
-  shiftSet,
-  broadcast,
-  rateShown,
-  rateTyped,
-  typing,
-  sent,
-  accepted,
-  narrow,
-}: {
-  dayPicked: boolean
-  shiftSet: boolean
-  broadcast: boolean
-  rateShown: boolean
-  rateTyped: string
-  typing: boolean
-  sent: boolean
-  accepted: boolean
-  /** True from the beat the phone joins: the region is 900 logical, not 1160. */
-  narrow: boolean
-}) {
-  return (
-    <>
-      <ConsoleTabs active="Referees" />
-      <div className="bg-ink-50/70 min-h-0 flex-1 px-5 py-3">
-        {/* BOOK A REFEREE FOR A SESSION DAY, with the real panel's own
-            explanatory sentence. */}
-        <Panel title="Book a referee for a session day">
-          <div className="px-4 py-2.5">
-            <p className="text-ink-600 text-[15px] font-medium leading-snug">
-              Pick a day and shift, then target a referee you know, or broadcast to your whole pool
-              and let the first taker have it. Accepting auto-assigns them to every game in the
-              window.
-            </p>
+/** `components/ui/badge.tsx`, tones and shape verbatim. */
+const BADGE_TONES = {
+  neutral: "bg-ink-50 text-ink-600 ring-ink-200",
+  play: "bg-play-50 text-play-700 ring-play-100",
+  hoop: "bg-hoop-50 text-hoop-600 ring-hoop-100",
+  court: "bg-court-50 text-court-700 ring-court-100",
+  gold: "bg-gold-50 text-gold-600 ring-gold-100",
+} as const
 
-            <div className="mt-2.5 flex flex-wrap items-end gap-3">
-              <Field label="Session day">
-                <span
-                  data-demo-target="book-day"
-                  className={cn(
-                    "border-ink-300 inline-flex w-[192px] items-center justify-between rounded-lg border bg-white px-3 py-1.5 text-[15px] font-semibold",
-                    dayPicked ? "text-ink-900" : "text-ink-400"
-                  )}
-                >
-                  {dayPicked ? SESSION : "Choose day…"}
-                  <span className="text-ink-400 text-[14px]">▾</span>
-                </span>
-              </Field>
-              <Field label="Shift">
-                <span className="flex items-center gap-1.5">
-                  <span className="border-ink-300 text-ink-900 rounded-lg border bg-white px-3 py-1.5 text-[15px] font-semibold tabular-nums">
-                    09:00
-                  </span>
-                  <span className="text-ink-400 text-[14px]">–</span>
-                  <span
-                    className={cn(
-                      "border-ink-300 text-ink-900 rounded-lg border bg-white px-3 py-1.5 text-[15px] font-semibold tabular-nums",
-                      shiftSet && "live-pop"
-                    )}
-                  >
-                    {shiftSet ? "15:00" : "18:00"}
-                  </span>
-                </span>
-              </Field>
-              <span className="flex gap-1.5 pb-1">
-                {["Full day (9–6)", PRESET, "Afternoon (12–6)"].map((p) => (
-                  <span
-                    key={p}
-                    data-demo-target={p === PRESET ? "preset-morning" : undefined}
-                    className={cn(
-                      "rounded-full px-2.5 py-1 text-[14px] font-semibold",
-                      shiftSet && p === PRESET
-                        ? "bg-play-600 text-white"
-                        : "bg-ink-100 text-ink-600"
-                    )}
-                  >
-                    {p}
-                  </span>
-                ))}
-              </span>
-            </div>
-
-            <div className="mt-2.5 flex flex-wrap items-end gap-3">
-              <Field label="Send to" className="min-w-0 flex-1">
-                <span
-                  data-demo-target="send-to"
-                  className={cn(
-                    "border-ink-300 text-ink-900 flex items-center justify-between rounded-lg border bg-white px-3 py-1.5 text-[15px] font-semibold",
-                    broadcast && "border-play-500"
-                  )}
-                >
-                  <span className="truncate">
-                    <span aria-hidden="true">📢 </span>
-                    All league referees (first accept wins)
-                  </span>
-                  <span className="text-ink-400 text-[14px]">▾</span>
-                </span>
-              </Field>
-              <span
-                data-demo-target="rate-field"
-                className={cn(
-                  "border-ink-300 w-[104px] shrink-0 rounded-lg border bg-white px-3 py-1.5 text-[15px] font-semibold tabular-nums",
-                  rateShown ? "text-ink-900" : "text-ink-400"
-                )}
-              >
-                {rateShown ? (
-                  <>
-                    ${rateTyped}
-                    {typing && <span className="bg-play-600 ml-0.5 inline-block h-4 w-[2px] align-middle" />}
-                  </>
-                ) : (
-                  "$/game"
-                )}
-              </span>
-              <span className="border-ink-300 text-ink-500 min-w-0 flex-1 shrink rounded-lg border bg-white px-3 py-1.5 text-[15px] font-medium">
-                <span className="text-ink-800">{MESSAGE}</span>
-              </span>
-              <Btn id="send-offer" size="sm">
-                Send offer
-              </Btn>
-            </div>
-          </div>
-        </Panel>
-
-        <div className={cn("mt-2.5 grid gap-2.5", narrow ? "grid-cols-1" : "grid-cols-[0.85fr_1.15fr]")}>
-        {/* OFFERS */}
-        <Panel title="Offers">
-          <div className="px-4 py-2">
-            {sent ? (
-              <div
-                data-demo-target="offer-row"
-                className={cn(
-                  "border-ink-100 live-pop flex flex-wrap items-center justify-between gap-2 rounded-xl border bg-white px-3.5 py-2",
-                  accepted && "border-court-200 bg-court-50/60"
-                )}
-              >
-                <span className="text-ink-900 text-[15px] font-semibold">
-                  {DAY} · {SHIFT}{" "}
-                  <span className="text-ink-400 font-medium">
-                    · {SESSION} · all league referees
-                  </span>
-                </span>
-                <StatusChip tone={accepted ? "court" : "gold"}>
-                  {accepted ? `accepted · ${REF}` : "pending"}
-                </StatusChip>
-              </div>
-            ) : (
-              <p className="text-ink-500 text-[15px] font-semibold">No offers sent yet.</p>
-            )}
-          </div>
-        </Panel>
-
-        {/* LEAGUE REFEREE POOL. It steps aside when the phone arrives: the
-            region is composed at 900 rather than 1160 from that beat on, and
-            two panels abreast do not fit at that width. No beat after
-            chapter 1 targets it. */}
-        {!narrow && (
-        <Panel
-          id="pool-panel"
-          title="League referee pool"
-          action={
-            <Chip tone="neutral" strong>
-              {POOL.length}
-            </Chip>
-          }
-        >
-          <div data-demo-target="pool-rows" className="space-y-1 px-4 py-2">
-            {POOL.map((r) => (
-              <div
-                key={r.name}
-                className="border-ink-100 flex flex-wrap items-center justify-between gap-2 rounded-xl border bg-white px-3.5 py-2"
-              >
-                <span className="min-w-0">
-                  <span className="text-ink-900 text-[15px] font-bold">{r.name}</span>
-                  <span className="text-ink-500 ml-2.5 text-[14px] font-medium">
-                    {r.cert} · Self-declared · {r.games} games · ${r.fee}/game
-                  </span>
-                </span>
-                {dayPicked && (
-                  <span className="live-pop shrink-0">
-                    <Chip tone={r.availability === "available" ? "court" : "neutral"}>
-                      {r.availability}
-                    </Chip>
-                  </span>
-                )}
-              </div>
-            ))}
-          </div>
-        </Panel>
-        )}
-        </div>
-      </div>
-    </>
-  )
-}
-
-function Field({
-  label,
+function Badge({
   children,
+  tone = "neutral",
   className,
 }: {
-  label: string
   children: ReactNode
+  tone?: keyof typeof BADGE_TONES
   className?: string
 }) {
   return (
-    <span className={cn("block", className)}>
-      <span className="text-ink-600 mb-1 block text-[14px] font-semibold">{label}</span>
+    <span
+      className={cn(
+        "inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold uppercase tracking-[0.12em] ring-1 ring-inset",
+        BADGE_TONES[tone],
+        className
+      )}
+    >
       {children}
     </span>
   )
 }
 
-/* ── Settlements ─────────────────────────────────────────────────────────── */
-
-function SettlementsScreen({ confirmed }: { confirmed: boolean }) {
+/** `components/ui/panel-header.tsx`: brand accent bar, condensed uppercase. */
+function PanelHeader({
+  title,
+  action,
+  id,
+}: {
+  title: string
+  action?: ReactNode
+  id?: string
+}) {
   return (
-    <>
-      <ConsoleTabs active="Referees" />
-      <div className="bg-ink-50/70 min-h-0 flex-1 px-6 py-3">
-        <div
-          data-demo-target="settle-panel"
-          className="border-ink-200 rounded-2xl border bg-white px-5 py-4"
-        >
-          <div className="flex items-center gap-2.5">
-            <span className="bg-play-600 h-4 w-[3px] shrink-0 rounded-full" />
-            <h3 className="font-display text-ink-900 text-[17px] font-extrabold uppercase tracking-[0.02em]">
-              Referee settlements
-            </h3>
-          </div>
-          <p className="text-ink-600 mt-1.5 text-[15px] font-medium leading-snug">
-            Games are tallied per referee per session day. Double-check and confirm each row ·
-            confirmation is the settlement of record at the agreed per-game rate.
-          </p>
-          <div className="mt-3 space-y-1.5">
-            {SETTLEMENTS.map((s, i) => {
-              const done = s.confirmed || (confirmed && i === 0)
-              return (
-                <div
-                  key={`${s.name}-${s.date}`}
-                  data-demo-target={i === 0 ? "settle-row" : undefined}
-                  className={cn(
-                    "border-ink-100 flex flex-wrap items-center justify-between gap-2 rounded-xl border bg-white px-3.5 py-2 transition-colors duration-300 motion-reduce:transition-none",
-                    done && "border-court-200 bg-court-50/50"
-                  )}
-                >
-                  <span className="min-w-0">
-                    <span className="text-ink-900 text-[15px] font-bold">{s.name}</span>
-                    <span className="text-ink-500 ml-2.5 text-[14px] font-medium tabular-nums">
-                      {s.date} · {s.games} games × ${s.rate} = ${s.total}
-                    </span>
-                  </span>
-                  {done ? (
-                    <span className={cn("shrink-0", confirmed && i === 0 && "live-pop")}>
-                      <StatusChip tone="court">Confirmed</StatusChip>
-                    </span>
-                  ) : (
-                    <Btn id={i === 0 ? "settle-confirm" : undefined} tone="ghost" size="sm">
-                      Confirm
-                    </Btn>
-                  )}
-                </div>
-              )
-            })}
-          </div>
-          <p
-            data-demo-target="settle-foot"
-            className="border-ink-100 text-ink-500 mt-3 border-t pt-2.5 text-[14px] font-medium leading-snug"
-          >
-            A confirmed settlement is the number both sides agreed: the games worked on that
-            session day, at the rate on the offer the referee accepted.
-          </p>
-        </div>
-
-        <div className="mt-3 flex flex-wrap items-baseline gap-x-8 gap-y-2 rounded-2xl border border-ink-200 bg-white px-5 py-3">
-          <span className="text-ink-500 text-[14px] font-bold uppercase tracking-[0.08em]">
-            The day just booked
-          </span>
-          <span className="flex items-baseline gap-2">
-            <span className="text-court-700 text-[26px] font-extrabold leading-none tabular-nums">
-              {GAME_COUNT}
-            </span>
-            <span className="text-ink-700 text-[15px] font-semibold">games assigned</span>
-          </span>
-          <span className="flex items-baseline gap-2">
-            <span className="text-court-700 text-[26px] font-extrabold leading-none tabular-nums">
-              ${DAY_PAY}
-            </span>
-            <span className="text-ink-700 text-[15px] font-semibold">
-              owed at the agreed ${RATE} a game
-            </span>
-          </span>
-          <span className="flex items-baseline gap-2">
-            <span className="text-court-700 text-[26px] font-extrabold leading-none tabular-nums">
-              0
-            </span>
-            <span className="text-ink-700 text-[15px] font-semibold">games assigned by hand</span>
-          </span>
-        </div>
-      </div>
-    </>
+    <div
+      data-demo-target={id}
+      className={cn("mb-4 flex flex-wrap items-center gap-x-2.5 gap-y-1", Boolean(action) && "justify-between")}
+    >
+      <span className="flex items-center gap-2.5">
+        <span className="h-5 w-1.5 shrink-0 rounded-full bg-[var(--brand)]" aria-hidden="true" />
+        <span className="font-condensed text-ink-950 text-lg font-bold uppercase leading-none tracking-wide">
+          {title}
+        </span>
+      </span>
+      {action && <span className="shrink-0">{action}</span>}
+    </div>
   )
 }
 
-/* ── The referee's phone ─────────────────────────────────────────────────── */
+/** `manage/components/types.ts` panelClass and inputClass, verbatim. */
+const PANEL =
+  "rounded-3xl border border-ink-100 bg-white p-6 shadow-[0_16px_50px_-34px_rgba(15,23,42,0.45)]"
+const INPUT =
+  "rounded-xl border border-ink-200 px-2 py-1.5 text-sm text-ink-900"
+
+/** `components/ui/button.tsx`, primary + brand at size md. */
+function Button({ children, id }: { children: ReactNode; id?: string }) {
+  return (
+    <span
+      data-demo-target={id}
+      style={{ backgroundColor: "var(--brand)" }}
+      className="inline-flex shrink-0 cursor-default items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold text-[color:var(--brand-on)] shadow-[0_10px_24px_-12px_rgba(15,23,42,0.5)] transition-all duration-150 data-[demo-press=true]:brightness-95 motion-reduce:transition-none"
+    >
+      {children}
+    </span>
+  )
+}
 
 /**
- * A real phone surface, not a composition. `/referee` and `/referee/requests`
- * are responsive pages the app's own mobile bottom bar links to, so the tab
- * strip below carries the real referee bar: Home, Chat, Calendar, My Games,
- * Social (`components/nav/bottom-tabs.tsx`).
+ * A real page is taller than the box the stage gives it, so the pane scrolls
+ * exactly as a browser would. Nothing is hidden; the column moves.
  */
-function RefPhone({
+function Pane({ offset, children }: { offset: number; children: ReactNode }) {
+  return (
+    <div className="min-h-0 flex-1 overflow-hidden">
+      <div
+        className="transition-transform duration-500 ease-out motion-reduce:transition-none"
+        style={{ transform: `translateY(${-offset}px)` }}
+      >
+        {children}
+      </div>
+    </div>
+  )
+}
+
+/** `components/ui/brand-listbox.tsx`: the 44px trigger and its chevron. */
+function ListboxTrigger({
+  id,
+  label,
+  placeholder,
+  open,
+  className,
+}: {
+  id: string
+  label?: string
+  placeholder?: string
+  open: boolean
+  className?: string
+}) {
+  return (
+    <span
+      data-demo-target={id}
+      className={cn(
+        "border-ink-200 text-ink-900 flex min-h-[44px] w-full cursor-default items-center justify-between gap-2 rounded-xl border bg-white px-3 py-2.5 text-left text-sm shadow-sm transition duration-200 data-[demo-press=true]:brightness-95",
+        className
+      )}
+    >
+      <span className={cn("truncate", !label && "text-ink-500")}>{label ?? placeholder}</span>
+      <svg
+        className={cn(
+          "text-ink-400 h-4 w-4 shrink-0 transition-transform duration-200",
+          open && "rotate-180"
+        )}
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2.5"
+        aria-hidden="true"
+      >
+        <path d="m6 9 6 6 6-6" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    </span>
+  )
+}
+
+/**
+ * The listbox panel. `BrandListbox` rides a body portal and flips ABOVE the
+ * trigger whenever there is under 280px under it, which is exactly the case
+ * for the "Send to" field inside a 600 logical stage, so that one opens
+ * upward and the session-day list opens down.
+ */
+function ListboxPanel({
+  options,
+  selected,
+  id,
+  above,
+}: {
+  options: Array<{ label: string; id?: string }>
+  selected: string
+  id?: string
+  above?: boolean
+}) {
+  return (
+    <span
+      data-demo-target={id}
+      className={cn(
+        "border-ink-200 absolute left-0 right-0 z-30 max-h-64 overflow-hidden rounded-xl border bg-white p-1 shadow-[0_24px_60px_-24px_rgba(15,23,42,0.4)]",
+        above ? "bottom-full mb-1" : "top-full mt-1"
+      )}
+    >
+      {options.map((o) => (
+        <span
+          key={o.label}
+          data-demo-target={o.id}
+          className={cn(
+            "flex min-h-[44px] items-center justify-between gap-2 rounded-lg px-3 py-2.5 text-sm",
+            o.label === selected ? "text-ink-950 bg-play-50 font-semibold" : "text-ink-800"
+          )}
+        >
+          <span className="truncate">{o.label}</span>
+          {o.label === selected && (
+            <svg
+              className="h-4 w-4 shrink-0 text-[#f59e0b]"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="3"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
+            >
+              <path d="M4 12.5l5 5L20 6.5" />
+            </svg>
+          )}
+        </span>
+      ))}
+    </span>
+  )
+}
+
+/** `components/ui/date-time-picker.tsx`, mode="time", the trigger. */
+function TimeField({ value, className }: { value: string; className?: string }) {
+  return (
+    <span
+      className={cn(
+        "border-ink-200 text-ink-900 flex min-h-[44px] w-full items-center justify-between rounded-xl border bg-white px-3 py-2.5 text-left text-sm shadow-sm",
+        className
+      )}
+    >
+      <span className="tabular-nums">{value}</span>
+      <svg
+        className="text-ink-400 h-4 w-4 shrink-0"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        aria-hidden="true"
+      >
+        <circle cx="12" cy="12" r="9" />
+        <path d="M12 7v5l3 2" />
+      </svg>
+    </span>
+  )
+}
+
+/* ── The season console shell (`manage/page.tsx`) ────────────────────────── */
+
+const TABS = [
+  "Overview",
+  "Clubs",
+  "Teams",
+  "Plan Your Season",
+  "Schedule",
+  "Standings",
+  "Playoffs",
+  "Referees",
+  "⚙ Settings",
+]
+
+function Console({ children }: { children: ReactNode }) {
+  return (
+    <div className="mx-auto flex h-full min-h-0 w-full max-w-5xl flex-col px-6 py-3">
+      <p className="text-ink-500 shrink-0 text-sm font-medium">&larr; {LEAGUE}</p>
+      <div className="mt-1 shrink-0">
+        <h1 className="font-condensed text-ink-950 text-3xl font-bold uppercase leading-none tracking-wide">
+          {SEASON}
+        </h1>
+        <p className="text-ink-500 mt-1 text-sm">{LEAGUE}</p>
+        <Badge className="mt-2" tone="play">
+          {SEASON_STATUS}
+        </Badge>
+      </div>
+      <div className="border-ink-100 mt-3 flex shrink-0 flex-wrap gap-1 border-b">
+        {TABS.map((t) => (
+          <span
+            key={t}
+            className={cn(
+              "relative -mb-px whitespace-nowrap px-3 py-2.5 text-sm font-semibold",
+              t === "Referees" ? "text-play-600" : "text-ink-500"
+            )}
+          >
+            {t}
+            {t === "Referees" && (
+              <span className="bg-play-600 absolute inset-x-2 -bottom-px h-0.5 rounded-full" />
+            )}
+          </span>
+        ))}
+      </div>
+      <div className="flex min-h-0 flex-1 flex-col pt-4">{children}</div>
+    </div>
+  )
+}
+
+/* ── The Referees tab (`manage/components/referees-tab.tsx`) ─────────────── */
+
+/** `referees-tab.tsx` AVAILABILITY_BADGE, lines 39 to 43. */
+const AVAIL_TONE: Record<string, keyof typeof BADGE_TONES> = {
+  available: "court",
+  "no availability set": "neutral",
+}
+
+function RefereesTab({
+  dayOpen,
+  dayPicked,
+  shiftSet,
+  targetOpen,
+  rateTyped,
+  msgTyped,
+  typingKey,
+  sent,
+  accepted,
+  confirmed,
+}: {
+  dayOpen: boolean
+  dayPicked: boolean
+  shiftSet: boolean
+  targetOpen: boolean
+  rateTyped: string
+  msgTyped: string
+  typingKey: string | null
+  sent: boolean
+  accepted: boolean
+  confirmed: boolean
+}) {
+  return (
+    <div className="grid gap-6">
+      {/* Book a day */}
+      <div data-demo-target="book-panel" className={PANEL}>
+        <PanelHeader title="Book a referee for a session day" />
+        <p className="text-ink-500 -mt-2 mb-4 text-xs">
+          Pick a day and shift, then target a referee you know · or broadcast to your whole pool
+          and let the first taker have it. Accepting auto-assigns them to every game in the window.
+        </p>
+        {sent && (
+          <div
+            data-demo-target="sent-note"
+            className="border-court-200 bg-court-50 text-court-700 live-pop mb-3 rounded-xl border px-3 py-2 text-xs"
+          >
+            {SENT_NOTE}
+          </div>
+        )}
+
+        <div className="flex flex-wrap items-end gap-3">
+          {/* `BrandListbox` takes its width on the wrapper (`className`), which
+              is how the Send-to field on this same page is sized. The day list
+              is given one here so its labels are not truncated to "Weekend 9 ·
+              …" inside the stage's narrower column. */}
+          <div className="relative w-[248px]">
+            <span className="text-ink-600 mb-1 block text-xs font-medium">Session day</span>
+            <ListboxTrigger
+              id="book-day"
+              label={dayPicked ? DAY_OPTION : undefined}
+              placeholder="Choose day…"
+              open={dayOpen}
+            />
+            {dayOpen && (
+              <ListboxPanel
+                selected=""
+                options={[
+                  { label: "Weekend 9 · Sat, Aug 1" },
+                  { label: DAY_OPTION, id: "day-opt" },
+                  { label: "Weekend 11 · Sat, Aug 15" },
+                ]}
+              />
+            )}
+          </div>
+          <div>
+            <span className="text-ink-600 mb-1 block text-xs font-medium">Shift</span>
+            <div data-demo-target="shift-field" className="flex items-center gap-1">
+              <TimeField value="09:00" className="w-28" />
+              <span className="text-ink-400 text-xs">–</span>
+              <TimeField
+                value={shiftSet ? "15:00" : "18:00"}
+                className={cn("w-28", shiftSet && "live-pop")}
+              />
+            </div>
+          </div>
+          <div className="flex gap-1">
+            {PRESETS.map((p) => (
+              <span
+                key={p}
+                data-demo-target={p === PRESET ? "preset-morning" : undefined}
+                className="bg-ink-100 text-ink-600 cursor-default rounded-full px-2 py-1 text-[11px] font-medium transition duration-150 data-[demo-press=true]:brightness-90"
+              >
+                {p}
+              </span>
+            ))}
+          </div>
+        </div>
+
+        <div className="mt-3 flex flex-wrap items-end gap-3">
+          <div className="relative min-w-0 flex-1">
+            <span className="text-ink-600 mb-1 block text-xs font-medium">Send to</span>
+            <ListboxTrigger
+              id="send-to"
+              label="📢 All league referees (first accept wins)"
+              open={targetOpen}
+            />
+            {targetOpen && (
+              <ListboxPanel
+                id="target-list"
+                above
+                selected="📢 All league referees (first accept wins)"
+                options={[
+                  { label: "📢 All league referees (first accept wins)", id: "target-all" },
+                  ...POOL.map((r) => ({
+                    label: `${r.name} · $${r.fee}/game${dayPicked ? ` · ${r.avail}` : ""}`,
+                  })),
+                ]}
+              />
+            )}
+          </div>
+          <span data-demo-target="rate-field" className={cn(INPUT, "w-24")}>
+            <TypeText
+              text={rateTyped ? `$${rateTyped}` : ""}
+              typing={typingKey === "rateTyped"}
+              placeholder="$/game"
+            />
+          </span>
+          <span data-demo-target="msg-field" className={cn(INPUT, "min-w-0 flex-1 truncate")}>
+            <TypeText
+              text={msgTyped}
+              typing={typingKey === "msgTyped"}
+              placeholder="Message (optional)"
+            />
+          </span>
+          <Button id="send-offer">Send offer</Button>
+        </div>
+      </div>
+
+      {/* Offers */}
+      <div className={PANEL}>
+        <PanelHeader title="Offers" />
+        {!sent ? (
+          <p className="text-ink-500 text-sm">No offers sent yet.</p>
+        ) : (
+          <div className="space-y-2">
+            <div
+              data-demo-target="offer-row"
+              className="border-court-100 bg-court-50 live-row-in flex flex-wrap items-center justify-between gap-2 rounded-xl border px-3 py-2 text-sm"
+            >
+              <div className="min-w-0">
+                <span className="text-ink-900 font-medium">
+                  {DAY} · {WINDOW}
+                </span>
+                <span className="text-ink-500 ml-2 text-xs">&rarr; All league referees</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Badge tone={accepted ? "court" : "gold"}>
+                  {accepted ? `accepted · ${REF}` : "pending"}
+                </Badge>
+                {!accepted && (
+                  <span className="text-hoop-600 text-xs font-semibold">Cancel</span>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Pool */}
+      <div className={PANEL}>
+        <PanelHeader
+          title="League referee pool"
+          action={
+            <span className="bg-ink-50 text-ink-600 rounded-full px-2.5 py-0.5 text-xs font-bold">
+              {POOL.length}
+            </span>
+          }
+        />
+        <div data-demo-target="pool-rows" className="mb-3 space-y-1">
+          {POOL.map((r) => (
+            <div
+              key={r.name}
+              data-demo-target={r.id}
+              className="border-ink-100 flex flex-wrap items-center justify-between gap-2 rounded-xl border px-3 py-2 text-sm"
+            >
+              <div className="min-w-0">
+                <span className="text-ink-900 font-medium">{r.name}</span>
+                <span className="text-ink-400 ml-2 text-xs">
+                  {r.cert} · Self-declared · {r.games} games · ${r.fee}/game
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                {dayPicked && (
+                  <span className="live-pop">
+                    <Badge tone={AVAIL_TONE[r.avail]}>{r.avail}</Badge>
+                  </span>
+                )}
+                <span className="text-hoop-600 text-xs font-semibold">Remove</span>
+              </div>
+            </div>
+          ))}
+        </div>
+        <div>
+          <span className="text-ink-600 mb-1 block text-xs font-medium">
+            Add a referee to your pool
+          </span>
+          <span className={cn(INPUT, "text-ink-400 block w-full")}>
+            Search referees on the platform…
+          </span>
+        </div>
+      </div>
+
+      {/* Settlements */}
+      <div
+        data-demo-target="settle-panel"
+        className="border-ink-100 mt-4 rounded-2xl border bg-white p-5"
+      >
+        <h3 className="text-ink-900 text-sm font-semibold">Referee settlements</h3>
+        <p className="text-ink-500 mt-1 text-xs">
+          Games are tallied per referee per session day. Double-check and confirm each row ·
+          confirmation is the settlement of record at the agreed per-game rate.
+        </p>
+        <div className="mt-3 space-y-1.5">
+          {SETTLEMENTS.map((s, i) => {
+            const done = s.confirmed || (confirmed && i === 0)
+            return (
+              <div
+                key={`${s.name}-${s.date}`}
+                data-demo-target={i === 0 ? "settle-row" : undefined}
+                className="border-ink-100 flex flex-wrap items-center justify-between gap-2 rounded-xl border px-3 py-2 text-sm"
+              >
+                <span className="min-w-0">
+                  <span className="text-ink-900 font-medium">{s.name}</span>
+                  <span className="text-ink-500 ml-2 text-xs tabular-nums">
+                    {s.date} · {s.games} games × ${s.rate} = ${s.total}
+                  </span>
+                </span>
+                {done ? (
+                  <span
+                    className={cn(
+                      "bg-court-50 text-court-700 rounded-full px-2 py-0.5 text-xs font-semibold",
+                      confirmed && i === 0 && "live-pop"
+                    )}
+                  >
+                    Confirmed
+                  </span>
+                ) : (
+                  <span
+                    data-demo-target={i === 0 ? "settle-confirm" : undefined}
+                    className="text-play-700 cursor-default text-xs font-semibold data-[demo-press=true]:opacity-70"
+                  >
+                    Confirm
+                  </span>
+                )}
+              </div>
+            )
+          })}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * THE REFEREE'S PHONE
+ *
+ * Not a fabrication: `/referee`, `/referee/requests` and `/calendar` are
+ * responsive pages the app's own mobile bottom bar links to, and
+ * `bottom-tabs.tsx` line 88 puts "My Games" → `/referee` in that bar whenever
+ * `shape.isRefereeing`. The native app ships the same inbox and list at
+ * `apps/mobile/src/app/(tabs)/referee.tsx`.
+ * ═══════════════════════════════════════════════════════════════════════════ */
+
+function Phone({
   view,
   accepted,
-  subscribed,
+  banner,
+  addOpen,
+  osCal,
 }: {
   view: string
   accepted: boolean
-  subscribed: boolean
+  banner: boolean
+  addOpen: boolean
+  osCal: boolean
 }) {
-  const tab = view === "games" ? "My Games" : view === "calendar" ? "Calendar" : "My Games"
   return (
-    <div className="flex h-full flex-col bg-[#f6f7f9]">
-      <div className="flex items-baseline gap-2 bg-[#0b1628] px-4 pb-2.5 pt-2 text-white">
+    <div className="relative flex h-full flex-col bg-[#f6f7f9]">
+      <div className="flex items-baseline gap-2 bg-[#0b1628] px-4 pb-2 pt-1.5 text-white">
         <p className="text-[15px] font-bold leading-tight">{REF}</p>
         <p className="text-[14px] font-medium text-white/60">Referee · Level 3</p>
       </div>
 
-      <div className="min-h-0 flex-1 overflow-hidden px-3 py-2.5">
-        {view === "games" ? (
-          <MyGames />
-        ) : view === "calendar" ? (
-          <RefCalendar subscribed={subscribed} />
+      <div key={view} className="demo-fade-in relative min-h-0 flex-1 overflow-hidden">
+        {view === "requests" && <RequestsScreen accepted={accepted} />}
+        {view === "games" && <MyGamesScreen assigned={accepted} />}
+        {view === "calendar" && <CalendarScreen addOpen={addOpen} />}
+      </div>
+
+      {banner && <PushBanner />}
+      {osCal && <IosCalendar />}
+
+      <TabBar active={view === "calendar" ? "Calendar" : "My Games"} />
+    </div>
+  )
+}
+
+/* ── /referee/requests ───────────────────────────────────────────────────── */
+
+function RequestsScreen({ accepted }: { accepted: boolean }) {
+  return (
+    <div className="mx-auto h-full max-w-3xl space-y-6 overflow-hidden p-4">
+      <p className="text-ink-500 text-sm font-semibold">&larr; Dashboard</p>
+      <div>
+        <h1 className="font-display text-ink-950 text-2xl font-bold">Shifts &amp; availability</h1>
+        <p className="text-ink-500 mt-1 text-sm">
+          Leagues book you by the day · keep your availability current and answer offers here.
+        </p>
+      </div>
+
+      {accepted && (
+        <div
+          data-demo-target="accept-note"
+          className="border-court-200 bg-court-50 text-court-700 live-pop rounded-xl border px-4 py-2 text-sm"
+        >
+          {ACCEPTED_NOTE}
+          <span data-demo-target="open-mygames" className="ml-2 font-semibold underline">
+            Open My games
+          </span>
+        </div>
+      )}
+
+      {/* Offers */}
+      <div className="border-ink-100 shadow-soft rounded-2xl border bg-white p-5">
+        <h2 className="text-ink-900 mb-3 font-semibold">Offers{accepted ? "" : " (1)"}</h2>
+        {accepted ? (
+          <p className="text-ink-500 text-sm">No open offers right now.</p>
         ) : (
-          <Offers accepted={accepted || view === "booked"} />
+          <div className="space-y-2">
+            <div data-demo-target="offer-card" className="border-ink-100 rounded-xl border p-3">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div>
+                  <span className="text-ink-900 text-sm font-semibold">
+                    {LEAGUE} · {DAY} · {WINDOW}
+                    <span className="text-court-700 ml-2 font-semibold">${RATE}/game</span>
+                  </span>
+                  <span className="text-ink-400 ml-2 text-xs">
+                    {SEASON} · {SESSION}
+                  </span>
+                  <span className="bg-hoop-100 text-hoop-700 ml-2 rounded-full px-2 py-0.5 text-[10px] font-bold">
+                    first accept wins
+                  </span>
+                </div>
+                <div className="flex gap-2">
+                  <span
+                    data-demo-target="accept-btn"
+                    className="bg-court-600 cursor-default rounded-xl px-3 py-1.5 text-xs font-semibold text-white transition duration-150 data-[demo-press=true]:brightness-90"
+                  >
+                    Accept
+                  </span>
+                  <span className="border-hoop-300 text-hoop-700 rounded-xl border px-3 py-1.5 text-xs font-semibold">
+                    Decline
+                  </span>
+                </div>
+              </div>
+              <p className="text-ink-600 mt-1 text-sm">&ldquo;{MESSAGE}&rdquo;</p>
+              <p className="text-ink-400 mt-1 text-xs">{PAY_TERMS}</p>
+            </div>
+          </div>
+        )}
+
+        {accepted && (
+          <div className="border-ink-100 live-row-in mt-4 border-t pt-3">
+            <p className="text-ink-500 mb-2 text-xs font-medium uppercase tracking-wide">
+              Your booked shifts
+            </p>
+            <div className="text-ink-700 flex flex-wrap items-center gap-2 text-sm">
+              <span className="bg-court-100 text-court-700 rounded-full px-2 py-0.5 text-xs font-medium">
+                booked
+              </span>
+              {LEAGUE} · {DAY} · {WINDOW}
+            </div>
+          </div>
         )}
       </div>
 
-      <div className="border-ink-200 flex shrink-0 items-center justify-around border-t bg-white px-1.5 pb-4 pt-2">
-        {["Home", "Chat", "Calendar", "My Games", "Social"].map((t) => (
-          <span
-            key={t}
-            className={cn(
-              "text-[14px] font-bold",
-              t === tab ? "text-play-700" : "text-ink-400"
-            )}
-          >
-            {t}
-          </span>
-        ))}
-      </div>
-    </div>
-  )
-}
-
-/** `/referee/requests`, Shifts and availability. */
-function Offers({ accepted }: { accepted: boolean }) {
-  return (
-    <div data-demo-target="phone-offers" className="space-y-2.5">
-      <p className="text-ink-900 text-[17px] font-extrabold">Shifts &amp; availability</p>
-
-      {accepted && (
-        <div className="border-court-200 bg-court-50 text-court-700 live-pop rounded-xl border px-3 py-2 text-[14px] font-semibold leading-snug">
-          {ACCEPTED_NOTE}
-        </div>
-      )}
-
-      <p className="text-ink-500 text-[14px] font-bold uppercase tracking-[0.08em]">
-        Offers{accepted ? "" : " (1)"}
-      </p>
-      <div>
-        <div
-          data-demo-target="offer-card"
-          className={cn(
-            "border-ink-100 mt-2 rounded-xl border px-3 py-2.5",
-            accepted && "border-court-200 bg-court-50/60"
-          )}
-        >
-          <p className="text-ink-900 text-[15px] font-bold leading-snug">
-            {LEAGUE} · {DAY} · {SHIFT}{" "}
-            <span className="text-court-700">${RATE}/game</span>
-          </p>
-          <p className="text-ink-400 mt-0.5 text-[14px] font-medium">
-            {SEASON} · {SESSION}
-          </p>
-          {!accepted && (
-            <span
-              data-demo-target="offer-wins"
-              className="bg-hoop-100 text-hoop-700 mt-1.5 inline-flex rounded-full px-2 py-0.5 text-[14px] font-bold"
-            >
-              first accept wins
-            </span>
-          )}
-          <p className="text-ink-600 mt-1.5 text-[14px] font-medium leading-snug">
-            &ldquo;{MESSAGE}&rdquo;
-          </p>
-          <p
-            data-demo-target="offer-terms"
-            className="text-ink-400 mt-1.5 text-[14px] font-medium leading-snug"
-          >
-            {PAY_TERMS}
-          </p>
-          {accepted ? (
-            <p className="text-court-700 mt-2 text-[14px] font-bold">
-              Booked · {GAME_COUNT} games on your schedule
-            </p>
-          ) : (
-            <div className="mt-2 flex gap-2">
-              <Btn id="accept-btn" tone="court" size="sm">
-                Accept
-              </Btn>
-              <Btn tone="quiet" size="sm">
-                Decline
-              </Btn>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* His declared availability, which is what put "available" beside his
-          name in the league's pool a moment ago. Compressed to one line, and
-          it steps aside once the booked banner arrives: the handset is 390 by
-          576 and nothing after the accept targets it. */}
-      {!accepted && (
-      <div className="border-ink-200 flex items-center justify-between gap-2 rounded-xl border bg-white px-3 py-2">
-        <span className="min-w-0">
-          <span className="text-ink-500 block text-[14px] font-bold uppercase tracking-[0.06em]">
-            My availability
-          </span>
-          <span className="text-ink-800 block text-[14px] font-semibold tabular-nums">
-            {DAY} · 09:00 to 18:00
-          </span>
-        </span>
-        <span className="text-hoop-600 shrink-0 text-[14px] font-bold">Remove</span>
-      </div>
-      )}
-    </div>
-  )
-}
-
-/** `/referee`, My games. */
-function MyGames() {
-  return (
-    <div data-demo-target="phone-games" className="space-y-2">
-      <p className="text-ink-900 text-[17px] font-extrabold">My games</p>
-      <p className="text-ink-400 text-[14px] font-bold uppercase tracking-[0.1em]">
-        Coming up ({GAME_COUNT})
-      </p>
-      {GAMES.slice(0, GAMES_SHOWN).map((g, i) => (
-        <div
-          key={`${g.home}-${g.at}-${g.where}`}
-          data-demo-target={i === 0 ? "game-1" : undefined}
-          className="border-ink-200 live-row-in rounded-2xl border bg-white px-3 py-2"
-          style={{ animationDelay: `${i * 70}ms` }}
-        >
-          <div className="flex items-center justify-between gap-2">
-            <span className="text-ink-900 text-[14px] font-bold">
-              {DAY} · {g.at}
-            </span>
-            <span className="text-court-700 text-[14px] font-bold tabular-nums">${RATE}/game</span>
+      {/* Availability */}
+      <div className="border-ink-100 shadow-soft rounded-2xl border bg-white p-5">
+        <h2 className="text-ink-900 mb-1 font-semibold">My availability</h2>
+        <p className="text-ink-500 mb-3 text-xs">
+          Days and hours you can work · leagues see this when they pick a referee.
+        </p>
+        <div className="space-y-1">
+          <div className="flex items-center justify-between text-sm">
+            <span className="text-ink-700 tabular-nums">{DAY} · 09:00–18:00</span>
+            <span className="text-hoop-600 text-xs font-semibold">Remove</span>
           </div>
-          <p className="text-ink-950 mt-0.5 text-[15px] font-bold leading-tight">
-            {g.home} vs {g.away}
-          </p>
-          <p className="text-ink-500 mt-0.5 text-[14px] font-medium">
-            {g.where} · {LEAGUE}
-          </p>
         </div>
-      ))}
-      <p className="text-ink-400 px-1 text-[14px] font-semibold">
-        and {GAME_COUNT - GAMES_SHOWN} more that morning
-      </p>
+      </div>
     </div>
   )
 }
 
-/** `/calendar` and its Add to phone control, then the subscribed feed. */
-function RefCalendar({ subscribed }: { subscribed: boolean }) {
+/* ── /referee, My games ──────────────────────────────────────────────────── */
+
+function IconWhistle() {
   return (
-    <div className="space-y-2.5">
-      <p className="text-ink-900 text-[17px] font-extrabold">My calendar</p>
-      {!subscribed ? (
-        <div className="border-ink-200 rounded-2xl border bg-white px-3 py-3">
-          <p className="text-ink-900 text-[15px] font-bold">Add to your phone</p>
-          <p className="text-ink-500 mt-1 text-[14px] font-medium leading-snug">
-            Subscribe once and every game you are assigned to appears in the calendar app you
-            already use, and keeps itself up to date.
+    <svg
+      viewBox="0 0 24 24"
+      className="h-3.5 w-3.5"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      aria-hidden="true"
+    >
+      <circle cx="7" cy="14" r="4" />
+      <path d="M11 14h5a4 4 0 0 0 0-8h-2" />
+      <circle cx="16" cy="8" r="1" />
+    </svg>
+  )
+}
+
+function MyGamesScreen({ assigned }: { assigned: boolean }) {
+  return (
+    <div className="mx-auto h-full max-w-3xl space-y-6 overflow-hidden px-4 py-6">
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <h1 className="font-display text-ink-950 text-2xl font-bold">My games</h1>
+          <p className="text-ink-500 mt-1 text-sm">
+            Every game you&apos;re officiating, next one first. Games land here when a league
+            books your shift and publishes that day&apos;s schedule.
           </p>
-          <span className="mt-2 inline-flex">
-            <Btn id="add-phone" size="sm">
-              Add to Apple Calendar
-            </Btn>
-          </span>
+        </div>
+      </div>
+
+      {!assigned ? (
+        /* `referee/page.tsx` lines 49 to 62: the real empty state, `past` empty. */
+        <div
+          data-demo-target="phone-empty"
+          className="border-ink-100 shadow-soft rounded-[28px] border border-dashed bg-white p-6 text-center"
+        >
+          <h2 className="text-ink-900 font-semibold">No games on your schedule yet</h2>
+          <p className="text-ink-500 mx-auto mt-2 max-w-md text-sm">
+            Leagues book referees by the day. Add your availability and answer shift offers, and
+            the games you get assigned appear here.
+          </p>
+          <div className="mt-5 flex justify-center">
+            <span
+              style={{ backgroundColor: "var(--brand)" }}
+              className="inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold text-[color:var(--brand-on)]"
+            >
+              <IconWhistle />
+              Open shifts and availability
+            </span>
+          </div>
         </div>
       ) : (
-        <div data-demo-target="ics-list" className="space-y-2">
-          <div className="border-court-200 bg-court-50 live-pop rounded-2xl border px-3 py-2">
-            <p className="text-court-800 text-[14px] font-bold">
-              Subscribed · {DAY} filled in by itself
-            </p>
-          </div>
-          {GAMES.slice(0, 2).map((g, i) => (
+        <section data-demo-target="phone-games" className="space-y-3">
+          <h2 className="text-ink-400 text-xs font-semibold uppercase tracking-[0.12em]">
+            Coming up ({GAME_COUNT})
+          </h2>
+          {GAMES.map((g, i) => (
             <div
-              key={g.home}
-              className="border-ink-200 border-l-4 border-l-court-500 live-row-in rounded-xl border bg-white px-3 py-2"
-              style={{ animationDelay: `${i * 90}ms` }}
+              key={`${g.home}-${g.court}`}
+              data-demo-target={i === 0 ? "game-1" : undefined}
+              className="border-ink-100 shadow-soft live-row-in rounded-2xl border bg-white p-4"
+              style={{ animationDelay: `${i * 70}ms` }}
             >
-              <p className="text-ink-950 text-[15px] font-extrabold tabular-nums">
-                {g.at} – {g.at === "9:00 AM" ? "10:30 AM" : "12:00 PM"}
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <p className="text-ink-900 text-sm font-semibold">
+                  {DAY} · {g.at}
+                </p>
+                <span className="text-court-700 text-xs font-semibold">${RATE}/game</span>
+              </div>
+              <p className="text-ink-950 mt-1 font-semibold">
+                {g.home} vs {g.away}
               </p>
-              <p className="text-ink-900 mt-0.5 text-[14px] font-bold leading-snug">
-                {ICS_TITLE(g)}
+              <p className="text-ink-500 mt-0.5 text-xs">
+                {g.venue} · {g.court} · {LEAGUE} · {SEASON}
               </p>
-              <p className="text-ink-500 mt-0.5 text-[14px] font-medium">{g.where}</p>
             </div>
           ))}
-          <p className="text-ink-400 px-1 text-[14px] font-semibold leading-snug">
-            and {GAME_COUNT - 2} more that morning, on one personal feed, so his kid&apos;s
-            practices and his officiating sit in the same calendar.
-          </p>
-        </div>
+        </section>
       )}
+    </div>
+  )
+}
+
+/* ── /calendar, agenda ───────────────────────────────────────────────────── */
+
+/**
+ * `calendar/page.tsx` + `my-calendar.tsx` in the agenda projection.
+ *
+ * Two things the real page decides for this user and the mock honours: the
+ * lens chip row is gated on `data.lenses.length > 1` and a referee with one
+ * league has exactly one lens, so there is no chip row; and the agenda/grid
+ * toggle is `hidden … sm:inline-flex`, so at 390 the only control on that row
+ * is Add to phone.
+ */
+function CalendarScreen({ addOpen }: { addOpen: boolean }) {
+  return (
+    <div className="mx-auto h-full max-w-5xl space-y-4 overflow-hidden px-4 py-6">
+      <div>
+        <h1 className="text-ink-950 font-display text-2xl font-bold">My Calendar</h1>
+        <p className="text-ink-500 mt-1 text-sm">
+          Every game, practice and event across all your teams · answer Going or Can&apos;t go
+          right here.
+        </p>
+      </div>
+
+      <div className="relative flex items-center justify-end gap-2">
+        <span
+          data-demo-target="add-phone"
+          className="border-ink-200 text-ink-700 cursor-default rounded-xl border px-3 py-1.5 text-xs font-semibold data-[demo-press=true]:brightness-95"
+        >
+          📅 Add to phone
+        </span>
+        {addOpen && <AddToPhonePanel />}
+      </div>
+
+      <div data-demo-target="cal-agenda" className="relative">
+        <div className="bg-ink-50/95 sticky top-0 z-10 -mx-1 px-1 py-1.5">
+          <p className="text-ink-500 text-xs font-bold uppercase tracking-widest">August 2026</p>
+        </div>
+        <div className="flex items-start gap-3 py-2">
+          <div className="bg-ink-100/70 text-ink-700 flex h-[60px] w-[60px] shrink-0 flex-col items-center justify-center rounded-2xl">
+            <span className="text-2xl font-extrabold leading-none">8</span>
+            <span className="text-ink-400 mt-0.5 text-[10px] font-semibold uppercase">Sat</span>
+          </div>
+          <div className="min-w-0 flex-1 space-y-1.5">
+            {GAMES.map((g) => (
+              <div
+                key={`${g.home}-${g.court}`}
+                /* `my-calendar.tsx` KIND_CARD.game + KIND_EDGE.game. */
+                className="bg-energy-soft/60 border-ink-100 flex gap-3 rounded-xl border border-l-4 px-4 py-3"
+                style={{ borderLeftColor: "var(--energy)" }}
+              >
+                <div className="min-w-0 flex-1">
+                  <p className="text-ink-950 text-[16px] font-extrabold tabular-nums">
+                    {g.at === "9:00 AM" ? "9:00 – 10:30 AM" : "10:30 AM – 12:00 PM"}
+                  </p>
+                  <p className="text-ink-900 mt-0.5 text-[15px] font-bold">
+                    {g.home} vs {g.away}
+                  </p>
+                  <p className="text-ink-600 mt-0.5 text-[13px]">{g.venue}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+/** `components/calendar/add-to-phone.tsx`, the panel after the one press. */
+function AddToPhonePanel() {
+  return (
+    <span
+      data-demo-target="add-panel"
+      className="border-ink-200 live-pop absolute right-0 top-full z-20 mt-2 w-72 rounded-2xl border bg-white p-4 shadow-lg"
+    >
+      <span className="block space-y-2 text-sm">
+        <span className="text-ink-800 block font-semibold">Opening Apple Calendar…</span>
+        <span className="text-ink-500 block text-xs">
+          Confirm the subscription there and every practice, game and event stays in sync.
+          Didn&apos;t open? Use the buttons below.
+        </span>
+        <span className="bg-play-600 block rounded-xl px-3 py-2 text-center text-xs font-semibold text-white">
+          iPhone / Apple Calendar
+        </span>
+        <span className="border-ink-200 text-ink-700 block rounded-xl border px-3 py-2 text-center text-xs font-semibold">
+          Google Calendar (Android)
+        </span>
+      </span>
+    </span>
+  )
+}
+
+/* ── OS chrome (R8) ──────────────────────────────────────────────────────── */
+
+/** An iOS-style push dropping from the top of the handset. */
+function PushBanner() {
+  return (
+    <div className="demo-banner-in absolute left-1.5 right-1.5 top-1.5 z-30">
+      <div
+        data-demo-target="push-open"
+        className="rounded-[18px] border border-black/5 bg-white/95 p-2.5 shadow-[0_10px_30px_rgba(11,22,40,0.28)] backdrop-blur"
+      >
+        <div className="flex items-start gap-2.5">
+          <AppIcon className="h-9 w-9 shrink-0" />
+          <div className="min-w-0 flex-1">
+            <div className="flex items-baseline justify-between gap-2">
+              <p className="text-ink-400 text-[10px] font-semibold uppercase tracking-[0.06em]">
+                SportsHub One
+              </p>
+              <p className="text-ink-400 text-[10px]">now</p>
+            </div>
+            <p className="text-ink-950 text-[13px] font-semibold leading-tight">{PUSH_TITLE}</p>
+            <p className="text-ink-600 line-clamp-2 text-[12px] leading-snug">{PUSH_BODY}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+/**
+ * The phone's own calendar app taking the screen after the webcal:// hand-off.
+ * OS chrome, hand-authored: no product UI is invented here, and the event
+ * titles are the feed's own (`api/calendar/[token]/route.ts` line 165).
+ */
+function IosCalendar() {
+  return (
+    <div className="demo-fade-in absolute inset-0 z-30 flex flex-col bg-white">
+      <div className="border-ink-100 shrink-0 border-b px-4 pb-2 pt-3">
+        <p className="text-[13px] font-semibold text-[#e5493d]">&lsaquo; August</p>
+        <p className="text-ink-950 mt-1 text-[22px] font-bold">Saturday 8 August</p>
+        <p className="text-ink-400 mt-0.5 text-[12px]">SportsHub · Mike</p>
+      </div>
+      <div className="min-h-0 flex-1 overflow-hidden px-4 py-2">
+        <CalHour label="9 AM">
+          {GAMES.slice(0, 3).map((g) => (
+            <CalEvent key={g.court} title={ICS_TITLE(g)} when="9:00 – 10:30 AM" />
+          ))}
+        </CalHour>
+        <CalHour label="10 AM">
+          <CalEvent title={ICS_TITLE(LATE_GAME)} when="10:30 AM – 12:00 PM" />
+        </CalHour>
+        <CalHour label="11 AM">{null}</CalHour>
+      </div>
+    </div>
+  )
+}
+
+/** One hour row of the OS day view: the gutter label and whatever sits in it. */
+function CalHour({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <div className="border-ink-100 flex gap-3 border-t border-dashed py-2 first:border-t-0">
+      <span className="text-ink-400 w-[46px] shrink-0 pt-1 text-[11px] font-semibold tabular-nums">
+        {label}
+      </span>
+      <div className="min-w-0 flex-1 space-y-1">{children}</div>
+    </div>
+  )
+}
+
+function CalEvent({ title, when }: { title: string; when: string }) {
+  return (
+    <div
+      className="min-w-0 rounded-lg border-l-[3px] bg-[#eef2fb] px-2.5 py-1.5"
+      style={{ borderLeftColor: "#3a6df0" }}
+    >
+      <p className="text-ink-950 text-[12.5px] font-semibold leading-snug">{title}</p>
+      <p className="text-ink-500 mt-0.5 text-[11.5px]">
+        {when} · {ICS_WHERE}
+      </p>
+    </div>
+  )
+}
+
+/* ── The bottom bar, from `components/nav/bottom-tabs.tsx` ───────────────── */
+
+const TAB_ICONS: Record<string, ReactNode> = {
+  Home: (
+    <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2">
+      <path d="M3 10 12 3l9 7" />
+      <path d="M5 10v10h14V10" />
+    </svg>
+  ),
+  Chat: (
+    <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2">
+      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+    </svg>
+  ),
+  Calendar: (
+    <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2">
+      <rect x="3" y="4" width="18" height="18" rx="2" />
+      <path d="M16 2v4M8 2v4M3 10h18" />
+    </svg>
+  ),
+  "My Games": (
+    <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2">
+      <circle cx="9" cy="14" r="6" />
+      <path d="M14.5 10.5 21 6l-2 6h-4" />
+    </svg>
+  ),
+  Social: (
+    <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2">
+      <circle cx="12" cy="12" r="10" />
+      <path d="M12 2c0 5.5 2 8.5 10 10M12 22c0-5.5-2-8.5-10-10" />
+    </svg>
+  ),
+}
+
+/** The real bar: icon over label, and the active tab in its energy capsule. */
+function TabBar({ active }: { active: string }) {
+  return (
+    <div className="border-ink-100 flex shrink-0 items-stretch justify-around border-t bg-white/95 px-1 pb-2 pt-1">
+      {["Home", "Chat", "Calendar", "My Games", "Social"].map((t) => (
+        <span
+          key={t}
+          data-demo-target={t === "Calendar" ? "tab-calendar" : undefined}
+          className="flex min-w-[54px] flex-col items-center justify-center px-0.5 py-1"
+        >
+          <span
+            className={cn(
+              "flex flex-col items-center justify-center gap-0.5 rounded-2xl px-2.5 py-0.5 text-[10px] font-bold",
+              t === active ? "bg-energy text-energy-on" : "text-ink-600"
+            )}
+          >
+            {TAB_ICONS[t]}
+            {t}
+          </span>
+        </span>
+      ))}
     </div>
   )
 }

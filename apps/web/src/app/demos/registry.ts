@@ -419,12 +419,12 @@ export const DEMOS: DemoEntry[] = [
     promise:
       "A league books a whole Saturday to its referee pool at a stated rate, the first one to answer gets every game in the window, and his schedule, his pay and his calendar fill themselves.",
     description:
-      "Referees are the second biggest thing a league pays for after gyms. It opens on the league's own referee desk: a pool of three, each row carrying the certification, whether it is self-declared, how many games they have worked and their own rate. The league picks a session day and the pool answers with who is free, from availability the referees declared themselves, with the one who has never said anything shown as silent rather than assumed unavailable. Then the part that matters: the league books a DAY, not a game. One shift preset, one broadcast to the whole pool, one rate on the offer, and the first referee to accept is assigned to every game that tips inside the window. The camera turns to his phone, a real screen in the app, and the offer is there with the money and the terms on it. He accepts, and eight games land on his own schedule with the court, not just the building, and what each one pays. He subscribes once and his officiating appears in the calendar app he already uses. The last chapter is the league's side of the money: games tallied per referee per session day at the rate they agreed to on accepting, and confirmed in one press.",
+      "Referees are the second biggest thing a league pays for after gyms. It opens on the league's own referee desk: a pool of three, each row carrying the certification, whether it is self-declared, how many games they have worked and their own rate. The league picks a session day and the pool answers with who is free, from availability the referees declared themselves, with the one who has never said anything shown as silent rather than assumed unavailable. Then the part that matters: the league books a DAY, not a game. One shift preset, one broadcast to the whole pool, one rate on the offer, and the first referee to accept is assigned to every game that tips inside the window. The camera turns to his phone, where his own schedule is still empty, and the offer arrives as a notification carrying the money and the terms. He accepts, and eight games land on that schedule with the court, not just the building, and what each one pays. He subscribes once and his officiating fills in inside the calendar app he already uses. The last chapter is the league's side of the money: games tallied per referee per session day at the rate they agreed to on accepting, and confirmed in one press.",
     audiences: ["leagues", "clubs"],
     primaryAudience: "leagues",
     kind: "chapter",
     stage: "split",
-    durationLabel: "1 min 45 sec",
+    durationLabel: "1 min 40 sec",
     status: "live",
     chapterCount: 4,
     /* No volatile numbers in the bullets: rates, counts and pool sizes move
