@@ -1,0 +1,123 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="_brand.css" />
+<!--
+  PARENT / PLAYER POST (2026-08-19) — the group-chat spiral.
+
+  Owner's idea, from his own summer: a team drops out, the schedule churns,
+  and the news arrives as forty messages and a new spreadsheet. His draft was
+  "Are you tired of getting spreadsheets and WhatsApp groups and then schedule
+  changes because a team dropped out?" — right feeling, too long to land in a
+  feed, so it is cut to the moment.
+
+  DISTINCT FROM s6/s7, which are the same family. Those are the SYMPTOM (a
+  game moved and you found out late). This is the CAUSE (the roster changed
+  and the schedule churned), and the product answer is different too: not
+  "you get notified faster" but "most games never move at all", because
+  late entries and dropouts re-adapt the schedule with minimal changes.
+
+  NO WHATSAPP BRANDING. It is a generic group thread: no logo, no name, no
+  colour lifted from theirs. The pile creatives cross out named competitors
+  with a trademark footnote; a messaging app we are only using as scenery
+  gets no name at all.
+
+  The bubbles are the joke and they should stay specific. "FINAL_v4.xlsx"
+  and "that's the old one" are what make a parent tag another parent.
+-->
+<style>
+  .stage { gap: 24px; padding: 48px 58px 232px; }
+
+  .thread {
+    flex: none;
+    width: 100%;
+    max-width: 820px;
+    background: #16233d;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 28px;
+    overflow: hidden;
+    box-shadow: 0 46px 100px -40px rgba(0, 0, 0, 0.9);
+    text-align: left;
+  }
+  .thread .hd {
+    background: rgba(255, 255, 255, 0.06);
+    padding: 14px 24px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  }
+  .thread .hd .av {
+    width: 38px; height: 38px; border-radius: 999px; flex: none;
+    background: rgba(255, 255, 255, 0.16);
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--display); font-weight: 800; font-size: 19px; color: #fff;
+  }
+  .thread .hd b { font-family: var(--display); font-size: 24px; font-weight: 700; color: #fff; }
+  .thread .hd span { font-family: var(--body); font-size: 20px; color: rgba(255,255,255,.45); margin-left: auto; }
+
+  .thread .msgs { padding: 18px 24px 22px; display: flex; flex-direction: column; gap: 10px; }
+  .b {
+    max-width: 76%;
+    border-radius: 18px;
+    padding: 12px 19px;
+    font-family: var(--body);
+    font-size: 23px;
+    line-height: 1.3;
+    color: rgba(255, 255, 255, 0.9);
+    background: rgba(255, 255, 255, 0.09);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+  }
+  .b.me { align-self: flex-end; background: rgba(79, 70, 229, 0.3); border-color: rgba(165, 180, 252, 0.3); }
+  .b.file {
+    display: inline-flex; align-items: center; gap: 12px;
+    font-weight: 600; color: rgba(255, 255, 255, 0.72);
+  }
+  .b.file .doc {
+    width: 34px; height: 34px; border-radius: 8px; flex: none;
+    background: var(--court-600); display: flex; align-items: center; justify-content: center;
+    font-family: var(--display); font-size: 15px; font-weight: 800; color: #fff;
+  }
+
+  h1 { font-size: 60px; line-height: 1.05; }
+  h1 .hit { color: var(--gold-300); }
+  .sub {
+    font-family: var(--body); font-size: 26px; font-weight: 500;
+    color: rgba(255, 255, 255, 0.62); max-width: 820px; line-height: 1.42;
+  }
+  .sub b { color: #ffffff; font-weight: 700; }
+</style>
+</head>
+<body>
+<div class="stage dark">
+  <span class="eyebrow">Sound familiar?</span>
+
+  <div class="thread">
+    <div class="hd">
+      <span class="av">G9</span>
+      <b>Grade 9 Parents</b>
+      <span>23 members</span>
+    </div>
+    <div class="msgs">
+      <span class="b">A team pulled out, so the whole weekend changed</span>
+      <span class="b me">Is Saturday still on?</span>
+      <span class="b">I heard 2pm now. Or 4?</span>
+      <span class="b file"><span class="doc">XLS</span> schedule_FINAL_v4.xlsx</span>
+      <span class="b">that&rsquo;s the old one sorry</span>
+    </div>
+  </div>
+
+  <h1>One team drops out.<br /><span class="hit">Forty messages later</span>, still no answer.</h1>
+  <p class="sub">Here the schedule redraws itself. <b>Most games never move</b>, and the ones that do reach every phone first.</p>
+
+  <div class="footer-brand">
+    <span class="wm"><span class="s">Sports</span><span class="h">Hub</span><span class="one">ONE</span></span>
+    <span class="domain">sportshubone.com</span>
+  </div>
+</div>
+<script>const m = location.hash.replace("#", ""); if (m) document.body.classList.add(m);</script>
+</body>
+</html>

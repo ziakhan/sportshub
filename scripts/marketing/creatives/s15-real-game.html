@@ -1,0 +1,82 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="_brand.css" />
+<!--
+  REPLACES s14 (2026-08-19). Owner rejected s14: "too graphic, doesn't look
+  anything like our app, it should look closer to our app."
+
+  Correct call, and the fix is to stop drawing it. s14 was a hand-built dark
+  poster card; the real live game screen is LIGHT, with a navy score hero,
+  Game/Stats/Plays tabs, a period table and GAME LEADERS with jersey chips.
+  The redraw shared almost nothing with the product, and the product looks
+  better than the redraw did.
+
+  So this uses the real capture, apps/web/public/shots/phone-game.png, in a
+  phone frame, the same way the homepage screens section presents its shots.
+  Nothing here is illustrated: what a club sees on this post is what they get.
+
+  Cropped to the top of the screen on purpose. The score hero, the live clock
+  and the period table are the money; GAME LEADERS runs below the fold of the
+  crop and a soft fade admits the cut rather than pretending the screen ends.
+-->
+<style>
+  .stage { gap: 34px; padding: 56px 60px 236px; }
+
+  .phone {
+    flex: none;
+    width: 430px;
+    border-radius: 46px;
+    background: #10192c;
+    padding: 13px;
+    box-shadow: 0 50px 110px -38px rgba(0, 0, 0, 0.9);
+    border: 1px solid rgba(255, 255, 255, 0.14);
+  }
+  .phone .screen {
+    position: relative;
+    height: 560px;
+    border-radius: 34px;
+    overflow: hidden;
+    background: #ffffff;
+  }
+  .phone .screen img { display: block; width: 100%; }
+  /* Admit the crop instead of hiding it. */
+  .phone .screen::after {
+    content: "";
+    position: absolute;
+    left: 0; right: 0; bottom: 0; height: 74px;
+    background: linear-gradient(to bottom, rgba(255,255,255,0), #ffffff);
+  }
+
+  h1 { font-size: 74px; line-height: 1.05; }
+  h1 .hit { color: var(--gold-300); }
+  .sub {
+    font-family: var(--body); font-size: 29px; font-weight: 500;
+    color: rgba(255, 255, 255, 0.62); max-width: 820px; line-height: 1.42;
+  }
+</style>
+</head>
+<body>
+<div class="stage dark">
+  <span class="eyebrow">This is the actual screen</span>
+
+  <div class="phone">
+    <div class="screen">
+      <img src="../../../apps/web/public/shots/phone-game.png" alt="Live game screen" />
+    </div>
+  </div>
+
+  <h1>The score, live, <span class="hit">on every phone</span>.</h1>
+  <p class="sub">One volunteer at the scorer&rsquo;s table. Everyone who could not make it is watching this.</p>
+
+  <div class="footer-brand">
+    <span class="wm"><span class="s">Sports</span><span class="h">Hub</span><span class="one">ONE</span></span>
+    <span class="domain">sportshubone.com</span>
+  </div>
+</div>
+<script>const m = location.hash.replace("#", ""); if (m) document.body.classList.add(m);</script>
+</body>
+</html>

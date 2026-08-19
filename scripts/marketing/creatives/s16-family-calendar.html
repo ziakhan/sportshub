@@ -1,0 +1,78 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="_brand.css" />
+<!--
+  PARENT POST 2 (2026-08-19) — the family calendar, which was the biggest
+  hole in the set: s7 sells the pain and nothing sold the relief.
+
+  Real capture, apps/web/public/shots/phone-calendar.png, for the same reason
+  s15 uses one. And this screen argues for itself better than copy could:
+  two different teams are visible in one list, colour-coded down the left
+  edge, with RSVP inline and a cancelled practice struck through. That is the
+  entire parent pitch sitting in one screenshot, unstaged.
+
+  "Both kids" is a claim the screen actually supports (Force Grade 10 and
+  Toronto Lords Grade 9 are two different teams in one list, and the tab bar
+  carries My Kids), so it is safe to say out loud.
+-->
+<style>
+  .stage { gap: 32px; padding: 54px 58px 236px; }
+
+  .phone {
+    flex: none;
+    width: 420px;
+    border-radius: 46px;
+    background: #10192c;
+    padding: 13px;
+    box-shadow: 0 46px 100px -38px rgba(0, 0, 0, 0.55);
+    border: 1px solid rgba(0, 0, 0, 0.12);
+  }
+  .phone .screen {
+    position: relative;
+    height: 545px;
+    border-radius: 34px;
+    overflow: hidden;
+    background: #ffffff;
+  }
+  .phone .screen img { display: block; width: 100%; }
+  .phone .screen::after {
+    content: "";
+    position: absolute;
+    left: 0; right: 0; bottom: 0; height: 70px;
+    background: linear-gradient(to bottom, rgba(247,247,248,0), #f7f7f8);
+  }
+
+  h1 { font-size: 72px; line-height: 1.05; }
+  h1 .hit { color: var(--play-600); }
+  .sub {
+    font-family: var(--body); font-size: 29px; font-weight: 500;
+    color: var(--ink-700); max-width: 810px; line-height: 1.42;
+  }
+  .sub b { color: var(--ink-950); font-weight: 700; }
+</style>
+</head>
+<body>
+<div class="stage light">
+  <span class="eyebrow">For the family</span>
+
+  <div class="phone">
+    <div class="screen">
+      <img src="../../../apps/web/public/shots/phone-calendar.png" alt="Family calendar screen" />
+    </div>
+  </div>
+
+  <h1>Both kids. Every practice.<br /><span class="hit">One list.</span></h1>
+  <p class="sub">Two teams, two schedules, one phone. Say you are coming without leaving the screen, and see a cancellation <b>the moment it happens</b>.</p>
+
+  <div class="footer-brand">
+    <span class="wm"><span class="s">Sports</span><span class="h">Hub</span><span class="one">ONE</span></span>
+    <span class="domain">sportshubone.com</span>
+  </div>
+</div>
+<script>const m = location.hash.replace("#", ""); if (m) document.body.classList.add(m);</script>
+</body>
+</html>
