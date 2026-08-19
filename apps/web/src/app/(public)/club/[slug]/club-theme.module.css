@@ -14,10 +14,27 @@
  * parallel session and this needs no global surface area.
  */
 
-.themed {
+/*
+ * IMPORTANT: `.page` and `.themed` are deliberately two classes.
+ *
+ * The hero is a daylight maple band on every club (CourtBackdropLayer
+ * variant="daylight"), matching EntityHeader across the rest of the site. It is
+ * theme-INDEPENDENT by design. When both jobs lived on one class wrapping the
+ * whole page, the ink override reached into that hero, so on any dark theme the
+ * club's h1 rendered near-white on maple and was unreadable. Caught in review
+ * 2026-08-19 on /club/alpha-elite-sports-group.
+ *
+ * So: `.page` paints the ground and nothing else, and goes on the outer wrapper.
+ * `.themed` carries the utility overrides and goes ONLY on the content region
+ * below the hero. Anything with its own fixed surface stays outside it.
+ */
+.page {
   background: var(--club-bg);
-  color: var(--club-ink);
   font-family: var(--club-body-font);
+}
+
+.themed {
+  color: var(--club-ink);
 }
 
 /* Surfaces. `Card` and any hand-rolled white panel become the theme's panel. */
