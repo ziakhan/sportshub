@@ -1,0 +1,145 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="_brand.css" />
+<!--
+  THE LAUNCH CARD v2 (2026-08-19), on the owner's review of v1.
+
+  LAUNCHING, NOT OPENING. "Opening" belongs to a place with a door; a platform
+  launches. Owner's call and the right one.
+
+  THE EYEBROW IS GONE. v1 led with "Canadian youth basketball", which narrowed
+  the invitation before anyone had read the name. Anyone can come and look;
+  what they find is basketball, and the footnote says so without making it the
+  headline.
+
+  THE REPETITION IS CUT. v1 said "One place for the league, the club, the
+  player and the parent" and then listed Leagues / Clubs / Players / Parents
+  as chips directly underneath — the same four things twice, in a card whose
+  whole job was to stay calm. The chips now carry WHO and the line carries
+  WHAT, so neither repeats the other and the line got shorter and bigger.
+
+  THE DEAD SPACE IS FILLED WITH DRAWING, NOT COPY. v1 left a hole above the
+  footer, and the temptation is to write something into it. Instead a cropped
+  regulation arc and key sit behind the type at 9%, which is the house court
+  system doing what it does on the hero: R2 cropped by an edge, R4 a fixed
+  low budget, and it never competes with the reading because it carries no
+  information at all.
+-->
+<style>
+  .stage { gap: 0; padding: 86px 74px 250px; overflow: hidden; }
+
+  /* Court line-work, cropped by the bottom edge. Pure decoration. */
+  .court {
+    position: absolute;
+    left: 50%;
+    bottom: -8%;
+    width: 132%;
+    transform: translateX(-50%);
+    aspect-ratio: 500 / 320;
+    z-index: 0;
+    pointer-events: none;
+  }
+  .stage > *:not(.court) { position: relative; z-index: 1; }
+
+  .brand-lead { font-size: 84px; }
+  .brand-lead .one { font-size: 0.26em; }
+
+  h1 {
+    font-size: 146px;
+    line-height: 0.98;
+    margin-top: 44px;
+    letter-spacing: -0.035em;
+  }
+  h1 .hit { color: var(--gold-300); }
+
+  .what {
+    font-family: var(--display);
+    font-size: 52px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: #ffffff;
+    margin-top: 34px;
+  }
+  .what em { font-style: normal; color: var(--hoop-500); }
+
+  .who {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 11px;
+    margin-top: 42px;
+  }
+  .who span {
+    font-family: var(--display);
+    font-size: 26px;
+    font-weight: 700;
+    color: rgba(255, 255, 255, 0.8);
+    border: 1.5px solid rgba(255, 255, 255, 0.22);
+    border-radius: 999px;
+    padding: 11px 28px;
+  }
+
+  .cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 16px;
+    margin-top: 46px;
+    background: var(--gold-500);
+    color: var(--ink-950);
+    border-radius: 999px;
+    padding: 22px 50px;
+    font-family: var(--display);
+    font-size: 37px;
+    font-weight: 800;
+    letter-spacing: -0.01em;
+    box-shadow: 0 26px 60px -22px rgba(245, 158, 11, 0.7);
+  }
+
+  .note {
+    font-family: var(--body);
+    font-size: 22px;
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.4);
+    margin-top: 26px;
+    letter-spacing: 0.02em;
+  }
+</style>
+</head>
+<body>
+<div class="stage dark">
+  <svg class="court" viewBox="0 0 500 320" fill="none" stroke="#f59e0b" stroke-opacity="0.09"
+       stroke-width="2.6" stroke-linecap="round" aria-hidden="true">
+    <path d="M0 300 H500" />
+    <path d="M30 300 V155.5" />
+    <path d="M470 300 V155.5" />
+    <path d="M30 155.5 A 237.5 237.5 0 0 1 470 155.5" />
+    <path d="M170 300 V110 H330 V300" />
+    <path d="M190 110 A 60 60 0 0 1 310 110" />
+    <path d="M220 260 H280" stroke-width="3.4" />
+    <circle cx="250" cy="245" r="7.5" stroke-width="2.2" />
+  </svg>
+
+  <span class="wm brand-lead"><span class="s">Sports</span><span class="h">Hub</span><span class="one">ONE</span></span>
+
+  <h1>Launching<br /><span class="hit">this fall</span>.</h1>
+
+  <p class="what">Registration to the <em>final buzzer</em>.</p>
+
+  <div class="who">
+    <span>Leagues</span>
+    <span>Clubs</span>
+    <span>Players</span>
+    <span>Parents</span>
+  </div>
+
+  <span class="cta">sportshubone.com</span>
+
+  <p class="note">Basketball first. More sports to follow.</p>
+</div>
+<script>const m = location.hash.replace("#", ""); if (m) document.body.classList.add(m);</script>
+</body>
+</html>
