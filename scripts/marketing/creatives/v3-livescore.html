@@ -23,10 +23,10 @@
   .score span { position: absolute; left: 0; right: 0; }
   .score .old { animation: numOut 0.35s ease-in both; }
   .score .new { animation: numIn 0.4s ease-out both, glow 1.4s ease-out both; }
-  .home .old { animation-delay: 2.0s; }
-  .home .new { animation-delay: 2.05s, 2.05s; }
-  .away .old { animation-delay: 4.5s; }
-  .away .new { animation-delay: 4.55s, 4.55s; }
+  .home .old { animation-delay: 1.9s; }
+  .home .new { animation-delay: 1.95s, 1.95s; }
+  .away .old { animation-delay: 4.3s; }
+  .away .new { animation-delay: 4.35s, 4.35s; }
   .livepill { background: var(--live-500); border-radius: 999px; padding: 8px 22px; font-family: var(--display); font-weight: 800; font-size: 20px; text-transform: uppercase; letter-spacing: 0.14em; display: inline-flex; align-items: center; gap: 8px; }
   .livepill i { width: 9px; height: 9px; background: #fff; border-radius: 50%; display: inline-block; animation: pulse 1.2s ease-in-out infinite; }
   .period { font-family: var(--condensed); font-weight: 700; font-size: 34px; margin-top: 8px; }
@@ -38,22 +38,32 @@
   }
   .playchip b { color: var(--court-600); }
   body.story .playchip { top: 145px; }
-  .chip1 { animation: chipIn 0.5s cubic-bezier(0.3, 1.3, 0.5, 1) 1.5s both, chipOut 0.4s ease-in 3.9s forwards; }
-  .chip2 { animation: chipIn 0.5s cubic-bezier(0.3, 1.3, 0.5, 1) 4.3s both, chipOut 0.4s ease-in 6.3s forwards; }
+  .chip1 { animation: chipIn 0.5s cubic-bezier(0.3, 1.3, 0.5, 1) 1.4s both, chipOut 0.4s ease-in 3.7s forwards; }
+  .chip2 { animation: chipIn 0.5s cubic-bezier(0.3, 1.3, 0.5, 1) 4.1s both, chipOut 0.4s ease-in 6.1s forwards; }
+  .chip3 { animation: chipIn 0.5s cubic-bezier(0.3, 1.3, 0.5, 1) 6.5s both, chipOut 0.4s ease-in 8.8s forwards; }
+  /* The clock is the cheapest life on the card: it just has to move. */
+  .ck { min-width: 92px; }
+  .ck span { animation: numOut 0.3s ease-in both; }
+  .ck .c1 { animation-delay: 3.9s; }
+  .ck .c2 { animation: numIn 0.35s ease-out 3.95s both, numOut 0.3s ease-in 7.4s both; }
+  .ck .c3 { animation: numIn 0.35s ease-out 7.45s both; }
   .box { background: #ffffff; padding: 10px 0 6px; }
-  .brow { display: grid; grid-template-columns: 1fr 90px 90px 90px; padding: 14px 34px; font-size: 26px; align-items: center; color: var(--ink-950); border-top: 1.5px solid var(--ink-100); }
-  .brow.head { color: var(--ink-500); font-size: 19px; letter-spacing: 0.1em; text-transform: uppercase; font-weight: 700; border-top: 0; }
+  .brow { display: grid; grid-template-columns: 1fr 68px 68px 68px 68px 68px; padding: 12px 28px; font-size: 24px; align-items: center; color: var(--ink-950); border-top: 1.5px solid var(--ink-100); }
+  .brow.head { color: var(--ink-500); font-size: 17px; letter-spacing: 0.1em; text-transform: uppercase; font-weight: 700; border-top: 0; }
   .brow .num { text-align: right; font-variant-numeric: tabular-nums; position: relative; }
   .brow .pts { font-weight: 800; color: var(--hoop-600); }
   .brow .j { color: var(--ink-500); margin-right: 10px; }
   .brow.top { background: rgba(22, 163, 74, 0.08); }
-  .swap { position: relative; display: inline-block; min-width: 52px; height: 1.25em; vertical-align: top; }
+  .swap { position: relative; display: inline-block; min-width: 40px; height: 1.25em; vertical-align: top; }
   .swap span { position: absolute; right: 0; top: 0; }
   .swap .old { animation: numOut 0.35s ease-in both; }
   .swap .new { animation: numIn 0.4s ease-out both, cellglow 1.4s ease-out both; }
-  .jp .old { animation-delay: 2.15s; } .jp .new { animation-delay: 2.2s, 2.2s; }
-  .ma .old { animation-delay: 2.55s; } .ma .new { animation-delay: 2.6s, 2.6s; }
-  .sub { font-family: var(--display); font-size: 40px; font-weight: 700; color: #fff; animation: rise 0.6s ease-out 6.6s both; }
+  .jp .old { animation-delay: 2.05s; } .jp .new { animation-delay: 2.1s, 2.1s; }
+  .ma .old { animation-delay: 2.45s; } .ma .new { animation-delay: 2.5s, 2.5s; }
+  /* Beat three: the block and the steal light up the two new columns. */
+  .mb .old { animation-delay: 6.75s; } .mb .new { animation-delay: 6.8s, 6.8s; }
+  .js .old { animation-delay: 7.05s; } .js .new { animation-delay: 7.1s, 7.1s; }
+  .sub { font-family: var(--display); font-size: 40px; font-weight: 700; color: #fff; animation: rise 0.6s ease-out 9.1s both; }
   .sub em { font-style: normal; color: #f9a178; }
   .footer-brand { animation: fadein 0.6s ease-out 0.4s both; }
   @keyframes rise { from { opacity: 0; transform: translateY(36px); } to { opacity: 1; transform: none; } }
@@ -71,6 +81,7 @@
 <div class="stage dark">
   <div class="playchip chip1">#23 Jayden T. hits a three, <b>assist Marcus C.</b></div>
   <div class="playchip chip2">Huskies answer inside</div>
+  <div class="playchip chip3">Malik O. <b>blocks it</b>, Jayden T. takes the steal</div>
   <h1>Watch every game live.</h1>
   <div class="scorecard">
     <div class="hero">
@@ -82,7 +93,7 @@
       <div>
         <span class="livepill"><i></i>Live</span>
         <div class="period">Q4</div>
-        <div class="clock">0:41</div>
+        <div class="clock"><span class="swap ck"><span class="c1">0:41</span><span class="c2">0:29</span><span class="c3">0:12</span></span></div>
       </div>
       <div>
         <div class="crest" style="background:#5b21b6">NT</div>
@@ -91,10 +102,11 @@
       </div>
     </div>
     <div class="box">
-      <div class="brow head"><span>Player</span><span class="num">Pts</span><span class="num">Reb</span><span class="num">Ast</span></div>
-      <div class="brow top"><span><span class="j">#23</span><b>Jayden T.</b></span><span class="num pts"><span class="swap jp"><span class="old">18</span><span class="new">21</span></span></span><span class="num">6</span><span class="num">3</span></div>
-      <div class="brow"><span><span class="j">#7</span>Marcus C.</span><span class="num pts">11</span><span class="num">2</span><span class="num"><span class="swap ma"><span class="old">4</span><span class="new">5</span></span></span></div>
-      <div class="brow"><span><span class="j">#11</span>Malik O.</span><span class="num pts">9</span><span class="num">8</span><span class="num">1</span></div>
+      <div class="brow head"><span>Player</span><span class="num">Pts</span><span class="num">Reb</span><span class="num">Ast</span><span class="num">Stl</span><span class="num">Blk</span></div>
+      <div class="brow top"><span><span class="j">#23</span><b>Jayden T.</b></span><span class="num pts"><span class="swap jp"><span class="old">18</span><span class="new">21</span></span></span><span class="num">6</span><span class="num">3</span><span class="num"><span class="swap js"><span class="old">2</span><span class="new">3</span></span></span><span class="num">1</span></div>
+      <div class="brow"><span><span class="j">#7</span>Marcus C.</span><span class="num pts">11</span><span class="num">2</span><span class="num"><span class="swap ma"><span class="old">4</span><span class="new">5</span></span></span><span class="num">1</span><span class="num">0</span></div>
+      <div class="brow"><span><span class="j">#11</span>Malik O.</span><span class="num pts">9</span><span class="num">8</span><span class="num">1</span><span class="num">0</span><span class="num"><span class="swap mb"><span class="old">2</span><span class="new">3</span></span></span></div>
+      <div class="brow"><span><span class="j">#4</span>Andre P.</span><span class="num pts">8</span><span class="num">5</span><span class="num">2</span><span class="num">2</span><span class="num">1</span></div>
     </div>
   </div>
   <p class="sub">No refresh. <em>It just moves.</em></p>
@@ -105,7 +117,7 @@
 </div>
 <script>
   const m = location.hash.replace("#", ""); if (m) document.body.classList.add(m);
-  window.__duration = 8000;
+  window.__duration = 10500;
   window.__seek = (t) => {
     document.getAnimations().forEach((a) => { a.pause(); a.currentTime = t; });
   };
