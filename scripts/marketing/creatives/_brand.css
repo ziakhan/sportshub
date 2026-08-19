@@ -227,3 +227,55 @@ body.story .stage {
 }
 body.story .footer-brand { bottom: 220px; }
 body.story .footer-brand .wm { font-size: 50px; }
+
+/* ---------- chips: the sub-line's replacement (2026-08-19) ----------
+   Six creatives had drifted to 22-37 word paragraphs in the smallest type on
+   the card, which is where a reader stops. Anything that was a LIST inside a
+   sentence becomes chips; what remains is a payoff under ~15 words. */
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 11px;
+  max-width: 860px;
+}
+.chips span {
+  display: inline-flex;
+  align-items: center;
+  gap: 11px;
+  font-family: var(--display);
+  font-size: 29px;
+  font-weight: 700;
+  white-space: nowrap;
+  border-radius: 999px;
+  padding: 13px 28px;
+}
+.chips span::before {
+  content: "";
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  background: var(--hoop-500);
+  flex: none;
+}
+.stage.dark .chips span {
+  color: rgba(255, 255, 255, 0.9);
+  background: rgba(255, 255, 255, 0.07);
+  border: 1.5px solid rgba(255, 255, 255, 0.16);
+}
+.stage.light .chips span {
+  color: var(--ink-700);
+  background: #ffffff;
+  border: 2px solid var(--ink-200);
+}
+.payoff {
+  font-family: var(--display);
+  font-size: 40px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+  max-width: 860px;
+}
+.stage.dark .payoff { color: #ffffff; }
+.stage.light .payoff { color: var(--ink-950); }
+.payoff em { font-style: normal; color: var(--hoop-500); }

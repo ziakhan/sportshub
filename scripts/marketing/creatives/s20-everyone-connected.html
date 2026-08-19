@@ -25,10 +25,11 @@
   basketball. All of it. One app." — that line is about relief from five
   tools, where "one platform" would sound bureaucratic.
 
-  THE DEVICE IS THE TIMESTAMP. Every card reads 6:04 PM. The league moves a
-  game and the club, the player and the parent know in the same minute, and
-  the identical clock on four cards argues it without a single word about how
-  it works. A reader does not have to believe a claim they can just count.
+  THE DEVICE IS THE TIMESTAMP, and v2 makes it the whole artifact. v1 spread
+  6:04 PM across four small cards, which meant reading four things to receive
+  one idea, at a size the owner could not read. Now there is one clock nobody
+  can miss and the four seats sit under it as who it reached. Same argument,
+  a quarter of the work, and it lands before the headline is read.
 
   Deliberately no product jargon, no talk of accounts or databases: a parent
   does not know what any of that means and does not need to. What they know is
@@ -36,113 +37,75 @@
   never happening again.
 -->
 <style>
-  .stage { gap: 34px; padding: 60px 56px 236px; }
+  .stage { gap: 0; padding: 74px 62px 240px; }
 
-  .grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 14px;
-    width: 100%;
-    max-width: 880px;
-  }
-  .who {
-    position: relative;
-    border-radius: 20px;
-    border: 1.5px solid rgba(255, 255, 255, 0.14);
-    background: linear-gradient(160deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.03));
-    padding: 20px 22px 18px;
-    text-align: left;
-    overflow: hidden;
-  }
-  .who .role {
-    display: inline-flex;
-    align-items: center;
-    gap: 9px;
-    font-family: var(--body);
-    font-size: 19px;
-    font-weight: 800;
-    letter-spacing: 0.15em;
-    text-transform: uppercase;
-  }
-  .who .role .dot { width: 11px; height: 11px; border-radius: 999px; }
-  .who .line {
-    display: block;
-    font-family: var(--display);
-    font-weight: 800;
-    font-size: 30px;
-    line-height: 1.2;
-    color: #ffffff;
-    letter-spacing: -0.01em;
-    margin-top: 13px;
-  }
-  .who .meta {
-    display: block;
-    font-family: var(--body);
-    font-size: 21px;
-    font-weight: 500;
-    color: rgba(255, 255, 255, 0.5);
-    margin-top: 7px;
-  }
-  .who .stamp {
-    display: inline-block;
-    margin-top: 15px;
+  /* ONE CLOCK, NOT FOUR CARDS (owner, on review). v1 put 6:04 PM on four
+     small cards, so the reader had to compare four things to get one idea
+     and the type was too small to read at a glance. The timestamp IS the
+     concept, so it becomes the whole artifact: one number nobody can miss,
+     and the four seats named underneath as who it reached. */
+  .clock {
     font-family: var(--condensed);
     font-weight: 800;
-    font-size: 30px;
-    letter-spacing: 0.04em;
+    font-size: 250px;
+    line-height: 0.86;
+    letter-spacing: 0.01em;
     color: var(--gold-300);
-    background: rgba(245, 158, 11, 0.14);
-    border: 1.5px solid rgba(245, 158, 11, 0.4);
-    border-radius: 999px;
-    padding: 4px 18px;
     font-variant-numeric: tabular-nums;
+    text-shadow: 0 30px 90px rgba(245, 158, 11, 0.28);
+  }
+  .setup {
+    font-family: var(--body);
+    font-size: 30px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.55);
+    margin-bottom: 14px;
+  }
+  .knew {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 12px;
+    margin-top: 34px;
+  }
+  .knew span {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    font-family: var(--display);
+    font-size: 30px;
+    font-weight: 700;
+    color: #ffffff;
+    background: rgba(255, 255, 255, 0.07);
+    border: 1.5px solid rgba(255, 255, 255, 0.18);
+    border-radius: 999px;
+    padding: 13px 30px;
+  }
+  .knew span::before {
+    content: "";
+    width: 12px; height: 12px; border-radius: 999px; flex: none;
+    background: var(--court-600);
   }
 
-  h1 { font-size: 82px; line-height: 1.04; }
+  h1 { font-size: 84px; line-height: 1.04; margin-top: 52px; }
   h1 .hit { color: var(--gold-300); }
-  .sub {
-    font-family: var(--body); font-size: 30px; font-weight: 500;
-    color: rgba(255, 255, 255, 0.62); max-width: 840px; line-height: 1.42;
-  }
-  .sub b { color: #ffffff; font-weight: 700; }
 </style>
 </head>
 <body>
 <div class="stage dark">
-  <span class="eyebrow">One change, 6:04 PM</span>
+  <span class="eyebrow">The league moved a game</span>
 
-  <div class="grid">
-    <span class="who">
-      <span class="role" style="color:#5B8DFF"><span class="dot" style="background:#5B8DFF"></span> League</span>
-      <span class="line">Moves Saturday&rsquo;s game to 4:00</span>
-      <span class="meta">Grade 10 Boys &middot; Haber Rec</span>
-      <span class="stamp">6:04 PM</span>
-    </span>
+  <p class="setup">Everyone knew at</p>
+  <span class="clock">6:04 PM</span>
 
-    <span class="who">
-      <span class="role" style="color:#3DDC97"><span class="dot" style="background:#3DDC97"></span> Club</span>
-      <span class="line">Sees its schedule redraw</span>
-      <span class="meta">No email, no re-typing</span>
-      <span class="stamp">6:04 PM</span>
-    </span>
-
-    <span class="who">
-      <span class="role" style="color:#F24E1E"><span class="dot" style="background:#F24E1E"></span> Player</span>
-      <span class="line">Sees the new time on his page</span>
-      <span class="meta">Jayden T. &middot; #23</span>
-      <span class="stamp">6:04 PM</span>
-    </span>
-
-    <span class="who">
-      <span class="role" style="color:#FFC24B"><span class="dot" style="background:#FFC24B"></span> Parent</span>
-      <span class="line">Phone buzzes, calendar moves</span>
-      <span class="meta">Both kids, one list</span>
-      <span class="stamp">6:04 PM</span>
-    </span>
+  <div class="knew">
+    <span>League</span>
+    <span>Club</span>
+    <span>Player</span>
+    <span>Parent</span>
   </div>
 
   <h1>Everyone connected.<br /><span class="hit">Not just compatible</span>.</h1>
-  <p class="sub">The only platform where the league, the club, the player and the parent are <b>actually in it together</b>.</p>
 
   <div class="footer-brand">
     <span class="wm"><span class="s">Sports</span><span class="h">Hub</span><span class="one">ONE</span></span>
