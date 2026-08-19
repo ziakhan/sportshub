@@ -1,0 +1,791 @@
+[
+  {
+    "id": "f29deed8-38d8-4205-964f-250adae5deb8",
+    "name": "Scarborough Basketball Association (SBA)",
+    "data": {
+      "contactEmail": "info@sbablues.ca",
+      "phoneNumber": "(416) 551-7554",
+      "website": "https://sbabasketball.ca/",
+      "region": "Toronto Region",
+      "latitude": 43.7580489,
+      "longitude": -79.2287812,
+      "geoSource": "research-import",
+      "geocodedAt": "2026-08-18T17:43:03.069Z"
+    },
+    "why": [
+      "email=info@sbablues.ca",
+      "phone=(416) 551-7554",
+      "website=https://sbabasketball.ca/",
+      "region",
+      "geo=43.758,-79.229"
+    ]
+  },
+  {
+    "id": "3a3e84e0-903f-4829-8bb9-7f5bb0f7bd6c",
+    "name": "416 United",
+    "data": {
+      "contactEmail": "416basketballto@gmail.com",
+      "website": "https://416basketball.com",
+      "region": "Toronto"
+    },
+    "why": [
+      "email=416basketballto@gmail.com",
+      "website=https://416basketball.com",
+      "region"
+    ]
+  },
+  {
+    "id": "0ac2bedf-5153-4ea4-becc-b1146881e7a6",
+    "name": "Canadian Basketball Academy (CBA)",
+    "data": {
+      "phoneNumber": "(416) 993-9536",
+      "website": "https://www.canadianbballacademy.com/",
+      "region": "Toronto Region",
+      "latitude": 43.6904943,
+      "longitude": -79.4088446,
+      "geoSource": "research-import",
+      "geocodedAt": "2026-08-18T17:43:03.069Z"
+    },
+    "why": [
+      "phone=(416) 993-9536",
+      "website=https://www.canadianbballacademy.com/",
+      "region",
+      "geo=43.690,-79.409"
+    ]
+  },
+  {
+    "id": "e3c072b2-1594-4fe2-8519-2b9ab9189237",
+    "name": "Basketball World Toronto",
+    "data": {
+      "contactEmail": "youth@bwt.ca",
+      "phoneNumber": "(647) 444-4298",
+      "website": "https://www.bwt.ca/",
+      "region": "Toronto Region",
+      "latitude": 43.6728452,
+      "longitude": -79.4969934,
+      "geoSource": "research-import",
+      "geocodedAt": "2026-08-18T17:43:03.069Z"
+    },
+    "why": [
+      "email=youth@bwt.ca",
+      "phone=(647) 444-4298",
+      "website=https://www.bwt.ca/",
+      "region",
+      "geo=43.673,-79.497"
+    ]
+  },
+  {
+    "id": "21b29626-5b19-489f-a770-9fd41c1e638f",
+    "name": "17 Basketball Club",
+    "data": {
+      "phoneNumber": "416-571-9367",
+      "website": "https://www.17basketball.com/",
+      "region": "York"
+    },
+    "why": [
+      "phone=416-571-9367",
+      "website=https://www.17basketball.com/",
+      "region"
+    ]
+  },
+  {
+    "id": "005416d6-936a-4b44-84d9-b55a6285267d",
+    "name": "Lincoln Prep",
+    "data": {
+      "contactEmail": "admin@lincolnprep.ca",
+      "phoneNumber": "905-522-0890",
+      "website": "https://www.lincolnprep.ca/",
+      "region": "Hamilton"
+    },
+    "why": [
+      "email=admin@lincolnprep.ca",
+      "phone=905-522-0890",
+      "website=https://www.lincolnprep.ca/",
+      "region"
+    ]
+  },
+  {
+    "id": "7275b266-b1fc-4c4c-9841-2991b37fca2d",
+    "name": "Windsor Suns",
+    "data": {
+      "website": "https://www.wpasuns.com/",
+      "region": "Windsor"
+    },
+    "why": [
+      "email SKIPPED (on 3 clubs)",
+      "website=https://www.wpasuns.com/",
+      "region"
+    ]
+  },
+  {
+    "id": "44ef01e0-254b-4686-9cc1-f00bbba29bdc",
+    "name": "TRC Academy",
+    "data": {
+      "contactEmail": "trchockey@therisecentre.com",
+      "region": "Brant"
+    },
+    "why": [
+      "email=trchockey@therisecentre.com",
+      "phone SKIPPED (invalid +1-844-493-7473)",
+      "region"
+    ]
+  },
+  {
+    "id": "ef732d7d-d67f-4b49-95bd-91b147697221",
+    "name": "St. Benedicts",
+    "data": {
+      "phoneNumber": "519-621-4050",
+      "website": "https://stbenedict.wcdsb.ca/",
+      "region": "Waterloo"
+    },
+    "why": [
+      "phone=519-621-4050",
+      "website=https://stbenedict.wcdsb.ca/",
+      "region"
+    ]
+  },
+  {
+    "id": "94a793eb-16d9-45aa-9909-ec732c0f64f8",
+    "name": "Gwillimbury Basketball United",
+    "data": {
+      "website": "https://gbunited.ca",
+      "region": "York"
+    },
+    "why": [
+      "website=https://gbunited.ca",
+      "region"
+    ]
+  },
+  {
+    "id": "2b1d2f02-c60d-4dc5-88f8-c2c310bdf261",
+    "name": "F.O.R.M. Basketball Academy",
+    "data": {
+      "website": "https://formbasketball.com/",
+      "region": "Toronto/Scarborough",
+      "latitude": 49.2827291,
+      "longitude": -123.1207375,
+      "geoSource": "research-import",
+      "geocodedAt": "2026-08-18T17:43:03.069Z"
+    },
+    "why": [
+      "email SKIPPED (on 3 clubs)",
+      "website=https://formbasketball.com/",
+      "region",
+      "geo=49.283,-123.121"
+    ]
+  },
+  {
+    "id": "58c421ac-3e98-4ba1-b000-c28e9f30ce83",
+    "name": "Central Tech",
+    "data": {
+      "contactEmail": "centraltechnicalschool@tdsb.on.ca",
+      "phoneNumber": "416-393-0070",
+      "website": "https://schoolweb.tdsb.on.ca/centraltechnicalschool",
+      "region": "Toronto"
+    },
+    "why": [
+      "email=centraltechnicalschool@tdsb.on.ca",
+      "phone=416-393-0070",
+      "website=https://schoolweb.tdsb.on.ca/centraltechnicalschool",
+      "region"
+    ]
+  },
+  {
+    "id": "007514c2-85eb-4bea-a4bd-be486d893cbd",
+    "name": "Oakville Panthers",
+    "data": {
+      "contactEmail": "chad@oakvillepanthers.com",
+      "phoneNumber": "647-405-2423",
+      "website": "https://www.oakvillepanthers.com/",
+      "region": "Halton"
+    },
+    "why": [
+      "email=chad@oakvillepanthers.com",
+      "phone=647-405-2423",
+      "website=https://www.oakvillepanthers.com/",
+      "region"
+    ]
+  },
+  {
+    "id": "0e8f07f8-ee03-495f-a147-ac1a6c2c9516",
+    "name": "CKATT Basketball",
+    "data": {
+      "contactEmail": "info@ckatt.com",
+      "phoneNumber": "416-346-6244",
+      "website": "https://ckatt.com",
+      "region": "Peel"
+    },
+    "why": [
+      "email=info@ckatt.com",
+      "phone=416-346-6244",
+      "website=https://ckatt.com",
+      "region"
+    ]
+  },
+  {
+    "id": "c84f06cb-8c5a-4cff-9206-63854c809203",
+    "name": "PDM Basketball",
+    "data": {
+      "contactEmail": "admin@pdmbasketball.com",
+      "phoneNumber": "(647) 637-3859",
+      "website": "https://pdmbasketball.com/",
+      "region": "Peel-Halton",
+      "latitude": 43.4223045,
+      "longitude": -79.7037018,
+      "geoSource": "research-import",
+      "geocodedAt": "2026-08-18T17:43:03.069Z"
+    },
+    "why": [
+      "email=admin@pdmbasketball.com",
+      "phone=(647) 637-3859",
+      "website=https://pdmbasketball.com/",
+      "region",
+      "geo=43.422,-79.704"
+    ]
+  },
+  {
+    "id": "332fe9f1-5407-4766-a037-824a7bcdcec6",
+    "name": "Polaris Prep",
+    "data": {
+      "contactEmail": "polarisprepacademy@gmail.com",
+      "website": "https://polarisprep.com/",
+      "region": "GTA"
+    },
+    "why": [
+      "email=polarisprepacademy@gmail.com",
+      "website=https://polarisprep.com/",
+      "region"
+    ]
+  },
+  {
+    "id": "290c24f0-da32-4190-8f9d-6302a739b7a2",
+    "name": "Alpha Elite",
+    "data": {
+      "region": "GTA"
+    },
+    "why": [
+      "region"
+    ]
+  },
+  {
+    "id": "81f8809e-94f9-4473-b3f7-b6beb82579f1",
+    "name": "Brampton City Prep",
+    "data": {
+      "region": "Peel",
+      "latitude": 43.6204946,
+      "longitude": -79.5131983,
+      "geoSource": "research-import",
+      "geocodedAt": "2026-08-18T17:43:03.069Z"
+    },
+    "why": [
+      "email SKIPPED (on 2 clubs)",
+      "phone SKIPPED (on 2 clubs)",
+      "region",
+      "geo=43.620,-79.513"
+    ]
+  },
+  {
+    "id": "16840ad2-5017-4998-90e4-3e18a8c2b9de",
+    "name": "Brotherhood Elite",
+    "data": {
+      "contactEmail": "info@brotherhoodelite.ca",
+      "phoneNumber": "6475450664",
+      "website": "https://brotherhoodelite.ca/"
+    },
+    "why": [
+      "email=info@brotherhoodelite.ca",
+      "phone=6475450664",
+      "website=https://brotherhoodelite.ca/"
+    ]
+  },
+  {
+    "id": "7e1a9ccc-7913-4a41-a273-60605bd43764",
+    "name": "Cali Prep",
+    "data": {
+      "website": "https://caliprepacademy.com"
+    },
+    "why": [
+      "email SKIPPED (on 2 clubs)",
+      "phone SKIPPED (on 3 clubs)",
+      "website=https://caliprepacademy.com"
+    ]
+  },
+  {
+    "id": "0fb5c4f8-f511-4dbe-a3a9-3babf1bad607",
+    "name": "Toronto Lords",
+    "data": {
+      "contactEmail": "lordsbasketball@gmail.com",
+      "phoneNumber": "(416) 598-4448",
+      "website": "http://www.lordsbasketball.com/",
+      "region": "Toronto Region",
+      "latitude": 43.6441973,
+      "longitude": -79.4042754,
+      "geoSource": "research-import",
+      "geocodedAt": "2026-08-18T17:43:03.069Z"
+    },
+    "why": [
+      "email=lordsbasketball@gmail.com",
+      "phone=(416) 598-4448",
+      "website=http://www.lordsbasketball.com/",
+      "region",
+      "geo=43.644,-79.404"
+    ]
+  },
+  {
+    "id": "fdfa506b-41d3-46d1-804b-8f8b8a085d1e",
+    "name": "North York Lions",
+    "data": {
+      "website": "https://pbaa.ca",
+      "region": "Toronto"
+    },
+    "why": [
+      "email SKIPPED (on 2 clubs)",
+      "phone SKIPPED (invalid 1-888-489-6441)",
+      "website=https://pbaa.ca",
+      "region"
+    ]
+  },
+  {
+    "id": "bfcc9c7c-1b78-4a4c-9710-d087ef41d0a6",
+    "name": "City Above Elite",
+    "data": {
+      "contactEmail": "northernkingsacademy@gmail.com",
+      "region": "GTA"
+    },
+    "why": [
+      "email=northernkingsacademy@gmail.com",
+      "phone SKIPPED (on 3 clubs)",
+      "region"
+    ]
+  },
+  {
+    "id": "cf4cf6fd-f144-43c0-b190-776e6fda839e",
+    "name": "Against The Six Prep",
+    "data": {
+      "website": "https://www.instagram.com/atsprep/",
+      "region": "GTA"
+    },
+    "why": [
+      "website=https://www.instagram.com/atsprep/",
+      "region"
+    ]
+  },
+  {
+    "id": "27391ef0-9b34-4e54-9ef1-77ed0d681e5e",
+    "name": "Royal Crown",
+    "data": {
+      "website": "https://royalcrownschool.com"
+    },
+    "why": [
+      "email SKIPPED (on 3 clubs)",
+      "phone SKIPPED (on 3 clubs)",
+      "website=https://royalcrownschool.com"
+    ]
+  },
+  {
+    "id": "88d71875-697a-424a-92f5-2fdd4f5a3b8f",
+    "name": "Uchenna Academy",
+    "data": {
+      "contactEmail": "info@uchenna.ca"
+    },
+    "why": [
+      "email=info@uchenna.ca",
+      "phone SKIPPED (on 3 clubs)"
+    ]
+  },
+  {
+    "id": "8adfb574-0275-43d5-bcb2-a7129562d26c",
+    "name": "West United Prep",
+    "data": {
+      "website": "https://linktr.ee/westunitedprepacademy",
+      "region": "GTA"
+    },
+    "why": [
+      "email SKIPPED (on 2 clubs)",
+      "website=https://linktr.ee/westunitedprepacademy",
+      "region"
+    ]
+  },
+  {
+    "id": "8d966dbb-c1e5-4fb9-9bc8-8b736c29103d",
+    "name": "Burlington Force",
+    "data": {
+      "contactEmail": "operations@burlingtonbasketball.ca",
+      "phoneNumber": "(905) 220-3735",
+      "website": "https://burlingtonbasketball.ca/",
+      "address": "The Playground, 952 Century Dr, Burlington, ON, L7L 5P2",
+      "postalCode": "L7L 5P2",
+      "region": "Peel-Halton",
+      "latitude": 43.3676672,
+      "longitude": -79.8268651,
+      "geoSource": "research-import",
+      "geocodedAt": "2026-08-18T17:43:03.069Z"
+    },
+    "why": [
+      "email=operations@burlingtonbasketball.ca",
+      "phone=(905) 220-3735",
+      "website=https://burlingtonbasketball.ca/",
+      "address",
+      "postalCode",
+      "region",
+      "geo=43.368,-79.827"
+    ]
+  },
+  {
+    "id": "6bc04713-7c81-426b-9a1f-4161addd561f",
+    "name": "Burloak Elite",
+    "data": {
+      "phoneNumber": "(416) 219-4939",
+      "website": "https://burloakbasketball.com",
+      "region": "Halton"
+    },
+    "why": [
+      "email SKIPPED (on 2 clubs)",
+      "phone=(416) 219-4939",
+      "website=https://burloakbasketball.com",
+      "region"
+    ]
+  },
+  {
+    "id": "de2116dd-af6a-4d66-94a0-584002d69f87",
+    "name": "C.O.D.E Academy",
+    "data": {
+      "contactEmail": "info@codeprep.ca",
+      "website": "https://codeprep.ca"
+    },
+    "why": [
+      "email=info@codeprep.ca",
+      "website=https://codeprep.ca"
+    ]
+  },
+  {
+    "id": "4834b8dc-26b9-4dbe-9a26-3c9503c5a8a2",
+    "name": "Eastern Basketball Academy",
+    "data": {
+      "website": "https://easternbasketball.ca",
+      "region": "Eastern Ontario"
+    },
+    "why": [
+      "email SKIPPED (on 2 clubs)",
+      "phone SKIPPED (on 2 clubs)",
+      "website=https://easternbasketball.ca",
+      "region"
+    ]
+  },
+  {
+    "id": "1f639111-d105-47d5-a3a2-844846ea2f9c",
+    "name": "Elton Academy",
+    "data": {
+      "contactEmail": "info@eltonacademy.ca",
+      "phoneNumber": "9057310505",
+      "website": "https://eltonacademy.ca/rep-basketball-program/"
+    },
+    "why": [
+      "email=info@eltonacademy.ca",
+      "phone=9057310505",
+      "website=https://eltonacademy.ca/rep-basketball-program/"
+    ]
+  },
+  {
+    "id": "e07e956d-421e-4e67-b223-dbb1242940e1",
+    "name": "Full Circle Basketball Academy",
+    "data": {
+      "latitude": 43.9109352,
+      "longitude": -78.7884468,
+      "geoSource": "research-import",
+      "geocodedAt": "2026-08-18T17:43:03.069Z"
+    },
+    "why": [
+      "website SKIPPED (dead-or-expired)",
+      "geo=43.911,-78.788"
+    ]
+  },
+  {
+    "id": "de11e1bd-ea22-4fc2-810a-7bc4f3b570b2",
+    "name": "Future Hope Academy",
+    "data": {
+      "contactEmail": "info@futurehopeacademy.com",
+      "phoneNumber": "416-900-0102"
+    },
+    "why": [
+      "email=info@futurehopeacademy.com",
+      "phone=416-900-0102"
+    ]
+  },
+  {
+    "id": "b94b5898-08d7-4aac-9c13-8b6ab2262e5e",
+    "name": "G2S Game Changers",
+    "data": {
+      "website": "https://www.instagram.com/g2s_gamechangers/",
+      "region": "GTA"
+    },
+    "why": [
+      "website=https://www.instagram.com/g2s_gamechangers/",
+      "region"
+    ]
+  },
+  {
+    "id": "b2eb4492-8470-43ac-956c-e8bef0992542",
+    "name": "Gators Basketball Academy",
+    "data": {
+      "website": "https://www.gatorsbasketballacademy.com/",
+      "region": "Durham-York",
+      "latitude": 43.8720975,
+      "longitude": -79.2685712,
+      "geoSource": "research-import",
+      "geocodedAt": "2026-08-18T17:43:03.069Z"
+    },
+    "why": [
+      "email SKIPPED (on 2 clubs)",
+      "phone SKIPPED (on 2 clubs)",
+      "website=https://www.gatorsbasketballacademy.com/",
+      "region",
+      "geo=43.872,-79.269"
+    ]
+  },
+  {
+    "id": "72cf0ceb-394d-4542-b9e5-914fc287f758",
+    "name": "Kings Court Academy",
+    "data": {
+      "website": "https://www.jrkcb.ca/",
+      "region": "GTA"
+    },
+    "why": [
+      "email SKIPPED (on 2 clubs)",
+      "phone SKIPPED (on 2 clubs)",
+      "website=https://www.jrkcb.ca/",
+      "region"
+    ]
+  },
+  {
+    "id": "b8540199-1644-4997-b051-a59f09dda707",
+    "name": "London Ramblers",
+    "data": {
+      "contactEmail": "ramblercoach@gmail.com",
+      "phoneNumber": "519-850-4318",
+      "website": "https://londonramblers.com/",
+      "region": "West Region",
+      "latitude": 43.0474141,
+      "longitude": -81.2563574,
+      "geoSource": "research-import",
+      "geocodedAt": "2026-08-18T17:43:03.069Z"
+    },
+    "why": [
+      "email=ramblercoach@gmail.com",
+      "phone=519-850-4318",
+      "website=https://londonramblers.com/",
+      "region",
+      "geo=43.047,-81.256"
+    ]
+  },
+  {
+    "id": "81ba1fa6-d42f-467c-8bba-300824c350a5",
+    "name": "M&R Basketball",
+    "data": {
+      "contactEmail": "info@mandrbasketball.ca",
+      "phoneNumber": "647-927-7091",
+      "website": "https://www.mandrbasketball.ca",
+      "region": "GTA",
+      "latitude": 43.8599076,
+      "longitude": -79.3349945,
+      "geoSource": "research-import",
+      "geocodedAt": "2026-08-18T17:43:03.069Z"
+    },
+    "why": [
+      "email=info@mandrbasketball.ca",
+      "phone=647-927-7091",
+      "website=https://www.mandrbasketball.ca",
+      "region",
+      "geo=43.860,-79.335"
+    ]
+  },
+  {
+    "id": "cd1af330-ec36-46ca-abfc-7300eb17bb02",
+    "name": "Orangeville Prep",
+    "data": {
+      "contactEmail": "info@orangevilleprep.com",
+      "phoneNumber": "519-940-3735",
+      "website": "https://orangevilleprep.com",
+      "region": "Dufferin"
+    },
+    "why": [
+      "email=info@orangevilleprep.com",
+      "phone=519-940-3735",
+      "website=https://orangevilleprep.com",
+      "region"
+    ]
+  },
+  {
+    "id": "db55b4c2-d892-4be5-bc49-247513571625",
+    "name": "Project Excellence",
+    "data": {
+      "phoneNumber": "647-705-0217"
+    },
+    "why": [
+      "phone=647-705-0217"
+    ]
+  },
+  {
+    "id": "83aa6cf4-ed2e-4371-a4b2-3c6f298a54d5",
+    "name": "RSB Elite",
+    "data": {
+      "website": "https://www.rsbassociation.ca/",
+      "region": "Peel-Halton",
+      "latitude": 43.7192939,
+      "longitude": -79.7170258,
+      "geoSource": "research-import",
+      "geocodedAt": "2026-08-18T17:43:03.069Z"
+    },
+    "why": [
+      "email SKIPPED (on 2 clubs)",
+      "phone SKIPPED (on 2 clubs)",
+      "website=https://www.rsbassociation.ca/",
+      "region",
+      "geo=43.719,-79.717"
+    ]
+  },
+  {
+    "id": "1e63cab3-130c-48ee-a0c2-88e438e5e7de",
+    "name": "Simcoe United",
+    "data": {
+      "contactEmail": "info@barrieroyals.ca",
+      "phoneNumber": "705-717-6449",
+      "website": "https://norfolkyouthbasketball.ca/",
+      "address": "Waterford District High School, 227 Main St S, Norfolk, ON, N0E 1Y0",
+      "postalCode": "N0E 1Y0",
+      "region": "Kitchener-Waterloo",
+      "latitude": 44.3903652,
+      "longitude": -79.6910866,
+      "geoSource": "research-import",
+      "geocodedAt": "2026-08-18T17:43:03.069Z"
+    },
+    "why": [
+      "email=info@barrieroyals.ca",
+      "phone=705-717-6449",
+      "website=https://norfolkyouthbasketball.ca/",
+      "address",
+      "postalCode",
+      "region",
+      "geo=44.390,-79.691"
+    ]
+  },
+  {
+    "id": "3148e220-7f2a-4b5e-960c-897b6e90f553",
+    "name": "Strive Hoops",
+    "data": {
+      "website": "https://strivehoops.com",
+      "postalCode": "K0H 2K0",
+      "region": "Lesser Slave Lake / Northern Alberta",
+      "latitude": 44.5717812,
+      "longitude": -76.8840548,
+      "geoSource": "research-import",
+      "geocodedAt": "2026-08-18T17:43:03.069Z"
+    },
+    "why": [
+      "email SKIPPED (on 2 clubs)",
+      "phone SKIPPED (on 2 clubs)",
+      "website=https://strivehoops.com",
+      "postalCode",
+      "region",
+      "geo=44.572,-76.884"
+    ]
+  },
+  {
+    "id": "8aefcc6f-aec9-4244-b6b7-7eab68e1cba6",
+    "name": "Team Sanctuary",
+    "data": {
+      "contactEmail": "contact@sanctuarysportcenter.ca",
+      "phoneNumber": "416-826-3391",
+      "website": "https://sanctuarysports.ca",
+      "region": "GTA"
+    },
+    "why": [
+      "email=contact@sanctuarysportcenter.ca",
+      "phone=416-826-3391",
+      "website=https://sanctuarysports.ca",
+      "region"
+    ]
+  },
+  {
+    "id": "cff967c5-f49a-4780-bce0-a2ca18f33f4c",
+    "name": "Tri-City Prep",
+    "data": {
+      "website": "https://tricityba.com"
+    },
+    "why": [
+      "website=https://tricityba.com"
+    ]
+  },
+  {
+    "id": "8ff29e9d-603a-41d9-89df-ed2991123d76",
+    "name": "Triple Balance",
+    "data": {
+      "contactEmail": "info@triplebalance.ca",
+      "website": "https://www.triplebalance.ca/",
+      "region": "Toronto Region",
+      "latitude": 43.821965,
+      "longitude": -79.2151548,
+      "geoSource": "research-import",
+      "geocodedAt": "2026-08-18T17:43:03.070Z"
+    },
+    "why": [
+      "email=info@triplebalance.ca",
+      "phone SKIPPED (on 3 clubs)",
+      "website=https://www.triplebalance.ca/",
+      "region",
+      "geo=43.822,-79.215"
+    ]
+  },
+  {
+    "id": "6069c0d4-750c-4e3e-8764-398469a41037",
+    "name": "UEWB",
+    "data": {
+      "contactEmail": "uewbcanada@gmail.com",
+      "region": "GTA"
+    },
+    "why": [
+      "email=uewbcanada@gmail.com",
+      "region"
+    ]
+  },
+  {
+    "id": "a84772fd-6883-4436-b87d-0eeb33816243",
+    "name": "Vanguard North",
+    "data": {
+      "contactEmail": "vanguardnorth29@gmail.com",
+      "phoneNumber": "416-875-2733",
+      "website": "https://vanguardnorthbasketball.ca/",
+      "region": "GTA"
+    },
+    "why": [
+      "email=vanguardnorth29@gmail.com",
+      "phone=416-875-2733",
+      "website=https://vanguardnorthbasketball.ca/",
+      "region"
+    ]
+  },
+  {
+    "id": "a196cc17-f7da-4519-a720-72baefee099a",
+    "name": "Wiggins Elite",
+    "data": {
+      "website": "https://wigginselite.com",
+      "region": "GTA"
+    },
+    "why": [
+      "website=https://wigginselite.com",
+      "region"
+    ]
+  },
+  {
+    "id": "562f5339-3c67-4ed5-857a-c16054c8590b",
+    "name": "William Academy",
+    "data": {
+      "contactEmail": "general@williamacademy.ca",
+      "phoneNumber": "416-491-6888"
+    },
+    "why": [
+      "email=general@williamacademy.ca",
+      "phone=416-491-6888"
+    ]
+  }
+]
