@@ -6,68 +6,90 @@
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&family=Work+Sans:wght@400;500;600;700&family=Barlow+Condensed:wght@600;700;800&display=swap" rel="stylesheet" />
 <link rel="stylesheet" href="_brand.css" />
 <!--
-  LEAGUE POST 2 (2026-08-19) — the scheduler, which was the other hole.
-  Fourteen statics and not one showed the thing a league operator would
-  actually change platforms for.
+  LEAGUE POST v2 (2026-08-19). v1 is scrapped and the owner is right about why.
 
-  THE NUMBERS ARE THE OWNER'S OWN, from the SportsHub Capability Deck
-  ("A full season, scheduled in about 15 seconds": 146 teams, 725 games
-  placed, 0 double-booked courts, 0 back-to-back games). They are already
-  vetted and already shown to leagues, so nothing new is being claimed.
+  WHAT V1 GOT WRONG
+  1. "0 double-booked courts" is not an achievement, it is the absence of a
+     bug. A scheduler that double-books is broken. Advertising it advertises a
+     low bar. Cut entirely.
+  2. It led on "15 seconds", which describes the generate button, not the job.
+     The planning — weekends, gyms, team estimates — is real work the operator
+     does. Cut.
+  3. It printed a league size (146 teams). Any size printed becomes a ceiling
+     in the reader's head: a 1,256-team prospect reads 146 as a limit. And
+     146/725 is the largest run documented anywhere in the repo, so a bigger
+     number would have been an untested claim. No size number at all now.
 
-  The two zeroes matter more than the fifteen seconds and are why they get
-  equal size. Any tool can place games fast. Placing 725 of them with zero
-  double-booked courts and zero back-to-backs is the part a person doing this
-  by hand cannot promise, and every operator reading it knows that.
+  WHAT IT LEADS WITH INSTEAD, from lib/scheduler-v2/ledger.ts
+  The burden ledger prices eight things per team (b2b, gap1, longGap,
+  twoDates, early, late, styleMiss, windowMiss) on the owner's shape ladder
+  (2026-08-08): a 2-4 slot same-day gap is BEST at zero; gap 1 is next; a long
+  gap (5+) and a two-date weekend are EQUALLY bad; a back-to-back is
+  forbidden-tier and gated to zero by acceptance test A7.
 
-  The closing line is aimed at one specific memory: the three weekends lost
-  to a spreadsheet. That is who this post is for.
+  And the placement objective is QUADRATIC:
+    cost = Σ_teams [ (B_pre(t) + b(t))² − B_pre(t)² ]
+  so one more burden point on an already-burdened team costs more than the
+  same point on a fresh one. That is the differentiator and it is what the
+  headline says in human words: the same families never get hit twice.
+
+  The ladder is the artifact because it proves the thinking. Anyone can claim
+  fairness; showing that a second trip on Sunday was deliberately priced level
+  with a five-slot wait is a claim only somebody who built it can make.
 -->
 <style>
-  .stage { gap: 40px; padding: 78px 62px 240px; }
+  .stage { gap: 30px; padding: 54px 56px 234px; }
 
-  h1 { font-size: 84px; line-height: 1.04; }
+  h1 { font-size: 74px; line-height: 1.05; }
   h1 .hit { color: var(--gold-300); }
 
-  .grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 16px;
+  .ladder {
+    flex: none;
     width: 100%;
-    max-width: 840px;
+    max-width: 860px;
+    display: flex;
+    flex-direction: column;
+    gap: 11px;
+    text-align: left;
   }
-  .st {
-    background: rgba(255, 255, 255, 0.06);
+  .rung {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    border-radius: 18px;
+    padding: 18px 24px;
     border: 1.5px solid rgba(255, 255, 255, 0.14);
-    border-radius: 22px;
-    padding: 26px 20px 22px;
+    background: rgba(255, 255, 255, 0.05);
   }
-  .st.zero { border-color: rgba(61, 220, 151, 0.4); background: rgba(61, 220, 151, 0.08); }
-  .st .n {
-    display: block;
-    font-family: var(--condensed);
-    font-weight: 800;
-    font-size: 104px;
-    line-height: 0.9;
-    color: #ffffff;
-    font-variant-numeric: tabular-nums;
-  }
-  .st.zero .n { color: #6ee7b7; }
-  .st .l {
-    display: block;
+  .rung .what {
     font-family: var(--body);
-    font-size: 23px;
-    font-weight: 700;
-    letter-spacing: 0.11em;
-    text-transform: uppercase;
-    color: rgba(255, 255, 255, 0.5);
-    margin-top: 12px;
+    font-size: 27px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.9);
     line-height: 1.25;
   }
+  .rung .verdict {
+    margin-left: auto;
+    flex: none;
+    font-family: var(--body);
+    font-size: 19px;
+    font-weight: 800;
+    letter-spacing: 0.13em;
+    text-transform: uppercase;
+    border-radius: 999px;
+    padding: 7px 18px;
+  }
+  .rung.best { border-color: rgba(61, 220, 151, 0.45); background: rgba(61, 220, 151, 0.1); }
+  .rung.best .verdict { background: #3DDC97; color: #06301f; }
+  .rung.ok .verdict { background: rgba(255, 255, 255, 0.16); color: rgba(255, 255, 255, 0.82); }
+  .rung.bad { border-color: rgba(245, 158, 11, 0.4); background: rgba(245, 158, 11, 0.08); }
+  .rung.bad .verdict { background: var(--gold-500); color: #2a1a00; }
+  .rung.no { border-color: rgba(239, 68, 68, 0.5); background: rgba(239, 68, 68, 0.1); }
+  .rung.no .verdict { background: var(--live-500); color: #ffffff; }
 
   .sub {
-    font-family: var(--body); font-size: 30px; font-weight: 500;
-    color: rgba(255, 255, 255, 0.62); max-width: 820px; line-height: 1.42;
+    font-family: var(--body); font-size: 28px; font-weight: 500;
+    color: rgba(255, 255, 255, 0.62); max-width: 850px; line-height: 1.42;
   }
   .sub b { color: #ffffff; font-weight: 700; }
 </style>
@@ -75,16 +97,28 @@
 <body>
 <div class="stage dark">
   <span class="eyebrow">For leagues</span>
-  <h1>A full season, scheduled in<br /><span class="hit">about 15 seconds</span>.</h1>
+  <h1>Nobody&rsquo;s team gets the<br /><span class="hit">bad weekend twice</span>.</h1>
 
-  <div class="grid">
-    <span class="st"><span class="n">146</span><span class="l">Teams</span></span>
-    <span class="st"><span class="n">725</span><span class="l">Games placed</span></span>
-    <span class="st zero"><span class="n">0</span><span class="l">Double-booked courts</span></span>
-    <span class="st zero"><span class="n">0</span><span class="l">Back-to-back games</span></span>
+  <div class="ladder">
+    <span class="rung best">
+      <span class="what">Two to four slots between games</span>
+      <span class="verdict">Target</span>
+    </span>
+    <span class="rung ok">
+      <span class="what">Only one slot to rest</span>
+      <span class="verdict">Costs</span>
+    </span>
+    <span class="rung bad">
+      <span class="what">A five-slot wait, or asked back a second day</span>
+      <span class="verdict">Costs the same</span>
+    </span>
+    <span class="rung no">
+      <span class="what">Two games in a row</span>
+      <span class="verdict">Not allowed</span>
+    </span>
   </div>
 
-  <p class="sub">The two zeroes are the hard part. <b>Anyone can place games fast.</b> Nobody doing this in a spreadsheet can promise you either of those.</p>
+  <p class="sub">Every wait, early start, late finish and second trip is priced per team. And it costs the scheduler <b>more</b> when it lands on a team that already carried one, so the same families never absorb it twice.</p>
 
   <div class="footer-brand">
     <span class="wm"><span class="s">Sports</span><span class="h">Hub</span><span class="one">ONE</span></span>
