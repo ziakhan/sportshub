@@ -99,6 +99,15 @@ jersey number):
 Lords 37, 28, 18, 29, 34; Panthers 11, 39, 16, 34, 32. Darius Reyes averages
 14.7 points a game, Ibrahim White 13.2, Jayden Anderson 12.9, Andre Nguyen 10.0.
 
+**Season averages on the pre-game roster tables (added 2026-08-19).** The
+parent's phone shows `pregame-rosters.tsx` before tip-off, which lists both
+rosters with GP / PPG / RPG / APG. Four of those PPG values are the `DB` ones
+above (Darius Reyes 14.7, Ibrahim White 13.2, Jayden Anderson 12.9, Andre
+Nguyen 10.0). **Every other PPG, and all of the RPG and APG columns, are
+INVENTED**, ordered so the five highest scorers on each side are the five the
+season really started. This is the second invented thing in the demo after the
+scorekeeper's name; both are in the story file's own ledger.
+
 **Absences.** #15 Ethan Lee (Lords) and #29 Daniel Osei (Panthers) are marked
 absent at the door. The product pre-marks absentees from calendar RSVPs
 (`lib/rsvp.ts` `getGameRsvpAbsentees`, `EventRsvp` rows with `status:
@@ -160,11 +169,27 @@ today. Each is listed with what it is composed FROM, under the owner's
    the referee's signature line and the real "Download PDF (landscape)" action.
    The per-quarter scoring-mark columns of the real sheet are dropped for width.
    AUTHORIZED phone composition.
-3. **The starting-five picker shows one team at a time.** The real screen stacks
-   both pick lists and the phone scrolls between them; the demo frame cannot
-   scroll, so the finished team is shown as its own done row ("✓ Oakville
-   Panthers Grade 9 · starting five: 5/5") above the list being picked. Same
-   information, no scroll.
+3. ~~**The starting-five picker shows one team at a time.**~~ **RETIRED
+   2026-08-19** by the owner's realism ruling: "let's show them all the proper
+   attendance lineup changes; if we need to scroll up a little bit to show them
+   pressing the buttons, let's do that." Both pre-game panes now render at their
+   REAL height with BOTH teams stacked (`scoring-console.tsx` L808 and L877,
+   `flex-col gap-4 md:flex-row`), inside a measured `ScrollPane` that clamps a
+   beat's requested scroll to the pane's own end, and the beats film the scroll.
+   On camera: #29 Daniel Osei marked absent on the Panthers' bench, the scroll to
+   the Lords' bench, #15 Ethan Lee marked absent, "Continue to starting lineups",
+   the last two Lords starters tapped in (3/5 → 4/5 → 5/5), "Start game" going
+   from disabled to live, and the press. Absentees are filtered out of the pick
+   lists exactly as L880 filters them. No composition is fabricated here any
+   more.
+3b. **The live watching view is the page's own scroll.** The parent's handset
+   renders `/live/7e467b44` as ONE column (hero, tabs, the tab's content) inside
+   the same `ScrollPane`, with the sticky score chip appearing once the hero
+   passes the top, which is what the real page does. A "tab" is a tap and a "look
+   further down" is a scroll: no view on that handset is composed, only scrolled
+   to. Added 2026-08-19 with `pregame-rosters.tsx` (the pre-game state),
+   `live-view.tsx` L253 ("Waiting for the first play"), `game-leaders.tsx` and
+   the `play-by-play-tab.tsx` filters, none of which the 08-16 cut drew.
 4. **Priya Anderson, the scorekeeper's name.** The checklist reads its two rows
    from `/api/games/[id]/scorekeeper` and `/api/games/[id]/referee`, which
    resolve `UserRole` rows. **The local `UserRole` table was wiped before this

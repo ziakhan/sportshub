@@ -222,18 +222,18 @@ export const DEMOS: DemoEntry[] = [
     promise:
       "A real league game kept on the scorer's phone, live on a father's phone the whole way, through the referee's signature and the paper scoresheet.",
     description:
-      "Two phones, side by side, and one game running through both. The left one is the scorer's table: the game-day checklist, the roll call at the door, the two starting fives, the action pad with makes, misses, rebounds, assists and fouls, and the substitutions drawer. The right one belongs to a father who is not in the building. Every tap at the table lands on his screen while you watch: the score flashes green, a foul flashes red, a substitution flashes amber, the play-by-play line writes itself with the assist named, and one clock ticks on both phones at once. It includes a wrong entry fixed with UNDO and the phone walking the number back, then runs through the buzzer, the referee's signature at the table, the official scoresheet as a printable PDF, and the recap, the player of the game and the division table landing on his phone minutes later.",
+      "Two phones, side by side, and one game running through both. It starts before anybody touches the ball: the game-day checklist, the roll call at the door with both benches on the one screen and two players marked absent on camera, and the two starting fives tapped in until Start game comes on. The right phone belongs to a father who is forty minutes away, and he opens the game page while it still says the tip-off time. The moment the table presses Start game, his page goes live on its own. From there the camera never sits still: an action is armed at the table, a player is tapped, and then you watch it land on his phone. The score flashes green, a foul flashes red, a substitution flashes amber, the play line writes itself with the assist named, and one clock ticks on both phones at once. It includes a wrong entry fixed with UNDO and the phone walking the number back. Later he scrolls his own page, the leaders, the box score where his son's row moves while he is looking at it, and the team stats that only exist because the table recorded the misses. Then the buzzer, the referee's signature and PIN at the table, the official scoresheet as a printable PDF, and the recap, the player of the game and the division table landing minutes later.",
     audiences: ["leagues", "clubs", "parents"],
     kind: "story",
     stage: "split",
-    durationLabel: "2 min 50 sec",
+    durationLabel: "3 min",
     status: "live",
     featured: true,
     chapterCount: 5,
     bullets: [
-      "Attendance, starting fives and the whole game kept on one phone",
-      "The same clock ticking on the scorer's phone and the parent's",
-      "Every basket flashes on the parent's phone the second it is scored",
+      "Attendance and both starting fives, every button pressed on camera",
+      "Every tap at the table lands on the father's phone while you watch",
+      "One clock, ticking on the scorer's phone and the parent's at the same time",
       "Referee signature, printable scoresheet, recap and standings, all off the same sheet",
     ],
     chapterTitles: [
