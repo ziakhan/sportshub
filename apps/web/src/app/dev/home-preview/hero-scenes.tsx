@@ -168,15 +168,15 @@ function Bubble({
 }) {
   return (
     <span
-      className={`max-w-[88%] rounded-2xl border px-3.5 py-2.5 text-[14px] leading-snug md:text-[15px] ${
+      className={`max-w-[88%] rounded-2xl border px-4 py-3 text-[16px] leading-snug md:text-[17px] ${
         me
-          ? "self-end border-play-300/30 bg-play-600/30 text-white/92"
-          : "border-white/10 bg-white/[0.07] text-white/85"
+          ? "self-end border-play-300/45 bg-play-600/45 text-white"
+          : "border-white/14 bg-white/[0.12] text-white"
       } ${hideOnPhone ? "max-md:hidden" : ""}`}
     >
       {children}
       {time ? (
-        <span className="mt-1 block text-[10px] font-medium text-white/30">{time}</span>
+        <span className="mt-1 block text-[11px] font-medium text-white/45">{time}</span>
       ) : null}
     </span>
   )
@@ -322,22 +322,33 @@ function LadderArtifact() {
 /* ── 5 · Family: the real capture, in a phone-shaped phone ───────────────── */
 
 function PhoneArtifact({ src, alt }: { src: string; alt: string }) {
-  /* v1 framed this at 212x300, which is not a phone shape and made the
-     capture read as distorted. The frame now holds a real 390:844 ratio and
-     simply crops lower down, so it is a phone with its screen cut off rather
-     than a squashed rectangle. */
+  /* THE FRAME IS 390:844 AND NOTHING OVERRIDES IT. v1 used 212x300, v2
+     claimed 390:844 while coding 390:620; both read as a squashed box.
+     A true-ratio phone that fits the hero vertically would have to be so
+     narrow the screen became unreadable, which is the same complaint in a
+     different form. So the phone is drawn WIDE at the correct ratio and the
+     section CLIPS it: you see the top of a real phone, cut off by the fold,
+     with the cut dissolved rather than hard-edged. Shape stays honest and
+     the screen stays legible. */
   return (
-    <div className="mx-auto w-[198px] rounded-[2rem] border border-white/15 bg-ink-950 p-1.5 shadow-[0_40px_90px_-28px_rgba(0,0,0,0.95)] md:w-[304px] md:rounded-[2.6rem] md:p-2.5">
-      <div className="relative aspect-[390/620] overflow-hidden rounded-[1.6rem] bg-white md:rounded-[2rem]">
-        <Image
-          src={src}
-          alt={alt}
-          width={780}
-          height={1688}
-          className="absolute left-0 top-0 w-full"
-        />
-        <span className="pointer-events-none absolute inset-x-0 bottom-0 h-16 bg-gradient-to-b from-transparent to-white" />
+    <div className="relative mx-auto w-[228px] md:w-[300px]">
+      <div className="h-[332px] overflow-hidden md:h-[524px]">
+        <div className="w-full rounded-[2rem] border border-white/15 bg-ink-950 p-1.5 shadow-[0_40px_90px_-28px_rgba(0,0,0,0.95)] md:rounded-[2.6rem] md:p-2">
+          <div className="relative aspect-[390/844] overflow-hidden rounded-[1.6rem] bg-white md:rounded-[2.2rem]">
+            <Image
+              src={src}
+              alt={alt}
+              width={780}
+              height={1688}
+              className="absolute left-0 top-0 w-full"
+            />
+          </div>
+        </div>
       </div>
+      <span
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-b from-transparent to-[#0b1628]"
+      />
     </div>
   )
 }
