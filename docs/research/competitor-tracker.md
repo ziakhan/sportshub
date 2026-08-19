@@ -76,3 +76,19 @@ DONE 2026-07-12 — commissioned by owner; 106-claim pricing sweep synthesized
 into **docs/business-model.md** (pricing v2: club tiers, league per-team fees,
 Family Pass, take-rate strategy). Remaining gaps noted there (Jersey Watch,
 Crossbar price points).
+
+---
+
+## Communiti (`communiti.app`) — added 2026-08-19
+
+**How we found it:** the owner's daughter's volleyball team pays camp and team fees through it. A live Ontario customer, not a directory find. It was absent from every research doc we hold, which is the gap worth noting.
+
+**Pricing, which is the story:** $0/month, no contract, **2% platform fee (min $2) added ON TOP and paid by the parent** — their own example is $500 program, $510 charged. Stripe 2.9% + 30¢ passed through with **no markup, advertised in public**. One tier, all features. The club never receives an invoice.
+
+**Scope:** registration, payments, waivers, medical and custom forms, attendance, waitlists, lesson and open-court booking, coupons. **No scheduling, scores, standings, statistics, player records, team chat, or mobile app.** It stops earlier than anything else we track: it never models a game at all.
+
+**Reach:** 15+ sports including basketball; visible traction is volleyball and skating in Ontario, including Ontario Volleyball / ABBV beach programs.
+
+**Why it matters:** third competitor undercutting our card position and the first to market the absence of a markup, which pushes [[business-model-v3]] §13 decision 13 toward passthrough. Also pressures the SHAPE of Club Pro, since invisible beats cheap for a volunteer treasurer.
+
+Full analysis: [[communiti-2026-08]]
