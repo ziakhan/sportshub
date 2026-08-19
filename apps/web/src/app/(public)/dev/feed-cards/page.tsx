@@ -16,6 +16,11 @@ import {
   RecapThrillerCard,
   RivalryCard,
 } from "@/components/social/cards/showcase-cards-vivid"
+import {
+  PlayerOfGameCompactCard,
+  PlayerOfGameSpotlightCard,
+  PlayersOfTheGameRoundupCard,
+} from "@/components/social/cards/showcase-cards"
 // ^ PREVIEW ONLY (owner 2026-08-19). This gallery renders the FROZEN
 // pre-2026-08-14 colour treatment so the original can be seen again. Every
 // real surface — the social feed, /news/[slug], club and team pages — imports
@@ -313,6 +318,70 @@ export default async function FeedCardsPreview() {
                 teamColor: NORTHGATE,
                 stat: "19 PTS",
               }}
+            />
+          </Section>
+
+          <Section
+            title="Player of the game — compact"
+            when="Every night there is a game. The workhorse version of the award card."
+            why="This game's line and one sentence naming what the kid actually did — no averages, no season arc. Defaults to the SportsHub palette because we author these for families and clubs to repost; pass a club colour where one genuinely exists."
+          >
+            <PlayerOfGameCompactCard
+              playerName="Marcus Reid"
+              jersey="11"
+              team="Summit Select"
+              handle="marcusr"
+              line={[
+                { value: "24", unit: "PTS" },
+                { value: "7", unit: "REB" },
+                { value: "11", unit: "AST" },
+              ]}
+              achievement="Game high in assists, and the only player on either side in double figures twice over."
+              gameLabel="Gr 10 · Summit Select 61, Ironwood Elite 58"
+            />
+          </Section>
+
+          <Section
+            title="Player of the game — spotlight"
+            when="Championship night, a career high, the one a family would print."
+            why="The broadcast treatment: the jersey number as architecture behind the subject, surname at a size that would be absurd anywhere else, and the line as a banded block ON the stage rather than under it. Layered light instead of a flat fill."
+          >
+            <PlayerOfGameSpotlightCard
+              playerName="Marcus Reid"
+              jersey="11"
+              team="Summit Select"
+              line={[
+                { value: "31", unit: "PTS" },
+                { value: "8", unit: "REB" },
+                { value: "12", unit: "AST" },
+              ]}
+              achievement="A 31-point, 12-assist double-double — the first in the division this season."
+              gameLabel="Gr 10 final · Summit Select 74, Ironwood Elite 69"
+            />
+          </Section>
+
+          <Section
+            title="Players of the game — round-up"
+            when="Once a round, not once a game. The post every club in it will repost."
+            why="Modelled on what leagues actually publish: a locked masthead, then one row per fixture with both winners facing each other across the score. A parent sees the whole round in a single image."
+          >
+            <PlayersOfTheGameRoundupCard
+              eyebrow="2026 Grade 10 · Round 1"
+              competition="Maple Court League"
+              games={[
+                {
+                  home: { crest: "SUM", score: 61, player: { name: "Marcus Reid", line: ["24 PTS", "7 REB", "11 AST"] } },
+                  away: { crest: "IRN", score: 58, player: { name: "Andre Cole", line: ["19 PTS", "9 REB", "2 BLK"] } },
+                },
+                {
+                  home: { crest: "LKS", score: 72, player: { name: "Devon Park", line: ["27 PTS", "5 REB", "3 STL"] } },
+                  away: { crest: "NGW", score: 55, player: { name: "Sam Okafor", line: ["16 PTS", "11 REB", "1 BLK"] } },
+                },
+                {
+                  home: { crest: "HCH", score: 48, player: { name: "Eli Vance", line: ["14 PTS", "6 AST", "4 STL"] } },
+                  away: { crest: "RVR", score: 51, player: { name: "Noah Bright", line: ["21 PTS", "4 REB", "2 AST"] } },
+                },
+              ]}
             />
           </Section>
 
