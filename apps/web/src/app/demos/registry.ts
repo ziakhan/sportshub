@@ -361,17 +361,17 @@ export const DEMOS: DemoEntry[] = [
     promise:
       "A real division's last weekend: a forfeit recorded honestly, a final signed at the table, a tie decided by a written rule, and a bracket where every team in the grade gets a game.",
     description:
-      "This runs on a real league table. The last weekend of a real Grade 10 division, eleven teams at their real records, and two games still to come. One of them never happens: a club cannot field a team, so the league records a forfeit on the game itself and the table takes a win and a loss with no points either way, which is exactly what a forfeit should be worth. The other is played and signed off at the scorer's table with the referee's own PIN, and the standings have already moved by the time you look, because they are worked out from completed games at the moment you open them rather than by a nightly job that might not have run. Then two teams finish level, and with no rules written down the order between them is arbitrary. The league writes them down in one screen, locks them, and the table re-reads itself with the rule that placed each row printed beside it. After that, who is allowed to play, taken from the scorekeeper's roll call, with a ruling that will not save without a written reason. The last chapter is the bracket the product really draws: every team in the grade is in it, the top seeds skip the opening round, the teams beaten in it are already scheduled again the same day, and the whole weekend is checked against the gym time that is actually booked before anybody is promised anything.",
+      "This runs on a real league table. The last weekend of a real Grade 10 division, eleven teams at their real records, and two games still to come. One of them never happens: a club cannot field a team, so the league records a forfeit on the game itself and the table takes a win and a loss with no points either way, which is exactly what a forfeit should be worth. The other is played and signed off at the scorer's table with the referee's own PIN, and the standings have already moved by the time you look, because they are worked out from completed games at the moment you open them rather than by a nightly job that might not have run. Then two teams finish level, and with no rules written down the order between them is arbitrary. The league writes them down in one screen, and the table re-reads itself with the rule that placed each row printed beside it. After that, who is allowed to play, taken from the scorekeeper's roll call, with a ruling that will not save without a written reason. The last chapter is the bracket the product really draws: every team in the grade is in it, the top seeds skip the opening round, the teams beaten in it are already scheduled again the same day, every game has its day and time before anybody knows who is in it, and the whole weekend is checked against the gym time that is actually booked before anybody is promised anything.",
     audiences: ["leagues"],
     kind: "chapter",
     stage: "desktop",
-    durationLabel: "2 min 25 sec",
+    durationLabel: "2 min 15 sec",
     status: "live",
     chapterCount: 4,
     bullets: [
       "Standings computed on read, so a signed sheet moves the table by itself",
       "A forfeit recorded as a forfeit: a win, a loss and no points either way",
-      "A tie decided by rules the league wrote down and locked, named on the row",
+      "A tie decided by rules the league wrote down, named on the row",
       "Playoff eligibility from the scorekeeper's roll call, overruled only in writing",
       "A bracket where every team in the grade plays, and the losers play again",
     ],

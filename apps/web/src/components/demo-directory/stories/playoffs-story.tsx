@@ -1,93 +1,130 @@
 "use client"
 
-import type { ReactNode } from "react"
+import { useEffect, useRef, type ReactNode } from "react"
 import { cn } from "@/components/ui/cn"
+import {
+  BracketLegend,
+  BracketTree,
+  sectionizeBracket,
+  type BracketMatch,
+  type BracketSection,
+} from "@/components/bracket"
+import { NewsCard } from "@/components/ui/news-card"
+import { SectionHeader } from "@/components/ui/section-header"
+import { StandingsTable } from "@/components/ui/standings-table"
 import { TypeText } from "../motion"
-import { Btn, Chip, ConsoleTabs, Dialog, Panel, StatusChip } from "../scene-kit"
 import type { DemoBeat, DemoScript } from "../types"
 
 /**
- * "Standings to playoffs", rebuilt to the gold standard (2026-08-16).
+ * "Standings to playoffs", rebuilt to the realism standard (mock-ui.tsx R1–R8)
+ * on 2026-08-19, over the cut the owner drove on 2026-08-16.
  *
- * WHAT CHANGED, AND WHY. The 2026-08-15 cut ran an invented eight team league
- * ("Metro West Youth Basketball", eight rows all at eight games played) through
- * a mock browser window, and drew a bracket that was four columns of stacked
- * boxes with no connectors. Every number in it was made up and the bracket was
- * not the one the product renders. This rebuild answers three owner rulings.
+ * WHAT THE 08-16 CUT GOT RIGHT AND KEEPS: every number is engine output over
+ * the seeded NPH Showcase "End of Season" world, written down with its working
+ * in `docs/roadmap/playoffs-numbers.md`. The story is the same story: a forfeit
+ * recorded honestly, a final signed at the scorer's table, a tie decided by a
+ * written rule, who is allowed to play, and a bracket with every team in it.
  *
- *   1. STANDINGS TRUTH IS REAL DATA (owner ruling 2026-08-16). Every row of
- *      every table here was computed by the product's own engine,
- *      `lib/standings/compute.ts`, over the real games of the seeded NPH
- *      Showcase world (season `860f7c32`, 725 completed games). The division is
- *      Grade 10 Boys · PRIME, eleven teams, at their real games played. Four
- *      states of that table appear, and all four are engine output, written
- *      down with their working in `docs/roadmap/playoffs-numbers.md`.
- *   2. THE BRACKET IS THE REAL ONE. The Grade 10 playoff plan already exists in
- *      that world: 42 teams pooled across four divisions, 47 games, an opening
- *      round of 10, a round of 32, a round of 16, quarters, semis, a final, a
- *      third place game and 5 consolation games. The tree drawn here is a
- *      readable REGION of that plan, on the geometry `components/bracket/
- *      bracket-tree.tsx` uses: columns by dependency tier, elbow connectors,
- *      dashed ghost slots carrying their real reference ("Winner of G35"), and
- *      the gold champion node hanging off the final.
- *   3. PRESENTATION (audit D2). Focused working REGIONS composed at 1160
- *      logical and rendered at scale 1.0, no browser chrome, no site header,
- *      one slim context strip. Desktop throughout: this is the league planning
- *      class of surface, which the phone first ruling exempts. Nothing is
- *      authored under 14px and `scripts/demo/readability-audit.mjs` is the gate.
+ * WHAT CHANGED: FIDELITY. The 08-16 cut drew those screens on `scene-kit.tsx`,
+ * a 14px-floor kit authored before R1. Every screen below is now the REAL
+ * component's markup at the product's own sizes, and every flow runs to its
+ * real end state.
  *
- * TRUTH TO THE PRODUCT, SCREEN BY SCREEN.
- *   · the Standings tab (`manage/components/standings-tab.tsx`): its sentence
- *     "Computed on read from completed games. Ties are broken in the order
- *     configured under Settings › Rules.", its eleven columns, its Win% printed
- *     as a whole percent, and its Tiebreakers column, which prints the enum
- *     keys the engine records and an em-dash when nothing was applied;
- *   · the Schedule tab's game row and its action strip in the product's own
- *     order, and the exact `window.confirm` sentence the Forfeit button
- *     carries: "Record a FORFEIT by the home team? The away team is awarded
- *     the win in standings.";
- *   · the scoring console's review header, "Review: {home} {score} · {score}
- *     {away}", its amber "Referee approval (required by this league)" panel
- *     with the Signature and Referee PIN modes and the sentence about the PIN
- *     being verified against the referee's account, and "Mark final";
- *   · the Tiebreakers tab: "Used to rank teams with identical records. Applied
- *     top-to-bottom until one team wins the tiebreaker.", "No tiebreakers
- *     configured.", the six options in the product's own order, the up, down
- *     and Remove controls, and the Locked badge;
- *   · the season team page's roster table: #, Player, Age, Position, GP,
- *     Playoffs, with GP titled "from the scorekeeper's attendance roll call",
- *     and `eligibility-action.tsx`: the lowercase "eligible" and "not eligible"
- *     badges, "N of M required games", the required "Ruling note (required)…"
- *     and the buttons "Rule eligible" and "Rule ineligible";
- *   · the Playoffs tab: "Playoff plan", "The whole playoff schedule is planned
- *     now; team names fill in automatically as the regular season finishes.",
- *     the pooling control with its two words, the grade card sentences, "The
- *     top 22 teams skip round 1.", the fit line, "Plan the playoffs", the
- *     legend, and the section titles and blurbs `sectionizeBracket` writes;
- *   · the public league page: the Standings section on `StandingsTable`
- *     (Team, W, L, PCT, GB, STRK) and the League news section on `NewsCard`,
- *     with the recap title `buildTemplateRecap` produces for this scoreline.
+ * TRUTH TO THE PRODUCT, SCREEN BY SCREEN (R1: classes copied, files cited).
+ * Console paths are under `app/(platform)/manage/leagues/[id]/seasons/[seasonId]`:
  *
- * WHAT IS STAGED RATHER THAN READ, AND IT IS DECLARED.
- *   1. THE FORFEIT. `DEFAULTED` is real: the Schedule tab's two Forfeit
- *      buttons PATCH it, and `compute.ts` credits the other team a win and the
- *      forfeiting team a loss with zero points either way. No game in the
- *      seeded world is defaulted, so ONE real game is recorded as a forfeit
- *      here instead of played: YvY Elite versus Vaughan Panthers, Feb 6. That
- *      single change moves four cells of the table and nothing else, not one
- *      place in the order and not one of the 42 seeds. The arithmetic is in
- *      section C of the numbers sheet.
- *   2. THE ELIGIBILITY FLOOR. Owner ruling: show a four games played floor as
- *      the standard. The setting, the roll call source, the badges and the
- *      written ruling are all real product; the NUMBERS cannot be, because
- *      this world has zero attendance events and no season rosters, so the
- *      players are invented, as they are in every demo (real rosters are
- *      minors). And nothing in the product ENFORCES the floor: it is a display
- *      and a record, not a gate. Both are punch items, section E.
- *   3. NO PUBLIC BRACKET EXISTS. `components/bracket` is imported by exactly
- *      one file, the operator Playoffs tab. The public league page has no
- *      bracket at all. So this demo does not stage one: it ends on what the
- *      public page really carries, the settled standings and the recap card.
+ *   · the console shell is `manage/page.tsx`: the SmartBack line, the floated
+ *     "Waiver signing status →", the condensed uppercase h1 carrying the SEASON
+ *     label, the league name under it, the status Badge, the "Season checklist"
+ *     button that shows on every tab but Overview, and the flat nine-tab row
+ *     with the play-600 underline. Same shell the season story films;
+ *   · Standings is `manage/components/standings-tab.tsx`: PanelHeader +
+ *     Refresh, its sentence "Computed on read from completed games. Ties are
+ *     broken in the order configured under Settings › Rules.", the condensed
+ *     division heading, and the eleven-column table inside its own
+ *     `rounded-xl border border-ink-100` scroller, at the tab's real
+ *     text-xs/[10px] type with the font-mono rank and differential;
+ *   · Schedule is `manage/components/schedule-tab.tsx` GamesTable: PanelHeader
+ *     with the List/Board switch and the count pill, the collapsed game row
+ *     (date, teams with the ink-400 "vs", venue · court, status Badge through
+ *     `toneForStatus`, the caret), and the expanded action strip in the
+ *     product's own order with its own tones: Box score ↗, Pin in place, Find
+ *     alternates (play), Forfeit: home and Forfeit: away (amber), Cancel game
+ *     (hoop). The confirm carries the button's exact sentence;
+ *   · the scorer's table is `components/scoring/scoring-console.tsx` on the bare
+ *     `(scoring)` layout: the centred "Review: {home} {score} · {score} {away}",
+ *     the amber approval panel with "Referee approval (required by this
+ *     league)", the Signature / Referee PIN switch, the named referee chip and
+ *     the PIN field, then "← Back to scoring" beside the court-600 "Mark
+ *     final", and the REAL finalized screen: "Final", the 3xl scoreline, and
+ *     the two play-600 links to the scoresheet and the public box score;
+ *   · Settings is `manage/components/settings-tab.tsx`: the status strip of
+ *     section chips with their real hints (Rules reads "Tiebreakers needed
+ *     before finalizing" until they exist), the numbered SectionHeading, and
+ *     inside section 6 the three panels `rules-settings.tsx` renders in order:
+ *     Playoffs (format ChipGroup, teams advancing, the minimum-games field with
+ *     its Save and its [10px] helper), `game-day-policies.tsx`, and
+ *     `tiebreakers-tab.tsx` (its sentence, its six options in its own order,
+ *     its ↑ ↓ Remove row, and its "+ label" add chips);
+ *   · the team page is `teams/[submissionId]/page.tsx`: the header with its
+ *     status and payment Badges, the "Roster (N)" panel with the real
+ *     no-roster-submitted line this world would print, the table with GP titled
+ *     "from the scorekeeper's attendance roll call", and `eligibility-action.tsx`
+ *     as it really is: the lowercase Badge IS the control, and the ruling is a
+ *     w-72 popover under it with "N of M required games", the required "Ruling
+ *     note (required)…" field, and Rule eligible / Rule ineligible / Close;
+ *   · Playoffs is `manage/components/playoffs-tab.tsx`: "Playoff plan" with
+ *     "Plan the playoffs" beside it, its blurb, the grade-pooling row with its
+ *     two words, the grade card's four sentences, the court-700 result line the
+ *     POST writes, the grade tab, the Bracket / Schedule switch, and both
+ *     views: the bracket is `components/bracket` itself, imported and rendered,
+ *     not a copy of it, so the tree, the elbows, the dashed ghosts carrying
+ *     "Winner of G35", the maple backdrop and the gold champion node are the
+ *     product's own; the schedule view is the tab's own day tables;
+ *   · the public page is `(public)/league/[id]/page.tsx`, rendering the real
+ *     `SectionHeader`, the real `StandingsTable` (Team, W, L, PCT, GB, STRK,
+ *     leader row in highlight-soft) and the real `NewsCard`.
+ *
+ * DELIBERATE DEPARTURES, ALL DECLARED:
+ *   · NO LOCK BEAT. The 08-16 cut pressed a "Lock for the playoffs" button.
+ *     That button does not exist: `tiebreakersLockedAt` is set by
+ *     `api/seasons/[id]/route.ts` when the season is FINALIZED, and the tab
+ *     only ever RENDERS the lock as a Badge. The demo therefore never locks
+ *     anything; the balloon says what the product really does instead.
+ *   · NO ROUND STRIP, NO INVENTED "GAMES GUARANTEED" CARD. Both were drawn by
+ *     the old cut; the Playoffs tab and the Rules panel draw neither. The 47
+ *     games are stated where the product states them: the result line, the
+ *     bracket's own column heads and the schedule view.
+ *   · COMPOSITION, not invention. The pane is 1160x600 and these pages are
+ *     taller, so long screens scroll inside it exactly as they do in a browser,
+ *     the bracket scrolls sideways inside its own scroller the way the real one
+ *     does, the games list is filmed at the window holding the last weekend
+ *     (the real list is the season's 780 committed games, and its count says
+ *     so), and the console header's margins are tightened from mb-6 to fit 600
+ *     logical. The season story makes the same three compressions.
+ *   · The console's Tiebreakers column and the public table's GB print an
+ *     em-dash when nothing applies; the house copy rule bans that character, so
+ *     both print a middot. Same substitution the numbers sheet declares.
+ *   · The review screen carries no box score and no Player of the Game panel:
+ *     this world has zero scoring events, so both would be invented (numbers
+ *     sheet E7).
+ *
+ * INVENTED-CONTENT LEDGER (everything not read from the world):
+ *   · THE FORFEIT. `DEFAULTED` is real end to end, but no game in the seeded
+ *     world is defaulted, so ONE real game is recorded as a forfeit rather than
+ *     played: YvY Elite versus Vaughan Panthers, Feb 6. It moves four cells and
+ *     nothing else, not one place in the order and not one of the 42 seeds
+ *     (numbers sheet section C);
+ *   · THE ELIGIBILITY FLOOR. The four-game floor is the owner's standard. The
+ *     setting, the roll-call source, the badge and the written ruling are all
+ *     real product, but this world has zero attendance events and no season
+ *     rosters, so the ten players and their game counts are staged, as every
+ *     roster in every demo is (real rosters are minors). Nothing in the product
+ *     ENFORCES the floor either; both are punch items, section E1;
+ *   · the team page's applied date and its waiver columns are not printed,
+ *     because this world does not hold them;
+ *   · the plan result line is scoped to the grade on screen; the real POST
+ *     plans every grade at once (section D5).
  */
 
 /* ── Cast, all read out of the seeded world ──────────────────────────────── */
@@ -103,7 +140,7 @@ const GRADE = "Grade 10"
 
 const CTX_STANDINGS = `${LEAGUE} · ${SEASON} · Standings`
 const CTX_SCHEDULE = `${LEAGUE} · ${SEASON} · Schedule`
-const CTX_TABLE = `${LEAGUE} · ${SEASON} · Scorer's table`
+const CTX_TABLE = "Scorer's table · MBA vs Burloak Elite (PRIME)"
 const CTX_RULES = `${LEAGUE} · ${SEASON} · Settings › Rules`
 const CTX_TEAM = `${LEAGUE} · ${SEASON} · Teams · MBA`
 const CTX_PLAYOFFS = `${LEAGUE} · ${SEASON} · Playoffs`
@@ -175,10 +212,36 @@ const ROWS_FINAL: Row[] = [
  *  sort by head to head and then by point differential; Eurostep edge Burloak
  *  on points scored. Every `tb` string is what the engine recorded. */
 const ROWS_RULED: Row[] = [
-  { team: "Vaughan Panthers", gp: 10, w: 7, l: 3, pf: 573, pa: 527, tb: "HEAD_TO_HEAD", id: "row-vaughan" },
+  {
+    team: "Vaughan Panthers",
+    gp: 10,
+    w: 7,
+    l: 3,
+    pf: 573,
+    pa: 527,
+    tb: "HEAD_TO_HEAD",
+    id: "row-vaughan",
+  },
   { team: "MBA", gp: 10, w: 7, l: 3, pf: 640, pa: 571, tb: "HEAD_TO_HEAD", id: "row-mba" },
-  { team: "Toronto Top Tier East", gp: 10, w: 6, l: 4, pf: 692, pa: 636, tb: "HEAD_TO_HEAD, POINT_DIFFERENTIAL", id: "row-cluster" },
-  { team: "Retro Elite", gp: 10, w: 6, l: 4, pf: 598, pa: 600, tb: "HEAD_TO_HEAD, POINT_DIFFERENTIAL" },
+  {
+    team: "Toronto Top Tier East",
+    gp: 10,
+    w: 6,
+    l: 4,
+    pf: 692,
+    pa: 636,
+    tb: "HEAD_TO_HEAD, POINT_DIFFERENTIAL",
+    id: "row-cluster",
+  },
+  {
+    team: "Retro Elite",
+    gp: 10,
+    w: 6,
+    l: 4,
+    pf: 598,
+    pa: 600,
+    tb: "HEAD_TO_HEAD, POINT_DIFFERENTIAL",
+  },
   { team: "Hooptrotters OGs", gp: 10, w: 6, l: 4, pf: 659, pa: 583, tb: "HEAD_TO_HEAD" },
   { team: "Alpha Elite", gp: 10, w: 6, l: 4, pf: 620, pa: 623, tb: "HEAD_TO_HEAD" },
   { team: "Eurostep Basketball", gp: 10, w: 5, l: 5, pf: 653, pa: 675, tb: "POINTS_SCORED" },
@@ -188,7 +251,7 @@ const ROWS_RULED: Row[] = [
   { team: "YvY Elite", gp: 10, w: 1, l: 9, pf: 508, pa: 620 },
 ]
 
-/** The six options, in the Tiebreakers tab's own order and wording. */
+/** `tiebreakers-tab.tsx` TIEBREAKER_OPTIONS, in the file's own order. */
 const TIEBREAKERS = [
   "Head-to-head record",
   "Point differential",
@@ -221,8 +284,11 @@ const DECIDER = {
   when: "Sunday, February 7 at 8:00 p.m.",
   where: "The Playground, Court 2",
 }
+/** `DB` the referee assigned to that game's crew. */
+const REFEREE = "Mike Ferreira"
 
-/** The other three games of that weekend, real rows, for the schedule region. */
+/** The window of the committed-games list the demo films: the division's three
+ *  games on the last weekend of the regular season. */
 const SCHEDULE_ROWS = [
   {
     id: "row-yvy",
@@ -247,6 +313,8 @@ const SCHEDULE_ROWS = [
     court: "Court 2",
   },
 ]
+/** `DB` committed games in the season: what the count pill really reads. */
+const SEASON_GAMES = 780
 
 /* ── Eligibility: real flow, invented players (there are no rosters here) ── */
 
@@ -264,11 +332,11 @@ const ROSTER: Player[] = [
   { number: "5", name: "S. Dubois", age: 16, position: "Guard", gp: 10 },
   { number: "7", name: "J. Reyes", age: 15, position: "Guard", gp: 9 },
   { number: "9", name: "B. Laurin", age: 16, position: "Forward", gp: 8 },
-  { number: "11", name: "R. Patel", age: 15, position: "Guard", gp: 7 },
+  { number: "11", name: "M. Rahim", age: 15, position: "Guard", gp: 3, id: "row-short" },
   { number: "12", name: "D. Mensah", age: 16, position: "Centre", gp: 6 },
   { number: "15", name: "L. Nguyen", age: 15, position: "Forward", gp: 5 },
   { number: "21", name: "C. Okafor", age: 16, position: "Forward", gp: 4 },
-  { number: "23", name: "M. Rahim", age: 15, position: "Guard", gp: 3, id: "row-short" },
+  { number: "23", name: "R. Patel", age: 15, position: "Guard", gp: 7 },
   { number: "33", name: "N. Achebe", age: 15, position: "Centre", gp: 2 },
 ]
 const SHORT_PLAYER = ROSTER.find((p) => p.id === "row-short")!
@@ -278,142 +346,143 @@ const RULING_NOTE = "Broken wrist in December, cleared by the club doctor"
 
 const PLAYOFF_TEAMS = 42
 const PLAYOFF_GAMES = 47
+const PLAYOFF_PLACEHOLDERS = 31
 const PLAYOFF_BYES = 22
 const PLAYOFF_WEEKEND = "Tier 2 Finals · Feb 27-28"
+/** `playoffs-tab.tsx` renders `d.preview.fit.text` after a court-700 check. */
 const PLAYOFF_FIT = `${PLAYOFF_GAMES} games · fits ${PLAYOFF_WEEKEND} (84 of 162 slots with the other grades)`
 
-/** Every round of the real Grade 10 plan, with its real game count. */
-const ROUNDS: Array<{ label: string; games: number; note: string }> = [
-  { label: "Opening round", games: 10, note: "seeds 23 to 42" },
-  { label: "Round of 32", games: 16, note: "the top 22 join here" },
-  { label: "Round of 16", games: 8, note: "" },
-  { label: "Quarterfinal", games: 4, note: "" },
-  { label: "Semifinal", games: 2, note: "" },
-  { label: "Final", games: 1, note: "" },
-  { label: "3rd place", games: 1, note: "" },
-  { label: "Consolation", games: 5, note: "the opening round losers" },
-]
-
-/* ── The bracket ─────────────────────────────────────────────────────────── */
-
-interface TreeSlot {
-  seed?: number
-  team?: string
-  ghost?: string
-  /** Structural id of the game that decides this slot, when it is in region. */
-  from?: string
-}
-interface TreeMatch {
-  id: string
-  code: string
-  round: string
-  tier: number
-  when: string
-  home: TreeSlot
-  away: TreeSlot
-}
-
 /**
- * The readable REGION of the real Grade 10 tree: both quarterfinals that feed
- * the top semifinal, that semifinal, the final and the champion node. Game
- * codes, round names, ghost references and kick-off times are the stored
- * plan's own (`Season.playoffPlan`, games g35, g36, g39, g46).
+ * The readable REGION of the real Grade 10 tree, as `BracketMatch`es fed to the
+ * product's own `sectionizeBracket` and `BracketTree`: both quarterfinals that
+ * feed the top semifinal, that semifinal, the final, the bronze game and two of
+ * the five consolation games. Codes, rounds, tiers, ghost references and
+ * kick-off times are the stored plan's own (numbers sheet D3).
  *
- * The full 42 team tree is six columns and 47 games wide, which cannot be read
- * at scale 1.0 in a 1160 by 600 region, so the demo stages this end of it and
- * says what the rest is with the round strip.
+ * Slots whose `from` points outside the region (G27, G40, G1) resolve to
+ * nothing, which is exactly how the real tree draws a game whose feeder is off
+ * in another column: a dashed ghost with no line into it.
  */
-const TREE: TreeMatch[] = [
+const PLAN_GAMES: BracketMatch[] = [
   {
     id: "g35",
     code: "G35",
     round: "Quarterfinal",
     tier: 3,
-    when: "Sun, Feb 28, 1:45 p.m.",
-    home: { ghost: "Winner of G27" },
-    away: { ghost: "Winner of G28" },
+    whenLabel: "Sun, Feb 28, 1:45 p.m.",
+    home: { kind: "WINNER", from: "g27", ghostLabel: "Winner of G27" },
+    away: { kind: "WINNER", from: "g28", ghostLabel: "Winner of G28" },
   },
   {
     id: "g36",
     code: "G36",
     round: "Quarterfinal",
     tier: 3,
-    when: "Sun, Feb 28, 1:45 p.m.",
-    home: { ghost: "Winner of G29" },
-    away: { ghost: "Winner of G30" },
+    whenLabel: "Sun, Feb 28, 1:45 p.m.",
+    home: { kind: "WINNER", from: "g29", ghostLabel: "Winner of G29" },
+    away: { kind: "WINNER", from: "g30", ghostLabel: "Winner of G30" },
   },
   {
     id: "g39",
     code: "G39",
     round: "Semifinal",
     tier: 4,
-    when: "Sun, Feb 28, 4:15 p.m.",
-    home: { ghost: "Winner of G35", from: "g35" },
-    away: { ghost: "Winner of G36", from: "g36" },
+    whenLabel: "Sun, Feb 28, 4:15 p.m.",
+    home: { kind: "WINNER", from: "g35", ghostLabel: "Winner of G35" },
+    away: { kind: "WINNER", from: "g36", ghostLabel: "Winner of G36" },
   },
   {
     id: "g46",
     code: "G46",
     round: "Final",
     tier: 5,
-    when: "Sun, Feb 28, 6:45 p.m.",
-    home: { ghost: "Winner of G39", from: "g39" },
-    away: { ghost: "Winner of G40" },
+    whenLabel: "Sun, Feb 28, 6:45 p.m.",
+    home: { kind: "WINNER", from: "g39", ghostLabel: "Winner of G39" },
+    away: { kind: "WINNER", from: "g40", ghostLabel: "Winner of G40" },
   },
-]
-
-/** The third place game, its own section on the real board. */
-const THIRD: TreeMatch = {
-  id: "g47",
-  code: "G47",
-  round: "3rd place",
-  tier: 5,
-  when: "Sun, Feb 28, 6:45 p.m.",
-  home: { ghost: "Loser of G39" },
-  away: { ghost: "Loser of G40" },
-}
-
-/** Two of the five consolation games, with the plan's own references. */
-const CONSOLATION: TreeMatch[] = [
+  {
+    id: "g47",
+    code: "G47",
+    round: "3rd place",
+    tier: 5,
+    whenLabel: "Sun, Feb 28, 6:45 p.m.",
+    home: { kind: "LOSER", from: "g39", ghostLabel: "Loser of G39" },
+    away: { kind: "LOSER", from: "g40", ghostLabel: "Loser of G40" },
+  },
   {
     id: "g41",
     code: "G41",
     round: "Consolation",
     tier: 1,
-    when: "Sat, Feb 27, 4:15 p.m.",
-    home: { ghost: "Loser of G1" },
-    away: { ghost: "Loser of G2" },
+    whenLabel: "Sat, Feb 27, 4:15 p.m.",
+    home: { kind: "LOSER", from: "g1", ghostLabel: "Loser of G1" },
+    away: { kind: "LOSER", from: "g2", ghostLabel: "Loser of G2" },
   },
   {
     id: "g42",
     code: "G42",
     round: "Consolation",
     tier: 1,
-    when: "Sat, Feb 27, 5:30 p.m.",
-    home: { ghost: "Loser of G3" },
-    away: { ghost: "Loser of G4" },
+    whenLabel: "Sat, Feb 27, 5:30 p.m.",
+    home: { kind: "LOSER", from: "g3", ghostLabel: "Loser of G3" },
+    away: { kind: "LOSER", from: "g4", ghostLabel: "Loser of G4" },
   },
 ]
 
-/** The opening round, where the real seeds show: plan games g1 and g3. */
-const OPENING: TreeMatch[] = [
+const SECTIONS: BracketSection[] = sectionizeBracket(PLAN_GAMES)
+const sectionByKey = (key: string) => SECTIONS.find((s) => s.key === key) ?? null
+
+/**
+ * The Schedule view of the same plan: the tab groups the weekend's games by
+ * day and prints time, round and the two labels, dimming a game whose teams
+ * are not decided. Rounds are the generator's own words, which is why the
+ * opening round reads "Round of 64" here and "Opening round" as a column head
+ * (`roundLabel` in bracket-tree.tsx renames it). Numbers sheet D3.
+ */
+const PLAN_DAYS: Array<{ day: string; games: Array<{ at: string; round: string; teams: string; resolved: boolean }> }> = [
   {
-    id: "g1",
-    code: "G1",
-    round: "Opening round",
-    tier: 0,
-    when: "Sat, Feb 27, 10:00 a.m.",
-    home: { seed: 35, team: "Brotherhood Elite" },
-    away: { seed: 36, team: "FEIA (Fort Erie)" },
+    day: "Saturday, Feb 27",
+    games: [
+      {
+        at: "10:00 a.m.",
+        round: "Round of 64",
+        teams: "Brotherhood Elite||FEIA (Fort Erie)",
+        resolved: true,
+      },
+      {
+        at: "10:00 a.m.",
+        round: "Round of 64",
+        teams: "Dragons de Gatineau (GAME SPEAKS)||Wiggins Elite",
+        resolved: true,
+      },
+      { at: "4:15 p.m.", round: "Consolation", teams: "Loser of G1||Loser of G2", resolved: false },
+      { at: "5:30 p.m.", round: "Consolation", teams: "Loser of G3||Loser of G4", resolved: false },
+    ],
   },
   {
-    id: "g3",
-    code: "G3",
-    round: "Opening round",
-    tier: 0,
-    when: "Sat, Feb 27, 10:00 a.m.",
-    home: { seed: 24, team: "Dragons de Gatineau (GAME SPEAKS)" },
-    away: { seed: 41, team: "Wiggins Elite" },
+    day: "Sunday, Feb 28",
+    games: [
+      {
+        at: "1:45 p.m.",
+        round: "Quarterfinal",
+        teams: "Winner of G27||Winner of G28",
+        resolved: false,
+      },
+      {
+        at: "1:45 p.m.",
+        round: "Quarterfinal",
+        teams: "Winner of G29||Winner of G30",
+        resolved: false,
+      },
+      {
+        at: "4:15 p.m.",
+        round: "Semifinal",
+        teams: "Winner of G35||Winner of G36",
+        resolved: false,
+      },
+      { at: "6:45 p.m.", round: "Final", teams: "Winner of G39||Winner of G40", resolved: false },
+      { at: "6:45 p.m.", round: "3rd place", teams: "Loser of G39||Loser of G40", resolved: false },
+    ],
   },
 ]
 
@@ -442,17 +511,16 @@ const RECAP_BODY = `${DECIDER.home} rolled past ${DECIDER.away} ${DECIDER.homeSc
 /* ── Pacing ──────────────────────────────────────────────────────────────── */
 
 /**
- * Stop, explain, act (owner ruling 2026-08-16: "slow is the point"). The hand
- * takes CURSOR_ARRIVE_MS to reach its target and the balloon lands with it, so
- * a beat holds for the travel, plus long enough to READ the balloon at about
- * 180ms a word with a 900ms buffer for the eye to find it, plus a settle so the
- * next thing does not fire on the last syllable.
+ * Human pace (owner 2026-08-19), the same function the converted your-week and
+ * season stories use: a beat holds for the cursor's travel, plus long enough to
+ * read the balloon at about 140ms a word, plus a settle. People click, then
+ * click again; long reads are only bought where a balloon earns one.
  */
 function paced(b: Omit<DemoBeat, "hold"> & { hold?: number }): DemoBeat {
   if (b.hold) return b as DemoBeat
-  const arrive = b.cursor ? 620 : 220
-  const settle = 500
-  const read = b.callout ? b.callout.trim().split(/\s+/).length * 180 + 900 : 2400
+  const arrive = b.cursor ? 620 : 180
+  const settle = 400
+  const read = b.callout ? b.callout.trim().split(/\s+/).length * 140 + 700 : 1200
   return { ...b, hold: Math.round(arrive + read + (b.callout ? settle : 0)) }
 }
 
@@ -478,80 +546,110 @@ export const playoffsStory: DemoScript = {
       caption: `Two games left in ${DIVISION}, and first place is not settled.`,
       emphasize: "table",
       callout:
-        "MBA and Vaughan have played nine. The table is worked out from completed games the moment you open it.",
+        "The table is worked out from the completed games the moment it is opened, not by a job that runs overnight.",
       set: { screen: "standings", table: "sat" },
     }),
+    /* Engine law: `set` applies at beat START, so a press that also swaps the
+       screen deletes its own target. Every press below is its own beat and the
+       landing is the next one. */
     paced({
       id: "to-schedule",
       chapter: "weekend",
-      caption: "One of the two is not played.",
+      caption: "One of the two is never played.",
+      cursor: "tab-schedule",
+      press: true,
+    }),
+    paced({
+      id: "schedule",
+      chapter: "weekend",
+      caption: "The last weekend of the regular season, in the committed games.",
       context: CTX_SCHEDULE,
+      set: { screen: "schedule" },
+      emphasize: "row-yvy",
+    }),
+    paced({
+      id: "open-row",
+      chapter: "weekend",
+      caption: "YvY Elite cannot field a team on Saturday night.",
       cursor: "row-yvy",
       press: true,
-      callout: "YvY Elite cannot field a team, and the league has to record that.",
-      set: { screen: "schedule", open: true },
+    }),
+    paced({
+      id: "row-open",
+      chapter: "weekend",
+      caption: "Everything the league can do to a game is on the game.",
+      set: { open: true },
+      emphasize: "row-actions",
     }),
     paced({
       id: "forfeit",
       chapter: "weekend",
-      caption: "The league records a forfeit.",
+      caption: "A forfeit by the home team.",
       cursor: "forfeit-home",
       press: true,
-      callout: "One press, on the game itself.",
+    }),
+    paced({
+      id: "forfeit-dialog",
+      chapter: "weekend",
+      caption: "The confirmation names what it will do to the table.",
       set: { dialog: "forfeit" },
+      emphasize: "confirm-forfeit",
+      callout: "The league records the forfeit on the game, and never edits a standings row.",
     }),
     paced({
       id: "forfeit-ok",
       chapter: "weekend",
-      caption: "The dialog names what it will do to the table.",
+      caption: "Recorded.",
       cursor: "confirm-forfeit",
       press: true,
-      toast: `Forfeit recorded · ${FORFEIT_GAME.away} awarded the win`,
-      set: { dialog: "", forfeited: true, open: false },
+    }),
+    paced({
+      id: "forfeited",
+      chapter: "weekend",
+      caption: "The row carries it: DEFAULTED, and no score.",
+      set: { dialog: "", forfeited: true },
+      emphasize: "row-yvy",
     }),
     paced({
       id: "forfeit-table",
       chapter: "weekend",
-      caption: "Vaughan take the win, YvY take the loss, and neither points column moves.",
+      caption: "Vaughan take the win, YvY take the loss, and both points columns stand still.",
       context: CTX_STANDINGS,
+      set: { screen: "standings", table: "forfeit", open: false },
       emphasize: "row-vaughan",
-      callout:
-        "A forfeit is a win, a loss and no points, so nobody's differential moves.",
-      set: { screen: "standings", table: "forfeit" },
+      callout: "A defaulted game is credited zero to zero, so nobody's differential moves.",
     }),
     paced({
       id: "review",
       chapter: "weekend",
-      caption: "The game that decides first place is at the review screen.",
+      caption: "Sunday night, and the game that decides first place is at the review screen.",
       context: CTX_TABLE,
-      emphasize: "review-head",
-      callout: "Nothing counts until the sheet is signed at the table.",
       set: { screen: "review" },
+      emphasize: "approval",
+      callout: "The PIN is checked against the assigned referee's own account.",
     }),
     paced({
-      id: "sign",
+      id: "mark-final",
       chapter: "weekend",
-      caption: "The referee approves it with the PIN tied to their own account.",
+      caption: "Mark final.",
       cursor: "mark-final",
       press: true,
-      callout: "The PIN is checked against the assigned referee's own account.",
     }),
     paced({
       id: "final",
       chapter: "weekend",
-      caption: "One press writes the box score, completes the game and starts everything downstream.",
-      emphasize: "final-card",
-      toast: `${DECIDER.home} ${DECIDER.homeScore}, ${DECIDER.away} ${DECIDER.awayScore} · marked final`,
+      caption: "Signed at the table, and official from here.",
       set: { finalized: true },
+      emphasize: "final-card",
+      callout: "That one press writes the box score, publishes the recap and moves the table.",
     }),
     paced({
       id: "settled",
       chapter: "weekend",
-      caption: "The table has already moved. Every row is at ten games.",
+      caption: "The table has already moved, and every row is at ten games.",
       context: CTX_STANDINGS,
-      emphasize: "row-mba",
-      callout: "The table reads the games. There is no standings page to type into.",
       set: { screen: "standings", table: "final" },
+      emphasize: "row-mba",
     }),
 
     /* ── 2. The rule that decides ─────────────────────────────────────── */
@@ -560,16 +658,22 @@ export const playoffsStory: DemoScript = {
       chapter: "rule",
       caption: "Two teams finished seven and three, and the Tiebreakers column is empty.",
       emphasize: "tb-col",
-      callout: "With no rules written down, the order between them is arbitrary.",
+      callout: "With nothing configured, teams on the same record sit in win-percentage order.",
     }),
     paced({
-      id: "rules-tab",
+      id: "to-settings",
+      chapter: "rule",
+      caption: "The rules live in one place.",
+      cursor: "tab-settings",
+      press: true,
+    }),
+    paced({
+      id: "tiebreakers",
       chapter: "rule",
       caption: "This league has no tiebreakers written down.",
-      context: `${CTX_RULES} · Tiebreakers`,
+      context: `${CTX_RULES}`,
+      set: { screen: "settings", scroll: 470, order: 0 },
       emphasize: "tb-empty",
-      callout: "One screen, and the rules are the league's own, in its own order.",
-      set: { screen: "tiebreakers", order: 0 },
     }),
     paced({
       id: "add-h2h",
@@ -577,42 +681,45 @@ export const playoffsStory: DemoScript = {
       caption: "Head-to-head first.",
       cursor: "tb-add-1",
       press: true,
-      callout: "Head-to-head reads only games those two teams played against each other.",
+    }),
+    paced({
+      id: "h2h",
+      chapter: "rule",
+      caption: "Added, and it can be moved or removed until the season is finalized.",
       set: { order: 1 },
+      emphasize: "tb-list",
+      callout: "Head-to-head reads only the games those two teams played against each other.",
     }),
     paced({
       id: "add-rest",
       chapter: "rule",
-      caption: "Then the ladder under it, applied top to bottom until one team wins the tiebreaker.",
+      caption: "Then the ladder under it, applied top to bottom until one team wins.",
+      set: { order: 6, scroll: 540 },
       emphasize: "tb-list",
-      callout: "Six rules, applied in order, ending in a tie-break that is deterministic.",
-      set: { order: 6 },
     }),
     paced({
-      id: "lock",
+      id: "locks",
       chapter: "rule",
-      caption: "And locked, before a playoff game is played.",
-      cursor: "tb-lock",
-      press: true,
-      toast: "Tiebreakers locked · Feb 8, 2027",
-      callout: "Locked means the order cannot be changed once it starts placing teams.",
-      set: { locked: true },
+      caption: "Six rules, ending in one that always answers.",
+      emphasize: "tb-list",
+      callout:
+        "The order locks itself when the season is finalized, so nobody rewrites it while it is placing teams.",
     }),
     paced({
       id: "reread",
       chapter: "rule",
       caption: "The table re-reads itself, and Vaughan hold first place.",
       context: CTX_STANDINGS,
+      set: { screen: "standings", table: "ruled" },
       emphasize: "row-vaughan",
       callout: "They met once, in October, and Vaughan won it by four.",
-      set: { screen: "standings", table: "ruled" },
     }),
     paced({
       id: "cluster",
       chapter: "rule",
       caption: "Four teams finished six and four, and every row names the rule that placed it.",
       emphasize: "row-cluster",
-      callout: "The column records which rule separated which teams.",
+      callout: "Two rules on a row means head-to-head left them level and the next one separated them.",
     }),
 
     /* ── 3. Who can play ──────────────────────────────────────────────── */
@@ -620,71 +727,79 @@ export const playoffsStory: DemoScript = {
       id: "floor",
       chapter: "who",
       caption: "Then the question of who is allowed to play.",
-      context: `${CTX_RULES} · Playoffs`,
+      context: `${CTX_RULES}`,
+      set: { screen: "settings", scroll: 0 },
       emphasize: "min-games",
       callout: "Four games of ten, written down before the playoffs rather than argued during them.",
-      set: { screen: "rules" },
     }),
     paced({
       id: "roster",
       chapter: "who",
       caption: "Games played come from the scorekeeper's roll call.",
       context: CTX_TEAM,
-      emphasize: "gp-col",
-      callout: "Attendance is taken at the start of every scored game, and that record counts.",
       set: { screen: "roster" },
+      emphasize: "gp-col",
+      callout: "Attendance is taken at the start of every scored game, and that record is the count.",
     }),
     paced({
       id: "short",
       chapter: "who",
       caption: `One player is short. ${SHORT_PLAYER.name} broke a wrist in December.`,
-      cursor: "row-short",
+      cursor: "row-short-badge",
       press: true,
-      callout: "The badge is computed. Whether she plays is still the league's call.",
+    }),
+    paced({
+      id: "popover",
+      chapter: "who",
+      caption: "The badge is the control: the league can overrule it either way.",
       set: { override: true },
+      emphasize: "ruling-note",
     }),
     paced({
       id: "note",
       chapter: "who",
-      caption: "The league can overrule it, and the note is required.",
+      caption: "The note is required.",
       type: { key: "note", text: RULING_NOTE },
-      callout: "The note is stored with the ruling and stays on her record.",
       emphasize: "ruling-note",
+      callout: "Neither button will save until a reason is written.",
+    }),
+    paced({
+      id: "rule-eligible",
+      chapter: "who",
+      caption: "Ruled in.",
+      cursor: "rule-eligible",
+      press: true,
     }),
     paced({
       id: "ruled",
       chapter: "who",
-      caption: "Ruled in, with the reason attached to her name.",
-      cursor: "rule-eligible",
-      press: true,
-      toast: "Ruling saved",
-      callout: "The ruling names who made it and when.",
+      caption: "The star marks a ruling, and the reason stays on her record.",
       set: { ruled: true, override: false },
+      emphasize: "row-short",
     }),
 
     /* ── 4. Everybody plays ───────────────────────────────────────────── */
+    /* No tab press here: the story is on the team PAGE, which is its own route
+       and carries no console tabs, so a press would have nothing to hit. */
     paced({
       id: "playoffs",
       chapter: "bracket",
-      caption: `${GRADE} runs as four divisions, and its playoffs are one championship.`,
+      caption: `${GRADE} runs as four divisions all season, and one championship at the end.`,
       context: CTX_PLAYOFFS,
+      set: { screen: "playoffs", scroll: 0 },
       emphasize: "pooling",
-      callout: "Four divisions all season, one bracket at the end.",
-      set: { screen: "playoffs" },
     }),
     paced({
       id: "everyone",
       chapter: "bracket",
-      caption: `All ${PLAYOFF_TEAMS} teams make the playoffs, and everyone plays at least two games.`,
+      caption: `All ${PLAYOFF_TEAMS} teams make the playoffs, and everyone plays at least twice.`,
       emphasize: "in-sentence",
-      callout: "No team is knocked out by where it finished in the table.",
     }),
     paced({
       id: "fit",
       chapter: "bracket",
       caption: "Checked against the gym time that is actually booked.",
       emphasize: "fit-line",
-      callout: `${PLAYOFF_GAMES} games, and the weekend holds them alongside two other grades.`,
     }),
     paced({
       id: "plan",
@@ -692,57 +807,67 @@ export const playoffsStory: DemoScript = {
       caption: "One press plans the whole weekend.",
       cursor: "plan-playoffs",
       press: true,
-      toast: `${PLAYOFF_GAMES} playoff games planned · ${GRADE}`,
-      callout: "Every game gets a time, a gym and a court now.",
-      set: { planned: true },
     }),
     paced({
-      id: "rounds",
+      id: "planned",
       chapter: "bracket",
-      caption: `${PLAYOFF_GAMES} games: an opening round of ten, then 32, 16, quarters, semis and a final.`,
-      emphasize: "round-strip",
-      callout: `64 slots and ${PLAYOFF_TEAMS} teams, so the top ${PLAYOFF_BYES} skip the opening round.`,
+      caption: `${PLAYOFF_GAMES} games planned, ${PLAYOFF_PLACEHOLDERS} of them still waiting on names.`,
+      set: { planned: true },
+      emphasize: "plan-msg",
     }),
     paced({
       id: "tree",
       chapter: "bracket",
       caption: "This is the bracket the league gets, and the one every club sees.",
+      set: { scroll: 400 },
       emphasize: "tree",
-      callout: "Winners move right, and the lines show which game feeds which slot.",
-      set: { view: "tree" },
     }),
     paced({
       id: "ghost",
       chapter: "bracket",
-      caption: "Nothing is guessed at. An undecided slot says which game decides it.",
-      cursor: "ghost-slot",
-      hover: "ghost-slot",
-      callout: "When G35 is signed, that name fills itself in.",
-    }),
-    paced({
-      id: "third",
-      chapter: "bracket",
-      caption: "The two beaten semifinalists play for bronze at the same time as the final.",
-      emphasize: "third-card",
-      callout: "Bronze is a real game on the schedule.",
-      set: { view: "extra" },
+      caption: "Nothing is guessed at: an undecided slot says which game decides it.",
+      set: { treeX: 230 },
+      emphasize: "tree",
+      callout: "When G35 is signed, that name fills itself in and the final is one game closer.",
     }),
     paced({
       id: "consolation",
       chapter: "bracket",
-      caption: "And the ten teams knocked out on Saturday morning are already scheduled again.",
+      caption: "The teams beaten on Saturday morning are already scheduled again.",
+      set: { scroll: 940 },
       emphasize: "consolation",
-      callout: "Five consolation games, drawn rather than promised.",
+    }),
+    paced({
+      id: "to-sched-view",
+      chapter: "bracket",
+      caption: "The same plan, as a schedule.",
+      set: { scroll: 210 },
+      cursor: "view-schedule",
+      press: true,
+    }),
+    paced({
+      id: "sched-view",
+      chapter: "bracket",
+      caption: "Two days, and every game already has a time.",
+      set: { view: "schedule", scroll: 380 },
+      emphasize: "sched-list",
+      callout: "These slots are booked now, so no club waits on the semifinals to know when it plays.",
     }),
     paced({
       id: "public",
       chapter: "bracket",
-      caption: "The public page carries the settled table and the recap of the game that decided it.",
+      caption: "The public page carries the settled table.",
       context: CTX_PUBLIC,
+      set: { screen: "public", scroll: 0 },
+      emphasize: "public-table",
+    }),
+    paced({
+      id: "public-news",
+      chapter: "bracket",
+      caption: "And the recap of the game that decided it.",
+      set: { scroll: 400 },
       emphasize: "public-news",
-      callout:
-        "Same engine, same rows, and a recap written the moment the sheet was signed.",
-      set: { screen: "public" },
+      callout: "Same engine, same rows, and the recap was written the moment the sheet was signed.",
     }),
     paced({
       id: "end",
@@ -759,19 +884,26 @@ export const playoffsStory: DemoScript = {
   render: ({ get, typingKey }) => {
     const screen = get<string>("screen", "standings")
     const dialog = get<string>("dialog", "")
+    const scroll = get("scroll", 0)
 
     const desktop = (
-      <div className="relative flex h-full flex-col">
+      /* `globals.css` body: white, lit by two faint corner radials. */
+      <div
+        className="relative flex h-full flex-col bg-white"
+        style={{
+          backgroundImage:
+            "radial-gradient(circle at top left, rgba(99, 102, 241, 0.05), transparent 22%), radial-gradient(circle at top right, rgba(242, 78, 30, 0.04), transparent 18%)",
+        }}
+      >
         <div key={screen} className="demo-fade-in flex min-h-0 flex-1 flex-col">
           {screen === "standings" && <StandingsScreen state={get<string>("table", "sat")} />}
           {screen === "schedule" && (
             <ScheduleScreen open={get("open", false)} forfeited={get("forfeited", false)} />
           )}
           {screen === "review" && <ReviewScreen finalized={get("finalized", false)} />}
-          {screen === "tiebreakers" && (
-            <TiebreakersScreen shown={get("order", 0)} locked={get("locked", false)} />
+          {screen === "settings" && (
+            <SettingsScreen shown={get("order", 0)} scroll={scroll} />
           )}
-          {screen === "rules" && <RulesScreen />}
           {screen === "roster" && (
             <RosterScreen
               override={get("override", false)}
@@ -786,26 +918,23 @@ export const playoffsStory: DemoScript = {
             />
           )}
           {screen === "playoffs" && (
-            <PlayoffsScreen planned={get("planned", false)} view={get<string>("view", "")} />
+            <PlayoffsScreen
+              planned={get("planned", false)}
+              view={get<string>("view", "bracket")}
+              scroll={scroll}
+              treeX={get("treeX", 0)}
+            />
           )}
-          {screen === "public" && <PublicScreen />}
+          {screen === "public" && <PublicScreen scroll={scroll} />}
         </div>
 
-        {/* The product's own confirmation: a native window.confirm carrying
-            one sentence, no reason field and no audience. */}
-        <Dialog
+        {/* `schedule-tab.tsx` guards the forfeit with window.confirm; the scene
+            has no browser chrome to hang a native sheet on, so it is drawn as
+            the product's own dialog with the confirm's exact sentence. */}
+        <ConfirmDialog
           open={dialog === "forfeit"}
           title={FORFEIT_CONFIRM}
-          footer={
-            <>
-              <Btn tone="quiet" size="sm">
-                Cancel
-              </Btn>
-              <Btn id="confirm-forfeit" size="sm">
-                OK
-              </Btn>
-            </>
-          }
+          confirmId="confirm-forfeit"
         />
 
         {get("endCard", false) && <EndCard />}
@@ -816,16 +945,185 @@ export const playoffsStory: DemoScript = {
   },
 }
 
-/* ── Standings ───────────────────────────────────────────────────────────── */
+/* ═══════════════════════════════════════════════════════════════════════════
+ * SHARED PRIMITIVES, copied from the product's own kit
+ * ═══════════════════════════════════════════════════════════════════════════ */
 
-function Shell({ tab, children }: { tab: string; children: ReactNode }) {
+/** `components/ui/badge.tsx`, tones and shape verbatim. */
+const BADGE_TONES = {
+  neutral: "bg-ink-50 text-ink-600 ring-ink-200",
+  play: "bg-play-50 text-play-700 ring-play-100",
+  hoop: "bg-hoop-50 text-hoop-600 ring-hoop-100",
+  court: "bg-court-50 text-court-700 ring-court-100",
+  gold: "bg-gold-50 text-gold-600 ring-gold-100",
+  warning: "bg-amber-50 text-amber-700 ring-amber-100",
+  danger: "bg-red-50 text-red-600 ring-red-100",
+} as const
+
+function Badge({
+  children,
+  tone = "neutral",
+  className,
+}: {
+  children: ReactNode
+  tone?: keyof typeof BADGE_TONES
+  className?: string
+}) {
   return (
-    <>
-      <ConsoleTabs active={tab} />
-      <div className="bg-ink-50/70 min-h-0 flex-1 px-5 py-3.5">{children}</div>
-    </>
+    <span
+      className={cn(
+        "inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold uppercase tracking-[0.12em] ring-1 ring-inset",
+        BADGE_TONES[tone],
+        className
+      )}
+    >
+      {children}
+    </span>
   )
 }
+
+/** `components/ui/panel-header.tsx`: brand accent bar, condensed uppercase. */
+function PanelHeader({
+  title,
+  action,
+  className,
+}: {
+  title: string
+  action?: ReactNode
+  className?: string
+}) {
+  return (
+    <div
+      className={cn(
+        "mb-4 flex flex-wrap items-center gap-x-2.5 gap-y-1",
+        Boolean(action) && "justify-between",
+        className
+      )}
+    >
+      <span className="flex items-center gap-2.5">
+        <span className="h-5 w-1.5 shrink-0 rounded-full bg-[var(--brand)]" aria-hidden="true" />
+        <span className="font-condensed text-ink-950 text-lg font-bold uppercase leading-none tracking-wide">
+          {title}
+        </span>
+      </span>
+      {action && <span className="shrink-0">{action}</span>}
+    </div>
+  )
+}
+
+/** `manage/components/types.ts` panelClass. */
+const PANEL =
+  "rounded-3xl border border-ink-100 bg-white p-6 shadow-[0_16px_50px_-34px_rgba(15,23,42,0.45)]"
+
+/** `components/ui/button.tsx` at the sizes and tones these screens use. */
+function Button({
+  children,
+  id,
+  tone = "play",
+  variant = "solid",
+  className,
+}: {
+  children: ReactNode
+  id?: string
+  tone?: "play" | "court" | "hoop"
+  variant?: "solid" | "subtle"
+  className?: string
+}) {
+  const solid =
+    tone === "court"
+      ? "bg-court-600 text-white"
+      : tone === "hoop"
+        ? "bg-hoop-600 text-white"
+        : "bg-play-600 text-white"
+  return (
+    <span
+      data-demo-target={id}
+      className={cn(
+        "inline-flex shrink-0 cursor-default items-center justify-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold shadow-sm transition-shadow duration-150 data-[demo-press=true]:shadow-inner data-[demo-press=true]:brightness-95 motion-reduce:transition-none",
+        variant === "solid" && solid,
+        variant === "subtle" && "border-ink-200 text-ink-700 border bg-white",
+        className
+      )}
+    >
+      {children}
+    </span>
+  )
+}
+
+/**
+ * A real page is taller than the 600 the stage gives it, so the pane scrolls
+ * exactly as a browser would. Nothing is hidden; the column moves.
+ */
+function Pane({ offset, children }: { offset: number; children: ReactNode }) {
+  return (
+    <div className="min-h-0 flex-1 overflow-hidden">
+      <div
+        className="transition-transform duration-500 ease-out motion-reduce:transition-none"
+        style={{ transform: `translateY(${-offset}px)` }}
+      >
+        {children}
+      </div>
+    </div>
+  )
+}
+
+/* ── The season console shell (`manage/page.tsx`) ────────────────────────── */
+
+const TABS: Array<{ label: string; id?: string }> = [
+  { label: "Overview" },
+  { label: "Clubs" },
+  { label: "Teams" },
+  { label: "Plan Your Season" },
+  { label: "Schedule", id: "tab-schedule" },
+  { label: "Standings", id: "tab-standings" },
+  { label: "Playoffs", id: "tab-playoffs" },
+  { label: "Referees" },
+  { label: "⚙ Settings", id: "tab-settings" },
+]
+
+function Console({ tab, children }: { tab: string; children: ReactNode }) {
+  return (
+    <div className="mx-auto flex h-full min-h-0 w-full max-w-5xl flex-col px-6 py-3">
+      <div className="flex shrink-0 items-baseline justify-between">
+        <p className="text-ink-500 text-sm font-medium">&larr; {LEAGUE}</p>
+        <p className="text-play-700 text-sm font-medium">Waiver signing status &rarr;</p>
+      </div>
+      <div className="mt-1 flex shrink-0 items-start justify-between gap-4">
+        <div>
+          <h1 className="font-condensed text-ink-950 text-3xl font-bold uppercase leading-none tracking-wide">
+            {SEASON}
+          </h1>
+          <p className="text-ink-500 mt-1 text-sm">{LEAGUE}</p>
+          <Badge className="mt-2" tone="play">
+            In Progress
+          </Badge>
+        </div>
+        <Button variant="subtle">Season checklist</Button>
+      </div>
+      <div className="border-ink-100 mt-3 flex shrink-0 flex-wrap gap-1 border-b">
+        {TABS.map((t) => (
+          <span
+            key={t.label}
+            data-demo-target={t.id}
+            className={cn(
+              "relative -mb-px whitespace-nowrap px-3 py-2.5 text-sm font-semibold",
+              t.label === tab ? "text-play-600" : "text-ink-500",
+              "data-[demo-hover=true]:text-ink-800"
+            )}
+          >
+            {t.label}
+            {t.label === tab && (
+              <span className="bg-play-600 absolute inset-x-2 -bottom-px h-0.5 rounded-full" />
+            )}
+          </span>
+        ))}
+      </div>
+      <div className="min-h-0 flex-1 pt-4">{children}</div>
+    </div>
+  )
+}
+
+/* ── Standings (`manage/components/standings-tab.tsx`) ───────────────────── */
 
 function StandingsScreen({ state }: { state: string }) {
   const rows =
@@ -836,151 +1134,122 @@ function StandingsScreen({ state }: { state: string }) {
         : state === "forfeit"
           ? ROWS_FORFEIT
           : ROWS_SAT
-  const ruled = state === "ruled"
   return (
-    <Shell tab="Standings">
-      <Panel
-        title="Standings"
-        meta={`${DIVISION} · 11 teams`}
-        action={<Btn tone="quiet" size="sm">Refresh</Btn>}
-      >
-        <p className="text-ink-600 px-4 pt-2.5 text-[14px] font-medium">
+    <Console tab="Standings">
+      {/* The panel is its natural height and the PAGE scrolls, exactly as the
+          browser does it: the eleventh row sits under the fold at 600 logical,
+          it is not squeezed out of the table. */}
+      <Pane offset={0}>
+      <div className={cn(PANEL, "p-5")}>
+        <PanelHeader
+          className="mb-1"
+          title="Standings"
+          action={<Button variant="subtle">Refresh</Button>}
+        />
+        <p className="text-ink-500 mb-3 text-xs">
           Computed on read from completed games. Ties are broken in the order configured under
-          Settings › Rules.
+          Settings &rsaquo; Rules.
         </p>
-        <div data-demo-target="table" className="px-3 pb-2.5 pt-2">
-          <table className="w-full table-fixed">
-            <thead>
-              <tr className="bg-ink-50">
-                <Th className="w-[34px]">#</Th>
-                <Th>Team</Th>
-                <Th className="w-[44px] text-right">GP</Th>
-                <Th className="w-[38px] text-right">W</Th>
-                <Th className="w-[38px] text-right">L</Th>
-                <Th className="w-[34px] text-right">T</Th>
-                <Th className="w-[52px] text-right">PF</Th>
-                <Th className="w-[52px] text-right">PA</Th>
-                <Th className="w-[56px] text-right">Diff</Th>
-                <Th className="w-[58px] text-right">Win%</Th>
-                <Th className="w-[300px]" id="tb-col">
+        <h4 className="font-condensed text-ink-800 mb-2 text-sm font-bold uppercase tracking-wide">
+          {DIVISION}
+        </h4>
+        <div
+          data-demo-target="table"
+          className="border-ink-100 overflow-hidden rounded-xl border"
+        >
+          <table className="text-ink-700 w-full text-xs">
+            <thead className="bg-ink-50 text-ink-500 text-[10px] uppercase tracking-wide">
+              <tr>
+                <th className="px-3 py-1.5 text-left">#</th>
+                <th className="px-3 py-1.5 text-left">Team</th>
+                <th className="px-3 py-1.5 text-right">GP</th>
+                <th className="px-3 py-1.5 text-right">W</th>
+                <th className="px-3 py-1.5 text-right">L</th>
+                <th className="px-3 py-1.5 text-right">T</th>
+                <th className="px-3 py-1.5 text-right">PF</th>
+                <th className="px-3 py-1.5 text-right">PA</th>
+                <th className="px-3 py-1.5 text-right">Diff</th>
+                <th className="px-3 py-1.5 text-right">Win%</th>
+                <th data-demo-target="tb-col" className="px-3 py-1.5 text-left">
                   Tiebreakers
-                </Th>
+                </th>
               </tr>
             </thead>
             <tbody>
               {rows.map((r, i) => {
                 const diff = r.pf - r.pa
-                const pct = Math.round((r.w / r.gp) * 100)
                 return (
                   <tr
                     key={r.team}
                     data-demo-target={r.id}
-                    className={cn(
-                      "border-ink-100 border-t transition-colors duration-300 motion-reduce:transition-none",
-                      i === 0 ? "bg-gold-50/70" : "bg-white",
-                      "data-[demo-hover=true]:bg-play-50/60"
-                    )}
+                    className="border-ink-100 border-t transition-colors data-[demo-hover=true]:bg-ink-50/60"
                   >
-                    <td className="text-ink-400 px-3 py-1 text-[14px] font-bold tabular-nums">
-                      {i + 1}
-                    </td>
-                    <td className="text-ink-900 truncate px-3 py-1 text-[15px] font-semibold">
-                      {r.team}
-                    </td>
-                    <Td>{r.gp}</Td>
-                    <Td strong>{r.w}</Td>
-                    <Td>{r.l}</Td>
-                    <Td>0</Td>
-                    <Td>{r.pf}</Td>
-                    <Td>{r.pa}</Td>
+                    <td className="text-ink-400 px-3 py-1.5 font-mono text-[10px]">{i + 1}</td>
+                    <td className="text-ink-900 px-3 py-1.5 font-medium">{r.team}</td>
+                    <td className="px-3 py-1.5 text-right">{r.gp}</td>
+                    <td className="px-3 py-1.5 text-right">{r.w}</td>
+                    <td className="px-3 py-1.5 text-right">{r.l}</td>
+                    <td className="px-3 py-1.5 text-right">0</td>
+                    <td className="px-3 py-1.5 text-right">{r.pf}</td>
+                    <td className="px-3 py-1.5 text-right">{r.pa}</td>
                     <td
                       className={cn(
-                        "px-3 py-1 text-right text-[14px] font-bold tabular-nums",
+                        "px-3 py-1.5 text-right font-mono text-[11px]",
                         diff > 0 ? "text-court-700" : diff < 0 ? "text-hoop-600" : "text-ink-500"
                       )}
                     >
                       {diff > 0 ? "+" : ""}
                       {diff}
                     </td>
-                    <Td strong>{pct}%</Td>
-                    <td
-                      className={cn(
-                        "truncate px-3 py-1 text-[14px] font-semibold tabular-nums",
-                        r.tb ? "text-court-700" : "text-ink-400"
-                      )}
-                    >
-                      {r.tb ?? "·"}
+                    <td className="px-3 py-1.5 text-right">
+                      {Math.round((r.w / r.gp) * 100)}%
                     </td>
+                    {/* The real column prints an em-dash when nothing applied;
+                        the house copy rule turns that into a middot. */}
+                    <td className="text-ink-500 px-3 py-1.5 text-[10px]">{r.tb ?? "·"}</td>
                   </tr>
                 )
               })}
             </tbody>
           </table>
         </div>
-      </Panel>
-      <p className="text-ink-500 mt-2 text-[14px] font-medium">
-        {ruled
-          ? "Six tiebreakers configured and locked. Every tied row shows which rule placed it."
-          : "No tiebreakers configured, so tied teams sit in win-percentage order."}
-      </p>
-    </Shell>
-  )
-}
-
-function Th({
-  children,
-  className,
-  id,
-}: {
-  children?: ReactNode
-  className?: string
-  id?: string
-}) {
-  return (
-    <th
-      data-demo-target={id}
-      className={cn(
-        "text-ink-500 px-3 py-2 text-left text-[14px] font-bold uppercase tracking-[0.06em]",
-        className
-      )}
-    >
-      {children}
-    </th>
-  )
-}
-
-function Td({ children, strong }: { children: ReactNode; strong?: boolean }) {
-  return (
-    <td
-      className={cn(
-        "px-3 py-1 text-right text-[14px] tabular-nums",
-        strong ? "text-ink-900 font-bold" : "text-ink-600"
-      )}
-    >
-      {children}
-    </td>
+      </div>
+      </Pane>
+    </Console>
   )
 }
 
 /* ── Schedule tab, and the forfeit ───────────────────────────────────────── */
 
+/**
+ * `schedule-tab.tsx` GamesTable. The season's committed games are one list of
+ * 780 rows behind "Show all games"; the pane is filmed at the window holding
+ * the division's last weekend, and the count pill carries the real total.
+ */
 function ScheduleScreen({ open, forfeited }: { open: boolean; forfeited: boolean }) {
   return (
-    <Shell tab="Schedule">
-      <div className="mb-2.5 flex items-center gap-2">
-        <span className="border-ink-200 flex shrink-0 overflow-hidden rounded-lg border bg-white text-[14px] font-bold">
-          <span className="text-ink-500 px-2.5 py-1">Whole season</span>
-          <span className="bg-play-600 px-2.5 py-1 text-white">Weekend 11 · Feb 6 to 7</span>
-        </span>
-        <Chip tone="court" strong>
-          Published
-        </Chip>
-        <span className="text-ink-500 truncate text-[14px] font-semibold">
-          {DIVISION} · last weekend of the regular season
-        </span>
-      </div>
-      <Panel title={`Games in ${DIVISION}`} action={<Chip tone="neutral" strong>3 of 3</Chip>}>
-        <div className="space-y-1 px-3 py-2">
+    <Console tab="Schedule">
+      <div className={cn(PANEL, "p-5")}>
+        <PanelHeader
+          className="mb-3"
+          title="Committed games"
+          action={
+            <span className="flex items-center gap-2">
+              <span className="border-ink-200 flex overflow-hidden rounded-lg border">
+                <span className="bg-ink-950 px-2.5 py-1 text-[11px] font-semibold text-white">
+                  List
+                </span>
+                <span className="text-ink-600 bg-white px-2.5 py-1 text-[11px] font-semibold">
+                  Board
+                </span>
+              </span>
+              <span className="bg-ink-100 text-ink-600 rounded-full px-2.5 py-0.5 text-xs font-semibold">
+                {SEASON_GAMES}
+              </span>
+            </span>
+          }
+        />
+        <div className="space-y-2">
           {SCHEDULE_ROWS.map((r) => (
             <GameRow
               key={r.when + r.home}
@@ -995,15 +1264,16 @@ function ScheduleScreen({ open, forfeited }: { open: boolean; forfeited: boolean
             />
           ))}
         </div>
-      </Panel>
-    </Shell>
+      </div>
+    </Console>
   )
 }
 
 /**
- * One row of the Schedule tab and its expansion. The action strip is the
- * product's own, in the product's own order, with the two amber
- * Forfeit buttons and the hoop-red Cancel game beside them.
+ * One row of the games list and its expansion, `schedule-tab.tsx` lines 1037
+ * to 1141: the collapsed line, the status Badge through `toneForStatus`
+ * (DEFAULTED is hoop, SCHEDULED is play), and the action strip in the
+ * product's own order and tones.
  */
 function GameRow({
   id,
@@ -1024,282 +1294,344 @@ function GameRow({
   status: "SCHEDULED" | "DEFAULTED"
   open: boolean
 }) {
-  const dead = status === "DEFAULTED"
   return (
     <div
       data-demo-target={id}
-      className={cn(
-        "rounded-xl border bg-white transition-colors duration-300 motion-reduce:transition-none",
-        open ? "border-ink-300" : "border-ink-100",
-        dead && "border-gold-400 bg-gold-50/60"
-      )}
+      className="border-ink-100 rounded-xl border bg-white transition-colors data-[demo-hover=true]:border-ink-300"
     >
-      <div className="flex w-full items-center justify-between gap-3 px-3.5 py-2">
-        <div className="flex flex-1 flex-wrap items-center gap-x-3 gap-y-0.5">
-          <span className="text-ink-700 shrink-0 whitespace-nowrap text-[15px] font-bold tabular-nums">
-            {when}
+      <div className="flex w-full items-center justify-between gap-3 px-3 py-2 text-left text-xs">
+        <div className="flex flex-1 flex-wrap items-center gap-3">
+          <span className="text-ink-700 whitespace-nowrap">{when}</span>
+          <span className="text-ink-900 font-medium">
+            {home} <span className="text-ink-400">vs</span> {away}
           </span>
-          <span className="text-ink-900 text-[15px] font-semibold">
-            {home} <span className="text-ink-400 font-medium">vs</span> {away}
-          </span>
-          <span className="text-ink-500 text-[14px] font-medium">
+          <span className="text-ink-500">
             {venue} · {court}
           </span>
         </div>
-        <div className="flex shrink-0 items-center gap-2">
-          <StatusChip tone={dead ? "gold" : "court"}>{status}</StatusChip>
-          <span className="text-ink-400 text-[14px]">{open ? "▴" : "▾"}</span>
+        <div className="flex items-center gap-2">
+          <Badge tone={status === "DEFAULTED" ? "hoop" : "play"}>{status}</Badge>
+          <span className="text-ink-400 text-[10px]">{open ? "▴" : "▾"}</span>
         </div>
       </div>
       {open && (
-        <div className="border-ink-100 flex flex-wrap items-center gap-1.5 border-t px-3.5 py-2">
-          <Btn tone="quiet" size="sm">
-            Box score ↗
-          </Btn>
-          <Btn tone="quiet" size="sm">
-            Pin in place
-          </Btn>
-          <span className="border-play-300 text-play-700 inline-flex shrink-0 items-center rounded-xl border bg-white px-3.5 py-1.5 text-[14px] font-bold">
-            Find alternates
-          </span>
-          <span
-            data-demo-target="forfeit-home"
-            className="border-gold-400 text-gold-600 inline-flex shrink-0 items-center rounded-xl border bg-white px-3.5 py-1.5 text-[14px] font-bold"
-          >
-            Forfeit: home
-          </span>
-          <span className="border-gold-400 text-gold-600 inline-flex shrink-0 items-center rounded-xl border bg-white px-3.5 py-1.5 text-[14px] font-bold">
-            Forfeit: away
-          </span>
-          <span className="border-hoop-300 text-hoop-700 inline-flex shrink-0 items-center rounded-xl border bg-white px-3.5 py-1.5 text-[14px] font-bold">
-            Cancel game
-          </span>
+        <div className="border-ink-100 border-t px-3 py-3 text-xs">
+          <div data-demo-target="row-actions" className="flex flex-wrap items-center gap-2">
+            <span className="border-ink-200 text-ink-700 rounded-lg border px-2 py-1 text-[11px] font-semibold">
+              Box score ↗
+            </span>
+            <span className="border-ink-200 text-ink-700 rounded-lg border px-2 py-1 text-[11px] font-semibold">
+              Pin in place
+            </span>
+            <span className="border-play-300 text-play-700 rounded-lg border px-2 py-1 text-[11px] font-semibold">
+              Find alternates
+            </span>
+            <span
+              data-demo-target="forfeit-home"
+              className="border-amber-300 text-amber-700 rounded-lg border px-2 py-1 text-[11px] font-semibold data-[demo-press=true]:bg-amber-50"
+            >
+              Forfeit: home
+            </span>
+            <span className="border-amber-300 text-amber-700 rounded-lg border px-2 py-1 text-[11px] font-semibold">
+              Forfeit: away
+            </span>
+            <span className="border-hoop-300 text-hoop-700 rounded-lg border px-2 py-1 text-[11px] font-semibold">
+              Cancel game
+            </span>
+          </div>
         </div>
       )}
     </div>
   )
 }
 
-/* ── The scorer's table ──────────────────────────────────────────────────── */
+/* ── The scorer's table (`components/scoring/scoring-console.tsx`) ───────── */
 
 /**
- * The console's review screen, composed as a region: the header sentence
- * and the referee approval panel. The box score is deliberately absent: this
- * world has no scoring events, so drawing player lines would be inventing them.
+ * The review screen on the bare `(scoring)` layout. No box score and no Player
+ * of the Game panel: this world has zero scoring events, so both tables would
+ * be empty in the product and inventing player lines is the one thing R1
+ * forbids (numbers sheet E7).
  */
 function ReviewScreen({ finalized }: { finalized: boolean }) {
   if (finalized) {
     return (
-      <div className="bg-ink-50/70 flex min-h-0 flex-1 items-center justify-center px-10">
-        <div data-demo-target="final-card" className="live-pop w-full max-w-[720px] text-center">
-          <p className="text-court-700 text-[15px] font-bold uppercase tracking-[0.2em]">Final</p>
-          <p className="font-display text-ink-950 mt-2 text-[46px] font-extrabold leading-none tabular-nums">
-            {DECIDER.home} {DECIDER.homeScore}{" "}
-            <span className="text-ink-300">·</span> {DECIDER.awayScore} {DECIDER.away}
+      <div className="bg-ink-50 flex min-h-0 flex-1 items-center justify-center">
+        <div data-demo-target="final-card" className="live-pop mx-auto max-w-lg p-8 text-center">
+          <h2 className="text-ink-900 text-xl font-bold">Final</h2>
+          <p className="text-ink-900 mt-2 text-3xl font-bold">
+            {DECIDER.home} {DECIDER.homeScore} · {DECIDER.awayScore} {DECIDER.away}
           </p>
-          <div className="mt-4 flex flex-wrap justify-center gap-2">
-            <Chip tone="court" strong>
-              Signed by the assigned referee, PIN verified
-            </Chip>
-            <Chip tone="neutral" strong>
-              Game status: COMPLETED
-            </Chip>
+          <div className="mt-4 flex justify-center gap-4">
+            <span className="text-play-600 text-sm font-semibold">
+              Official scoresheet (print) &rarr;
+            </span>
+            <span className="text-play-600 text-sm font-semibold">Public box score &rarr;</span>
           </div>
-          <p className="text-ink-600 mx-auto mt-4 max-w-[560px] text-[15px] font-medium leading-snug">
-            Box score written, recap published, standings input changed, playoff bracket advanced.
-            Every one of those happened because the sheet was marked final.
-          </p>
         </div>
       </div>
     )
   }
   return (
-    <div className="bg-ink-50/70 flex min-h-0 flex-1 flex-col gap-3 px-5 py-4">
-      <div data-demo-target="review-head" className="text-center">
-        <p className="font-display text-ink-950 text-[26px] font-extrabold">
-          Review: {DECIDER.home} {DECIDER.homeScore} <span className="text-ink-300">·</span>{" "}
-          {DECIDER.awayScore} {DECIDER.away}
-        </p>
-        <p className="text-ink-500 mt-1 text-[15px] font-semibold">
+    <div className="bg-ink-50 flex min-h-0 flex-1 flex-col justify-center">
+      <div className="mx-auto w-full max-w-5xl space-y-4 p-4">
+        <h2 className="text-ink-950 text-center text-lg font-bold">
+          Review: {DECIDER.home} {DECIDER.homeScore} · {DECIDER.awayScore} {DECIDER.away}
+        </h2>
+        <p className="text-ink-500 text-center text-xs">
           {LEAGUE} · {SEASON} · {DECIDER.where} · {DECIDER.when}
         </p>
-      </div>
 
-      <div className="border-gold-400 bg-gold-50 mx-auto w-full max-w-[720px] rounded-2xl border px-4 py-3">
-        <div className="flex items-center justify-between gap-2">
-          <p className="text-gold-600 text-[16px] font-bold">
-            Referee approval{" "}
-            <span className="text-ink-600 font-semibold">(required by this league)</span>
-          </p>
-          <span className="border-ink-200 flex overflow-hidden rounded-lg border bg-white text-[14px] font-bold">
-            <span className="text-ink-500 px-2.5 py-1">Signature</span>
-            <span className="bg-gold-100 text-gold-600 px-2.5 py-1">Referee PIN</span>
-          </span>
-        </div>
-        <p className="text-ink-700 mt-2 text-[15px] font-medium leading-snug">
-          The assigned referee enters their personal PIN, verified against their account, the
-          strongest form of approval.
-        </p>
-        <div className="border-ink-200 mt-2.5 flex items-center justify-center gap-2 rounded-xl border bg-white px-3 py-2.5">
-          {[0, 1, 2, 3].map((d) => (
-            <span
-              key={d}
-              className="bg-ink-100 text-ink-700 flex h-9 w-9 items-center justify-center rounded-lg text-[18px] font-bold"
-            >
-              •
+        <div
+          data-demo-target="approval"
+          className="border-amber-300 bg-amber-50 rounded-xl border p-3"
+        >
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-amber-800 text-[13px] font-semibold">
+              Referee approval (required by this league)
+            </p>
+            <div className="flex rounded-lg bg-white p-0.5">
+              <span className="text-ink-500 rounded-md px-2.5 py-1 text-[11px] font-semibold">
+                Signature
+              </span>
+              <span className="bg-amber-100 text-amber-900 rounded-md px-2.5 py-1 text-[11px] font-semibold">
+                Referee PIN
+              </span>
+            </div>
+          </div>
+          <div className="mt-2 space-y-2">
+            {/* The product joins the clause with an em-dash; house copy takes
+                a comma. */}
+            <p className="text-ink-600 text-sm">
+              The assigned referee enters their personal PIN, verified against their account, the
+              strongest form of approval.
+            </p>
+            <div className="flex flex-wrap gap-1.5">
+              <span className="border-amber-500 bg-amber-100 text-amber-900 rounded-lg border px-2.5 py-1.5 text-xs font-semibold">
+                {REFEREE}
+              </span>
+            </div>
+            <span className="border-amber-300 text-ink-400 block w-full rounded-lg border bg-white px-3 py-2 text-sm">
+              ● ● ● ●
             </span>
-          ))}
+          </div>
         </div>
-        <div className="border-court-200 bg-court-50 mt-2.5 flex items-center gap-2 rounded-xl border px-3 py-1.5">
-          <span className="bg-court-600 flex h-5 w-5 items-center justify-center rounded-full text-[14px] font-black text-white">
-            ✓
-          </span>
-          <span className="text-court-900 text-[15px] font-semibold">
-            Matched: the referee assigned to this game
-          </span>
-        </div>
-      </div>
 
-      <div className="mx-auto flex w-full max-w-[720px] items-center gap-3">
-        <span className="text-ink-400 text-[15px] font-semibold">← Back to scoring</span>
-        <span className="ml-auto">
-          <Btn id="mark-final" tone="court">
+        <div className="flex gap-3">
+          <span className="border-ink-200 text-ink-700 flex-1 rounded-xl border px-4 py-3 text-center text-sm font-semibold">
+            &larr; Back to scoring
+          </span>
+          <span
+            data-demo-target="mark-final"
+            className="bg-court-600 flex-1 rounded-xl px-4 py-3 text-center text-sm font-bold text-white data-[demo-press=true]:brightness-95"
+          >
             Mark final
-          </Btn>
-        </span>
+          </span>
+        </div>
       </div>
     </div>
   )
 }
 
-/* ── Tiebreakers ─────────────────────────────────────────────────────────── */
+/* ── Settings › Rules (`settings-tab.tsx` + `rules-settings.tsx`) ────────── */
 
-function TiebreakersScreen({ shown, locked }: { shown: number; locked: boolean }) {
+const SETTINGS_CHIPS = [
+  { label: "Basics", hint: "Set", ok: true },
+  { label: "Divisions", hint: "10 divisions", ok: true },
+  { label: "Registration", hint: "Closed", ok: true },
+  { label: "Game format", hint: "Set", ok: true },
+  { label: "Sessions & rounds", hint: "7 sessions", ok: true },
+]
+
+function SettingsScreen({ shown, scroll }: { shown: number; scroll: number }) {
+  const rulesOk = shown > 0
   return (
-    <Shell tab="Settings">
-      <Panel
-        title="Tiebreaker order"
-        action={
-          locked ? (
-            <Chip tone="court" strong>
-              Locked Feb 8, 2027
-            </Chip>
-          ) : (
-            <Btn id="tb-lock" tone="quiet" size="sm">
-              Lock for the playoffs
-            </Btn>
-          )
-        }
-      >
-        <div className="px-4 py-3">
-          <p className="text-ink-600 text-[15px] font-medium">
-            Used to rank teams with identical records. Applied top-to-bottom until one team wins
-            the tiebreaker.
-          </p>
-
-          {shown === 0 ? (
-            <p data-demo-target="tb-empty" className="text-ink-500 mt-3 text-[16px] font-semibold">
-              No tiebreakers configured.
-            </p>
-          ) : (
-            <ol data-demo-target="tb-list" className="mt-3 space-y-1.5">
-              {TIEBREAKERS.slice(0, shown).map((t, i) => (
-                <li
-                  key={t}
-                  className="border-court-100 bg-court-50 live-row-in flex items-center justify-between gap-3 rounded-xl border px-3.5 py-2"
-                  style={{ animationDelay: `${Math.min(i * 70, 350)}ms` }}
-                >
-                  <span className="text-ink-900 text-[15px] font-semibold">
-                    <span className="text-ink-400 mr-2 font-bold tabular-nums">{i + 1}.</span>
-                    {t}
-                  </span>
-                  <span className="flex items-center gap-3 text-[14px] font-bold">
-                    <span className={locked ? "text-ink-300" : "text-ink-500"}>↑</span>
-                    <span className={locked ? "text-ink-300" : "text-ink-500"}>↓</span>
-                    <span className={locked ? "text-ink-300" : "text-hoop-600"}>Remove</span>
-                  </span>
-                </li>
-              ))}
-            </ol>
-          )}
-
-          {shown < TIEBREAKERS.length && (
-            <div className="border-ink-200 mt-4 border-t pt-3">
-              <p className="text-ink-600 mb-2 text-[14px] font-bold uppercase tracking-[0.06em]">
-                Add a tiebreaker
-              </p>
-              <div className="flex flex-wrap gap-2">
-                {TIEBREAKERS.slice(shown).map((t, i) => (
-                  <span
-                    key={t}
-                    data-demo-target={i === 0 ? `tb-add-${shown + 1}` : undefined}
-                    className="border-ink-200 text-ink-700 inline-flex items-center rounded-xl border bg-white px-3.5 py-1.5 text-[14px] font-bold"
-                  >
-                    + {t}
-                  </span>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-      </Panel>
-    </Shell>
-  )
-}
-
-/* ── The eligibility rule and the roster ─────────────────────────────────── */
-
-function RulesScreen() {
-  return (
-    <Shell tab="Settings">
-      <Panel title="Playoffs" meta="Season rules">
-        <div className="grid grid-cols-3 gap-4 px-4 py-4">
-          <div>
-            <p className="text-ink-700 mb-1.5 text-[15px] font-bold">Playoff format</p>
-            <div className="flex flex-wrap gap-1.5">
-              {["Single elimination", "Double elimination", "Round robin"].map((f, i) => (
-                <span
-                  key={f}
-                  className={cn(
-                    "rounded-full px-3 py-1 text-[14px] font-semibold",
-                    i === 0 ? "bg-play-100 text-play-800" : "text-ink-500 bg-ink-50"
-                  )}
-                >
-                  {f}
-                </span>
-              ))}
-            </div>
-          </div>
-          <div data-demo-target="min-games">
-            <p className="text-ink-700 mb-1.5 text-[15px] font-bold">
-              Minimum games played to be playoff-eligible
-            </p>
-            <div className="flex items-center gap-2">
-              <span className="border-ink-200 flex w-[92px] items-center justify-center rounded-xl border bg-white py-2 text-[22px] font-extrabold tabular-nums">
-                {MIN_GAMES}
+    <Console tab="⚙ Settings">
+      <Pane offset={scroll}>
+        <div className="space-y-6 pb-8">
+          <div className="flex flex-wrap gap-2">
+            {SETTINGS_CHIPS.map((c) => (
+              <span
+                key={c.label}
+                className="border-court-200 bg-court-50 text-court-700 flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold"
+              >
+                <span>✓</span>
+                {c.label}
+                <span className="font-normal">· {c.hint}</span>
               </span>
-              <Btn size="sm">Save</Btn>
-            </div>
-            <p className="text-ink-500 mt-2 text-[14px] font-medium leading-snug">
-              Leave empty for no rule. Eligibility is computed from the scorekeeper&apos;s
-              attendance roll call across completed games; overrule any player from their team page
-              (a written note is required).
-            </p>
-          </div>
-          <div>
-            <p className="text-ink-700 mb-1.5 text-[15px] font-bold">Games guaranteed</p>
-            <span className="border-ink-200 flex w-[92px] items-center justify-center rounded-xl border bg-white py-2 text-[22px] font-extrabold tabular-nums">
-              10
+            ))}
+            <span
+              data-demo-target="rules-chip"
+              className={cn(
+                "flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold",
+                rulesOk
+                  ? "border-court-200 bg-court-50 text-court-700"
+                  : "border-amber-200 bg-amber-50 text-amber-700"
+              )}
+            >
+              <span>{rulesOk ? "✓" : "!"}</span>
+              Rules
+              <span className="font-normal">
+                · {rulesOk ? "Tiebreakers set" : "Tiebreakers needed before finalizing"}
+              </span>
             </span>
-            <p className="text-ink-500 mt-2 text-[14px] font-medium leading-snug">
-              What every club was sold, and what the schedule kept.
-            </p>
           </div>
+
+          <section>
+            <div className="mb-2 flex items-center gap-2">
+              <h2 className="font-condensed text-ink-950 text-lg font-bold uppercase tracking-wide">
+                <span className="text-ink-300 mr-1.5">6.</span>
+                Rules
+              </h2>
+              {rulesOk ? (
+                <span className="text-court-600 text-sm font-bold">✓</span>
+              ) : (
+                <span className="bg-amber-100 text-amber-700 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase">
+                  needs attention
+                </span>
+              )}
+            </div>
+
+            <div className="space-y-4">
+              <div className={PANEL}>
+                <PanelHeader title="Playoffs" />
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                  <div>
+                    <p className="text-ink-700 mb-1 text-xs font-medium">Playoff format</p>
+                    <div className="flex flex-wrap gap-2">
+                      {["None / TBD", "Single Elimination"].map((f, i) => (
+                        <span
+                          key={f}
+                          className={cn(
+                            "inline-flex min-h-[44px] items-center rounded-full border px-4 py-2 text-sm font-semibold",
+                            i === 1
+                              ? "border-play-600 bg-play-600 text-white shadow-sm"
+                              : "border-ink-200 text-ink-700 bg-white"
+                          )}
+                        >
+                          {f}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                  <div>
+                    <p className="text-ink-700 mb-1 text-xs font-medium">
+                      Teams advancing to playoffs
+                    </p>
+                    <span className="border-ink-200 text-ink-900 block rounded-xl border px-2 py-1.5 text-sm">
+                      42
+                    </span>
+                  </div>
+                  <div data-demo-target="min-games">
+                    <p className="text-ink-700 mb-1 text-xs font-medium">
+                      Minimum games played to be playoff-eligible
+                    </p>
+                    <div className="flex items-center gap-2">
+                      <span className="border-ink-200 text-ink-900 w-24 rounded-xl border px-2 py-1.5 text-sm">
+                        {MIN_GAMES}
+                      </span>
+                      <span className="bg-play-600 rounded-lg px-3 py-1.5 text-sm font-semibold text-white">
+                        Save
+                      </span>
+                    </div>
+                    <p className="text-ink-400 mt-1 text-[10px]">
+                      Leave empty for no rule. Eligibility is computed from the scorekeeper&apos;s
+                      attendance roll call across completed games; overrule any player from their
+                      team page (a written note is required).
+                    </p>
+                  </div>
+                </div>
+                <p className="text-ink-500 mt-3 text-xs">
+                  Brackets are generated on the Playoffs tab once the season is underway.
+                </p>
+              </div>
+
+              <div className="border-ink-100 shadow-soft mt-4 rounded-2xl border bg-white p-4">
+                <h3 className="text-ink-900 text-sm font-bold uppercase tracking-wide">
+                  Game-day policies
+                </h3>
+                <label className="text-ink-700 mt-2 flex items-start gap-2 text-sm">
+                  <span className="border-ink-300 mt-0.5 flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-sm border bg-white text-[9px] font-black text-play-700">
+                    ✓
+                  </span>
+                  <span>
+                    Allow guest players
+                    <span className="text-ink-400 block text-xs">
+                      A scorekeeper can add a pickup player (name and jersey only) to a single game
+                      when a team is short. Guests are labeled &quot;(Guest)&quot; in the box score,
+                      never count in official season stats or leaderboards, and never join a roster.
+                    </span>
+                  </span>
+                </label>
+              </div>
+
+              <TiebreakersPanel shown={shown} />
+            </div>
+          </section>
         </div>
-      </Panel>
-    </Shell>
+      </Pane>
+    </Console>
   )
 }
+
+/** `manage/components/tiebreakers-tab.tsx`, verbatim. */
+function TiebreakersPanel({ shown }: { shown: number }) {
+  return (
+    <div className={PANEL}>
+      <PanelHeader className="mb-1" title="Tiebreaker order" />
+      <p className="text-ink-500 mb-4 text-xs">
+        Used to rank teams with identical records. Applied top-to-bottom until one team wins the
+        tiebreaker.
+      </p>
+
+      {shown > 0 ? (
+        <ol data-demo-target="tb-list" className="space-y-2">
+          {TIEBREAKERS.slice(0, shown).map((t, i) => (
+            <li
+              key={t}
+              className="border-court-100 bg-court-50 live-row-in flex items-center justify-between gap-3 rounded-xl border px-3 py-2 text-sm transition-colors"
+              style={{ animationDelay: `${Math.min(i * 70, 350)}ms` }}
+            >
+              <span className="text-ink-900">
+                <span className="text-ink-400 mr-2 font-mono text-xs">{i + 1}.</span>
+                {t}
+              </span>
+              <div className="flex items-center gap-2">
+                <span className="text-ink-500 text-xs">↑</span>
+                <span className="text-ink-500 text-xs">↓</span>
+                <span className="text-xs text-red-500">Remove</span>
+              </div>
+            </li>
+          ))}
+        </ol>
+      ) : (
+        <p data-demo-target="tb-empty" className="text-ink-500 text-sm">
+          No tiebreakers configured.
+        </p>
+      )}
+
+      <div className="border-ink-200 mt-4 border-t pt-4">
+        <p className="text-ink-600 mb-2 text-xs font-medium">Add a tiebreaker</p>
+        <div className="flex flex-wrap gap-2">
+          {TIEBREAKERS.slice(shown).map((t, i) => (
+            <span
+              key={t}
+              data-demo-target={i === 0 ? `tb-add-${shown + 1}` : undefined}
+              className="border-ink-200 text-ink-700 rounded-full border px-3 py-1 text-xs data-[demo-press=true]:border-play-300 data-[demo-press=true]:text-play-700"
+            >
+              + {t}
+            </span>
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+/* ── The team page (`teams/[submissionId]/page.tsx`) ─────────────────────── */
+
+const SUB_PANEL = "border-ink-100 shadow-soft rounded-2xl border bg-white p-4"
+const SUB_H2 = "text-ink-900 mb-2 text-sm font-bold uppercase tracking-wide"
 
 function RosterScreen({
   override,
@@ -1311,69 +1643,295 @@ function RosterScreen({
   note: ReactNode
 }) {
   return (
-    <Shell tab="Teams">
-      <Panel title="MBA" meta={`${DIVISION} · roster submitted, frozen on submission`}>
-        <div className="px-3 py-2">
-          <table className="w-full table-fixed">
-            <thead>
-              <tr className="bg-ink-50">
-                <Th className="w-[48px]">#</Th>
-                <Th>Player</Th>
-                <Th className="w-[64px]">Age</Th>
-                <Th className="w-[110px]">Position</Th>
-                <Th className="w-[62px] text-right" id="gp-col">
-                  GP
-                </Th>
-                <Th className="w-[300px]">Playoffs</Th>
-              </tr>
-            </thead>
-            <tbody>
-              {ROSTER.map((p) => {
-                const short = p.gp < MIN_GAMES
-                const overridden = p.id === "row-short" && ruled
-                const eligible = !short || overridden
-                return (
-                  <tr
-                    key={p.name}
-                    data-demo-target={p.id}
+    <div className="mx-auto flex h-full w-full min-h-0 max-w-5xl flex-col gap-3 p-5">
+      <div className="shrink-0">
+        <p className="text-ink-500 text-sm font-medium">
+          &larr; {LEAGUE} · {SEASON}
+        </p>
+        <div className="mt-1 flex flex-wrap items-center gap-2">
+          <h1 className="text-ink-900 text-2xl font-bold">MBA</h1>
+          <Badge tone="court">approved</Badge>
+          <Badge tone="court">paid</Badge>
+        </div>
+        <p className="text-ink-500 mt-1 text-sm">
+          MBA · {DIVISION} · <span className="text-play-600">public page &rarr;</span>
+        </p>
+      </div>
+
+      <div className={cn(SUB_PANEL, "min-h-0 flex-1")}>
+        <h2 className={cn(SUB_H2, "mb-1")}>Roster ({ROSTER.length})</h2>
+        <p className="text-ink-500 mb-3 text-xs">
+          No roster submitted yet · showing the club&apos;s current roster.
+        </p>
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="text-ink-400 border-ink-100 border-b text-left text-xs uppercase">
+              <th className="py-1.5 pr-2">#</th>
+              <th className="py-1.5 pr-2">Player</th>
+              <th className="py-1.5 pr-2">Age</th>
+              <th className="py-1.5 pr-2">Position</th>
+              <th data-demo-target="gp-col" className="py-1.5 pr-2">
+                GP
+              </th>
+              <th className="py-1.5 pr-2">Playoffs</th>
+            </tr>
+          </thead>
+          <tbody>
+            {ROSTER.map((p) => {
+              const short = p.gp < MIN_GAMES
+              const overridden = p.id === "row-short" && ruled
+              const eligible = !short || overridden
+              return (
+                <tr
+                  key={p.name}
+                  data-demo-target={p.id}
+                  className="border-ink-50 border-b last:border-0"
+                >
+                  <td className="text-ink-500 py-1.5 pr-2">{p.number}</td>
+                  <td className="text-ink-900 py-1.5 pr-2 font-medium">{p.name}</td>
+                  <td className="text-ink-500 py-1.5 pr-2">{p.age}</td>
+                  <td className="text-ink-500 py-1.5 pr-2">{p.position}</td>
+                  <td className="text-ink-700 py-1.5 pr-2 font-medium">{p.gp}</td>
+                  <td className="py-1.5 pr-2">
+                    <span className="relative inline-flex items-center gap-1">
+                      <span
+                        data-demo-target={p.id === "row-short" ? "row-short-badge" : undefined}
+                        key={String(eligible)}
+                        className={cn(
+                          "inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold uppercase tracking-[0.12em] ring-1 ring-inset",
+                          eligible ? BADGE_TONES.court : BADGE_TONES.danger,
+                          overridden && "live-pop"
+                        )}
+                      >
+                        {eligible ? "eligible" : "not eligible"}
+                        {overridden ? " *" : ""}
+                      </span>
+                      {p.id === "row-short" && override && (
+                        <RulingPopover note={note} />
+                      )}
+                    </span>
+                  </td>
+                </tr>
+              )
+            })}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  )
+}
+
+/** `eligibility-action.tsx`: the w-72 popover under the badge, verbatim. */
+function RulingPopover({ note }: { note: ReactNode }) {
+  return (
+    <div className="border-ink-200 live-pop absolute left-0 top-7 z-40 w-72 rounded-xl border bg-white p-3 shadow-lg">
+      <p className="text-ink-900 text-xs font-bold">{SHORT_PLAYER.name}</p>
+      <p className="text-ink-500 mt-0.5 text-xs">
+        {SHORT_PLAYER.gp} of {MIN_GAMES} required games
+      </p>
+      <span
+        data-demo-target="ruling-note"
+        className="border-ink-200 mt-2 flex min-h-[30px] w-full items-center rounded-lg border px-2 py-1.5 text-xs"
+      >
+        {note}
+      </span>
+      <div className="mt-2 flex flex-wrap gap-1.5">
+        <span
+          data-demo-target="rule-eligible"
+          className="bg-court-600 rounded-lg px-2.5 py-1 text-xs font-semibold text-white data-[demo-press=true]:brightness-95"
+        >
+          Rule eligible
+        </span>
+        <span className="bg-hoop-600 rounded-lg px-2.5 py-1 text-xs font-semibold text-white">
+          Rule ineligible
+        </span>
+        <span className="text-ink-400 px-1 py-1 text-xs">Close</span>
+      </div>
+    </div>
+  )
+}
+
+/* ── Playoffs (`manage/components/playoffs-tab.tsx`) ─────────────────────── */
+
+function PlayoffsScreen({
+  planned,
+  view,
+  scroll,
+  treeX,
+}: {
+  planned: boolean
+  view: string
+  scroll: number
+  treeX: number
+}) {
+  const championship = sectionByKey("championship")
+  const third = sectionByKey("third")
+  const consolation = sectionByKey("consolation")
+  return (
+    <Console tab="Playoffs">
+      <Pane offset={scroll}>
+        <div className={cn(PANEL, "pb-8")}>
+          <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+            <PanelHeader title="Playoff plan" />
+            <Button id="plan-playoffs">Plan the playoffs</Button>
+          </div>
+          <p className="text-ink-500 -mt-2 mb-3 text-xs">
+            The whole playoff schedule is planned now; team names fill in automatically as the
+            regular season finishes.
+          </p>
+
+          <div
+            data-demo-target="pooling"
+            className="border-ink-100 bg-ink-50/50 mb-3 space-y-2 rounded-xl border p-3"
+          >
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <p className="text-ink-700 text-xs">
+                <span className="text-ink-900 font-semibold">{GRADE}</span> runs as 4 divisions; its
+                playoffs are
+              </p>
+              <div className="border-ink-200 inline-flex overflow-hidden rounded-lg border text-xs">
+                <span className="bg-play-600 px-2.5 py-1 font-semibold text-white">
+                  one championship
+                </span>
+                <span className="text-ink-600 bg-white px-2.5 py-1 font-semibold">
+                  a bracket per division
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <div className="border-ink-100 rounded-xl border p-3">
+              <div className="flex flex-wrap items-start justify-between gap-2">
+                <div>
+                  <p className="text-ink-900 text-sm font-semibold">{GRADE}</p>
+                  <p data-demo-target="in-sentence" className="text-ink-700 mt-0.5 text-xs">
+                    All {PLAYOFF_TEAMS} teams make the playoffs. Everyone plays at least 2 games;
+                    champion crowned Sunday.
+                  </p>
+                  <p className="text-ink-500 mt-0.5 text-xs">
+                    The top {PLAYOFF_BYES} teams skip round 1.
+                  </p>
+                  <p data-demo-target="fit-line" className="text-court-700 mt-0.5 text-xs font-semibold">
+                    ✓ {PLAYOFF_FIT}
+                  </p>
+                </div>
+                <span className="text-play-600 text-xs font-semibold">Change</span>
+              </div>
+            </div>
+          </div>
+
+          {planned ? (
+            <>
+              <p data-demo-target="plan-msg" className="text-court-700 mt-3 text-xs font-semibold">
+                {PLAYOFF_GAMES} playoff games planned. {PLAYOFF_PLACEHOLDERS} show placeholders
+                until the regular season decides the teams.
+              </p>
+              <div className="border-ink-100 mt-4 flex flex-wrap gap-1 border-b pb-2">
+                <span className="bg-play-600 rounded-lg px-3 py-1.5 text-xs font-bold text-white">
+                  {GRADE}
+                </span>
+              </div>
+              <div className="mt-3 flex flex-wrap items-center gap-3">
+                <div className="border-ink-100 inline-flex overflow-hidden rounded-lg border text-xs">
+                  <span
                     className={cn(
-                      "border-ink-100 border-t bg-white transition-colors duration-300 motion-reduce:transition-none",
-                      "data-[demo-hover=true]:bg-play-50/60 data-[demo-press=true]:bg-play-50"
+                      "px-3 py-1 font-semibold",
+                      view === "bracket" ? "bg-play-600 text-white" : "text-ink-600 bg-white"
                     )}
                   >
-                    <td className="text-ink-500 px-3 py-1 text-[14px] font-bold tabular-nums">
-                      {p.number}
-                    </td>
-                    <td className="text-ink-900 px-3 py-1 text-[15px] font-semibold">{p.name}</td>
-                    <td className="text-ink-500 px-3 py-1 text-[14px] font-medium">{p.age}</td>
-                    <td className="text-ink-500 px-3 py-1 text-[14px] font-medium">{p.position}</td>
-                    <td
-                      className={cn(
-                        "px-3 py-1 text-right text-[15px] font-bold tabular-nums",
-                        short ? "text-hoop-600" : "text-ink-900"
-                      )}
-                    >
-                      {p.gp}
-                    </td>
-                    <td className="px-3 py-1">
-                      <span className="flex items-center gap-2">
-                        <span
-                          key={String(eligible)}
-                          className={cn(
-                            "rounded-full px-2.5 py-0.5 text-[14px] font-bold",
-                            eligible ? "bg-court-50 text-court-700" : "bg-hoop-50 text-hoop-700",
-                            overridden && "live-pop"
-                          )}
-                        >
-                          {eligible ? "eligible" : "not eligible"}
-                          {overridden ? " *" : ""}
-                        </span>
-                        <span className="text-ink-500 truncate text-[14px] font-medium">
-                          {overridden
-                            ? `league ruling: ${RULING_NOTE}`
-                            : `${p.gp} of ${MIN_GAMES} required games`}
-                        </span>
-                      </span>
+                    Bracket
+                  </span>
+                  <span
+                    data-demo-target="view-schedule"
+                    className={cn(
+                      "px-3 py-1 font-semibold",
+                      view === "schedule" ? "bg-play-600 text-white" : "text-ink-600 bg-white"
+                    )}
+                  >
+                    Schedule
+                  </span>
+                </div>
+              </div>
+
+              {view === "schedule" ? (
+                <PlanSchedule />
+              ) : (
+                <div className="mt-3">
+                  <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+                    <p className="text-ink-900 text-xs font-bold uppercase tracking-[0.14em]">
+                      {GRADE}
+                    </p>
+                    <BracketLegend />
+                  </div>
+                  {/* The product's own board: `components/bracket`, imported
+                      rather than copied, so the tree, the elbows, the dashed
+                      ghosts and the champion node are the real ones. */}
+                  <div className="min-w-0 space-y-5">
+                    {championship && (
+                      <BracketScroll x={treeX}>
+                        <div data-demo-target="tree">
+                          <BracketTree section={championship} />
+                        </div>
+                      </BracketScroll>
+                    )}
+                    {third && (
+                      <div data-demo-target="third">
+                        <BracketTree section={third} />
+                      </div>
+                    )}
+                    {consolation && (
+                      <div data-demo-target="consolation">
+                        <BracketTree section={consolation} />
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </>
+          ) : null}
+          {/* Before a plan exists the tab shows exactly this and no more: the
+              grade cards, and nothing where the board will be. */}
+        </div>
+      </Pane>
+    </Console>
+  )
+}
+
+/**
+ * The bracket's own scroller is inside `BracketTree` (overflow-x-auto), which
+ * is exactly how an operator reaches the later rounds. The demo drives that
+ * same scroller rather than shrinking the tree to fit.
+ */
+function BracketScroll({ x, children }: { x: number; children: ReactNode }) {
+  const box = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    const region = box.current?.querySelector<HTMLElement>('[role="region"]')
+    region?.scrollTo({ left: x, behavior: "smooth" })
+  }, [x])
+  return <div ref={box}>{children}</div>
+}
+
+/** The tab's Schedule view: one block per weekend, one table per day. */
+function PlanSchedule() {
+  return (
+    <div data-demo-target="sched-list" className="mt-4 space-y-4">
+      <p className="text-ink-900 mb-1 text-xs font-bold uppercase tracking-wide">
+        {PLAYOFF_WEEKEND}
+      </p>
+      {PLAN_DAYS.map((d) => (
+        <div key={d.day} className="mb-2">
+          <p className="text-ink-500 mb-1 text-[11px] font-semibold">{d.day}</p>
+          <table className="w-full text-xs">
+            <tbody>
+              {d.games.map((g, i) => {
+                const [home, away] = g.teams.split("||")
+                return (
+                  <tr key={`${g.at}-${i}`} className="border-ink-50 border-b">
+                    <td className="text-ink-500 whitespace-nowrap py-1 pr-2">{g.at}</td>
+                    <td className="text-ink-500 py-1 pr-2">{g.round}</td>
+                    <td className={cn("py-1", g.resolved ? "text-ink-900 font-semibold" : "text-ink-400")}>
+                      {home} <span className="text-ink-300 font-normal">vs</span> {away}
                     </td>
                   </tr>
                 )
@@ -1381,629 +1939,113 @@ function RosterScreen({
             </tbody>
           </table>
         </div>
-      </Panel>
-
-      {override && !ruled && (
-        <div className="absolute inset-0 z-30 flex items-center justify-center bg-[#0b1628]/35 px-10">
-          <div className="border-ink-200 live-pop w-full max-w-[520px] rounded-3xl border bg-white p-5 shadow-[0_50px_120px_-40px_rgba(15,23,42,0.65)]">
-            <div className="flex items-center gap-3">
-              <p className="text-ink-900 text-[18px] font-bold">{SHORT_PLAYER.name}</p>
-              <span className="bg-hoop-50 text-hoop-700 ml-auto rounded-full px-2.5 py-0.5 text-[14px] font-bold">
-                not eligible
-              </span>
-            </div>
-            <p className="text-ink-500 mt-1 text-[15px] font-semibold">
-              {SHORT_PLAYER.gp} of {MIN_GAMES} required games
-            </p>
-            <span
-              data-demo-target="ruling-note"
-              className="border-ink-200 mt-3 flex min-h-[42px] items-center rounded-xl border bg-white px-3 py-2 text-[15px]"
-            >
-              {note}
-            </span>
-            <div className="mt-3 flex items-center gap-2">
-              <Btn id="rule-eligible" tone="court" size="sm">
-                Rule eligible
-              </Btn>
-              <span className="bg-hoop-600 inline-flex items-center rounded-xl px-3.5 py-1.5 text-[14px] font-bold text-white">
-                Rule ineligible
-              </span>
-              <span className="text-ink-400 ml-auto text-[14px] font-semibold">Close</span>
-            </div>
-          </div>
-        </div>
-      )}
-    </Shell>
-  )
-}
-
-/* ── Playoffs ────────────────────────────────────────────────────────────── */
-
-/**
- * The Playoffs tab, in the two states a 1160 by 600 region can hold honestly.
- *
- * The real tab stacks the config cards ABOVE a bracket that is 47 games wide,
- * so the whole thing is a scrolling page. A scene is a focused region of a
- * page, so the plan beats show the top of it (pooling, the grade card, the fit
- * line, the round strip) and the bracket beats show the board with a one line
- * reminder of what was just configured. Shrinking both into one frame is the
- * shrink this presentation exists to ban.
- */
-function PlayoffsScreen({ planned, view }: { planned: boolean; view: string }) {
-  const board = view === "tree" || view === "extra"
-  return (
-    <Shell tab="Playoffs">
-      <div className="flex items-center gap-3">
-        <div className="min-w-0">
-          <p className="font-display text-ink-900 text-[19px] font-extrabold uppercase tracking-[0.02em]">
-            Playoff plan
-          </p>
-          <p className="text-ink-500 text-[14px] font-medium">
-            The whole playoff schedule is planned now; team names fill in automatically as the
-            regular season finishes.
-          </p>
-        </div>
-        <span className="ml-auto shrink-0">
-          <Btn id="plan-playoffs" tone="court" size="sm">
-            {planned ? "Re-plan the playoffs" : "Plan the playoffs"}
-          </Btn>
-        </span>
-      </div>
-
-      {board ? (
-        <>
-          <p className="border-ink-200 mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 rounded-xl border bg-white px-3.5 py-1.5 text-[14px] font-semibold">
-            <span className="text-ink-900">{GRADE}</span>
-            <span className="text-ink-600">{PLAYOFF_TEAMS} teams, one championship</span>
-            <span className="text-ink-600">{PLAYOFF_GAMES} games</span>
-            <span className="text-ink-600">everyone plays at least 2</span>
-            <span className="text-court-700 ml-auto">{PLAYOFF_WEEKEND}</span>
-          </p>
-          {view === "extra" ? <ExtraBoard /> : <TreeBoard />}
-        </>
-      ) : (
-        <>
-          <div
-            data-demo-target="pooling"
-            className="border-ink-200 bg-ink-50/60 mt-2.5 flex flex-wrap items-center justify-between gap-2 rounded-xl border px-3.5 py-2"
-          >
-            <p className="text-ink-700 text-[15px] font-medium">
-              <span className="text-ink-900 font-bold">{GRADE}</span> runs as 4 divisions; its
-              playoffs are
-            </p>
-            <span className="border-ink-200 flex overflow-hidden rounded-lg border text-[14px] font-bold">
-              <span className="bg-play-600 px-2.5 py-1 text-white">one championship</span>
-              <span className="text-ink-600 bg-white px-2.5 py-1">a bracket per division</span>
-            </span>
-          </div>
-
-          <div className="border-ink-200 mt-2 rounded-xl border bg-white px-3.5 py-2.5">
-            <p data-demo-target="in-sentence" className="text-ink-900 text-[15px] font-semibold">
-              All {PLAYOFF_TEAMS} teams make the playoffs. Everyone plays at least 2 games; champion
-              crowned Sunday.
-            </p>
-            <p className="text-ink-500 mt-0.5 text-[14px] font-medium">
-              The top {PLAYOFF_BYES} teams skip round 1.
-            </p>
-            <p data-demo-target="fit-line" className="text-court-700 mt-0.5 text-[14px] font-bold">
-              ✓ {PLAYOFF_FIT}
-            </p>
-          </div>
-
-          {planned ? (
-            <div className="mt-2.5 space-y-2.5">
-              <RoundStrip />
-              <p className="text-ink-500 text-[14px] font-medium">
-                Every one of those games has a time, a gym and a court on the booked weekend, and
-                the names fill in as the rounds decide them.
-              </p>
-            </div>
-          ) : (
-            <div className="border-ink-300 mt-2.5 rounded-2xl border border-dashed bg-white px-6 py-8 text-center">
-              <p className="font-display text-ink-900 text-[19px] font-extrabold uppercase tracking-wide">
-                No playoff games yet
-              </p>
-              <p className="text-ink-500 mx-auto mt-1.5 max-w-[620px] text-[15px] font-medium leading-snug">
-                Playoffs are planned once the season is underway. The plan takes your divisions and
-                the final standings, and you pick who qualifies, how many games everyone is
-                guaranteed, and how brackets pool.
-              </p>
-            </div>
-          )}
-        </>
-      )}
-    </Shell>
-  )
-}
-
-function RoundStrip() {
-  return (
-    <div
-      data-demo-target="round-strip"
-      className="border-ink-200 flex flex-wrap items-center gap-1.5 rounded-xl border bg-white px-3 py-2"
-    >
-      <span className="text-ink-900 mr-1 text-[15px] font-bold">
-        {PLAYOFF_GAMES} games
-      </span>
-      {ROUNDS.map((r) => (
-        <span
-          key={r.label}
-          className={cn(
-            "inline-flex items-center gap-1.5 rounded-lg border px-2 py-0.5 text-[14px] font-semibold",
-            r.label === "Consolation"
-              ? "border-play-200 bg-play-50 text-play-700"
-              : "border-ink-200 text-ink-700 bg-white"
-          )}
-        >
-          {r.label}
-          <span className="text-ink-400 font-bold tabular-nums">{r.games}</span>
-        </span>
       ))}
     </div>
   )
 }
 
-/* ── The tree ────────────────────────────────────────────────────────────── */
+/* ── The public league page (`(public)/league/[id]/page.tsx`) ────────────── */
 
-/**
- * The bracket geometry, mirrored from `components/bracket/bracket-tree.tsx` and
- * re-scaled so nothing is under 14px:
- *   · every slot is one row unit, and a slot fed by an in-region game inherits
- *     that game's span;
- *   · a game's centre is the middle of its two slots, so the tree
- *     converges toward the final instead of stacking at the top;
- *   · connectors are SVG elbows in neutral grey on integer pixels.
- */
-/* Sized so the whole region (3 columns, the champion node, the section padding
-   and the shell gutters) lands inside 1160 with room to spare, and so the tree
-   plus its heads and legend land inside 600. Nothing here is under 14px. */
-const S = { boxW: 240, gap: 48, row: 56, cardH: 94, teamH: 29, metaH: 20, seedW: 26 }
-const CHAMP_W = 190
-const LINE = "#d9d9df"
-
-function layout(matches: TreeMatch[]) {
-  const byId = new Map(matches.map((m) => [m.id, m]))
-  const feeder = (slot: TreeSlot, of: TreeMatch): TreeMatch | null => {
-    if (!slot.from) return null
-    const f = byId.get(slot.from)
-    if (!f || f.tier >= of.tier) return null
-    return f
-  }
-  const spanOf = (m: TreeMatch): number => {
-    const h = feeder(m.home, m)
-    const a = feeder(m.away, m)
-    return (h ? spanOf(h) : 1) + (a ? spanOf(a) : 1)
-  }
-  const referenced = new Set<string>()
-  for (const m of matches) {
-    for (const slot of [m.home, m.away]) {
-      const f = feeder(slot, m)
-      if (f) referenced.add(f.id)
-    }
-  }
-  const roots = matches.filter((m) => !referenced.has(m.id)).sort((a, b) => b.tier - a.tier)
-  const center = new Map<string, number>()
-  const place = (m: TreeMatch, start: number) => {
-    const h = feeder(m.home, m)
-    const a = feeder(m.away, m)
-    const hs = h ? spanOf(h) : 1
-    const as = a ? spanOf(a) : 1
-    if (h) place(h, start)
-    if (a) place(a, start + hs)
-    center.set(m.id, start + (hs + as) / 2)
-  }
-  let cursor = 0
-  for (const r of roots) {
-    place(r, cursor)
-    cursor += spanOf(r)
-  }
-  const cols = [...new Set(matches.map((m) => m.tier))].sort((a, b) => a - b)
-  const colIndex = new Map(cols.map((t, i) => [t, i]))
-  return { center, cols, colIndex, totalSpan: Math.max(cursor, 2), feeder, root: roots[0] ?? null }
-}
-
-function TreeBoard() {
-  const l = layout(TREE)
-  const xOf = (m: TreeMatch) => (l.colIndex.get(m.tier) ?? 0) * (S.boxW + S.gap)
-  const midY = (m: TreeMatch) => Math.round((l.center.get(m.id) ?? 0) * S.row)
-  const width = (l.cols.length - 1) * (S.boxW + S.gap) + S.boxW + S.gap + CHAMP_W
-  const height = l.totalSpan * S.row
-
-  const edges: Array<{ key: string; d: string }> = []
-  for (const m of TREE) {
-    for (const [side, slot] of [
-      ["h", m.home],
-      ["a", m.away],
-    ] as const) {
-      const f = l.feeder(slot, m)
-      if (!f) continue
-      const x1 = xOf(f) + S.boxW
-      const y1 = midY(f)
-      const x2 = xOf(m)
-      const y2 = midY(m)
-      const mid = Math.round(x1 + (x2 - x1) / 2)
-      edges.push({
-        key: `${m.id}-${side}`,
-        d: y1 === y2 ? `M ${x1} ${y1} H ${x2}` : `M ${x1} ${y1} H ${mid} V ${y2} H ${x2}`,
-      })
-    }
-  }
-  if (l.root) {
-    edges.push({
-      key: "champ",
-      d: `M ${xOf(l.root) + S.boxW} ${midY(l.root)} H ${xOf(l.root) + S.boxW + S.gap}`,
-    })
-  }
-
+function PublicScreen({ scroll }: { scroll: number }) {
+  const leader = ROWS_RULED[0]
   return (
-    <section data-demo-target="tree" className="mt-2">
-      {/* The real tab puts the legend on the same line as the unit title. */}
-      <div className="flex flex-wrap items-end justify-between gap-x-6 gap-y-1">
-        <SectionHead
-          title="Championship bracket"
-          blurb="Winners move right. The final decides the banner."
-          count={`${PLAYOFF_GAMES - 5 - 1} games`}
-        />
-        <div className="mb-1.5">
-          <Legend />
-        </div>
-      </div>
-      <div className="border-ink-100 bg-ink-50/40 rounded-2xl border p-3">
-        <div style={{ width, minWidth: width }}>
-          <div className="mb-1.5 flex" style={{ gap: S.gap }}>
-            {l.cols.map((tier) => {
-              const column = TREE.filter((m) => m.tier === tier)
-              return (
-                <div key={tier} style={{ width: S.boxW }} className="shrink-0">
-                  <p className="text-ink-600 truncate text-[14px] font-bold uppercase tracking-[0.08em]">
-                    {column[0].round}
-                  </p>
+    <div className="bg-white">
+      <Pane offset={scroll}>
+        <div className="mx-auto w-full max-w-[820px] space-y-10 px-4 py-6 pb-16">
+          <section>
+            <SectionHeader title="Standings" accent="gold" className="mb-5" />
+            <div className="grid grid-cols-1 gap-6">
+              <div>
+                <h3 className="text-ink-950 mb-2 px-1 text-sm font-bold uppercase tracking-wide">
+                  {DIVISION}
+                </h3>
+                <div data-demo-target="public-table">
+                  <StandingsTable
+                    rows={ROWS_RULED.slice(0, 6).map((r, i) => ({
+                      rank: i + 1,
+                      name: r.team,
+                      wins: r.w,
+                      losses: r.l,
+                      pct: r.w / r.gp,
+                      gamesBack:
+                        i === 0
+                          ? "·"
+                          : ((leader.w - r.w + (r.l - leader.l)) / 2).toFixed(1).replace(/\.0$/, ""),
+                      streak: STREAKS[r.team],
+                    }))}
+                  />
                 </div>
-              )
-            })}
-            <div style={{ width: CHAMP_W }} className="shrink-0">
-              <p className="text-gold-600 truncate text-[14px] font-bold uppercase tracking-[0.08em]">
-                Champion
-              </p>
-            </div>
-          </div>
-
-          <div className="relative" style={{ height }}>
-            <svg
-              className="pointer-events-none absolute left-0 top-0"
-              width={width}
-              height={height}
-              viewBox={`0 0 ${width} ${height}`}
-              aria-hidden="true"
-              shapeRendering="crispEdges"
-            >
-              {edges.map((e) => (
-                <path key={e.key} d={e.d} fill="none" stroke={LINE} strokeWidth={1.5} />
-              ))}
-            </svg>
-            {TREE.map((m) => (
-              <MatchCard
-                key={m.id}
-                match={m}
-                gold={m.round === "Final"}
-                ghostId={m.id === "g39" ? "ghost-slot" : undefined}
-                style={{
-                  position: "absolute",
-                  left: xOf(m),
-                  top: midY(m) - S.cardH / 2,
-                  width: S.boxW,
-                }}
-              />
-            ))}
-            {l.root && (
-              <div
-                style={{
-                  position: "absolute",
-                  left: xOf(l.root) + S.boxW + S.gap,
-                  top: midY(l.root) - S.cardH / 2,
-                  width: CHAMP_W,
-                  height: S.cardH,
-                }}
-                className="border-gold-400 bg-gold-50 flex flex-col justify-center rounded-xl border px-3"
-              >
-                <p className="text-gold-600 text-[14px] font-bold uppercase tracking-[0.1em]">
-                  🏆 Champion
-                </p>
-                <p className="text-ink-500 mt-1 text-[14px] font-semibold">Decided by the final</p>
               </div>
-            )}
-          </div>
-        </div>
-      </div>
+            </div>
+          </section>
 
-    </section>
+          <section>
+            <SectionHeader
+              title="League news"
+              accent="hoop"
+              className="mb-5"
+              action={<span className="text-play-600 text-sm font-semibold">All news &rarr;</span>}
+            />
+            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+              <div data-demo-target="public-news">
+                <NewsCard
+                  title={RECAP_TITLE}
+                  excerpt={RECAP_BODY}
+                  dateLabel="Feb 7, 2027"
+                  author="Game recap"
+                />
+              </div>
+            </div>
+          </section>
+        </div>
+      </Pane>
+    </div>
   )
 }
 
-/**
- * What hangs off the tree: the bronze game, the consolation round the beaten
- * opening-round teams play the same day, and the opening round itself, which is
- * the only place in this region where real team names and seeds appear (the
- * seeds are known, so the plan resolved them).
- */
-function ExtraBoard() {
-  return (
-    <section className="mt-2 grid grid-cols-3 gap-4">
-      <div data-demo-target="third-card">
-        <SectionHead
-          title="Third place"
-          blurb="The two beaten semifinalists play for bronze."
-          count="1 game"
-        />
-        <MatchCard match={THIRD} />
-        <p className="text-ink-500 mt-2 text-[14px] font-medium leading-snug">
-          Scheduled at the same hour as the final, on the court beside it.
-        </p>
-      </div>
+/* ── The confirm, and the end card ───────────────────────────────────────── */
 
-      <div data-demo-target="consolation">
-        <SectionHead
-          title="Consolation bracket"
-          blurb="Everybody plays: teams knocked out early keep playing on their own tree."
-          count="5 games"
-        />
-        <div className="space-y-2">
-          {CONSOLATION.map((m) => (
-            <MatchCard key={m.id} match={m} />
-          ))}
-        </div>
-      </div>
-
-      <div>
-        <SectionHead
-          title="Opening round"
-          blurb="Seeds 23 to 42 open the weekend. The plan calls it the round of 64: 64 slots, 42 teams, 22 byes."
-          count="10 games"
-        />
-        <div className="space-y-2">
-          {OPENING.map((m) => (
-            <MatchCard key={m.id} match={m} />
-          ))}
-        </div>
-      </div>
-    </section>
-  )
-}
-
-function SectionHead({
+function ConfirmDialog({
+  open,
   title,
-  blurb,
-  count,
+  confirmId,
 }: {
+  open: boolean
   title: string
-  blurb: string
-  count: string
+  confirmId: string
 }) {
+  if (!open) return null
   return (
-    <div className="mb-1.5">
-      <div className="flex items-baseline gap-2">
-        <span aria-hidden="true" className="bg-play-500 inline-block h-3.5 w-1 rounded-full" />
-        <h3 className="text-ink-900 text-[15px] font-bold uppercase tracking-[0.1em]">{title}</h3>
-        <span className="text-ink-400 text-[14px] font-semibold">{count}</span>
-      </div>
-      <p className="text-ink-500 mt-0.5 text-[14px] font-medium">{blurb}</p>
-    </div>
-  )
-}
-
-function MatchCard({
-  match,
-  gold,
-  ghostId,
-  style,
-}: {
-  match: TreeMatch
-  gold?: boolean
-  ghostId?: string
-  style?: React.CSSProperties
-}) {
-  const resolved = !!match.home.team && !!match.away.team
-  return (
-    <div
-      style={{ height: S.cardH, ...style }}
-      className={cn(
-        "relative overflow-hidden rounded-xl border shadow-[0_2px_6px_-3px_rgba(15,23,42,0.35)]",
-        gold
-          ? "border-gold-400 bg-gold-50"
-          : resolved
-            ? "border-ink-200 bg-white"
-            : "border-ink-200/80 border-dashed bg-white/85"
-      )}
-    >
-      <span
-        aria-hidden="true"
-        className={cn(
-          "absolute inset-y-0 left-0 w-[3px]",
-          resolved ? "bg-play-400" : "bg-ink-200"
-        )}
-      />
-      <div className="flex h-full flex-col justify-center py-2 pl-3 pr-2">
-        <SlotLine slot={match.home} targetId={ghostId} />
-        <SlotLine slot={match.away} />
-        <p
-          className="text-ink-400 flex items-center gap-1.5 truncate text-[14px] font-semibold"
-          style={{ height: S.metaH, lineHeight: `${S.metaH}px` }}
-        >
-          <span className="text-ink-500">{match.code}</span>
-          <span className="text-ink-300">·</span>
-          <span className="truncate font-medium">{match.when}</span>
-        </p>
+    <div className="absolute inset-0 z-30 flex items-center justify-center bg-[#0b1628]/45 px-8">
+      <div className="live-pop w-full max-w-[520px] rounded-2xl bg-white p-5 shadow-[0_40px_90px_-40px_rgba(15,23,42,0.7)]">
+        <h4 className="text-ink-950 text-base font-semibold leading-snug">{title}</h4>
+        <div className="mt-4 flex justify-end gap-2">
+          <Button variant="subtle">Cancel</Button>
+          <Button id={confirmId} tone="court">
+            OK
+          </Button>
+        </div>
       </div>
     </div>
   )
 }
-
-function SlotLine({ slot, targetId }: { slot: TreeSlot; targetId?: string }) {
-  return (
-    <div className="flex items-center gap-1.5" style={{ height: S.teamH }}>
-      <span
-        style={{ width: S.seedW }}
-        className={cn(
-          "bg-ink-100 text-ink-600 shrink-0 rounded text-center text-[14px] font-bold leading-[20px]",
-          slot.seed == null && "opacity-0"
-        )}
-      >
-        {slot.seed ?? ""}
-      </span>
-      {slot.team ? (
-        <span className="text-ink-900 min-w-0 flex-1 truncate text-[15px] font-semibold">
-          {slot.team}
-        </span>
-      ) : (
-        <span className="min-w-0 flex-1">
-          <span
-            data-demo-target={targetId}
-            className="border-ink-300 text-ink-500 inline-block max-w-full truncate rounded-md border border-dashed px-2 text-[14px] font-bold uppercase leading-[22px] tracking-wide"
-          >
-            {slot.ghost ?? "To be decided"}
-          </span>
-        </span>
-      )}
-    </div>
-  )
-}
-
-function Legend() {
-  return (
-    <p className="text-ink-500 flex flex-wrap items-center gap-x-4 gap-y-1 text-[14px] font-medium">
-      <span className="flex items-center gap-1.5">
-        <span aria-hidden="true" className="border-ink-200 inline-block h-3 w-3 rounded-sm border bg-white" />
-        teams decided
-      </span>
-      <span className="flex items-center gap-1.5">
-        <span aria-hidden="true" className="border-ink-300 inline-block h-3 w-3 rounded-sm border border-dashed" />
-        waiting on an earlier result
-      </span>
-      <span className="flex items-center gap-1.5">
-        <span
-          aria-hidden="true"
-          className="bg-ink-100 text-ink-600 inline-block h-4 w-5 rounded text-center text-[14px] font-bold leading-[16px]"
-        >
-          1
-        </span>
-        seed
-      </span>
-    </p>
-  )
-}
-
-/* ── The public league page ──────────────────────────────────────────────── */
-
-function PublicScreen() {
-  return (
-    <div className="bg-ink-50/70 flex min-h-0 flex-1 flex-col gap-3 px-5 py-3.5">
-      <div className="grid grid-cols-[minmax(0,1fr)_420px] gap-3">
-        <section className="border-ink-200 overflow-hidden rounded-2xl border bg-white">
-          <div className="border-ink-100 flex items-baseline gap-2 border-b px-4 py-2.5">
-            <span aria-hidden="true" className="bg-gold-400 inline-block h-3.5 w-1 rounded-full" />
-            <h3 className="font-display text-ink-900 text-[17px] font-extrabold uppercase tracking-[0.02em]">
-              Standings
-            </h3>
-            <span className="text-ink-500 text-[14px] font-semibold">{DIVISION}</span>
-          </div>
-          <table className="w-full table-fixed">
-            <thead>
-              <tr className="bg-ink-50">
-                <Th>Team</Th>
-                <Th className="w-[46px] text-center">W</Th>
-                <Th className="w-[46px] text-center">L</Th>
-                <Th className="w-[64px] text-center">PCT</Th>
-                <Th className="w-[52px] text-center">GB</Th>
-                <Th className="w-[64px] text-center">STRK</Th>
-              </tr>
-            </thead>
-            <tbody>
-              {ROWS_RULED.slice(0, 6).map((r, i) => {
-                const leader = ROWS_RULED[0]
-                /* The page's own games-back arithmetic, and its own "—" for
-                   the leader, which the house copy rule turns into a middot. */
-                const gb = (leader.w - r.w + (r.l - leader.l)) / 2
-                return (
-                  <tr key={r.team} className="border-ink-100 border-t bg-white">
-                    <td className="text-ink-900 truncate px-3 py-1.5 text-[15px] font-semibold">
-                      {r.team}
-                    </td>
-                    <td className="text-ink-900 px-3 py-1.5 text-center text-[15px] font-bold tabular-nums">
-                      {r.w}
-                    </td>
-                    <td className="text-ink-600 px-3 py-1.5 text-center text-[15px] tabular-nums">
-                      {r.l}
-                    </td>
-                    <td className="text-ink-600 px-3 py-1.5 text-center text-[15px] tabular-nums">
-                      .{String(Math.round((r.w / r.gp) * 1000)).padStart(3, "0")}
-                    </td>
-                    <td className="text-ink-500 px-3 py-1.5 text-center text-[15px] tabular-nums">
-                      {i === 0 ? "·" : gb.toFixed(1).replace(/\.0$/, "")}
-                    </td>
-                    <td className="text-ink-500 px-3 py-1.5 text-center text-[14px] font-semibold">
-                      {STREAKS[r.team] ?? ""}
-                    </td>
-                  </tr>
-                )
-              })}
-            </tbody>
-          </table>
-        </section>
-
-        <section data-demo-target="public-news" className="min-w-0">
-          <div className="mb-1.5 flex items-baseline gap-2">
-            <span aria-hidden="true" className="bg-hoop-400 inline-block h-3.5 w-1 rounded-full" />
-            <h3 className="font-display text-ink-900 text-[17px] font-extrabold uppercase tracking-[0.02em]">
-              League news
-            </h3>
-            <span className="text-play-700 ml-auto text-[14px] font-bold">All news →</span>
-          </div>
-          <article className="border-ink-200 overflow-hidden rounded-2xl border bg-white">
-            <div className="bg-[#0b1628] px-4 py-5">
-              <p className="text-[14px] font-bold uppercase tracking-[0.14em] text-white/60">
-                {LEAGUE} · {SEASON}
-              </p>
-              <p className="font-display mt-1 text-[26px] font-extrabold leading-none text-white tabular-nums">
-                {DECIDER.home} {DECIDER.homeScore} <span className="text-white/40">·</span>{" "}
-                {DECIDER.awayScore} {DECIDER.away}
-              </p>
-            </div>
-            <div className="px-4 py-3">
-              <p className="text-ink-500 text-[14px] font-bold uppercase tracking-[0.06em]">
-                Game recap · Feb 7, 2027
-              </p>
-              <p className="text-ink-900 mt-1 text-[16px] font-bold leading-snug">{RECAP_TITLE}</p>
-              <p className="text-ink-600 mt-1 text-[14px] font-medium leading-snug">{RECAP_BODY}</p>
-            </div>
-          </article>
-        </section>
-      </div>
-      <p className="text-ink-500 text-[14px] font-medium">
-        Every club, every family and anybody with the link reads the same table, from the same
-        engine, with no login.
-      </p>
-    </div>
-  )
-}
-
-/* ── End card ────────────────────────────────────────────────────────────── */
 
 function EndCard() {
   return (
-    <div className="absolute inset-0 z-20 flex items-center justify-center bg-[#0b1628] px-12 text-white">
-      <div className="live-pop max-w-[780px] text-center">
+    <div className="absolute inset-0 z-40 flex items-center justify-center bg-[#0b1628] px-10 text-white">
+      <div className="live-pop max-w-[560px] text-center">
         <p className="text-gold-400 text-[15px] font-bold uppercase tracking-[0.18em]">
           A league chapter
         </p>
-        <h3 className="font-display mt-2 text-[34px] font-extrabold leading-tight">
+        <h3 className="font-display mt-2 text-[30px] font-extrabold leading-tight">
           Standings to playoffs
         </h3>
-        <p className="mt-3 text-[17px] leading-relaxed text-white/75">
+        <p className="mt-3 text-[15px] leading-relaxed text-white/75">
           A forfeit recorded as a forfeit, a final signed at the scorer&apos;s table, a table that
           recalculated itself twice, a rule that decided first place and said so on the row, and 42
           teams who all have a game on Saturday.
         </p>
-        <p className="mt-5 text-[15px] font-semibold text-white/50">Next: waivers, start to finish</p>
+        <p className="mt-4 text-[14px] font-semibold text-white/50">Next: waivers, start to finish</p>
       </div>
     </div>
   )

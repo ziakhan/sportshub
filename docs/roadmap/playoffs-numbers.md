@@ -61,7 +61,7 @@ only world in the database that has both: 725 completed games and a stored `play
 | 1 | `open`, `forfeit-table`, `settled`, `tie`, `reread`, `cluster` (the standings table) | `/manage/leagues/[id]/seasons/[seasonId]/manage?tab=standings` | `manage/components/standings-tab.tsx` + `GET /api/seasons/[id]/standings` + `lib/queries/standings.ts` |
 | 2 | `to-schedule`, `forfeit`, `forfeit-ok` (the game row and the forfeit) | same console, `?tab=schedule` | `manage/components/schedule-tab.tsx` lines 1112-1133, `PATCH /api/games/[id]` with `{status:"DEFAULTED", defaultedBy}` |
 | 3 | `review`, `sign`, `final` (the scorer's table) | `/games/[id]/score` | `components/scoring/scoring-console.tsx` (review header line 997, referee approval panel line 1067, `Mark final` line 1223) → `POST /api/games/[id]/finalize` |
-| 4 | `rules-tab`, `add-h2h`, `add-rest`, `lock` (tiebreakers) | same console, Settings › Rules › Tiebreakers | `manage/components/tiebreakers-tab.tsx` (its six options, its sentence, its up/down/Remove, its Locked badge) |
+| 4 | `tiebreakers`, `add-h2h`, `h2h`, `add-rest`, `locks` | same console, Settings › Rules › Tiebreakers | `manage/components/tiebreakers-tab.tsx` (its six options, its sentence, its up/down/Remove) inside `settings-tab.tsx`'s numbered section 6 |
 | 5 | `floor` (the eligibility floor) | same console, Settings › Rules › Playoffs | `manage/components/rules-settings.tsx` (`playoffMinGames` input + helper text) |
 | 6 | `roster`, `short`, `note`, `ruled` (games played and the ruling) | `/manage/leagues/[id]/seasons/[seasonId]/teams/[submissionId]` | `teams/[submissionId]/page.tsx` (roster table with the GP column) + `eligibility-action.tsx` + `POST /api/seasons/[id]/eligibility-overrides` |
 | 7 | `playoffs`, `everyone`, `fit`, `plan`, `rounds` (the plan cards) | same console, `?tab=playoffs` | `manage/components/playoffs-tab.tsx` + `GET/POST/PATCH /api/seasons/[id]/playoff-plan` |
@@ -412,6 +412,55 @@ beats. All four widths are now written as longhands. No visual change, and every
 gets a quiet console too.
 
 ---
+
+## Realism conversion, 2026-08-19 (mock-ui.tsx R1–R8)
+
+The 08-16 cut was drawn on `scene-kit.tsx`, a 14px-floor kit authored before R1. Every screen
+is now the REAL component's markup at the product's own type sizes, and two things the product
+does not have came out.
+
+**What is now the real component, not a copy of one.** The bracket is `@/components/bracket`
+itself: `sectionizeBracket` splits the region's seven plan games into the Championship, Third
+place and Consolation sections, and `BracketTree` draws them at its own ROOMY scale with its
+elbows, its dashed ghosts, its maple backdrop and its gold champion node. The public page
+renders the real `SectionHeader`, `StandingsTable` and `NewsCard`. Everything else copies the
+real file's classes with the file named in a comment: `manage/page.tsx` (shell),
+`standings-tab.tsx`, `schedule-tab.tsx` GamesTable, `scoring-console.tsx` (review AND its
+finalized screen), `settings-tab.tsx` + `rules-settings.tsx` + `game-day-policies.tsx` +
+`tiebreakers-tab.tsx`, `teams/[submissionId]/page.tsx` + `eligibility-action.tsx`, and
+`playoffs-tab.tsx` (both the Bracket and the Schedule view).
+
+**THE LOCK BEAT IS GONE, and this is a product truth worth keeping.** The 08-16 cut pressed a
+"Lock for the playoffs" button on the Tiebreakers tab. **That button does not exist.**
+`tiebreakersLockedAt` is written by `api/seasons/[id]/route.ts` when a season is moved to
+FINALIZED (line 360), the tab only ever RENDERS the lock as a Badge, and a PATCH of
+`tiebreakerOrder` after the lock is rejected with a 409. This world's season is IN_PROGRESS
+with `tiebreakersLockedAt` null (it was seeded straight into that status rather than walked
+through finalize), so ADDING tiebreakers is legal here and is what the demo does; the lock is
+now said in a balloon instead of mimed with a control the product does not ship.
+
+**Two other inventions removed**: the "round strip" of eight round chips (the Playoffs tab
+draws no such strip; the 47 games are stated in the result line, the bracket's column heads and
+the Schedule view), and the "Games guaranteed 10" card on the Rules panel (that panel has three
+fields: format, teams advancing, minimum games).
+
+**New composition rules, all browser-honest.** Long screens scroll inside the 600-logical pane
+instead of being squeezed (standings, settings, playoffs, public page), and the bracket is
+driven through `BracketTree`'s own `overflow-x-auto` scroller — the same sideways scroll an
+operator uses — rather than being re-scaled to fit. The games list is filmed at the window
+holding the division's last weekend; its count pill carries the real season total.
+
+| Gate | Result |
+|---|---|
+| `readability-audit.mjs --routes /demos/standings-to-playoffs --scope chrome` | **0 violations**, 43 beats / 47 scenes |
+| Beat-by-beat drive (`drive-demo-beats.mjs`) | 43 frames, every screen reviewed |
+| Runtime at 1x | **2 min 15 sec** (was 2 min 25 sec over 32 beats) |
+| Balloons | **16** (was 29) |
+| `tsc --noEmit` | clean |
+
+Stage-floor hits inside the console are expected now and are not a regression: R1 outranks the
+14px floor, so the standings tab's `text-[10px]` head and the bracket's `text-[10px]` codes are
+the product's own sizes. Only `--scope chrome` is gated.
 
 ## Sweep, 2026-08-16
 
