@@ -115,7 +115,7 @@ export function WaiversManager({
 
       {initialWaivers.length === 0 && !creating ? (
         <div className="rounded-xl border border-dashed border-ink-300 bg-ink-50/50 p-8 text-center text-sm text-ink-500">
-          No waivers yet. Start from a template — the risk acknowledgment and the
+          No waivers yet. Start from a template: the risk acknowledgment and the
           Rowan&apos;s Law concussion code cover most Ontario programs.
         </div>
       ) : null}

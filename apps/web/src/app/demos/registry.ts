@@ -450,7 +450,7 @@ export const DEMOS: DemoEntry[] = [
     promise:
       "The league's required waiver, a parent signing it on his phone in about a minute, and a compliance board that keeps its own score.",
     description:
-      "It opens on the one document this league requires: Ontario's concussion code under Rowan's Law, required, version one, and carrying the badge that says it has to be signed again every year. Nobody built a recipient list, because there is no recipient picker: approving a team emails every guardian on its roster, and the season's board counts signatures rather than emails sent. One team opens to show the families behind the number, and the four who have not signed are named rather than counted. Then the phone, at life size, where a waiver is actually signed: the email the league really sends, the document, his name, who he is to the player, a signature drawn with a finger, and an acknowledgment that names his daughter rather than agreeing to nothing in particular. Her cell on the league's board turns green while you watch, with his name in it. The last stretch is the sending: re-sending leaves the families who already have an unopened link alone, and the reminders go out on their own seven days before the season and again twenty four hours before, once each, guaranteed by a ledger row, with no list built by a human being.",
+      "It opens on a league with nothing to sign, and builds the document in front of you: three Ontario starters, the concussion code under Rowan's Law, the whole text read before anybody is asked to agree to it, and a row that comes out required, version one, and carrying the badge that says it has to be signed again every year. Nobody then builds a recipient list, because there is no recipient picker: approving a team emails every guardian on its roster, and the season's board counts signatures rather than emails sent. One team opens to show the families behind the number, and the four who have not signed are named rather than counted. Then the phone, at life size, where a waiver is actually signed: the email in his mail app, the link that opens the document in a browser with no account to make first, his name, who he is to the player, a signature drawn with a finger, and an acknowledgment that names his daughter rather than agreeing to nothing in particular. Her cell on the league's board turns green while you watch, with his name in it. The last stretch is the sending: re-sending leaves the families who already have an unopened link alone, and the reminders go out on their own seven days before the season and again twenty four hours before, once each, guaranteed by a ledger row, with no list built by a human being.",
     audiences: ["clubs", "parents", "leagues"],
     /* Everyone touches a waiver, but the league is the one that adds it and
        the one holding the compliance grid, so the card sits on their shelf. */
@@ -459,7 +459,7 @@ export const DEMOS: DemoEntry[] = [
     /* No volatile numbers in the bullets: the board's counts move with the
        seed, and a bullet that goes stale is a bullet that lies on the card. */
     bullets: [
-      "One required document, versioned, and renewing every year under Rowan's Law",
+      "The document built from Ontario's own template, versioned, renewing every year under Rowan's Law",
       "No recipient picker anywhere: approving a team emails every guardian on its roster",
       "The whole signing flow on a life size phone, from the email to the signature",
       "A cell turns green on the league's board, and the reminders run on a clock",
@@ -467,7 +467,7 @@ export const DEMOS: DemoEntry[] = [
     chapterTitles: ["One document", "A minute on a phone", "The board answers"],
     kind: "chapter",
     stage: "split",
-    durationLabel: "2 min 2 sec",
+    durationLabel: "1 min 42 sec",
     status: "live",
     thumbEyebrow: "Chapter 10",
   },

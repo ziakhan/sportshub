@@ -43,6 +43,12 @@ world would be legitimately empty and the demo would have nothing to show.
 
 ## A. This flow exists today: scene by scene
 
+> Beat numbers below describe the 2026-08-16 cut (23 beats). The 2026-08-19
+> realism conversion split every press from its landing, so the same flow now
+> runs as 37 beats; the flow-exists-at and code columns all still hold. The
+> current gate table is in the "Realism conversion, 2026-08-19" section at the
+> end of this file.
+
 | # | Beat | Flow exists today at | Code |
 |---|---|---|---|
 | 1 | `open`, the referee desk | `/manage/leagues/[id]/seasons/[seasonId]/manage?tab=referees` | `manage/components/referees-tab.tsx`, tab registered in `manage/page.tsx` line 360 |
@@ -311,3 +317,34 @@ confirmation is and is not".
 
 Gate re-run: readability audit **0 violations**, minimum stage scale **1.000**, 22 beats / 26
 scenes, one headless drive with a clean console. Runtime **1 min 45 sec**.
+
+---
+
+## Realism conversion, 2026-08-19
+
+The whole story now copies its shipping sources (mock-ui.tsx laws R1-R8):
+the console shell from `manage/page.tsx`, the full Referees tab filmed in its
+real scroll positions from `referees-tab.tsx` (one page, four panels — the two
+invented screens are gone), `brand-listbox.tsx` comboboxes whose option labels
+carry each referee's fee and that day's availability, `date-time-picker.tsx`
+shift fields, the shift inbox from `referee/requests/page.tsx` with its real
+accept confirmation and "Your booked shifts", `/referee` in both its empty and
+"Coming up (8)" states, the calendar agenda plus `add-to-phone.tsx`, and the
+bottom tab bar from `components/nav/bottom-tabs.tsx`. The scene-kit primitives
+and the invented "day just booked" summary band are deleted; that arithmetic
+lives only on the end card.
+
+OS chrome (R8): the offer push is an iOS banner carrying the notification
+route's exact copy (lines 172-176) with the approved app icon; the webcal
+hand-off ends in an OS calendar day view drawn as chrome.
+
+| Gate, this cut | Result |
+|---|---|
+| Beats | 37 (was 22), all 12 presses split press/land |
+| Callouts | 9 (was 21), invisible-consequence lines only |
+| Runtime | 1 min 41 sec (data-demo-runtime-ms 101180) |
+| tsc --noEmit | clean |
+| eslint (both changed files) | clean |
+| readability --scope chrome at 390x844 | 0 violations |
+| Full playback | 0 console or page errors |
+| Database writes | none |

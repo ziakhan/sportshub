@@ -2,99 +2,148 @@
 
 import type { ReactNode } from "react"
 import { cn } from "@/components/ui/cn"
-import { Btn, Chip, StatusChip } from "../scene-kit"
 import { TypeText } from "../motion"
 import type { DemoBeat, DemoScript } from "../types"
 
 /**
- * "Waivers, start to finish" (league shelf, audit section B: KEEP).
+ * "Waivers, start to finish" (league shelf), rebuilt to the REALISM STANDARD
+ * (mock-ui.tsx R1–R8) on 2026-08-19, over the gold-standard truth pass of
+ * 2026-08-16.
  *
- * Rebuilt 2026-08-16 to the gold standard set by `season-story.tsx` and
- * `schedule-change-story.tsx`, to the same three laws:
+ * WHAT SURVIVED, UNTOUCHED. The 08-16 pass anchored this story to real waiver
+ * data and wrote every number down in `docs/roadmap/waivers-numbers.md`. None
+ * of that is disturbed: the league, the season, the document, the 22 approved
+ * teams, the 220 rostered players, the 27 signatures, the 12 live links and
+ * the 180 the re-send would really mail are the same rows, and the one
+ * signature this demo performs is still the one signature this world is
+ * actually waiting for. What changed is FIDELITY: every screen below is now
+ * the real component's markup, and every flow runs to its real end state.
  *
- *   1. PRESENTATION (audit D2). The league board is a focused working REGION
- *      composed at 1160 logical and rendered at scale 1.0: no browser chrome,
- *      no site header, one slim context strip. The parent's signing page is a
- *      LIFE SIZE handset, 390 logical at 1.0, because that is where a waiver
- *      is really signed. Nothing here is authored under 14px, and
- *      `scripts/demo/readability-audit.mjs` is the gate.
- *   2. PACING. Stop, explain, act. Every dwell is computed from the balloon's
- *      own word count, and a beat that carries a balloon silences the caption
- *      bar so the viewer is never read to twice.
- *   3. EVERY NUMBER DERIVED. The league, the season, the waiver, the 22
- *      approved teams, the 220 roster spots, the 27 signatures, the 13 live
- *      links and the 180 the re-send would actually mail are all read out of
- *      the local database, and every one of them is written down with its
- *      source in `docs/roadmap/waivers-numbers.md`.
+ * WHAT THE 08-16 CUT STILL GOT WRONG, AND IS FIXED HERE:
+ *   · the two league screens were drawn as bare regions with no page around
+ *     them. Both are real pages with a SmartBack, an h1 and a lead sentence,
+ *     and the lead sentences are the two that explain the whole feature;
+ *   · the library invented a panel called "The text every family signs". The
+ *     product never shows a body there. The document's text is now shown where
+ *     the product really shows it, in the create panel's own preview, which
+ *     also means the story can film the document being MADE;
+ *   · the board drew 22 teams as a two column grid under an invented
+ *     "3 of 22 teams" chip, and stacked the parent email beside the player
+ *     name. The real board is one vertical column and the email sits UNDER the
+ *     name. It is one column here now, all 22 of them, and the pane scrolls to
+ *     the team the story opens, the way a browser does;
+ *   · "Only missing" was pressed and claimed to filter the board. Not one of
+ *     the 22 teams is complete in this world, so the real filter removes
+ *     nothing. The beat is gone rather than dressed up;
+ *   · everything was authored to the scene kit's 14px floor. R1 outranks that
+ *     floor: these screens are the product's own `text-sm` / `text-xs`.
  *
  * THE WORLD IS REAL, NOT STAGED. `DB`: NPH Summer League, season Summer 2026
  * (`fbbe767c-00e9-4130-9258-4f02c6854efa`), holds exactly one required
  * parent-facing waiver, `WaiverDocument ea472023-b4cb-450a-ab15-b26552bc3b25`,
  * "Concussion Code of Conduct (Rowan's Law)", CONCUSSION_CODE, province ON,
- * `annualRenewal: true`, `required: true`, version 1, created from the
- * product's own template `concussion-code-on` in `lib/waivers/templates.ts`.
- * Against it sit 22 APPROVED team submissions, 220 rostered players, 40 minted
- * sign requests and 27 signatures. The board in this demo is that board.
+ * `annualRenewal: true`, `required: true`, version 1, created by
+ * `scripts/seed-summer-world.ts` from the product's own template
+ * `concussion-code-on` in `lib/waivers/templates.ts`. Against it sit 22
+ * APPROVED team submissions, 220 rostered players, 40 minted sign requests and
+ * 27 signatures.
  *
  * THE FAMILY IS REAL. `DB` `summer-parent-lords@sportshub.demo`, Jordan Reyes,
  * two children in this league. He signed for Darius (#37, Toronto Lords Grade
  * 9) on 2026-07-18. The link for Danielle (#20, Toronto Lords Grade 10 Girls)
  * was emailed on 2026-07-17, expires 2026-10-05, and `consumedAt` is still
- * NULL. So the one signature this demo performs is the one signature this
- * world is actually waiting for, and the cell that turns green is her cell.
+ * NULL. So the cell that turns green is her cell.
  *
- * TRUTH TO THE PRODUCT, SCREEN BY SCREEN.
- *   · the waiver library, `manage/leagues/[id]/waivers` with
- *     `components/waivers/waivers-manager.tsx`: "Waivers & agreements",
- *     "Documents parents sign before their child participates", the type / v1 /
- *     Required / Renews yearly badges, the "27 signatures" count, Edit and
- *     Deactivate, and the versions footnote verbatim;
- *   · the compliance board, `manage/leagues/[id]/seasons/[seasonId]/waivers`
- *     with `components/waivers/waiver-status-view.tsx`: the "N signed" and
- *     "N outstanding" badges, "Only missing", "Re-send all outstanding", the
- *     collapsed team rows with "{signed}/{total} signed" and their own
- *     "Re-send", the expanded table's Player column with the parent email
- *     under it, one column per required waiver, and the cell that reads
- *     "✓ {signerName}" in court green or "Pending" in amber;
- *   · the email, `sendWaiverSignEmail` in `lib/email.ts`: the subject
- *     "Action needed: sign {title} for {player}", the "Review and sign"
- *     button, and the sentence about the link being personal and expiring in
- *     30 days;
- *   · the signing page, `(public)/waivers/sign/[token]`: the org eyebrow, the
- *     title, "For {player} · renews yearly", the document text, "Your full
- *     name" with its "First and last name" placeholder, the "Parent or
- *     guardian" and "Player (18 or older)" chips, "Signature" with "Draw with
- *     your finger or mouse", the acknowledgment sentence naming the child,
- *     "Sign and submit", the storage line, and "Signed and recorded";
- *   · the reminders, `lib/waivers/reminders.ts` behind
- *     `GET /api/cron/waiver-reminders`: 7 days out and 24 hours out, the two
- *     real titles, and the `WaiverReminder` row that IS the send-once lock.
+ * WHAT THIS STORY IS, NEXT TO `your-week`. The your-week demo films the FAMILY
+ * side of one waiver from inside the app: a push arrives, the signing page
+ * opens, "Signed and recorded". This one is the LEAGUE arc around it, and it
+ * deliberately reaches the family a different way, because the product really
+ * has two: the emailed link the roster send mints. So the phone here opens in
+ * MAIL and the page opens in a BROWSER, which is what a tokenized public link
+ * does, and the two demos never draw the same surface twice.
  *
- * FOUR THINGS THE PRODUCT CANNOT HONESTLY SHOW, AND THEY ARE NOT STAGED. All
- * four are punch items in `waivers-numbers.md` section F:
+ * TRUTH TO THE PRODUCT, SCREEN BY SCREEN (R1: classes copied, files cited):
+ *   · the library page is `app/(platform)/manage/leagues/[id]/waivers/page.tsx`
+ *     (SmartBack, `text-xl font-bold text-ink-900 md:text-2xl` "Waivers", and
+ *     the lead about roster auto-send, verbatim) wrapped around
+ *     `components/waivers/waivers-manager.tsx`: the heading pair, the primary
+ *     "Add waiver", the dashed EMPTY STATE that names the two Ontario
+ *     starters, the `CreatePanel` (template buttons in play tones, the
+ *     template's own description, the `max-h-56` preview with its
+ *     `text-xs leading-relaxed` pre, and the `Add "{title}"` button), the
+ *     document row with its type / v1 / Required / Renews yearly Badges and
+ *     its signature count, Edit and Deactivate, and the versions footnote;
+ *   · the board page is
+ *     `manage/leagues/[id]/seasons/[seasonId]/waivers/page.tsx` around
+ *     `components/waivers/waiver-status-view.tsx`: the "N signed" court Badge
+ *     and "N outstanding" warning Badge, the "Only missing" pill, the subtle
+ *     "Re-send all outstanding", the `bg-play-50 text-play-800` notice, then
+ *     one card per approved team with its caret, its name, its
+ *     "{signed}/{total} signed" warning Badge and its own "Re-send", and the
+ *     expansion's table: Player column with the parent email under the name,
+ *     one column per required waiver, and the cell that reads "✓ {signerName}"
+ *     in `text-court-700` or "Pending" in `text-amber-600`;
+ *   · the email is `sendWaiverSignEmail` in `lib/email.ts` lines 292 to 339,
+ *     rendered with its OWN inline styles (the #4f46e5 eyebrow, the 21px
+ *     title, the 14px/1.6 body, the #4f46e5 pill, the #a1a1aa fine print),
+ *     inside an iOS Mail message view. The Mail chrome is chrome (R8);
+ *   · the signing page is `app/(public)/waivers/sign/[token]/page.tsx` +
+ *     `sign-form.tsx`: the daylight court wash, the `rounded-[28px]` card, the
+ *     org eyebrow, the title, "For {player} · renews yearly", the `bg-ink-50`
+ *     document box, "Your full name" with its "First and last name"
+ *     placeholder, the ChipGroup's "Parent or guardian" / "Player (18 or
+ *     older)", "Signature" with "Draw with your finger or mouse", the
+ *     acknowledgment naming the child, "Sign and submit", the storage line,
+ *     and the real success render: court check tile, "Signed and recorded",
+ *     the on-file sentence;
+ *   · the reminders are `lib/waivers/reminders.ts` behind
+ *     `GET /api/cron/waiver-reminders`: 7 days out and 24 hours out, both
+ *     notification titles and the message template verbatim, and the
+ *     `WaiverReminder` row that IS the send-once lock.
+ *
+ * FRAMING, and why anything scrolls (R4). The scene region is 600 logical
+ * tall and both league pages are taller than that in a real browser too. So
+ * they are filmed in the scroll positions a person really puts them in: the
+ * library scrolls once to reach the preview and the Add button, the board
+ * scrolls once to reach the team the story opens and back up to read the
+ * season total, and the signing page scrolls the way a thumb scrolls it. No
+ * screen is squeezed to fit and no phone is cropped in half.
+ *
+ * THREE THINGS THE PRODUCT CANNOT HONESTLY SHOW, AND THEY ARE NOT STAGED.
+ * All three are punch items in `waivers-numbers.md` section F:
  *
  *   1. NO REMINDER SURFACE. `sendWaiverReminders` runs on a cron and nothing
  *      in the product ever shows a league what it sent or is about to send. So
- *      the reminder beat is drawn as an explicit NARRATION card, in navy, with
- *      no console chrome on it, exactly as the schedule-change demo draws its
- *      fan-out. It can never be mistaken for a screen.
+ *      the reminder beat is an explicit NARRATION card, navy, with no console
+ *      chrome on it, and its context strip says out loud that no screen shows
+ *      this. It quotes the notification the cron really sends rather than
+ *      inventing a dashboard for it.
  *   2. NO EXPIRY ANYWHERE ON SCREEN. `WaiverSignature.validUntil` is written
  *      (signedAt plus 365 days) and every "is this satisfied" query filters on
  *      it, but no surface tells a parent or a league when a signature lapses.
- *      The demo therefore says renewal in words and on the two badges the
- *      product really draws, and shows no renewal date.
+ *      The demo says renewal in words and on the badge the product really
+ *      draws, and shows no renewal date.
  *   3. NO TEAM IS COMPLETE. Not one of the 22 approved teams has all ten
- *      signatures, so the product's "All signed" badge never appears in this
- *      world and it does not appear here either.
- *   4. THE SEASON ALREADY STARTED (2026-04-04), so the cron's two windows are
- *      in the past and there are no `WaiverReminder` rows for this waiver. The
- *      cadence card states the rule and its code path, not a send that
- *      happened.
+ *      signatures, so the product's court "All signed" badge never appears in
+ *      this world and it does not appear here either.
  *
- * MOTION. Nothing pans, zooms or scrolls. The signature draws itself the way a
- * finger leaves it, the cell that changed flashes green in place, and the
- * phone changes what it is showing the same way the desktop does, with a
- * keyed fade rather than a camera move.
+ * INVENTED-CONTENT LEDGER (everything not read from the seeded world):
+ *   · THE LIBRARY OPENS EMPTY. The document exists in the database today, so
+ *     the create flow is filmed at the moment the seed really created it, from
+ *     the same template, and the row it makes carries 0 signatures because
+ *     that is what a new document has. By the time the story reaches the
+ *     season board the same document has the 27 the database holds. That gap
+ *     is a cut between two moments in one season, and it is the only one;
+ *   · the iOS Mail chrome (the nav row, the sender row, "9:41 AM") and the
+ *     browser bar over the signing page are OS chrome, not product UI;
+ *   · the four teams' signature counts, the roster and the signer names are
+ *     `DB`; the four guardian names on the pending rows are the seed's pool
+ *     names, like every other roster in these demos.
+ *
+ * ONE COPY DEFECT CARRIED, NOT INTRODUCED. `waivers-manager.tsx` line 119
+ * writes its empty state with an em-dash, which the owner's copy rule bans
+ * everywhere user facing. R1 says quote the screen, so it is quoted here
+ * exactly; the fix belongs in the product component, not in a mock of it.
  */
 
 /* ── Cast, all read out of the seeded world ──────────────────────────────── */
@@ -105,7 +154,8 @@ const DOC = "Concussion Code of Conduct (Rowan's Law)"
 
 const CTX_LIBRARY = `${LEAGUE} · League workspace · Waivers`
 const CTX_BOARD = `${LEAGUE} · ${SEASON} · Signing status`
-const CTX_LEDGER = `${LEAGUE} · ${SEASON} · What the cron does next`
+/** The narration card is not a screen, and its strip says so (punch 1). */
+const CTX_CRON = `${LEAGUE} · ${SEASON} · Runs on its own, and no screen shows it`
 
 /** `DB` The family. Two children in this league, one waiver still open. */
 const PARENT = "Jordan Reyes"
@@ -113,8 +163,7 @@ const PARENT_EMAIL = "summer-parent-lords@sportshub.demo"
 const PLAYER = "Danielle Reyes"
 const PLAYER_TEAM = "Toronto Lords Grade 10 Girls"
 
-/** `DB` The board, before this demo signs anything. */
-const TEAMS_TOTAL = 22
+/** `DB` The board, before this demo signs anything. 22 approved teams. */
 const CELLS = 220
 const SIGNED_BEFORE = 27
 const SIGNED_AFTER = 28
@@ -125,10 +174,39 @@ const OUT_AFTER = CELLS - SIGNED_AFTER
 const RESEND_SENT = 180
 const LIVE_LINKS_AFTER = 12
 
+/* ── The product's own words ─────────────────────────────────────────────── */
+
+/** `PRODUCT` `manage/leagues/[id]/waivers/page.tsx` lines 49 to 53. */
+const LIBRARY_LEAD =
+  "Required waivers are emailed automatically to every parent on a team's roster the moment that team is approved for a season. Track who has signed from each season's Signing status page."
+
+/** `PRODUCT` `waivers-manager.tsx` lines 117 to 120, the empty state. */
+const LIBRARY_EMPTY =
+  "No waivers yet. Start from a template: the risk acknowledgment and the Rowan's Law concussion code cover most Ontario programs."
+
+/** `PRODUCT` `waivers-manager.tsx` lines 179 to 183, the versions footnote. */
+const LIBRARY_FOOT =
+  "Templates are starting points, not legal advice. Have a lawyer review your final text. Editing a waiver's text creates a new version and everyone signs the new text; existing signatures keep the exact text they signed."
+
+/** `PRODUCT` `seasons/[seasonId]/waivers/page.tsx` lines 54 to 58. */
+const BOARD_LEAD =
+  "Who has signed the league's required waivers, team by team. Waiver emails go out automatically when a team is approved; re-send covers new roster additions and lost emails."
+
+/** `PRODUCT` The re-send notice, `waiver-status-view.tsx` lines 86 to 88. */
+const RESEND_NOTICE = `Sent ${RESEND_SENT} emails.`
+
+/** `PRODUCT` The acknowledgment, `sign-form.tsx` lines 134 to 137. */
+const ACK = `I have read and understood this document, and I confirm that I am authorized to sign it for ${PLAYER}.`
+
+/** `PRODUCT` The storage line under the submit button, `sign-form.tsx` 153. */
+const STORED =
+  "Your signature, name, the exact document text, and the date and time are stored securely as your signed record."
+
 /**
- * The document text, verbatim from `WaiverDocument.body`. The signing page
- * renders the whole thing in a scrolling `<pre>`; the handset shows the part
- * that fits and says so, which is what a phone does.
+ * `PRODUCT` `WaiverDocument.body`, the whole thing, exactly as
+ * `WAIVER_TEMPLATES` builds it for this league. The create panel caps it at
+ * `max-h-56` and the signing page scrolls it, so both screens show the part
+ * that fits and neither pretends otherwise.
  */
 const DOC_BODY = `CONCUSSION CODE OF CONDUCT
 
@@ -138,19 +216,99 @@ Under Rowan's Law (Concussion Safety), 2018, all athletes under 26, and the pare
 
 I confirm that I have reviewed the Ontario Concussion Awareness Resource for my child's age group (available at ontario.ca/concussions) and I commit to the following:
 
-1. I will help create a culture where concussions are taken seriously. Fair play and respect for all participants come first.`
+1. I will help create a culture where concussions are taken seriously. Fair play and respect for all participants come first.
+
+2. I understand the signs and symptoms of concussion, and I will encourage my child to report any symptoms to a coach, official, trainer, parent or guardian right away, whether the injury happened during this sport or anywhere else.
+
+3. I understand that if my child is suspected of having sustained a concussion, they will be removed from play immediately and will not return to practice or competition until permitted under the organization's Removal-from-Sport and Return-to-Sport protocols.
+
+4. I understand that returning to sport after a concussion is a gradual process that must follow the Return-to-Sport protocol, and that medical clearance may be required.
+
+5. I will respect the decisions of coaches, officials and trainers regarding removal from play, and I will not pressure my child, their coaches, or ${LEAGUE} for an early return.
+
+6. I understand that repeated concussions, and returning to play before recovery is complete, can significantly worsen outcomes.`
+
+/**
+ * `PRODUCT` The other two template bodies, also verbatim. They are here
+ * because the create panel previews WHATEVER template is selected, and the
+ * 2026-08-19 frame review caught the first cut previewing the concussion text
+ * under the risk agreement's own heading. A preview that does not match its
+ * selection is a lie on screen, so every button in this panel now carries the
+ * text `WAIVER_TEMPLATES` really builds for it.
+ */
+const RISK_BODY = `ACKNOWLEDGMENT OF RISK AND INDEMNITY AGREEMENT
+
+Organization: ${LEAGUE}
+
+1. ACKNOWLEDGMENT OF RISK
+I understand that participation in basketball activities, including practices, games, tryouts, tournaments and related events, involves inherent risks. These risks include, but are not limited to: collisions with other participants, falls, contact with equipment or playing surfaces, muscle and joint injuries, fractures, concussion and other head injuries, and, in rare circumstances, serious or permanent injury. I acknowledge that these risks cannot be fully eliminated even when the activity is run with reasonable care.
+
+2. VOLUNTARY PARTICIPATION
+I confirm that my child's participation is voluntary and that I have had the opportunity to ask questions about the activities and how they are supervised.
+
+3. FITNESS TO PARTICIPATE
+I confirm that, to the best of my knowledge, my child has no medical condition that would make participation unsafe, and I agree to inform ${LEAGUE} of any relevant medical conditions or changes.
+
+4. ASSUMPTION OF RISK
+I freely accept and assume the inherent risks described above as a condition of my child's participation.`
+
+const MEDIA_BODY = `PHOTO AND MEDIA CONSENT
+
+Organization: ${LEAGUE}
+
+I understand that photographs and video may be taken at games, practices and events organized by ${LEAGUE}.
+
+I consent to images and recordings that include my child being used by ${LEAGUE} for its website, team and league pages, social media accounts, and reasonable promotional material, without compensation.
+
+I understand that:
+
+1. My child's full name will not be published alongside their image without separate consent.
+2. I may withdraw this consent at any time by written notice to ${LEAGUE}, which applies to future use.
+3. ${LEAGUE} cannot control photography by spectators or other attendees at public events.`
+
+/**
+ * `PRODUCT` The template library, `lib/waivers/templates.ts`. Titles,
+ * descriptions and bodies verbatim, in the file's own order, so the panel
+ * opens on `templates[0]` exactly as the real one does; the fourth button is
+ * the manager's own "Custom document".
+ */
+const TEMPLATES = [
+  {
+    id: "tpl-risk",
+    title: "Acknowledgment of Risk and Indemnity Agreement",
+    description:
+      "The core participation agreement: informed acknowledgment of the risks of basketball plus a parent indemnity. Structured for Ontario, where courts are not expected to enforce liability releases signed on behalf of minors.",
+    body: RISK_BODY,
+  },
+  {
+    id: "tpl-concussion",
+    title: DOC,
+    description:
+      "Mandatory in Ontario under Rowan's Law (Concussion Safety), 2018: athletes and, for athletes under 18, their parent or guardian must review concussion awareness resources and acknowledge the code of conduct every year, within 12 months before registration.",
+    body: DOC_BODY,
+  },
+  {
+    id: "tpl-media",
+    title: "Photo and Media Consent",
+    description:
+      "Optional consent for photos and video taken at games and events to be used on the organization's website, social media and promotional material.",
+    body: MEDIA_BODY,
+  },
+]
+
+/** `PRODUCT` The email, `sendWaiverSignEmail` in `lib/email.ts`. */
+const EMAIL = {
+  subject: `Action needed: sign ${DOC} for ${PLAYER}`,
+  greeting: `Hi ${PARENT.split(" ")[0]},`,
+  context: `${PLAYER_TEAM} · ${SEASON}`,
+  cta: "Review and sign",
+}
 
 /**
  * ALL TWENTY TWO approved teams, in the order the endpoint returns them
  * (`waiver-status/route.ts` orders submissions by `createdAt` asc), each with
  * its REAL signed count read out of the database on 2026-08-16: 27 signatures
  * across 220 rostered players, and the four teams carrying all of them.
- *
- * The 2026-08-16 cut drew THREE of these rows under a "3 of 22" chip, with
- * about 290px of empty panel under them, while the beat said the board counts
- * the whole season. A compliance board that claims 22 teams draws 22 teams, so
- * it is a two column grid now. Opening a team narrows it back to one column
- * around that team, because the expansion names all ten of its players.
  */
 const BOARD_TEAMS: { team: string; signed: number; id?: string }[] = [
   { team: "Toronto Lords Grade 9", signed: 7 },
@@ -176,14 +334,12 @@ const BOARD_TEAMS: { team: string; signed: number; id?: string }[] = [
   { team: "Oakville Panthers Grade 10 Girls", signed: 0 },
   { team: "West United Prep Grade 10 Girls", signed: 0 },
 ]
-/** The window the board narrows to while a team is open. */
-const OPEN_WINDOW = 3
 
 /**
  * The whole Toronto Lords Grade 10 Girls roster, in the order the endpoint
- * hands it over, with the signer the product would print in the cell. Ten of
- * ten, because the point of the beat is that the four who have not signed are
- * named rather than counted.
+ * hands it over, with the signer the product prints in the cell. Ten of ten,
+ * because the point is that the four who have not signed are named rather
+ * than counted.
  */
 const ROSTER: { player: string; email: string; signer?: string; id?: string }[] = [
   { player: "Emma Pierre", email: "parent-summer-lords-159@sportshub.demo", signer: "Dana Sharma" },
@@ -198,76 +354,57 @@ const ROSTER: { player: string; email: string; signer?: string; id?: string }[] 
   { player: "Priya Diallo", email: "parent-summer-lords-167@sportshub.demo" },
 ]
 
-/** `PRODUCT` The board's own lead sentence, from the season waivers page. */
-const BOARD_LEAD =
-  "Who has signed the league's required waivers, team by team. Waiver emails go out automatically when a team is approved; re-send covers new roster additions and lost emails."
-
-/** `PRODUCT` The library's footnote, from `waivers-manager.tsx`. */
-const LIBRARY_FOOT =
-  "Templates are starting points, not legal advice. Have a lawyer review your final text. Editing a waiver's text creates a new version and everyone signs the new text; existing signatures keep the exact text they signed."
-
-/** `PRODUCT` The email, from `sendWaiverSignEmail` in `lib/email.ts`. */
-const EMAIL = {
-  subject: `Action needed: sign ${DOC} for ${PLAYER}`,
-  greeting: `Hi ${PARENT.split(" ")[0]},`,
-  context: `${PLAYER_TEAM} · ${SEASON}`,
-  body: `before ${PLAYER} can participate with ${LEAGUE}, a parent or guardian needs to review and sign this document. It takes about a minute.`,
-  cta: "Review and sign",
-  foot: `This link is personal to ${PLAYER} and expires in 30 days. If someone else in your family already signed, the page will tell you and nothing more is needed.`,
-}
-
-/** `PRODUCT` The re-send notice, from `waiver-status-view.tsx` line 88. */
-const RESEND_NOTICE = `Sent ${RESEND_SENT} emails.`
-
-/** `PRODUCT` The acknowledgment, from `sign-form.tsx` lines 134 to 137. */
-const ACK = `I have read and understood this document, and I confirm that I am authorized to sign it for ${PLAYER}.`
-
-/** `PRODUCT` The storage line under the submit button. */
-const STORED =
-  "Your signature, name, the exact document text, and the date and time are stored securely as your signed record."
-
 /**
  * THE CADENCE, from `lib/waivers/reminders.ts`, behind
- * `GET /api/cron/waiver-reminders` running daily. Titles and the message
- * template are verbatim; the send-once rule is the `WaiverReminder` unique key.
+ * `GET /api/cron/waiver-reminders` running daily. Both notification titles and
+ * the message template are verbatim (lines 160 to 166); the send-once rule is
+ * the `WaiverReminder` unique key on player, waiver, season and window.
  */
 const CADENCE = [
   {
-    n: "7 days",
+    n: "7 days out",
     label: "Waiver still unsigned",
-    note: `Bell, push and a fresh signing link, to the guardian of every player still outstanding. "${LEAGUE} starts soon: ${PLAYER} can't play until you sign."`,
+    note: `Bell, push and a fresh signing link to the guardian of every player still outstanding: "${LEAGUE} starts soon: ${PLAYER} can't play until you sign “${DOC}”. Tap to sign, it takes a minute."`,
   },
   {
-    n: "24 hours",
+    n: "24 hours out",
     label: "Sign before the first game",
-    note: "The same three channels, the last call, and it also writes the 7 day ledger row so an out of order run can never double send.",
+    note: "The same three channels, the last call, and it writes the 7 day ledger row at the same time so an out of order run can never double send.",
   },
   {
     n: "Once each",
-    label: "A row in the ledger is the lock",
-    note: "The reminder row is unique on player, waiver, season and window, so a missed day or a late start date never mails anybody twice.",
-  },
-  {
-    n: "0",
-    label: "lists built by hand",
-    note: "The window picks the season, and the season's own rosters pick the guardians. The reminders stop the moment the signature lands.",
+    label: "The ledger row is the lock",
+    note: "One row per player, waiver, season and window, unique in the database, so a missed cron day or a late start date never mails anybody twice. The reminders stop the moment the signature lands.",
   },
 ]
 
+/* ── Scroll stops: the positions a person really puts these pages in ─────── */
+
+const LIB_TOP = 0
+/** Down to the template's own description, its preview and the Add button. */
+const LIB_PREVIEW = 208
+
+const BOARD_TOP = 0
+/** Down to Toronto Lords Grade 10 Girls, the seventeenth of the 22 cards. */
+const BOARD_LORDS = 1592
+
+const SIGN_TOP = 0
+/** Thumb one: the name, the relationship chips and the signature pad. */
+const SIGN_FORM = 400
+/** Thumb two: the signature, the acknowledgment and the button. */
+const SIGN_SUBMIT = 640
+/** The success render is short: the card sits with the receipt mid screen. */
+const SIGN_DONE = 250
+
 /* ── Pacing ──────────────────────────────────────────────────────────────── */
 
-/**
- * Stop, explain, act (owner ruling 2026-08-16: "slow is the point"). The hand
- * takes CURSOR_ARRIVE_MS to reach its target and the balloon lands with it, so
- * a beat holds for the travel, plus long enough to READ the balloon at about
- * 180ms a word with a 900ms buffer for the eye to find it, plus a settle so
- * the next thing does not fire on the last syllable.
- */
 function paced(b: Omit<DemoBeat, "hold"> & { hold?: number }): DemoBeat {
   if (b.hold) return b as DemoBeat
-  const arrive = b.cursor ? 620 : 220
-  const settle = 500
-  const read = b.callout ? b.callout.trim().split(/\s+/).length * 180 + 900 : 2400
+  /* Human pace (owner 2026-08-19): people click, then click again. Long reads
+     only where a balloon earns one. Copied from your-week-story.tsx. */
+  const arrive = b.cursor ? 620 : 180
+  const settle = 400
+  const read = b.callout ? b.callout.trim().split(/\s+/).length * 140 + 700 : 1200
   return { ...b, hold: Math.round(arrive + read + (b.callout ? settle : 0)) }
 }
 
@@ -284,104 +421,140 @@ export const waiversStory: DemoScript = {
     { id: "board", title: "The board answers" },
   ],
 
+  /* ENGINE LAW, obeyed everywhere below: a beat's `set` applies at its START,
+     so a press whose own patch moves or removes its target deletes the thing
+     the cursor is flying at. Every press is its own beat; the landing is the
+     next one, and nothing scrolls on a beat that also presses. */
   beats: [
     /* ── 1. One document ──────────────────────────────────────────────── */
     paced({
-      id: "library",
+      id: "empty",
       chapter: "doc",
-      caption: "The league's waiver is a document the league owns.",
-      emphasize: "doc-row",
-      callout: "One stored text and one version, so everybody signs the same words.",
+      caption: "A league starts with nothing to sign, and the page names the two that matter.",
+      emphasize: "empty-state",
     }),
     paced({
-      id: "renews",
+      id: "add",
       chapter: "doc",
-      caption: "Ontario's concussion code has to be confirmed again every year.",
+      caption: "Adding one.",
+      cursor: "add-waiver",
+      press: true,
+    }),
+    paced({
+      id: "templates",
+      chapter: "doc",
+      caption: "Three Ontario starters, and a blank document for anything else.",
+      set: { creating: true },
+      emphasize: "templates",
+    }),
+    paced({
+      id: "pick",
+      chapter: "doc",
+      caption: "The concussion code.",
+      cursor: "tpl-concussion",
+      press: true,
+    }),
+    /* No balloon here: the panel's own description states the Rowan's Law
+       mandate in the product's words, and R6 forbids narrating the visible. */
+    paced({
+      id: "preview",
+      chapter: "doc",
+      caption: "The whole text, and the province's reason for it, before anybody agrees to anything.",
+      set: { template: "tpl-concussion", scroll: LIB_PREVIEW },
+      emphasize: "tpl-preview",
+    }),
+    paced({
+      id: "create",
+      chapter: "doc",
+      caption: "Added.",
+      cursor: "tpl-add",
+      press: true,
+    }),
+    paced({
+      id: "created",
+      chapter: "doc",
+      caption: "Required, version one, and it renews every year.",
+      set: { created: true, creating: false, scroll: LIB_TOP },
       emphasize: "badge-renews",
-      callout:
-        "Rowan's Law renews yearly, so last season's signature is not an answer to this season.",
+      callout: "Last season's signature is not an answer to this season.",
     }),
     paced({
-      id: "footnote",
+      id: "attach",
       chapter: "doc",
-      caption: "Change the text and the old signatures keep the old text.",
-      emphasize: "library-foot",
-      holdMs: 0,
-      callout: "Editing makes a new version. Nobody is recorded agreeing to words they never read.",
+      caption: "Nothing else is set up. Approval is the send.",
+      emphasize: "page-lead",
+      callout: "There is no recipient picker in this product: an approved roster already is the list.",
     }),
+
+    /* ── The season's own board ───────────────────────────────────────── */
     paced({
       id: "board-open",
       chapter: "doc",
-      caption: `The season counts the same document in signatures: ${SIGNED_BEFORE} in, ${OUT_BEFORE} still out.`,
+      caption: `Later in the season, the same document reads ${SIGNED_BEFORE} in and ${OUT_BEFORE} still out.`,
       context: CTX_BOARD,
-      set: { screen: "board" },
+      set: { screen: "board", scroll: BOARD_TOP },
       emphasize: "totals",
-      callout: `Twenty two approved teams and ${CELLS} rostered players, counted from the rosters.`,
+      callout: `Twenty two approved teams and ${CELLS} rostered players, counted off the rosters rather than off emails sent.`,
     }),
     paced({
-      id: "no-picker",
+      id: "stack",
       chapter: "doc",
-      caption: "There is no recipient list to build.",
-      emphasize: "board-lead",
-      callout: "Approving a team emails every guardian on its roster. That is the whole send.",
+      caption: "Every approved team, with its own count and its own re-send.",
+      set: { scroll: BOARD_LORDS },
     }),
     paced({
       id: "expand",
       chapter: "doc",
-      caption: "Every team opens to the families behind the number.",
+      caption: "One of them opens.",
       cursor: "team-lords",
       press: true,
+    }),
+    paced({
+      id: "expanded",
+      chapter: "doc",
+      caption: "The families behind the number, and the guardian each link was sent to.",
       set: { expanded: true },
-      callout: "The four who have not signed are named on the row, with their guardian.",
+      emphasize: "roster-table",
     }),
     paced({
       id: "pending",
       chapter: "doc",
-      caption: "One of them has a guardian who has already signed for his other child.",
+      caption: "One of the four still pending has a guardian who has already signed once.",
       emphasize: "row-danielle",
-      callout: "Jordan Reyes signed for his son in July. Her link is still unopened.",
+      callout: `${PARENT} signed for his son in July. His daughter's link is still unopened.`,
     }),
 
     /* ── 2. A minute on a phone ───────────────────────────────────────── */
     paced({
       id: "email",
       chapter: "sign",
-      caption: "This is the email the league sent him.",
+      caption: "This is what the league sent him, in the app he reads mail in.",
       stage: "split",
-      set: { phone: "email" },
-      emphasize: "mail-card",
-      callout: "One email per child, naming the child, with the link that belongs to her alone.",
+      set: { phone: "mail" },
+      /* No balloon: the email's own fine print says the link is personal to
+         one child and expires, which is the only invisible thing here. */
+      emphasize: "mail-body",
     }),
     paced({
       id: "open",
       chapter: "sign",
       caption: "One tap.",
-      /* PRESS, THEN RESULT (2026-08-16). State lands at the TOP of a beat, so
-         opening the link here would delete the button the hand is still
-         travelling to, and a phone keyhole would pan to nothing. The tap is
-         this beat; the page it opens is the next one. */
       cursor: "mail-cta",
       press: true,
-      callout: "The link is the key. There is no account to make first.",
+      callout: "No account and no password: the emailed link is the whole of the authorization.",
     }),
     paced({
       id: "read",
       chapter: "sign",
-      caption: "The link opens the stored document.",
-      emphasize: "doc-body",
-      set: { phone: "doc" },
-      /* The renewal is carried on this beat rather than its own: the header
-         line "For Danielle Reyes · renews yearly" sits directly above the ring,
-         so the viewer reads both without buying a second beat for it. */
-      callout: "For Danielle Reyes by name, and it renews next year.",
+      caption: "The link opens the stored document, named for his daughter.",
+      set: { phone: "sign", scrollY: SIGN_TOP },
+      emphasize: "sign-doc",
     }),
     paced({
       id: "form",
       chapter: "sign",
       caption: "Under the document, three things and a button.",
-      set: { phone: "form" },
-      emphasize: "form-top",
-      callout: "His name, who he is to the player, and a signature.",
+      set: { scrollY: SIGN_FORM },
     }),
     paced({
       id: "name",
@@ -397,42 +570,57 @@ export const waiversStory: DemoScript = {
       caption: "Then who is signing.",
       cursor: "rel-parent",
       press: true,
+    }),
+    paced({
+      id: "relation-land",
+      chapter: "sign",
+      caption: "Parent or guardian.",
       set: { relation: "parent" },
-      callout: "A player over eighteen signs for themselves, so the form asks who is signing.",
     }),
     paced({
       id: "pad",
       chapter: "sign",
-      caption: "The signature is drawn with a finger.",
+      caption: "And a signature.",
       cursor: "sign-pad",
       press: true,
+    }),
+    paced({
+      id: "drawn",
+      chapter: "sign",
+      caption: "Drawn with a finger, the way he would sign a form at the gym door.",
       set: { drawn: true },
-      hold: 3400,
+      hold: 2600,
     }),
     paced({
       id: "ack",
       chapter: "sign",
-      caption: "The acknowledgment names his daughter.",
+      caption: "The confirmation names his daughter rather than agreeing to nothing in particular.",
+      set: { scrollY: SIGN_SUBMIT },
+      emphasize: "ack-check",
+    }),
+    paced({
+      id: "ack-press",
+      chapter: "sign",
+      caption: "Checked.",
       cursor: "ack-check",
       press: true,
-      set: { acked: true },
-      callout: "It names the child, and it names the authority to sign for her.",
     }),
     paced({
       id: "submit",
       chapter: "sign",
       caption: "Sign and submit.",
+      set: { acked: true },
       cursor: "submit",
       press: true,
-      hold: 2400,
     }),
     paced({
       id: "recorded",
       chapter: "sign",
-      caption: "Recorded.",
-      set: { phone: "done" },
+      caption: "Recorded, and the whole thing took about a minute.",
+      set: { done: true, scrollY: SIGN_DONE },
       emphasize: "done-card",
-      callout: "The signature, the name, the exact text and the timestamp, kept as one record.",
+      callout:
+        "The record keeps the exact text he was shown, so editing the document later cannot change what he agreed to.",
     }),
 
     /* ── 3. The board answers ─────────────────────────────────────────── */
@@ -442,70 +630,56 @@ export const waiversStory: DemoScript = {
       caption: "Her cell on the league's board turns green while you watch, with his name in it.",
       stage: "desktop",
       context: CTX_BOARD,
-      set: { signed: true },
+      set: { signed: true, scroll: BOARD_LORDS },
       emphasize: "row-danielle",
       callout: "The board is reading the same signature record from the other end.",
     }),
     paced({
       id: "badge",
       chapter: "board",
-      caption: "The team badge moves with it.",
+      caption: "The team badge moves with it: seven of ten, and the three still open keep their names.",
       emphasize: "badge-lords",
       holdMs: 0,
-      callout: "Seven of ten, and the three still open keep their names on the row.",
     }),
     paced({
       id: "totals",
       chapter: "board",
       caption: `${SIGNED_AFTER} signed, ${OUT_AFTER} outstanding, across every approved team.`,
+      set: { scroll: BOARD_TOP },
       emphasize: "totals",
-      holdMs: 0,
-      callout: "One count for the whole season, recomputed on every read.",
-    }),
-    paced({
-      id: "missing",
-      chapter: "board",
-      caption: "Only missing filters the board to the teams with a gap.",
-      cursor: "only-missing",
-      press: true,
-      set: { onlyMissing: true },
-      callout: "That filtered list is the chase list, and it is the whole of it.",
     }),
     paced({
       id: "resend",
       chapter: "board",
-      caption: "One button covers roster additions and lost emails.",
+      caption: "One button covers new roster additions and lost emails.",
       cursor: "resend-all",
       press: true,
-      set: { notice: RESEND_NOTICE, onlyMissing: false },
-      callout: "The first send already happened, the day each team was approved.",
     }),
     paced({
-      id: "skipped",
+      id: "sent",
       chapter: "board",
-      caption: `${RESEND_SENT} emails, and the ${LIVE_LINKS_AFTER} families with a live link were left alone.`,
+      caption: `${RESEND_SENT} emails, and the ${LIVE_LINKS_AFTER} families who already have a live link were left alone.`,
+      set: { notice: RESEND_NOTICE },
       emphasize: "notice",
-      holdMs: 0,
-      callout: "A family whose link is still live is skipped, so no inbox gets it twice.",
+      callout: "A family whose link is still live is skipped, so no inbox gets the same ask twice.",
     }),
     paced({
       id: "cadence",
       chapter: "board",
-      caption: "The reminders run on a clock.",
-      context: undefined,
+      caption: "The rest of the chase is nobody's job.",
+      context: CTX_CRON,
       set: { ledger: true, shown: 0 },
       emphasize: "ledger",
-      callout: "Two windows, once each, and a ledger row that guarantees the once.",
+      callout: "Two windows, once each, and a row in the database that guarantees the once.",
     }),
-    paced({ id: "cad-1", chapter: "board", caption: "Seven days before the season starts.", set: { shown: 1 }, hold: 2700 }),
-    paced({ id: "cad-2", chapter: "board", caption: "Then twenty four hours before.", set: { shown: 2 }, hold: 2400 }),
-    paced({ id: "cad-3", chapter: "board", caption: "Once each, guaranteed, by a ledger row.", set: { shown: 3 }, hold: 2400 }),
-    paced({ id: "cad-4", chapter: "board", caption: "And no list is built by a human being.", set: { shown: 4 }, hold: 2700 }),
+    paced({ id: "cad-1", chapter: "board", caption: "Seven days before the season starts.", set: { shown: 1 }, hold: 3000 }),
+    paced({ id: "cad-2", chapter: "board", caption: "Then twenty four hours before.", set: { shown: 2 }, hold: 2600 }),
+    paced({ id: "cad-3", chapter: "board", caption: "Once each, guaranteed, and no list built by a person.", set: { shown: 3 }, hold: 2800 }),
     paced({
       id: "end",
       chapter: "board",
       caption:
-        "One document, sent by the roster rather than by a person, signed in a minute, and a board that keeps its own score.",
+        "One document made from a template, sent by the roster rather than by a person, signed on a phone in a minute, and a board that keeps its own score.",
       hold: 4800,
       set: { endCard: true },
     }),
@@ -516,24 +690,33 @@ export const waiversStory: DemoScript = {
   render: ({ get, typingKey }) => {
     const screen = get<string>("screen", "library")
     const ledger = get("ledger", false)
-    const phone = get<string>("phone", "email")
+    const phone = get<string>("phone", "mail")
 
     const desktop = (
-      <div className="relative flex h-full flex-col">
-        <div
-          key={ledger ? "ledger" : screen}
-          className="demo-fade-in flex min-h-0 flex-1 flex-col"
-        >
+      /* `globals.css` body: white, lit by two faint corner radials. */
+      <div
+        className="relative flex h-full flex-col bg-white"
+        style={{
+          backgroundImage:
+            "radial-gradient(circle at top left, rgba(99, 102, 241, 0.05), transparent 22%), radial-gradient(circle at top right, rgba(242, 78, 30, 0.04), transparent 18%)",
+        }}
+      >
+        <div key={ledger ? "ledger" : screen} className="demo-fade-in flex min-h-0 flex-1 flex-col">
           {ledger ? (
-            <CadenceLedger shown={get("shown", 0)} />
+            <CadenceNarration shown={get("shown", 0)} />
           ) : screen === "library" ? (
-            <WaiverLibrary />
+            <WaiverLibraryPage
+              creating={get("creating", false)}
+              created={get("created", false)}
+              template={get<string>("template", "tpl-risk")}
+              scroll={get("scroll", 0)}
+            />
           ) : (
-            <SigningBoard
+            <SigningStatusPage
               expanded={get("expanded", false)}
               signed={get("signed", false)}
-              onlyMissing={get("onlyMissing", false)}
               notice={get<string>("notice", "")}
+              scroll={get("scroll", 0)}
             />
           )}
         </div>
@@ -544,13 +727,11 @@ export const waiversStory: DemoScript = {
 
     const phoneNode = (
       <div key={phone} className="demo-fade-in h-full">
-        {phone === "email" ? (
+        {phone === "mail" ? (
           <PhoneMail />
-        ) : phone === "done" ? (
-          <PhoneDone />
         ) : (
-          <PhoneSign
-            view={phone === "form" ? "form" : "doc"}
+          <PhoneSignPage
+            scrollY={get("scrollY", 0)}
             name={
               <TypeText
                 text={get<string>("name", "")}
@@ -561,6 +742,7 @@ export const waiversStory: DemoScript = {
             relation={get<string>("relation", "")}
             drawn={get("drawn", false)}
             acked={get("acked", false)}
+            done={get("done", false)}
           />
         )}
       </div>
@@ -570,199 +752,337 @@ export const waiversStory: DemoScript = {
   },
 }
 
-/* ── Desktop: the league's waiver library ────────────────────────────────── */
+/* ═══════════════════════════════════════════════════════════════════════════
+ * SHARED PRIMITIVES, copied from the product's own kit
+ * ═══════════════════════════════════════════════════════════════════════════ */
+
+/** `components/ui/badge.tsx`, tones and shape verbatim. */
+const BADGE_TONES = {
+  neutral: "bg-ink-50 text-ink-600 ring-ink-200",
+  play: "bg-play-50 text-play-700 ring-play-100",
+  court: "bg-court-50 text-court-700 ring-court-100",
+  warning: "bg-amber-50 text-amber-700 ring-amber-100",
+} as const
+
+function Badge({
+  children,
+  tone = "neutral",
+  id,
+}: {
+  children: ReactNode
+  tone?: keyof typeof BADGE_TONES
+  id?: string
+}) {
+  return (
+    <span
+      data-demo-target={id}
+      className={cn(
+        "inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold uppercase tracking-[0.12em] ring-1 ring-inset",
+        BADGE_TONES[tone]
+      )}
+    >
+      {children}
+    </span>
+  )
+}
 
 /**
- * `manage/leagues/[id]/waivers`, drawn from `waivers-manager.tsx`: the heading
- * pair, the "Add waiver" button, one document row carrying the type label, the
- * version, Required, Renews yearly and its signature count, the two row
- * actions, and the versions footnote in full.
+ * `components/ui/button.tsx` at the two shapes these screens use: the default
+ * `primary` + `brand` fill (the league's brand colour, `--brand`), and
+ * `subtle`. Sizes are the file's own SIZES map.
  */
-function WaiverLibrary() {
+function Btn({
+  children,
+  id,
+  variant = "primary",
+  block,
+  className,
+}: {
+  children: ReactNode
+  id?: string
+  variant?: "primary" | "subtle"
+  block?: boolean
+  className?: string
+}) {
   return (
-    <div className="bg-ink-50/70 flex min-h-0 flex-1 flex-col px-6 py-4">
-      <div className="mb-3 flex items-center gap-3">
-        <span>
-          <h2 className="font-display text-ink-900 text-[20px] font-extrabold">
-            Waivers &amp; agreements
-          </h2>
-          <p className="text-ink-500 mt-0.5 text-[15px] font-medium">
-            Documents parents sign before their child participates
-          </p>
-        </span>
-        <span className="ml-auto">
-          <Btn tone="primary">Add waiver</Btn>
-        </span>
-      </div>
+    <span
+      data-demo-target={id}
+      className={cn(
+        "inline-flex cursor-default items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition-all duration-150 motion-reduce:transition-none",
+        variant === "subtle"
+          ? "border-ink-200 text-ink-700 border bg-white data-[demo-hover=true]:border-ink-300 data-[demo-hover=true]:bg-ink-50"
+          : "text-white shadow-[0_10px_24px_-12px_rgba(15,23,42,0.5)] data-[demo-hover=true]:brightness-95",
+        "data-[demo-press=true]:scale-[0.97]",
+        block && "w-full",
+        className
+      )}
+      style={variant === "primary" ? { backgroundColor: "var(--brand, #4f46e5)" } : undefined}
+    >
+      {children}
+    </span>
+  )
+}
 
+/** `components/ui/smart-back.tsx` on a cold entry: the chevron and the parent. */
+function SmartBack({ label }: { label: string }) {
+  return (
+    <span className="text-ink-600 -ml-1 inline-flex min-h-[44px] items-center gap-1.5 rounded-xl py-2 pl-1 pr-3 text-sm font-semibold">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="h-5 w-5">
+        <path d="M15 18l-6-6 6-6" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+      {label}
+    </span>
+  )
+}
+
+/**
+ * A real page is taller than the 600 the scene gives it, so the region scrolls
+ * exactly as a browser would. Nothing is hidden or squeezed; the column moves.
+ */
+function Scroll({ offset, children }: { offset: number; children: ReactNode }) {
+  return (
+    <div className="min-h-0 flex-1 overflow-hidden">
       <div
-        data-demo-target="doc-row"
-        className="border-ink-200 rounded-2xl border bg-white px-5 py-3.5 shadow-[0_2px_10px_-8px_rgba(15,23,42,0.4)]"
+        className="transition-transform duration-500 ease-out motion-reduce:transition-none"
+        style={{ transform: `translateY(${-offset}px)` }}
       >
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div className="min-w-0">
-            <p className="text-ink-900 text-[17px] font-bold">{DOC}</p>
-            <div className="mt-2 flex flex-wrap items-center gap-2">
-              <Chip tone="neutral">Concussion code</Chip>
-              <Chip tone="neutral">v1</Chip>
-              <Chip tone="play" strong>
-                Required
-              </Chip>
-              <span data-demo-target="badge-renews">
-                <Chip tone="gold" strong>
-                  Renews yearly
-                </Chip>
-              </span>
-              <span className="text-ink-500 text-[14px] font-semibold">
-                {SIGNED_BEFORE} signatures
-              </span>
+        {children}
+      </div>
+    </div>
+  )
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * DESKTOP 1 — /manage/leagues/[id]/waivers
+ * ═══════════════════════════════════════════════════════════════════════════ */
+
+/**
+ * `manage/leagues/[id]/waivers/page.tsx` around
+ * `components/waivers/waivers-manager.tsx`. The page's own header block is
+ * drawn because it carries the sentence that explains the whole feature, and
+ * the 08-16 cut left it off.
+ */
+function WaiverLibraryPage({
+  creating,
+  created,
+  template,
+  scroll,
+}: {
+  creating: boolean
+  created: boolean
+  template: string
+  scroll: number
+}) {
+  return (
+    <Scroll offset={scroll}>
+      <div className="mx-auto max-w-4xl space-y-6 p-4 md:p-6">
+        <div>
+          <SmartBack label={LEAGUE} />
+          <h1 className="text-ink-900 mt-1 text-xl font-bold md:text-2xl">Waivers</h1>
+          <p data-demo-target="page-lead" className="text-ink-500 mt-1 text-sm">
+            {LIBRARY_LEAD}
+          </p>
+        </div>
+
+        {/* `waivers-manager.tsx` lines 77 to 185. */}
+        <div className="space-y-4">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h2 className="text-ink-900 text-lg font-bold">Waivers &amp; agreements</h2>
+              <p className="text-ink-500 mt-0.5 text-sm">
+                Documents parents sign before their child participates
+              </p>
             </div>
+            <Btn id="add-waiver">{creating ? "Cancel" : "Add waiver"}</Btn>
           </div>
-          <span className="flex shrink-0 items-center gap-2">
-            <Btn tone="quiet" size="sm">
-              Edit
-            </Btn>
-            <Btn tone="quiet" size="sm">
-              Deactivate
-            </Btn>
-          </span>
+
+          {creating && <CreatePanel template={template} />}
+
+          {!created && !creating && (
+            <div
+              data-demo-target="empty-state"
+              className="border-ink-300 bg-ink-50/50 text-ink-500 rounded-xl border border-dashed p-8 text-center text-sm"
+            >
+              {LIBRARY_EMPTY}
+            </div>
+          )}
+
+          {created && (
+            <div className="space-y-3">
+              <div
+                data-demo-target="doc-row"
+                className="border-ink-200 rounded-xl border bg-white p-4"
+              >
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="text-ink-900 font-semibold">{DOC}</p>
+                    <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+                      <Badge>Concussion code</Badge>
+                      <Badge>v1</Badge>
+                      <Badge tone="play">Required</Badge>
+                      <Badge tone="warning" id="badge-renews">
+                        Renews yearly
+                      </Badge>
+                      {/* A document made a moment ago has none. The season
+                          board later in the story is the same document with
+                          the 27 the database holds. */}
+                      <span className="text-ink-400 text-xs">0 signatures</span>
+                    </div>
+                  </div>
+                  <div className="flex shrink-0 items-center gap-2">
+                    <Btn variant="subtle">Edit</Btn>
+                    <Btn variant="subtle">Deactivate</Btn>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          <p className="text-ink-400 text-xs leading-relaxed">{LIBRARY_FOOT}</p>
         </div>
       </div>
+    </Scroll>
+  )
+}
 
-      {/* The opening of the stored text, so the operator screen shows what the
-          league is actually holding. The library page reveals the body through
-          Edit; this is the same string, `WaiverDocument.body`. */}
-      <div className="border-ink-200 mt-3 min-h-0 flex-1 overflow-hidden rounded-2xl border bg-white px-5 py-3">
-        <p className="text-ink-500 text-[14px] font-bold uppercase tracking-[0.08em]">
-          The text every family signs
-        </p>
-        <pre className="text-ink-700 mt-2 whitespace-pre-wrap font-sans text-[15px] leading-[1.6]">
-          {DOC_BODY}
+/** `waivers-manager.tsx` CreatePanel, lines 188 to 272. */
+function CreatePanel({ template }: { template: string }) {
+  const selected = TEMPLATES.find((t) => t.id === template) ?? TEMPLATES[0]
+  return (
+    <div
+      data-demo-target="templates"
+      className="border-ink-200 space-y-4 rounded-xl border bg-white p-4 sm:p-5"
+    >
+      <div className="flex flex-wrap gap-2">
+        {TEMPLATES.map((t) => (
+          <span
+            key={t.id}
+            data-demo-target={t.id}
+            className={cn(
+              "cursor-default rounded-xl border px-3.5 py-2 text-sm font-semibold transition",
+              t.id === template
+                ? "border-play-600 bg-play-50 text-play-800"
+                : "border-ink-200 text-ink-600 data-[demo-hover=true]:border-ink-300"
+            )}
+          >
+            {t.title}
+          </span>
+        ))}
+        <span className="border-ink-200 text-ink-600 cursor-default rounded-xl border px-3.5 py-2 text-sm font-semibold">
+          Custom document
+        </span>
+      </div>
+
+      <p className="text-ink-500 text-sm">{selected.description}</p>
+
+      {/* The panel's own preview box: max-h-56, scrolling, 12px pre. */}
+      <div
+        data-demo-target="tpl-preview"
+        className="border-ink-100 bg-ink-50/50 max-h-56 overflow-hidden rounded-xl border p-4"
+      >
+        <pre className="text-ink-600 whitespace-pre-wrap font-sans text-xs leading-relaxed">
+          {selected.body}
         </pre>
       </div>
 
-      <p
-        data-demo-target="library-foot"
-        className="text-ink-500 mt-3 shrink-0 text-[14px] font-medium leading-snug"
-      >
-        {LIBRARY_FOOT}
-      </p>
+      <Btn id="tpl-add">Add &quot;{selected.title}&quot;</Btn>
     </div>
   )
 }
 
-/* ── Desktop: the compliance board ───────────────────────────────────────── */
+/* ═══════════════════════════════════════════════════════════════════════════
+ * DESKTOP 2 — /manage/leagues/[id]/seasons/[seasonId]/waivers
+ * ═══════════════════════════════════════════════════════════════════════════ */
 
 /**
- * `manage/leagues/[id]/seasons/[seasonId]/waivers`, drawn from
- * `waiver-status-view.tsx`. All 22 approved teams as a two column grid, and a
- * three row window around the open team when a roster is expanded. The count
- * chip carries the product's own "N of M" shape either way.
+ * `seasons/[seasonId]/waivers/page.tsx` around
+ * `components/waivers/waiver-status-view.tsx`. All 22 approved teams in one
+ * vertical column, the way the real page draws them; the region scrolls to
+ * whichever one is being read.
  */
-function SigningBoard({
+function SigningStatusPage({
   expanded,
   signed,
-  onlyMissing,
   notice,
+  scroll,
 }: {
   expanded: boolean
   signed: boolean
-  onlyMissing: boolean
   notice: string
+  scroll: number
 }) {
   const total = signed ? SIGNED_AFTER : SIGNED_BEFORE
   const outstanding = signed ? OUT_AFTER : OUT_BEFORE
-  const openIndex = BOARD_TEAMS.findIndex((t) => t.id === "team-lords")
-  const rows = expanded
-    ? BOARD_TEAMS.slice(openIndex - 1, openIndex - 1 + OPEN_WINDOW)
-    : onlyMissing
-      ? BOARD_TEAMS.filter((t) => t.signed < 10)
-      : BOARD_TEAMS
 
   return (
-    <div className="bg-ink-50/70 flex min-h-0 flex-1 flex-col px-6 py-3">
-      <p
-        data-demo-target="board-lead"
-        className="text-ink-600 mb-1.5 shrink-0 text-[15px] font-medium leading-tight"
-      >
-        {BOARD_LEAD}
-      </p>
+    <Scroll offset={scroll}>
+      <div className="mx-auto max-w-5xl space-y-6 p-4 md:p-6">
+        <div>
+          <SmartBack label={`${LEAGUE} · ${SEASON}`} />
+          <h1 className="text-ink-900 mt-1 text-xl font-bold md:text-2xl">Signing status</h1>
+          <p data-demo-target="board-lead" className="text-ink-500 mt-1 text-sm">
+            {BOARD_LEAD}
+          </p>
+        </div>
 
-      <div data-demo-target="totals" className="mb-2 flex shrink-0 items-center gap-2">
-        <Chip tone="court" strong>
-          <span className="tabular-nums">{total}</span> signed
-        </Chip>
-        <Chip tone="gold" strong>
-          <span className="tabular-nums">{outstanding}</span> outstanding
-        </Chip>
-        <span
-          data-demo-target="only-missing"
-          className={cn(
-            "rounded-full border px-3 py-0.5 text-[14px] font-semibold transition-colors duration-200 motion-reduce:transition-none",
-            onlyMissing
-              ? "border-gold-400 bg-gold-100 text-gold-600"
-              : "border-ink-200 text-ink-600 bg-white"
+        {/* `waiver-status-view.tsx` lines 118 to 146. */}
+        <div className="space-y-5">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div data-demo-target="totals" className="flex items-center gap-2">
+              <Badge tone="court">
+                <span className="tabular-nums">{total}</span> signed
+              </Badge>
+              <Badge tone="warning">
+                <span className="tabular-nums">{outstanding}</span> outstanding
+              </Badge>
+              {/* Never pressed in this story: no team in this world is
+                  complete, so the real filter would remove nothing. */}
+              <span className="bg-ink-50 text-ink-500 rounded-full px-2.5 py-1 text-[11px] font-medium">
+                Only missing
+              </span>
+            </div>
+            <Btn id="resend-all" variant="subtle">
+              Re-send all outstanding
+            </Btn>
+          </div>
+
+          {notice && (
+            <p
+              data-demo-target="notice"
+              className="bg-play-50 text-play-800 live-pop rounded-xl px-4 py-3 text-sm"
+            >
+              {notice}
+            </p>
           )}
-        >
-          Only missing
-        </span>
-        {notice && (
-          <span
-            data-demo-target="notice"
-            className="bg-play-50 text-play-800 live-pop rounded-xl px-3 py-1 text-[14px] font-semibold"
-          >
-            {notice}
-          </span>
-        )}
-        {/* The slice, stated on screen rather than hidden: three consecutive
-            rows of the twenty two the endpoint returns. Same honesty device the
-            schedule-change demo uses for its "3 of 11" games chip. */}
-        <Chip tone="neutral" strong>
-          {rows.length} of {TEAMS_TOTAL} teams
-        </Chip>
-        <span className="ml-auto">
-          <Btn id="resend-all" tone="quiet" size="sm">
-            Re-send all outstanding
-          </Btn>
-        </span>
-      </div>
 
-      {/* No panel chrome: the real page (`waiver-status-view.tsx`) is a plain
-          vertical stack of team cards under the badges row, with no section
-          header over it. */}
-      <div
-        className={cn(
-          "min-h-0 flex-1",
-          expanded ? "space-y-1.5" : "grid grid-cols-2 content-start gap-x-3 gap-y-0.5"
-        )}
-      >
-        {rows.map((t) => {
-          const isTarget = t.id === "team-lords"
-          const teamSigned = isTarget && signed ? t.signed + 1 : t.signed
-          return (
-            <BoardTeam
-              key={t.team}
-              id={t.id}
-              team={t.team}
-              signed={teamSigned}
-              badgeId={isTarget ? "badge-lords" : undefined}
-              open={isTarget && expanded}
-              signedNow={isTarget && signed}
-            />
-          )
-        })}
+          {BOARD_TEAMS.map((t) => {
+            const isTarget = t.id === "team-lords"
+            return (
+              <TeamCard
+                key={t.team}
+                id={t.id}
+                team={t.team}
+                signed={isTarget && signed ? t.signed + 1 : t.signed}
+                badgeId={isTarget ? "badge-lords" : undefined}
+                open={isTarget && expanded}
+                signedNow={isTarget && signed}
+              />
+            )
+          })}
+        </div>
       </div>
-    </div>
+    </Scroll>
   )
 }
 
 /**
- * One collapsed team row and its expansion. The real row is a disclosure
- * button carrying the caret, the team name and the signed badge, with its own
- * "Re-send" on the right; the expansion is a table whose first column is the
- * player and whose remaining columns are one per required waiver.
+ * One team card and its expansion. The row is a disclosure button carrying the
+ * caret, the team name and the signed Badge, with its own "Re-send" on the
+ * right; the expansion is a table whose first column is the player with the
+ * parent email UNDER the name, and whose remaining columns are one per
+ * required waiver.
  */
-function BoardTeam({
+function TeamCard({
   id,
   team,
   signed,
@@ -778,325 +1098,417 @@ function BoardTeam({
   signedNow: boolean
 }) {
   return (
-    <div
-      className={cn(
-        "rounded-xl border bg-white transition-colors duration-300 motion-reduce:transition-none",
-        open ? "border-ink-300" : "border-ink-100"
-      )}
-    >
-      <div
-        data-demo-target={id}
-        className="flex w-full items-center gap-2.5 px-3.5 py-1"
-      >
-        <span className="text-ink-400 shrink-0 text-[14px]">{open ? "▾" : "▸"}</span>
-        <span className="text-ink-900 text-[15px] font-bold">{team}</span>
-        <span data-demo-target={badgeId} className="shrink-0">
+    <div className="border-ink-200 overflow-hidden rounded-xl border bg-white">
+      <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-3">
+        <span data-demo-target={id} className="flex min-w-0 items-center gap-2 text-left">
+          <span className="text-ink-400 text-xs">{open ? "▾" : "▸"}</span>
+          <span className="text-ink-900 font-semibold">{team}</span>
           {/* PUNCH 3, honoured: no team in this world is complete, so the
-              product's "All signed" badge never appears here either. */}
-          <StatusChip tone="gold">{signed}/10 signed</StatusChip>
+              product's court "All signed" badge never appears here either. */}
+          <Badge tone="warning" id={badgeId}>
+            {signed}/10 signed
+          </Badge>
         </span>
-        <span className="ml-auto shrink-0">
-          <Btn tone="quiet" size="sm">
-            Re-send
-          </Btn>
-        </span>
+        <Btn variant="subtle">Re-send</Btn>
       </div>
 
-      {/* All TEN players, not a slice: the beat's claim is that the ones who
-          have not signed are NAMED rather than counted, so hiding four of them
-          would be the demo undercutting its own point. The rows are therefore
-          tight, and the parent email sits beside the name rather than under it
-          (the product stacks them), which is the one composition liberty this
-          screen takes. */}
       {open && (
-        <div className="border-ink-100 border-t px-3.5 pb-1.5 pt-1">
-          <div className="text-ink-500 flex items-center gap-3 pb-0.5 text-[14px] font-bold uppercase leading-tight tracking-[0.06em]">
-            <span className="min-w-0 flex-1">Player</span>
-            <span className="w-[300px] shrink-0">{DOC}</span>
-          </div>
-          <div>
-            {ROSTER.map((r) => {
-              const isTarget = r.id === "row-danielle"
-              const cellSigner = isTarget && signedNow ? PARENT : r.signer
-              return (
-                <div
-                  key={r.player}
-                  data-demo-target={r.id}
-                  className="border-ink-50 flex items-center gap-3 border-t py-px leading-tight"
-                >
-                  <span className="flex min-w-0 flex-1 items-baseline gap-2">
-                    <span className="text-ink-900 shrink-0 text-[15px] font-semibold leading-tight">
-                      {r.player}
-                    </span>
-                    <span className="text-ink-400 truncate text-[14px] font-medium leading-tight">
-                      {r.email}
-                    </span>
-                  </span>
-                  <span className="w-[300px] shrink-0">
-                    {cellSigner ? (
-                      <span
-                        className={cn(
-                          "text-court-700 text-[15px] font-semibold leading-tight",
-                          isTarget && signedNow && "demo-pulse-green"
-                        )}
-                      >
-                        ✓ {cellSigner}
-                      </span>
-                    ) : (
-                      <span className="text-[15px] font-semibold leading-tight text-amber-600">
-                        Pending
-                      </span>
-                    )}
-                  </span>
-                </div>
-              )
-            })}
-          </div>
+        <div data-demo-target="roster-table" className="border-ink-100 border-t">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="text-ink-400 text-left text-xs uppercase tracking-wide">
+                <th className="px-4 py-2 font-semibold">Player</th>
+                <th className="px-4 py-2 font-semibold">{DOC}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {ROSTER.map((r) => {
+                const isTarget = r.id === "row-danielle"
+                const cellSigner = isTarget && signedNow ? PARENT : r.signer
+                return (
+                  <tr key={r.player} data-demo-target={r.id} className="border-ink-50 border-t">
+                    <td className="px-4 py-2.5">
+                      <p className="text-ink-800 font-medium">{r.player}</p>
+                      <p className="text-ink-400 text-xs">{r.email}</p>
+                    </td>
+                    <td className="px-4 py-2.5">
+                      {cellSigner ? (
+                        <span
+                          className={cn(
+                            "text-court-700",
+                            isTarget && signedNow && "demo-pulse-green"
+                          )}
+                        >
+                          ✓ {cellSigner}
+                        </span>
+                      ) : (
+                        <span className="text-amber-600">Pending</span>
+                      )}
+                    </td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
         </div>
       )}
     </div>
   )
 }
 
-/* ── Desktop: the reminder cadence ───────────────────────────────────────── */
+/* ═══════════════════════════════════════════════════════════════════════════
+ * DESKTOP 3 — the reminder cadence: NARRATION, NOT A SCREEN
+ * ═══════════════════════════════════════════════════════════════════════════ */
 
 /**
- * NARRATION, NOT A SCREEN.
- *
  * `sendWaiverReminders` runs from `GET /api/cron/waiver-reminders` and nothing
  * in the product ever shows a league what it sent or is about to send. So this
- * card is drawn in navy with no console chrome anywhere near it, which is the
- * honest way to put a server-side truth on camera. It is punch item 1 in the
- * numbers sheet, and the fix is a real reminder log on the season.
+ * card is navy, with no console chrome anywhere near it, and its context strip
+ * says out loud that no screen shows this. Punch item 1 in the numbers sheet;
+ * the fix is a real reminder log on the season.
  */
-function CadenceLedger({ shown }: { shown: number }) {
+function CadenceNarration({ shown }: { shown: number }) {
   return (
-    <div
-      data-demo-target="ledger"
-      className="flex min-h-0 flex-1 flex-col justify-center bg-[#0b1628] px-10 py-7 text-white"
-    >
+    <div className="flex min-h-0 flex-1 flex-col justify-center bg-[#0b1628] px-12 py-8 text-white">
       <p className="text-gold-400 text-[15px] font-bold uppercase tracking-[0.16em]">
         What happens next, without anybody chasing
       </p>
-      <p className="font-display mt-1.5 text-[38px] font-extrabold leading-none tabular-nums">
+      {/* The ring and the balloon anchor HERE rather than to the whole card:
+          a full-height anchor pushed the balloon up over the context strip,
+          which is the line that says no screen shows this (frame review). */}
+      <p
+        data-demo-target="ledger"
+        className="font-display mt-2 text-[38px] font-extrabold leading-none tabular-nums"
+      >
         {OUT_AFTER} still outstanding
       </p>
-      <p className="mt-1.5 text-[16px] font-semibold text-white/70">
+      <p className="mt-2 text-[16px] font-semibold text-white/70">
         {DOC} · every approved roster in {SEASON}
       </p>
 
-      <div className="mt-5 space-y-2">
+      <div className="mt-6 space-y-2.5">
         {CADENCE.map((r, i) => (
           <div
             key={r.label}
             className={cn(
-              "flex items-baseline gap-4 rounded-2xl border px-4 py-2.5 transition-opacity duration-500 motion-reduce:transition-none",
+              "flex items-baseline gap-5 rounded-2xl border px-5 py-3 transition-opacity duration-500 motion-reduce:transition-none",
               i < shown ? "border-white/15 bg-white/[0.07] opacity-100" : "border-white/5 opacity-20"
             )}
           >
-            <span className="text-gold-400 w-[104px] shrink-0 text-[19px] font-extrabold leading-tight">
+            <span className="text-gold-400 w-[132px] shrink-0 text-[18px] font-extrabold leading-tight">
               {r.n}
             </span>
             <span className="min-w-0">
               <span className="block text-[17px] font-bold">{r.label}</span>
-              <span className="mt-0.5 block text-[15px] font-medium leading-snug text-white/60">
+              <span className="mt-1 block text-[15px] font-medium leading-snug text-white/60">
                 {r.note}
               </span>
             </span>
           </div>
         ))}
       </div>
-
     </div>
   )
 }
 
-/* ── Phone: the email ────────────────────────────────────────────────────── */
+/* ═══════════════════════════════════════════════════════════════════════════
+ * PHONE — the OS, then the public page
+ * ═══════════════════════════════════════════════════════════════════════════ */
 
 /**
- * Her inbox, not our product. The subject, the greeting, the sentence, the
- * button label and the expiry line are all verbatim from `sendWaiverSignEmail`
- * in `lib/email.ts`.
+ * His mail app, not our product (R8). The chrome is iOS Mail's message view;
+ * everything inside the white card is `sendWaiverSignEmail` rendered with its
+ * OWN inline styles, so what is on screen is the HTML the server really sends.
  */
 function PhoneMail() {
   return (
-    <div className="flex h-full flex-col bg-[#f2f3f6]">
-      <div className="border-ink-200 shrink-0 border-b bg-white px-4 pb-2 pt-2.5">
-        <p className="text-ink-900 text-[17px] font-bold">Inbox</p>
-        <p className="text-ink-500 text-[14px] font-medium">{PARENT_EMAIL}</p>
+    <div className="flex h-full flex-col bg-white">
+      <div className="flex shrink-0 items-center justify-between border-b border-black/10 bg-[#f7f7f8] px-3 py-1.5">
+        <span className="text-[15px] font-medium text-[#007aff]">‹ Inbox</span>
+        <span className="flex items-center gap-4 text-[#007aff]">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-4 w-4">
+            <path d="M3 8l9 6 9-6" strokeLinecap="round" strokeLinejoin="round" />
+            <rect x="3" y="5" width="18" height="14" rx="2" />
+          </svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-4 w-4">
+            <path d="M9 17l-5-5 5-5M4 12h11a5 5 0 0 1 0 10h-1" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </span>
       </div>
-      <div className="min-h-0 flex-1 px-3 py-3">
+
+      <div className="flex shrink-0 items-start gap-2.5 border-b border-black/10 px-4 py-2">
+        <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-[#0b1628] text-[12px] font-bold text-white">
+          NS
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="text-ink-950 block text-[15px] font-semibold leading-tight">{LEAGUE}</span>
+          <span className="text-ink-500 block text-[13px] leading-tight">to {PARENT}</span>
+        </span>
+        <span className="text-ink-400 shrink-0 text-[13px]">9:41 AM</span>
+      </div>
+
+      <p className="text-ink-950 shrink-0 px-4 pt-2 text-[15px] font-bold leading-tight">
+        {EMAIL.subject}
+      </p>
+
+      {/* The email itself. Inline styles, not Tailwind, because these are the
+          bytes `lib/email.ts` puts on the wire. */}
+      <div className="min-h-0 flex-1 overflow-hidden">
         <div
-          data-demo-target="mail-card"
-          className="border-ink-200 rounded-2xl border bg-white px-4 py-3.5 shadow-[0_10px_30px_-22px_rgba(15,23,42,0.6)]"
+          style={{
+            fontFamily: "-apple-system, 'Segoe UI', Roboto, Arial, sans-serif",
+            maxWidth: 520,
+            margin: "0 auto",
+            padding: 8,
+          }}
         >
-          <p className="text-play-700 text-[14px] font-bold uppercase tracking-[0.14em]">
-            {LEAGUE}
-          </p>
-          <p className="text-ink-950 mt-1.5 text-[17px] font-bold leading-snug">{DOC}</p>
-          <p className="text-ink-500 mt-1 text-[14px] font-medium">{EMAIL.context}</p>
-          <p className="text-ink-700 mt-3 text-[15px] font-medium leading-relaxed">
-            {EMAIL.greeting} {EMAIL.body}
-          </p>
-          <span
-            data-demo-target="mail-cta"
-            className="bg-play-600 mt-4 block rounded-xl px-4 py-2.5 text-center text-[15px] font-bold text-white transition-all duration-200 motion-reduce:transition-none data-[demo-hover=true]:brightness-110 data-[demo-press=true]:scale-[0.98]"
+          {/* The ring hugs the CARD, not the scroll region: a ring around the
+              region crossed the subject line (frame review, 2026-08-19). */}
+          <div
+            data-demo-target="mail-body"
+            style={{
+              background: "#ffffff",
+              border: "1px solid #e5e5e5",
+              borderRadius: 20,
+              padding: 16,
+            }}
           >
-            {EMAIL.cta}
-          </span>
-          <p className="text-ink-400 mt-3.5 text-[14px] font-medium leading-snug">{EMAIL.foot}</p>
+            <p
+              style={{
+                margin: 0,
+                fontSize: 11,
+                letterSpacing: 2,
+                textTransform: "uppercase",
+                color: "#4f46e5",
+                fontWeight: 700,
+              }}
+            >
+              {LEAGUE}
+            </p>
+            <h1 style={{ margin: "10px 0 0", fontSize: 21, color: "#18181b", lineHeight: 1.2 }}>
+              {DOC}
+            </h1>
+            <p style={{ margin: "6px 0 0", fontSize: 13, color: "#71717a" }}>{EMAIL.context}</p>
+            <p style={{ margin: "16px 0 0", fontSize: 14, lineHeight: 1.6, color: "#3f3f46" }}>
+              {EMAIL.greeting} before <strong>{PLAYER}</strong> can participate with {LEAGUE}, a
+              parent or guardian needs to review and sign this document. It takes about a minute.
+            </p>
+            <p style={{ margin: "22px 0 0" }}>
+              <span
+                data-demo-target="mail-cta"
+                style={{
+                  display: "inline-block",
+                  padding: "13px 28px",
+                  background: "#4f46e5",
+                  color: "#ffffff",
+                  borderRadius: 12,
+                  fontWeight: 700,
+                  fontSize: 15,
+                }}
+                className="transition-all duration-150 data-[demo-hover=true]:brightness-110 data-[demo-press=true]:scale-[0.97]"
+              >
+                {EMAIL.cta}
+              </span>
+            </p>
+            <p style={{ margin: "24px 0 0", fontSize: 12, lineHeight: 1.6, color: "#a1a1aa" }}>
+              This link is personal to {PLAYER} and expires in 30 days. If someone else in your
+              family already signed, the page will tell you and nothing more is needed.
+            </p>
+          </div>
+          <hr style={{ border: "none", borderTop: "1px solid #e5e5e5", margin: "24px 0 12px" }} />
+          <p style={{ color: "#999", fontSize: 12, margin: 0 }}>
+            Sent by {LEAGUE} via SportsHub (Youth Basketball Hub). You received this because of an
+            account, registration, or invitation associated with this address.
+          </p>
         </div>
       </div>
     </div>
   )
 }
 
-/* ── Phone: the signing page ─────────────────────────────────────────────── */
+/** Mobile Safari, the way a tokenized public link arrives. OS chrome (R8). */
+function BrowserBar() {
+  return (
+    <div className="flex shrink-0 items-center justify-center gap-1.5 border-b border-black/10 bg-[#f7f7f8] px-4 py-1.5">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-ink-500 h-3 w-3">
+        <rect x="5" y="11" width="14" height="9" rx="2" />
+        <path d="M8 11V7a4 4 0 0 1 8 0v4" />
+      </svg>
+      <span className="text-ink-600 text-[13px] font-medium">sportshubone.com</span>
+    </div>
+  )
+}
 
 /**
- * `(public)/waivers/sign/[token]`, at life size.
+ * `app/(public)/waivers/sign/[token]/page.tsx` + `sign-form.tsx`, at life size
+ * and in one piece.
  *
- * The real page is ONE scrolling page: the header block, the document in a
- * `max-h-[45vh]` scroll box, then the form. A 390 by 576 handset cannot hold
- * all of that at 14px and up, so the demo shows the page in the two positions
- * a thumb actually puts it in, and swaps between them with a fade rather than
- * a camera move. Every label, placeholder, chip and sentence is verbatim.
+ * The real page is ONE long scroll: a daylight court wash, a `rounded-[28px]`
+ * card, the header block, the document in a `max-h-[45vh]` scroll box, then
+ * the form. A 390 handset cannot hold all of that at once and neither can a
+ * real one, so the page is filmed in the three positions a thumb puts it in
+ * rather than redrawn as three different screens. Every label, placeholder,
+ * chip and sentence is verbatim.
  */
-function PhoneSign({
-  view,
+function PhoneSignPage({
+  scrollY,
+  name,
+  relation,
+  drawn,
+  acked,
+  done,
+}: {
+  scrollY: number
+  name: ReactNode
+  relation: string
+  drawn: boolean
+  acked: boolean
+  done: boolean
+}) {
+  return (
+    <div className="flex h-full flex-col bg-white">
+      <BrowserBar />
+      <div
+        className="min-h-0 flex-1 overflow-hidden"
+        /* `court-backdrop.tsx` daylight: the base gradient under the wash. */
+        style={{ backgroundImage: "linear-gradient(165deg,#fffbf0 0%,#ffffff 55%,#fff7ed 100%)" }}
+      >
+        <div
+          className="transition-transform duration-500 ease-out motion-reduce:transition-none"
+          style={{ transform: `translateY(${-scrollY}px)` }}
+        >
+          <div className="px-4 py-8">
+            <div className="border-ink-100 shadow-panel overflow-hidden rounded-[28px] border bg-white">
+              <div className="border-ink-100 border-b p-6">
+                <p className="text-play-600 text-[11px] font-bold uppercase tracking-[2px]">
+                  {LEAGUE}
+                </p>
+                <h1 className="text-ink-950 mt-2 text-2xl font-bold leading-tight">{DOC}</h1>
+                <p className="text-ink-500 mt-1 text-sm">
+                  For <span className="text-ink-700 font-semibold">{PLAYER}</span> · renews yearly
+                </p>
+              </div>
+
+              <div
+                data-demo-target="sign-doc"
+                className="border-ink-100 bg-ink-50 h-[200px] overflow-hidden border-b p-6"
+              >
+                <pre className="text-ink-700 whitespace-pre-wrap font-sans text-[13.5px] leading-relaxed">
+                  {DOC_BODY}
+                </pre>
+              </div>
+
+              {done ? <SignDone /> : (
+                <SignForm
+                  name={name}
+                  relation={relation}
+                  drawn={drawn}
+                  acked={acked}
+                />
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+/** `sign-form.tsx` lines 87 to 158, verbatim. */
+function SignForm({
   name,
   relation,
   drawn,
   acked,
 }: {
-  view: "doc" | "form"
   name: ReactNode
   relation: string
   drawn: boolean
   acked: boolean
 }) {
   return (
-    <div className="flex h-full flex-col bg-white">
-      {/* The real page is one long scroll with no sticky header, so a thumb
-          that has reached the form has scrolled the title block away. The form
-          view therefore keeps one compact line of context rather than pretending
-          the header is pinned. */}
-      {view === "doc" ? (
-        <div className="border-ink-100 shrink-0 border-b px-4 pb-2.5 pt-1.5">
-          <p className="text-play-600 text-[14px] font-bold uppercase tracking-[0.14em]">{LEAGUE}</p>
-          <h2 className="text-ink-950 mt-1 text-[19px] font-bold leading-tight">{DOC}</h2>
-          <p data-demo-target="phone-sub" className="text-ink-500 mt-1 text-[15px] font-medium">
-            For <span className="text-ink-700 font-bold">{PLAYER}</span> · renews yearly
-          </p>
-        </div>
-      ) : (
-        <div className="border-ink-100 shrink-0 border-b px-4 pb-1.5 pt-1">
-          <p className="text-ink-500 text-[14px] font-semibold leading-tight">
-            Concussion Code of Conduct · for{" "}
-            <span className="text-ink-700 font-bold">{PLAYER}</span> · renews yearly
-          </p>
-        </div>
-      )}
-
-      {view === "doc" ? (
-        <div className="bg-ink-50 min-h-0 flex-1 px-4 py-3">
-          <pre
-            data-demo-target="doc-body"
-            className="text-ink-700 h-full overflow-hidden whitespace-pre-wrap font-sans text-[14px] leading-[1.55]"
-          >
-            {DOC_BODY}
-          </pre>
-        </div>
-      ) : (
-        <div className="min-h-0 flex-1 px-4 py-2.5">
-          <div data-demo-target="form-top">
-            <p className="text-ink-700 text-[15px] font-bold">Your full name</p>
-            <span
-              data-demo-target="name-field"
-              className="border-ink-200 mt-1.5 flex min-h-[40px] w-full items-center rounded-xl border bg-white px-3.5 text-[15px] transition-all duration-200 motion-reduce:transition-none data-[demo-hover=true]:border-play-400 data-[demo-hover=true]:ring-play-100 data-[demo-hover=true]:ring-2"
-            >
-              {name}
-            </span>
-          </div>
-
-          <div className="mt-3">
-            <p className="text-ink-700 text-[15px] font-bold">Relationship to player</p>
-            <div className="mt-1.5 flex gap-2">
-              <RelChip id="rel-parent" label="Parent or guardian" on={relation === "parent"} />
-              <RelChip label="Player (18 or older)" on={relation === "player"} />
-            </div>
-          </div>
-
-          <div className="mt-3">
-            <div className="flex items-center justify-between">
-              <p className="text-ink-700 text-[15px] font-bold">Signature</p>
-              <p className="text-ink-400 text-[14px] font-medium">Draw with your finger or mouse</p>
-            </div>
-            <span
-              data-demo-target="sign-pad"
-              className={cn(
-                "border-ink-200 mt-1.5 block h-[80px] w-full overflow-hidden rounded-xl border bg-white transition-all duration-200 motion-reduce:transition-none",
-                "data-[demo-hover=true]:border-play-400 data-[demo-press=true]:brightness-95"
-              )}
-            >
-              {drawn ? (
-                <svg viewBox="0 0 320 90" className="h-full w-full" aria-hidden="true">
-                  <path
-                    d="M22 66 C40 26, 58 24, 66 48 C72 66, 84 66, 92 44 C100 22, 116 26, 120 52 C124 74, 140 70, 152 44 C160 26, 176 30, 178 54 C180 72, 196 70, 208 50 C218 34, 236 36, 244 56 C250 70, 262 68, 276 48"
-                    fill="none"
-                    stroke="#0b1628"
-                    strokeWidth="3"
-                    strokeLinecap="round"
-                    className="demo-sign-in"
-                  />
-                </svg>
-              ) : (
-                <span className="text-ink-400 flex h-full items-center justify-center text-[14px] font-semibold">
-                  Sign here
-                </span>
-              )}
-            </span>
-          </div>
-
+    <div className="space-y-5 p-6">
+      <div className="grid gap-4">
+        <div>
+          <span className="text-ink-700 block text-sm font-semibold">Your full name</span>
           <span
-            data-demo-target="ack-check"
-            className={cn(
-              "mt-2 flex items-start gap-2.5 rounded-xl border px-3 py-2 transition-all duration-200 motion-reduce:transition-none",
-              acked ? "border-play-300 bg-play-50/60" : "border-ink-200 bg-white",
-              /* Same rule as the relationship chips: no press scale over 14px copy. */
-              "data-[demo-hover=true]:border-play-400 data-[demo-press=true]:brightness-95"
-            )}
+            data-demo-target="name-field"
+            className="border-ink-200 mt-1.5 flex min-h-[42px] w-full items-center rounded-xl border bg-white px-3.5 text-sm transition-all duration-200 motion-reduce:transition-none data-[demo-hover=true]:border-play-500 data-[demo-hover=true]:ring-play-200 data-[demo-hover=true]:ring-2"
           >
-            <span
-              className={cn(
-                "mt-0.5 flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded border-2",
-                acked ? "border-play-600 bg-play-600" : "border-ink-300 bg-white"
-              )}
-            >
-              {acked && (
-                <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="4" className="h-2.5 w-2.5">
-                  <path d="M5 13l4 4L19 7" />
-                </svg>
-              )}
-            </span>
-            <span className="text-ink-700 text-[14px] font-medium leading-snug">{ACK}</span>
+            {name}
           </span>
-
-          <span
-            data-demo-target="submit"
-            className={cn(
-              "bg-play-600 mt-2.5 block rounded-xl px-4 py-2.5 text-center text-[15px] font-bold text-white transition-all duration-200 motion-reduce:transition-none",
-              !(acked && drawn) && "opacity-40",
-              "data-[demo-hover=true]:brightness-110 data-[demo-press=true]:scale-[0.98]"
-            )}
-          >
-            Sign and submit
-          </span>
-          <p className="text-ink-400 mt-1.5 text-center text-[14px] font-medium leading-snug">
-            {STORED}
-          </p>
         </div>
-      )}
+        <div>
+          <span className="text-ink-700 block text-sm font-semibold">Relationship to player</span>
+          {/* `components/ui/chip-group.tsx`: min-h-[44px] pills, play fill. */}
+          <div className="mt-1.5 flex flex-wrap gap-2">
+            <RelChip id="rel-parent" label="Parent or guardian" on={relation === "parent"} />
+            <RelChip label="Player (18 or older)" on={relation === "player"} />
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div className="flex items-center justify-between">
+          <span className="text-ink-700 block text-sm font-semibold">Signature</span>
+          <span className="text-ink-400 text-xs">Draw with your finger or mouse</span>
+        </div>
+        <span
+          data-demo-target="sign-pad"
+          className={cn(
+            "border-ink-200 mt-1.5 block h-[150px] overflow-hidden rounded-xl border bg-white transition-all duration-200 motion-reduce:transition-none",
+            "data-[demo-hover=true]:border-play-400 data-[demo-press=true]:brightness-95"
+          )}
+        >
+          {drawn && (
+            <svg viewBox="0 0 300 150" className="h-full w-full" aria-hidden="true">
+              <path
+                className="demo-sign-draw"
+                d="M26 104 C40 46 56 40 60 66 C64 92 52 104 74 90 C96 76 90 60 112 76 C124 86 140 62 152 76 C170 96 180 58 200 74 C212 84 226 68 244 80 C256 88 266 76 276 62"
+                fill="none"
+                stroke="#1b2a4a"
+                strokeWidth="3"
+                strokeLinecap="round"
+              />
+            </svg>
+          )}
+        </span>
+      </div>
+
+      <span
+        data-demo-target="ack-check"
+        className={cn(
+          "text-ink-700 flex items-start gap-3 rounded-lg text-sm transition-all duration-200 motion-reduce:transition-none",
+          "data-[demo-press=true]:brightness-95"
+        )}
+      >
+        <span
+          className={cn(
+            "mt-0.5 grid h-4 w-4 shrink-0 place-items-center rounded border",
+            acked ? "border-play-600 bg-play-600" : "border-ink-300 bg-white"
+          )}
+        >
+          {acked && (
+            <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="4" className="h-2.5 w-2.5">
+              <path d="M5 13l4 4L19 7" />
+            </svg>
+          )}
+        </span>
+        <span>{ACK}</span>
+      </span>
+
+      <span
+        data-demo-target="submit"
+        className={cn(
+          "bg-play-600 block w-full rounded-xl px-6 py-3.5 text-center text-sm font-bold text-white transition-all duration-150 motion-reduce:transition-none",
+          !(acked && drawn) && "opacity-40",
+          "data-[demo-hover=true]:bg-play-700 data-[demo-press=true]:scale-[0.97]"
+        )}
+      >
+        Sign and submit
+      </span>
+
+      <p className="text-ink-400 text-center text-xs leading-relaxed">{STORED}</p>
     </div>
   )
 }
@@ -1106,13 +1518,10 @@ function RelChip({ id, label, on }: { id?: string; label: string; on: boolean })
     <span
       data-demo-target={id}
       className={cn(
-        /* No press SCALE anywhere a 14px string lives: the readability gate
-           measures effective size through every transform, and a 0.97 press on
-           a 14px chip reaches the viewer at 13.6px. The press reads as a
-           brightness and border change instead. */
-        "flex min-w-0 flex-1 items-center justify-center rounded-xl border px-2 py-1.5 text-center text-[14px] font-bold transition-all duration-200 motion-reduce:transition-none",
-        on ? "border-play-600 bg-play-600 text-white" : "border-ink-200 text-ink-600 bg-white",
-        "data-[demo-hover=true]:border-play-400 data-[demo-press=true]:brightness-95"
+        "inline-flex min-h-[44px] cursor-default items-center rounded-full border px-4 py-2 text-sm font-semibold transition-colors duration-200 motion-reduce:transition-none",
+        on
+          ? "border-play-600 bg-play-600 text-white shadow-sm"
+          : "border-ink-200 text-ink-700 bg-white data-[demo-hover=true]:border-play-300 data-[demo-hover=true]:bg-play-50/50"
       )}
     >
       {label}
@@ -1120,27 +1529,26 @@ function RelChip({ id, label, on }: { id?: string; label: string; on: boolean })
   )
 }
 
-/**
- * The success state, verbatim from `sign-form.tsx` lines 60 to 84. PUNCH 2,
- * honoured: the product never tells the signer when this lapses, so neither
- * does this card.
- */
-function PhoneDone() {
+/** `sign-form.tsx` lines 60 to 84, the real "done" render. */
+function SignDone() {
   return (
-    <div
-      data-demo-target="done-card"
-      className="flex h-full flex-col items-center justify-center bg-white px-6 text-center"
-    >
-      <span className="bg-court-50 text-court-600 live-pop grid h-14 w-14 place-items-center rounded-2xl">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="h-7 w-7">
+    <div data-demo-target="done-card" className="p-6 text-center">
+      <div className="bg-court-50 text-court-600 live-pop mx-auto grid h-14 w-14 place-items-center rounded-2xl">
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2.5"
+          className="h-7 w-7"
+          aria-hidden="true"
+        >
           <path d="M20 6 9 17l-5-5" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
-      </span>
-      <h3 className="text-ink-950 mt-3 text-[19px] font-bold">Signed and recorded</h3>
-      <p className="text-ink-600 mt-2 text-[15px] font-medium leading-relaxed">
+      </div>
+      <h2 className="text-ink-950 mt-3 text-lg font-bold">Signed and recorded</h2>
+      <p className="text-ink-600 mt-2 text-sm leading-relaxed">
         Thank you. {LEAGUE} now has your signed copy on file for {PLAYER}. You can close this page.
       </p>
-      <p className="text-ink-400 mt-4 text-[14px] font-medium leading-snug">{STORED}</p>
     </div>
   )
 }
@@ -1158,9 +1566,9 @@ function EndCard() {
           Waivers, start to finish
         </h3>
         <p className="mt-3 text-[17px] leading-relaxed text-white/75">
-          One required document that renews every year, emailed by the roster rather than by a
-          person, signed on a phone in about a minute, and a board that counts {SIGNED_AFTER} of{" "}
-          {CELLS} without anybody building a list.
+          One required document built from the province&apos;s own template, renewing every year,
+          emailed by the roster rather than by a person, signed on a phone in about a minute, and a
+          board that counts {SIGNED_AFTER} of {CELLS} without anybody building a list.
         </p>
         <p className="mt-5 text-[15px] font-semibold text-white/50">
           Next: game day, both sides at once

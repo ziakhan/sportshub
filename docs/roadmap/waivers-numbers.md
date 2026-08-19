@@ -442,3 +442,69 @@ they miss it", "turns the camera around" and "the part nobody demos".
 
 Gate re-run: readability audit **0 violations**, minimum stage scale **1.000**, 29 beats / 32
 scenes, one headless drive with a clean console. Runtime **2 min 02 sec**.
+
+---
+
+## Sweep, 2026-08-19: the realism conversion (mock-ui.tsx R1–R8)
+
+The numbers above are unchanged and still govern. What changed is FIDELITY, and it supersedes
+section G's deviation table wherever the two disagree.
+
+**Both league screens are whole pages now.** The 08-16 cut drew bare regions with the page header
+removed under presentation law D2.1. R1 outranks that: `SmartBack`, the `text-xl md:text-2xl` h1
+and the page's own lead sentence are drawn on both, because on these two pages the lead sentence IS
+the feature ("Required waivers are emailed automatically to every parent on a team's roster the
+moment that team is approved", and the board's "Waiver emails go out automatically when a team is
+approved"). Everything is authored at the product's own `text-sm` / `text-xs` rather than the scene
+kit's 14px floor.
+
+**Four deviations deleted rather than defended.**
+
+| 08-16 deviation | 08-19 |
+|---|---|
+| "3 of 22 teams" slice chip | GONE. Invented control. All 22 team cards in one vertical column, and the region SCROLLS to whichever is being read (two stops: page top, and the seventeenth card) |
+| Two column grid of teams | GONE. `waiver-status-view.tsx` renders one column |
+| Player name and parent email on one line | GONE. Stacked, `font-medium text-ink-800` over `text-xs text-ink-400`, as the real `<td>` does |
+| The library showed `WaiverDocument.body` under the document row | GONE. That panel does not exist. The body is shown where the product really shows it, in the create panel's `max-h-56` preview |
+
+**The document is now MADE on camera, and that is new content, declared.** The library opens on its
+real empty state (`waivers-manager.tsx` 117 to 120), "Add waiver" opens the real `CreatePanel`, the
+three real Ontario templates are the three real buttons plus "Custom document", and each button
+previews ITS OWN body (`WAIVER_TEMPLATES` verbatim; the first cut previewed the concussion text
+under the risk agreement's heading and the frame review caught it). The created row reads **0
+signatures**, because that is what a document made a moment ago has; the same document carries the
+database's 27 when the story reaches the season board. That cut between two moments of one season
+is the only one in the demo, and it is the whole of the invented content.
+
+**"Only missing" is no longer pressed.** Not one of the 22 approved teams is complete (punch F3), so
+the real filter removes nothing. The beat claimed it filtered the board to a chase list. Deleted;
+the control is still drawn, because the real page draws it.
+
+**The OS is drawn as the OS (R8).** The email now sits in an iOS Mail message view and is rendered
+with `sendWaiverSignEmail`'s OWN inline styles, so the card on screen is the HTML the server sends.
+The signing page opens behind a mobile browser bar, because a tokenized public link is what the
+roster send mints. This is also what keeps this demo from repeating `your-week`, which films the
+same signing page reached from a PUSH, inside the app.
+
+**The signing page is one page, scrolled.** The 08-16 cut drew two different screens with a
+compact context line the product does not have. It is one column now, translated through the three
+positions a thumb puts it in, and the success state keeps the card header and document box above it
+exactly as `sign-form.tsx` renders inside the page's card.
+
+**Balloon diet (R6): 21 callouts to 9.** Cut every balloon that narrated something on screen: the
+template's legal mandate (the panel's own description says it), the email's expiry (the fine print
+says it), the relationship chips, the acknowledgment text, the roster naming, the recomputed total.
+The nine that survive all say something the screen cannot: where 220 comes from, that renewal voids
+last season's signature, that no recipient picker exists, that Jordan signed for his son in July,
+that no account is involved, that the record freezes the text he was shown, that the board reads the
+same row from the other end, that live links are skipped, and the reminder cadence.
+
+### Gate results, 2026-08-19
+
+| Gate | Result |
+|---|---|
+| `tsc --noEmit` (apps/web) | clean |
+| `readability-audit.mjs --routes /demos/waivers --scope chrome` | **0 violations** |
+| `drive-demo-beats.mjs waivers` | 36 beats, every beat reviewed as a frame |
+| Runtime at 1x | **1 min 42 sec** (was 2 min 02 sec); registry `durationLabel` updated |
+| Em-dash sweep | clean, with ONE carried quote: `waivers-manager.tsx` line 119 writes its empty state with an em-dash. R1 quotes the screen; the fix belongs in the product component |
