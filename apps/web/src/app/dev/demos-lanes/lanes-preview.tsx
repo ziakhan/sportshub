@@ -1,27 +1,27 @@
 "use client"
 
 import Link from "next/link"
-import { useState } from "react"
+import { useMemo, useState } from "react"
 import { cn } from "@/components/ui"
 import { CourtBackdropLayer } from "@/components/ui/court-backdrop"
 import { BrandWordmark } from "@/components/brand/wordmark"
 import { DEMOS, type DemoAudience, type DemoEntry } from "../../demos/registry"
 
 /**
- * The lanes preview (see page.tsx). Visual language matches the shipped
- * gallery (demos/gallery.tsx): daylight court header band, white cards on
- * ink-50, gold hover ring, play glyph. What is NEW here:
+ * Lanes preview v2 (owner round 2, 2026-08-19): the DOOR GATE IS GONE.
  *
- *   1. The DOORS replace the top chip row: three large audience cards in the
- *      main panel. One tap opens that audience's lane.
- *   2. A lane is a numbered PATH, not a grid: four or five demos in a
- *      deliberate order, "Start here" on the first, a plain one-line
- *      "what you'll watch" under every title (the subtitles live in
- *      WATCH_LINES below until the ruling moves them into the registry).
- *   3. The rest of that audience's demos sit folded under "More for …".
+ * The owner liked the lane UI but not the extra click, so this cut shows
+ * everything on one page: the flagship as one wide card for everyone, then
+ * three CLEARLY BOUNDED sections (clubs / leagues / families), each a tinted
+ * container holding its numbered path in the approved card style, every card
+ * carrying its plain "what you'll watch" line. Each demo appears exactly ONCE,
+ * in its home section, so thirteen reads as thirteen.
  *
- * Doors carry the gallery's audience tones: clubs hoop, leagues court,
- * families play. Icons are hand-authored SVG per the asset law.
+ * The role picker moved INTO prominence at the top of the main panel: large
+ * labelled chips plus search, with a moving "Pick your seat" arrow cue
+ * (demo-nudge-x, reduced-motion safe) that retires after the first pick.
+ * Choosing a role focuses the page on that section (the flagship stays,
+ * it is for everyone); All shows every section. Zero clicks by default.
  */
 
 /** One plain line per demo: what you will actually watch. */
@@ -56,72 +56,74 @@ const WATCH_LINES: Record<string, string> = {
 
 interface Lane {
   audience: DemoAudience
-  door: string
-  doorSub: string
-  /** "More for clubs" / "More for leagues" / "More for families". */
-  moreLabel: string
-  /** Ordered path slugs, the curated "start here" run. */
+  title: string
+  sub: string
+  /** Numbered, in the recommended watching order. */
   path: string[]
-  /** Folded below the path. */
-  more: string[]
+  /** Unnumbered row inside the same boundary. */
+  also: string[]
   tone: {
     text: string
-    bg: string
+    iconBg: string
     ring: string
     chip: string
+    /** The section boundary's tinted ground. */
+    ground: string
   }
 }
 
+/** Every demo exactly once; game-day lives in the flagship band above. */
 const LANES: Lane[] = [
   {
     audience: "clubs",
-    door: "I run a club",
-    doorSub: "Your page, tryouts, rosters and the money.",
-    moreLabel: "More for clubs",
-    path: ["claim-your-club", "roster-story", "money-picture", "game-day"],
-    more: ["everyone-in-the-loop", "waivers", "team-drops-out"],
+    title: "For clubs",
+    sub: "Your page, tryouts, rosters and the money.",
+    path: ["claim-your-club", "roster-story", "everyone-in-the-loop", "money-picture"],
+    also: [],
     tone: {
       text: "text-hoop-700",
-      bg: "bg-hoop-50",
+      iconBg: "bg-hoop-50",
       ring: "ring-hoop-200",
       chip: "bg-hoop-600",
+      ground: "bg-hoop-50/40",
     },
   },
   {
     audience: "leagues",
-    door: "I run a league",
-    doorSub: "Seasons, schedules, standings and referees.",
-    moreLabel: "More for leagues",
+    title: "For leagues",
+    sub: "Seasons, schedules, standings and referees.",
     path: [
       "season-planned-to-published",
       "schedule-change",
       "standings-to-playoffs",
       "the-referees",
-      "game-day",
     ],
-    more: ["waivers", "team-drops-out"],
+    also: ["team-drops-out", "waivers"],
     tone: {
       text: "text-court-700",
-      bg: "bg-court-50",
+      iconBg: "bg-court-50",
       ring: "ring-court-200",
       chip: "bg-court-600",
+      ground: "bg-court-50/40",
     },
   },
   {
     audience: "parents",
-    door: "I'm a parent or player",
-    doorSub: "The week, the games and your kid's page.",
-    moreLabel: "More for families",
-    path: ["your-week", "game-day", "players-season"],
-    more: ["everyone-in-the-loop", "money-picture", "waivers"],
+    title: "For parents and players",
+    sub: "The week, the games and your kid's page.",
+    path: ["your-week", "players-season"],
+    also: [],
     tone: {
       text: "text-play-700",
-      bg: "bg-play-50",
+      iconBg: "bg-play-50",
       ring: "ring-play-200",
       chip: "bg-play-600",
+      ground: "bg-play-50/40",
     },
   },
 ]
+
+const FLAGSHIP_SLUG = "game-day"
 
 const bySlug = new Map(DEMOS.map((d) => [d.slug, d]))
 const demoOf = (slug: string): DemoEntry => {
@@ -130,7 +132,6 @@ const demoOf = (slug: string): DemoEntry => {
   return d
 }
 
-/** "1 min 45 sec" → seconds, for the lane's total. */
 function seconds(label: string): number {
   const m = /(\d+)\s*min(?:\s*(\d+)\s*sec)?/.exec(label)
   if (m) return Number(m[1]) * 60 + Number(m[2] ?? 0)
@@ -139,8 +140,11 @@ function seconds(label: string): number {
 }
 
 function laneMinutes(lane: Lane): number {
-  const total = lane.path.reduce((sum, slug) => sum + seconds(demoOf(slug).durationLabel), 0)
-  return Math.round(total / 60)
+  const total = [...lane.path, ...lane.also].reduce(
+    (sum, slug) => sum + seconds(demoOf(slug).durationLabel),
+    0
+  )
+  return Math.max(1, Math.round(total / 60))
 }
 
 function shortDuration(label: string): string {
@@ -149,8 +153,15 @@ function shortDuration(label: string): string {
   return `${m[1]}:${(m[2] ?? "0").padStart(2, "0")}`
 }
 
-/** Hand-authored door marks: crest, bracket, phone. Stroke style, themable. */
-function DoorMark({ audience, className }: { audience: DemoAudience; className?: string }) {
+function matches(demo: DemoEntry, q: string): boolean {
+  if (!q) return true
+  return `${demo.title} ${WATCH_LINES[demo.slug] ?? ""} ${demo.promise}`
+    .toLowerCase()
+    .includes(q)
+}
+
+/** Hand-authored role marks: crest, bracket, phone. */
+function RoleMark({ audience, className }: { audience: DemoAudience; className?: string }) {
   const common = {
     viewBox: "0 0 24 24",
     fill: "none",
@@ -188,16 +199,41 @@ function DoorMark({ audience, className }: { audience: DemoAudience; className?:
   )
 }
 
+const ROLE_FILTERS: { value: DemoAudience | "all"; label: string }[] = [
+  { value: "all", label: "Everything" },
+  { value: "clubs", label: "I run a club" },
+  { value: "leagues", label: "I run a league" },
+  { value: "parents", label: "Parent or player" },
+]
+
 export function DemoLanesPreview() {
-  const [laneKey, setLaneKey] = useState<DemoAudience | null>(null)
-  const lane = LANES.find((l) => l.audience === laneKey) ?? null
+  const [role, setRole] = useState<DemoAudience | "all">("all")
+  const [picked, setPicked] = useState(false)
+  const [query, setQuery] = useState("")
+  const q = query.trim().toLowerCase()
+
+  const flagship = demoOf(FLAGSHIP_SLUG)
+  const showFlagship = matches(flagship, q)
+  const lanes = useMemo(
+    () =>
+      LANES.filter((lane) => role === "all" || lane.audience === role)
+        .map((lane) => ({
+          lane,
+          path: lane.path.filter((slug) => matches(demoOf(slug), q)),
+          also: lane.also.filter((slug) => matches(demoOf(slug), q)),
+        }))
+        .filter(({ path, also }) => path.length + also.length > 0),
+    [role, q]
+  )
+
+  const nothing = !showFlagship && lanes.length === 0
 
   return (
     <div className="min-h-[100dvh] bg-ink-50 text-ink-950">
-      {/* ── Header band: same daylight court as the shipped gallery ──────── */}
+      {/* ── Header band ─────────────────────────────────────────────────── */}
       <header className="relative isolate overflow-hidden border-b border-ink-100 bg-white">
         <CourtBackdropLayer variant="daylight" intensity="band" />
-        <div className="relative z-10 mx-auto w-full max-w-[1120px] px-4 pb-6 pt-5 sm:px-7 sm:pb-8 sm:pt-6">
+        <div className="relative z-10 mx-auto w-full max-w-[1120px] px-4 pb-6 pt-5 sm:px-7 sm:pb-7 sm:pt-6">
           <Link
             href="/"
             className="inline-flex items-center rounded-lg outline-none transition-opacity hover:opacity-80 focus-visible:ring-2 focus-visible:ring-gold-500/70"
@@ -212,15 +248,106 @@ export function DemoLanesPreview() {
             Product demos
           </h1>
           <p className="mt-2.5 max-w-xl text-[16px] leading-relaxed text-ink-600">
-            Short walkthroughs of the real screens. Nothing to install, nothing to sign
-            up for.
+            Thirteen short walkthroughs of the real screens. Nothing to install,
+            nothing to sign up for.
           </p>
         </div>
       </header>
 
       <main className="relative isolate">
-        <div className="mx-auto w-full max-w-[1120px] px-4 py-8 sm:px-7 sm:py-10">
-          {!lane ? <Doors onPick={setLaneKey} /> : <LaneView lane={lane} onBack={() => setLaneKey(null)} />}
+        <div className="mx-auto w-full max-w-[1120px] px-4 py-7 sm:px-7 sm:py-8">
+          {/* ── The picker row: loud, with its moving cue ────────────────── */}
+          <div className="rounded-3xl bg-white p-4 shadow-sm ring-1 ring-ink-100 sm:p-5">
+            <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+              <div className="flex min-w-0 flex-col gap-2 sm:flex-row sm:items-center sm:gap-2.5">
+                {!picked && (
+                  <span
+                    className="flex shrink-0 items-center gap-1.5 text-[14px] font-bold text-gold-600"
+                    aria-hidden="true"
+                  >
+                    Pick your seat
+                    <span className="rotate-90 sm:rotate-0">
+                      <svg
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2.6"
+                        className="demo-nudge-x h-5 w-5"
+                      >
+                        <path
+                          d="M4 12h15M14 6l6 6-6 6"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                      </svg>
+                    </span>
+                  </span>
+                )}
+                <div
+                  role="group"
+                  aria-label="Show demos for"
+                  className="-mx-4 flex gap-1.5 overflow-x-auto px-4 sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+                >
+                  {ROLE_FILTERS.map((f) => {
+                    const active = role === f.value
+                    return (
+                      <button
+                        key={f.value}
+                        type="button"
+                        onClick={() => {
+                          setRole(f.value)
+                          setPicked(true)
+                        }}
+                        className={cn(
+                          "inline-flex h-10 shrink-0 cursor-pointer items-center gap-2 whitespace-nowrap rounded-full px-4 text-[14px] font-bold outline-none transition-colors sm:h-11 sm:text-[14.5px]",
+                          "focus-visible:ring-2 focus-visible:ring-gold-500",
+                          active
+                            ? "bg-ink-950 text-white"
+                            : "bg-ink-50 text-ink-600 ring-1 ring-ink-200 hover:bg-ink-100 hover:text-ink-900"
+                        )}
+                        aria-pressed={active}
+                      >
+                        {f.value !== "all" && (
+                          <RoleMark audience={f.value} className="h-4 w-4" />
+                        )}
+                        {f.label}
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+              <SearchField value={query} onChange={setQuery} />
+            </div>
+          </div>
+
+          {nothing ? (
+            <div className="mt-6 rounded-3xl border border-ink-200 bg-white px-6 py-12 text-center">
+              <p className="text-[17px] font-bold">Nothing matches that</p>
+              <p className="mx-auto mt-2 max-w-md text-[14px] leading-relaxed text-ink-500">
+                Clear the search to see every walkthrough again.
+              </p>
+              <button
+                type="button"
+                onClick={() => {
+                  setQuery("")
+                  setRole("all")
+                }}
+                className="mt-6 inline-flex cursor-pointer items-center rounded-xl bg-gold-500 px-5 py-3 text-sm font-bold text-ink-950 outline-none transition-transform duration-200 hover:-translate-y-0.5 focus-visible:ring-2 focus-visible:ring-ink-950/40 motion-reduce:transform-none"
+              >
+                Show everything
+              </button>
+            </div>
+          ) : (
+            <div className="mt-6 space-y-6">
+              {/* ── The flagship, once, for everyone ─────────────────────── */}
+              {showFlagship && <FlagshipCard demo={flagship} />}
+
+              {/* ── The bounded lanes ────────────────────────────────────── */}
+              {lanes.map(({ lane, path, also }) => (
+                <LaneSection key={lane.audience} lane={lane} path={path} also={also} />
+              ))}
+            </div>
+          )}
 
           <p className="mt-12 border-t border-ink-200 pt-5 text-[14px] leading-relaxed text-ink-400">
             Every demo runs on a sample club and league. Real accounts, rosters and
@@ -232,177 +359,143 @@ export function DemoLanesPreview() {
   )
 }
 
-/* ── The doors ───────────────────────────────────────────────────────────── */
-
-function Doors({ onPick }: { onPick: (a: DemoAudience) => void }) {
+function SearchField({
+  value,
+  onChange,
+}: {
+  value: string
+  onChange: (value: string) => void
+}) {
   return (
-    <div>
-      <h2 className="font-display text-[22px] font-extrabold tracking-tight sm:text-[26px]">
-        Who&apos;s watching?
-      </h2>
-      <p className="mt-1.5 max-w-2xl text-[14.5px] leading-relaxed text-ink-500">
-        Pick your seat and we&apos;ll line up the demos worth your next ten minutes, in
-        order.
-      </p>
-
-      <div className="mt-6 grid gap-4 sm:grid-cols-3">
-        {LANES.map((lane) => (
-          <button
-            key={lane.audience}
-            type="button"
-            onClick={() => onPick(lane.audience)}
-            className={cn(
-              "group flex cursor-pointer flex-col items-start rounded-3xl bg-white p-6 text-left ring-1 ring-ink-100",
-              "shadow-sm outline-none transition-all duration-200",
-              "hover:-translate-y-0.5 hover:shadow-lg hover:ring-gold-500/60",
-              "focus-visible:ring-2 focus-visible:ring-gold-500",
-              "motion-reduce:transform-none motion-reduce:transition-none"
-            )}
-          >
-            <span
-              className={cn(
-                "grid h-12 w-12 place-items-center rounded-2xl ring-1",
-                lane.tone.bg,
-                lane.tone.ring,
-                lane.tone.text
-              )}
-            >
-              <DoorMark audience={lane.audience} className="h-6 w-6" />
-            </span>
-            <span className="font-display mt-4 text-[21px] font-extrabold leading-tight sm:text-[23px]">
-              {lane.door}
-            </span>
-            <span className="mt-1 text-[14.5px] leading-relaxed text-ink-500">
-              {lane.doorSub}
-            </span>
-            <span className="mt-4 text-[12.5px] font-bold uppercase tracking-[0.14em] text-ink-400">
-              {lane.path.length} demos · about {laneMinutes(lane)} minutes
-            </span>
-            <span
-              className={cn(
-                "mt-3 inline-flex items-center gap-1.5 text-[14px] font-bold transition-colors",
-                lane.tone.text
-              )}
-            >
-              Start watching
-              <svg
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2.4"
-                className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5 motion-reduce:transform-none"
-                aria-hidden="true"
-              >
-                <path d="M5 12h14M13 6l6 6-6 6" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-            </span>
-          </button>
-        ))}
-      </div>
-
-      <p className="mt-6 text-[14.5px] text-ink-500">
-        Just browsing?{" "}
-        <Link
-          href="/demos"
-          className="font-semibold text-play-700 underline-offset-2 hover:underline"
-        >
-          See all thirteen demos
-        </Link>
-      </p>
+    <div className="relative w-full lg:w-[250px]">
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2.2"
+        aria-hidden="true"
+        className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-400"
+      >
+        <circle cx="11" cy="11" r="7" />
+        <path d="m20 20-3.2-3.2" />
+      </svg>
+      <input
+        type="search"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder="Search demos"
+        aria-label="Search demos"
+        className="h-11 w-full rounded-xl border border-ink-200 bg-white pl-9 pr-3 text-sm font-medium outline-none transition-colors placeholder:text-ink-400 focus:border-gold-500/60 focus:ring-2 focus:ring-gold-500/25"
+      />
     </div>
   )
 }
 
-/* ── One lane: the numbered path, then the folded rest ───────────────────── */
-
-function LaneView({ lane, onBack }: { lane: Lane; onBack: () => void }) {
-  const [moreOpen, setMoreOpen] = useState(false)
-
+/** The one loud card: navy stage, gold play, "for everyone". */
+function FlagshipCard({ demo }: { demo: DemoEntry }) {
   return (
-    <div>
-      <button
-        type="button"
-        onClick={onBack}
-        className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg text-[14px] font-semibold text-ink-500 outline-none transition-colors hover:text-ink-800 focus-visible:ring-2 focus-visible:ring-gold-500"
+    <Link
+      href={`/demos/${demo.slug}`}
+      className={cn(
+        "group relative isolate flex flex-col gap-4 overflow-hidden rounded-[28px] p-6 text-white sm:flex-row sm:items-center sm:gap-6 sm:p-7",
+        "shadow-soft outline-none transition-all duration-200",
+        "hover:-translate-y-0.5 hover:shadow-lg",
+        "focus-visible:ring-2 focus-visible:ring-gold-500",
+        "motion-reduce:transform-none motion-reduce:transition-none"
+      )}
+      style={{
+        backgroundImage:
+          "radial-gradient(120% 150% at 50% -20%, rgba(255,255,255,0.10) 0%, transparent 60%), linear-gradient(135deg, #16233a, #0b1628)",
+      }}
+    >
+      <span className="min-w-0 flex-1">
+        <span className="flex flex-wrap items-center gap-2">
+          <span className="rounded-full bg-gold-500 px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-[0.1em] text-ink-950">
+            The big one
+          </span>
+          <span className="text-[12px] font-bold uppercase tracking-[0.16em] text-white/55">
+            For everyone · {shortDuration(demo.durationLabel)}
+          </span>
+        </span>
+        <span className="font-display mt-2 block text-[24px] font-extrabold leading-tight sm:text-[28px]">
+          {demo.title}
+        </span>
+        <span className="mt-1.5 block max-w-2xl text-[15px] leading-relaxed text-white/75">
+          {WATCH_LINES[demo.slug]}
+        </span>
+      </span>
+      <span
+        className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-gold-500 text-ink-950 transition-colors group-hover:bg-gold-400"
+        aria-hidden="true"
       >
-        <svg
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2.4"
-          className="h-4 w-4"
-          aria-hidden="true"
-        >
-          <path d="M19 12H5M11 6l-6 6 6 6" strokeLinecap="round" strokeLinejoin="round" />
+        <svg viewBox="0 0 24 24" fill="currentColor" className="ml-1 h-6 w-6">
+          <path d="M8 5v14l11-7z" />
         </svg>
-        Who&apos;s watching
-      </button>
+      </span>
+    </Link>
+  )
+}
 
-      <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2">
+/** One clearly bounded audience section: tinted ground, numbered path inside. */
+function LaneSection({
+  lane,
+  path,
+  also,
+}: {
+  lane: Lane
+  path: string[]
+  also: string[]
+}) {
+  return (
+    <section
+      aria-labelledby={`lane-${lane.audience}`}
+      className={cn("rounded-[28px] p-4 ring-1 sm:p-6", lane.tone.ground, lane.tone.ring)}
+    >
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
         <span
           className={cn(
-            "grid h-11 w-11 place-items-center rounded-2xl ring-1",
-            lane.tone.bg,
+            "grid h-11 w-11 place-items-center rounded-2xl bg-white ring-1",
             lane.tone.ring,
             lane.tone.text
           )}
         >
-          <DoorMark audience={lane.audience} className="h-5.5 w-5.5" />
+          <RoleMark audience={lane.audience} className="h-5 w-5" />
         </span>
-        <div>
-          <h2 className="font-display text-[24px] font-extrabold tracking-tight sm:text-[28px]">
-            {lane.door}
+        <div className="min-w-0">
+          <h2
+            id={`lane-${lane.audience}`}
+            className="font-display text-[22px] font-extrabold tracking-tight sm:text-[25px]"
+          >
+            {lane.title}
           </h2>
-          <p className="text-[14.5px] text-ink-500">
-            {lane.path.length} demos in order · about {laneMinutes(lane)} minutes
-            all the way through
+          <p className="text-[14px] text-ink-600">
+            {lane.sub}{" "}
+            <span className="whitespace-nowrap font-bold uppercase tracking-[0.1em] text-ink-400">
+              {path.length + also.length} demos · about {laneMinutes(lane)} min
+            </span>
           </p>
         </div>
       </div>
 
-      <ol className="mt-6 space-y-3">
-        {lane.path.map((slug, i) => (
+      <ol className="mt-4 space-y-3">
+        {path.map((slug, i) => (
           <PathCard key={slug} demo={demoOf(slug)} index={i} lane={lane} />
         ))}
       </ol>
 
-      {lane.more.length > 0 && (
-        <div className="mt-8">
-          <button
-            type="button"
-            onClick={() => setMoreOpen((v) => !v)}
-            aria-expanded={moreOpen}
-            className="inline-flex cursor-pointer items-center gap-2 rounded-lg text-[15px] font-bold text-ink-700 outline-none transition-colors hover:text-ink-950 focus-visible:ring-2 focus-visible:ring-gold-500"
-          >
-            <svg
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2.4"
-              className={cn(
-                "h-4 w-4 transition-transform duration-200",
-                moreOpen && "rotate-90",
-                "motion-reduce:transition-none"
-              )}
-              aria-hidden="true"
-            >
-              <path d="m9 6 6 6-6 6" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-            {lane.moreLabel}
-            <span className="text-[13px] font-bold uppercase tracking-[0.14em] text-ink-400">
-              {lane.more.length} more
-            </span>
-          </button>
-          {moreOpen && (
-            <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {lane.more.map((slug) => (
-                <MoreCard key={slug} demo={demoOf(slug)} />
-              ))}
-            </div>
-          )}
+      {also.length > 0 && (
+        <div className="mt-4">
+          <p className="text-[12.5px] font-bold uppercase tracking-[0.16em] text-ink-500">
+            Also worth your time
+          </p>
+          <div className="mt-2.5 grid gap-3 sm:grid-cols-2">
+            {also.map((slug) => (
+              <AlsoCard key={slug} demo={demoOf(slug)} />
+            ))}
+          </div>
         </div>
       )}
-    </div>
+    </section>
   )
 }
 
@@ -413,7 +506,7 @@ function PathCard({ demo, index, lane }: { demo: DemoEntry; index: number; lane:
       <Link
         href={`/demos/${demo.slug}`}
         className={cn(
-          "group flex items-start gap-4 rounded-2xl bg-white p-5 ring-1 ring-ink-100 sm:gap-5 sm:p-6",
+          "group flex items-start gap-4 rounded-2xl bg-white p-4 ring-1 ring-ink-100 sm:gap-5 sm:p-5",
           "shadow-sm outline-none transition-all duration-200",
           "hover:-translate-y-0.5 hover:shadow-lg hover:ring-gold-500/60",
           "focus-visible:ring-2 focus-visible:ring-gold-500",
@@ -440,10 +533,10 @@ function PathCard({ demo, index, lane }: { demo: DemoEntry; index: number; lane:
               </span>
             )}
           </span>
-          <span className="font-display mt-1 block text-[20px] font-bold leading-tight transition-colors group-hover:text-play-700 sm:text-[22px]">
+          <span className="font-display mt-1 block text-[19px] font-bold leading-tight transition-colors group-hover:text-play-700 sm:text-[21px]">
             {demo.title}
           </span>
-          <span className="mt-1 block text-[14.5px] leading-relaxed text-ink-500">
+          <span className="mt-1 block text-[14px] leading-relaxed text-ink-500">
             {WATCH_LINES[demo.slug]}
           </span>
         </span>
@@ -460,12 +553,12 @@ function PathCard({ demo, index, lane }: { demo: DemoEntry; index: number; lane:
   )
 }
 
-function MoreCard({ demo }: { demo: DemoEntry }) {
+function AlsoCard({ demo }: { demo: DemoEntry }) {
   return (
     <Link
       href={`/demos/${demo.slug}`}
       className={cn(
-        "group flex flex-col rounded-2xl bg-white p-5 ring-1 ring-ink-100",
+        "group flex flex-col rounded-2xl bg-white p-4 ring-1 ring-ink-100",
         "shadow-sm outline-none transition-all duration-200",
         "hover:-translate-y-0.5 hover:shadow-lg hover:ring-gold-500/60",
         "focus-visible:ring-2 focus-visible:ring-gold-500",
@@ -475,7 +568,7 @@ function MoreCard({ demo }: { demo: DemoEntry }) {
       <p className="text-[12px] font-bold uppercase tracking-[0.16em] text-ink-400">
         {shortDuration(demo.durationLabel)}
       </p>
-      <h3 className="font-display mt-1.5 text-[18px] font-bold leading-tight transition-colors group-hover:text-play-700">
+      <h3 className="font-display mt-1 text-[17px] font-bold leading-tight transition-colors group-hover:text-play-700">
         {demo.title}
       </h3>
       <p className="mt-1 text-[13.5px] leading-relaxed text-ink-500">

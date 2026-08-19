@@ -458,6 +458,25 @@
     opacity: 1;
   }
 }
+/* Demo directory gallery: the "choose here" cue beside the role picker
+   (owner 2026-08-19) — a gentle horizontal bob, killed by reduced motion. */
+.demo-nudge-x {
+  animation: demo-nudge-x 1.1s ease-in-out infinite;
+}
+@keyframes demo-nudge-x {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  50% {
+    transform: translateX(6px);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .demo-nudge-x {
+    animation: none;
+  }
+}
 /* Demo directory: a signature being drawn. A real pen takes about a second,
    so the stroke reveals over one. */
 .demo-sign-draw {
