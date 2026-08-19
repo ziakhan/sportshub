@@ -1,0 +1,143 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&family=Work+Sans:wght@400;500;600;700&family=Barlow+Condensed:wght@600;700;800&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="_brand.css" />
+<!--
+  THE ANCHOR POST (2026-08-19) — the only app where all four are in the
+  same season.
+
+  Owner's call, and the brief was explicit: say "the only app", make it about
+  players, parents, clubs and leagues INTERACTING, and use no technical
+  language. Referees, scorekeepers and trainers are complementary and stay out
+  of the headline; four parties is the story.
+
+  THE DEVICE IS THE TIMESTAMP. Every card reads 6:04 PM. The league moves a
+  game and the club, the player and the parent know in the same minute, and
+  the identical clock on four cards argues it without a single word about how
+  it works. A reader does not have to believe a claim they can just count.
+
+  Deliberately no product jargon, no talk of accounts or databases: a parent
+  does not know what any of that means and does not need to. What they know is
+  the feeling of being the last person told, and this is the picture of that
+  never happening again.
+-->
+<style>
+  .stage { gap: 34px; padding: 60px 56px 236px; }
+
+  .grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    width: 100%;
+    max-width: 880px;
+  }
+  .who {
+    position: relative;
+    border-radius: 20px;
+    border: 1.5px solid rgba(255, 255, 255, 0.14);
+    background: linear-gradient(160deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.03));
+    padding: 20px 22px 18px;
+    text-align: left;
+    overflow: hidden;
+  }
+  .who .role {
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+    font-family: var(--body);
+    font-size: 19px;
+    font-weight: 800;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+  }
+  .who .role .dot { width: 11px; height: 11px; border-radius: 999px; }
+  .who .line {
+    display: block;
+    font-family: var(--display);
+    font-weight: 800;
+    font-size: 30px;
+    line-height: 1.2;
+    color: #ffffff;
+    letter-spacing: -0.01em;
+    margin-top: 13px;
+  }
+  .who .meta {
+    display: block;
+    font-family: var(--body);
+    font-size: 21px;
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.5);
+    margin-top: 7px;
+  }
+  .who .stamp {
+    display: inline-block;
+    margin-top: 15px;
+    font-family: var(--condensed);
+    font-weight: 800;
+    font-size: 30px;
+    letter-spacing: 0.04em;
+    color: var(--gold-300);
+    background: rgba(245, 158, 11, 0.14);
+    border: 1.5px solid rgba(245, 158, 11, 0.4);
+    border-radius: 999px;
+    padding: 4px 18px;
+    font-variant-numeric: tabular-nums;
+  }
+
+  h1 { font-size: 82px; line-height: 1.04; }
+  h1 .hit { color: var(--gold-300); }
+  .sub {
+    font-family: var(--body); font-size: 30px; font-weight: 500;
+    color: rgba(255, 255, 255, 0.62); max-width: 840px; line-height: 1.42;
+  }
+  .sub b { color: #ffffff; font-weight: 700; }
+</style>
+</head>
+<body>
+<div class="stage dark">
+  <span class="eyebrow">One change, 6:04 PM</span>
+
+  <div class="grid">
+    <span class="who">
+      <span class="role" style="color:#5B8DFF"><span class="dot" style="background:#5B8DFF"></span> League</span>
+      <span class="line">Moves Saturday&rsquo;s game to 4:00</span>
+      <span class="meta">Grade 10 Boys &middot; Haber Rec</span>
+      <span class="stamp">6:04 PM</span>
+    </span>
+
+    <span class="who">
+      <span class="role" style="color:#3DDC97"><span class="dot" style="background:#3DDC97"></span> Club</span>
+      <span class="line">Sees its schedule redraw</span>
+      <span class="meta">No email, no re-typing</span>
+      <span class="stamp">6:04 PM</span>
+    </span>
+
+    <span class="who">
+      <span class="role" style="color:#F24E1E"><span class="dot" style="background:#F24E1E"></span> Player</span>
+      <span class="line">Sees the new time on his page</span>
+      <span class="meta">Jayden T. &middot; #23</span>
+      <span class="stamp">6:04 PM</span>
+    </span>
+
+    <span class="who">
+      <span class="role" style="color:#FFC24B"><span class="dot" style="background:#FFC24B"></span> Parent</span>
+      <span class="line">Phone buzzes, calendar moves</span>
+      <span class="meta">Both kids, one list</span>
+      <span class="stamp">6:04 PM</span>
+    </span>
+  </div>
+
+  <h1>The only app where <span class="hit">all four</span><br />are in the same season.</h1>
+  <p class="sub">Not four apps passing messages between them. <b>One change, and everybody already knows.</b></p>
+
+  <div class="footer-brand">
+    <span class="wm"><span class="s">Sports</span><span class="h">Hub</span><span class="one">ONE</span></span>
+    <span class="domain">sportshubone.com</span>
+  </div>
+</div>
+<script>const m = location.hash.replace("#", ""); if (m) document.body.classList.add(m);</script>
+</body>
+</html>
