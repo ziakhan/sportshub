@@ -145,6 +145,16 @@ export function brandStyle(hex?: string | null): CSSProperties {
 /** The colour the importer and the schema default stamp on everyone. */
 export const DEFAULT_BRAND_HEX = "#1a73e8"
 
+/**
+ * Every hex an importer ever stamped, none of them a human choice. #1a73e8 is
+ * the schema default; #1e40af rode in on the census import — 1,611 branding
+ * rows hold it and all of them are census-sourced (audit 2026-08-19, box and
+ * local agree; 1,346 sit on UNCLAIMED clubs). Without this, a club claimed out
+ * of the census starts wearing that blue the moment its status leaves
+ * UNCLAIMED, as if somebody picked it.
+ */
+export const IMPORTER_BRAND_HEXES = new Set([DEFAULT_BRAND_HEX, "#1e40af"])
+
 /** What a crest, stripe or accent wears when nobody chose a colour. */
 export const NEUTRAL_BRAND = "#0f1b33" // navy-900
 
@@ -170,14 +180,14 @@ function normalizeHex(input?: string | null): string | null {
 
 /**
  * Did this entity actually pick its colour? Two gates, both required:
- * an unclaimed club never picked anything, and a record still wearing the
- * schema default never picked anything either.
+ * an unclaimed club never picked anything, and a record still wearing an
+ * importer-stamped hex never picked anything either.
  */
 export function hasChosenBrand(input: BrandChoiceInput): boolean {
   if (typeof input.status === "string" && input.status.toUpperCase() === "UNCLAIMED") return false
   const hex = normalizeHex(input.primaryColor)
   if (!hex) return false
-  return hex !== DEFAULT_BRAND_HEX
+  return !IMPORTER_BRAND_HEXES.has(hex)
 }
 
 /**
