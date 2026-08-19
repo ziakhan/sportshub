@@ -127,12 +127,24 @@ export function CreativeGallery({ creatives }: { creatives: CreativeEntry[] }) {
 
                   <p className="mt-1.5 truncate text-[15px] font-semibold">{c.name}</p>
 
-                  <div className="mt-1.5 flex items-center gap-3 text-[13px] font-semibold">
+                  <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[13px] font-semibold">
+                    {/* The postable file. Rendered on demand at full export
+                        size (PNG for statics, MP4 for spots), so what lands in
+                        Downloads is what the CLI would have produced. */}
+                    <a
+                      href={`/dev/creatives/download/${c.name}/${format}`}
+                      className="inline-flex cursor-pointer items-center gap-1.5 rounded-md bg-gold-500 px-2.5 py-1 text-ink-950 transition-colors hover:bg-gold-400"
+                    >
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" className="h-3.5 w-3.5">
+                        <path d="M12 3v12m0 0 4-4m-4 4-4-4M4 20h16" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                      Download {FORMATS[format].w}&times;{FORMATS[format].h}
+                    </a>
                     <a
                       href={src}
                       target="_blank"
                       rel="noreferrer"
-                      className="cursor-pointer text-gold-400 transition-colors hover:text-gold-300"
+                      className="cursor-pointer text-white/55 transition-colors hover:text-white"
                     >
                       Open full size
                     </a>
@@ -155,8 +167,10 @@ export function CreativeGallery({ creatives }: { creatives: CreativeEntry[] }) {
         </div>
 
         <p className="mt-10 rounded-xl bg-white/5 p-4 text-[13px] leading-relaxed text-white/50 ring-1 ring-white/10">
-          These are the authored sources, playing live. To export postable files
-          (PNG for statics, MP4 and GIF for the animated ones, three formats each):
+          These are the authored sources, playing live. <b className="text-white/80">Download</b> renders
+          the postable file at full export size for the format selected above: PNG for statics,
+          MP4 for the animated spots. The first click on a creative costs a render, the rest are
+          instant. To export everything at once instead:
           <code className="ml-1 rounded bg-black/40 px-1.5 py-0.5 text-white/70">
             node scripts/marketing/render-creatives.mjs &lt;outDir&gt;
           </code>
