@@ -389,20 +389,20 @@ export const DEMOS: DemoEntry[] = [
     promise:
       "A club asks out of a drawn season, the league approves it, ten games come off by themselves, and the teams left short get exactly the games they were missing.",
     description:
-      "It opens after the season is drawn: the teams are approved, the games are on the board, and one club writes in asking out. The league reads the reason, sees in advance what approving will cost, and presses one button. The withdrawal then executes as a single transaction: the entry goes to withdrawn while its history stays, an unpaid entry fee is cancelled with it, the club's open schedule requests close themselves, the team's future games come off the board, and every opposing club is told without anybody building a list. The schedule tab then names the teams now under the games guarantee, with each one's real count, including the one that is short by two because they were drawn against the leavers twice. The last chapter is the fix. Preview it, then add only the missing games, and the warning goes green while every game already on the board keeps its court, its time and its weekend.",
+      "It opens after the season is drawn: the teams are approved, the games are on the board, and one club writes in asking out. The league reads the reason, sees in advance what approving will cost, and presses one button. The queue empties itself, the row says withdrawn, and the team's own page shows all ten of their games cancelled without anybody opening one. The rest of the withdrawal runs as a single transaction: an unpaid entry fee is cancelled with the entry, the club's open schedule requests close themselves, and every opposing club office finds the news in its inbox without anybody building a list. The schedule tab then names the teams now under the games guarantee, and Team check carries each one's real count, including the team short by two because they were drawn against the leavers twice. The last chapter is the fix. Preview it, then add only the missing games, and the warning disappears while every game already on the board keeps its court, its time and its weekend.",
     audiences: ["leagues", "clubs"],
     primaryAudience: "leagues",
     kind: "chapter",
     stage: "desktop",
-    durationLabel: "1 min 43 sec",
+    durationLabel: "1 min 27 sec",
     status: "live",
     chapterCount: 4,
     /* No volatile numbers in the bullets: the counts move with the seed, and
        a bullet that goes stale is a bullet that lies on the card. */
     bullets: [
       "A club that is already approved cannot just leave: the league signs it off, with the reason on the record",
-      "One approval withdraws the entry, kills the unpaid fee, closes their requests and cancels their future games",
-      "The schedule names every team left under the games guarantee, and how short each one is",
+      "One approval withdraws the entry, kills the unpaid fee, closes their requests and cancels every future game on their page",
+      "The schedule names every team left under the games guarantee, and Team check says how short each one is",
       "The fix ADDS only the missing games, so nobody else's court, time or weekend moves",
     ],
     chapterTitles: [

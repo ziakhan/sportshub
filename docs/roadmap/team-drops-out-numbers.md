@@ -328,3 +328,64 @@ part no league has ever been shown" and "it is the reason this demo exists".
 
 **Screen.** The transaction card was half empty under its four rows and its notice card was clipped;
 the rows now carry the height and the whole card, notice included, is on screen.
+
+---
+
+## Realism conversion, 2026-08-19 (mock-ui.tsx R1–R8)
+
+Every screen is now the REAL component's markup at the product's own sizes, and the two
+things this demo never showed are on camera: the ten games actually reading **cancelled**,
+and the notification actually **landing**. Sections A to G above still hold; these rows
+change.
+
+**Four invented panels deleted.** The season stats strip, the "Nothing waiting" state of the
+withdrawal panel (the real one returns `null`, so approving DELETES it), the "The fix,
+previewed" card with its four counters, and the green "Every team has its 10 games" banner.
+The old expanding gap list went with them: `schedule-tab.tsx` truncates to four names and
+"+5 more" and offers no way to see the rest. Per-team counts, Vanguard's 8 included, are now
+read where the product really shows them, in **Team check**.
+
+**Two real screens added**, both reached the way the product reaches them:
+
+| New screen | File | What it proves |
+|---|---|---|
+| The team page, via "Details →" | `teams/[submissionId]/page.tsx` | the withdrawn Badge, and **Games (10)**, every line ending `· cancelled` |
+| The opponents' inbox | `(platform)/notifications/page.tsx` | the unread row carrying `requests.ts` lines 337 to 339 verbatim, in its real read-state |
+
+**Three corrections the old cut got wrong.**
+
+1. **The season is filmed as FINALIZED, not REGISTRATION.** `schedule-tab.tsx` line 365
+   (`canCommit`) DISABLES "Add ONLY the missing games" outside `FINALIZED`/`IN_PROGRESS`; the
+   08-16 cut showed an "Open for registration" chip and pressed the button anyway. Nothing
+   else moves: every game is still future and unpublished.
+2. **The draft strip counts every unpublished game.** `draftCount` is
+   `scheduleGames.filter(g => !g.publishedAt)`, and in this world that is all of them, so the
+   strip reads **715** before the fix and **720** after it, not "5 new drafts". It is also on
+   screen from the first schedule beat, because it always is.
+3. **`toneForStatus("WITHDRAWN")` is NEUTRAL**, not hoop. The row is grey, not red.
+
+**One new invented block, declared (extends section G).** The preview panel's five fixtures.
+The panel really renders a When/Home/Away table, so drawing the panel without it would be a
+fabricated variant of a real component. The **pairings** are arithmetic (eight teams short by
+one, Vanguard by two, which is exactly five games); the **dates and courts** are composed at
+the season's real weekends and venue, because the commit was never run against a database.
+Also composed: which side was home in the ten cancelled games, the payment Badges and
+"Unpaid (146)" (the schema default, no payment rows exist), and the notification's timestamp.
+
+**Composition, unchanged in kind:** Team check is still filmed over Division D; the registered
+list shows four of 146 rows; the team page's Entry fee, Blackout and Contacts panels, the
+tab's roster-requests panel and the ScheduleReadiness band are not drawn and no beat acts on
+them. Long pages scroll inside the 1160x600 pane exactly as a browser scrolls them.
+
+**Balloons and pace.** 18 callouts down to 12; `paced()` is now `your-week-story.tsx`'s
+function verbatim, and every press is split from its landing (a `set` applies at beat start,
+so a press that also swaps the screen deletes its own target). No toasts: the product raises
+none here, and the queue emptying is the confirmation.
+
+| Gate, this cut | Result |
+|---|---|
+| `readability-audit.mjs --routes /demos/team-drops-out --scope chrome` | **0 violations**, 24 beats, 28 scenes |
+| Runtime at 1x | **1 min 27 sec** (was 1 min 43 sec), registry updated |
+| `drive-demo-beats.mjs team-drops-out`, all 24 beats reviewed frame by frame | clean: no overflow, no dead white, no orphaned rings, every press lands |
+| `tsc --noEmit` | clean |
+| Database writes | **none** (the 08-16 world is no longer in the local DB; every number stays sourced from sections B to D above) |
