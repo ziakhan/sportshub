@@ -1,0 +1,134 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&family=Work+Sans:wght@400;500;600;700&family=Barlow+Condensed:wght@600;700;800&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="_brand.css" />
+<!--
+  COACH POST (2026-08-19) — the two-team conflict.
+
+  Owner's scenario, from coaches he has watched: one person runs two teams in
+  two age groups, the two games land in different buildings, and there is not
+  enough time to make the drive.
+
+  Roadmap note for whoever wires this: the scheduler does not read coaches
+  today (no person reference in lib/scheduler-v2; SnapTeam carries only id,
+  name, gradeId, style, blackouts, windows). Owner's call to run the post
+  ahead of the build, deliberately. Rulings already captured: the grade
+  building rule wins and the coach takes the drive, and venue proximity is a
+  declared travel group rather than computed distance.
+
+  The artifact is the conflict, not the fix, for the same reason s18 shows
+  the group chat rather than a tidy calendar: a coach recognises their own
+  Saturday instantly and needs no persuading that it is a problem. The turn
+  lives in one line underneath.
+
+  Two gyms named and a real drive time make it concrete. "Same slot, twenty
+  minutes apart" is the detail a coach repeats to another coach.
+-->
+<style>
+  .stage { gap: 30px; padding: 60px 58px 236px; }
+
+  .day {
+    flex: none;
+    width: 100%;
+    max-width: 840px;
+    background: linear-gradient(158deg, #16233d, #0c1526);
+    border: 1px solid rgba(239, 68, 68, 0.4);
+    border-radius: 28px;
+    overflow: hidden;
+    box-shadow: 0 46px 100px -40px rgba(0, 0, 0, 0.9);
+    text-align: left;
+  }
+  .day .hd {
+    padding: 16px 28px;
+    font-family: var(--body);
+    font-size: 19px;
+    font-weight: 800;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.4);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.09);
+  }
+  .g { display: flex; align-items: center; gap: 22px; padding: 20px 28px; }
+  .g + .g { border-top: 1px solid rgba(255, 255, 255, 0.07); }
+  .g .t {
+    font-family: var(--condensed);
+    font-weight: 800;
+    font-size: 44px;
+    color: var(--gold-300);
+    width: 148px;
+    flex: none;
+    font-variant-numeric: tabular-nums;
+  }
+  .g .who { min-width: 0; }
+  .g .who b {
+    display: block;
+    font-family: var(--display);
+    font-weight: 800;
+    font-size: 33px;
+    color: #ffffff;
+    letter-spacing: -0.01em;
+  }
+  .g .who span {
+    display: block;
+    font-family: var(--body);
+    font-size: 23px;
+    color: rgba(255, 255, 255, 0.5);
+    margin-top: 4px;
+  }
+  .clash {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    background: rgba(239, 68, 68, 0.16);
+    border-top: 1px solid rgba(239, 68, 68, 0.35);
+    padding: 16px 24px;
+    font-family: var(--body);
+    font-size: 23px;
+    font-weight: 800;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: #ff9ba3;
+  }
+  .clash i { width: 12px; height: 12px; border-radius: 999px; background: var(--live-500); flex: none; }
+
+  h1 { font-size: 66px; line-height: 1.05; }
+  h1 .hit { color: var(--gold-300); }
+  .sub {
+    font-family: var(--body); font-size: 28px; font-weight: 500;
+    color: rgba(255, 255, 255, 0.62); max-width: 830px; line-height: 1.42;
+  }
+  .sub b { color: #ffffff; font-weight: 700; }
+</style>
+</head>
+<body>
+<div class="stage dark">
+  <span class="eyebrow">For coaches</span>
+
+  <div class="day">
+    <div class="hd">Your Saturday</div>
+    <div class="g">
+      <span class="t">12:00</span>
+      <span class="who"><b>Grade 9 Boys</b><span>Haber Recreation Centre</span></span>
+    </div>
+    <div class="g">
+      <span class="t">12:00</span>
+      <span class="who"><b>Grade 11 Boys</b><span>Milliken Mills</span></span>
+    </div>
+    <div class="clash"><i></i> Same slot &middot; 20 minutes apart</div>
+  </div>
+
+  <h1>You coach two teams.<br />You can&rsquo;t coach them <span class="hit">at once</span>.</h1>
+  <p class="sub">The schedule knows which teams share a coach, and <b>leaves you the drive</b>.</p>
+
+  <div class="footer-brand">
+    <span class="wm"><span class="s">Sports</span><span class="h">Hub</span><span class="one">ONE</span></span>
+    <span class="domain">sportshubone.com</span>
+  </div>
+</div>
+<script>const m = location.hash.replace("#", ""); if (m) document.body.classList.add(m);</script>
+</body>
+</html>
