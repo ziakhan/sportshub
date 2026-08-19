@@ -306,17 +306,20 @@ export const DEMOS: DemoEntry[] = [
     promise:
       "Every game, stat line, highlight and award on one page a kid is proud to share.",
     description:
-      "It opens on the page the season builds for her: her team, her number, six averages written out in words, and every night she played on its own line with the numbers she put up. Last night's game is already there, because it was scored at the table rather than written on a clipboard. Then the part that matters to a kid: until somebody uploads a photo she gets a hand drawn mugshot with her jersey number on the chest, never a grey circle, and you watch the swap happen along with the one sentence the upload control carries about whose photo you may upload. The last stretch is the eighteen point night that won her Player of the Game, the share sheet with its consent line and its choice between her page and a twenty four hour story, and a handle that turns all of it into a link she can send to her grandmother.",
+      "This runs on a real player. It opens on the page a real season built for her: her team, her number, six averages written out in words, and every night she played on its own line with the numbers she really put up. Last night's game is already there, because it was scored at the table rather than written on a clipboard, and you watch the averages above it move when the line lands. Then the part that matters to a kid: until somebody uploads a photo she gets a hand drawn mugshot with her jersey number on the chest, never a grey circle, and you watch the swap happen along with the one sentence the upload control carries about whose photo you may upload. The last stretch is the twenty point night that won her Player of the Game, on the game page where the award actually lives, because nothing lands on a child's page until a person chooses it. The share sheet shows the card the product draws, the choice between her page and a twenty four hour story, and the reason a public share on a private profile is clamped back to followers. Then the address: she claims a handle, and every card she shares from that moment carries the link back to her page.",
     audiences: ["parents", "clubs"],
     kind: "chapter",
     stage: "phone",
-    durationLabel: "1 min 11 sec",
+    durationLabel: "1 min 30 sec",
     status: "live",
     chapterCount: 4,
+    /* No volatile numbers in the bullets: the seed's stat lines move, and a
+       bullet that goes stale is a bullet that lies on the card. */
     bullets: [
-      "Points, rebounds and assists kept for every game she played",
-      "A real photo replaces the sketched mug in one tap",
-      "Player of the Game, shareable the night it happens",
+      "Points, rebounds and assists kept for every game she played, straight off the scorer's phone",
+      "A real photo replaces the sketched mug, saved against the child rather than a post",
+      "Player of the Game shared with a decision, never landed on her page by itself",
+      "One handle, and every card she shares carries the link back to her page",
     ],
     chapterTitles: ["Her season, kept", "The photo", "Player of the Game", "Share it"],
     thumbEyebrow: "Chapter 7",
