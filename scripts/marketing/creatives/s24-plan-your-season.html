@@ -28,10 +28,19 @@
   value and wrapped with one orphaned word. It now covers the other half of
   the owner's point — no import either — in six words.
 
-  The chips are the three constraints the scheduler actually enforces, from
+  The chips are the constraints the scheduler actually enforces, from
   lib/scheduler-v2/ledger.ts: back-to-backs are forbidden-tier and gated to
   zero, long waits are priced, and early and late finishes are spread rather
   than dumped on one team.
+
+  "REQUESTS HONOURED" is a fourth chip rather than its own block, on the
+  owner's note to keep it simple — the ask was one idea, not a list of early
+  starts, late starts and blackouts. It sits with the guarantees because that
+  is what it is: blackouts are hard constraints and approved team requests are
+  constraints too, not suggestions. Worth knowing for anyone extending this:
+  requests are APPROVED by the league first (the console shows what a request
+  costs everyone else before you accept it), so "honoured" describes what
+  happens after approval, not an automatic yes to anything a team asks for.
 -->
 <style>
   .stage { gap: 28px; padding: 50px 56px 234px; }
@@ -124,6 +133,7 @@
     <span>No back-to-backs</span>
     <span>No long waits</span>
     <span>Early and late shared</span>
+    <span>Requests honoured</span>
   </div>
 
   <p class="payoff">No importing. No typing. <em>Not one team.</em></p>
