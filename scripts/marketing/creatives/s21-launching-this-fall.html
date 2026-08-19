@@ -16,6 +16,18 @@
   what they find is basketball, and the footnote says so without making it the
   headline.
 
+  NINE SEATS, NOT FOUR (owner, on review of v2). The other creatives lead with
+  four parties on purpose, because a pitch needs a spine. A LAUNCH card is the
+  opposite job: it is the one asset where a reader scans for their own role,
+  and a missing role reads as "not for me". So every seat in the Role enum is
+  named — Leagues, Clubs, Coaches (Staff), Team managers, Trainers, Players,
+  Parents, Referees, Scorekeepers. PlatformAdmin is internal and stays off.
+
+  MEDIA IS NOT ON IT BECAUSE MEDIA IS NOT A ROLE. Asked for twice; the enum
+  has no Media and no Videographer. On a launch announcement that would be the
+  single factual error on the card, and it is the card most likely to be
+  screenshotted. If media becomes a role, this is the first place to add it.
+
   THE REPETITION IS CUT. v1 said "One place for the league, the club, the
   player and the parent" and then listed Leagues / Clubs / Players / Parents
   as chips directly underneath — the same four things twice, in a card whose
@@ -66,21 +78,26 @@
   }
   .what em { font-style: normal; color: var(--hoop-500); }
 
+  /* Nine seats, not four. A launch card is the one asset where somebody
+     scans for their own job, so leaving a role off reads as "not for me".
+     Two rows and smaller chips keep nine from turning into clutter. */
   .who {
     display: flex;
     flex-wrap: wrap;
     justify-content: center;
-    gap: 11px;
-    margin-top: 42px;
+    gap: 9px;
+    margin-top: 38px;
+    max-width: 880px;
   }
   .who span {
     font-family: var(--display);
-    font-size: 26px;
+    font-size: 24px;
     font-weight: 700;
-    color: rgba(255, 255, 255, 0.8);
+    color: rgba(255, 255, 255, 0.82);
     border: 1.5px solid rgba(255, 255, 255, 0.22);
     border-radius: 999px;
-    padding: 11px 28px;
+    padding: 10px 22px;
+    white-space: nowrap;
   }
 
   .cta {
@@ -132,8 +149,13 @@
   <div class="who">
     <span>Leagues</span>
     <span>Clubs</span>
+    <span>Coaches</span>
+    <span>Team managers</span>
+    <span>Trainers</span>
     <span>Players</span>
     <span>Parents</span>
+    <span>Referees</span>
+    <span>Scorekeepers</span>
   </div>
 
   <span class="cta">sportshubone.com</span>
