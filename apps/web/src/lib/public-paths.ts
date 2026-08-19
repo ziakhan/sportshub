@@ -161,6 +161,12 @@ const PUBLIC_API_ANY_METHOD_PREFIXES = [
  *  notFound() in production as a second lock. */
 const DEV_ONLY_PREFIXES = ["/api/dev", "/api/create-test-users", "/dev"] as const
 
+/** The rare /dev preview the owner has explicitly made public (2026-08-19,
+ *  "I want some people to see it"): the demo-directory reorganization draft.
+ *  Checked BEFORE the dev deny-prefix, so it wins. Remove the entry when the
+ *  lanes design ships as /demos itself. */
+const PUBLIC_DEV_EXCEPTIONS = ["/dev/demos-lanes"] as const
+
 const READ_METHODS = new Set(["GET", "HEAD", "OPTIONS"])
 
 function matchesPrefix(pathname: string, prefix: string): boolean {
@@ -170,6 +176,10 @@ function matchesPrefix(pathname: string, prefix: string): boolean {
 
 export function isPublicPath(pathname: string, method: string = "GET"): boolean {
   const upperMethod = method.toUpperCase()
+
+  if (PUBLIC_DEV_EXCEPTIONS.some((p) => matchesPrefix(pathname, p))) {
+    return true
+  }
 
   if (DEV_ONLY_PREFIXES.some((p) => matchesPrefix(pathname, p))) {
     return process.env.NODE_ENV !== "production"
