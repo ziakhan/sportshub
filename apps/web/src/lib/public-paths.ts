@@ -164,7 +164,15 @@ const DEV_ONLY_PREFIXES = ["/api/dev", "/api/create-test-users", "/dev"] as cons
 /** The rare /dev preview the owner has explicitly made public (2026-08-19,
  *  "I want some people to see it"): the demo-directory reorganization draft.
  *  Checked BEFORE the dev deny-prefix, so it wins. Remove the entry when the
- *  lanes design ships as /demos itself. */
+ *  lanes design ships as /demos itself.
+ *
+ *  Before adding ANYTHING here, know what the route actually does:
+ *  /dev/creatives in particular must NEVER be listed — its download endpoint
+ *  shells out to render-creatives.mjs (Playwright + ffmpeg on demand), so a
+ *  public entry would hand strangers a remote render trigger. Its handler
+ *  404s in production as a second lock; the sanctioned way to share that
+ *  gallery is pre-rendering the exports to a static directory, not relaxing
+ *  either guard (marketing session, 2026-08-19). */
 const PUBLIC_DEV_EXCEPTIONS = ["/dev/demos-lanes"] as const
 
 const READ_METHODS = new Set(["GET", "HEAD", "OPTIONS"])
