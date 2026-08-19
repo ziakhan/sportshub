@@ -4,6 +4,8 @@ import { useEffect, useRef, useState, type ReactNode } from "react"
 import { demoNow } from "./motion"
 import { cn } from "@/components/ui/cn"
 import { Crest } from "@/components/ui/crest"
+import { PlayerMug } from "@/components/ui/player-mug"
+import { accentForKey } from "@/lib/ui/player-accent"
 
 /**
  * Game-day kit, PHONE AND PHONE (owner ruling 2026-08-16).
@@ -25,9 +27,13 @@ import { Crest } from "@/components/ui/crest"
  *      · the checklist modal, its Scorekeeper / Referee rows, the "Run the
  *        game clock?" choice with "Yes — I'll run it" / "No clock", the guest
  *        scorekeeper link, and "Continue to attendance & scoring →";
- *      · the attendance roll call, "Everyone starts as present — tap whoever is
- *        missing", present / absent tiles, "+ Add guest player";
- *      · the starting-five picker, "starting five: n/5", "Start game";
+ *      · the attendance roll call, BOTH teams stacked the way a phone gets
+ *        them, "Everyone starts as present — tap whoever is missing", present /
+ *        absent tiles, the per-team "n here · n absent" counts, "+ Add guest
+ *        player";
+ *      · the starting-five picker, BOTH pick lists with absentees already
+ *        filtered out, "starting five: n/5", the disabled "Start game" and its
+ *        "Fewer than 5 marked players?" footnote;
  *      · the console header: each team's score and period fouls, the mono clock
  *        button that starts and stops, "End Q1", the event ticker, the synced
  *        pill, BOX and the red UNDO;
@@ -232,6 +238,12 @@ export interface PhoneTeam {
 
 const TARGET = (id?: string) => (id ? { "data-demo-target": id } : {})
 
+/**
+ * One heading treatment for every panel on the live page (`ui-bits.tsx`
+ * SECTION_HEADING), raised from 11px to the kit's 14px floor (departure §H.1).
+ */
+const SECTION_HEADING = "text-ink-800 text-[14px] font-bold uppercase tracking-[0.18em]"
+
 /** The phone screen both surfaces sit in: light app ground, no chrome. */
 export function PhoneBody({ children, className }: { children: ReactNode; className?: string }) {
   return <div className={cn("flex h-full flex-col bg-[#f4f5f7]", className)}>{children}</div>
@@ -268,7 +280,10 @@ export function ConsoleChecklist({
   )
   return (
     <div className="absolute inset-0 z-40 flex items-center justify-center bg-black/50 px-3">
-      <div className="live-pop w-full rounded-3xl bg-white p-3.5 shadow-xl">
+      <div
+        data-demo-target="checklist-card"
+        className="live-pop w-full rounded-3xl bg-white p-3.5 shadow-xl"
+      >
         <p className="text-play-600 text-[14px] font-bold uppercase tracking-[0.18em]">
           Before tip-off
         </p>
@@ -300,7 +315,9 @@ export function ConsoleChecklist({
             <span
               className={cn(
                 "flex-1 rounded-lg border px-3 py-2 text-center text-[14px] font-bold",
-                clockChoice === false ? "border-ink-700 bg-ink-700 text-white" : "border-ink-200 text-ink-600"
+                clockChoice === false
+                  ? "border-ink-700 bg-ink-700 text-white"
+                  : "border-ink-200 text-ink-600"
               )}
             >
               No clock
@@ -332,144 +349,240 @@ export function ConsoleChecklist({
 
 /* ── Attendance roll call (scoring-console.tsx, pregameStep "attendance") ── */
 
-export function ConsoleAttendance({
-  teamName,
-  players,
-  absent,
-  id,
-}: {
-  teamName: string
-  players: MockPlayer[]
-  absent: number[]
-  id?: string
-}) {
-  const here = players.length - absent.length
+/**
+ * A pane taller than the handset, filmed at REAL scroll positions.
+ *
+ * The pre-game steps stack BOTH teams (`scoring-console.tsx` L808:
+ * `flex flex-col gap-4 md:flex-row`, so a phone gets one column and scrolls
+ * between them). The demo used to show one team and call the other one done;
+ * the owner's 2026-08-19 ruling is the opposite: "let's show them all the
+ * proper attendance lineup changes, if we need to scroll up a little bit to
+ * show them pressing the buttons, let's do that." So the pane is authored at
+ * its real height and the beat moves it, which is what a thumb does.
+ */
+export function ScrollPane({ y, children }: { y: number; children: ReactNode }) {
+  const host = useRef<HTMLDivElement>(null)
+  const inner = useRef<HTMLDivElement>(null)
+  const [max, setMax] = useState(0)
+  /* MEASURED, not guessed. A beat asks for a scroll position and the pane
+     clamps it to its own real end, so `SCROLL_END` means "the bottom of this
+     screen" and the control the beat is about can never end up under the
+     handset's edge with the hand chasing it off frame. */
+  useEffect(() => {
+    const measure = () => {
+      const h = host.current?.clientHeight ?? 0
+      const c = inner.current?.scrollHeight ?? 0
+      setMax(Math.max(0, c - h))
+    }
+    measure()
+    const ro = new ResizeObserver(measure)
+    if (inner.current) ro.observe(inner.current)
+    if (host.current) ro.observe(host.current)
+    return () => ro.disconnect()
+  })
   return (
-    <div className="flex h-full flex-col px-3 py-2">
-      <h2 className="text-ink-950 text-[17px] font-bold leading-tight">Attendance</h2>
-      <p className="text-ink-600 mt-0.5 text-[14px] leading-snug">
-        Everyone starts as present, tap whoever is missing. An absent player does not count a game
-        played in their season stats.
-      </p>
-
-      <div className="border-ink-200 mt-2 min-h-0 flex-1 rounded-xl border bg-white p-2">
-        <h3 className="text-ink-900 flex items-baseline gap-2 text-[15px] font-bold">
-          {teamName}
-          <span className="text-ink-600 text-[14px] font-semibold">
-            {here} here · {absent.length} absent
-          </span>
-        </h3>
-        <div className="mt-2 grid grid-cols-2 gap-1.5" {...TARGET(id)}>
-          {players.map((p) => {
-            const off = absent.includes(p.jersey)
-            return (
-              <span
-                key={p.jersey}
-                data-demo-target={`att-${p.jersey}`}
-                className={cn(
-                  "rounded-lg border px-2 py-1 text-left text-[14px] leading-snug transition-colors duration-300 motion-reduce:transition-none",
-                  off
-                    ? "border-hoop-300 bg-hoop-50 text-hoop-700 line-through"
-                    : "border-court-300 bg-court-50 text-ink-800"
-                )}
-              >
-                <span className="text-[16px] font-bold">#{p.jersey}</span>
-                <span className="ml-1.5">{p.short}</span>
-                <span className="block text-[14px] font-bold uppercase">
-                  {off ? "absent" : "present"}
-                </span>
-              </span>
-            )
-          })}
-        </div>
-        <span className="text-ink-500 mt-1.5 block text-[14px] font-bold">
-          + Add guest player (this game only)
-        </span>
-      </div>
-
-      <span
-        data-demo-target="to-lineups"
-        className="bg-play-600 mt-2 block rounded-xl px-4 py-2 text-center text-[15px] font-bold text-white"
+    <div ref={host} className="h-full overflow-hidden">
+      <div
+        ref={inner}
+        className="ease-out motion-reduce:transition-none"
+        style={{
+          transform: `translateY(-${Math.min(y, max)}px)`,
+          transitionProperty: "transform",
+          transitionDuration: "520ms",
+        }}
       >
-        Continue to starting lineups →
+        {children}
+      </div>
+    </div>
+  )
+}
+
+export function ConsoleAttendance({
+  homeName,
+  awayName,
+  homePlayers,
+  awayPlayers,
+  homeAbsent,
+  awayAbsent,
+  scrollY = 0,
+}: {
+  homeName: string
+  awayName: string
+  homePlayers: MockPlayer[]
+  awayPlayers: MockPlayer[]
+  homeAbsent: number[]
+  awayAbsent: number[]
+  scrollY?: number
+}) {
+  const rollCall = (
+    side: "home" | "away",
+    name: string,
+    players: MockPlayer[],
+    absent: number[]
+  ) => (
+    <div data-demo-target={`att-${side}`} className="border-ink-200 rounded-xl border bg-white p-2">
+      <h3 className="text-ink-900 flex items-baseline gap-2 text-[15px] font-bold">
+        <span className="min-w-0 truncate">{name}</span>
+        <span className="text-ink-600 shrink-0 text-[14px] font-semibold">
+          {players.length - absent.length} here · {absent.length} absent
+        </span>
+      </h3>
+      <div className="mt-2 grid grid-cols-2 gap-1.5">
+        {players.map((p) => {
+          const off = absent.includes(p.jersey)
+          return (
+            <span
+              key={p.jersey}
+              data-demo-target={`att-${side}-${p.jersey}`}
+              className={cn(
+                "rounded-lg border px-2 py-1 text-left text-[14px] leading-snug transition-colors duration-300 motion-reduce:transition-none",
+                off
+                  ? "border-hoop-300 bg-hoop-50 text-hoop-700 line-through"
+                  : "border-court-300 bg-court-50 text-ink-800"
+              )}
+            >
+              <span className="text-[16px] font-bold">#{p.jersey}</span>
+              <span className="ml-1.5">{p.short}</span>
+              <span className="block text-[14px] font-bold uppercase">
+                {off ? "absent" : "present"}
+              </span>
+            </span>
+          )
+        })}
+      </div>
+      <span className="text-ink-500 mt-1.5 block text-[14px] font-bold">
+        + Add guest player (this game only, not on the roster)
       </span>
     </div>
+  )
+  return (
+    <ScrollPane y={scrollY}>
+      <div className="space-y-2 px-3 py-2">
+        <div>
+          <h2 className="text-ink-950 text-[17px] font-bold leading-tight">
+            Attendance, {homeName} vs {awayName}
+          </h2>
+          <p className="text-ink-600 mt-0.5 text-[14px] leading-snug">
+            Everyone starts as present, tap whoever is missing. Absent players show on the
+            scoresheet and do not count a game played in their season stats.
+          </p>
+        </div>
+        {rollCall("home", homeName, homePlayers, homeAbsent)}
+        {rollCall("away", awayName, awayPlayers, awayAbsent)}
+        <span
+          data-demo-target="to-lineups"
+          className="bg-play-600 block rounded-xl px-4 py-2.5 text-center text-[15px] font-bold text-white"
+        >
+          Continue to starting lineups →
+        </span>
+      </div>
+    </ScrollPane>
   )
 }
 
 /* ── Starting fives (scoring-console.tsx, pregameStep "starters") ────────── */
 
 /**
- * The starting-five picker.
+ * The starting-five picker, BOTH pick lists, filmed at real scroll positions
+ * (`scoring-console.tsx` L822-926).
  *
- * The real screen stacks BOTH teams' pick lists and the phone scrolls between
- * them; the demo frame cannot scroll, so it shows the team being picked and
- * keeps the finished one as its own done row, which is what the operator sees
- * once they have scrolled past it. Declared in the numbers sheet §C.
+ * The 2026-08-16 build showed one team and reduced the other to a done row,
+ * declared in the numbers sheet §C.3. The owner's 2026-08-19 ruling retires
+ * that shortcut: both lists are here, absentees are already filtered out of
+ * them exactly as L880 filters them, "Start game" is disabled until both fives
+ * are five, and the footnote under it is the screen's own.
  */
 export function ConsoleLineup({
-  doneName,
-  doneStarters,
-  pickName,
-  players,
-  starters,
-  side,
+  league,
+  venue,
+  homeName,
+  awayName,
+  homePlayers,
+  awayPlayers,
+  homeStarters,
+  awayStarters,
+  scrollY = 0,
 }: {
-  doneName: string
-  doneStarters: number[]
-  pickName: string
-  players: MockPlayer[]
-  starters: number[]
-  side: "home" | "away"
+  league: string
+  venue: string
+  homeName: string
+  awayName: string
+  homePlayers: MockPlayer[]
+  awayPlayers: MockPlayer[]
+  homeStarters: number[]
+  awayStarters: number[]
+  scrollY?: number
 }) {
-  return (
-    <div className="flex h-full flex-col gap-2 px-3 py-2.5">
-      <p className="text-ink-600 text-[14px] font-semibold leading-snug">
-        Pick each starting five, then start the game.
-      </p>
-
-      <div className="border-court-200 bg-court-50 flex items-center gap-2 rounded-xl border px-2.5 py-2">
-        <span className="text-court-700 text-[15px] font-bold">✓</span>
-        <span className="text-ink-900 min-w-0 flex-1 truncate text-[15px] font-bold">{doneName}</span>
-        <span className="text-court-700 shrink-0 text-[14px] font-semibold">
-          starting five: {doneStarters.length}/5
+  const pickList = (
+    side: "home" | "away",
+    name: string,
+    players: MockPlayer[],
+    starters: number[]
+  ) => (
+    <div
+      data-demo-target={`lineup-${side}`}
+      className="border-ink-200 rounded-xl border bg-white p-2.5"
+    >
+      <h3 className="text-ink-900 flex items-baseline gap-2 text-[15px] font-bold">
+        <span className="min-w-0 truncate">{name}</span>
+        <span className="text-ink-600 shrink-0 text-[14px] font-semibold">
+          starting five: {starters.length}/5
         </span>
+      </h3>
+      <div className="mt-2 grid grid-cols-2 gap-1.5">
+        {players.map((p) => {
+          const on = starters.includes(p.jersey)
+          return (
+            <span
+              key={p.jersey}
+              data-demo-target={`start-${side}-${p.jersey}`}
+              className={cn(
+                "rounded-lg border px-2 py-1.5 text-left text-[14px] transition-colors duration-300 motion-reduce:transition-none",
+                on ? "border-play-400 bg-play-50 text-play-800" : "border-ink-200 text-ink-700"
+              )}
+            >
+              <span className="text-[15px] font-bold">#{p.jersey}</span>
+              <span className="ml-1.5 truncate">{p.short}</span>
+            </span>
+          )
+        })}
       </div>
-
-      <div className="border-ink-200 rounded-xl border bg-white p-2.5">
-        <h3 className="text-ink-900 flex items-baseline gap-2 text-[15px] font-bold">
-          <span className="truncate">{pickName}</span>
-          <span className="text-ink-600 shrink-0 text-[14px] font-semibold">
-            starting five: {starters.length}/5
-          </span>
-        </h3>
-        <div className="mt-2 grid grid-cols-3 gap-1.5">
-          {players.map((p) => {
-            const on = starters.includes(p.jersey)
-            return (
-              <span
-                key={p.jersey}
-                data-demo-target={`start-${side}-${p.jersey}`}
-                className={cn(
-                  "rounded-lg border px-1.5 py-1.5 text-left text-[14px] transition-colors duration-300 motion-reduce:transition-none",
-                  on ? "border-play-400 bg-play-50 text-play-800" : "border-ink-200 text-ink-700"
-                )}
-              >
-                <span className="text-[15px] font-bold">#{p.jersey}</span>
-                <span className="block truncate">{p.short}</span>
-              </span>
-            )
-          })}
-        </div>
-      </div>
-
-      <span
-        data-demo-target="start-game"
-        className="bg-court-600 mt-auto block rounded-xl px-4 py-2.5 text-center text-[15px] font-bold text-white"
-      >
-        Start game
-      </span>
     </div>
+  )
+  const ready = homeStarters.length === 5 && awayStarters.length === 5
+  return (
+    <ScrollPane y={scrollY}>
+      <div className="space-y-2 px-3 py-2.5">
+        <div>
+          <h2 className="text-ink-950 text-[17px] font-bold leading-tight">
+            {homeName} vs {awayName}
+          </h2>
+          <p className="text-ink-600 mt-0.5 text-[14px] leading-snug">
+            {league} · {venue} · pick each starting five, then start the game
+          </p>
+        </div>
+        {pickList("home", homeName, homePlayers, homeStarters)}
+        {pickList("away", awayName, awayPlayers, awayStarters)}
+        <div className="flex gap-2">
+          <span className="border-ink-200 text-ink-700 rounded-xl border px-3 py-2.5 text-center text-[15px] font-bold">
+            ← Attendance
+          </span>
+          <span
+            data-demo-target="start-game"
+            className={cn(
+              "flex-1 rounded-xl px-4 py-2.5 text-center text-[15px] font-bold text-white transition-opacity duration-300 motion-reduce:transition-none",
+              ready ? "bg-court-600" : "bg-court-600 opacity-40"
+            )}
+          >
+            Start game
+          </span>
+        </div>
+        <p className="text-ink-600 text-center text-[14px] leading-snug">
+          Fewer than 5 marked players? Tap the ones who are here, you can fix lineups with SUBS any
+          time.
+        </p>
+      </div>
+    </ScrollPane>
   )
 }
 
@@ -512,7 +625,9 @@ export function ConsoleHeader({
             <span className="bg-play-400 mr-1 inline-block h-2 w-2 rounded-full align-middle" />
             <span className="text-ink-500 font-semibold">{homeName}</span>
           </p>
-          <p className="text-ink-950 text-[28px] font-bold leading-none tabular-nums">{homeScore}</p>
+          <p className="text-ink-950 text-[28px] font-bold tabular-nums leading-none">
+            {homeScore}
+          </p>
           <p className="text-ink-400 text-[14px] font-semibold leading-tight">fouls {homeFouls}</p>
         </div>
 
@@ -556,7 +671,9 @@ export function ConsoleHeader({
             <span className="text-ink-500 font-semibold">{awayName}</span>
             <span className="bg-court-400 ml-1 inline-block h-2 w-2 rounded-full align-middle" />
           </p>
-          <p className="text-ink-950 text-[28px] font-bold leading-none tabular-nums">{awayScore}</p>
+          <p className="text-ink-950 text-[28px] font-bold tabular-nums leading-none">
+            {awayScore}
+          </p>
           <p className="text-ink-400 text-[14px] font-semibold leading-tight">fouls {awayFouls}</p>
         </div>
       </div>
@@ -704,9 +821,7 @@ export function ConsoleActionPad({
         ) : pending ? (
           <p className="text-play-700 text-[14px] font-bold">{pending}. Now tap the player</p>
         ) : pendingPlayer ? (
-          <p className="text-play-700 text-[14px] font-bold">
-            #{pendingPlayer}. Now tap an action
-          </p>
+          <p className="text-play-700 text-[14px] font-bold">#{pendingPlayer}. Now tap an action</p>
         ) : (
           <p className="text-ink-500 text-[14px]">
             Tap an action, then a player, either order works
@@ -848,7 +963,10 @@ export function ConsoleReview({
         <span className="tabular-nums">{awayScore}</span> {awayName}
       </h2>
 
-      <div className="border-play-200 bg-play-50 rounded-xl border p-2.5">
+      <div
+        data-demo-target="potg-block"
+        className="border-play-200 bg-play-50 rounded-xl border p-2.5"
+      >
         <p className="text-play-800 text-[14px] font-bold">
           Player of the Game (optional)
           <span className="text-play-600 ml-1.5 font-medium">top scorer suggested</span>
@@ -870,9 +988,9 @@ export function ConsoleReview({
         </div>
       </div>
 
-      <div className="border-amber-300 bg-amber-50 rounded-xl border p-2.5">
+      <div className="rounded-xl border border-amber-300 bg-amber-50 p-2.5">
         <div className="flex items-center justify-between gap-2">
-          <p className="text-amber-800 text-[14px] font-bold">Referee approval (optional)</p>
+          <p className="text-[14px] font-bold text-amber-800">Referee approval (optional)</p>
           <span className="flex rounded-lg bg-white p-0.5">
             {(
               [
@@ -901,11 +1019,11 @@ export function ConsoleReview({
               strongest form of approval.
             </p>
             <div className="flex flex-wrap gap-1.5">
-              <span className="border-amber-500 bg-amber-100 text-amber-900 rounded-lg border px-2 py-1 text-[14px] font-bold">
+              <span className="rounded-lg border border-amber-500 bg-amber-100 px-2 py-1 text-[14px] font-bold text-amber-900">
                 {refereeName || "Mike Ferreira"}
               </span>
             </div>
-            <span className="border-amber-300 text-ink-400 block rounded-lg border bg-white px-3 py-2 text-[15px]">
+            <span className="text-ink-400 block rounded-lg border border-amber-300 bg-white px-3 py-2 text-[15px]">
               ● ● ● ●
             </span>
           </div>
@@ -914,17 +1032,13 @@ export function ConsoleReview({
             <span
               data-demo-target="sign-pad"
               className={cn(
-                "border-amber-300 flex h-[92px] items-center justify-center rounded-lg border bg-white",
+                "flex h-[92px] items-center justify-center rounded-lg border border-amber-300 bg-white",
                 signed ? "" : "text-ink-400 text-[14px]"
               )}
             >
-              {signed ? (
-                <SignatureMark />
-              ) : (
-                "Sign here with a finger"
-              )}
+              {signed ? <SignatureMark /> : "Sign here with a finger"}
             </span>
-            <span className="border-amber-300 block rounded-lg border bg-white px-3 py-2 text-[15px]">
+            <span className="block rounded-lg border border-amber-300 bg-white px-3 py-2 text-[15px]">
               {refereeName ? (
                 <span className="text-ink-900 font-semibold">{refereeName}</span>
               ) : (
@@ -962,7 +1076,13 @@ function SignatureMark() {
         strokeLinecap="round"
         strokeLinejoin="round"
       />
-      <path d="M150 50c14 0 40-3 62-9" fill="none" stroke="#111827" strokeWidth="2" strokeLinecap="round" />
+      <path
+        d="M150 50c14 0 40-3 62-9"
+        fill="none"
+        stroke="#111827"
+        strokeWidth="2"
+        strokeLinecap="round"
+      />
     </svg>
   )
 }
@@ -996,7 +1116,16 @@ export function ConsoleScoresheet({
   homeLine: number[]
   awayLine: number[]
   /** One team's sheet rows: the roster in jersey order, marks included. */
-  rows: { jersey: number; name: string; fouls: number; marks: string[]; reb: number; ast: number; pts: number; absent?: boolean }[]
+  rows: {
+    jersey: number
+    name: string
+    fouls: number
+    marks: string[]
+    reb: number
+    ast: number
+    pts: number
+    absent?: boolean
+  }[]
   potg: string
   referee: string
   signedAt: string
@@ -1014,7 +1143,7 @@ export function ConsoleScoresheet({
   )
   return (
     <div className="h-full overflow-hidden bg-white p-1.5 text-black">
-      <div className="border-2 border-black p-1.5">
+      <div data-demo-target="sheet-doc" className="border-2 border-black p-1.5">
         <div className="flex items-start justify-between gap-2 border-b-2 border-black pb-1">
           <div className="min-w-0">
             <h1 className="text-[16px] font-bold uppercase leading-tight">Official Scoresheet</h1>
@@ -1029,7 +1158,7 @@ export function ConsoleScoresheet({
         </div>
 
         <div className="my-1 flex items-center justify-center">
-          <table className="border-collapse text-center leading-[1.15] tabular-nums">
+          <table className="border-collapse text-center tabular-nums leading-[1.15]">
             <thead>
               <tr>
                 <th className="border border-black px-1 py-0.5" />
@@ -1121,7 +1250,6 @@ export function ConsoleScoresheet({
         >
           Download PDF (landscape)
         </span>
-
       </div>
     </div>
   )
@@ -1144,7 +1272,8 @@ export function LiveHero({
   clockBase,
   running,
   reduced,
-  final,
+  state,
+  tipoff,
   venue,
   linescore,
   displayPeriods,
@@ -1159,12 +1288,15 @@ export function LiveHero({
   clockBase: number
   running: boolean
   reduced: boolean
-  final: boolean
+  /** The page's own three states: `!live && !final` shows the tip-off time. */
+  state: "pre" | "live" | "final"
+  tipoff: string
   venue: string
   linescore: { home: Record<number, number>; away: Record<number, number> }
   displayPeriods: number[]
   tone: PulseTone
 }) {
+  const final = state === "final"
   const rows: [PhoneTeam, number, number, "home" | "away"][] = [
     [home, homeScore, awayScore, "home"],
     [away, awayScore, homeScore, "away"],
@@ -1182,8 +1314,15 @@ export function LiveHero({
           {league}
         </p>
 
-        <div className="mt-1.5 flex items-center justify-center gap-2.5" data-demo-target="live-state">
-          {final ? (
+        <div
+          className="mt-1.5 flex items-center justify-center gap-2.5"
+          data-demo-target="live-state"
+        >
+          {state === "pre" ? (
+            <span className="text-[14px] font-medium uppercase tracking-[0.14em] text-white/55">
+              {tipoff}
+            </span>
+          ) : final ? (
             <span className="bg-court-500 rounded-full px-3 py-[3px] text-[14px] font-bold uppercase tracking-[0.16em] text-white">
               Final
             </span>
@@ -1196,7 +1335,7 @@ export function LiveHero({
               <Pulse value={periodLabel} tone={tone}>
                 <span className="text-[15px] font-bold uppercase text-white/75">{periodLabel}</span>
               </Pulse>
-              <span className="text-highlight text-[22px] font-bold leading-none tabular-nums">
+              <span className="font-condensed text-highlight text-[24px] font-semibold tabular-nums leading-none">
                 <DemoClock base={clockBase} running={running} reduced={reduced} where="phone" />
               </span>
             </>
@@ -1209,7 +1348,8 @@ export function LiveHero({
               <Crest
                 name={team.name}
                 surface="dark"
-                sizeClassName="h-9 w-9 rounded-xl text-[14px]"
+                sizeClassName="h-11 w-11 rounded-xl text-[15px]"
+                className="shadow-lg"
               />
               <span className="min-w-0 flex-1">
                 <span className="block truncate text-[15px] font-semibold leading-tight text-white">
@@ -1223,7 +1363,7 @@ export function LiveHero({
                 <span
                   data-demo-target={`live-score-${side}`}
                   className={cn(
-                    "min-w-[52px] text-right text-[28px] font-bold leading-none tabular-nums",
+                    "font-condensed min-w-[62px] text-right text-[40px] font-semibold tabular-nums leading-none tracking-[-0.01em]",
                     !final ? "text-white" : score > other ? "text-highlight" : "text-white/45"
                   )}
                 >
@@ -1238,9 +1378,14 @@ export function LiveHero({
           {venue}
         </p>
 
+        {/* A game with no periods played has no linescore: the strip is
+            `periods.length > 0` on the real hero (score-hero.tsx L272). */}
         <div
           data-demo-target="linescore"
-          className="mt-1.5 rounded-2xl bg-white/[0.08] ring-1 ring-inset ring-white/15"
+          className={cn(
+            "mt-1.5 rounded-2xl bg-white/[0.08] ring-1 ring-inset ring-white/15",
+            state === "pre" && "hidden"
+          )}
         >
           <table className="w-full text-center tabular-nums">
             <thead>
@@ -1265,7 +1410,10 @@ export function LiveHero({
                   {displayPeriods.map((p) => {
                     const v = linescore[side][p]
                     return (
-                      <td key={p} className="px-2 py-0.5 text-[16px] font-medium leading-none text-white/85">
+                      <td
+                        key={p}
+                        className="font-condensed px-2 py-1 text-[18px] font-medium leading-none text-white/85"
+                      >
                         {v == null ? (
                           <span className="text-white/25">–</span>
                         ) : (
@@ -1276,7 +1424,7 @@ export function LiveHero({
                       </td>
                     )
                   })}
-                  <td className="text-highlight px-2 py-0.5 pr-2.5 text-[16px] font-bold leading-none">
+                  <td className="font-condensed text-highlight px-2 py-1 pr-2.5 text-[19px] font-bold leading-none">
                     <Pulse value={score} tone={tone}>
                       <span>{score}</span>
                     </Pulse>
@@ -1316,7 +1464,10 @@ export function LiveScoreChip({
   tone: PulseTone
 }) {
   return (
-    <div className="flex shrink-0 items-center justify-center gap-2 bg-[#0b1628] px-3 py-1.5 text-white">
+    <div
+      data-demo-target="score-chip"
+      className="flex shrink-0 items-center justify-center gap-2 bg-[#0b1628] px-3 py-1.5 text-white"
+    >
       <span className="text-[14px] font-semibold">{home.short}</span>
       <Pulse value={homeScore} tone={tone}>
         <span className="text-[18px] font-bold tabular-nums">{homeScore}</span>
@@ -1335,6 +1486,201 @@ export function LiveScoreChip({
         )}
       </span>
     </div>
+  )
+}
+
+/**
+ * Pre-game: both rosters with season averages instead of an empty box score
+ * (`pregame-rosters.tsx`). The card's two sentences are verbatim.
+ */
+export function LivePregame({
+  teams,
+}: {
+  teams: {
+    name: string
+    rows: { jersey: number; name: string; gp: number; ppg: string; rpg: string; apg: string }[]
+  }[]
+}) {
+  return (
+    <>
+      <div
+        data-demo-target="pregame-card"
+        className="border-ink-100 rounded-2xl border bg-white p-3 text-center"
+      >
+        <p className="text-ink-900 text-[15px] font-semibold">This game hasn&apos;t started yet</p>
+        <p className="text-ink-500 mt-1 text-[14px] leading-snug">
+          Live score, leaders and the box score appear here automatically at tip-off, the page
+          refreshes on its own. Season numbers below.
+        </p>
+      </div>
+      <div className="mt-2 space-y-2">
+        {teams.map((t) => (
+          <div key={t.name} className="border-ink-100 overflow-hidden rounded-2xl border bg-white">
+            <div className="bg-ink-800 flex items-center gap-2.5 px-3 py-2 text-[15px] font-bold text-white">
+              <Crest name={t.name} surface="dark" sizeClassName="h-7 w-7 rounded-lg text-[14px]" />
+              <span className="truncate">{t.name}</span>
+            </div>
+            <table className="w-full text-[15px] tabular-nums">
+              <thead className="text-ink-500 text-left text-[14px] uppercase tracking-wide">
+                <tr>
+                  <th className="py-1.5 pl-3 pr-2 font-bold">Player</th>
+                  <th className="px-1.5 text-right font-bold">GP</th>
+                  <th className="px-1.5 text-right font-bold">PPG</th>
+                  <th className="px-1.5 text-right font-bold">RPG</th>
+                  <th className="px-1.5 pr-3 text-right font-bold">APG</th>
+                </tr>
+              </thead>
+              <tbody>
+                {t.rows.map((r) => (
+                  <tr key={r.jersey} className="border-ink-50 border-t">
+                    <td className="text-ink-900 whitespace-nowrap py-1.5 pl-3 pr-2 font-semibold">
+                      <span className="text-ink-500 mr-1.5 font-normal">#{r.jersey}</span>
+                      {r.name}
+                    </td>
+                    <td className="px-1.5 text-right">{r.gp}</td>
+                    <td className="text-ink-950 px-1.5 text-right font-bold">{r.ppg}</td>
+                    <td className="px-1.5 text-right">{r.rpg}</td>
+                    <td className="px-1.5 pr-3 text-right">{r.apg}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ))}
+      </div>
+    </>
+  )
+}
+
+/**
+ * A live game with no plays yet (`live-view.tsx` L253-263). This is what the
+ * page says between the tip-off and the table's first entry, and its two
+ * sentences are verbatim.
+ */
+export function LiveWaiting() {
+  return (
+    <div
+      data-demo-target="waiting-card"
+      className="border-ink-100 rounded-2xl border bg-white p-4 text-center"
+    >
+      <p className="text-ink-900 text-[15px] font-semibold">Waiting for the first play</p>
+      <p className="text-ink-500 mt-1 text-[14px] leading-snug">
+        The box score, leaders and play-by-play appear here the moment the scorer records a play.
+        This page updates on its own.
+      </p>
+    </div>
+  )
+}
+
+/**
+ * Game leaders as face-off cards (`game-leaders.tsx`), phone layout: the
+ * category label on top, the two players side by side, each card washed with
+ * the PLAYER's own accent (`lib/ui/player-accent.ts`) rather than a club
+ * colour, and the number in the condensed face.
+ */
+export function LiveGameLeaders({
+  sections,
+}: {
+  sections: {
+    label: string
+    home: {
+      key: string
+      short: string
+      jersey: number
+      value: number
+      unit: string
+      sub: string
+    } | null
+    away: {
+      key: string
+      short: string
+      jersey: number
+      value: number
+      unit: string
+      sub: string
+    } | null
+  }[]
+}) {
+  const cell = (
+    entry: {
+      key: string
+      short: string
+      jersey: number
+      value: number
+      unit: string
+      sub: string
+    } | null,
+    won: boolean
+  ) => {
+    if (!entry) {
+      return (
+        <div className="border-ink-100 text-ink-300 flex min-w-0 flex-1 items-center justify-center rounded-2xl border border-dashed py-5 text-[14px]">
+          —
+        </div>
+      )
+    }
+    const accent = accentForKey(entry.key)
+    return (
+      <div
+        className="flex min-w-0 flex-1 items-center gap-2 rounded-2xl p-2"
+        style={{ backgroundColor: won ? accent.washSoft : accent.washFaint }}
+      >
+        <PlayerMug
+          name={entry.short}
+          accentKey={entry.key}
+          jerseyNumber={String(entry.jersey)}
+          sizeClassName="h-9 w-9 rounded-full"
+          frameClassName="bg-white shadow-md ring-2 ring-inset ring-ink-100"
+        />
+        <div className="min-w-0 flex-1">
+          <p className="text-ink-950 truncate text-[14px] font-semibold leading-tight">
+            {entry.short}
+          </p>
+          <div className="mt-0.5 flex items-end gap-1">
+            <span className="font-condensed text-ink-950 text-[30px] font-semibold tabular-nums leading-[0.85] tracking-[-0.01em]">
+              {entry.value}
+            </span>
+            <span className="text-ink-500 pb-0.5 text-[14px] font-semibold uppercase tracking-[0.12em]">
+              {entry.unit}
+            </span>
+          </div>
+          {/* The one line in the kit under 14px, and it is measured: the cell
+              is 116px wide at 390 and "4 DREB · 1 OREB" is 15 characters, so
+              14px small-caps truncates to "1 O…". The product authors it at
+              10.5px; this is 13px with the tracking dropped. */}
+          <p className="text-ink-500 mt-0.5 truncate text-[13px] font-medium uppercase">
+            {entry.sub}
+          </p>
+        </div>
+      </div>
+    )
+  }
+  return (
+    <section>
+      <h3 className={cn(SECTION_HEADING, "mb-1.5 px-1")}>Game leaders</h3>
+      <div className="space-y-2">
+        {sections.map((sec, i) => {
+          const hWins = (sec.home?.value ?? -1) >= (sec.away?.value ?? -1)
+          return (
+            <div
+              key={sec.label}
+              /* The ring goes round the FIRST pair, not the whole stack: a
+                 target taller than the handset has nowhere to put a balloon. */
+              data-demo-target={i === 0 ? "leaders" : undefined}
+              className="border-ink-100 flex flex-col gap-1 rounded-2xl border bg-white p-1.5"
+            >
+              <span className="text-ink-600 w-full shrink-0 pt-1 text-center text-[14px] font-bold uppercase leading-tight tracking-[0.18em]">
+                {sec.label}
+              </span>
+              <div className="flex min-w-0 gap-1.5">
+                {cell(sec.home, hWins)}
+                {cell(sec.away, !hWins)}
+              </div>
+            </div>
+          )
+        })}
+      </div>
+    </section>
   )
 }
 
@@ -1389,12 +1735,14 @@ export function LivePlays({
   activeFilter?: string
   id?: string
 }) {
+  /** The full Play-by-play view, rather than the Latest plays preview panel. */
+  const feed = Boolean(filters)
   return (
     <div className="border-ink-100 overflow-hidden rounded-2xl border bg-white" {...TARGET(id)}>
       {title && (
         <div className="border-ink-100 flex items-center justify-between border-b px-3 py-1.5">
-          <h3 className="text-ink-800 text-[14px] font-bold uppercase tracking-[0.14em]">{title}</h3>
-          <span className="text-play-600 text-[14px] font-bold">See all plays</span>
+          <h3 className={SECTION_HEADING}>{title}</h3>
+          <span className="text-play-600 text-[14px] font-semibold">See all plays</span>
         </div>
       )}
       {filters && (
@@ -1403,8 +1751,10 @@ export function LivePlays({
             <span
               key={f}
               className={cn(
-                "shrink-0 whitespace-nowrap rounded-full px-3 py-1 text-[14px] font-bold",
-                f === activeFilter ? "bg-ink-950 text-white" : "text-ink-600 border-ink-200 border bg-white"
+                "shrink-0 whitespace-nowrap rounded-full px-3 py-1 text-[14px] font-semibold",
+                f === activeFilter
+                  ? "bg-ink-950 text-white shadow-sm"
+                  : "text-ink-600 border-ink-200 border bg-white"
               )}
             >
               {f}
@@ -1417,25 +1767,41 @@ export function LivePlays({
           r.period ? (
             <li
               key={r.key}
-              className="bg-ink-100 text-ink-700 px-3 py-1 text-center text-[14px] font-bold uppercase tracking-[0.16em]"
+              className={cn(
+                "px-3 py-1 text-center text-[14px] font-bold uppercase tracking-[0.16em]",
+                // The full feed's dividers are heavier and stick to the top of
+                // the list; the preview panel's are the lighter ink-50 band.
+                feed
+                  ? "bg-ink-200/80 text-ink-700 border-ink-300 border-y"
+                  : "bg-ink-50 text-ink-600"
+              )}
             >
               {r.period}
             </li>
           ) : (
             <li
               key={r.key}
+              /* The ring goes round the ROW that changed, not the panel: a
+                 panel taller than the handset draws its ring over the bezel. */
+              data-demo-target={r.key === freshKey ? "fresh-play" : undefined}
               className={cn(
                 "flex items-center gap-2 px-3 py-[3px] text-[14px] leading-snug",
-                r.score ? "text-ink-950 font-semibold" : "text-ink-600",
+                r.score ? "text-ink-950 font-medium" : "text-ink-600",
+                // Scoring rows carry a wash in the full feed (play-by-play-tab
+                // L66), so a scan down the list finds the baskets.
+                feed && r.score && "bg-ink-50/60",
                 r.key === freshKey && `demo-pulse-${tone}`
               )}
             >
               <span
-                className={cn("w-1 shrink-0 self-stretch rounded-full", r.home ? "bg-ink-400" : "bg-ink-200")}
+                className={cn(
+                  "w-1 shrink-0 self-stretch rounded-full",
+                  r.home ? "bg-ink-400" : "bg-ink-200"
+                )}
               />
               <span className="min-w-0 flex-1 leading-snug">{r.text}</span>
               {r.score && (
-                <span className="text-ink-950 shrink-0 text-[15px] font-bold tabular-nums">
+                <span className="font-condensed text-ink-950 shrink-0 text-[17px] font-semibold tabular-nums">
                   {r.score}
                 </span>
               )}
@@ -1451,6 +1817,8 @@ export function LivePlays({
 export function LiveBoxScore({
   homeName,
   awayName,
+  homeColor,
+  awayColor,
   side,
   players,
   lines,
@@ -1462,6 +1830,8 @@ export function LiveBoxScore({
 }: {
   homeName: string
   awayName: string
+  homeColor?: string
+  awayColor?: string
   side: "home" | "away"
   players: MockPlayer[]
   lines: Record<number, MockLine>
@@ -1475,7 +1845,7 @@ export function LiveBoxScore({
   const sorted = [...players].sort((a, b) => lines[b.jersey].pts - lines[a.jersey].pts)
   const top = sorted.length > 0 && lines[sorted[0].jersey].pts > 0 ? sorted[0].jersey : null
   const starterRows = sorted.filter((p) => starters.includes(p.jersey))
-  const benchRows = sorted.filter((p) => !starters.includes(p.jersey)).slice(0, 3)
+  const benchRows = sorted.filter((p) => !starters.includes(p.jersey))
   const totals = players.reduce(
     (t, p) => {
       const l = lines[p.jersey]
@@ -1501,14 +1871,28 @@ export function LiveBoxScore({
         key={p.jersey}
         data-demo-target={p.jersey === highlight ? "box-highlight" : undefined}
         className="border-ink-50 border-t"
-        style={isTop ? { backgroundColor: "rgba(24,24,27,0.06)", boxShadow: "inset 3px 0 0 0 #3f3f46" } : undefined}
+        style={
+          isTop
+            ? { backgroundColor: "rgba(24,24,27,0.06)", boxShadow: "inset 3px 0 0 0 #3f3f46" }
+            : undefined
+        }
       >
         <td className={cn("truncate py-1 pl-2 pr-0.5", isTop ? "font-bold" : "font-medium")}>
           <span className="text-ink-500 mr-1 font-normal">#{p.jersey}</span>
           <span className="text-ink-900">{p.short}</span>
-          {l && onFloor.includes(p.jersey) && live ? <span className="text-court-600"> ●</span> : null}
+          {l && onFloor.includes(p.jersey) && live ? (
+            <span className="text-court-600"> ●</span>
+          ) : null}
+          {/* The leading scorer's row is the one a parent scans for, so it
+              carries the rail, the bolder type AND the badge (box-score.tsx
+              L136). */}
+          {isTop && (
+            <span className="bg-highlight text-highlight-on ml-1 rounded px-[3px] align-[1px] text-[13px] font-bold leading-none">
+              TOP
+            </span>
+          )}
         </td>
-        <td className={cn("text-[15px] font-bold", cell)}>
+        <td className={cn("text-energy-ink text-[15px] font-bold", cell)}>
           <Pulse value={l.pts} tone={tone}>
             <span>{l.pts}</span>
           </Pulse>
@@ -1531,13 +1915,17 @@ export function LiveBoxScore({
     )
   }
 
-  const groupHead = "bg-ink-50 text-ink-500 border-ink-100 border-y px-2.5 py-0.5 text-[14px] font-bold uppercase tracking-[0.14em]"
+  const groupHead =
+    "bg-ink-50 text-ink-500 border-ink-100 border-y px-2.5 py-0.5 text-[14px] font-bold uppercase tracking-[0.14em]"
 
   return (
-    <div className="border-ink-100 overflow-hidden rounded-2xl border bg-white">
+    <div
+      data-demo-target="box-card"
+      className="border-ink-100 overflow-hidden rounded-2xl border bg-white"
+    >
       <div className="border-ink-100 border-b px-2.5 py-2">
         <div className="mb-1.5 flex items-center justify-between gap-2">
-          <h3 className="text-ink-800 text-[14px] font-bold uppercase tracking-[0.14em]">Box score</h3>
+          <h3 className={SECTION_HEADING}>Box score</h3>
           <span className="text-ink-400 text-[14px] font-semibold uppercase tracking-[0.1em]">
             Tap a team
           </span>
@@ -1545,19 +1933,35 @@ export function LiveBoxScore({
         <div className="bg-ink-100 flex gap-1 rounded-xl p-1">
           {(
             [
-              ["home", homeName],
-              ["away", awayName],
+              ["home", homeName, homeColor],
+              ["away", awayName, awayColor],
             ] as const
-          ).map(([key, name]) => (
+          ).map(([key, name, color]) => (
             <span
               key={key}
               data-demo-target={`box-side-${key}`}
               className={cn(
-                "flex flex-1 items-center justify-center gap-1.5 truncate rounded-lg px-2 py-1.5 text-[14px] font-bold",
+                "flex min-w-0 flex-1 items-center justify-center gap-1.5 truncate rounded-lg px-2 py-1.5 text-[14px] font-semibold",
                 side === key ? "bg-ink-900 text-white shadow-sm" : "text-ink-600"
               )}
             >
-              <span className={cn("h-2 w-2 shrink-0 rounded-full", side === key ? "bg-white" : "bg-ink-300")} />
+              {/* The dot carries the club-chosen team colour (box-score.tsx
+                  L76), which is how the switcher reads by colour as well as by
+                  name. The full name, never an abbreviation: this control
+                  decides which roster you are looking at. */}
+              <span
+                className={cn(
+                  "h-2.5 w-2.5 shrink-0 rounded-full",
+                  color
+                    ? side === key
+                      ? "ring-1 ring-white/70"
+                      : ""
+                    : side === key
+                      ? "bg-white"
+                      : "bg-ink-300"
+                )}
+                style={color ? { backgroundColor: color } : undefined}
+              />
               <span className="truncate">{name}</span>
             </span>
           ))}
@@ -1572,12 +1976,15 @@ export function LiveBoxScore({
           <col className="w-[32px]" />
           <col className="w-[32px]" />
           <col className="w-[32px]" />
+          <col className="w-[27px]" />
+          <col className="w-[27px]" />
+          <col className="w-[27px]" />
           <col className="w-[30px]" />
-          <col className="w-[30px]" />
-          <col className="w-[30px]" />
-          <col className="w-[32px]" />
         </colgroup>
-        <thead className="text-ink-500 text-left text-[14px] uppercase tracking-[0.04em]">
+        {/* The stat headings run 13px, not 14: nine columns inside 390 gives
+            each of Stl / Blk / TO 27px, and at 14px the three labels touch.
+            The product authors this row at 10px. */}
+        <thead className="text-ink-500 text-left text-[13px] uppercase tracking-[0.02em]">
           <tr>
             <th className="py-1 pl-2 pr-0.5 font-bold">Player</th>
             <th className={cn("font-bold", cell)}>Pts</th>
@@ -1638,7 +2045,10 @@ export function LiveTeamStats({
   pulseLabel?: string
 }) {
   return (
-    <div className="border-ink-100 overflow-hidden rounded-2xl border bg-white">
+    <div
+      data-demo-target="team-stats"
+      className="border-ink-100 overflow-hidden rounded-2xl border bg-white"
+    >
       <div className="border-ink-100 flex items-center justify-between gap-2 border-b px-3 py-2.5">
         {[
           [home, homeScore, awayScore],
@@ -1648,14 +2058,19 @@ export function LiveTeamStats({
           return (
             <div
               key={t.name}
-              className={cn("flex min-w-0 flex-1 items-center gap-2", i === 1 && "flex-row-reverse text-right")}
+              className={cn(
+                "flex min-w-0 flex-1 items-center gap-2",
+                i === 1 && "flex-row-reverse text-right"
+              )}
             >
               <Crest name={t.name} surface="light" sizeClassName="h-8 w-8 rounded-xl text-[14px]" />
               <div className="min-w-0">
-                <p className="text-ink-950 truncate text-[14px] font-semibold leading-tight">{t.short}</p>
+                <p className="text-ink-950 truncate text-[14px] font-semibold leading-tight">
+                  {t.short}
+                </p>
                 <p
                   className={cn(
-                    "text-[22px] font-bold leading-none tabular-nums",
+                    "text-[22px] font-bold tabular-nums leading-none",
                     (score as number) >= (other as number) ? "text-ink-950" : "text-ink-400"
                   )}
                 >
@@ -1695,7 +2110,10 @@ export function LiveTeamStats({
               <div className="mt-1.5 flex h-2.5 items-center gap-1">
                 <div className="bg-ink-100 flex flex-1 justify-end overflow-hidden rounded-l-full">
                   <span
-                    className={cn("h-2.5 rounded-l-full transition-all duration-500", !home.color && "bg-ink-700")}
+                    className={cn(
+                      "h-2.5 rounded-l-full transition-all duration-500",
+                      !home.color && "bg-ink-700"
+                    )}
                     style={{
                       width: `${hShare}%`,
                       opacity: hWins ? 1 : 0.45,
@@ -1706,7 +2124,10 @@ export function LiveTeamStats({
                 <span className="bg-ink-300 h-2.5 w-px shrink-0" />
                 <div className="bg-ink-100 flex flex-1 overflow-hidden rounded-r-full">
                   <span
-                    className={cn("h-2.5 rounded-r-full transition-all duration-500", !away.color && "bg-ink-700")}
+                    className={cn(
+                      "h-2.5 rounded-r-full transition-all duration-500",
+                      !away.color && "bg-ink-700"
+                    )}
                     style={{
                       width: `${100 - hShare}%`,
                       opacity: aWins ? 1 : 0.45,
@@ -1734,11 +2155,14 @@ export function LiveTeamStats({
 export function LivePotgCard({
   name,
   jersey,
+  playerKey,
   line,
   fresh,
 }: {
   name: string
   jersey: number
+  /** Accent key: the mug's tone is hashed from the player, not the club. */
+  playerKey: string
   line: string
   fresh?: boolean
 }) {
@@ -1750,9 +2174,16 @@ export function LivePotgCard({
         fresh && "live-pop"
       )}
     >
-      <span className="border-gold-400 bg-gold-50 text-gold-700 flex h-14 w-14 shrink-0 items-center justify-center rounded-full border-2 text-[19px] font-extrabold tabular-nums">
-        {jersey}
-      </span>
+      {/* No photo on file, so the sketched mug with the kid's number on the
+          chest (`components/ui/player-mug.tsx`), which is how you identify
+          them from the stands anyway. Never an initials circle. */}
+      <PlayerMug
+        name={name}
+        accentKey={playerKey}
+        jerseyNumber={String(jersey)}
+        sizeClassName="h-16 w-16 rounded-full"
+        frameClassName="border-gold-400 bg-gold-50 border-2"
+      />
       <div className="min-w-0">
         <p className="text-gold-700 text-[14px] font-bold uppercase tracking-[0.16em]">
           Player of the Game
@@ -1786,7 +2217,10 @@ export function LiveRecapCard({
   return (
     <div
       data-demo-target="recap"
-      className={cn("border-ink-100 overflow-hidden rounded-2xl border bg-white", fresh && "live-pop")}
+      className={cn(
+        "border-ink-100 overflow-hidden rounded-2xl border bg-white",
+        fresh && "live-pop"
+      )}
     >
       <div
         className="flex h-[74px] items-center justify-center"
@@ -1813,7 +2247,15 @@ export function LiveStandings({
   rows,
   movedTeam,
 }: {
-  rows: { rank: number; team: string; w: number; l: number; pct: string; gb: string; strk: string }[]
+  rows: {
+    rank: number
+    team: string
+    w: number
+    l: number
+    pct: string
+    gb: string
+    strk: string
+  }[]
   movedTeam?: string
 }) {
   return (
@@ -1846,25 +2288,41 @@ export function LiveStandings({
             return (
               <tr
                 key={r.rank}
-                className={cn("border-ink-50 border-b last:border-0", you && "bg-highlight-soft live-pop")}
+                className={cn(
+                  "border-ink-50 border-b last:border-0",
+                  you && "bg-highlight-soft live-pop"
+                )}
               >
                 <td className="px-2 py-1.5">
                   <span className="flex items-center gap-1.5">
-                    <span className={cn("w-4 shrink-0 text-right text-[14px] font-bold tabular-nums", you ? "text-gold-600" : "text-ink-400")}>
+                    <span
+                      className={cn(
+                        "w-4 shrink-0 text-right text-[14px] font-bold tabular-nums",
+                        you ? "text-gold-600" : "text-ink-400"
+                      )}
+                    >
                       {r.rank}
                     </span>
                     <span className="text-ink-950 truncate font-bold">{r.team}</span>
                   </span>
                 </td>
-                <td className="text-energy-ink px-0 py-1.5 text-center font-extrabold tabular-nums">{r.w}</td>
-                <td className="text-ink-700 px-0 py-1.5 text-center font-bold tabular-nums">{r.l}</td>
-                <td className="text-ink-900 px-0 py-1.5 text-center font-bold tabular-nums">{r.pct}</td>
+                <td className="text-energy-ink px-0 py-1.5 text-center font-extrabold tabular-nums">
+                  {r.w}
+                </td>
+                <td className="text-ink-700 px-0 py-1.5 text-center font-bold tabular-nums">
+                  {r.l}
+                </td>
+                <td className="text-ink-900 px-0 py-1.5 text-center font-bold tabular-nums">
+                  {r.pct}
+                </td>
                 <td className="text-ink-500 px-0 py-1.5 text-center tabular-nums">{r.gb}</td>
                 <td className="px-0 py-1.5 text-center">
                   <span
                     className={cn(
                       "rounded-full px-1 py-0.5 text-[14px] font-extrabold",
-                      r.strk.startsWith("W") ? "bg-court-100 text-court-700" : "bg-hoop-50 text-hoop-700"
+                      r.strk.startsWith("W")
+                        ? "bg-court-100 text-court-700"
+                        : "bg-hoop-50 text-hoop-700"
                     )}
                   >
                     {r.strk}
