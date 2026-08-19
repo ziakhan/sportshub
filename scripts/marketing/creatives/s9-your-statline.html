@@ -1,0 +1,142 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&family=Work+Sans:wght@400;500;600;700&family=Barlow+Condensed:wght@600;700;800&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="_brand.css" />
+<!--
+  PLAYER TEASER 1 of 3 (2026-08-19) — the box score.
+
+  Audience: players 13+, which is the lane `ad-players` already established
+  ("Dropped 21 last night? Prove it."). Instagram is 13+, and under-13s reach
+  us through a parent, so nothing here is aimed at a child who cannot legally
+  hold the account it would be shown on.
+
+  NO FACES, BY DESIGN. We hold no player photography, generating synthetic
+  children for a youth platform is off the table, and the product itself
+  consent-gates full names behind `mediaConsent GRANTED`
+  (api/live/[gameId]/card/[playerId]). So the hero is the jersey number and
+  the stat line, which is the house pattern for dynamic art, needs no
+  likeness, and reads better at thumbnail size than a photo would.
+
+  The name is shown the way an ungranted card shows it: first name, last
+  initial. The creative therefore promises exactly what the product delivers.
+
+  Sports typography per the consult: Barlow Condensed for the figures, which
+  is the pairing the skill returns for athletic brands, and it is already a
+  token in _brand.css (--condensed).
+-->
+<style>
+  .stage { gap: 52px; padding: 90px 70px 250px; }
+
+  .card {
+    width: 100%;
+    max-width: 880px;
+    background: linear-gradient(155deg, #16233d, #0d1729);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 34px;
+    padding: 44px 48px 40px;
+    box-shadow: 0 50px 110px -40px rgba(0, 0, 0, 0.9);
+    text-align: left;
+  }
+  .card .top { display: flex; align-items: center; gap: 30px; }
+  .jersey {
+    font-family: var(--condensed);
+    font-weight: 800;
+    font-size: 168px;
+    line-height: 0.78;
+    letter-spacing: -0.02em;
+    color: transparent;
+    -webkit-text-stroke: 4px var(--gold-500);
+    font-variant-numeric: tabular-nums;
+    flex: none;
+  }
+  .who .nm {
+    display: block;
+    font-family: var(--display);
+    font-weight: 800;
+    font-size: 60px;
+    letter-spacing: -0.02em;
+    color: #ffffff;
+    line-height: 1.05;
+  }
+  .who .mt {
+    display: block;
+    font-family: var(--body);
+    font-size: 27px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.5);
+    margin-top: 10px;
+    letter-spacing: 0.02em;
+  }
+
+  .line { height: 1px; background: rgba(255, 255, 255, 0.12); margin: 34px 0 30px; }
+
+  .stats { display: flex; justify-content: space-between; }
+  .st { text-align: center; flex: 1; }
+  .st .v {
+    display: block;
+    font-family: var(--condensed);
+    font-weight: 800;
+    font-size: 92px;
+    line-height: 1;
+    color: #ffffff;
+    font-variant-numeric: tabular-nums;
+  }
+  .st.hero .v { color: var(--gold-300); }
+  .st .k {
+    display: block;
+    font-family: var(--body);
+    font-size: 23px;
+    font-weight: 700;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.42);
+    margin-top: 8px;
+  }
+
+  h1 { font-size: 88px; line-height: 1.05; }
+  h1 .hit { color: var(--gold-300); }
+  .sub {
+    font-family: var(--body);
+    font-size: 32px;
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.6);
+    max-width: 760px;
+    line-height: 1.45;
+  }
+</style>
+</head>
+<body>
+<div class="stage dark">
+  <span class="eyebrow">Every game you play</span>
+
+  <div class="card">
+    <div class="top">
+      <span class="jersey">23</span>
+      <span class="who">
+        <span class="nm">Jayden T.</span>
+        <span class="mt">Grade 10 Boys &middot; vs Huskies</span>
+      </span>
+    </div>
+    <div class="line"></div>
+    <div class="stats">
+      <span class="st hero"><span class="v">21</span><span class="k">Pts</span></span>
+      <span class="st"><span class="v">7</span><span class="k">Reb</span></span>
+      <span class="st"><span class="v">4</span><span class="k">Ast</span></span>
+      <span class="st"><span class="v">3</span><span class="k">Stl</span></span>
+    </div>
+  </div>
+
+  <h1>Your name in the <span class="hit">box score</span>.</h1>
+  <p class="sub">Counted at the table while you play. Yours to post before you get to the car.</p>
+
+  <div class="footer-brand">
+    <span class="wm"><span class="s">Sports</span><span class="h">Hub</span><span class="one">ONE</span></span>
+    <span class="domain">sportshubone.com</span>
+  </div>
+</div>
+<script>const m = location.hash.replace("#", ""); if (m) document.body.classList.add(m);</script>
+</body>
+</html>

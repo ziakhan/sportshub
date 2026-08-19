@@ -1,0 +1,71 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="_brand.css" />
+<!--
+  TEASER 2 of 2 (2026-08-19) — the credibility teaser.
+
+  Purpose: post two. The pain teaser earns attention; this earns belief. It
+  is the only asset that can prove work has already happened without showing
+  the product, which is what stops a zero-follower account reading as vapour.
+
+  ⚠️ THE NUMBER. "1,300+" is deliberately conservative. Local DB
+  `youthbasketballhub` counts 1,323 clubs under the product's own visibility
+  filters (publishedAt set, mergedIntoId null, isDemo false). The box, which
+  is production, was last recorded at ~1,488 in the public directory. Both
+  clear 1,300, so the claim is safe either way. Confirm the box number before
+  raising it, and never print a count without naming the database it came
+  from.
+
+  Light stage: the teaser run alternates dark (feeling) and light (proof), so
+  the grid reads as a set rather than a series of unrelated posts.
+-->
+<style>
+  .stage { gap: 46px; padding: 90px 90px 250px; }
+  .figures { display: flex; align-items: baseline; justify-content: center; gap: 26px; flex-wrap: wrap; }
+  .fig { font-family: var(--display); font-weight: 800; letter-spacing: -0.03em; line-height: 1; }
+  .fig .n { font-size: 150px; color: var(--play-600); display: block; }
+  .fig .l {
+    font-family: var(--body);
+    font-size: 30px;
+    font-weight: 600;
+    color: var(--ink-500);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    display: block;
+    margin-top: 12px;
+  }
+  .dot { width: 14px; height: 14px; border-radius: 99px; background: var(--ink-200); align-self: center; }
+  h1 { font-size: 92px; line-height: 1.05; margin-top: 10px; }
+  h1 em { font-style: normal; color: var(--hoop-500); }
+  .sub {
+    font-family: var(--body);
+    font-size: 34px;
+    font-weight: 500;
+    color: var(--ink-700);
+    line-height: 1.45;
+    max-width: 780px;
+  }
+</style>
+</head>
+<body>
+<div class="stage light">
+  <span class="eyebrow">Something is coming</span>
+  <div class="figures">
+    <span class="fig"><span class="n">1,300+</span><span class="l">Clubs</span></span>
+    <span class="dot"></span>
+    <span class="fig"><span class="n">11</span><span class="l">Provinces</span></span>
+  </div>
+  <h1>We spent a year mapping<br />Canadian youth basketball.</h1>
+  <p class="sub">Every club, every program, every city. Now we are building the thing that runs on top of it.</p>
+  <div class="footer-brand">
+    <span class="wm"><span class="s">Sports</span><span class="h">Hub</span><span class="one">ONE</span></span>
+    <span class="domain">sportshubone.com</span>
+  </div>
+</div>
+<script>const m = location.hash.replace("#", ""); if (m) document.body.classList.add(m);</script>
+</body>
+</html>

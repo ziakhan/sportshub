@@ -1,0 +1,117 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&family=Work+Sans:wght@400;500;600;700&family=Barlow+Condensed:wght@600;700;800&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="_brand.css" />
+<!--
+  PLAYER TEASER 2 of 3 (2026-08-19) — the handle.
+
+  The strongest hook of the three, and the one closest to how a fourteen year
+  old actually thinks. Features are abstract; a page with your name on it is
+  status. `/p/<handle>` is already real in the product
+  (apps/web/src/app/(public)/p/[handle]), so this promises nothing that does
+  not exist.
+
+  It is also the most shareable asset we can make, because the payoff is a
+  link the player wants to put in their own bio. That is the whole growth
+  mechanic in one post: they promote us to promote themselves.
+
+  Light stage, so the teaser run alternates dark and light down the grid.
+  The handle chip is the hero: one object, high contrast, unmistakably a URL.
+
+  ⚠️ EVERY CHIP IS A CHECKED CLAIM. A first draft carried "Your highlights";
+  the player page has no highlights, so it came out. Box scores and season
+  averages are on /player/[id] today (queries/season-stats), Player of the
+  Game renders in live scoring, and recaps are the feature `ad-players`
+  already advertises. Note that /p/<handle> is a REDIRECT to /player/[id]
+  right now (P0 of player-handles-plan). The handle is real and the page is
+  real; the player does not own the page yet, which is P1. Nothing here
+  claims they do. Re-check this list before the reveal phase, when these
+  chips stop being a teaser and start being a promise.
+-->
+<style>
+  .stage { gap: 40px; padding: 90px 70px 250px; }
+
+  .chip-url {
+    display: inline-flex;
+    align-items: center;
+    background: var(--ink-950);
+    border-radius: 999px;
+    padding: 26px 46px;
+    box-shadow: 0 34px 70px -28px rgba(24, 24, 27, 0.75);
+    max-width: 100%;
+  }
+  .chip-url .dom {
+    font-family: var(--body);
+    font-size: 40px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.45);
+    letter-spacing: -0.01em;
+  }
+  .chip-url .you {
+    font-family: var(--display);
+    font-size: 46px;
+    font-weight: 800;
+    color: var(--gold-300);
+    letter-spacing: -0.02em;
+  }
+
+  h1 { font-size: 96px; line-height: 1.04; }
+  h1 .hit { color: var(--play-600); }
+
+  .sub {
+    font-family: var(--body);
+    font-size: 33px;
+    font-weight: 500;
+    color: var(--ink-700);
+    max-width: 800px;
+    line-height: 1.45;
+  }
+
+  .rowchips { display: flex; flex-wrap: wrap; justify-content: center; gap: 14px; max-width: 860px; }
+  .rowchips .c {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    border: 2px solid var(--ink-200);
+    background: #ffffff;
+    border-radius: 999px;
+    padding: 15px 28px;
+    font-family: var(--body);
+    font-size: 28px;
+    font-weight: 600;
+    color: var(--ink-700);
+    white-space: nowrap;
+  }
+  .rowchips .c b { color: var(--hoop-500); font-weight: 800; }
+</style>
+</head>
+<body>
+<div class="stage light">
+  <span class="eyebrow">Every player gets one</span>
+
+  <span class="chip-url">
+    <span class="dom">sportshubone.com/p/</span><span class="you">jaydent</span>
+  </span>
+
+  <h1>Your own page.<br /><span class="hit">One link</span>, everything you did.</h1>
+
+  <div class="rowchips">
+    <span class="c"><b>&#9679;</b> Every box score</span>
+    <span class="c"><b>&#9679;</b> Season averages</span>
+    <span class="c"><b>&#9679;</b> Player of the Game</span>
+    <span class="c"><b>&#9679;</b> Game recaps</span>
+  </div>
+
+  <p class="sub">Put it in your bio. Send it to a coach. It updates itself every time you play.</p>
+
+  <div class="footer-brand">
+    <span class="wm"><span class="s">Sports</span><span class="h">Hub</span><span class="one">ONE</span></span>
+    <span class="domain">sportshubone.com</span>
+  </div>
+</div>
+<script>const m = location.hash.replace("#", ""); if (m) document.body.classList.add(m);</script>
+</body>
+</html>
