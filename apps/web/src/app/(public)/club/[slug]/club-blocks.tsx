@@ -9,6 +9,9 @@ import { OneOnOneBooking } from "@/components/training/one-on-one-booking"
 
 export interface ClubPageData {
   club: any
+  /** Club Page Studio sections (2026-08-18) — both auto-filled by getClubProfile. */
+  staff?: Array<{ id: string; name: string; role: string; designation: string | null; avatarUrl: string | null }>
+  venues?: Array<{ id: string; name: string; address: string; city: string; latitude: number | null; longitude: number | null }>
   currency: string
   accent: string
   teams: any[]
@@ -70,8 +73,8 @@ export function hasBlockContent(key: string, d: ClubPageData): boolean {
           d.trainingSessions.length >
           0 || !!d.oneOnOne
       )
-    case "teams":
-      return true // shows an empty state
+        case "teams":
+      return d.teams.length > 0
     case "schedule":
       return d.recentGames.length + d.upcomingGames.length > 0
     case "news":
@@ -84,6 +87,15 @@ export function hasBlockContent(key: string, d: ClubPageData): boolean {
       return !!(d.club.address || d.club.phoneNumber || d.club.contactEmail || d.club.website)
     case "stats":
       return true
+    // Club Page Studio (2026-08-18). Every one of these gates on real content,
+    // so a section that has nothing to say hides itself instead of drawing an
+    // empty shell — which is what `teams` was doing on 1,517 imported pages.
+    case "staff":
+      return (d.staff?.length ?? 0) > 0
+    case "venues":
+      return (d.venues?.length ?? 0) > 0
+    case "cta":
+      return openProgramCount(d) > 0
     case "socials":
       return socialLinks(d.club.branding?.socials).length > 0
     default:
@@ -154,6 +166,12 @@ function renderBlock(key: string, variant: Variant, d: ClubPageData) {
       return <ContactBlock d={d} />
     case "stats":
       return <StatsBlock d={d} />
+    case "staff":
+      return <StaffBlock d={d} />
+    case "venues":
+      return <VenuesBlock d={d} variant={variant} />
+    case "cta":
+      return <CtaBlock d={d} />
     case "socials":
       return <SocialsBlock d={d} />
     default:
@@ -893,5 +911,127 @@ function IconGlobe() {
       <circle cx="12" cy="12" r="9" />
       <path d="M3 12h18M12 3c2.5 2.5 2.5 15 0 18M12 3c-2.5 2.5-2.5 15 0 18" />
     </svg>
+  )
+}
+
+/* ------------------------------------------------ Club Page Studio sections */
+
+/** How many programs a family could actually join right now. Drives the CTA. */
+function openProgramCount(d: ClubPageData): number {
+  return (
+    (d.tryouts?.length ?? 0) +
+    (d.camps?.length ?? 0) +
+    (d.houseLeagues?.length ?? 0) +
+    (d.trainingSessions?.length ?? 0)
+  )
+}
+
+const DESIGNATION_LABEL: Record<string, string> = {
+  HeadCoach: "Head coach",
+  AssistantCoach: "Assistant coach",
+}
+const ROLE_LABEL: Record<string, string> = {
+  ClubOwner: "Club owner",
+  ClubManager: "Club manager",
+  Trainer: "Trainer",
+  Staff: "Staff",
+}
+
+/** Coaches and staff. Fills itself from the roles the club already assigns. */
+function StaffBlock({ d }: { d: ClubPageData }) {
+  const people = d.staff ?? []
+  if (!people.length) return null
+  return (
+    <Card>
+      <BlockHeader title="Coaches and staff" count={people.length} />
+      <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+        {people.map((p) => {
+          const initials =
+            p.name.split(/\s+/).slice(0, 2).map((w) => w[0]).join("").toUpperCase() || "?"
+          return (
+            <li key={p.id} className="flex items-center gap-2.5">
+              {p.avatarUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={p.avatarUrl} alt="" className="h-10 w-10 shrink-0 rounded-full object-cover" />
+              ) : (
+                <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[var(--brand)] text-[13px] font-bold text-[color:var(--brand-on)]">
+                  {initials}
+                </span>
+              )}
+              <span className="min-w-0">
+                <span className="text-ink-900 block truncate text-sm font-semibold">{p.name}</span>
+                <span className="text-ink-500 block truncate text-xs">
+                  {(p.designation && DESIGNATION_LABEL[p.designation]) || ROLE_LABEL[p.role] || p.role}
+                </span>
+              </span>
+            </li>
+          )
+        })}
+      </ul>
+    </Card>
+  )
+}
+
+/** Where we play. Real venues, with a maps link when we hold coordinates. */
+function VenuesBlock({ d, variant }: { d: ClubPageData; variant: Variant }) {
+  const venues = d.venues ?? []
+  if (!venues.length) return null
+  const body = (
+    <ul className="space-y-2.5">
+      {venues.map((v) => {
+        const q = encodeURIComponent(`${v.name}, ${v.address}, ${v.city}`)
+        return (
+          <li key={v.id}>
+            <a
+              href={`https://www.google.com/maps/search/?api=1&query=${q}`}
+              target="_blank"
+              rel="noreferrer"
+              className="border-ink-100 hover:border-ink-300 block rounded-xl border p-3 transition-colors"
+            >
+              <span className="text-ink-900 block text-sm font-semibold">{v.name}</span>
+              <span className="text-ink-500 block text-xs">
+                {v.address}, {v.city}
+              </span>
+            </a>
+          </li>
+        )
+      })}
+    </ul>
+  )
+  if (variant === "rail") {
+    return (
+      <Card>
+        <RailHeader title="Where we play" />
+        {body}
+      </Card>
+    )
+  }
+  return (
+    <Card>
+      <BlockHeader title="Where we play" count={venues.length} />
+      {body}
+    </Card>
+  )
+}
+
+/** One clear invitation, shown only while something is actually open. */
+function CtaBlock({ d }: { d: ClubPageData }) {
+  const n = openProgramCount(d)
+  if (!n) return null
+  return (
+    <div className="overflow-hidden rounded-[28px] bg-[var(--brand)] p-6 sm:p-7">
+      <p className="text-[color:var(--brand-on)] text-xl font-bold sm:text-2xl">
+        {n === 1 ? "One program is open right now" : `${n} programs are open right now`}
+      </p>
+      <p className="text-[color:var(--brand-on)] mt-1 text-sm opacity-90">
+        Tryouts, camps and house league for {d.club.name}.
+      </p>
+      <a
+        href="#programs"
+        className="mt-4 inline-block rounded-xl bg-white px-5 py-2.5 text-sm font-bold text-[color:var(--brand-ink)] transition-opacity hover:opacity-90"
+      >
+        See what is open
+      </a>
+    </div>
   )
 }

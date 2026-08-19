@@ -83,6 +83,9 @@ export interface ClubProfileData {
   /** Trainer 1-on-1 booking (TRAINER tenants with booking on) — null = hidden. */
   oneOnOne: { title: string; fee: number | null; slotMinutes: number; players: any[] } | null
   staffCount: number
+  /** Club Page Studio sections (2026-08-18). Auto-filled from data we already hold. */
+  staff: Array<{ id: string; name: string; role: string; designation: string | null; avatarUrl: string | null }>
+  venues: Array<{ id: string; name: string; address: string; city: string; latitude: number | null; longitude: number | null }>
   /** Follow.tenantId count — native club hero stat chip (2026-07-25 additive). */
   followerCount: number
   announcements: any[]
@@ -288,6 +291,8 @@ export async function getClubProfile(
     reviews,
     announcements,
     ownReview,
+    staffRows,
+    venueRows,
   ] = await Promise.all([
     // archivedAt: null — "active lists" per the season-continuity plan;
     // archived teams keep their history but drop off the public page. The
@@ -332,6 +337,28 @@ export async function getClubProfile(
           select: { id: true, rating: true, title: true, content: true, status: true },
         })
       : null,
+    // Club Page Studio sections (2026-08-18). Both fill themselves from data
+    // the club already maintains, so turning the section on costs it nothing.
+    prisma.userRole.findMany({
+      where: {
+        tenantId: tenant.id,
+        role: { in: ["ClubOwner", "ClubManager", "Staff", "Trainer"] as any },
+        OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
+      },
+      select: {
+        id: true,
+        role: true,
+        designation: true,
+        user: { select: { firstName: true, lastName: true, avatarUrl: true } },
+      },
+      take: 40,
+    }),
+    prisma.venue.findMany({
+      where: { tenantId: tenant.id },
+      select: { id: true, name: true, address: true, city: true, latitude: true, longitude: true },
+      orderBy: { name: "asc" },
+      take: 12,
+    }),
   ])
 
   const tryoutsWithFee = tryouts.map((t: any) => ({ ...t, fee: Number(t.fee) }))
@@ -390,6 +417,21 @@ export async function getClubProfile(
     trainingSessions,
     oneOnOne,
     staffCount,
+    staff: (staffRows as any[]).map((r) => ({
+      id: r.id,
+      name: [r.user?.firstName, r.user?.lastName].filter(Boolean).join(" ") || "Staff",
+      role: String(r.role),
+      designation: r.designation ? String(r.designation) : null,
+      avatarUrl: r.user?.avatarUrl ?? null,
+    })),
+    venues: (venueRows as any[]).map((v) => ({
+      id: v.id,
+      name: v.name,
+      address: v.address,
+      city: v.city,
+      latitude: v.latitude ?? null,
+      longitude: v.longitude ?? null,
+    })),
     followerCount,
     announcements,
     recentGames,

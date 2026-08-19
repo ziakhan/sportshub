@@ -139,6 +139,10 @@ export default async function ClubProfilePage({ params }: { params: { slug: stri
     currency: club.currency,
     accent,
     teams,
+    // Club Page Studio sections (2026-08-18). This literal names every field
+    // it passes, so a new one on the query is invisible until listed here.
+    staff: (profile as any).staff ?? [],
+    venues: (profile as any).venues ?? [],
     tryouts,
     houseLeagues,
     camps,

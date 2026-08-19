@@ -32,6 +32,11 @@ export const BLOCK_DEFS: BlockDef[] = [
   { key: "schedule", label: "Schedule & scores", hint: "Recent + upcoming games (auto)", zones: ["main"], defaultZone: "main", defaultOrder: 5 },
   { key: "news", label: "News & highlights", hint: "Recaps of your teams' games (auto)", zones: ["main"], defaultZone: "main", defaultOrder: 6 },
   { key: "reviews", label: "Reviews", hint: "Family reviews (auto)", zones: ["main"], defaultZone: "main", defaultOrder: 7 },
+  // Club Page Studio (owner 2026-08-18). These fill themselves from data the club
+  // already maintains, so switching one on costs the club nothing.
+  { key: "cta", label: "Join us", hint: "One invitation, shown while something is open (auto)", zones: ["main"], defaultZone: "main", defaultOrder: 8 },
+  { key: "staff", label: "Coaches and staff", hint: "Your people, with their roles (auto)", zones: ["main"], defaultZone: "main", defaultOrder: 9 },
+  { key: "venues", label: "Where we play", hint: "Your gyms, with directions (auto)", zones: ["main", "rail"], defaultZone: "main", defaultOrder: 10 },
   { key: "nextgame", label: "Next game", hint: "Your next fixture (auto)", zones: ["rail", "main"], defaultZone: "rail", defaultOrder: 1 },
   { key: "contact", label: "Contact", hint: "Phone, address, email, website", zones: ["rail", "main"], defaultZone: "rail", defaultOrder: 2 },
   { key: "stats", label: "At a glance", hint: "Teams / programs / staff counts (auto)", zones: ["rail"], defaultZone: "rail", defaultOrder: 3 },
