@@ -184,7 +184,8 @@ export function LiveEditor({
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
   )
 
-  const resolved = useMemo(() => resolveTheme({ ...(look as any), primaryColor: undefined }), [look])
+  const resolved = useMemo(() => resolveTheme(look as any), [look])
+  const custom = !look.accentKey && !!look.primaryColor
   const accent = resolved.accentHex
   const theme = resolved.theme
 
@@ -259,7 +260,7 @@ export function LiveEditor({
 
   const chip = (on: boolean) =>
     `min-h-[34px] cursor-pointer rounded-lg px-2.5 text-[12px] font-medium transition-colors duration-200 ${
-      on ? "text-white" : "bg-white/10 text-white/70 hover:bg-white/20"
+      on ? "text-white" : "bg-white/[0.14] text-white hover:bg-white/25"
     }`
 
   return (
@@ -311,21 +312,27 @@ export function LiveEditor({
             <div className="mx-auto flex max-w-[1400px] flex-col gap-3 px-4 py-3">
               <div className="flex flex-wrap items-center gap-1.5">
                 <span className="w-16 text-[11px] font-semibold uppercase tracking-wider text-white/40">Theme</span>
-                {THEMES.map((t) => (
-                  <button key={t.key} type="button" onClick={() => setLookField("theme", t.key)}
-                    aria-pressed={(look.theme ?? THEMES[0].key) === t.key}
-                    className={chip((look.theme ?? THEMES[0].key) === t.key)}
-                    style={(look.theme ?? THEMES[0].key) === t.key ? { background: accent } : undefined}>
-                    {t.label}
-                  </button>
-                ))}
+                {THEMES.map((t) => {
+                  const on = (look.theme ?? THEMES[0].key) === t.key
+                  return (
+                    <button key={t.key} type="button" onClick={() => setLookField("theme", t.key)}
+                      aria-pressed={on} title={t.blurb}
+                      className={`flex items-center gap-1.5 ${chip(on)}`}
+                      style={on ? { background: accent } : undefined}>
+                      {/* the ground itself, so the name is not doing all the work */}
+                      <span className="h-3.5 w-3.5 rounded-full ring-1 ring-white/30" style={{ background: t.bg }} />
+                      {t.label}
+                    </button>
+                  )
+                })}
               </div>
               <div className="flex flex-wrap items-center gap-1.5">
                 <span className="w-16 text-[11px] font-semibold uppercase tracking-wider text-white/40">Colour</span>
                 {ACCENTS.map((a) => {
-                  const on = (look.accentKey ?? ACCENTS[0].key) === a.key
+                  const on = !custom && (look.accentKey ?? ACCENTS[0].key) === a.key
                   return (
-                    <button key={a.key} type="button" onClick={() => setLookField("accentKey", a.key)}
+                    <button key={a.key} type="button"
+                      onClick={() => { setLookField("accentKey", a.key); setLookField("primaryColor", null) }}
                       aria-label={a.label} aria-pressed={on} title={a.label}
                       className="grid h-9 w-9 cursor-pointer place-items-center rounded-lg transition-colors duration-200 hover:bg-white/10">
                       <span className="block h-5 w-5 rounded-full"
@@ -333,6 +340,34 @@ export function LiveEditor({
                     </button>
                   )
                 })}
+                {/* Bring your own. Any hex is safe: brand.ts darkens the derived
+                    ink until it clears 4.5:1 and flips text on a fill between
+                    white and near-black, so no custom colour can be unreadable. */}
+                <label
+                  className={`ml-1 flex min-h-[36px] cursor-pointer items-center gap-1.5 rounded-lg px-2.5 text-[12px] font-medium transition-colors duration-200 ${
+                    custom ? "text-white" : "bg-white/[0.14] text-white hover:bg-white/25"
+                  }`}
+                  style={custom ? { background: accent } : undefined}
+                  title="Use your club's exact colour"
+                >
+                  <span className="h-3.5 w-3.5 rounded-full ring-1 ring-white/40"
+                    style={{ background: look.primaryColor || "#888" }} />
+                  Exact colour
+                  <input
+                    type="color"
+                    value={look.primaryColor || accent}
+                    onChange={(e) => { setLookField("primaryColor", e.target.value); setLookField("accentKey", null) }}
+                    className="h-0 w-0 opacity-0"
+                    aria-label="Pick your club's exact colour"
+                  />
+                </label>
+                {custom && (
+                  <button type="button"
+                    onClick={() => { setLookField("primaryColor", null); setLookField("accentKey", ACCENTS[0].key) }}
+                    className="min-h-[36px] cursor-pointer px-2 text-[11.5px] font-medium text-white/60 underline transition-colors duration-200 hover:text-white">
+                    Back to the set
+                  </button>
+                )}
               </div>
               {[
                 { label: "Header", key: "headerStyle" as const, opts: HEADER_STYLES, dflt: "banner" },

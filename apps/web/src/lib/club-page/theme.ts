@@ -237,8 +237,14 @@ export function resolveTheme(input?: ThemeInput | null): ResolvedTheme {
   const shape = SHAPES.find((s) => s.key === input?.shape) ?? SHAPES[1]
   const density = DENSITIES.find((d) => d.key === input?.density) ?? DENSITIES[1]
 
-  // A club that customised before the studio existed only ever picked a
-  // primaryColor. Honour it rather than snapping them to Royal on first render.
+  // Accent resolution, in priority order:
+  //   1. a curated accentKey, resolved against this theme's surface
+  //   2. the club's own hex, whether typed into the colour picker or set before
+  //      the studio existed. Safe to allow freely because brand.ts derives every
+  //      downstream token from it and darkens `ink` until it clears 4.5:1, and
+  //      flips `on` between white and near-black. An unreadable custom colour is
+  //      therefore not reachable, which is why "bring your own" costs us nothing.
+  //   3. the theme's default accent
   const stored = input?.primaryColor?.trim()
   const accentHex = input?.accentKey ? accentFor(theme, accent) : stored || accentFor(theme, accent)
 

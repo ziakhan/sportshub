@@ -28,6 +28,8 @@ import {
 export interface LookValue {
   theme: string | null
   accentKey: string | null
+  /** Set when the club picked its exact colour instead of one of the ten. */
+  primaryColor?: string | null
   headerStyle: string | null
   intensity: string | null
   shape: string | null
