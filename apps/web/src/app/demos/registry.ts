@@ -169,11 +169,11 @@ export const DEMOS: DemoEntry[] = [
     promise:
       "A real league of 146 teams: the last entries answered with their fees, a home court plus floater gyms you never have to book, a board that catches the weekend booked one court short, and one publish that fills every calendar.",
     description:
-      "This runs on a real league. 146 teams across 82 clubs, and registration is nearly done: the league answers the last four entries, one on the submission page where the 3,950 dollar fee appears by itself, dated by the league's own balance rule, and the rest straight from the list. Then the buildings, which is the part leagues have never been shown: the one court they own fills first because its games cost them nothing, and the other two sit in a pool, rented by the court only when a weekend needs the space, with nothing booked in advance. Grade 10 came in 42 teams deep, so it is split into four divisions on a drag board and the league says whether they may play each other. Then the board, which is what this demo is really for. The plan is complete, but one November weekend was booked one court short, and the board says so in amber. The drawer on the right names the weekend, the shortfall and the move that clears it: the league drags a whole building's games onto the next weekend, rents a third court there from that gym's own menu, and the draw fits, 730 games with none left over, read worst team first. Two clubs ask about the drive home, the cost of saying yes is simulated before anyone answers, and one press puts the season on every calendar, where the games land around the practices that were already there.",
+      "This runs on a real league. 146 teams across 82 clubs, and registration is nearly done: the season's own summary says four applications are waiting, and the league answers them, one on the application page where the 3,950 dollar fee appears by itself, dated by the league's own balance rule, and the rest straight from the list. Then the buildings, which is the part leagues have never been shown: the one court they own fills first because its games cost them nothing, and the other two sit in a pool, rented by the court only when a weekend needs the space, with nothing booked in advance. Grade 10 came in 42 teams deep, so it is split into four divisions on a drag board and the league says whether they may play each other. Then the board, which is what this demo is really for. The plan is complete, but one November weekend was booked one court short, and the board says so in amber. The drawer on the right names the weekend, the shortfall and the move that clears it: the league drags a whole building's games onto the next weekend, rents a third court there from that gym's own menu, and the draw fits, 730 games with none left over, read worst team first. Two clubs ask about the drive home, the cost of saying yes is priced before anyone answers, and one press puts the season on every calendar, where the games land around the practices that were already there.",
     audiences: ["leagues", "clubs"],
     kind: "story",
     stage: "split",
-    durationLabel: "3 min 39 sec",
+    durationLabel: "3 min 24 sec",
     status: "live",
     chapterCount: 6,
     bullets: [
@@ -181,7 +181,7 @@ export const DEMOS: DemoEntry[] = [
       "A home court that fills first, then floater gyms you never have to book",
       "A grade of 42 teams split into four divisions by dragging teams between them",
       "A weekend booked one court short, caught on the board, with the drawer writing the fix",
-      "Publish once, and the games land around the practices already on the family's calendar",
+      "Publish once, and one notification lands on the family's phone, naming their team",
     ],
     chapterTitles: [
       "Teams come in",

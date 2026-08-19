@@ -20,6 +20,16 @@ import { cn } from "@/components/ui/cn"
  * Every component mirrors a real league-console element. The names in the
  * comments are the screens they came from, captured 2026-08-16 from the seeded
  * NPH Showcase League as owner-nph@sportshub.demo.
+ *
+ * SUPERSEDED BY THE REALISM STANDARD, 2026-08-19. A story converted to
+ * mock-ui.tsx R1–R8 owns its screens, because R1 wants the REAL component's
+ * classes and this kit was authored to a 14px floor instead. `your-week`,
+ * `roster` and `season` are converted and import little or nothing from here.
+ * Everything below the atoms (Chip, StatusChip, Btn, ConsoleTabs, Panel,
+ * Dialog, the Phone*) is therefore LEGACY: it is still what the unconverted
+ * stories run on, and the planner/board/teams components in it are no longer
+ * used by anything since season-story.tsx was converted. Do not build a NEW
+ * screen out of them; copy the real file, the way the converted stories do.
  */
 
 /* ── Atoms ───────────────────────────────────────────────────────────────── */
