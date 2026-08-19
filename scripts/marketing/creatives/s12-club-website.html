@@ -1,0 +1,125 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="_brand.css" />
+<!--
+  CLUB POST 1 (2026-08-19) — the website, which is the newest thing we have.
+
+  WHY THIS IS THE UPDATE TO THE JULY PILE CREATIVES. s1-pain-pills and
+  s3-checklist were written 2026-07-19, before the club page studio existed.
+  The studio shipped 2026-08-18: an in-place editor at
+  /clubs/<id>/customize/live that drags the REAL sections on the REAL page,
+  six themes, five headers, ten accents or an exact hex, own photos.
+
+  So the pile got one item longer, and it is the expensive one: clubs pay a
+  website builder monthly AND pay someone to keep it current. That is the
+  angle here, and it is the one competitor gap that is easiest to feel.
+
+  THE DIFFERENTIATOR IS THE LAST LINE, not the editor. Squarespace and Wix
+  build a prettier page. Neither can fill it, because they do not hold the
+  roster, the schedule or the results. Ours fills itself from data the club
+  already entered to run its season. That is not a feature comparison, it is
+  a category difference, and it is the whole reason to say it out loud.
+-->
+<style>
+  .stage { gap: 34px; padding: 74px 70px 240px; }
+
+  .browser {
+    flex: none;
+    width: 100%;
+    max-width: 880px;
+    border-radius: 22px;
+    overflow: hidden;
+    background: var(--ink-900, #1f2937);
+    box-shadow: 0 50px 110px -42px rgba(0, 0, 0, 0.55);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+  .browser .bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: #232c42;
+    padding: 15px 22px;
+  }
+  .browser .bar i { width: 13px; height: 13px; border-radius: 999px; background: rgba(255, 255, 255, 0.22); }
+  .browser .bar .url {
+    margin-left: 14px;
+    background: rgba(0, 0, 0, 0.4);
+    border-radius: 8px;
+    padding: 7px 18px;
+    font-family: var(--body);
+    font-size: 21px;
+    color: rgba(255, 255, 255, 0.62);
+  }
+
+  /* A club page wearing a chosen theme, which is what the studio produces. */
+  .site { background: #ffffff; }
+  .site .hero {
+    background: linear-gradient(135deg, #0f2f5c, #1b4d8f);
+    padding: 32px 40px 28px;
+    text-align: left;
+  }
+  .site .hero .crest {
+    width: 64px; height: 64px; border-radius: 16px;
+    background: var(--gold-500); display: inline-flex;
+    align-items: center; justify-content: center;
+    font-family: var(--display); font-weight: 800; font-size: 34px; color: #10233f;
+  }
+  .site .hero .nm {
+    font-family: var(--display); font-weight: 800; font-size: 40px;
+    color: #ffffff; letter-spacing: -0.02em; margin-top: 13px;
+  }
+  .site .hero .mt { font-family: var(--body); font-size: 21px; color: rgba(255, 255, 255, 0.66); margin-top: 8px; }
+  .site .body { display: flex; gap: 13px; padding: 22px 40px 28px; }
+  .site .body .blk {
+    flex: 1; border: 1.5px solid var(--ink-100); border-radius: 14px; padding: 16px 18px; text-align: left;
+  }
+  .site .body .blk b { display: block; font-family: var(--display); font-size: 22px; color: var(--ink-950); }
+  .site .body .blk span { display: block; font-family: var(--body); font-size: 18px; color: var(--ink-500); margin-top: 5px; }
+
+  h1 { font-size: 68px; line-height: 1.06; }
+  h1 .hit { color: var(--hoop-500); }
+  .sub {
+    font-family: var(--body); font-size: 29px; font-weight: 500;
+    color: var(--ink-700); max-width: 820px; line-height: 1.42;
+  }
+  .sub b { color: var(--ink-950); font-weight: 700; }
+</style>
+</head>
+<body>
+<div class="stage light">
+  <span class="eyebrow">New for clubs</span>
+
+  <div class="browser">
+    <div class="bar">
+      <i></i><i></i><i></i>
+      <span class="url">sportshubone.com/club/north-york-force</span>
+    </div>
+    <div class="site">
+      <div class="hero">
+        <span class="crest">F</span>
+        <div class="nm">North York Force</div>
+        <div class="mt">Toronto, ON &middot; 14 teams &middot; Tryouts open</div>
+      </div>
+      <div class="body">
+        <span class="blk"><b>Teams</b><span>By age group</span></span>
+        <span class="blk"><b>Schedule</b><span>Next: Sat 4:00</span></span>
+        <span class="blk"><b>Standings</b><span>2nd in Grade 10</span></span>
+      </div>
+    </div>
+  </div>
+
+  <h1>Your club&rsquo;s website,<br /><span class="hit">built where you run the season</span>.</h1>
+  <p class="sub">Pick a look, drag the sections, use your own colours. Then the part no website builder can do: <b>it fills itself</b> from the teams, schedule and results you already keep here.</p>
+
+  <div class="footer-brand">
+    <span class="wm"><span class="s">Sports</span><span class="h">Hub</span><span class="one">ONE</span></span>
+    <span class="domain">sportshubone.com</span>
+  </div>
+</div>
+<script>const m = location.hash.replace("#", ""); if (m) document.body.classList.add(m);</script>
+</body>
+</html>
