@@ -6,8 +6,9 @@
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&family=Work+Sans:wght@400;500;600;700&family=Barlow+Condensed:wght@600;700&display=swap" rel="stylesheet" />
 <link rel="stylesheet" href="_brand.css" />
 <style>
-  .stage { gap: 48px; padding: 80px 80px 250px; }
-  h1 { font-size: 84px; max-width: 860px; color: #ffffff; }
+  .stage { gap: 28px; padding: 52px 62px 236px; }
+  h1 { font-size: 76px; max-width: 880px; color: #ffffff; }
+  h1 .hit { color: var(--gold-300); }
   .sub { font-size: 34px; color: rgba(255, 255, 255, 0.65); font-weight: 500; }
   .scorecard {
     width: 700px; border-radius: 36px; overflow: hidden; text-align: left;
@@ -42,8 +43,8 @@
 </head>
 <body>
 <div class="stage dark">
-  <h1>Watch every game live.</h1>
-  <p class="sub">Score, box score, play by play. No refresh, it just moves.</p>
+  <span class="eyebrow">From the scorer&rsquo;s table</span>
+
   <div class="scorecard">
     <div class="hero">
       <div>
@@ -70,6 +71,16 @@
       <div class="brow"><span><span class="j">#4</span>Andre P.</span><span class="num pts">8</span><span class="num">5</span><span class="num">2</span><span class="num">2</span><span class="num">1</span></div>
     </div>
   </div>
+  <h1>Watch every game <span class="hit">live</span>.</h1>
+
+  <div class="chips">
+    <span>Steals</span>
+    <span>Blocks</span>
+    <span>Play by play</span>
+  </div>
+
+  <p class="payoff">No refresh. <em>It just moves.</em></p>
+
   <div class="footer-brand">
     <span class="wm"><span class="s">Sports</span><span class="h">Hub</span><span class="one">ONE</span></span>
     <span class="domain">sportshubone.com</span>
