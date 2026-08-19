@@ -29,6 +29,16 @@ const updateSettingsSchema = z.object({
   // Review invites (owner 2026-07-18): platform default; clubs may hold overrides
   reviewInvitePolicy: z.enum(["AUTO", "OFF"]).optional(),
   reviewWindowDays: z.number().int().min(7).max(90).optional(),
+  // Uploads (owner 2026-08-18). Credentials are NOT here on purpose: the access
+  // key and secret live only in the server environment, so a database dump
+  // cannot leak them. Only the driver and the bucket's public shape are stored.
+  uploadDriver: z.enum(["LOCAL", "S3"]).optional(),
+  uploadLocalDir: z.string().trim().min(1).max(300).optional(),
+  uploadPublicUrl: z.string().trim().min(1).max(300).optional(),
+  uploadS3Bucket: z.string().trim().max(200).nullable().optional(),
+  uploadS3Region: z.string().trim().max(60).nullable().optional(),
+  uploadS3Endpoint: z.string().trim().max(300).nullable().optional(),
+  uploadMaxMb: z.number().int().min(1).max(64).optional(),
 })
 
 function serializeSettings(settings: any) {
@@ -44,6 +54,13 @@ function serializeSettings(settings: any) {
     themePalette: settings.themePalette,
     reviewInvitePolicy: settings.reviewInvitePolicy,
     reviewWindowDays: settings.reviewWindowDays,
+    uploadDriver: settings.uploadDriver,
+    uploadLocalDir: settings.uploadLocalDir,
+    uploadPublicUrl: settings.uploadPublicUrl,
+    uploadS3Bucket: settings.uploadS3Bucket,
+    uploadS3Region: settings.uploadS3Region,
+    uploadS3Endpoint: settings.uploadS3Endpoint,
+    uploadMaxMb: settings.uploadMaxMb,
   }
 }
 

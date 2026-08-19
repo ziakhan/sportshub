@@ -4048,6 +4048,28 @@ model PlatformSettings {
   reviewInvitePolicy String @default("AUTO") // AUTO | OFF
   reviewWindowDays   Int    @default(30)
 
+  // Uploads (owner 2026-08-18: "we should have an option to do an S3 or local
+  // for now ... so it should be configurable"). Images were data URLs in
+  // Postgres, which bloats every row and ships the whole file inline on each
+  // render. This moves them to a real store, admin-switchable without a deploy.
+  //
+  // CREDENTIALS ARE NEVER STORED HERE. The driver and its public shape live in
+  // the database because an admin must be able to change them; the access key
+  // and secret stay in /etc/sportshub/web.env, where a database dump cannot
+  // leak them.
+  uploadDriver    String  @default("LOCAL") // LOCAL | S3
+  /// LOCAL: absolute directory on the box, served by Caddy. Outside the repo, so
+  /// a deploy's git pull and any git clean can never touch a club's photos.
+  uploadLocalDir  String  @default("/var/lib/sportshub/uploads")
+  /// What a stored path is prefixed with to become a public URL.
+  uploadPublicUrl String  @default("/uploads")
+  uploadS3Bucket  String?
+  uploadS3Region  String?
+  /// Set for S3-compatible hosts (R2, MinIO, Backblaze). Empty = real AWS.
+  uploadS3Endpoint String?
+  /// Largest accepted upload, megabytes.
+  uploadMaxMb     Int     @default(8)
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }

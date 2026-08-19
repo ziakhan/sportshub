@@ -169,6 +169,55 @@ Every new column has a default (`theme` = `home-court`, `accentKey` = `royal`, f
 
 **Status:** ⛔ NOT APPLIED to box or Neon. Local only.
 
+---
+
+## ⛔ 43. Upload storage — schema + a Caddy route + a directory on the box
+
+**Linked code change:** `PlatformSettings` gains `uploadDriver`, `uploadLocalDir`, `uploadPublicUrl`, `uploadS3Bucket`, `uploadS3Region`, `uploadS3Endpoint`, `uploadMaxMb`. New `lib/storage`, `POST /api/uploads`, admin storage panel.
+
+**Why before deploy:** additive columns with defaults, so the code is safe against an old database, but **uploads will fail until the box has somewhere to write**.
+
+### Step 1 — schema
+
+`prisma db push`, then restart the service so the regenerated client is loaded.
+
+### Step 2 — the directory (LOCAL driver, the default)
+
+```
+sudo mkdir -p /var/lib/sportshub/uploads
+sudo chown sportshub:sportshub /var/lib/sportshub/uploads
+```
+
+**Outside `/opt/sportshub` on purpose.** The deploy runs `git pull --ff-only` inside the repo; anything kept in there is one `git clean` away from deleting every club's photos.
+
+### Step 3 — Caddy serves it
+
+The box already runs Caddy, so static files never need to touch Node:
+
+```
+handle_path /uploads/* {
+    root * /var/lib/sportshub/uploads
+    header Cache-Control "public, max-age=31536000, immutable"
+    file_server
+}
+```
+
+Then `sudo systemctl reload caddy`.
+
+### Step 4 — S3 instead (optional)
+
+Set the bucket, region and public URL in Dashboard > Admin > Settings > Image storage. Put the credentials in `/etc/sportshub/web.env` as `UPLOAD_S3_ACCESS_KEY_ID` and `UPLOAD_S3_SECRET_ACCESS_KEY`. **They are deliberately not stored in the database**, so a dump cannot leak them.
+
+### Verification
+
+Admin > Settings > Image storage > **Test it now**. LOCAL writes and removes a probe file, which catches a missing directory or the wrong owner. Anything else, including a working-looking save, proves nothing.
+
+### Backups
+
+The uploads directory is now a second thing to back up alongside Postgres. Not covered by the database backup.
+
+**Status:** ⛔ NOT APPLIED to box or Neon. Local only.
+
 <!-- Future entries below. Each entry: linked code change → why-before-deploy → step-by-step commands → verification → status flip ✅ when applied. -->
 
 

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { ChipGroup } from "@/components/ui"
+import { StoragePanel } from "./storage-panel"
 
 interface Country {
   code: string
@@ -143,6 +144,8 @@ export default function AdminSettingsPage() {
           {message.text}
         </div>
       )}
+
+      <StoragePanel onMessage={setMessage} />
 
       {/* Search engine indexing (SEO go-live switch) */}
       <div className="border-ink-100 shadow-soft rounded-2xl border bg-white p-6">
