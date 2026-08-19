@@ -1,0 +1,131 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="_brand.css" />
+<!--
+  CLUBS · THE TRYOUT POST (2026-08-19).
+
+  Owner's note: the earlier club posts were generic and had no call to action.
+  This one ends on a real ask, and the ask is the strongest one we own —
+  their page ALREADY EXISTS. 1,300+ club pages are live from the census, so
+  "claim yours" is a fact rather than a pitch, and it is a far easier yes than
+  "sign up".
+
+  WHY TRYOUTS AND NOT "PROGRAMS". Tryouts carry a date, and a date carries
+  urgency: an unfilled tryout is a lost season, not a lost signup. Camps and
+  house league ride along in the sub-line where they cost nothing, but the
+  headline needs the deadline.
+
+  THE CLAIM IS DISCOVERY, NOT TRAFFIC. We do not say "we bring you families",
+  because on day one the honest answer to "how many?" is "we open this fall",
+  and the post would have created an objection it cannot answer. What is true
+  today is that the pages are live and public, /tryout/[id] is a real public
+  route, and a family searching a city lands on something that exists. The
+  artifact shows exactly that and claims nothing more.
+-->
+<style>
+  .stage { gap: 30px; padding: 56px 56px 236px; }
+
+  .search {
+    flex: none;
+    width: 100%;
+    max-width: 840px;
+    background: #ffffff;
+    border-radius: 24px;
+    overflow: hidden;
+    box-shadow: 0 44px 96px -36px rgba(0, 0, 0, 0.9);
+    text-align: left;
+  }
+  .search .bar {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 20px 26px;
+    border-bottom: 1.5px solid var(--ink-100);
+  }
+  .search .bar svg { width: 26px; height: 26px; stroke: var(--ink-400); fill: none; stroke-width: 2.4; }
+  .search .bar .q { font-family: var(--body); font-size: 27px; font-weight: 600; color: var(--ink-950); }
+  .search .bar .loc { font-family: var(--body); font-size: 27px; color: var(--ink-400); }
+
+  .row { display: flex; align-items: center; gap: 18px; padding: 20px 26px; border-top: 1px solid var(--ink-100); }
+  .row:first-of-type { border-top: 0; }
+  .row .crest {
+    width: 58px; height: 58px; border-radius: 15px; flex: none;
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--display); font-weight: 800; font-size: 25px; color: #fff;
+  }
+  .row .info { min-width: 0; flex: 1; }
+  .row .info b { display: block; font-family: var(--display); font-size: 28px; color: var(--ink-950); }
+  .row .info span { display: block; font-family: var(--body); font-size: 21px; color: var(--ink-500); margin-top: 3px; }
+  .row .tag {
+    flex: none; font-family: var(--body); font-size: 17px; font-weight: 800;
+    letter-spacing: 0.1em; text-transform: uppercase; border-radius: 999px; padding: 8px 18px;
+    /* Base tone matters: the stage is dark, so anything without its own
+       colour inherits white and disappears on a white card. */
+    background: var(--court-100); color: var(--court-600);
+  }
+  .row.you { background: #fff8ec; }
+  .row.you .tag { background: var(--court-600); color: #fff; }
+  .row .tag.shut { background: var(--ink-100); color: var(--ink-500); }
+
+  h1 { font-size: 74px; line-height: 1.05; }
+  h1 .hit { color: var(--gold-300); }
+  .sub {
+    font-family: var(--body); font-size: 28px; font-weight: 500;
+    color: rgba(255, 255, 255, 0.65); max-width: 830px; line-height: 1.42;
+  }
+  .sub b { color: #ffffff; font-weight: 700; }
+
+  .cta {
+    display: inline-flex; align-items: center; gap: 14px;
+    background: var(--gold-500); color: var(--ink-950);
+    border-radius: 999px; padding: 19px 44px;
+    font-family: var(--display); font-size: 33px; font-weight: 800;
+    box-shadow: 0 24px 54px -20px rgba(245, 158, 11, 0.65);
+  }
+  .cta .arrow { font-size: 0.9em; }
+</style>
+</head>
+<body>
+<div class="stage dark">
+  <span class="eyebrow">For clubs</span>
+
+  <div class="search">
+    <div class="bar">
+      <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" stroke-linecap="round" /></svg>
+      <span class="q">Basketball tryouts</span>
+      <span class="loc">&middot; Scarborough</span>
+    </div>
+    <div class="row you">
+      <span class="crest" style="background:#1b4d8f">F</span>
+      <span class="info"><b>North York Force</b><span>Tryouts Sat Sep 13 &middot; Grade 9 to 11</span></span>
+      <span class="tag">Open</span>
+    </div>
+    <div class="row">
+      <span class="crest" style="background:#3DDC97">S</span>
+      <span class="info"><b>Scarborough Selects</b><span>Tryouts Sun Sep 14 &middot; Grade 7 to 9</span></span>
+      <span class="tag">Open</span>
+    </div>
+    <div class="row">
+      <span class="crest" style="background:#8FA3C8">E</span>
+      <span class="info"><b>East End Hoops</b><span>No dates posted</span></span>
+      <span class="tag shut">Not listed</span>
+    </div>
+  </div>
+
+  <h1>Tryouts in three weeks.<br /><span class="hit">Who has seen the date?</span></h1>
+  <p class="sub">Your club page is <b>already live</b> on SportsHub. Put your tryouts, camps and house league on it, and the families searching your city find them.</p>
+
+  <span class="cta">Claim your club <span class="arrow">&rarr;</span></span>
+
+  <div class="footer-brand">
+    <span class="wm"><span class="s">Sports</span><span class="h">Hub</span><span class="one">ONE</span></span>
+    <span class="domain">sportshubone.com</span>
+  </div>
+</div>
+<script>const m = location.hash.replace("#", ""); if (m) document.body.classList.add(m);</script>
+</body>
+</html>

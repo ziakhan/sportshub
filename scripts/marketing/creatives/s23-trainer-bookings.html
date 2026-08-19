@@ -1,0 +1,124 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&family=Work+Sans:wght@400;500;600;700&family=Barlow+Condensed:wght@600;700;800&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="_brand.css" />
+<!--
+  TRAINERS · THE DM POST (2026-08-19).
+
+  Owner's brief: trainers, group or one-on-one, tired of posting to Instagram.
+
+  THE ANGLE MOVED FROM REACH TO BOOKING, on purpose. "Post it where parents
+  search instead of to your followers" would need a public trainer directory
+  with traffic; what actually ships today is a TRAINER tenant with a public
+  page, real availability (api/trainers/[tenantId]/availability) and 1-on-1
+  booking on it (club-blocks: "Trainer 1-on-1 booking, TRAINER tenants with
+  booking on"). So the promise is the thing that exists.
+
+  It is also the better angle. Every trainer's real tax is not reach, it is
+  the DM thread: "Tuesday free?" "No, Wednesday?" "How much?" "E-transfer?" —
+  fifteen messages to sell one hour. A page with live slots deletes that, and
+  a trainer feels it immediately.
+
+  The artifact is the week, because an empty Tuesday is the whole argument.
+-->
+<style>
+  .stage { gap: 28px; padding: 54px 56px 234px; }
+
+  .week {
+    flex: none;
+    width: 100%;
+    max-width: 830px;
+    background: #ffffff;
+    border-radius: 24px;
+    overflow: hidden;
+    box-shadow: 0 44px 96px -36px rgba(0, 0, 0, 0.9);
+    text-align: left;
+  }
+  .week .hd {
+    display: flex; align-items: center; gap: 16px;
+    padding: 20px 26px; border-bottom: 1.5px solid var(--ink-100);
+  }
+  .week .hd .av {
+    width: 52px; height: 52px; border-radius: 999px; flex: none;
+    background: var(--play-600); color: #fff;
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--display); font-weight: 800; font-size: 22px;
+  }
+  .week .hd b { display: block; font-family: var(--display); font-size: 27px; color: var(--ink-950); }
+  .week .hd span { display: block; font-family: var(--body); font-size: 20px; color: var(--ink-500); margin-top: 2px; }
+
+  .slot { display: flex; align-items: center; gap: 16px; padding: 15px 26px; border-top: 1px solid var(--ink-100); }
+  .slot .day {
+    font-family: var(--condensed); font-weight: 800; font-size: 27px;
+    color: var(--ink-950); width: 118px; flex: none; letter-spacing: 0.02em;
+  }
+  .slot .what { flex: 1; min-width: 0; font-family: var(--body); font-size: 23px; font-weight: 600; color: var(--ink-700); }
+  .slot .what em { font-style: normal; color: var(--ink-400); font-weight: 500; }
+  .slot .btn {
+    flex: none; font-family: var(--display); font-size: 20px; font-weight: 800;
+    border-radius: 999px; padding: 9px 26px; background: var(--hoop-500); color: #fff;
+  }
+  .slot .btn.taken { background: var(--ink-100); color: var(--ink-500); }
+
+  h1 { font-size: 72px; line-height: 1.05; }
+  h1 .hit { color: var(--gold-300); }
+  .sub {
+    font-family: var(--body); font-size: 27px; font-weight: 500;
+    color: rgba(255, 255, 255, 0.65); max-width: 820px; line-height: 1.42;
+  }
+  .sub b { color: #ffffff; font-weight: 700; }
+
+  .cta {
+    display: inline-flex; align-items: center; gap: 14px;
+    background: var(--gold-500); color: var(--ink-950);
+    border-radius: 999px; padding: 18px 42px;
+    font-family: var(--display); font-size: 32px; font-weight: 800;
+    box-shadow: 0 24px 54px -20px rgba(245, 158, 11, 0.65);
+  }
+</style>
+</head>
+<body>
+<div class="stage dark">
+  <span class="eyebrow">For trainers</span>
+
+  <div class="week">
+    <div class="hd">
+      <span class="av">MC</span>
+      <span>
+        <b>Marcus C. Skills Training</b>
+        <span>Scarborough &middot; Guards &middot; Grades 6 to 12</span>
+      </span>
+    </div>
+    <div class="slot">
+      <span class="day">Tue 5:00</span>
+      <span class="what">Group session <em>&middot; 3 of 6 spots</em></span>
+      <span class="btn">Book</span>
+    </div>
+    <div class="slot">
+      <span class="day">Wed 6:30</span>
+      <span class="what">One-on-one <em>&middot; 60 min</em></span>
+      <span class="btn">Book</span>
+    </div>
+    <div class="slot">
+      <span class="day">Thu 5:00</span>
+      <span class="what">Group session <em>&middot; full</em></span>
+      <span class="btn taken">Booked</span>
+    </div>
+  </div>
+
+  <h1>Still taking bookings<br /><span class="hit">in your DMs?</span></h1>
+  <p class="sub">Group sessions and one-on-ones, with your real availability on your own page. A parent picks a time and pays. <b>No fifteen messages to sell one hour.</b></p>
+
+  <span class="cta">Set up your page &rarr;</span>
+
+  <div class="footer-brand">
+    <span class="wm"><span class="s">Sports</span><span class="h">Hub</span><span class="one">ONE</span></span>
+    <span class="domain">sportshubone.com</span>
+  </div>
+</div>
+<script>const m = location.hash.replace("#", ""); if (m) document.body.classList.add(m);</script>
+</body>
+</html>
