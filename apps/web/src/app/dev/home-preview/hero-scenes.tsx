@@ -120,7 +120,7 @@ function PileArtifact() {
 
 /* ── 2 · Parents: the group chat spiral ──────────────────────────────────── */
 
-function ChatArtifact() {
+export function ChatArtifact() {
   return (
     <Card>
       <div className="flex items-center gap-3 border-b border-white/10 bg-white/[0.06] px-4 py-3 md:px-5">
@@ -321,7 +321,7 @@ function LadderArtifact() {
 
 /* ── 5 · Family: the real capture, in a phone-shaped phone ───────────────── */
 
-function PhoneArtifact({ src, alt }: { src: string; alt: string }) {
+export function PhoneArtifact({ src, alt }: { src: string; alt: string }) {
   /* THE FRAME IS 390:844 AND NOTHING OVERRIDES IT. v1 used 212x300, v2
      claimed 390:844 while coding 390:620; both read as a squashed box.
      A true-ratio phone that fits the hero vertically would have to be so

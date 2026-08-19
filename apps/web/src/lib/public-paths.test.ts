@@ -73,13 +73,11 @@ describe("isPublicPath", () => {
   })
 })
 
-describe("the public dev exception (owner 2026-08-19)", () => {
-  it("lets the demos-lanes preview through while every other /dev route stays locked", () => {
-    expect(isPublicPath("/dev/demos-lanes")).toBe(true)
-    expect(isPublicPath("/dev/demos-lanes/")).toBe(true)
+describe("the public dev exception list (owner 2026-08-19)", () => {
+  it("is empty at launch: every /dev route is dev-locked, including the retired lanes preview", () => {
+    expect(isPublicPath("/dev/demos-lanes")).toBe(process.env.NODE_ENV !== "production")
     expect(isPublicPath("/dev/home-preview")).toBe(process.env.NODE_ENV !== "production")
     expect(isPublicPath("/dev/mock-kit")).toBe(process.env.NODE_ENV !== "production")
-    // No prefix overmatch: a lookalike sibling is still dev-locked.
-    expect(isPublicPath("/dev/demos-lanes-2")).toBe(process.env.NODE_ENV !== "production")
+    expect(isPublicPath("/dev/creatives")).toBe(process.env.NODE_ENV !== "production")
   })
 })

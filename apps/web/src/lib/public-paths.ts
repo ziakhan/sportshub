@@ -161,10 +161,10 @@ const PUBLIC_API_ANY_METHOD_PREFIXES = [
  *  notFound() in production as a second lock. */
 const DEV_ONLY_PREFIXES = ["/api/dev", "/api/create-test-users", "/dev"] as const
 
-/** The rare /dev preview the owner has explicitly made public (2026-08-19,
- *  "I want some people to see it"): the demo-directory reorganization draft.
- *  Checked BEFORE the dev deny-prefix, so it wins. Remove the entry when the
- *  lanes design ships as /demos itself.
+/** Rare /dev previews the owner has explicitly made public. EMPTY at launch
+ *  (2026-08-19 pre-launch sweep): the demos-lanes entry was removed the day
+ *  the lanes design shipped as /demos itself, so nothing under /dev is
+ *  publicly reachable.
  *
  *  Before adding ANYTHING here, know what the route actually does:
  *  /dev/creatives in particular must NEVER be listed — its download endpoint
@@ -173,7 +173,7 @@ const DEV_ONLY_PREFIXES = ["/api/dev", "/api/create-test-users", "/dev"] as cons
  *  404s in production as a second lock; the sanctioned way to share that
  *  gallery is pre-rendering the exports to a static directory, not relaxing
  *  either guard (marketing session, 2026-08-19). */
-const PUBLIC_DEV_EXCEPTIONS = ["/dev/demos-lanes"] as const
+const PUBLIC_DEV_EXCEPTIONS: readonly string[] = []
 
 const READ_METHODS = new Set(["GET", "HEAD", "OPTIONS"])
 

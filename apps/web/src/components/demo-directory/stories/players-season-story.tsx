@@ -80,6 +80,27 @@ import type { DemoBeat, DemoScript } from "../types"
  *     default, the Followers/Public segment, the line about public sharing,
  *     and "Just share the image" beside "Share". It runs to the dialog's real
  *     `done` state: "Shared! The story runs for 24 hours.";
+ *   · the feed is `app/(platform)/feed/page.tsx` on its own floor gradient with
+ *     `components/social/stories-rail.tsx` on top — her fresh 24 hour story,
+ *     ringed gold because nobody has opened it — and one
+ *     `components/social/feed-card.tsx` under it: the gradient ring avatar with
+ *     `AVATAR_BG` picking `bg-court-600` for "Jordan Reyes", the timestamp
+ *     followed by "· 🔒 Followers", the `KIND_CHIP.PLAYER_OF_GAME` chip, the
+ *     generated title and body, the card image, and the action row with the
+ *     heart at `h-[18px]` and the comment icon at the `Ic` default `h-6 w-6`.
+ *     Liking fills the heart and turns the row `text-hoop-600`, which is the
+ *     component's own liked state;
+ *   · `PRODUCT` NO REPOST AND NO SEND BUTTON, and this is the point rather
+ *     than an omission. feed-card.tsx gates both on
+ *     `item.visibility === "PUBLIC"` (lines 513 and 525), and her share was
+ *     clamped to FOLLOWERS three beats earlier because her profile is private.
+ *     A demo that showed a repost count here would contradict the beat that
+ *     came before it;
+ *   · the post's title and body are `PRODUCT` api/posts/player-card: it
+ *     generates `"{public name}: Player of the Game"` and
+ *     `"{PTS} PTS · {REB} REB · {AST} AST. {home} {hs}–{as} {away}, {date}."`
+ *     There is no text input anywhere in the share dialog, so a caption a
+ *     human typed would be invented UI;
  *   · the card in the Moments grid and in the dialog preview is
  *     `lib/cards/game-card.tsx` `renderCard()` in the `bold` template, drawn
  *     at 1200x630 and scaled down — the same flex composition, the same
@@ -117,7 +138,17 @@ import type { DemoBeat, DemoScript } from "../types"
  *      its line, which the real width does not at 390;
  *   6. the score hero's quarter-by-quarter linescore strip is composed out.
  *      The Game tab's leaders pair is drawn under the tabs and the box score
- *      and play-by-play continue below the fold, as they do on a phone.
+ *      and play-by-play continue below the fold, as they do on a phone;
+ *   7. the feed page's `FeedTabs` is not drawn because it genuinely is not
+ *      there: the component is `hidden lg:block` and phones get the social
+ *      bottom nav instead. `OrgComposer` returns null for anyone who runs no
+ *      club or league, which is her. So the phone feed really is the rail and
+ *      then the posts, and only the posts BELOW hers are composed out;
+ *   8. the open comment list is composed to its first four rows. The real list
+ *      renders all fourteen and then the "Add a comment…" input, which no 390
+ *      screen holds at once — the fourth row is cut by the screen edge on
+ *      purpose, because that is what a list continuing below the fold looks
+ *      like.
  *
  * INVENTED-CONTENT LEDGER (everything not read from the database):
  *   · the head shot. A demo may not put a real child's face on a marketing
@@ -126,6 +157,20 @@ import type { DemoBeat, DemoScript } from "../types"
  *     component performs in production;
  *   · the game-card font. The real renderer loads Outfit through satori; the
  *     scaled replica here uses the page's own stack;
+ *   · THE ENGAGEMENT ON THE FEED POST (added 2026-08-19). The seed does not
+ *     write reactions or comments, so every number and every commenter below
+ *     is invented, and this is the whole list of them:
+ *       - 218 likes, rising to 219 when the demo's own viewer taps the heart;
+ *       - 14 comments;
+ *       - the four commenters and their words: Nadia Osei, "Twenty in a four
+ *         point game. Unreal."; Marcus Bell, "She was the best player on that
+ *         floor all night."; Priya Raman, "Congrats Danielle!"; Dan Whyte,
+ *         "That last quarter was something else.";
+ *       - the post's age, "3h". The demo jumps to later the same evening
+ *         rather than pretending an evening of engagement arrived in the
+ *         minute since the Share button was pressed, and the caption says so.
+ *     Reposts are NOT invented, because the product does not offer them on a
+ *     followers-only post (see the feed note above);
  *   · nothing else. Names, teams, dates, scores, stat lines, the award, the
  *     missing photo and the missing handle are all `DB`, including the
  *     opposing points leader on the game page (`DB` Maya Campbell, #36, 17
@@ -236,6 +281,33 @@ function aggregate(rows: LogRow[]) {
   }
 }
 
+/* ── The post, and the evening it had ────────────────────────────────────── */
+
+/**
+ * `PRODUCT` api/posts/player-card generates both of these from game data and
+ * offers no text input, so nothing here is a caption somebody wrote. The
+ * matchup reads home first: `DB` North Toronto Huskies were home, and lost.
+ */
+const POST_TITLE = `${PLAYER_PUBLIC}: Player of the Game`
+const POST_BODY = `20 PTS · 3 REB · 1 AST. ${POTG_OPPONENT} 44–48 ${TEAM}, ${POTG_DATE}.`
+
+/** House number style: 1.2K, never 1234. Every count below goes through it. */
+function compact(n: number): string {
+  if (Math.abs(n) < 1000) return String(n)
+  const k = n / 1000
+  return `${k >= 10 ? Math.round(k) : Math.round(k * 10) / 10}K`
+}
+
+/** INVENTED, and declared in the ledger above. The seed writes no reactions. */
+const LIKES = 218
+const COMMENT_COUNT = 14
+const COMMENTS: Array<{ author: string; body: string }> = [
+  { author: "Nadia Osei", body: "Twenty in a four point game. Unreal." },
+  { author: "Marcus Bell", body: "She was the best player on that floor all night." },
+  { author: "Priya Raman", body: "Congrats Danielle!" },
+  { author: "Dan Whyte", body: "That last quarter was something else." },
+]
+
 /* ── Where the handset is scrolled ───────────────────────────────────────── */
 
 /** Player page: the top, and the game log brought up under the header. */
@@ -250,6 +322,10 @@ const EDIT_LINK = 238
 /** Share dialog: the card, then the destinations and the buttons. */
 const DLG_TOP = 0
 const DLG_SEND = 214
+/** Feed: the top of the post, its action row, then the open comment list. */
+const FEED_TOP = 0
+const FEED_ACTIONS = 300
+const FEED_COMMENTS = 470
 
 /* ── Pacing ──────────────────────────────────────────────────────────────── */
 
@@ -453,6 +529,57 @@ export const playersSeasonStory: DemoScript = {
       emphasize: "moments",
     }),
 
+    /* The other place it went. The share posted to her page AND to a story,
+       and the post is in the feed of everyone who follows her — so the demo
+       jumps to later the same evening rather than pretending an evening of
+       likes arrived in the minute since the Share button was pressed. */
+    paced({
+      id: "feed",
+      chapter: "potg",
+      caption: "Later that evening, the same card is in the feed of everyone who follows her.",
+      set: { screen: "feed", feedScroll: FEED_TOP },
+      emphasize: "feed-post",
+    }),
+    paced({
+      id: "feed-busy",
+      chapter: "potg",
+      caption: "Two hundred and eighteen likes and fourteen comments by the time she went to bed.",
+      set: { feedScroll: FEED_ACTIONS },
+      emphasize: "feed-actions",
+      callout:
+        "Nobody paid for this reach. Her team, her club and her league already follow her, so the room was already in the building.",
+    }),
+    paced({
+      id: "like",
+      chapter: "potg",
+      caption: "Her own mother is one of them.",
+      cursor: "feed-like",
+      press: true,
+    }),
+    paced({
+      id: "liked",
+      chapter: "potg",
+      caption: "One tap is the whole reaction. There is no picker of six faces to choose from.",
+      set: { liked: true },
+      emphasize: "feed-like",
+    }),
+    paced({
+      id: "open-comments",
+      chapter: "potg",
+      caption: "And the comments open on the post itself.",
+      cursor: "feed-comments",
+      press: true,
+    }),
+    paced({
+      id: "comments",
+      chapter: "potg",
+      caption: "Other parents, from the gym she was in, about a Sunday afternoon in July.",
+      set: { comments: true, feedScroll: FEED_COMMENTS },
+      emphasize: "feed-comment-list",
+      callout:
+        "Any comment on a child's post can be reported in one tap, and a reported comment hides itself while it waits.",
+    }),
+
     /* ── 4. Share it ──────────────────────────────────────────────────── */
     paced({
       id: "handle",
@@ -526,9 +653,11 @@ export const playersSeasonStory: DemoScript = {
         ? "/players/dc5d7845/edit"
         : screen === "game"
           ? "/live/44744bad"
-          : claimed
-            ? `/p/${HANDLE}`
-            : "/player/dc5d7845"
+          : screen === "feed"
+            ? "/feed"
+            : claimed
+              ? `/p/${HANDLE}`
+              : "/player/dc5d7845"
 
     return {
       desktop: (
@@ -546,6 +675,9 @@ export const playersSeasonStory: DemoScript = {
             dlgScroll={get<number>("dlgScroll", DLG_TOP)}
             shared={get("shared", false)}
             moment={get("moment", false)}
+            feedScroll={get<number>("feedScroll", FEED_TOP)}
+            liked={get("liked", false)}
+            commentsOpen={get("comments", false)}
             claimed={claimed}
             copied={get("copied", false)}
             handleValue={
@@ -579,6 +711,9 @@ function Phone({
   dlgScroll,
   shared,
   moment,
+  feedScroll,
+  liked,
+  commentsOpen,
   claimed,
   copied,
   handleValue,
@@ -595,6 +730,9 @@ function Phone({
   dlgScroll: number
   shared: boolean
   moment: boolean
+  feedScroll: number
+  liked: boolean
+  commentsOpen: boolean
   claimed: boolean
   copied: boolean
   handleValue: ReactNode
@@ -625,6 +763,14 @@ function Phone({
           />
         )}
         {screen === "game" && <GamePage photoUrl={mug} />}
+        {screen === "feed" && (
+          <FeedScreen
+            scroll={feedScroll}
+            liked={liked}
+            commentsOpen={commentsOpen}
+            handle={claimed ? HANDLE : null}
+          />
+        )}
       </div>
 
       {/* `share-card-dialog.tsx` is `fixed inset-0`: it covers the handset. */}
@@ -1041,6 +1187,327 @@ function GameCard({ width, handle }: { width: number; handle: string | null }) {
         </div>
       </div>
     </div>
+  )
+}
+
+/**
+ * `lib/cards/game-card.tsx` `renderCard()` again, but the PORTRAIT branch —
+ * 1080x1350, one navy column, centred. The feed asks for this one and the
+ * player page asks for the landscape: `lib/queries/feed.ts` `toItem()` appends
+ * `&aspect=portrait` to every card image it hands the feed, and the player
+ * page's Moments grid does not. Both are the same `bold` template.
+ */
+function GameCardPortrait({ width, handle }: { width: number; handle: string | null }) {
+  const s = width / 1080
+  const chip: CSSProperties = {
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    padding: "22px 40px",
+    borderRadius: 24,
+    background: "rgba(148,163,184,0.18)",
+    border: `2px solid ${CARD.accent}44`,
+  }
+  /* `won` is computed for the HOME side, and `DB` the home side lost. */
+  const homeWon = false
+  const row = (name: string, score: number, won: boolean, top: boolean) => (
+    <div
+      key={name}
+      style={{
+        display: "flex",
+        justifyContent: "space-between",
+        width: "100%",
+        marginTop: top ? 16 : 6,
+      }}
+    >
+      <span style={{ fontSize: 32, fontWeight: won ? 800 : 600, opacity: won ? 1 : 0.7 }}>
+        {name}
+      </span>
+      <span style={{ fontSize: 40, fontWeight: 800, color: won ? CARD.eyebrow : undefined }}>
+        {score}
+      </span>
+    </div>
+  )
+  return (
+    <div className="overflow-hidden" style={{ width, height: Math.round(1350 * s) }}>
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "space-between",
+          width: 1080,
+          height: 1350,
+          padding: "64px 56px",
+          background: CARD.leftBg,
+          color: CARD.leftFg,
+          transform: `scale(${s})`,
+          transformOrigin: "top left",
+        }}
+      >
+        <span style={{ fontSize: 30, fontWeight: 800, letterSpacing: 8, color: CARD.eyebrow }}>
+          PLAYER OF THE GAME
+        </span>
+        {/* Her mediaConsent is UNSET, so `loadCardData` withholds the photo
+            and the renderer draws the number. */}
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            width: 300,
+            height: 300,
+            borderRadius: 999,
+            background: CARD.accent,
+            color: "#fff",
+            fontSize: 110,
+            fontWeight: 800,
+          }}
+        >
+          #{JERSEY}
+        </div>
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+          <span style={{ fontSize: 76, fontWeight: 800, textAlign: "center" }}>
+            {PLAYER_PUBLIC}
+          </span>
+          <span style={{ fontSize: 36, fontWeight: 700, color: CARD.eyebrow, marginTop: 4 }}>
+            #{JERSEY}
+          </span>
+        </div>
+        <div style={{ display: "flex", gap: 24 }}>
+          {CARD_STATS.map(([label, value]) => (
+            <div key={label} style={chip}>
+              <span style={{ fontSize: 72, fontWeight: 800 }}>{value}</span>
+              <span
+                style={{ fontSize: 26, fontWeight: 700, color: CARD.eyebrow, letterSpacing: 2 }}
+              >
+                {label}
+              </span>
+            </div>
+          ))}
+        </div>
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            width: "100%",
+            padding: "26px 40px",
+            borderRadius: 28,
+            background: "rgba(0,0,0,0.25)",
+            border: `1px solid ${CARD.accent}33`,
+          }}
+        >
+          <span
+            style={{
+              fontSize: 20,
+              fontWeight: 800,
+              letterSpacing: 5,
+              padding: "6px 22px",
+              borderRadius: 999,
+              background: CARD.accent,
+              color: "#fff",
+            }}
+          >
+            FINAL
+          </span>
+          {row(POTG_OPPONENT, 44, homeWon, true)}
+          {row(TEAM, 48, !homeWon, false)}
+        </div>
+        <div
+          style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}
+        >
+          <span style={{ fontSize: 24, color: CARD.sub }}>
+            {LEAGUE} · {SEASON} · {POTG_DATE}
+          </span>
+          <span style={{ fontSize: 30, fontWeight: 800 }}>
+            Sports<span style={{ color: CARD.accent }}>Hub</span> One
+            {handle ? ` · /p/${handle}` : ""}
+          </span>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+/* ── /feed ───────────────────────────────────────────────────────────────── */
+
+/** `feed-card.tsx` `Ic` + `IC`, verbatim. The default box really is h-6 w-6. */
+function Ic({ d, className }: { d: string; className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className ?? "h-6 w-6"}
+    >
+      <path d={d} />
+    </svg>
+  )
+}
+const IC = {
+  heart:
+    "M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z",
+  chat: "M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z",
+}
+
+/**
+ * `app/(platform)/feed/page.tsx` at 390: its floor gradient, its
+ * `max-w-xl space-y-4 px-3` column, the stories rail, then the post.
+ * FeedTabs is `hidden lg:block` and OrgComposer returns null without an org,
+ * so on a phone the page really does begin with the rail.
+ */
+function FeedScreen({
+  scroll,
+  liked,
+  commentsOpen,
+  handle,
+}: {
+  scroll: number
+  liked: boolean
+  commentsOpen: boolean
+  handle: string | null
+}) {
+  return (
+    <div className="h-full overflow-hidden bg-[radial-gradient(ellipse_at_top,#e4e9f7_0%,#f1f4fa_55%,#f6f7fb_100%)]">
+      <div
+        className="mx-auto max-w-xl space-y-4 px-3 pb-4 pt-1 transition-transform duration-[700ms] ease-out motion-reduce:transition-none"
+        style={{ transform: `translateY(${-scroll}px)` }}
+      >
+        <StoriesRailMock />
+        <FeedPost liked={liked} commentsOpen={commentsOpen} handle={handle} />
+      </div>
+    </div>
+  )
+}
+
+/**
+ * `stories-rail.tsx`: the gradient ring is the UNVIEWED state, and hers is
+ * unviewed because she posted it minutes ago. The rail labels an entry with
+ * the handle when there is one and the first name when there is not, so
+ * before the last chapter she is simply "Danielle".
+ */
+function StoriesRailMock() {
+  return (
+    <div className="no-scrollbar flex gap-1 overflow-x-auto">
+      <span className="flex w-[82px] shrink-0 flex-col items-center">
+        <span className="from-gold-400 via-hoop-500 to-play-600 rounded-full bg-gradient-to-tr p-[3px]">
+          <span className="text-hoop-600 flex h-[76px] w-[76px] items-center justify-center rounded-full border-2 border-white bg-white text-xl font-extrabold">
+            D
+          </span>
+        </span>
+        <span className="text-ink-700 -mt-0.5 w-full truncate text-center text-xs font-medium leading-tight">
+          Danielle
+        </span>
+      </span>
+    </div>
+  )
+}
+
+/**
+ * One `feed-card.tsx` article. Everything it does NOT have is as deliberate
+ * as everything it does: no repost button and no send button, because both
+ * are gated on `item.visibility === "PUBLIC"` and this post was clamped to
+ * FOLLOWERS; and no three-dot menu, because `manageable` is only passed on
+ * /feed/mine, not on the feed itself.
+ */
+function FeedPost({
+  liked,
+  commentsOpen,
+  handle,
+}: {
+  liked: boolean
+  commentsOpen: boolean
+  handle: string | null
+}) {
+  const likes = liked ? LIKES + 1 : LIKES
+  return (
+    <article
+      data-demo-target="feed-post"
+      className="ring-ink-950/10 overflow-hidden rounded-3xl bg-white shadow-[0_24px_60px_-18px_rgba(30,41,59,0.55)] ring-1"
+    >
+      <div className="flex items-center justify-between gap-2 px-4 pt-3.5">
+        <div className="flex min-w-0 items-center gap-2.5">
+          <span className="from-gold-400 via-hoop-500 to-play-600 shrink-0 rounded-full bg-gradient-to-tr p-[2px]">
+            {/* AVATAR_BG[( 'J'.charCodeAt(0) + "Jordan Reyes".length ) % 5] */}
+            <span className="bg-court-600 flex h-9 w-9 items-center justify-center rounded-full border-2 border-white text-sm font-bold text-white">
+              J
+            </span>
+          </span>
+          <div className="min-w-0">
+            <p className="text-ink-900 truncate text-[13px] font-semibold">{PARENT}</p>
+            <p className="text-ink-400 text-[11px] font-medium">3h · 🔒 Followers</p>
+          </div>
+        </div>
+        <span className="flex shrink-0 items-center gap-1.5">
+          <span className="bg-gold-50 text-gold-700 ring-gold-200 rounded-full px-2.5 py-1 text-[11px] font-bold ring-1 ring-inset">
+            🏀 Player of the Game
+          </span>
+        </span>
+      </div>
+
+      {/* Title and body are GENERATED by the share endpoint. */}
+      <div className="block px-4 pt-1.5">
+        <h3 className="text-ink-950 text-[15px] font-bold leading-snug">{POST_TITLE}</h3>
+        <p className="text-ink-600 mt-1 line-clamp-3 text-sm">{POST_BODY}</p>
+      </div>
+
+      <div className="mt-2.5 block">
+        <GameCardPortrait width={366} handle={handle} />
+      </div>
+
+      <div
+        data-demo-target="feed-actions"
+        className="text-ink-800 mt-1 flex items-center gap-1 px-2.5 py-1 text-[13px] font-semibold"
+      >
+        <span className="relative">
+          <span
+            data-demo-target="feed-like"
+            className={cn(
+              "flex items-center gap-1.5 rounded-full px-3 py-2 transition-all duration-200 motion-reduce:transition-none",
+              "data-[demo-hover=true]:bg-hoop-50 data-[demo-press=true]:scale-[0.94]",
+              liked && "text-hoop-600"
+            )}
+          >
+            <Ic d={IC.heart} className={cn("h-[18px] w-[18px]", liked && "fill-current")} />
+            <span key={likes} className={cn("rounded", liked && "demo-pulse-green")}>
+              {compact(likes)}
+            </span>
+          </span>
+        </span>
+        <span
+          data-demo-target="feed-comments"
+          className={cn(
+            "flex items-center gap-1.5 rounded-full px-3 py-2 transition-all duration-200 motion-reduce:transition-none",
+            "data-[demo-hover=true]:bg-play-50 data-[demo-hover=true]:text-play-700",
+            "data-[demo-press=true]:scale-[0.94]"
+          )}
+        >
+          <Ic d={IC.chat} />
+          {compact(COMMENT_COUNT)}
+        </span>
+      </div>
+
+      {commentsOpen && (
+        <div
+          data-demo-target="feed-comment-list"
+          className="border-ink-100 live-row-in border-t px-4 py-3"
+        >
+          {COMMENTS.map((c) => (
+            <div key={c.author} className="flex items-start gap-2 py-1.5">
+              <div className="min-w-0 flex-1">
+                <p className="text-ink-800 text-sm">
+                  <span className="font-semibold">{c.author}</span> {c.body}
+                </p>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </article>
   )
 }
 

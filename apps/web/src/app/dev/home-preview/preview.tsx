@@ -24,7 +24,11 @@ import { CourtBackdrop } from "@/components/ui"
 import { NotifyForm } from "@/components/launch/notify-form"
 import { BrandWordmark } from "@/components/brand/wordmark"
 import { DEMOS, type DemoAudience } from "@/app/demos/registry"
-import { HeroScenes } from "./hero-scenes"
+// The proof rail (owner-approved 2026-08-19): the merge of hero B and the
+// screens band into one slider of problem-to-proof scenes, each carrying a
+// real capture and a live demo link. Hero B itself is retired from the page;
+// its file stays for the artifacts the rail imports.
+import { ProofRail } from "./proof-rail"
 
 /* Rotating hero slogans in the owner's priority order (2026-08-17), each with
    its own accent the way the product home page colours "All of it." in gold.
@@ -62,67 +66,28 @@ const SLOGANS: { key: string; node: React.ReactNode; sub: React.ReactNode }[] = 
     ),
   },
   {
-    key: "rosters",
-    node: (
-      <>
-        Tryouts become <span className="text-hoop-400">signed, paid rosters</span>.
-      </>
-    ),
-    sub: (
-      <>
-        Jersey sizes, numbers and payment collected <span className="text-hoop-400 font-semibold">the moment a family accepts</span>.
-      </>
-    ),
-  },
-  {
-    key: "payments",
-    node: (
-      <>
-        Payment plans <span className="text-play-400">run themselves</span>.
-      </>
-    ),
-    sub: (
-      <>
-        The deposit at signup, the installments <span className="text-play-400 font-semibold">on their own dates, automatically</span>.
-      </>
-    ),
-  },
-  {
     key: "chat-calendar",
     node: (
       <>
-        Team chat, polls, and <span className="text-court-400">one family calendar</span>.
+        Team chat, polls, and <span className="text-hoop-400">one family calendar</span>.
       </>
     ),
     sub: (
       <>
-        Both kids, every practice and game, <span className="text-court-400 font-semibold">one phone</span>.
+        Both kids, every practice and game, <span className="text-hoop-400 font-semibold">one phone</span>.
       </>
     ),
   },
   {
-    key: "game-moved",
+    key: "rosters",
     node: (
       <>
-        <span className="text-hoop-400">Game moved?</span> Everyone already knows.
+        Tryouts become <span className="text-play-400">signed, paid rosters</span>.
       </>
     ),
     sub: (
       <>
-        Every calendar and phone updates <span className="text-hoop-400 font-semibold">instantly</span>. Nobody makes calls.
-      </>
-    ),
-  },
-  {
-    key: "watch-live",
-    node: (
-      <>
-        Watch every game <span className="text-play-400">live</span>.
-      </>
-    ),
-    sub: (
-      <>
-        Score, box score, play by play. <span className="text-play-400 font-semibold">No refresh, it just moves</span>.
+        Jersey sizes, numbers and payment collected <span className="text-play-400 font-semibold">the moment a family accepts</span>.
       </>
     ),
   },
@@ -140,41 +105,54 @@ const SLOGANS: { key: string; node: React.ReactNode; sub: React.ReactNode }[] = 
     ),
   },
   {
-    key: "in-the-news",
-    node: (
-      <>
-        <span className="text-hoop-400">Your name</span> in the news.
-      </>
-    ),
-    sub: (
-      <>
-        Recaps <span className="text-hoop-400 font-semibold">write themselves</span> from the official scoring record.
-      </>
-    ),
-  },
-  {
     key: "plan-season",
     node: (
       <>
-        Plan the season. <span className="text-play-400">Schedule it in one click.</span>
+        Plan the season. <span className="text-hoop-400">Schedule it in one click.</span>
       </>
     ),
     sub: (
       <>
-        A whole season generated <span className="text-play-400 font-semibold">in seconds</span>, conflicts already handled.
+        A whole season generated <span className="text-hoop-400 font-semibold">in seconds</span>, conflicts already handled.
       </>
     ),
   },
   {
-    key: "already-built",
+    key: "game-moved",
     node: (
       <>
-        Registration to final buzzer, <span className="text-court-400">already built</span>.
+        <span className="text-play-400">Game moved?</span> Everyone already knows.
       </>
     ),
     sub: (
       <>
-        Team entry, approvals, rosters and fees, <span className="text-court-400 font-semibold">ready the day you sign in</span>.
+        Every calendar and phone updates <span className="text-play-400 font-semibold">instantly</span>. Nobody makes calls.
+      </>
+    ),
+  },
+  {
+    key: "watch-live",
+    node: (
+      <>
+        Watch every game <span className="text-court-400">live</span>.
+      </>
+    ),
+    sub: (
+      <>
+        Score, box score, play by play. <span className="text-court-400 font-semibold">No refresh, it just moves</span>.
+      </>
+    ),
+  },
+  {
+    key: "payments",
+    node: (
+      <>
+        Payment plans <span className="text-hoop-400">run themselves</span>.
+      </>
+    ),
+    sub: (
+      <>
+        The deposit at signup, the installments <span className="text-hoop-400 font-semibold">on their own dates, automatically</span>.
       </>
     ),
   },
@@ -182,12 +160,12 @@ const SLOGANS: { key: string; node: React.ReactNode; sub: React.ReactNode }[] = 
     key: "standings",
     node: (
       <>
-        Standings <span className="text-hoop-400">settle themselves</span>.
+        Standings <span className="text-play-400">settle themselves</span>.
       </>
     ),
     sub: (
       <>
-        Updated <span className="text-hoop-400 font-semibold">the moment a final goes in</span>, tiebreakers included.
+        Updated <span className="text-play-400 font-semibold">the moment a final goes in</span>, tiebreakers included.
       </>
     ),
   },
@@ -201,6 +179,32 @@ const SLOGANS: { key: string; node: React.ReactNode; sub: React.ReactNode }[] = 
     sub: (
       <>
         Reminders go out <span className="text-court-400 font-semibold">automatically</span> until every signature is in.
+      </>
+    ),
+  },
+  {
+    key: "in-the-news",
+    node: (
+      <>
+        <span className="text-hoop-400">Your name</span> in the news.
+      </>
+    ),
+    sub: (
+      <>
+        Recaps <span className="text-hoop-400 font-semibold">write themselves</span> from the official scoring record.
+      </>
+    ),
+  },
+  {
+    key: "already-built",
+    node: (
+      <>
+        Registration to final buzzer, <span className="text-court-400">already built</span>.
+      </>
+    ),
+    sub: (
+      <>
+        Team entry, approvals, rosters and fees, <span className="text-court-400 font-semibold">ready the day you sign in</span>.
       </>
     ),
   },
@@ -1618,7 +1622,9 @@ function SlideZoom({
   )
 }
 
-function Screenshots() {
+// Retired from the page 2026-08-19 (its captures live inside the proof rail
+// now); kept exported for reference until the owner orders deletion.
+export function Screenshots() {
   const { active, goTo } = useSloganRotation(SCREEN_SLIDES.length, 30000)
   const sliderRef = useRef<HTMLDivElement>(null)
   useArrowNav(
@@ -1968,8 +1974,11 @@ export function HomePreview() {
       {/* Hero B, the scene version (owner A/B, 2026-08-19). Additive on
           purpose: Hero A above is untouched, both live on the page so they can
           be read back to back and shown to other people before one is cut. */}
-      <HeroScenes />
-      <Screenshots />
+      {/* The proof rail is the page's second act (owner ruling 2026-08-19):
+          hero B and the screens band it merged are retired from the page.
+          Their components stay in the tree for the artifacts the rail
+          imports and for reference. */}
+      <ProofRail />
       <ClaimYourClub />
       <ReplacesStory />
       <CompareTable />
