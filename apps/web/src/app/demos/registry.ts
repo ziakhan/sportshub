@@ -199,18 +199,18 @@ export const DEMOS: DemoEntry[] = [
     promise:
       "A league moves one game and cancels another, and every family, coach and club owner on both rosters is told automatically, by notification and by email.",
     description:
-      "It opens on a published weekend, which is the point: eleven games are already on somebody's calendar, so changing one is not a private act. Saturday's nine o'clock game at The Playground has to move, and the league does not pick a time out of the air. It asks for alternates, gets only slots where the court is free and neither team is already playing, and takes noon on the same day. One press, and that is the entire job. Then the demo turns the camera around: a parent with two children in the league gets the notification word for word, and Saturday's row moves to noon where it stands, on the same card, with nothing to reconcile. Then the fan-out, counted out loud: twenty guardian accounts, four coaches, two club owners, twenty six people from one press. Sunday's game is not being played at all, so it gets cancelled, and the cancellation lands on the same phone: the row is struck through where it sits rather than vanishing, and the email carries the same sentence the app does.",
+      "It opens on a published schedule, which is the point: every game on that list is already on somebody's calendar, so changing one is not a private act. Saturday's nine o'clock game at The Playground has to move, and the league does not pick a time out of the air. It asks for alternates, gets only slots where the court is free and neither team is already playing, and takes noon on the same day. One press, and that is the entire job. Then the demo turns the camera around: a parent with two children in the league gets the push on her lock screen, the same words unread in her bell, and Saturday's row moved to noon where it stands, on the same card, with nothing to reconcile. Then the fan-out, counted out loud: twenty guardian accounts, four coaches, two club owners, twenty six people from one press. Sunday's game is not being played at all, so it gets cancelled behind the browser's own one-line warning, and the cancellation lands on the same phone: the row is struck through where it sits rather than vanishing, and the email in her inbox carries the line that keeps a family off the road.",
     audiences: ["leagues", "clubs", "parents"],
     primaryAudience: "leagues",
     kind: "chapter",
     stage: "split",
-    durationLabel: "1 min 36 sec",
+    durationLabel: "1 min 23 sec",
     status: "live",
     chapterCount: 3,
     bullets: [
       "Move a game from the real schedule, with only the slots that actually fit offered",
       "The recipient list counted on camera: 20 guardians, 4 coaches, 2 club owners, 26 people",
-      "One audience list feeds the notification and the email, so the two can never disagree",
+      "One audience list feeds the push, the bell and the email, so the three can never disagree",
       "A cancelled game stays on the family calendar struck through, so nobody drives to an empty gym",
     ],
     chapterTitles: ["The move", "Everyone knows", "The cancellation"],

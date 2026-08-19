@@ -308,3 +308,62 @@ the same row keeps a subscribed calendar from duplicating, that same-day slots a
 
 Gate re-run: readability audit **0 violations**, minimum stage scale **1.000**, 22 beats / 25
 scenes, one headless drive with a clean console. Runtime **1 min 36 sec**.
+
+---
+
+## Realism conversion, 2026-08-19 (mock-ui.tsx R1–R8)
+
+The demo was rebuilt to the realism standard: every screen to the real component's anatomy,
+every flow to its real end state, the OS drawn as the OS, the balloons cut to what a screen
+cannot say. 22 beats became 27 (every press split from its landing, per the engine law), 15
+callouts became 8, and the runtime fell from 1 min 36 sec to **1 min 23 sec**.
+
+### Screens, before and after
+
+| Was | Is now, and its source |
+|---|---|
+| scene-kit `ConsoleTabs` | the console's own flat tab row, `manage/.../manage/page.tsx` lines 250 to 285, Settings included |
+| scene-kit `Panel` + `Chip` + `StatusChip` + `Btn` | the `panelClass` card, `PanelHeader`, the real `Badge` at `toneForStatus(status)`, and `Button size="sm"` classes, all from `schedule-tab.tsx` `GamesTable` |
+| a "Whole season / Weekend 11 · Aug 22" scope toggle | **deleted.** That control left the product on 2026-08-08 (`schedule-tab.tsx` line 640). The list is the season's committed games and the count pill reads **45**, which is `DB` every scheduled game in Summer 2026, all published |
+| a product-styled modal for the cancel guard | a **browser confirm sheet**: `cancelGame` calls native `window.confirm`, so it is drawn as chrome (R8), origin line and all |
+| two toasts, "Moved · …" and "Cancelled · …" | **deleted.** The product shows no confirmation on either action; the row re-rendering is the feedback |
+| a white notice card for the push | an iOS banner (`demo-banner-in`) carrying the approved app icon (R8) |
+| an invented "Also in her inbox" panel | the bell page `/notifications` (unread tint, dismiss ×) and an **OS Mail reading view** carrying the route's own `emailHtml`, its blue "View game details" button and `transactionalFooter` |
+| day headings and plain white calendar rows | `/calendar`: the lens chips with `LENS_COLORS`, `AddToPhone`, the sticky month header and 60px date tile from `agenda-list.tsx`, and `KIND_CARD`/`KIND_EDGE` game cards |
+
+### Two corrections to section D, both real defects in the old cut
+
+1. **The cancellation email's line.** Cancel game calls `DELETE /api/games/[id]`, whose email
+   says *"This game will not be played — please do not travel to the venue."* (line 427). The
+   old cut quoted the PATCH branch's variant, *"will not be played AS SCHEDULED"* (line 313),
+   which no button in the product reaches. Section D's table should read line 427.
+2. **The calendar's place line.** `lib/calendar/my-calendar.ts` line 326 sets a game's
+   `location` to the **venue name only**; the court never reaches My Calendar. The old cut
+   wrote "The Playground, Court 1 · Toronto Lords Grade 9". It is "The Playground · Toronto
+   Lords Grade 9", which is also why the notification naming the court earns its place.
+
+### Composition, declared
+
+The console region drops the page h1 and the Schedule tab's generation controls, division
+card, TeamCheck and fairness verdict that sit above the games list; the list is filmed at the
+league's own scroll position, eight rows around the game being worked on, running past the
+fold both ways because the real list is 45 games long. On the phone, the calendar drops its
+one-line subtitle and the `RsvpControl` under each upcoming row (`DB` these two games hold
+zero `EventRsvp` rows, answering is the your-week demo's chapter, and three buttons wrap onto
+two lines at 390 and cost the Sunday row its place); the bell heading is `text-2xl` so "Mark
+all as read" keeps its line. Invented content is two older bell rows carrying real product
+titles on this world's own events, and the OS clock faces.
+
+### Gates, this cut
+
+| Gate | Result |
+|---|---|
+| `tsc --noEmit` | clean |
+| Beat-stepper drive, 27 beats | 27 frames reviewed, no overflow, no orphaned cursor, no dead panel |
+| `readability-audit.mjs --scope chrome` | **0 violations** |
+| Minimum stage scale | **1.038** (nothing shrinks to fit) |
+| Runtime at 1x | **1 min 23 sec** |
+| Em-dash sweep, user-facing copy | clean (the four in the file are code comments, one of them quoting the product) |
+
+Stage-floor hits inside the mocks (1,420 at `--scope all`) are the product's own 11 to 13px
+console and app type, which R1 requires be copied rather than enlarged.
