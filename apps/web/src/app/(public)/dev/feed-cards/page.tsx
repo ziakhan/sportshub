@@ -15,7 +15,12 @@ import {
   RecapScorelineCard,
   RecapThrillerCard,
   RivalryCard,
-} from "@/components/social/cards/showcase-cards"
+} from "@/components/social/cards/showcase-cards-vivid"
+// ^ PREVIEW ONLY (owner 2026-08-19). This gallery renders the FROZEN
+// pre-2026-08-14 colour treatment so the original can be seen again. Every
+// real surface — the social feed, /news/[slug], club and team pages — imports
+// `showcase-cards` and stays neutral per the "team colors go neutral by
+// default" ruling. Changing this import back is all it takes to align them.
 
 /**
  * DESIGN PREVIEW — not a product surface (2026-08-13).
