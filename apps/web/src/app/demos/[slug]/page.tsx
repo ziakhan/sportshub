@@ -1,6 +1,6 @@
 import type { Metadata } from "next"
 import Link from "next/link"
-import { notFound } from "next/navigation"
+import { notFound, redirect } from "next/navigation"
 import { CourtBackdropLayer } from "@/components/ui/court-backdrop"
 import { BrandWordmark } from "@/components/brand/wordmark"
 import { DEMOS, getDemo } from "../registry"
@@ -30,7 +30,24 @@ export function generateMetadata({ params }: { params: { slug: string } }): Meta
  * The view opens on the read-then-play intro. Playback replaces it in the same
  * space, so nothing jumps around when the viewer presses Play.
  */
+/** Outreach aliases (owner 2026-08-19): a link sent to a club owner opens the
+ *  gallery already focused on their lane. Family/parent both work because both
+ *  get typed. */
+const AUDIENCE_ALIASES: Record<string, string> = {
+  clubs: "clubs",
+  club: "clubs",
+  leagues: "leagues",
+  league: "leagues",
+  families: "parents",
+  family: "parents",
+  parents: "parents",
+  players: "parents",
+}
+
 export default function DemoPlayerPage({ params }: { params: { slug: string } }) {
+  const audience = AUDIENCE_ALIASES[params.slug.toLowerCase()]
+  if (audience) redirect(`/demos?for=${audience}`)
+
   const demo = getDemo(params.slug)
   if (!demo) notFound()
 
