@@ -1,5 +1,5 @@
 ---
-updated: 2026-08-16
+updated: 2026-08-19
 tags: [type/reference, status/active, area/demos]
 ---
 
@@ -7,7 +7,12 @@ tags: [type/reference, status/active, area/demos]
 
 Status: **SOURCE OF TRUTH for `/demos/money-picture`** ("The money picture", rebuilt 2026-08-16 to
 the gold standard set by the season story, the schedule-change demo, the waivers demo, game day,
-the withdrawal demo, the referees demo and the roster story).
+the withdrawal demo, the referees demo and the roster story, and CONVERTED 2026-08-19 to the
+realism standard, mock-ui.tsx R1–R8).
+
+> **Read section K first.** The numbers below still hold and still say where they came from, but two
+> screens the 08-16 cut composed by hand were replaced by the product's own pages in the realism
+> conversion, and three money strings were corrected against the code.
 
 Same two rules as `season-story-numbers.md` and `roster-story-numbers.md`:
 
@@ -278,9 +283,58 @@ them, and when the family's row is expanded the two rows beneath it stay on scre
 panel emptying out. The price list and the schedule both had 190px of dead space at the bottom and
 now fill their panels.
 
-**Copy.** Sixteen captions and balloons rewritten off the copy law. Gone: "on one screen it did not
+**Copy.** Sixteen captions and balloons rewritten off the copy law (08-16 cut). Gone: "on one screen it did not
 have to build", "Including the one nobody else counts", "That is not a reminder problem", "The small
 ones matter most, because they are the ones clubs stop chasing", "not worth an invoice to a human
 being. It is worth one to a machine", "Nobody writes one cheque for a rep season", "And look at how
 they arrived", "the machine quits", "No club owner had to sit down on a Sunday and write it", "the
 one clubs never say out loud".
+
+---
+
+## K. Realism conversion, 2026-08-19 (mock-ui.tsx R1–R8)
+
+The demo was rebuilt again, this time against the owner's realism standard: every screen copies the
+REAL component's markup and cites it, and every flow runs to its real end state. Sections A to J
+above still describe where the numbers come from; this section records what the screens now are.
+
+**Two invented screens are gone.** R1 leaves no room for a panel the product does not draw, the
+same ruling that removed the roster story's "Programs" screen.
+
+| Was (08-16) | Is now |
+|---|---|
+| A five-row price panel composing a tryout, house league, camp, summer program and rep band | The REAL `/clubs/[id]/offer-templates` page, reached by pressing the real club tab strip: three `OfferTemplate` cards with their real fees, installments, practice count, game range, description and included items (Elite All-In $1,495, Returning Player $795, New Player $895). The New Player price is the fee on the family's obligation, which is what now carries chapter 2 into chapter 3 |
+| A "What goes out, and when" cadence panel listing the code's constants | The family's REAL `/notifications` page. Four `payment_overdue` notices ARE the cadence: the day after the 1 April due date, then every `OVERDUE_NAG_DAYS`, the last one 90 days late where `OVERDUE_MAX_DAYS` stops selecting the row |
+| A hand-built money desk (compressed panel, gold row tint, dashed "not in" installment rows) | `clubs/[id]/payments/page.tsx` and `components/payments/obligations-table.tsx` verbatim: `rounded-3xl` `font-condensed` tiles, the red-200 aging banner, the `TYPE_LABEL` pills, `PanelHeader`, the five real filter chips, the six real columns, the reference-type chip, `OBLIGATION_STATUS_STYLE`, the `Overdue {n}d` badge, and Record payment / Waive on EVERY open row. The product does not list future installments in the row expansion, so the dashed rows are gone |
+| A hand-built notification-and-email card list on the phone | The real notifications page (R2 read state: unread = play-200 border, play-50/30 tint, play-500 dot) plus the overdue email in an OS Mail view (R8), and the receipt as an iOS push carrying the APPROVED app icon |
+| The demo ended when the row turned green | R7: `recordOfflinePayment` also notifies the payer, so the demo ends where the code ends — the obligation closed, the cash on the ledger with its note, and "Payment received" on her phone |
+
+**Three numbers corrected against the code.**
+
+1. `formatCurrency` (`lib/countries.ts`) formats with locale `"en"`, so every money string in the club
+   UI really reads **CA$23,270.00**, while `formatMoney` (`lib/email.ts`) uses `"en-CA"` and the same
+   amount in mail reads **$23,270.00**. Both are now printed as the code prints them.
+   **PUNCH: unify the UI formatter on en-CA.**
+2. The overdue nag quotes the OBLIGATION'S FULL AMOUNT, not the balance: `scheduled.ts` line 213
+   passes `Number(o.amount)`. So a family that has paid half is told "$895.00 was due N days ago",
+   and that is what the demo shows. **PUNCH: send the outstanding balance.**
+3. The row expansion's history line is `{date} · {method} · recorded by {name}`, and it does not
+   carry the payment description. `DB` both of her payments were recorded by **Mark Harris**
+   (`summer-owner-lords@sportshub.demo`), the ClubOwner of this club and the persona filming the
+   demo, which is now on screen.
+
+**Her schedule had already stopped, and the demo now says so.** `OVERDUE_MAX_DAYS` is 90 and the fee
+is 137 days late, so `sendOverdueReminders` stopped selecting the row at the end of June. That is
+the reason the club owner is on this screen recording cash, and it is what joins chapters 4 and 5.
+
+**Composition trims, this cut.** The club layout's title block is not drawn (the tab strip is,
+because the story presses it); the region is 1160 by 600, a short browser window, so the page is
+filmed in the scroll positions a club really uses (the top, the table, and the family's own row
+after acting on it); below the fold the real page also carries "Fees Toronto Lords owes" and the
+payment settings card; the templates page's create form is likewise below the fold. A later seed
+pass layered a second book onto this club (obligations at $3,000 and $2,700, and two more offer
+templates carrying no detail) and the demo films the summer 2026 book documented above.
+
+**Gates, this cut.** `tsc --noEmit` clean · beat drive 25 beats, every frame reviewed ·
+`readability-audit --scope chrome` 0 violations at 1440x900 and at 390x844 · runtime **1 min 22 sec**
+(was 1 min 53 sec) · callouts **9** (was 22) · database writes none.

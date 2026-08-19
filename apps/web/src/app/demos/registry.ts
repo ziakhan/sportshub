@@ -330,11 +330,11 @@ export const DEMOS: DemoEntry[] = [
     promise:
       "Every dollar a real club is owed on one screen, one family's plan opened underneath it, cash taken at the door and recorded, and a reminder nobody has to remember to send.",
     description:
-      "This runs on a real club's real books. Four numbers at the top, worked out from the obligations themselves rather than typed into a spreadsheet: collected, outstanding, overdue aged in buckets, and waived, because a fee a club writes off is recorded rather than deleted. The overdue line is eight payments, and every dollar of it is past sixty days. Then the price list behind those numbers, five products at five different prices with five different rhythms, from a twenty five dollar tryout to a rep season carrying a deposit and three installments. One family opens underneath itself: half paid and stopped, with the cash in March and the e-transfer in April that really paid it sitting in the history, and the two installments that did not. The reminder chapter is the schedule the code keeps, three days before it is due, the day after it is missed, then every four days, stopping at ninety, with the exact notification and the exact email a family receives, on the phone where they land. The last stretch is how most of this money arrives. She hands over the rest at the gym on Saturday, the club records it as cash with a note in its own words, the obligation closes itself, the family is told without anybody writing a message, and the four numbers at the top move last.",
+      "This runs on a real club's real books. Four numbers at the top, worked out from the obligations themselves rather than typed into a spreadsheet: collected, outstanding, overdue aged in buckets, and waived, because a fee a club writes off is recorded rather than deleted. The overdue line is eight payments, and every dollar of it is past sixty days. Then the club's own templates behind those numbers, three packages at three prices, and the one that raised the fee the next chapter is about. One family opens underneath itself: half paid and stopped, with the cash in March and the e-transfer in April that really paid it sitting in the history, each recorded by the club owner who took it. The reminder chapter is her own inbox: the notices the code writes, the day after a fee is missed and then every four days, the last one ninety days late where the schedule gives up, and the same words in the email she received. The last stretch is how most of this money arrives. She hands over the rest in cash at the gym, the club records it with a note in its own words, the obligation closes itself, a receipt reaches her phone without anybody writing a message, and the four numbers at the top move last.",
     audiences: ["clubs"],
     kind: "chapter",
     stage: "split",
-    durationLabel: "1 min 53 sec",
+    durationLabel: "1 min 22 sec",
     status: "live",
     chapterCount: 5,
     /* No volatile numbers in the bullets: the totals move with the seed, and a
@@ -342,9 +342,9 @@ export const DEMOS: DemoEntry[] = [
     bullets: [
       "Collected, outstanding, overdue and waived, computed from the obligations rather than kept in a spreadsheet",
       "Overdue aged in real buckets, with the lateness written on the row",
-      "One family's plan with the cash and the e-transfer that really paid it",
+      "One family's row opened on the cash and the e-transfer that really paid half of it",
       "Cash taken at the door, recorded with a note, and the obligation closing itself",
-      "The reminder schedule the code keeps, with the exact notification and email a family gets",
+      "The reminders the code writes, on the phone that got them, and the receipt that follows the cash",
     ],
     chapterTitles: [
       "Every dollar owed",
