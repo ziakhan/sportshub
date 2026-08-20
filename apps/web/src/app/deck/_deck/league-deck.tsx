@@ -129,10 +129,7 @@ function Line({ head, rest, dark = true }: { head: string; rest: string; dark?: 
   )
 }
 
-type ShotDef = { file: string; w: number; h: number; alt: string; fit?: "cover" | "contain" }
-/* cover fills the slide and crops from the bottom, which is right for a tall
-   page capture. A wide, short crop has to be `contain`: cropping it to fill a
-   taller box eats its own left and right edges. */
+type ShotDef = { file: string; w: number; h: number; alt: string }
 
 /**
  * A screenshot, and nothing around it.
@@ -147,7 +144,7 @@ type ShotDef = { file: string; w: number; h: number; alt: string; fit?: "cover" 
  * top the way a window would show a page, on a rounded edge with a shadow so
  * it still reads as a surface against either ground.
  */
-function Shot({ shot, base, dark = true }: { shot: ShotDef; base: string; dark?: boolean }) {
+function Shot({ shot, base }: { shot: ShotDef; base: string }) {
   return (
     <img
       src={`${base}/${shot.file}`}
@@ -155,11 +152,12 @@ function Shot({ shot, base, dark = true }: { shot: ShotDef; base: string; dark?:
       height={shot.h}
       alt={shot.alt}
       className={cn(
-        "min-h-0 w-full flex-1 rounded-xl object-top",
-        shot.fit === "contain" ? "object-contain" : "object-cover",
-        dark
-          ? "shadow-[0_36px_80px_-40px_rgba(0,0,0,0.9)]"
-          : "shadow-[0_30px_70px_-42px_rgba(15,23,40,0.5)]",
+        /* CONTAIN, always. `cover` filled the width by cropping everything
+           below the header, so every screenshot turned into a white page with
+           a title bar and nothing underneath: the actual product was the part
+           being thrown away. Letterboxing is the right trade. A smaller whole
+           screen beats a large useless one. */
+        "min-h-0 w-full flex-1 rounded-xl object-contain",
       )}
     />
   )
@@ -182,7 +180,7 @@ function ShotSlide({
         </p>
       </div>
       <div className="mt-5 flex min-h-0 flex-1 flex-col sm:mt-7">
-        <Shot shot={shot} base={base} dark={dark} />
+        <Shot shot={shot} base={base} />
       </div>
     </div>
   )
@@ -190,7 +188,7 @@ function ShotSlide({
 
 const SHOTS = {
   overview: { file: "overview.webp", w: 1900, h: 1224, alt: "The season console showing clubs entered, teams approved, what is waiting, and the season checklist" },
-  plan: { file: "plan.webp", w: 1900, h: 636, fit: "contain", alt: "The five step season planner: teams, your buildings, your calendar, publish, schedule" },
+  plan: { file: "plan.webp", w: 1900, h: 636, alt: "The five step season planner: teams, your buildings, your calendar, publish, schedule" },
   schedule: { file: "schedule.webp", w: 1900, h: 1224, alt: "The scheduling tab with a check confirming every team has its full game count" },
   playoffs: { file: "playoffs.webp", w: 1900, h: 1003, alt: "The playoff plan, checked against championship weekend" },
   referees: { file: "referees.webp", w: 1900, h: 1224, alt: "Booking a referee for a session day and the league referee pool" },
