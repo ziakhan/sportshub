@@ -94,7 +94,7 @@ function phoneSane(v) {
   return true
 }
 
-function fill(t, field, value, source) {
+function fill(t, field, value, source, extra = {}) {
   if (!value) return
   if (field === "phoneNumber" && !phoneSane(value)) {
     conflicts.push({ name: t.name, field, current: t[field], proposed: value, source: source + " REJECTED-INSANE-PHONE" })
@@ -102,7 +102,7 @@ function fill(t, field, value, source) {
   }
   const cur = t[field]
   if (cur == null || cur === "" ) {
-    plan.push({ id: t.id, name: t.name, field, value, source })
+    plan.push({ id: t.id, name: t.name, field, value, from: cur ?? null, source, ...extra })
   } else if (String(cur).trim() !== String(value).trim()) {
     conflicts.push({ name: t.name, field, current: cur, proposed: value, source })
   }
@@ -142,9 +142,10 @@ if (process.argv.includes("--discovered")) {
     if (!t) { misses.push({ source: "discovered", club: d.club }); continue }
     if (t === "ambiguous") { misses.push({ source: "discovered-ambiguous", club: d.club }); continue }
     if (suspects.has(norm(d.club))) continue
-    if (d.website) fill(t, "website", d.website, `discovered(${d.confidence})`)
-    if (d.email) fill(t, "contactEmail", d.email, `discovered(${d.confidence})`)
-    if (d.phone) fill(t, "phoneNumber", d.phone, `discovered(${d.confidence})`)
+    const prov = { sourceUrl: d.source_url || null, confidence: d.confidence || null }
+    if (d.website) fill(t, "website", d.website, `discovered(${d.confidence})`, prov)
+    if (d.email) fill(t, "contactEmail", d.email, `discovered(${d.confidence})`, prov)
+    if (d.phone) fill(t, "phoneNumber", d.phone, `discovered(${d.confidence})`, prov)
   }
 }
 
@@ -155,7 +156,7 @@ for (const d of dead) {
   const deadUrl = (d.url || "").replace(/\/+$/, "")
   const cur = (t.website || "").replace(/\/+$/, "")
   if (cur && deadUrl && cur.toLowerCase() === deadUrl.toLowerCase()) {
-    plan.push({ id: t.id, name: t.name, field: "website", value: null, source: "dead-site-clear" })
+    plan.push({ id: t.id, name: t.name, field: "website", value: null, from: t.website, source: "dead-site-clear" })
   }
 }
 
@@ -174,7 +175,7 @@ const seedActive = await prisma.tenant.findMany({
 for (const t of seedActive) {
   const allSeed = t.teams.length > 0 && t.teams.every((x) => x.description === "NPH_DEMO_SEED" || x.description === "SHOWCASE_SEED")
   if (allSeed && t.claims.length === 0) {
-    plan.push({ id: t.id, name: t.name, field: "status", value: "UNCLAIMED", source: "seed-adoption-fix" })
+    plan.push({ id: t.id, name: t.name, field: "status", value: "UNCLAIMED", from: "ACTIVE", source: "seed-adoption-fix" })
   }
 }
 
@@ -195,8 +196,44 @@ if (APPLY) {
   let written = 0
   for (const p of plan) {
     await prisma.tenant.update({ where: { id: p.id }, data: { [p.field]: p.value } })
+    // Every machine write is flagged for human review in the club console
+    // (owner 2026-08-20), with the old value kept so review can revert.
+    await prisma.tenantEnrichment.create({
+      data: {
+        tenantId: p.id,
+        field: p.field,
+        fromValue: p.from == null ? null : String(p.from),
+        toValue: p.value == null ? null : String(p.value),
+        source: p.source,
+        sourceUrl: p.sourceUrl ?? null,
+        confidence: p.confidence ?? null,
+        appliedBy: "apply-validated-data",
+      },
+    })
     written++
   }
-  console.log(`written: ${written} field updates`)
+  console.log(`written: ${written} field updates, each flagged for review`)
+}
+
+/* --backfill-flags: create review rows for a PRIOR run's plan (the 150
+   writes applied before the review system existed), without re-writing
+   tenant fields. Reads docs/research/validation/apply-run.json. */
+if (process.argv.includes("--backfill-flags")) {
+  const prior = JSON.parse(readFileSync(ROOT + "docs/research/validation/apply-run.json", "utf8"))
+  let made = 0
+  for (const p of prior.plan) {
+    await prisma.tenantEnrichment.create({
+      data: {
+        tenantId: p.id,
+        field: p.field,
+        fromValue: null,
+        toValue: p.value == null ? null : String(p.value),
+        source: p.source + " (backfilled)",
+        appliedBy: "apply-validated-data",
+      },
+    })
+    made++
+  }
+  console.log(`backfilled review flags: ${made}`)
 }
 await prisma.$disconnect()
