@@ -279,3 +279,36 @@ body.story .footer-brand .wm { font-size: 50px; }
 .stage.dark .payoff { color: #ffffff; }
 .stage.light .payoff { color: var(--ink-950); }
 .payoff em { font-style: normal; color: var(--hoop-500); }
+
+/* ---------- calls to action (2026-08-19) ----------
+   Two kinds, deliberately different, because they ask for different things.
+   .cta is a CLICK: solid, gold, only on cards where an action exists today.
+   .ask is a REPLY: quiet, outlined, a question that belongs in the comments.
+   Putting a solid button on every card turns the grid into an ad feed, which
+   is the fastest way to stop being read as a person's account. */
+.cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 14px;
+  background: var(--gold-500);
+  color: var(--ink-950);
+  border-radius: 999px;
+  padding: 20px 46px;
+  font-family: var(--display);
+  font-size: 34px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  box-shadow: 0 24px 56px -20px rgba(245, 158, 11, 0.65);
+}
+.ask {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 16px 38px;
+  font-family: var(--display);
+  font-size: 32px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+.stage.dark .ask { color: #ffffff; border: 2px solid rgba(255, 255, 255, 0.3); }
+.stage.light .ask { color: var(--ink-950); border: 2px solid var(--ink-200); background: #ffffff; }
