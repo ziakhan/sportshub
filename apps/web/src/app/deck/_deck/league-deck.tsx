@@ -129,57 +129,44 @@ function Line({ head, rest, dark = true }: { head: string; rest: string; dark?: 
   )
 }
 
-type Shot = { file: string; w: number; h: number; alt: string }
+type ShotDef = { file: string; w: number; h: number; alt: string }
 
 /**
- * The window chrome is ALWAYS light, whatever the slide behind it is doing.
+ * A screenshot, and nothing around it.
  *
- * It used to follow the slide, so the same console screenshot sat in white
- * chrome on one slide and navy chrome on the next, which read as a terminal
- * window rather than a browser and made two slides look like a different
- * product. The screenshot inside is a light UI; a light frame belongs around
- * it. Only the shadow follows the ground, because a shadow tuned for white
- * disappears on navy.
+ * This used to draw a fake browser window: a title bar, three dots and a URL
+ * pill. The owner asked for it gone, twice. It cost a bar's worth of height on
+ * every screenshot slide, it made the shot sit INSIDE a frame rather than fill
+ * the slide, and dressing a product screenshot as a browser tab tells a
+ * commissioner nothing they did not already know.
+ *
+ * What is left is the image at the full size of the space, cropped from the
+ * top the way a window would show a page, on a rounded edge with a shadow so
+ * it still reads as a surface against either ground.
  */
-function Browser({ shot, url, base, dark = true }: { shot: Shot; url: string; base: string; dark?: boolean }) {
+function Shot({ shot, base, dark = true }: { shot: ShotDef; base: string; dark?: boolean }) {
   return (
-    <div
+    <img
+      src={`${base}/${shot.file}`}
+      width={shot.w}
+      height={shot.h}
+      alt={shot.alt}
       className={cn(
-        "flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-[#dde3ee] bg-white",
+        "min-h-0 w-full flex-1 rounded-xl object-cover object-top",
         dark
           ? "shadow-[0_36px_80px_-40px_rgba(0,0,0,0.9)]"
           : "shadow-[0_30px_70px_-42px_rgba(15,23,40,0.5)]",
       )}
-    >
-      <div className="flex shrink-0 items-center gap-2 border-b border-[#dde3ee] bg-[#eef1f7] px-4 py-2.5">
-        {[0, 1, 2].map((i) => (
-          <span key={i} className="h-2.5 w-2.5 rounded-full bg-[#c3cbdb]" />
-        ))}
-        <span className="ml-2 truncate rounded bg-white px-3 py-1 font-mono text-[clamp(0.7rem,0.85vw,0.82rem)] text-[#5d6679]">
-          {url}
-        </span>
-      </div>
-      <img
-        src={`${base}/${shot.file}`}
-        width={shot.w}
-        height={shot.h}
-        alt={shot.alt}
-        /* cover, not contain: contain letterboxes the shot inside the frame
-           and leaves white bars down both sides whenever the copy above is
-           tall. A browser window shows the top of a page and cuts off the
-           rest, which is exactly what cover + object-top does. */
-        className="min-h-0 w-full flex-1 object-cover object-top"
-      />
-    </div>
+    />
   )
 }
 
 /** Headline, one line, and the image as big as the slide allows. No cards. */
 function ShotSlide({
-  eyebrow, title, lead, shot, url, base, dark = false,
+  eyebrow, title, lead, shot, base, dark = false,
 }: {
   eyebrow: string; title: ReactNode; lead: string
-  shot: Shot; url: string; base: string; dark?: boolean
+  shot: ShotDef; base: string; dark?: boolean
 }) {
   return (
     <div className="flex h-full min-h-0 flex-col">
@@ -191,7 +178,7 @@ function ShotSlide({
         </p>
       </div>
       <div className="mt-5 flex min-h-0 flex-1 flex-col sm:mt-7">
-        <Browser shot={shot} url={url} base={base} dark={dark} />
+        <Shot shot={shot} base={base} dark={dark} />
       </div>
     </div>
   )
@@ -205,7 +192,7 @@ const SHOTS = {
   referees: { file: "referees.webp", w: 1900, h: 1224, alt: "Booking a referee for a session day and the league referee pool" },
   waivers: { file: "waivers.webp", w: 1900, h: 1224, alt: "The waiver signing grid for the season" },
   hub: { file: "hub.webp", w: 1900, h: 1224, alt: "The public league page with scores, schedule and scoring leaders" },
-} satisfies Record<string, Shot>
+} satisfies Record<string, ShotDef>
 
 /* ── a team's Saturday, drawn ──────────────────────────────────────────────
    Hand-authored SVG per the design law: product graphics are code, so they
@@ -336,7 +323,6 @@ const SLIDES: SlideDef[] = [
         title={<>Your whole league, <span className="text-[#c2410c]">on one screen.</span></>}
         lead="Clubs in, teams approved, what is still waiting on you, and a checklist that will not let you finalize with something missing."
         shot={SHOTS.overview}
-        url="sportshubone.com/manage/leagues/summer-2026"
       />
     ),
   },
@@ -351,7 +337,6 @@ const SLIDES: SlideDef[] = [
         title={<>Book the gyms <span className="text-[#c2410c]">before you know the teams.</span></>}
         lead="Estimate each grade with last season's count sitting right beside it. Drop in the dates and gyms you think you can get. It tells you whether that fits or how many more court hours you need, months before registration opens."
         shot={SHOTS.plan}
-        url="/seasons/summer-2026/plan"
       />
     ),
   },
@@ -372,7 +357,7 @@ const SLIDES: SlideDef[] = [
           </p>
         </div>
         <div className="mt-5 flex min-h-0 flex-1 flex-col sm:mt-7">
-          <Browser shot={SHOTS.schedule} url="/seasons/summer-2026/schedule" base={brand.shots} />
+          <Shot shot={SHOTS.schedule} base={brand.shots} />
         </div>
       </div>
     ),
@@ -463,7 +448,6 @@ const SLIDES: SlideDef[] = [
         title={<>Brackets built from <span className="text-[#f24e1e]">what actually happened.</span></>}
         lead="Standings build themselves from the scoresheets the referee signed, in your tiebreaker order. The bracket sits on real weekends in real gyms before it is seeded, and team names fill in as results land. Nobody's season ends at 9am."
         shot={SHOTS.playoffs}
-        url="/seasons/summer-2026/playoffs"
       />
     ),
   },
@@ -478,7 +462,6 @@ const SLIDES: SlideDef[] = [
         title={<>A referee pool, <span className="text-[#c2410c]">not a group text.</span></>}
         lead="Referees mark their own availability. Offer a shift to the whole pool or to one person you trust, and the first to accept gets it. They sign the scoresheet at the end."
         shot={SHOTS.referees}
-        url="/seasons/summer-2026/referees"
       />
     ),
   },
@@ -493,7 +476,6 @@ const SLIDES: SlideDef[] = [
         title={<>Concussion forms and waivers, <span className="text-[#c2410c]">signed before the first game.</span></>}
         lead="They go out the day the schedule is published, so only teams that are actually playing get asked. Reminders chase whoever has not signed. You can send one yourself any time. On opening day you can see exactly who is still missing."
         shot={SHOTS.waivers}
-        url="/seasons/summer-2026/waivers"
       />
     ),
   },
@@ -525,7 +507,6 @@ const SLIDES: SlideDef[] = [
         title={<>It writes itself <span className="text-[#f24e1e]">while you run the league.</span></>}
         lead="Every game that gets scored updates the scores, the standings and the leaders, then posts a recap naming the top performers. Your logo, your colours, your news. Next season opens while this one is still playing, teams carry their history forward, and nobody needs an account."
         shot={SHOTS.hub}
-        url="sportshubone.com/league/summer-2026"
       />
     ),
   },
