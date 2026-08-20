@@ -34,6 +34,14 @@ import {
 import type { DemoBeat, DemoScript } from "../types"
 
 /**
+ * The league name is the one piece of branding in this story, so it is a
+ * parameter rather than a baked constant: the public demo directory runs it as
+ * the seeded league, and a pitch deck sent to a different league must not
+ * advertise someone else's. Everything else (clubs, venues, people) is generic.
+ */
+function buildGameDayStory(LEAGUE: string): DemoScript {
+
+/**
  * "Game day, both phones" (owner ruling 2026-08-16), converted to the mock
  * realism standard 2026-08-19 (mock-ui.tsx R1-R8). The flagship of the
  * thirteen, and the last one converted.
@@ -162,7 +170,6 @@ import type { DemoBeat, DemoScript } from "../types"
 
 /* ── Cast, all read out of the seeded world ──────────────────────────────── */
 
-const LEAGUE = "NPH Summer League"
 const SEASON = "Summer 2026"
 const DIVISION = "Grade 9 Boys · Tier 1"
 const SESSION = "Weekend 11 · Aug 22"
@@ -936,7 +943,7 @@ function land(
 
 /* ── The script ──────────────────────────────────────────────────────────── */
 
-export const gameDayStory: DemoScript = {
+const story: DemoScript = {
   presentation: "scene",
   scenePhones: true,
   desktopUrl: URL_SCORE,
@@ -1977,3 +1984,12 @@ export const gameDayStory: DemoScript = {
     }
   },
 }
+
+  return story
+}
+
+/** The seeded demo world the public demo directory runs. */
+export const gameDayStory = buildGameDayStory("NPH Summer League")
+
+/** Same story under a different league name, for decks sent to other leagues. */
+export const makeGameDayStory = buildGameDayStory

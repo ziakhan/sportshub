@@ -4,45 +4,53 @@ import Link from "next/link"
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react"
 import { cn } from "@/components/ui/cn"
 import { DemoPlayer } from "@/components/demo-directory/player"
-import { gameDayStory } from "@/components/demo-directory/stories/game-day-story"
+import { makeGameDayStory } from "@/components/demo-directory/stories/game-day-story"
 import type { DemoScript } from "@/components/demo-directory/types"
 
 /**
  * The league pitch deck (owner 2026-08-20).
  *
- * A presentation, not a scrolling page: one slide per screen, arrow keys or a
- * tap to advance, a contents overlay to jump. It is sent as a link to a named
- * commissioner, so it opens on the title slide and never autoplays itself.
+ * One presentation, two brands. `/deck/nph` shows the seeded NPH league and is
+ * addressed to North Pole Hoops; `/deck/leagues` is the one that gets sent to
+ * anybody else and must not mention NPH anywhere, because a deck full of a
+ * rival league's name is not a deck you send to a commissioner. Both draw from
+ * the same slides; only `brand` differs.
  *
- * ── THE TYPE SCALE IS THE WHOLE DESIGN ───────────────────────────────────
+ * ── HOW TO WRITE FOR IT ──────────────────────────────────────────────────
  *
- * The first cut of this deck was built on page typography: 13px card bodies,
- * 14px leads, and six-card grids. The owner's note was "staring you in the
- * face, not having to squint", and the ui-ux-pro-max consult for a projected
- * deck says the same thing in its own words: pattern "Minimal Single Column",
- * large type (32px+), 48px+ section gaps, THREE bullets maximum, and
- * "text-heavy pages" listed as an anti-pattern.
+ * Owner, three times and finally as a standing rule: plain and direct, never
+ * dramatic or abstract, never anything the reader has to decode. Specific bans
+ * that came out of reviewing this deck:
  *
- * So `T` below is the one modular scale every slide draws from, sized for
- * someone reading a laptop across a desk rather than a phone in their hand.
- * Two standing rules that follow from it:
+ *   - No money word for something that is not money. "Requests you can price"
+ *     read as dollars. It is not dollars.
+ *   - Never sell the absence of a bug. "Zero double-booked courts" is banned
+ *     everywhere: a double-booked court is a defect, not an achievement, and
+ *     saying it out loud implies shipping it was on the table.
+ *   - Never headline the fifteen-second scheduler run. The button is fifteen
+ *     seconds; the work is the weeks of planning before it.
+ *   - Fairness is measured per TEAM, not per player. Not "fair to every kid".
+ *   - No team or game count is printed anywhere. A bigger league reads a
+ *     number as a ceiling.
  *
- *   1. THREE CARDS MAXIMUM on any slide. If a fourth wants in, it belongs on
- *      its own slide or it is not important enough to say. Fairness and money
- *      each carried six; both are cut to three.
- *   2. A SLIDE WITH A SCREENSHOT CARRIES NO CARDS. A headline, one line, and
- *      the image at the biggest size the viewport allows. Cards under a
- *      screenshot shrink the only thing on the slide worth looking at.
+ * ── HOW IT IS BUILT ──────────────────────────────────────────────────────
  *
- * ── TWO OTHER RULES ──────────────────────────────────────────────────────
+ * `T` is the one type scale, sized for a laptop across a desk. Three cards
+ * maximum on a slide, and a slide carrying a screenshot carries no cards at
+ * all, so the image gets the whole frame.
  *
- * NO LEAGUE SIZE IS PRINTED ANYWHERE (owner ruling). An earlier deck showed
- * "146 teams / 725 games" as proof the scheduler scales. A commissioner
- * running several thousand games reads that as a ceiling, not a floor.
- *
- * THE LIVE GAME IS PLAYED, NOT DESCRIBED. Slide `live` mounts the real
- * game-day demo, the same split-stage script the public demo directory runs.
+ * ⚠️ `DemoPlayer`'s `autoStart` is initial state only, so the live slide mounts
+ * the player only while it is showing, keyed on a visit counter so it replays.
  */
+
+export interface DeckBrand {
+  /** Folder under /public holding this variant's screenshots. */
+  shots: string
+  /** League name the embedded game-day demo should show. */
+  league: string
+  /** Shown under the title, e.g. "Prepared for North Pole Hoops". */
+  addressedTo?: string
+}
 
 /* ── the scale ─────────────────────────────────────────────────────────── */
 
@@ -58,64 +66,8 @@ const T = {
   bar: "text-[clamp(0.75rem,0.9vw,0.85rem)]",
 } as const
 
-/* 48px+ between a slide's blocks, per the consult. */
-const BLOCK = "mt-7 sm:mt-9 lg:mt-12"
+const BLOCK = "mt-6 sm:mt-8 lg:mt-10"
 const CARDS = "grid gap-3 sm:gap-4 lg:gap-5 sm:grid-cols-3"
-
-/* ── assets ────────────────────────────────────────────────────────────── */
-
-type Shot = { src: string; w: number; h: number; alt: string }
-
-const SHOTS = {
-  overview: {
-    src: "/deck/overview.webp", w: 1900, h: 1224,
-    alt: "The season console: clubs entered, teams approved, applications pending, waivers outstanding, and the season checklist",
-  },
-  plan: {
-    src: "/deck/plan.webp", w: 1900, h: 636,
-    alt: "The five-step season planner: teams, your buildings, your calendar, publish, schedule",
-  },
-  schedule: {
-    src: "/deck/schedule.webp", w: 1900, h: 1224,
-    alt: "The scheduling tab: plan, divisions, generate, publish, with a per-team check confirming every team has its full game count",
-  },
-  standings: {
-    src: "/deck/standings.webp", w: 1900, h: 1224,
-    alt: "Standings computed from finalized games",
-  },
-  playoffs: {
-    src: "/deck/playoffs.webp", w: 1900, h: 1003,
-    alt: "The playoff plan: one championship or a bracket per division, checked against championship weekend",
-  },
-  referees: {
-    src: "/deck/referees.webp", w: 1900, h: 1224,
-    alt: "Booking a referee for a session day, broadcasting to the league pool, with pending offers and the referee pool",
-  },
-  waivers: {
-    src: "/deck/waivers.webp", w: 1900, h: 1224,
-    alt: "The waiver signing grid for the season",
-  },
-  hub: {
-    src: "/deck/hub.webp", w: 1900, h: 1224,
-    alt: "The public league page: branded header, what is included, scores and schedule, and scoring leaders",
-  },
-} satisfies Record<string, Shot>
-
-/** Play a subset of a script's chapters. */
-function chaptersOf(script: DemoScript, ids: string[]): DemoScript {
-  return {
-    ...script,
-    chapters: script.chapters.filter((c) => ids.includes(c.id)),
-    beats: script.beats.filter((b) => ids.includes(b.chapter)),
-  }
-}
-
-/* ⚠️ "tipoff" is in the cut and must stay. `chaptersOf` drops beats rather than
- * replaying their patches, and console state accumulates from them. Cutting to
- * ["scoring", "family"] left the table on the game-day checklist while the
- * caption read "Two taps a play". A chapter cut is only safe when its opening
- * beat sets its own stage. */
-const LIVE_CUT = chaptersOf(gameDayStory, ["tipoff", "scoring", "family"])
 
 /* ── primitives ────────────────────────────────────────────────────────── */
 
@@ -136,16 +88,15 @@ function Eyebrow({ children, dark = true }: { children: ReactNode; dark?: boolea
 
 function H({ children, className }: { children: ReactNode; className?: string }) {
   return (
-    <h2 className={cn("font-display max-w-[18ch] text-balance font-extrabold", T.h2, className)}>
+    <h2 className={cn("font-display max-w-[19ch] text-balance font-extrabold", T.h2, className)}>
       {children}
     </h2>
   )
 }
 
-/** Line length capped at ~60ch: the consult's 65-75 character rule. */
 function Lead({ children, dark = true }: { children: ReactNode; dark?: boolean }) {
   return (
-    <p className={cn("mt-4 max-w-[52ch]", T.lead, dark ? "text-white/72" : "text-[#46506a]")}>
+    <p className={cn("mt-4 max-w-[56ch]", T.lead, dark ? "text-white/72" : "text-[#46506a]")}>
       {children}
     </p>
   )
@@ -171,8 +122,22 @@ function Card({
   )
 }
 
-/** A screenshot in browser chrome, given every pixel the slide can spare. */
-function Browser({ shot, url, dark = true }: { shot: Shot; url: string; dark?: boolean }) {
+/** One plain line with a bold opener. Used where a list beats cards. */
+function Line({ head, rest, dark = true }: { head: string; rest: string; dark?: boolean }) {
+  return (
+    <li className={cn("flex gap-3.5", T.lead)}>
+      <span className={cn("mt-[0.62em] h-2 w-2 shrink-0 rounded-sm", dark ? "bg-[#f24e1e]" : "bg-[#c2410c]")} />
+      <span>
+        <b className={cn("font-bold", dark ? "text-white" : "text-[#0f1728]")}>{head}</b>{" "}
+        <span className={dark ? "text-white/68" : "text-[#46506a]"}>{rest}</span>
+      </span>
+    </li>
+  )
+}
+
+type Shot = { file: string; w: number; h: number; alt: string }
+
+function Browser({ shot, url, base, dark = true }: { shot: Shot; url: string; base: string; dark?: boolean }) {
   return (
     <div
       className={cn(
@@ -201,7 +166,7 @@ function Browser({ shot, url, dark = true }: { shot: Shot; url: string; dark?: b
         </span>
       </div>
       <img
-        src={shot.src}
+        src={`${base}/${shot.file}`}
         width={shot.w}
         height={shot.h}
         alt={shot.alt}
@@ -213,8 +178,11 @@ function Browser({ shot, url, dark = true }: { shot: Shot; url: string; dark?: b
 
 /** Headline, one line, and the image as big as the slide allows. No cards. */
 function ShotSlide({
-  eyebrow, title, lead, shot, url, dark = false,
-}: { eyebrow: string; title: ReactNode; lead: string; shot: Shot; url: string; dark?: boolean }) {
+  eyebrow, title, lead, shot, url, base, dark = false,
+}: {
+  eyebrow: string; title: ReactNode; lead: string
+  shot: Shot; url: string; base: string; dark?: boolean
+}) {
   return (
     <div className="flex h-full min-h-0 flex-col">
       <div className="shrink-0">
@@ -225,50 +193,74 @@ function ShotSlide({
         </p>
       </div>
       <div className="mt-5 flex min-h-0 flex-1 flex-col sm:mt-7">
-        <Browser shot={shot} url={url} dark={dark} />
+        <Browser shot={shot} url={url} base={base} dark={dark} />
       </div>
     </div>
   )
 }
 
-function Stat({ n, label, gold = false }: { n: string; label: string; gold?: boolean }) {
-  return (
-    <div>
-      <div
-        className={cn(
-          "font-display font-extrabold tabular-nums",
-          T.statN,
-          gold ? "text-[#f6b73c]" : "text-[#f24e1e]",
-        )}
-      >
-        {n}
-      </div>
-      <div className={cn("mt-3 font-mono font-semibold uppercase text-white/45", T.statL)}>
+const SHOTS = {
+  overview: { file: "overview.webp", w: 1900, h: 1224, alt: "The season console showing clubs entered, teams approved, what is waiting, and the season checklist" },
+  plan: { file: "plan.webp", w: 1900, h: 636, alt: "The five step season planner: teams, your buildings, your calendar, publish, schedule" },
+  schedule: { file: "schedule.webp", w: 1900, h: 1224, alt: "The scheduling tab with a check confirming every team has its full game count" },
+  standings: { file: "standings.webp", w: 1900, h: 1224, alt: "Standings built from finalized games" },
+  playoffs: { file: "playoffs.webp", w: 1900, h: 1003, alt: "The playoff plan, checked against championship weekend" },
+  referees: { file: "referees.webp", w: 1900, h: 1224, alt: "Booking a referee for a session day and the league referee pool" },
+  waivers: { file: "waivers.webp", w: 1900, h: 1224, alt: "The waiver signing grid for the season" },
+  hub: { file: "hub.webp", w: 1900, h: 1224, alt: "The public league page with scores, schedule and scoring leaders" },
+} satisfies Record<string, Shot>
+
+/* ── a team's Saturday, drawn ──────────────────────────────────────────────
+   Hand-authored SVG per the design law: product graphics are code, so they
+   stay crisp and themable. This is the fairness slide's whole argument in one
+   picture, which beats another paragraph about it. */
+function WeekendShapes() {
+  const Row = ({ label, blocks, good }: { label: string; blocks: [number, number][]; good: boolean }) => (
+    <div className="flex items-center gap-3 sm:gap-5">
+      <span className={cn("w-[8.5rem] shrink-0 text-right font-semibold sm:w-[11rem]", T.cardBody, good ? "text-[#0f1728]" : "text-[#9aa3b5]")}>
         {label}
-      </div>
+      </span>
+      <svg viewBox="0 0 340 24" className="h-6 min-w-0 flex-1" role="img" aria-label={label}>
+        <rect x="0" y="9" width="340" height="6" rx="3" fill="#dde3ee" />
+        {blocks.map(([x, w], i) => (
+          <rect key={i} x={x} y="0" width={w} height="24" rx="5" fill={good ? "#16a34a" : "#d1d5e0"} />
+        ))}
+      </svg>
+      <span className={cn("w-16 shrink-0 font-mono", T.statL, good ? "text-[#16a34a]" : "text-[#9aa3b5]")}>
+        {good ? "GOOD" : "NO"}
+      </span>
+    </div>
+  )
+  return (
+    <div className="flex flex-col gap-3 sm:gap-4">
+      <Row label="A gap between games" blocks={[[0, 58], [150, 58]]} good />
+      <Row label="Back to back" blocks={[[0, 58], [62, 58]]} good={false} />
+      <Row label="Waiting all day" blocks={[[0, 58], [282, 58]]} good={false} />
     </div>
   )
 }
 
 /* ── slides ────────────────────────────────────────────────────────────── */
 
-type SlideDef = {
-  id: string
-  chapter: string
-  light?: boolean
-  render: (ctx: { active: boolean; visits: number }) => ReactNode
-}
+type Ctx = { active: boolean; visits: number; brand: DeckBrand; script: DemoScript }
+type SlideDef = { id: string; chapter: string; light?: boolean; render: (c: Ctx) => ReactNode }
 
 const SLIDES: SlideDef[] = [
   {
     id: "title",
     chapter: "Open",
-    render: () => (
+    render: ({ brand }) => (
       <div className="flex h-full flex-col justify-center">
+        {/* The PNG, never the SVG. wordmark-one-reverse.svg sets "SportsHub"
+            and the ONE badge as live <text> in a SYSTEM font stack, so the
+            badge lands in a different place on every machine. The PNG is the
+            canonical mark. See memory: project-logo-spec-do-not-redraw. */}
         <img
-          src="/brand/wordmark-one-reverse.svg"
+          src="/brand/wordmark-one-reverse.png"
           alt="SportsHub One"
-          className="mb-10 h-9 w-auto sm:h-12"
+          width={723}
+          height={204}
+          className="mb-10 h-9 w-auto self-start sm:h-12"
         />
         <Eyebrow>For league operators</Eyebrow>
         <h1 className={cn("font-display text-balance font-extrabold", T.h1)}>
@@ -277,31 +269,40 @@ const SLIDES: SlideDef[] = [
           <span className="text-[#f24e1e]">in one place.</span>
         </h1>
         <Lead>
-          Registration, divisions, the schedule, game day, standings, playoffs, referees, waivers
-          and fees. One console for the league. One calendar for every family.
+          Clubs register their own teams. You set the rules: your game guarantee, your tiebreakers,
+          your playoff format. Everything after that runs inside them.
         </Lead>
-        <p className={cn("mt-10 font-mono uppercase text-white/40", T.eyebrow)}>
-          Use the arrow keys, or tap the sides
-        </p>
+        {brand.addressedTo ? (
+          <p className={cn("mt-9 font-mono uppercase text-white/45", T.eyebrow)}>{brand.addressedTo}</p>
+        ) : (
+          <p className={cn("mt-9 font-mono uppercase text-white/40", T.eyebrow)}>
+            Use the arrow keys, or tap the sides
+          </p>
+        )}
       </div>
     ),
   },
   {
-    id: "problem",
+    id: "gauntlet",
     chapter: "The problem",
     render: () => (
       <div className="flex h-full flex-col justify-center">
         <Eyebrow>Why we built it</Eyebrow>
-        <H className="max-w-[20ch]">
-          Nobody is fighting the sport.
+        <H className="max-w-[24ch]">
+          Everything between registration
           <br />
-          They are fighting <span className="text-[#f24e1e]">the admin.</span>
+          and <span className="text-[#f24e1e]">a schedule anyone can trust.</span>
         </H>
-        <div className={cn(CARDS, BLOCK)}>
-          <Card title="The schedule goes out late" body="Gyms get confirmed in pieces, so the calendar lands weeks after families booked their lives around nothing." />
-          <Card title="Then it changes" body="One flooded gym on a Saturday turns into forty phone calls and a reprinted sheet nobody reads." />
-          <Card title="Parents dig" body="Game time, gym address, jersey colour. Buried in a three-hundred-message group chat." />
-        </div>
+        <ul className={cn("flex flex-col gap-3.5 sm:gap-4", BLOCK)}>
+          <Line head="Team entries." rest="Chased by email, one club at a time." />
+          <Line head="Rosters." rest="Late, incomplete, and changed after you thought they were final." />
+          <Line head="Blackout dates." rest="Buried in replies you have to remember." />
+          <Line head="Special requests." rest="A team that travels, a coach with two teams, a club that cannot play Sundays." />
+          <Line head="Waivers." rest="Chased one parent at a time until the first whistle." />
+        </ul>
+        <p className={cn("mt-7 max-w-[56ch]", T.lead, "text-white/72")}>
+          Then it all changes, and you do it again.
+        </p>
       </div>
     ),
   },
@@ -312,14 +313,28 @@ const SLIDES: SlideDef[] = [
       <div className="flex h-full flex-col justify-center">
         <Eyebrow>The spine</Eyebrow>
         <H>The season, end to end.</H>
-        <div className={cn("grid grid-cols-2 gap-2.5 sm:grid-cols-5 sm:gap-3.5", BLOCK)}>
-          {["Plan", "Register", "Approve", "Divisions", "Schedule",
-            "Publish", "Play", "Standings", "Playoffs", "Renew"].map((t, i) => (
-            <div key={t} className="rounded-xl border border-white/12 bg-[#16253f] px-4 py-4 sm:px-5 sm:py-5">
-              <div className="font-mono text-[clamp(0.7rem,0.85vw,0.8rem)] font-semibold tracking-[0.12em] text-[#f24e1e]">
+        <div className={cn("grid grid-cols-2 gap-2.5 sm:grid-cols-5 sm:gap-3", BLOCK)}>
+          {[
+            ["Plan", "Gyms booked early", "What you still need"],
+            ["Register", "Clubs enter teams", "Your questions attached"],
+            ["Approve", "One queue", "Fees attach at entry"],
+            ["Divisions", "Drag and drop", "Split or merge any time"],
+            ["Schedule", "Minutes, not weeks", "Preview before it commits"],
+            ["Publish", "Locked before tip-off", "Families told once"],
+            ["Play", "Scored from a phone", "Referee signs off"],
+            ["Standings", "Your tiebreakers", "No Monday spreadsheet"],
+            ["Playoffs", "Seeded from results", "Everyone plays twice"],
+            ["Renew", "One click", "Teams keep their history"],
+          ].map(([t, a, b], i) => (
+            <div key={t} className="rounded-xl border border-white/12 bg-[#16253f] px-4 py-3.5 sm:px-4 sm:py-4">
+              <div className="font-mono text-[clamp(0.68rem,0.8vw,0.78rem)] font-semibold tracking-[0.12em] text-[#f24e1e]">
                 {String(i + 1).padStart(2, "0")}
               </div>
-              <b className={cn("mt-2 block font-bold", T.cardTitle)}>{t}</b>
+              <b className="mt-1.5 block text-[clamp(0.98rem,1.25vw,1.15rem)] font-bold leading-tight tracking-[-0.015em]">{t}</b>
+              <span className="mt-2 block text-[clamp(0.85rem,1vw,0.95rem)] leading-snug text-white/55">{a}</span>
+              {/* ten boxes times two details does not fit a 390px screen; the
+                  second line is the one that can go. */}
+              <span className="mt-1 hidden text-[clamp(0.85rem,1vw,0.95rem)] leading-snug text-white/55 sm:block">{b}</span>
             </div>
           ))}
         </div>
@@ -327,14 +342,15 @@ const SLIDES: SlideDef[] = [
     ),
   },
   {
-    id: "intake",
-    chapter: "Intake",
+    id: "dashboard",
+    chapter: "The console",
     light: true,
-    render: () => (
+    render: ({ brand }) => (
       <ShotSlide
+        base={brand.shots}
         eyebrow="The league console"
-        title={<>One queue, <span className="text-[#c2410c]">not an inbox.</span></>}
-        lead="Clubs apply to your season and register their own teams. Your questions travel with the entry, your fees attach to it, and a checklist tells you what is still waiting."
+        title={<>Your whole league, <span className="text-[#c2410c]">on one screen.</span></>}
+        lead="Clubs in, teams approved, what is still waiting on you, and a checklist that will not let you finalize with something missing."
         shot={SHOTS.overview}
         url="sportshubone.com/manage/leagues/summer-2026"
       />
@@ -344,11 +360,12 @@ const SLIDES: SlideDef[] = [
     id: "plan",
     chapter: "Planning",
     light: true,
-    render: () => (
+    render: ({ brand }) => (
       <ShotSlide
+        base={brand.shots}
         eyebrow="Pre-season planning"
-        title={<>Plan the season <span className="text-[#c2410c]">before it exists.</span></>}
-        lead="Book gyms early and see exactly what fits. Every weekend shows games needed against slots booked, and it tells you the court hours you are still short."
+        title={<>Book the gyms <span className="text-[#c2410c]">before you know the teams.</span></>}
+        lead="Estimate each grade with last season's count sitting right beside it. Drop in the dates and gyms you think you can get. It tells you whether that fits or how many more court hours you need, months before registration opens."
         shot={SHOTS.plan}
         url="/seasons/summer-2026/plan"
       />
@@ -357,43 +374,43 @@ const SLIDES: SlideDef[] = [
   {
     id: "schedule",
     chapter: "Scheduling",
-    render: () => (
+    render: ({ brand }) => (
       <div className="flex h-full min-h-0 flex-col">
         <div className="shrink-0">
           <Eyebrow>Scheduling</Eyebrow>
-          <H className="max-w-[24ch]">
-            A full season, scheduled in about <span className="text-[#f24e1e]">fifteen seconds.</span>
+          <H className="max-w-[26ch]">
+            Weeks of planning, <span className="text-[#f24e1e]">then minutes to build it.</span>
           </H>
-          <div className="mt-6 flex flex-wrap gap-x-12 gap-y-5 sm:mt-8">
-            <Stat n="~15s" label="To build a season" />
-            <Stat n="0" label="Double-booked courts" gold />
-            <Stat n="0" label="Back-to-back games" gold />
-          </div>
+          <p className={cn("mt-3 max-w-[64ch]", T.lead, "text-white/72")}>
+            It only uses the gyms, courts and hours you actually have. Every team gets the games you
+            promised. You read the whole season before anything commits, and what you read is what
+            commits.
+          </p>
         </div>
-        <div className="mt-6 flex min-h-0 flex-1 flex-col sm:mt-8">
-          <Browser shot={SHOTS.schedule} url="/seasons/summer-2026/schedule" />
+        <div className="mt-5 flex min-h-0 flex-1 flex-col sm:mt-7">
+          <Browser shot={SHOTS.schedule} url="/seasons/summer-2026/schedule" base={brand.shots} />
         </div>
       </div>
     ),
   },
   {
     id: "fair",
-    chapter: "Fairness",
+    chapter: "A fair schedule",
+    light: true,
     render: () => (
       <div className="flex h-full flex-col justify-center">
-        <Eyebrow>Fairness</Eyebrow>
+        <Eyebrow dark={false}>A fair schedule</Eyebrow>
         <H>
-          Fair to every kid, <span className="text-[#f24e1e]">by the numbers.</span>
+          Fair to <span className="text-[#c2410c]">every team.</span>
         </H>
-        <Lead>
-          The scheduler tracks what each team has been asked to put up with, and charges itself more
-          every time it loads one more thing onto a team that has already had a rough run.
-        </Lead>
-        <div className={cn(CARDS, BLOCK)}>
-          <Card tone="green" title="Never back to back" body="No team plays two games in a row. Not once, all season." />
-          <Card tone="green" title="One gym per grade" body="A grade stays in one building, all its divisions together, so a family learns one drive." />
-          <Card tone="green" title="Early and late, shared" body="First tip-offs and last finishes spread evenly instead of landing on the same team every week." />
+        <div className={cn("max-w-[720px]", BLOCK)}>
+          <WeekendShapes />
         </div>
+        <ul className="mt-7 flex flex-col gap-3 sm:gap-3.5">
+          <Line dark={false} head="Early starts and late finishes get shared." rest="Not dumped on the same team every week." />
+          <Line dark={false} head="One gym, not two." rest="Nobody drives across town twice in a day." />
+          <Line dark={false} head="Games on one day where we can." rest="So the rest of the weekend is yours." />
+        </ul>
       </div>
     ),
   },
@@ -402,16 +419,16 @@ const SLIDES: SlideDef[] = [
     chapter: "Changes",
     render: () => (
       <div className="flex h-full flex-col justify-center">
-        <Eyebrow>Change management</Eyebrow>
+        <Eyebrow>When things change</Eyebrow>
         <H className="max-w-[22ch]">
           Schedules change.
           <br />
-          <span className="text-[#f24e1e]">Phone trees are optional now.</span>
+          <span className="text-[#f24e1e]">You send one message, not forty.</span>
         </H>
         <div className={cn(CARDS, BLOCK)}>
-          <Card tone="play" title="One edit, everyone told" body="Move or cancel a game. Every affected family is notified and every synced calendar corrects itself." />
-          <Card tone="play" title="A team drops out" body="The schedule adapts with minimal churn. Most games do not move, and every team stays whole." />
-          <Card tone="play" title="Requests you can price" body="A travelling team asks for early Sunday games. You see what it costs everyone else, then decide." />
+          <Card tone="play" title="A game moves" body="Change it once. Every family in both teams is told, and their calendars update on their phones." />
+          <Card tone="play" title="A team drops out" body="Most games stay where they are. Every team that is left keeps its full number of games." />
+          <Card tone="play" title="A team asks for a later start" body="You see which other teams get a worse weekend if you say yes. Then you decide." />
         </div>
       </div>
     ),
@@ -420,10 +437,8 @@ const SLIDES: SlideDef[] = [
     id: "live",
     chapter: "Game day",
     light: true,
-    render: ({ active, visits }) => (
+    render: ({ active, visits, script }) => (
       <div className="flex h-full min-h-0 flex-col">
-        {/* The player carries its own transport row and caption bar, so this
-            slide's header is the tightest in the deck. Anything more clips. */}
         <div className="shrink-0 [&>p]:mb-2 sm:[&>p]:mb-5">
           <span className="hidden sm:block">
             <Eyebrow dark={false}>Game day, both sides at once</Eyebrow>
@@ -434,13 +449,10 @@ const SLIDES: SlideDef[] = [
           </h2>
         </div>
         <div className="mt-3 flex min-h-0 flex-1 flex-col">
-          {/* Mounted only while this slide is showing: the player autoplays on
-              mount, and `autoStart` cannot be flipped after the fact. The key
-              forces a fresh run each time the viewer returns to the slide. */}
           {active ? (
             <DemoPlayer
               key={`live-${visits}`}
-              script={LIVE_CUT}
+              script={script}
               role="Scorer's table"
               roleTone="referee"
               autoStart
@@ -455,11 +467,12 @@ const SLIDES: SlideDef[] = [
     id: "standings",
     chapter: "Standings",
     light: true,
-    render: () => (
+    render: ({ brand }) => (
       <ShotSlide
+        base={brand.shots}
         eyebrow="Standings"
-        title={<>Standings <span className="text-[#c2410c]">nobody has to compute.</span></>}
-        lead="Wins, losses and points flow straight from signed-off scoresheets, with your tiebreakers applied. The weekend ends and the tables are already right."
+        title={<>Standings <span className="text-[#c2410c]">nobody has to work out.</span></>}
+        lead="Wins, losses and points come straight from the scoresheets the referee signed, in the tiebreaker order you set. The weekend ends and the tables are already right."
         shot={SHOTS.standings}
         url="/seasons/summer-2026/standings"
       />
@@ -468,11 +481,12 @@ const SLIDES: SlideDef[] = [
   {
     id: "playoffs",
     chapter: "Playoffs",
-    render: () => (
+    render: ({ brand }) => (
       <ShotSlide
         dark
+        base={brand.shots}
         eyebrow="Playoffs"
-        title={<>Brackets seeded by <span className="text-[#f24e1e]">what actually happened.</span></>}
+        title={<>Brackets built from <span className="text-[#f24e1e]">what actually happened.</span></>}
         lead="The bracket sits on real weekends in real gyms before it is seeded, and team names fill in as results land. Consolation rounds mean nobody's season ends at 9am."
         shot={SHOTS.playoffs}
         url="/seasons/summer-2026/playoffs"
@@ -483,11 +497,12 @@ const SLIDES: SlideDef[] = [
     id: "referees",
     chapter: "Referees",
     light: true,
-    render: () => (
+    render: ({ brand }) => (
       <ShotSlide
+        base={brand.shots}
         eyebrow="Referees"
         title={<>A referee pool, <span className="text-[#c2410c]">not a group text.</span></>}
-        lead="Referees mark their own availability. Broadcast a shift to the pool or target one person you trust, and the first accept wins it."
+        lead="Referees mark their own availability. Offer a shift to the whole pool or to one person you trust, and the first to accept gets it. They sign the scoresheet at the end."
         shot={SHOTS.referees}
         url="/seasons/summer-2026/referees"
       />
@@ -497,11 +512,12 @@ const SLIDES: SlideDef[] = [
     id: "waivers",
     chapter: "Waivers",
     light: true,
-    render: () => (
+    render: ({ brand }) => (
       <ShotSlide
+        base={brand.shots}
         eyebrow="Waivers"
-        title={<>Signed <span className="text-[#c2410c]">before the first whistle.</span></>}
-        lead="On approval they email every rostered parent, reminders chase the rest, and a missing signature has nowhere to hide. Rowan's Law is included."
+        title={<>Concussion forms and waivers, <span className="text-[#c2410c]">signed before the first game.</span></>}
+        lead="They go out the day the schedule is published, so only teams that are actually playing get asked. Reminders chase whoever has not signed. You can send one yourself any time. On opening day you can see exactly who is still missing."
         shot={SHOTS.waivers}
         url="/seasons/summer-2026/waivers"
       />
@@ -512,30 +528,51 @@ const SLIDES: SlideDef[] = [
     chapter: "Money",
     render: () => (
       <div className="flex h-full flex-col justify-center">
-        <Eyebrow>Money and insight</Eyebrow>
+        <Eyebrow>Money</Eyebrow>
         <H>
-          Fees you can <span className="text-[#f24e1e]">actually track.</span>
+          Every fee, <span className="text-[#f24e1e]">and who still owes it.</span>
         </H>
         <div className={cn(CARDS, BLOCK)}>
-          <Card tone="play" title="Owed, by club" body="Every team fee with its status at a glance. E-transfers reconciled beside cards, because this is Canada." />
-          <Card tone="play" title="Exports to the bookkeeper" body="Transactions, revenue per program, aging on what is overdue, and CSV for QuickBooks or Xero." />
-          <Card tone="gold" title="A fairness report card" body="Every team's early games, late games and waits, straight from the scheduler. Show it to the club that complains." />
+          <Card tone="play" title="Owed, by club" body="Every team fee and where it stands. E-transfers recorded beside card payments, because this is Canada." />
+          <Card tone="play" title="Ready for your bookkeeper" body="Revenue by program, what is overdue and how long, and a CSV that opens in QuickBooks or Xero." />
+          <Card tone="gold" title="Proof when a club complains" body="Every team's early games, late games and waits, in a report you can send them." />
         </div>
       </div>
     ),
   },
   {
-    id: "hub",
-    chapter: "Public page",
-    render: () => (
+    id: "website",
+    chapter: "Your website",
+    render: ({ brand }) => (
       <ShotSlide
         dark
-        eyebrow="The public hub"
-        title={<>Your league&apos;s <span className="text-[#f24e1e]">front door.</span></>}
-        lead="A branded page families, grandparents and recruiters read without making an account. Live scores, standings and leaders, always current with the published season."
+        base={brand.shots}
+        eyebrow="Your league's website"
+        title={<>It writes itself <span className="text-[#f24e1e]">while you run the league.</span></>}
+        lead="Every game that gets scored updates the scores, the standings and the leaders, then posts a recap naming the top performers. Your logo, your colours, your news. Next season takes registrations while this one is still playing, and nobody needs an account to read any of it."
         shot={SHOTS.hub}
         url="sportshubone.com/league/summer-2026"
       />
+    ),
+  },
+  {
+    id: "audience",
+    chapter: "Your audience",
+    render: () => (
+      <div className="flex h-full flex-col justify-center">
+        <Eyebrow>Who is watching</Eyebrow>
+        <H>
+          Numbers you can take <span className="text-[#f24e1e]">to a sponsor.</span>
+        </H>
+        <div className={cn(CARDS, BLOCK)}>
+          <Card tone="gold" title="Your audience" body="How many people follow the league, and how that grew since last season." />
+          <Card tone="gold" title="Where they go" body="Views by game, by team and by player page. Which recaps got read." />
+          <Card tone="gold" title="Live" body="How many watched the championship while it was happening." />
+        </div>
+        <p className={cn("mt-7 max-w-[60ch]", T.lead, "text-white/72")}>
+          A league page that nobody measures is a cost. One you can measure is something you can sell.
+        </p>
+      </div>
     ),
   },
   {
@@ -546,15 +583,15 @@ const SLIDES: SlideDef[] = [
       <div className="flex h-full flex-col justify-center">
         <Eyebrow dark={false}>One season, every seat in the gym</Eyebrow>
         <H>
-          Everyone sees <span className="text-[#c2410c]">their slice</span> of the same season.
+          Everyone sees <span className="text-[#c2410c]">their own part</span> of the same season.
         </H>
         <p className={cn("mt-4 max-w-[62ch]", T.lead, "text-[#46506a]")}>
-          One data source underneath. Move a game and the club, the coach and every family&apos;s
-          calendar all correct themselves.
+          Move a game and the club, the coach and every family&apos;s calendar all update. There is
+          nothing to keep in sync.
         </p>
         <div className={cn("grid grid-cols-2 gap-2.5 sm:grid-cols-3 sm:gap-4", BLOCK)}>
           {[
-            ["Clubs", "A branded club site, teams, tryouts and fees."],
+            ["Clubs", "Their own page, teams, tryouts and fees."],
             ["Coaches", "Roster, chat, RSVPs, and the console at the table."],
             ["Families", "One calendar, one place to pay, one place to sign."],
             ["Players", "A page of season stats a senior can send a recruiter."],
@@ -571,6 +608,46 @@ const SLIDES: SlideDef[] = [
     ),
   },
   {
+    id: "summary",
+    chapter: "Before and after",
+    render: () => (
+      <div className="flex h-full flex-col justify-center">
+        <Eyebrow>The whole thing, in one place</Eyebrow>
+        <H>What actually changes.</H>
+        <div className={cn("grid gap-4 sm:grid-cols-2 sm:gap-6", BLOCK)}>
+          <div className="rounded-2xl border border-white/10 bg-[#101d33] p-5 sm:p-7">
+            <div className={cn("mb-4 font-mono font-semibold uppercase text-white/40", T.statL)}>Today</div>
+            <ul className="flex flex-col gap-2.5">
+              {["Team entries chased by email", "Rosters in a spreadsheet", "The schedule built by hand",
+                "Changes by phone call", "Scores typed up on Sunday night", "Waivers chased one parent at a time",
+                "A website somebody has to update"].map((t) => (
+                <li key={t} className={cn("flex gap-3 text-white/45", T.cardBody)}>
+                  <span className="mt-[0.55em] h-px w-3 shrink-0 bg-white/25" />
+                  {t}
+                </li>
+              ))}
+            </ul>
+          </div>
+          <div className="rounded-2xl border border-[#f24e1e]/35 bg-[#1a2b48] p-5 sm:p-7">
+            <div className={cn("mb-4 font-mono font-semibold uppercase text-[#f24e1e]", T.statL)}>On SportsHub</div>
+            <ul className="flex flex-col gap-2.5">
+              {["Clubs enter their own teams", "Rosters locked and versioned", "The schedule built in minutes",
+                "One change, everyone told", "Standings right at the buzzer", "Waivers collected and chased for you",
+                "A website that writes itself"].map((t) => (
+                <li key={t} className={cn("flex gap-3", T.cardBody)}>
+                  <svg viewBox="0 0 16 16" className="mt-[0.3em] h-4 w-4 shrink-0 stroke-[#16a34a]" fill="none" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <path d="M3 8.5l3.2 3.2L13 5" />
+                  </svg>
+                  {t}
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      </div>
+    ),
+  },
+  {
     id: "see",
     chapter: "See it working",
     render: () => (
@@ -579,12 +656,10 @@ const SLIDES: SlideDef[] = [
         <H>
           See it working, <span className="text-[#f24e1e]">right now.</span>
         </H>
-        <Lead>
-          Click-through walkthroughs of the real product. No login, no form, nothing to install.
-        </Lead>
+        <Lead>Walkthroughs of the real product. No login, no form, nothing to install.</Lead>
         <div className={cn(CARDS, BLOCK)}>
           {[
-            ["season-planned-to-published", "A season, planned to published", "Gyms, divisions, generate, publish."],
+            ["season-planned-to-published", "A season, planned to published", "Gyms, divisions, build, publish."],
             ["schedule-change", "A game moves on Friday night", "One edit, and the family stays off the road."],
             ["standings-to-playoffs", "Standings into brackets", "Seeding from real results onto booked weekends."],
           ].map(([slug, title, body]) => (
@@ -626,8 +701,8 @@ const SLIDES: SlideDef[] = [
           <span className="text-[#f24e1e]">Run live, with us on the hook.</span>
         </h2>
         <Lead>
-          We will do the setup, the migration and the hand-holding. You tell us what is wrong with
-          it while it runs.
+          We do the setup, we move your data across, and we sit with you through the first weekend.
+          You tell us what is wrong with it while it runs.
         </Lead>
         <div className={cn("flex flex-wrap gap-4", BLOCK)}>
           <a
@@ -655,12 +730,26 @@ const SLIDES: SlideDef[] = [
 
 /* ── the deck ──────────────────────────────────────────────────────────── */
 
-export function LeagueDeck() {
+export function LeagueDeck({ brand }: { brand: DeckBrand }) {
   const [i, setI] = useState(0)
   const [menu, setMenu] = useState(false)
-  /* Bumped on every slide entry, so a remounted demo replays. */
   const [visits, setVisits] = useState(0)
   const touch = useRef<{ x: number; y: number } | null>(null)
+
+  /* The story is rebuilt per brand so the deck sent to one league never shows
+     another league's name. `tipoff` must stay in the cut: chapter filtering
+     drops beats rather than replaying their state, so without it the table
+     sits on the pre-game checklist while the caption talks about scoring. */
+  const script = useRef<DemoScript | null>(null)
+  if (!script.current) {
+    const full = makeGameDayStory(brand.league)
+    const ids = ["tipoff", "scoring", "family"]
+    script.current = {
+      ...full,
+      chapters: full.chapters.filter((c) => ids.includes(c.id)),
+      beats: full.beats.filter((b) => ids.includes(b.chapter)),
+    }
+  }
 
   const go = useCallback((n: number) => {
     setI((cur) => {
@@ -704,7 +793,6 @@ export function LeagueDeck() {
         touch.current = null
         const t = e.changedTouches[0]
         const dx = t.clientX - s.x
-        /* Horizontal only: a vertical drag is someone reading a tall slide. */
         if (Math.abs(dx) > 56 && Math.abs(dx) > Math.abs(t.clientY - s.y)) go(dx < 0 ? i + 1 : i - 1)
       }}
     >
@@ -723,31 +811,20 @@ export function LeagueDeck() {
             className={cn(
               "absolute inset-0 overflow-y-auto px-6 pb-5 pt-10 sm:px-12 sm:pt-14 lg:px-20",
               "motion-safe:transition-[opacity,transform] motion-safe:duration-300 motion-safe:ease-out",
-              n === i
-                ? "z-10 translate-y-0 opacity-100"
-                : "pointer-events-none z-0 translate-y-2 opacity-0",
+              n === i ? "z-10 translate-y-0 opacity-100" : "pointer-events-none z-0 translate-y-2 opacity-0",
             )}
           >
             <div className="mx-auto h-full w-full max-w-[1280px]">
-              {s.render({ active: n === i, visits })}
+              {s.render({ active: n === i, visits, brand, script: script.current as DemoScript })}
             </div>
           </section>
         ))}
       </div>
 
-      {/* tap zones, clear of the bar so its buttons still work */}
-      <button
-        type="button"
-        aria-label="Previous slide"
-        onClick={() => go(i - 1)}
-        className="absolute left-0 top-0 z-20 h-[calc(100%-60px)] w-[8%] cursor-w-resize opacity-0"
-      />
-      <button
-        type="button"
-        aria-label="Next slide"
-        onClick={() => go(i + 1)}
-        className="absolute right-0 top-0 z-20 h-[calc(100%-60px)] w-[8%] cursor-e-resize opacity-0"
-      />
+      <button type="button" aria-label="Previous slide" onClick={() => go(i - 1)}
+        className="absolute left-0 top-0 z-20 h-[calc(100%-60px)] w-[8%] cursor-w-resize opacity-0" />
+      <button type="button" aria-label="Next slide" onClick={() => go(i + 1)}
+        className="absolute right-0 top-0 z-20 h-[calc(100%-60px)] w-[8%] cursor-e-resize opacity-0" />
 
       <div
         className={cn(
@@ -756,13 +833,7 @@ export function LeagueDeck() {
         )}
       >
         <span className="h-3 w-3 shrink-0 rounded-sm bg-[#f24e1e]" />
-        <span
-          className={cn(
-            "min-w-0 flex-1 truncate font-mono font-semibold uppercase tracking-[0.13em]",
-            T.bar,
-            light ? "text-[#79839a]" : "text-white/45",
-          )}
-        >
+        <span className={cn("min-w-0 flex-1 truncate font-mono font-semibold uppercase tracking-[0.13em]", T.bar, light ? "text-[#79839a]" : "text-white/45")}>
           {slide.chapter}
         </span>
         <span className={cn("shrink-0 font-mono tabular-nums", T.bar, light ? "text-[#79839a]" : "text-white/45")}>
@@ -827,7 +898,6 @@ export function LeagueDeck() {
           </div>
         </div>
       ) : null}
-
     </div>
   )
 }
