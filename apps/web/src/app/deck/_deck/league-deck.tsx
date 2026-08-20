@@ -290,11 +290,14 @@ const SLIDES: SlideDef[] = [
               {brand.recipient}
             </span>
           </div>
-        ) : (
-          <p className={cn("mt-9 font-mono uppercase tracking-[0.16em] text-white/70", "text-[clamp(0.8rem,1.05vw,1rem)]")}>
-            Use the arrow keys, or tap the sides
-          </p>
-        )}
+        ) : null}
+        {/* Says the true thing on each device: the side chevrons are hidden
+            below sm, where a thumb swipes instead. "Tap the sides" was wrong
+            on both. */}
+        <p className={cn("mt-8 font-mono uppercase tracking-[0.16em] text-white/60", "text-[clamp(0.72rem,0.9vw,0.85rem)]")}>
+          <span className="sm:hidden">Swipe, or use the buttons below</span>
+          <span className="hidden sm:inline">Arrow keys, or the arrows either side</span>
+        </p>
       </div>
     ),
   },
@@ -856,11 +859,13 @@ export function LeagueDeck({ brand }: { brand: DeckBrand }) {
           >
             <span
               className={cn(
-                "flex h-12 w-12 items-center justify-center rounded-full border backdrop-blur-sm transition duration-200",
+                "flex h-12 w-12 items-center justify-center rounded-full border-2 shadow-lg transition duration-200",
                 light
-                  ? "border-black/10 bg-white/70 text-[#0f1728] hover:border-[#c2410c] hover:bg-white"
-                  : "border-white/15 bg-white/8 text-white hover:border-[#f24e1e] hover:bg-white/15",
-                "opacity-45 group-hover:opacity-100 hover:opacity-100",
+                  ? "border-black/15 bg-white text-[#0f1728] hover:border-[#c2410c] hover:text-[#c2410c]"
+                  /* Solid, not a wash. White at 8% over navy is 1.09:1: there
+                     was no button, only a floating chevron. */
+                  : "border-white/40 bg-[#22334f] text-white hover:border-[#f24e1e] hover:bg-[#2b3e5e] hover:text-[#ff8a5f]",
+                "opacity-90 hover:opacity-100",
               )}
             >
               <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
