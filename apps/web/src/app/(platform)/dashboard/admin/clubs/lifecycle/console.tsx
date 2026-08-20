@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { Badge, BrandListbox, Button, Card, SectionHeader } from "@/components/ui"
 import { MergeDialog } from "./merge-dialog"
+import { MachineEditsQueue } from "./enrichments"
 
 /**
  * Club review console (client half).
@@ -65,10 +66,20 @@ const EDITABLE: Array<{ key: keyof Club; label: string; type?: string }> = [
   { key: "website", label: "Website", type: "url" },
 ]
 
+/** The two halves of the console: the clubs themselves, and what scripts did to them. */
+const VIEWS: Array<{ key: "clubs" | "machine"; label: string }> = [
+  { key: "clubs", label: "Clubs" },
+  { key: "machine", label: "Machine edits" },
+]
+
 export function ClubLifecycleConsole() {
   const [data, setData] = useState<Payload | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+
+  const [view, setView] = useState<"clubs" | "machine">("clubs")
+  // Counted on arrival so the tab says how much is waiting before it is opened.
+  const [machinePending, setMachinePending] = useState<number | null>(null)
 
   const [q, setQ] = useState("")
   const [issue, setIssue] = useState("all")
@@ -111,6 +122,13 @@ export function ClubLifecycleConsole() {
     const t = setTimeout(load, q ? 300 : 0)
     return () => clearTimeout(t)
   }, [load, q])
+
+  useEffect(() => {
+    fetch("/api/admin/clubs/enrichments?counts=1")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j) => j && setMachinePending(j.pendingRows))
+      .catch(() => {})
+  }, [])
 
   // Any filter change invalidates the current page number.
   useEffect(() => setPage(1), [q, issue, province, region])
@@ -195,12 +213,43 @@ export function ClubLifecycleConsole() {
       <SectionHeader
         title="Club review"
         description={
-          data
-            ? `${data.total.toLocaleString()} ${data.total === 1 ? "club" : "clubs"} matching. ${(data.counts.unpublished ?? 0).toLocaleString()} still unpublished`
-            : "Loading…"
+          view === "machine"
+            ? machinePending
+              ? `${machinePending.toLocaleString()} ${machinePending === 1 ? "edit" : "edits"} made by a script, waiting for a person to check`
+              : "What the scripts changed, and where they got it"
+            : data
+              ? `${data.total.toLocaleString()} ${data.total === 1 ? "club" : "clubs"} matching. ${(data.counts.unpublished ?? 0).toLocaleString()} still unpublished`
+              : "Loading…"
         }
       />
 
+      <div className="border-ink-200 bg-ink-50 mb-4 mt-5 inline-flex rounded-full border p-1">
+        {VIEWS.map((v) => (
+          <button
+            key={v.key}
+            onClick={() => setView(v.key)}
+            className={`rounded-full px-4 py-1.5 text-sm font-semibold transition ${
+              view === v.key ? "shadow-soft text-ink-900 bg-white" : "text-ink-500 hover:text-ink-800"
+            }`}
+          >
+            {v.label}
+            {v.key === "machine" && machinePending ? (
+              <span
+                className={`ml-2 rounded-full px-1.5 py-0.5 text-[11px] font-bold ${
+                  view === v.key ? "bg-hoop-50 text-hoop-600" : "bg-ink-200 text-ink-600"
+                }`}
+              >
+                {machinePending.toLocaleString()}
+              </span>
+            ) : null}
+          </button>
+        ))}
+      </div>
+
+      {view === "machine" && <MachineEditsQueue onPendingChange={setMachinePending} />}
+
+      {view === "clubs" && (
+      <>
       {notice && (
         <div className="mb-3 rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
           {notice}
@@ -525,6 +574,8 @@ export function ClubLifecycleConsole() {
             </Button>
           </div>
         </div>
+      )}
+      </>
       )}
     </div>
   )

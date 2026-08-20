@@ -34,6 +34,10 @@ export type AuditAction =
   | "CLUB_UNPUBLISH"
   | "CLUB_MERGE"
   | "CLUB_MERGE_UNDO"
+  // Machine-edit review (owner 2026-08-20): a pipeline writing to a club is
+  // flagged for a human, and keeping or putting back that value is recorded.
+  | "CLUB_ENRICHMENT_APPROVE"
+  | "CLUB_ENRICHMENT_REVERT"
   | "CLUB_UNFEATURE"
   // Manual roster + game operations — the escape hatches leave a trail
   | "ROSTER_PLAYER_ADD"
