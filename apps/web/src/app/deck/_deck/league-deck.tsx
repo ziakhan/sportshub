@@ -129,46 +129,68 @@ function Line({ head, rest, dark = true }: { head: string; rest: string; dark?: 
   )
 }
 
-type ShotDef = { file: string; w: number; h: number; alt: string }
+/** `frames` is one or more images. More than one and the slide crossfades
+ *  between them, which is how a screenshot shows the whole page AND the one
+ *  region that proves the claim without either being unreadable. */
+type ShotDef = { frames: string[]; w: number; h: number; alt: string }
 
 /**
  * A screenshot, and nothing around it.
  *
- * This used to draw a fake browser window: a title bar, three dots and a URL
- * pill. The owner asked for it gone, twice. It cost a bar's worth of height on
- * every screenshot slide, it made the shot sit INSIDE a frame rather than fill
- * the slide, and dressing a product screenshot as a browser tab tells a
- * commissioner nothing they did not already know.
+ * No browser chrome: it cost height, it framed the shot instead of showing it,
+ * and telling a commissioner a web page lives in a tab is not information.
  *
- * What is left is the image at the full size of the space, cropped from the
- * top the way a window would show a page, on a rounded edge with a shadow so
- * it still reads as a surface against either ground.
+ * `object-contain` always. `cover` filled the width by cropping everything
+ * below the header, which threw away the actual product.
+ *
+ * With more than one frame the slide crossfades between them every few seconds:
+ * the page as it lands, then scrolled to the part the slide is claiming. That
+ * is the answer to the readability problem. A whole page shrunk to fit is
+ * unreadable, a crop alone loses the context, so it shows both. It runs only
+ * while its slide is on screen, and holds on the first frame under
+ * prefers-reduced-motion.
  */
-function Shot({ shot, base }: { shot: ShotDef; base: string }) {
+function Shot({ shot, base, active }: { shot: ShotDef; base: string; active: boolean }) {
+  const [frame, setFrame] = useState(0)
+
+  useEffect(() => {
+    if (!active) { setFrame(0); return }
+    if (shot.frames.length < 2) return
+    if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return
+    const id = window.setInterval(
+      () => setFrame((f) => (f + 1) % shot.frames.length),
+      4200,
+    )
+    return () => window.clearInterval(id)
+  }, [active, shot.frames.length])
+
   return (
-    <img
-      src={`${base}/${shot.file}`}
-      width={shot.w}
-      height={shot.h}
-      alt={shot.alt}
-      className={cn(
-        /* CONTAIN, always. `cover` filled the width by cropping everything
-           below the header, so every screenshot turned into a white page with
-           a title bar and nothing underneath: the actual product was the part
-           being thrown away. Letterboxing is the right trade. A smaller whole
-           screen beats a large useless one. */
-        "min-h-0 w-full flex-1 rounded-xl object-contain",
-      )}
-    />
+    <div className="relative min-h-0 flex-1">
+      {shot.frames.map((file, i) => (
+        <img
+          key={file}
+          src={`${base}/${file}`}
+          width={shot.w}
+          height={shot.h}
+          alt={i === 0 ? shot.alt : ""}
+          aria-hidden={i === 0 ? undefined : true}
+          className={cn(
+            "absolute inset-0 h-full w-full rounded-xl object-contain",
+            "motion-safe:transition-opacity motion-safe:duration-700",
+            i === frame ? "opacity-100" : "opacity-0",
+          )}
+        />
+      ))}
+    </div>
   )
 }
 
 /** Headline, one line, and the image as big as the slide allows. No cards. */
 function ShotSlide({
-  eyebrow, title, lead, shot, base, dark = false,
+  eyebrow, title, lead, shot, base, active, dark = false,
 }: {
   eyebrow: string; title: ReactNode; lead: string
-  shot: ShotDef; base: string; dark?: boolean
+  shot: ShotDef; base: string; active: boolean; dark?: boolean
 }) {
   return (
     <div className="flex h-full min-h-0 flex-col">
@@ -180,20 +202,41 @@ function ShotSlide({
         </p>
       </div>
       <div className="mt-5 flex min-h-0 flex-1 flex-col sm:mt-7">
-        <Shot shot={shot} base={base} />
+        <Shot shot={shot} base={base} active={active} />
       </div>
     </div>
   )
 }
 
 const SHOTS = {
-  overview: { file: "overview.webp", w: 2000, h: 1032, alt: "The season console showing clubs entered, teams approved, what is waiting, and the season checklist" },
-  plan: { file: "plan.webp", w: 2000, h: 1032, alt: "The five step season planner: teams, your buildings, your calendar, publish, schedule" },
-  schedule: { file: "schedule.webp", w: 2000, h: 1032, alt: "The scheduling tab with a check confirming every team has its full game count" },
-  playoffs: { file: "playoffs.webp", w: 2000, h: 1032, alt: "The playoff plan, checked against championship weekend" },
-  referees: { file: "referees.webp", w: 2000, h: 1032, alt: "Booking a referee for a session day and the league referee pool" },
-  waivers: { file: "waivers.webp", w: 2000, h: 1032, alt: "The waiver signing grid for the season" },
-  hub: { file: "hub.webp", w: 2000, h: 1032, alt: "The public league page with scores, schedule and scoring leaders" },
+  overview: {
+    frames: ["overview.webp", "overview-2.webp"], w: 1900, h: 848,
+    alt: "The season console: clubs entered, teams approved, what is waiting, and the season checklist",
+  },
+  plan: {
+    frames: ["plan.webp"], w: 1900, h: 848,
+    alt: "The five step season planner: teams, your buildings, your calendar, publish, schedule",
+  },
+  schedule: {
+    frames: ["schedule.webp", "schedule-2.webp"], w: 1900, h: 848,
+    alt: "The scheduling tab, and the team check confirming every team has its full game count",
+  },
+  playoffs: {
+    frames: ["playoffs.webp"], w: 1900, h: 848,
+    alt: "The playoff plan, checked against championship weekend",
+  },
+  referees: {
+    frames: ["referees.webp", "referees-2.webp"], w: 1900, h: 848,
+    alt: "Booking a referee for a session day, and the league referee pool",
+  },
+  waivers: {
+    frames: ["waivers.webp", "waivers-2.webp"], w: 1900, h: 848,
+    alt: "The waiver signing status, team by team",
+  },
+  hub: {
+    frames: ["hub.webp"], w: 1900, h: 861,
+    alt: "The public league page with scores, schedule and scoring leaders",
+  },
 } satisfies Record<string, ShotDef>
 
 /* ── a team's Saturday, drawn ──────────────────────────────────────────────
@@ -318,9 +361,10 @@ const SLIDES: SlideDef[] = [
     id: "dashboard",
     chapter: "The console",
     light: true,
-    render: ({ brand }) => (
+    render: ({ brand, active }) => (
       <ShotSlide
         base={brand.shots}
+        active={active}
         eyebrow="The league console"
         title={<>Your whole league, <span className="text-[#c2410c]">on one screen.</span></>}
         lead="Clubs in, teams approved, what is still waiting on you, and a checklist that will not let you finalize with something missing."
@@ -332,12 +376,13 @@ const SLIDES: SlideDef[] = [
     id: "plan",
     chapter: "Planning",
     light: true,
-    render: ({ brand }) => (
+    render: ({ brand, active }) => (
       <ShotSlide
         base={brand.shots}
+        active={active}
         eyebrow="Pre-season planning"
         title={<>Book the gyms <span className="text-[#c2410c]">before you know the teams.</span></>}
-        lead="Estimate each grade with last season's count sitting right beside it. Drop in the dates and gyms you think you can get. It tells you whether that fits or how many more court hours you need, months before registration opens."
+        lead="Estimate each grade with last season's count beside it, drop in the dates and gyms you think you can get, and it tells you whether that fits or how many more court hours you need."
         shot={SHOTS.plan}
       />
     ),
@@ -345,7 +390,7 @@ const SLIDES: SlideDef[] = [
   {
     id: "schedule",
     chapter: "Scheduling",
-    render: ({ brand }) => (
+    render: ({ brand, active }) => (
       <div className="flex h-full min-h-0 flex-col">
         <div className="shrink-0">
           <Eyebrow>Scheduling</Eyebrow>
@@ -353,13 +398,12 @@ const SLIDES: SlideDef[] = [
             Weeks of planning, <span className="text-[#f24e1e]">then minutes to build it.</span>
           </H>
           <p className={cn("mt-3 max-w-[66ch]", T.lead, "text-white/72")}>
-            Build your divisions on a drag-and-drop board once you know who actually turned up, then
-            generate. It only uses the gyms, courts and hours you have, every team gets the games you
-            promised, and you read the whole season before anything commits.
+            Divisions on a drag-and-drop board once you know who turned up, then generate. It only
+            uses the gyms and hours you have, and you read the whole season before anything commits.
           </p>
         </div>
         <div className="mt-5 flex min-h-0 flex-1 flex-col sm:mt-7">
-          <Shot shot={SHOTS.schedule} base={brand.shots} />
+          <Shot shot={SHOTS.schedule} base={brand.shots} active={active} />
         </div>
       </div>
     ),
@@ -442,13 +486,14 @@ const SLIDES: SlideDef[] = [
   {
     id: "playoffs",
     chapter: "Playoffs",
-    render: ({ brand }) => (
+    render: ({ brand, active }) => (
       <ShotSlide
         dark
         base={brand.shots}
+        active={active}
         eyebrow="Playoffs"
         title={<>Brackets built from <span className="text-[#f24e1e]">what actually happened.</span></>}
-        lead="Standings build themselves from the scoresheets the referee signed, in your tiebreaker order. The bracket sits on real weekends in real gyms before it is seeded, and team names fill in as results land. Nobody's season ends at 9am."
+        lead="Standings build themselves from the signed scoresheets, in your tiebreaker order. The bracket sits on real weekends in real gyms before it is seeded, and nobody's season ends at 9am."
         shot={SHOTS.playoffs}
       />
     ),
@@ -457,9 +502,10 @@ const SLIDES: SlideDef[] = [
     id: "referees",
     chapter: "Referees",
     light: true,
-    render: ({ brand }) => (
+    render: ({ brand, active }) => (
       <ShotSlide
         base={brand.shots}
+        active={active}
         eyebrow="Referees"
         title={<>A referee pool, <span className="text-[#c2410c]">not a group text.</span></>}
         lead="Referees mark their own availability. Offer a shift to the whole pool or to one person you trust, and the first to accept gets it. They sign the scoresheet at the end."
@@ -471,12 +517,13 @@ const SLIDES: SlideDef[] = [
     id: "waivers",
     chapter: "Waivers",
     light: true,
-    render: ({ brand }) => (
+    render: ({ brand, active }) => (
       <ShotSlide
         base={brand.shots}
+        active={active}
         eyebrow="Waivers"
         title={<>Concussion forms and waivers, <span className="text-[#c2410c]">signed before the first game.</span></>}
-        lead="They go out the day the schedule is published, so only teams that are actually playing get asked. Reminders chase whoever has not signed. You can send one yourself any time. On opening day you can see exactly who is still missing."
+        lead="They go out the day the schedule is published, so only teams actually playing get asked. Reminders chase whoever has not signed, and on opening day you can see who is still missing."
         shot={SHOTS.waivers}
       />
     ),
@@ -501,13 +548,14 @@ const SLIDES: SlideDef[] = [
   {
     id: "website",
     chapter: "Your website",
-    render: ({ brand }) => (
+    render: ({ brand, active }) => (
       <ShotSlide
         dark
         base={brand.shots}
+        active={active}
         eyebrow="Your league's website"
         title={<>It writes itself <span className="text-[#f24e1e]">while you run the league.</span></>}
-        lead="Every game that gets scored updates the scores, the standings and the leaders, then posts a recap naming the top performers. Your logo, your colours, your news. Next season opens while this one is still playing, teams carry their history forward, and nobody needs an account."
+        lead="Every game scored updates the scores, standings and leaders, then posts a recap naming the top performers. Your logo, your colours, your news, and nobody needs an account to read it."
         shot={SHOTS.hub}
       />
     ),
