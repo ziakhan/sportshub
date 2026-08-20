@@ -145,7 +145,34 @@ const same = (a: TargetRect, b: TargetRect) =>
   a.viewW === b.viewW
 
 /**
- * Measures a `data-demo-target` against the stage box.
+ * Measures a `
+      .demo-rolebug { animation: demo-rolebug 600ms ease-out both; }
+      @keyframes demo-rolebug {
+        0% { opacity: 0; transform: scale(0.85); }
+        55% { opacity: 1; transform: scale(1.08); }
+        100% { opacity: 1; transform: scale(1); }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .demo-rolebug { animation: none; opacity: 1; }
+      }
+      .demo-launchcue { animation: demo-launchcue 3400ms ease-in-out both; }
+      @keyframes demo-launchcue {
+        0% { opacity: 0; transform: scale(0.92); }
+        9% { opacity: 1; transform: scale(1); }
+        80% { opacity: 1; transform: scale(1); }
+        100% { opacity: 0; transform: scale(1.02); }
+      }
+      .demo-flash { animation: demo-flash 700ms ease-out both; }
+      @keyframes demo-flash {
+        0% { opacity: 0; transform: scale(0.7); }
+        18% { opacity: 1; transform: scale(1.05); }
+        45% { opacity: 1; transform: scale(1); }
+        100% { opacity: 0; transform: scale(1.12); }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .demo-flash { animation: none; opacity: 0; }
+      }
+data-demo-target` against the stage box.
  *
  * This is the single measurement path the cursor, the emphasis ring and the
  * callout all share, so all three agree on where the target is to the pixel:

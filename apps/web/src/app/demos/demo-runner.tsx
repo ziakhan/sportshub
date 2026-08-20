@@ -36,6 +36,27 @@ import { AUDIENCE_LABELS, DEMOS, type DemoEntry } from "./registry"
  */
 
 /** Slug to script. A demo goes live the moment it appears in this map. */
+/**
+ * Play a subset of an existing script's chapters as a demo in its own right
+ * (owner 2026-08-19).
+ *
+ * "Standings and playoff brackets" had grown four chapters wide: two about the
+ * table and the bracket, and two about league CONFIGURATION — writing the
+ * tiebreaker ladder and ruling on eligibility. Those are set-up decisions, not
+ * last-weekend ones, so the title only described half of what played.
+ *
+ * Splitting by chapter rather than forking the file keeps ONE script: the same
+ * screens, the same data, the same 500 lines of render. Each half must open on
+ * a beat that sets its own stage, or it inherits a screen the viewer never saw.
+ */
+function chaptersOf(script: DemoScript, ids: string[]): DemoScript {
+  return {
+    ...script,
+    chapters: script.chapters.filter((c) => ids.includes(c.id)),
+    beats: script.beats.filter((b) => ids.includes(b.chapter)),
+  }
+}
+
 const SCRIPTS: Record<
   string,
   { script: DemoScript; role: string; roleTone: "club" | "league" | "parent" | "referee" }
@@ -49,7 +70,16 @@ const SCRIPTS: Record<
   "your-week": { script: yourWeekStory, role: "Parent", roleTone: "parent" },
   "players-season": { script: playersSeasonStory, role: "Player", roleTone: "parent" },
   "money-picture": { script: moneyStory, role: "Club", roleTone: "club" },
-  "standings-to-playoffs": { script: playoffsStory, role: "League", roleTone: "league" },
+  "standings-to-playoffs": {
+    script: chaptersOf(playoffsStory, ["weekend", "bracket"]),
+    role: "League",
+    roleTone: "league",
+  },
+  "league-rulebook": {
+    script: chaptersOf(playoffsStory, ["rule", "who"]),
+    role: "League",
+    roleTone: "league",
+  },
   waivers: { script: waiversStory, role: "League", roleTone: "league" },
   "team-drops-out": { script: teamDropsOutStory, role: "League", roleTone: "league" },
   "the-referees": { script: theRefereesStory, role: "League", roleTone: "referee" },

@@ -437,7 +437,7 @@ const SCENES: Scene[] = [
     eyebrow: "For clubs",
     title: (
       <>
-        Still running the season on <span className="text-gold-300">five apps</span> and a
+        Still running the season on <span className="text-play-300">five apps</span> and a
         spreadsheet?
       </>
     ),
@@ -449,7 +449,7 @@ const SCENES: Scene[] = [
     eyebrow: "Sound familiar?",
     title: (
       <>
-        One team drops out. <span className="text-gold-300">Forty messages later</span>, still no
+        One team drops out. <span className="text-play-300">Forty messages</span> later, still no
         answer.
       </>
     ),
@@ -461,7 +461,7 @@ const SCENES: Scene[] = [
     eyebrow: "For players",
     title: (
       <>
-        Some nights <span className="text-gold-300">it&rsquo;s you</span>.
+        Some nights it&rsquo;s you.
       </>
     ),
     sub: (
@@ -476,7 +476,7 @@ const SCENES: Scene[] = [
     eyebrow: "For leagues",
     title: (
       <>
-        Nobody&rsquo;s team gets the <span className="text-gold-300">bad weekend twice</span>.
+        Nobody&rsquo;s team gets the bad weekend <span className="text-play-300">twice</span>.
       </>
     ),
     sub: (
@@ -489,7 +489,7 @@ const SCENES: Scene[] = [
     eyebrow: "For the family",
     title: (
       <>
-        Grandma is <span className="text-gold-300">three provinces away</span>.
+        Grandma is three provinces away.
       </>
     ),
     sub: <>She sees the three the second it drops. No account, no app store.</>,
@@ -500,7 +500,7 @@ const SCENES: Scene[] = [
     eyebrow: "For players",
     title: (
       <>
-        Your own page. <span className="text-gold-300">One link</span>, everything you did.
+        Your own page. <span className="text-play-300">One link</span>, everything you did.
       </>
     ),
     sub: <>Put it in your bio. Send it to a coach. It updates itself every time you play.</>,
@@ -657,22 +657,46 @@ export function HeroScenes() {
 
         <div className="grid items-center gap-6 md:grid-cols-[1fr_minmax(0,460px)] md:gap-12 md:px-12">
           <div className="text-center md:text-left">
-            <p className="text-[12px] font-bold uppercase tracking-[0.18em] text-gold-400 md:text-[13px]">
+            <p className="text-[12px] font-bold uppercase tracking-[0.18em] text-white/50 md:text-[13px]">
               {scene.eyebrow}
             </p>
             <h2 className="mt-2.5 text-balance text-[30px] font-bold leading-[1.07] tracking-tight text-white sm:text-[42px] lg:text-[52px]">
               {scene.title}
             </h2>
-            <p className="mx-auto mt-3.5 max-w-lg text-[16px] font-medium leading-relaxed text-white/70 md:mx-0 md:text-[19px]">
+            <p className="mx-auto mt-3.5 max-w-lg text-[16px] font-medium leading-relaxed text-white/70 md:mx-0 md:mt-5 md:text-[19px]">
               {scene.sub}
             </p>
+
+            {/* Desktop signup lives INSIDE the message column (owner 2026-08-19).
+                It used to hang below the whole two-column row at max-w-xl, which
+                is narrower than this column and aligned to neither the grid nor
+                the page — a third act under a balanced pair. As the last step of
+                eyebrow -> problem -> solution, it reads as the conclusion of the
+                argument, with the artifact standing beside it as proof.
+                Mobile is untouched: it keeps its own card below. */}
+            <div className="mt-7 hidden max-w-xl md:block">
+              <p className="mb-2.5 text-[17px] font-semibold text-white/85">Save your spot.</p>
+              <NotifyForm
+                source="landing-hero-b"
+                identityAfter
+                finePrint
+                clubNudgeHref="#claim"
+                tone="dark"
+              />
+            </div>
           </div>
-          <div className="flex justify-center md:justify-end">{scene.artifact}</div>
+          {/* Reserved height (2026-08-19): six of the seven artifacts size to
+              their own content, so rotating scenes changed this row's height and
+              everything below it jumped every few seconds. Sized to the tallest
+              (PhoneArtifact). Nothing under the hero moves now. */}
+          <div className="flex items-center justify-center md:min-h-[524px] md:justify-end">
+            {scene.artifact}
+          </div>
         </div>
 
         {/* Dots plus an explicit pause, so autoplay is never something that
             just happens to you. */}
-        <div className="mt-5 flex items-center justify-center gap-3 md:mt-6 md:justify-start md:px-12">
+        <div className="mt-5 flex items-center justify-center gap-3 md:mt-6 md:justify-end md:px-12">
           <button
             type="button"
             onClick={() => setPlaying((p) => !p)}
@@ -705,29 +729,17 @@ export function HeroScenes() {
           </div>
         </div>
 
-        <div className="mt-5 w-full max-w-xl max-md:rounded-3xl max-md:bg-white max-md:px-4 max-md:py-4 max-md:shadow-2xl md:mt-6 md:px-12">
-          <p className="mb-2.5 text-center text-[17px] font-bold text-ink-950 md:hidden">
-            Save your spot.
-          </p>
-          <div className="md:hidden">
-            <NotifyForm
-              source="landing-hero-b"
-              identityAfter
-              finePrint
-              clubNudgeHref="#claim"
-              buttonClassName="bg-gold-500 text-ink-950 shadow-lg hover:bg-gold-400 focus-visible:ring-gold-600"
-            />
-          </div>
-          <div className="hidden md:block">
-            <p className="mb-2.5 text-[17px] font-semibold text-white/85">Save your spot.</p>
-            <NotifyForm
-              source="landing-hero-b"
-              identityAfter
-              finePrint
-              clubNudgeHref="#claim"
-              tone="dark"
-            />
-          </div>
+        {/* Mobile keeps the white card at the foot of the hero — the desktop
+            twin moved up into the message column. */}
+        <div className="mt-5 w-full max-w-xl rounded-3xl bg-white px-4 py-4 shadow-2xl md:hidden">
+          <p className="mb-2.5 text-center text-[17px] font-bold text-ink-950">Save your spot.</p>
+          <NotifyForm
+            source="landing-hero-b"
+            identityAfter
+            finePrint
+            clubNudgeHref="#claim"
+            buttonClassName="bg-gold-500 text-ink-950 shadow-lg hover:bg-gold-400 focus-visible:ring-gold-600"
+          />
         </div>
       </div>
     </CourtBackdrop>

@@ -41,6 +41,8 @@ const WATCH_LINES: Record<string, string> = {
     "One game moves, and every phone, inbox and calendar finds out in seconds.",
   "standings-to-playoffs":
     "Standings that settle themselves and a playoff bracket the product draws for you.",
+  "league-rulebook":
+    "The tiebreaker ladder written once, and a player ruled on in writing.",
   "the-referees":
     "A day of games offered to your whole pool, first accept wins, and the pay adds itself up.",
   "your-week":
@@ -99,7 +101,7 @@ const LANES: Lane[] = [
       "standings-to-playoffs",
       "the-referees",
     ],
-    also: ["team-drops-out", "waivers"],
+    also: ["team-drops-out", "waivers", "league-rulebook"],
     tone: {
       text: "text-court-700",
       iconBg: "bg-court-50",

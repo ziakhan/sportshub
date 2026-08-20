@@ -266,6 +266,10 @@ export const theRefereesStory: DemoScript = {
   desktopUrl: "/manage/leagues/nph-summer/seasons/summer-2026/manage?tab=referees",
   context: CTX,
   initialStage: "desktop",
+  roles: {
+    desktop: { label: "League", tone: "league" },
+    phone: { label: "Referee", tone: "referee" },
+  },
   chapters: [
     { id: "book", title: "The league books a day" },
     { id: "accept", title: "First accept wins" },
@@ -397,6 +401,7 @@ export const theRefereesStory: DemoScript = {
     /* ── 2. First accept wins ─────────────────────────────────────────── */
     paced({
       id: "phone-in",
+      actor: "phone", // the offer lands with the referee
       chapter: "accept",
       caption: `On ${REF}'s phone, his schedule is still empty.`,
       stage: "split",
@@ -446,6 +451,7 @@ export const theRefereesStory: DemoScript = {
     }),
     paced({
       id: "league-side",
+      actor: "desktop", // the league finds out
       chapter: "accept",
       caption: "The league finds out without being asked.",
       set: { scroll: SCROLL.offersNarrow },
@@ -456,6 +462,7 @@ export const theRefereesStory: DemoScript = {
     /* ── 3. His games, his calendar ───────────────────────────────────── */
     paced({
       id: "open-games",
+      actor: "phone", // his schedule, his games
       chapter: "his",
       caption: "The confirmation offers the way to the schedule it just made.",
       cursor: "open-mygames",

@@ -656,6 +656,11 @@ export const playoffsStory: DemoScript = {
     paced({
       id: "tie",
       chapter: "rule",
+      /* Explicit, not inherited (2026-08-19): this beat opens the rulebook demo
+         when the chapters are played as their own story, so it cannot rely on
+         the weekend chapter having left the stage on standings. Idempotent in
+         the full sequence, which is already here. */
+      set: { screen: "standings" },
       caption: "Two teams finished seven and three, and the Tiebreakers column is empty.",
       emphasize: "tb-col",
       callout: "With nothing configured, teams on the same record sit in win-percentage order.",
