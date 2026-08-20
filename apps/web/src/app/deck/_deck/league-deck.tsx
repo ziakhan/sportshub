@@ -563,20 +563,25 @@ const SLIDES: SlideDef[] = [
   },
   {
     id: "audience",
-    chapter: "Your audience",
+    chapter: "What you can see",
+    /* Deliberately says nothing about selling or sponsors (owner 2026-08-20).
+       The business model is still open, and a slide that implies a league can
+       make money off this data is a promise nobody has agreed to make. It
+       states what exists and how detailed it is, and stops there. */
     render: () => (
       <div className="flex h-full flex-col justify-center">
-        <Eyebrow>Who is watching</Eyebrow>
-        <H>
-          Numbers you can take <span className="text-[#f24e1e]">to a sponsor.</span>
+        <Eyebrow>What you can see</Eyebrow>
+        <H className="max-w-[22ch]">
+          Every weekend <span className="text-[#f24e1e]">leaves a number behind.</span>
         </H>
         <div className={cn(CARDS, BLOCK)}>
-          <Card tone="gold" title="Your audience" body="How many people follow the league, and how that grew since last season." />
-          <Card tone="gold" title="Where they go" body="Views by game, by team and by player page. Which recaps got read." />
-          <Card tone="gold" title="Live" body="How many watched the championship while it was happening." />
+          <Card tone="play" title="Who is following" body="How many people follow the league and its teams, and how that has changed since last season." />
+          <Card tone="play" title="What gets read" body="Views by game, by team and by player page, and which recaps people opened." />
+          <Card tone="play" title="How the season ran" body="Registrations against last year, games played and rescheduled, and how much of the gym time you booked you actually used." />
         </div>
-        <p className={cn("mt-7 max-w-[60ch]", T.lead, "text-white/72")}>
-          A league page that nobody measures is a cost. One you can measure is something you can sell.
+        <p className={cn("mt-5 max-w-[64ch] text-[clamp(0.95rem,1.6vw,1.45rem)] leading-[1.45] text-white/72 sm:mt-7")}>
+          None of it is anybody&apos;s job to write down. It is a by-product of running the season
+          here.
         </p>
       </div>
     ),
