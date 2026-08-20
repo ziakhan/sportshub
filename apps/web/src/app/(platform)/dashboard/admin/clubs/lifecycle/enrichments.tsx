@@ -88,22 +88,24 @@ function fieldLabel(field: string) {
   )
 }
 
-/** The kind of run a row came from, in one word, with its chip colour. */
-function sourceKind(source: string): { key: string; tone: BadgeTone } {
-  if (source.startsWith("discovered")) return { key: "discovered", tone: "play" }
-  if (source.startsWith("verified")) return { key: "verified-scrape", tone: "court" }
-  if (source.startsWith("edits")) return { key: "edits", tone: "gold" }
-  if (source.startsWith("dead-site")) return { key: "dead-site-clear", tone: "hoop" }
-  if (source.startsWith("seed-adoption")) return { key: "seed-adoption-fix", tone: "neutral" }
-  return { key: source, tone: "neutral" }
+/** The kind of run a row came from, with its chip colour and display name.
+ *  Attribution matters (owner 2026-08-20): rows that trace back to the other
+ *  developer's sheets say so on the chip, not just in the raw source string. */
+function sourceKind(source: string): { key: string; tone: BadgeTone; label: string } {
+  if (source.startsWith("discovered")) return { key: "discovered", tone: "play", label: "AI search" }
+  if (source.startsWith("verified")) return { key: "verified-scrape", tone: "court", label: "developer sheet, re-checked" }
+  if (source.startsWith("edits")) return { key: "edits", tone: "gold", label: "developer sheet" }
+  if (source.startsWith("dead-site")) return { key: "dead-site-clear", tone: "hoop", label: "dead site cleared" }
+  if (source.startsWith("seed-adoption")) return { key: "seed-adoption-fix", tone: "neutral", label: "seed adoption fix" }
+  return { key: source, tone: "neutral", label: source }
 }
 
 /** What each kind of run actually did, for the legend. */
 const SOURCE_MEANING: Record<string, string> = {
-  discovered: "Found by search. The link is the page it was found on.",
-  "verified-scrape": "Read off the club's own website.",
-  edits: "From the hand-checked corrections list.",
-  "dead-site-clear": "The old website did not answer, so the link was cleared.",
+  discovered: "An AI search run found this. The link is the page it was found on.",
+  "verified-scrape": "From the developer's contact sheet, re-confirmed on the club's own website before it was written.",
+  edits: "From the developer's hand-checked corrections sheet.",
+  "dead-site-clear": "On the developer's dead-sites list, re-checked by us: the old website did not answer, so the link was cleared.",
   "seed-adoption-fix": "A seeded demo record was matched onto this club.",
 }
 
@@ -153,6 +155,9 @@ export function MachineEditsQueue({
   const [notice, setNotice] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const [showAll, setShowAll] = useState(false)
+  /** One source kind at a time, so the developer-sheet rows and the AI-search
+   *  rows can each be reviewed as their own pass. null = everything. */
+  const [sourceFilter, setSourceFilter] = useState<string | null>(null)
   /** The one row asking "are you sure" right now. */
   const [confirming, setConfirming] = useState<string | null>(null)
 
@@ -200,17 +205,34 @@ export function MachineEditsQueue({
 
   const clubs = data?.clubs ?? []
 
-  /** The chip meanings actually on screen, so the legend never lists ghosts. */
+  /** The chip meanings actually on screen, with counts, so the legend never
+   *  lists ghosts and each chip doubles as a filter. */
   const legend = useMemo(() => {
-    const seen = new Map<string, BadgeTone>()
+    const seen = new Map<string, { tone: BadgeTone; label: string; count: number }>()
     for (const g of clubs) {
       for (const r of g.rows) {
-        const { key, tone } = sourceKind(r.source)
-        if (!seen.has(key)) seen.set(key, tone)
+        const { key, tone, label } = sourceKind(r.source)
+        const cur = seen.get(key)
+        if (cur) cur.count += 1
+        else seen.set(key, { tone, label, count: 1 })
       }
     }
     return [...seen.entries()]
   }, [clubs])
+
+  // A reload can retire the filtered kind entirely; fall back to everything.
+  useEffect(() => {
+    if (sourceFilter && !legend.some(([key]) => key === sourceFilter)) {
+      setSourceFilter(null)
+    }
+  }, [legend, sourceFilter])
+
+  const visibleClubs = useMemo(() => {
+    if (!sourceFilter) return clubs
+    return clubs
+      .map((g) => ({ ...g, rows: g.rows.filter((r) => sourceKind(r.source).key === sourceFilter) }))
+      .filter((g) => g.rows.length > 0)
+  }, [clubs, sourceFilter])
 
   return (
     <div>
@@ -226,8 +248,10 @@ export function MachineEditsQueue({
       <Card size="sm" className="mb-4">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <p className="text-ink-600 max-w-2xl text-sm leading-6">
-            Every value an automated run wrote to a club waits here. Each line says what was
-            changed, where it was fetched from and when. Keep it, or put the old value back.
+            Every value an automated run wrote to a club waits here, including what came in
+            from the developer&apos;s sheets. Each line says what was changed, where it was
+            fetched from and when. Keep it, or put the old value back. Click a chip below to
+            review one kind of run at a time.
           </p>
           <div className="border-ink-200 bg-ink-50 inline-flex shrink-0 rounded-full border p-1">
             {[
@@ -251,18 +275,47 @@ export function MachineEditsQueue({
 
         {legend.length > 0 && (
           <div className="border-ink-100 mt-3 grid gap-x-8 gap-y-2 border-t pt-3 sm:grid-cols-2">
-            {legend.map(([key, tone]) => (
-              <div key={key} className="flex items-center gap-2">
-                <span className="min-w-[168px] shrink-0">
-                  <Badge tone={tone} className="whitespace-nowrap">
-                    {key}
-                  </Badge>
-                </span>
-                <span className="text-ink-500 text-xs leading-5">
-                  {SOURCE_MEANING[key] ?? "Written by an automated run."}
-                </span>
-              </div>
-            ))}
+            {legend.map(([key, meta]) => {
+              const active = sourceFilter === key
+              const dimmed = sourceFilter !== null && !active
+              return (
+                <div key={key} className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    aria-pressed={active}
+                    onClick={() => setSourceFilter(active ? null : key)}
+                    className={`min-w-[190px] shrink-0 cursor-pointer rounded-full text-left transition ${
+                      dimmed ? "opacity-40 hover:opacity-70" : ""
+                    }`}
+                  >
+                    <Badge
+                      tone={meta.tone}
+                      className={`whitespace-nowrap ${active ? "ring-ink-400 ring-2 ring-offset-1" : ""}`}
+                    >
+                      {meta.label} · {meta.count}
+                    </Badge>
+                  </button>
+                  <span className="text-ink-500 text-xs leading-5">
+                    {SOURCE_MEANING[key] ?? "Written by an automated run."}
+                  </span>
+                </div>
+              )
+            })}
+          </div>
+        )}
+
+        {sourceFilter && (
+          <div className="mt-3 flex items-center gap-2">
+            <span className="text-ink-600 text-xs">
+              Showing only: {legend.find(([key]) => key === sourceFilter)?.[1].label}
+            </span>
+            <button
+              type="button"
+              onClick={() => setSourceFilter(null)}
+              className="text-play-600 cursor-pointer text-xs underline"
+            >
+              show every run
+            </button>
           </div>
         )}
       </Card>
@@ -273,14 +326,18 @@ export function MachineEditsQueue({
         </Card>
       )}
 
-      {!loading && clubs.length === 0 && (
+      {!loading && visibleClubs.length === 0 && (
         <Card size="sm">
           <div className="bg-ink-50/70 rounded-xl px-4 py-10 text-center">
-            <p className="text-ink-900 text-sm font-semibold">The queue is clear.</p>
+            <p className="text-ink-900 text-sm font-semibold">
+              {clubs.length > 0 ? "Nothing from that run in view." : "The queue is clear."}
+            </p>
             <p className="text-ink-500 mt-1 text-sm">
-              {showAll
-                ? "No script has written to a club yet."
-                : "Every machine edit has been looked at."}
+              {clubs.length > 0
+                ? "Pick another chip, or show every run."
+                : showAll
+                  ? "No script has written to a club yet."
+                  : "Every machine edit has been looked at."}
             </p>
           </div>
         </Card>
@@ -294,8 +351,11 @@ export function MachineEditsQueue({
       )}
 
       <div className="space-y-3">
-        {clubs.map((group) => {
+        {visibleClubs.map((group) => {
           const pendingIds = group.rows.filter((r) => !r.reviewedAt).map((r) => r.id)
+          // Under a source filter the card only holds that run's rows, so the
+          // waiting count follows what is actually on screen.
+          const waiting = sourceFilter ? pendingIds.length : group.pending
           return (
             <Card key={group.club.id} size="sm">
               <div className="border-ink-100 flex flex-wrap items-start justify-between gap-3 border-b pb-3">
@@ -322,8 +382,8 @@ export function MachineEditsQueue({
                     {group.club.city && ` · ${group.club.city}`}
                     {group.club.state && `, ${group.club.state}`}
                     {" · "}
-                    {group.pending > 0
-                      ? `${group.pending} waiting`
+                    {waiting > 0
+                      ? `${waiting} waiting`
                       : `${group.rows.length} already looked at`}
                   </div>
                 </div>
@@ -361,7 +421,10 @@ export function MachineEditsQueue({
                           <span className="text-ink-900 text-sm font-semibold">
                             {fieldLabel(row.field)}
                           </span>
-                          <Badge tone={kind.tone}>{row.source}</Badge>
+                          <Badge tone={kind.tone}>{kind.label}</Badge>
+                          {row.source.includes("backfilled") && (
+                            <Badge tone="neutral">flagged after the fact</Badge>
+                          )}
                           {row.confidence && (
                             <Badge tone={CONFIDENCE_TONE[row.confidence] ?? "neutral"}>
                               {row.confidence} confidence

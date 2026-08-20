@@ -220,15 +220,27 @@ if (APPLY) {
    tenant fields. Reads docs/research/validation/apply-run.json. */
 if (process.argv.includes("--backfill-flags")) {
   const prior = JSON.parse(readFileSync(ROOT + "docs/research/validation/apply-run.json", "utf8"))
+  // That run predates from-capture, so its log has no old values. They are
+  // still pinned down by the run's own inputs: a dead-site clear's old value
+  // IS the confirmed-dead URL, a seed-adoption flip was ACTIVE by definition,
+  // and everything else was fill-only, so "was empty" is the truth.
+  const deadByClub = new Map(dead.map((d) => [norm(d.club), (d.url || "").trim()]))
   let made = 0
   for (const p of prior.plan) {
+    let from = p.from ?? null
+    if (from == null) {
+      if (p.source === "dead-site-clear") from = deadByClub.get(norm(p.name)) ?? null
+      else if (p.source === "seed-adoption-fix") from = "ACTIVE"
+    }
     await prisma.tenantEnrichment.create({
       data: {
         tenantId: p.id,
         field: p.field,
-        fromValue: null,
+        fromValue: from == null ? null : String(from),
         toValue: p.value == null ? null : String(p.value),
         source: p.source + " (backfilled)",
+        sourceUrl: p.sourceUrl ?? null,
+        confidence: p.confidence ?? null,
         appliedBy: "apply-validated-data",
       },
     })
