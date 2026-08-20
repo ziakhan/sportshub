@@ -35,12 +35,12 @@ which is the current state for all of them.
 wording change lands on every league at once. A fork is how two versions of the
 same pitch start telling different stories.
 
-`/deck/leagues` is the general cut. **NPH is not named anywhere in it**, in the
-copy, in the screenshots, or in the embedded demo. `/deck/nph` is the same
-twenty slides with NPH's league in every screenshot and in the live demo, and
-"Prepared for North Pole Hoops" on the title slide.
+Every deck is the same nineteen slides from one file. Only three things vary:
+which screenshot set, what the embedded demo calls its league, and the name on
+the title slide. **NPH is named nowhere except `/deck/nph`**, verified by
+scanning the rendered text of every slide.
 
-Both are `robots: noindex`. They are for sending, not for finding.
+All of them are `robots: noindex`. They are for sending, not for finding.
 
 ## Using one
 
