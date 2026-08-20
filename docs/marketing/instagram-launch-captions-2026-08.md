@@ -72,9 +72,9 @@ Swap the city tag to match the post. Add `#basketballleague` on 7,
 ## 3 · Five apps and a spreadsheet
 `s1-pain-pills` · **Ask: reply**
 
-> Ask any club how many tools their season runs on. Then watch them count on
-> their fingers.
-> So we built the one that replaces them.
+> Ask any club or league how many tools their season runs on. Then watch them
+> count on their fingers.
+> So we built the one that replaces them all.
 >
 > How many are you using?
 
@@ -134,11 +134,10 @@ Swap the city tag to match the post. Add `#basketballleague` on 7,
 ## 9 · Still taking bookings in your DMs
 `s23-trainer-bookings` · **Ask: reply** · add `#basketballtrainer`
 
-> Every trainer we talk to runs their business out of their DMs. Fifteen of
-> them to sell one hour.
+> Booking one session takes fifteen DMs.
 > Put your real availability on a page and let them pick a time.
 >
-> How many DMs to book one hour?
+> How many DMs to book a session?
 
 ---
 
