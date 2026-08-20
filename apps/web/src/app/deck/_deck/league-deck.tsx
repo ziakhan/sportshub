@@ -747,20 +747,23 @@ export function LeagueDeck({ brand }: { brand: DeckBrand }) {
   const [visits, setVisits] = useState(0)
   const touch = useRef<{ x: number; y: number } | null>(null)
 
-  /* The story is rebuilt per brand so the deck sent to one league never shows
-     another league's name. `tipoff` must stay in the cut: chapter filtering
-     drops beats rather than replaying their state, so without it the table
-     sits on the pre-game checklist while the caption talks about scoring. */
+  /* All five chapters, all 73 beats (owner 2026-08-20).
+   *
+   * It ran three chapters for a while and stopped after "What the family
+   * sees", which is 51 beats in, with the clock on 0:00 and Q4 still open. It
+   * did not read as a trim, it read as broken, and it cut the two moments a
+   * commissioner cares about most: the referee's signature and PIN making the
+   * score official, and the recap writing itself afterwards. The slide loops,
+   * so nobody is ever stuck at the end, and anyone who does not want three
+   * minutes can press Next.
+   *
+   * Rebuilt per brand so the deck sent to one league never shows another
+   * league's name. If this is ever cut down again: chapter filtering DROPS
+   * beats rather than replaying their state, so any cut must open on a beat
+   * that sets its own stage, or the console inherits a screen the viewer
+   * never saw. */
   const script = useRef<DemoScript | null>(null)
-  if (!script.current) {
-    const full = makeGameDayStory(brand.league)
-    const ids = ["tipoff", "scoring", "family"]
-    script.current = {
-      ...full,
-      chapters: full.chapters.filter((c) => ids.includes(c.id)),
-      beats: full.beats.filter((b) => ids.includes(b.chapter)),
-    }
-  }
+  if (!script.current) script.current = makeGameDayStory(brand.league)
 
   const go = useCallback((n: number) => {
     setI((cur) => {
