@@ -39,6 +39,7 @@ interface ClubGroup {
     name: string
     city: string | null
     state: string | null
+    region: string | null
     status: string
     publishedAt: string | null
     mergedIntoId: string | null
@@ -48,6 +49,11 @@ interface ClubGroup {
   rows: EnrichmentRow[]
 }
 
+interface PlaceOption {
+  value: string
+  count: number
+}
+
 interface Payload {
   clubs: ClubGroup[]
   pendingRows: number
@@ -55,7 +61,13 @@ interface Payload {
   shownRows: number
   truncated: boolean
   includeReviewed: boolean
+  provinces: PlaceOption[]
+  regions: PlaceOption[]
+  cities: PlaceOption[]
 }
+
+/** Matches the API's "(no region)" sentinel. */
+const NONE = "__none__"
 
 const FIELD_LABELS: Record<string, string> = {
   name: "Name",
@@ -162,6 +174,10 @@ export function MachineEditsQueue({
    *  rows can each be reviewed as their own pass. null = everything. */
   const [sourceFilter, setSourceFilter] = useState<string | null>(null)
   const [query, setQuery] = useState("")
+  /** Place filters, applied server side, so GTA can be worked as its own pass. */
+  const [province, setProvince] = useState("")
+  const [region, setRegion] = useState("")
+  const [city, setCity] = useState("")
   /** The one row asking "are you sure" right now. */
   const [confirming, setConfirming] = useState<string | null>(null)
   /** The "keep everything shown" button asking "are you sure". */
@@ -173,7 +189,13 @@ export function MachineEditsQueue({
     setLoading(true)
     setError(null)
     try {
-      const res = await fetch(`/api/admin/clubs/enrichments${showAll ? "?all=1" : ""}`)
+      const p = new URLSearchParams()
+      if (showAll) p.set("all", "1")
+      if (province) p.set("province", province)
+      if (region) p.set("region", region)
+      if (city) p.set("city", city)
+      const qs = p.toString()
+      const res = await fetch(`/api/admin/clubs/enrichments${qs ? `?${qs}` : ""}`)
       const json = await res.json()
       if (!res.ok) throw new Error(json.error ?? "Failed to load")
       setData(json)
@@ -183,7 +205,7 @@ export function MachineEditsQueue({
     } finally {
       setLoading(false)
     }
-  }, [showAll, onPendingChange])
+  }, [showAll, province, region, city, onPendingChange])
 
   useEffect(() => {
     void load()
@@ -234,6 +256,15 @@ export function MachineEditsQueue({
       setSourceFilter(null)
     }
   }, [legend, sourceFilter])
+
+  // A changed upstream place filter can strand a narrower one; drop what no
+  // longer exists in the options.
+  useEffect(() => {
+    if (!data) return
+    if (province && !data.provinces.some((o) => o.value === province)) setProvince("")
+    if (region && !data.regions.some((o) => o.value === region)) setRegion("")
+    if (city && !data.cities.some((o) => o.value === city)) setCity("")
+  }, [data, province, region, city])
 
   const visibleClubs = useMemo(() => {
     const q = query.trim().toLowerCase()
@@ -316,9 +347,48 @@ export function MachineEditsQueue({
             type="search"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Find a club by name or city"
-            className="border-ink-200 text-ink-900 placeholder:text-ink-400 focus:border-ink-400 min-w-[220px] flex-1 rounded-lg border bg-white px-3 py-2 text-sm outline-none"
+            placeholder="Find a club by name"
+            className="border-ink-200 text-ink-900 placeholder:text-ink-400 focus:border-ink-400 min-w-[180px] flex-1 rounded-lg border bg-white px-3 py-2 text-sm outline-none"
           />
+          <select
+            value={province}
+            onChange={(e) => setProvince(e.target.value)}
+            aria-label="Province"
+            className="border-ink-200 text-ink-900 cursor-pointer rounded-lg border bg-white px-3 py-2 text-sm outline-none"
+          >
+            <option value="">All provinces</option>
+            {(data?.provinces ?? []).map((o) => (
+              <option key={o.value} value={o.value}>
+                {o.value} ({o.count})
+              </option>
+            ))}
+          </select>
+          <select
+            value={region}
+            onChange={(e) => setRegion(e.target.value)}
+            aria-label="Region"
+            className="border-ink-200 text-ink-900 max-w-[220px] cursor-pointer rounded-lg border bg-white px-3 py-2 text-sm outline-none"
+          >
+            <option value="">All regions</option>
+            {(data?.regions ?? []).map((o) => (
+              <option key={o.value} value={o.value}>
+                {o.value === NONE ? "No region set" : o.value} ({o.count})
+              </option>
+            ))}
+          </select>
+          <select
+            value={city}
+            onChange={(e) => setCity(e.target.value)}
+            aria-label="City"
+            className="border-ink-200 text-ink-900 max-w-[200px] cursor-pointer rounded-lg border bg-white px-3 py-2 text-sm outline-none"
+          >
+            <option value="">All cities</option>
+            {(data?.cities ?? []).map((o) => (
+              <option key={o.value} value={o.value}>
+                {o.value} ({o.count})
+              </option>
+            ))}
+          </select>
           <label className="flex items-center gap-2">
             <span className="text-ink-500 text-xs font-semibold">Show</span>
             <select
@@ -379,7 +449,7 @@ export function MachineEditsQueue({
             : ""}
           Showing {visibleClubs.length} {visibleClubs.length === 1 ? "club" : "clubs"} ·{" "}
           {shownPendingIds.length} still to check
-          {sourceFilter || query ? (
+          {sourceFilter || query || province || region || city ? (
             <>
               {" · "}
               <button
@@ -387,6 +457,9 @@ export function MachineEditsQueue({
                 onClick={() => {
                   setSourceFilter(null)
                   setQuery("")
+                  setProvince("")
+                  setRegion("")
+                  setCity("")
                 }}
                 className="text-play-600 cursor-pointer underline"
               >
@@ -426,6 +499,9 @@ export function MachineEditsQueue({
                   onClick={() => {
                     setQuery("")
                     setSourceFilter(null)
+                    setProvince("")
+                    setRegion("")
+                    setCity("")
                   }}
                   className="text-play-600 cursor-pointer underline"
                 >
@@ -469,7 +545,8 @@ export function MachineEditsQueue({
                   <div className="text-ink-500 mt-0.5 text-xs">
                     {group.club.city && `${group.club.city}`}
                     {group.club.state && `, ${group.club.state}`}
-                    {(group.club.city || group.club.state) && " · "}
+                    {group.club.region && ` · ${group.club.region}`}
+                    {(group.club.city || group.club.state || group.club.region) && " · "}
                     {waiting > 0
                       ? `${waiting} waiting`
                       : `${group.rows.length} already looked at`}

@@ -110,16 +110,40 @@ const CLUB_SELECT = {
   name: true,
   city: true,
   state: true,
+  region: true,
   status: true,
   publishedAt: true,
   mergedIntoId: true,
 } as const
+
+/** "(no region)" in the select: the sentinel filters clubs where the value is null. */
+const NONE = "__none__"
 
 export const GET = withAuth<NextRequest>(async (request, _ctx, session) => {
   requirePlatformAdmin(session)
 
   const sp = request.nextUrl.searchParams
   const includeReviewed = sp.get("all") === "1"
+  const province = (sp.get("province") ?? "").trim()
+  const region = (sp.get("region") ?? "").trim()
+  const city = (sp.get("city") ?? "").trim()
+
+  // Region-by-region review (owner 2026-08-20): the same place filters as the
+  // clubs page, applied server side so the view stays true past the row cap.
+  const tenantFilter =
+    province || region || city
+      ? {
+          tenant: {
+            ...(province ? { state: { equals: province, mode: "insensitive" as const } } : {}),
+            ...(region
+              ? region === NONE
+                ? { region: null }
+                : { region: { equals: region, mode: "insensitive" as const } }
+              : {}),
+            ...(city ? { city: { equals: city, mode: "insensitive" as const } } : {}),
+          },
+        }
+      : {}
 
   const [pendingRows, pendingClubGroups] = await Promise.all([
     prisma.tenantEnrichment.count({ where: { reviewedAt: null } }),
@@ -137,13 +161,54 @@ export const GET = withAuth<NextRequest>(async (request, _ctx, session) => {
   }
 
   const rows = await prisma.tenantEnrichment.findMany({
-    where: includeReviewed ? {} : { reviewedAt: null },
+    where: { ...(includeReviewed ? {} : { reviewedAt: null }), ...tenantFilter },
     // Field breaks the tie so a pair written in the same run (latitude and
     // longitude) always lands the same way up.
     orderBy: [{ appliedAt: "desc" }, { field: "asc" }],
     take: ROW_LIMIT,
     include: { tenant: { select: CLUB_SELECT } },
   })
+
+  // Filter options with club counts, each list counted under the OTHER two
+  // active filters so the numbers always match what picking it would show.
+  const optTenants = await prisma.tenant.findMany({
+    where: { enrichments: { some: includeReviewed ? {} : { reviewedAt: null } } },
+    select: { state: true, region: true, city: true },
+  })
+  const eq = (a: string | null, b: string) =>
+    b === NONE ? a == null : (a ?? "").toLowerCase() === b.toLowerCase()
+  const tally = (
+    pick: (t: { state: string | null; region: string | null; city: string | null }) => string | null,
+    applies: (t: { state: string | null; region: string | null; city: string | null }) => boolean,
+    includeNone = false
+  ) => {
+    const counts = new Map<string, number>()
+    let none = 0
+    for (const t of optTenants) {
+      if (!applies(t)) continue
+      const v = pick(t)
+      if (v) counts.set(v, (counts.get(v) ?? 0) + 1)
+      else none++
+    }
+    const list = [...counts.entries()]
+      .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+      .map(([value, count]) => ({ value, count }))
+    if (includeNone && none > 0) list.push({ value: NONE, count: none })
+    return list
+  }
+  const provinces = tally(
+    (t) => t.state,
+    (t) => (!region || eq(t.region, region)) && (!city || eq(t.city, city))
+  )
+  const regions = tally(
+    (t) => t.region,
+    (t) => (!province || eq(t.state, province)) && (!city || eq(t.city, city)),
+    true
+  )
+  const cities = tally(
+    (t) => t.city,
+    (t) => (!province || eq(t.state, province)) && (!region || eq(t.region, region))
+  )
 
   // Who signed each reviewed row off, in the names an admin recognises.
   const reviewerIds = [...new Set(rows.map((r) => r.reviewedById).filter(Boolean))] as string[]
@@ -214,6 +279,9 @@ export const GET = withAuth<NextRequest>(async (request, _ctx, session) => {
     shownRows: rows.length,
     truncated: rows.length === ROW_LIMIT,
     includeReviewed,
+    provinces,
+    regions,
+    cities,
   })
 })
 

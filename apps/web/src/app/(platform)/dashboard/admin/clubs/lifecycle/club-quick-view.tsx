@@ -300,7 +300,7 @@ export function ClubQuickView({
             <span className="text-ink-400 text-sm italic">empty</span>
           )}
         </div>
-        {prov && (
+        {prov ? (
           <span className="flex shrink-0 items-center gap-1.5">
             <span title={`${shortDate(prov.appliedAt)} by ${prov.appliedBy}${prov.confidence ? `, ${prov.confidence} confidence` : ""}`}>
               <Badge tone={sourceChip(prov.source).tone}>{sourceChip(prov.source).label}</Badge>
@@ -316,7 +316,16 @@ export function ClubQuickView({
               </a>
             )}
           </span>
-        )}
+        ) : value ? (
+          <span
+            className="shrink-0"
+            title={`Came in with the original import${
+              club?.dataSources ? ` (datasets: ${club.dataSources})` : ""
+            }. Which dataset filled this exact field was not recorded.`}
+          >
+            <Badge tone="neutral">import</Badge>
+          </span>
+        ) : null}
       </div>
     )
   }
