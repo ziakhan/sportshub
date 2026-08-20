@@ -83,7 +83,20 @@ const conflicts = []
 const misses = []
 
 /** Placeholder/premium patterns caught in review (900-900-9009 was in the
- *  sheets): reject 900/976 area codes, short numbers, and digit wallpaper. */
+ *  sheets): reject 900/976 area codes, short numbers, and digit wallpaper.
+ *  Also require a Canadian (or toll-free) area code: a US number on a
+ *  Canadian youth club is a wrong-owner tell (812-xxx Indiana slipped
+ *  through a discovery batch). */
+const CANADIAN_AREA_CODES = new Set([
+  "204", "226", "236", "249", "250", "257", "263", "289", "306", "343",
+  "354", "365", "367", "368", "382", "403", "416", "418", "428", "431",
+  "437", "438", "450", "468", "474", "506", "514", "519", "548", "579",
+  "581", "584", "587", "604", "613", "639", "647", "672", "683", "705",
+  "709", "742", "753", "778", "780", "782", "807", "819", "825", "867",
+  "873", "879", "902", "905",
+  // toll-free, legitimate for clubs
+  "800", "833", "844", "855", "866", "877", "888",
+])
 function phoneSane(v) {
   const d = (v || "").replace(/\D/g, "").replace(/^1/, "")
   if (d.length !== 10) return false
@@ -91,6 +104,7 @@ function phoneSane(v) {
   if (/^(\d)\1{9}$/.test(d)) return false
   if (/^55501/.test(d.slice(3))) return false
   if (new Set(d).size <= 2) return false
+  if (!CANADIAN_AREA_CODES.has(d.slice(0, 3))) return false
   return true
 }
 

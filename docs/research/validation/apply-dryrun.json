@@ -1,10 +1,10 @@
 {
-  "when": "2026-08-20T03:02:09.469Z",
+  "when": "2026-08-20T05:38:35.131Z",
   "mode": "dry",
   "byField": {
-    "contactEmail": 14,
-    "website": 77,
-    "phoneNumber": 45,
+    "contactEmail": 75,
+    "website": 209,
+    "phoneNumber": 76,
     "status": 2
   },
   "plan": [
@@ -13,6 +13,7 @@
       "name": "C.O.D.E Academy",
       "field": "contactEmail",
       "value": "info@codeprep.ca",
+      "from": null,
       "source": "edits"
     },
     {
@@ -20,6 +21,7 @@
       "name": "C.O.D.E Academy",
       "field": "website",
       "value": "https://codeprep.ca",
+      "from": null,
       "source": "edits"
     },
     {
@@ -27,6 +29,7 @@
       "name": "Cali Prep",
       "field": "website",
       "value": "https://caliprepacademy.com",
+      "from": null,
       "source": "edits"
     },
     {
@@ -34,6 +37,7 @@
       "name": "Elton Academy",
       "field": "contactEmail",
       "value": "info@eltonacademy.ca",
+      "from": null,
       "source": "edits"
     },
     {
@@ -41,6 +45,7 @@
       "name": "Elton Academy",
       "field": "phoneNumber",
       "value": "9057310505",
+      "from": null,
       "source": "edits"
     },
     {
@@ -48,6 +53,7 @@
       "name": "Elton Academy",
       "field": "website",
       "value": "https://eltonacademy.ca/rep-basketball-program/",
+      "from": null,
       "source": "edits"
     },
     {
@@ -55,6 +61,7 @@
       "name": "Uchenna Academy",
       "field": "contactEmail",
       "value": "info@uchenna.ca",
+      "from": null,
       "source": "edits"
     },
     {
@@ -62,13 +69,7 @@
       "name": "Christian Youth Basketball League (CYBL)",
       "field": "phoneNumber",
       "value": "705-702-2502",
-      "source": "verified-scrape"
-    },
-    {
-      "id": "99fea506-5540-43bd-ba11-2d7ff986cb88",
-      "name": "BC United Basketball Club",
-      "field": "phoneNumber",
-      "value": "812-990-0837",
+      "from": null,
       "source": "verified-scrape"
     },
     {
@@ -76,6 +77,7 @@
       "name": "Centre communautaire récréatif Saint-Jean-Baptiste (CCRSJB), Mini-basket",
       "field": "phoneNumber",
       "value": "819-477-4475",
+      "from": null,
       "source": "verified-scrape"
     },
     {
@@ -83,6 +85,7 @@
       "name": "Downtown's Finest",
       "field": "contactEmail",
       "value": "info@downtownsfinest.ca",
+      "from": null,
       "source": "verified-scrape"
     },
     {
@@ -90,13 +93,7 @@
       "name": "Bulkley Valley Basketball Society",
       "field": "phoneNumber",
       "value": "250-877-9537",
-      "source": "verified-scrape"
-    },
-    {
-      "id": "45c1028f-0921-4038-bfd0-fae17e01ee8f",
-      "name": "Hamilton Transway Basketball",
-      "field": "phoneNumber",
-      "value": "810-287-0562",
+      "from": null,
       "source": "verified-scrape"
     },
     {
@@ -104,6 +101,7 @@
       "name": "Island Swish",
       "field": "phoneNumber",
       "value": "250-327-2416",
+      "from": null,
       "source": "verified-scrape"
     },
     {
@@ -111,6 +109,7 @@
       "name": "Junior Royals Basketball Club (Selkirk)",
       "field": "phoneNumber",
       "value": "204-925-5775",
+      "from": null,
       "source": "verified-scrape"
     },
     {
@@ -118,6 +117,7 @@
       "name": "LIFT AAU Basketball",
       "field": "contactEmail",
       "value": "info@letitflybasketball.com",
+      "from": null,
       "source": "verified-scrape"
     },
     {
@@ -125,20 +125,7 @@
       "name": "Albany Avenue Basketball",
       "field": "phoneNumber",
       "value": "416-844-0131",
-      "source": "verified-scrape"
-    },
-    {
-      "id": "03736de1-965f-4895-8240-88475182cf82",
-      "name": "Legacy Athletics / ITD Panthers Basketball Club",
-      "field": "phoneNumber",
-      "value": "907-815-6314",
-      "source": "verified-scrape"
-    },
-    {
-      "id": "6f845950-8b05-46bd-8900-bb69cd44ea2c",
-      "name": "Junior Bears Basketball Club (University of Alberta)",
-      "field": "phoneNumber",
-      "value": "326-471-3741",
+      "from": null,
       "source": "verified-scrape"
     },
     {
@@ -146,6 +133,7 @@
       "name": "GTA Mavericks",
       "field": "contactEmail",
       "value": "info@gtamavericks.ca",
+      "from": null,
       "source": "verified-scrape"
     },
     {
@@ -153,6 +141,7 @@
       "name": "Little Hoopers (New Tecumseth Jr NBA Basketball Program)",
       "field": "phoneNumber",
       "value": "416-616-2514",
+      "from": null,
       "source": "verified-scrape"
     },
     {
@@ -160,6 +149,7 @@
       "name": "Medicine Hat Golden Hawks Basketball Club",
       "field": "phoneNumber",
       "value": "403-878-7369",
+      "from": null,
       "source": "verified-scrape"
     },
     {
@@ -167,13 +157,7 @@
       "name": "Mini Indigo / Relève Indigo (Cégep de Granby)",
       "field": "phoneNumber",
       "value": "450-372-6614",
-      "source": "verified-scrape"
-    },
-    {
-      "id": "6d9c7410-0e5e-4b3a-8d0c-85584bd2630a",
-      "name": "Markham-Stouffville Basketball Academy (MSBA STORM)",
-      "field": "phoneNumber",
-      "value": "254-535-2419",
+      "from": null,
       "source": "verified-scrape"
     },
     {
@@ -181,6 +165,7 @@
       "name": "Next Generation Athletics",
       "field": "phoneNumber",
       "value": "604-300-0669",
+      "from": null,
       "source": "verified-scrape"
     },
     {
@@ -188,20 +173,7 @@
       "name": "N.W. Sports Club Society (Ballers Basketball)",
       "field": "phoneNumber",
       "value": "778-987-8116",
-      "source": "verified-scrape"
-    },
-    {
-      "id": "ab74dc0a-a559-469f-8e09-d26979f7ddf1",
-      "name": "Next Generation Basketball",
-      "field": "phoneNumber",
-      "value": "906-504-1151",
-      "source": "verified-scrape"
-    },
-    {
-      "id": "cab18be0-e8b5-458c-8630-0d21fda07917",
-      "name": "Northstar Basketball (Northstar Sports Foundation)",
-      "field": "phoneNumber",
-      "value": "643-961-3626",
+      "from": null,
       "source": "verified-scrape"
     },
     {
@@ -209,6 +181,7 @@
       "name": "Gloucester Cumberland Basketball Association (Wolverines)",
       "field": "phoneNumber",
       "value": "613-834-2178",
+      "from": null,
       "source": "verified-scrape"
     },
     {
@@ -216,6 +189,7 @@
       "name": "Oakville Recreational Basketball League (ORBL)",
       "field": "phoneNumber",
       "value": "905-815-6177",
+      "from": null,
       "source": "verified-scrape"
     },
     {
@@ -223,6 +197,7 @@
       "name": "Northern Trailblazers Basketball Association",
       "field": "contactEmail",
       "value": "rachel@northerntrailblazers.com",
+      "from": null,
       "source": "verified-scrape"
     },
     {
@@ -230,6 +205,7 @@
       "name": "BGC Peel (Boys and Girls Club of Peel)",
       "field": "phoneNumber",
       "value": "905-712-1789",
+      "from": null,
       "source": "verified-scrape"
     },
     {
@@ -237,6 +213,7 @@
       "name": "Northern Kings",
       "field": "phoneNumber",
       "value": "833-937-4667",
+      "from": null,
       "source": "verified-scrape"
     },
     {
@@ -244,13 +221,7 @@
       "name": "BGC Peel (Boys and Girls Club of Peel)",
       "field": "contactEmail",
       "value": "info@bgcpeel.org",
-      "source": "verified-scrape"
-    },
-    {
-      "id": "245b27e3-0225-462f-a45f-929fe58713fd",
-      "name": "Roots Sports Club",
-      "field": "phoneNumber",
-      "value": "788-376-3113",
+      "from": null,
       "source": "verified-scrape"
     },
     {
@@ -258,6 +229,7 @@
       "name": "Pictou County Raptors Basketball Association",
       "field": "phoneNumber",
       "value": "902-425-5450",
+      "from": null,
       "source": "verified-scrape"
     },
     {
@@ -265,6 +237,7 @@
       "name": "Prédateurs NDL (Collège Notre-Dame-de-Lourdes)",
       "field": "phoneNumber",
       "value": "450-670-4740",
+      "from": null,
       "source": "verified-scrape"
     },
     {
@@ -272,20 +245,7 @@
       "name": "Shoot 360 Regina",
       "field": "phoneNumber",
       "value": "306-559-7360",
-      "source": "verified-scrape"
-    },
-    {
-      "id": "68ffb987-1fb0-4588-b465-51540f09c577",
-      "name": "Red Deer Minor Basketball Association (RDMBA)",
-      "field": "phoneNumber",
-      "value": "235-294-1176",
-      "source": "verified-scrape"
-    },
-    {
-      "id": "e1b4daee-852d-4c61-b5cd-edb527d0c9c9",
-      "name": "South Delta Basketball Association (SDBA)",
-      "field": "phoneNumber",
-      "value": "777-655-9005",
+      "from": null,
       "source": "verified-scrape"
     },
     {
@@ -293,6 +253,7 @@
       "name": "Rothesay Netherwood School",
       "field": "contactEmail",
       "value": "info@rns.cc",
+      "from": null,
       "source": "verified-scrape"
     },
     {
@@ -300,13 +261,7 @@
       "name": "RUMI Basketball",
       "field": "contactEmail",
       "value": "director@rumibasketball.com",
-      "source": "verified-scrape"
-    },
-    {
-      "id": "f4d82804-180b-4a76-bcfc-8bfb9ce646f3",
-      "name": "The Basketball Club",
-      "field": "phoneNumber",
-      "value": "201-525-4195",
+      "from": null,
       "source": "verified-scrape"
     },
     {
@@ -314,6 +269,7 @@
       "name": "Toronto Chinese Basketball Association (TCBL/TCBA)",
       "field": "phoneNumber",
       "value": "416-450-0826",
+      "from": null,
       "source": "verified-scrape"
     },
     {
@@ -321,6 +277,7 @@
       "name": "St. Benedicts",
       "field": "contactEmail",
       "value": "sben.attendance@wcdsb.ca",
+      "from": null,
       "source": "verified-scrape"
     },
     {
@@ -328,6 +285,7 @@
       "name": "No Limits Youth Organization (Basketball)",
       "field": "phoneNumber",
       "value": "613-922-3613",
+      "from": null,
       "source": "verified-scrape"
     },
     {
@@ -335,6 +293,7 @@
       "name": "No Limits Youth Organization (Basketball)",
       "field": "contactEmail",
       "value": "info@nolimitsyouth.ca",
+      "from": null,
       "source": "verified-scrape"
     },
     {
@@ -342,6 +301,7 @@
       "name": "JoooKooo Sports Academy",
       "field": "phoneNumber",
       "value": "647-243-6859",
+      "from": null,
       "source": "verified-scrape"
     },
     {
@@ -349,6 +309,7 @@
       "name": "Underground Basketball Academy Inc.",
       "field": "phoneNumber",
       "value": "825-973-9909",
+      "from": null,
       "source": "verified-scrape"
     },
     {
@@ -356,6 +317,7 @@
       "name": "Winnipeg Wolves Basketball Club",
       "field": "phoneNumber",
       "value": "204-509-3793",
+      "from": null,
       "source": "verified-scrape"
     },
     {
@@ -363,6 +325,7 @@
       "name": "RUMI Basketball",
       "field": "phoneNumber",
       "value": "905-767-0399",
+      "from": null,
       "source": "verified-scrape"
     },
     {
@@ -370,6 +333,7 @@
       "name": "Warman Wolves Basketball Club",
       "field": "phoneNumber",
       "value": "306-933-2133",
+      "from": null,
       "source": "verified-scrape"
     },
     {
@@ -377,6 +341,7 @@
       "name": "Wolves Athletic Club (Jr. Wolves Basketball / Free Play for Kids)",
       "field": "phoneNumber",
       "value": "825-901-0484",
+      "from": null,
       "source": "verified-scrape"
     },
     {
@@ -384,6 +349,7 @@
       "name": "West Richmond Summer Slam",
       "field": "phoneNumber",
       "value": "604-238-8400",
+      "from": null,
       "source": "verified-scrape"
     },
     {
@@ -391,6 +357,7 @@
       "name": "Whitecourt Wolves Community Basketball League (Whitecourt Community Youth Basketball)",
       "field": "phoneNumber",
       "value": "780-778-3637",
+      "from": null,
       "source": "verified-scrape"
     },
     {
@@ -398,6 +365,7 @@
       "name": "University Settlement Basketball",
       "field": "contactEmail",
       "value": "fitness@universitysettlement.ca",
+      "from": null,
       "source": "verified-scrape"
     },
     {
@@ -405,6 +373,7 @@
       "name": "Woodbridge Basketball Association",
       "field": "phoneNumber",
       "value": "905-851-9444",
+      "from": null,
       "source": "verified-scrape"
     },
     {
@@ -412,6 +381,7 @@
       "name": "Shuswap Hoops Basketball Club",
       "field": "phoneNumber",
       "value": "250-832-6031",
+      "from": null,
       "source": "verified-scrape"
     },
     {
@@ -419,6 +389,7 @@
       "name": "École secondaire Saint-Gabriel (CSSMI)",
       "field": "contactEmail",
       "value": "saint-gabriel@cssmi.qc.ca",
+      "from": null,
       "source": "verified-scrape"
     },
     {
@@ -426,6 +397,7 @@
       "name": "YM-YWHA Wolves",
       "field": "phoneNumber",
       "value": "514-737-6551",
+      "from": null,
       "source": "verified-scrape"
     },
     {
@@ -433,6 +405,7 @@
       "name": "YMCA of Fredericton, Youth Basketball (Jr. NBA)",
       "field": "phoneNumber",
       "value": "506-462-3000",
+      "from": null,
       "source": "verified-scrape"
     },
     {
@@ -440,27 +413,2385 @@
       "name": "Escadron Basketball",
       "field": "phoneNumber",
       "value": "450-662-7000",
+      "from": null,
       "source": "verified-scrape"
     },
     {
-      "id": "4d976334-fe20-43c9-a361-f297b66101bf",
-      "name": "22 Wing Fitness & Wellness Centre",
-      "field": "website",
-      "value": null,
-      "source": "dead-site-clear"
+      "id": "7ebe3f26-e760-482a-8e97-87242e4bda27",
+      "name": "EK Hoops Training",
+      "field": "contactEmail",
+      "value": "ekhoopstraining@gmail.com",
+      "from": null,
+      "source": "discovered(high)",
+      "sourceUrl": "https://www.ekhoopstraining.com/",
+      "confidence": "high"
     },
     {
-      "id": "06c593a6-9fea-4c72-a2f3-182c5555b833",
-      "name": "416 United",
+      "id": "7526167b-c20b-4cd3-8819-7ee7e6dbf19e",
+      "name": "Falcons Basketball Club",
       "field": "website",
-      "value": null,
-      "source": "dead-site-clear"
+      "value": "https://playsport.com/falconsbasketballclub_ag_1a1cd73e",
+      "from": null,
+      "source": "discovered(medium)",
+      "sourceUrl": "https://playsport.com/falconsbasketballclub_ag_1a1cd73e/contact",
+      "confidence": "medium"
+    },
+    {
+      "id": "7526167b-c20b-4cd3-8819-7ee7e6dbf19e",
+      "name": "Falcons Basketball Club",
+      "field": "contactEmail",
+      "value": "ellmason14@gmail.com",
+      "from": null,
+      "source": "discovered(medium)",
+      "sourceUrl": "https://playsport.com/falconsbasketballclub_ag_1a1cd73e/contact",
+      "confidence": "medium"
+    },
+    {
+      "id": "7526167b-c20b-4cd3-8819-7ee7e6dbf19e",
+      "name": "Falcons Basketball Club",
+      "field": "phoneNumber",
+      "value": "6046443013",
+      "from": null,
+      "source": "discovered(medium)",
+      "sourceUrl": "https://playsport.com/falconsbasketballclub_ag_1a1cd73e/contact",
+      "confidence": "medium"
+    },
+    {
+      "id": "9be44e81-ef8c-4f0b-9483-dc6d6b3d962e",
+      "name": "Inspire Basketball Club",
+      "field": "contactEmail",
+      "value": "inspirebasketballclub@gmail.com",
+      "from": null,
+      "source": "discovered(medium)",
+      "sourceUrl": "https://www.instagram.com/inspire_basketball_club/",
+      "confidence": "medium"
+    },
+    {
+      "id": "a0272e43-9717-4d97-ae64-bd125f04a493",
+      "name": "JR Basketball Club",
+      "field": "contactEmail",
+      "value": "info@jrbasketball.ca",
+      "from": null,
+      "source": "discovered(high)",
+      "sourceUrl": "https://www.jrbasketball.ca/",
+      "confidence": "high"
+    },
+    {
+      "id": "7516c6cb-3bf9-4409-9f8d-8bbcde83aef7",
+      "name": "South Cariboo Basketball Association",
+      "field": "website",
+      "value": "https://www.instagram.com/southcariboobasketball/",
+      "from": null,
+      "source": "discovered(high)",
+      "sourceUrl": "https://www.instagram.com/southcariboobasketball/",
+      "confidence": "high"
+    },
+    {
+      "id": "f8cacf54-dbe5-452a-98f4-0c9fd179620b",
+      "name": "Super Senior Elite",
+      "field": "website",
+      "value": "https://www.instagram.com/superseniorelite/",
+      "from": null,
+      "source": "discovered(medium)",
+      "sourceUrl": "https://clearwatertimes.com/2025/08/18/cariboo-based-u18-basketball-team-beats-out-bigger-cities/",
+      "confidence": "medium"
+    },
+    {
+      "id": "ee8c14f2-69ef-4c8a-80f6-2b396e8969c8",
+      "name": "The Watchman Academy",
+      "field": "website",
+      "value": "https://www.instagram.com/thewatchman_academy/",
+      "from": null,
+      "source": "discovered(medium)",
+      "sourceUrl": "https://www.instagram.com/thewatchman_academy/",
+      "confidence": "medium"
+    },
+    {
+      "id": "f8dd9ad8-50d2-4868-bea9-97338370c8f8",
+      "name": "Vancity Prep Basketball",
+      "field": "website",
+      "value": "https://www.instagram.com/vancityprep/",
+      "from": null,
+      "source": "discovered(medium)",
+      "sourceUrl": "https://www.instagram.com/vancityprep/",
+      "confidence": "medium"
+    },
+    {
+      "id": "b62242b8-9590-43f3-9f1d-bfdacfe4b276",
+      "name": "West Coast Swish Basketball",
+      "field": "website",
+      "value": "https://www.instagram.com/westcoastswishbball/",
+      "from": null,
+      "source": "discovered(medium)",
+      "sourceUrl": "https://www.instagram.com/westcoastswishbball/",
+      "confidence": "medium"
+    },
+    {
+      "id": "b262d531-d16e-4db5-8229-87178c80045f",
+      "name": "West Coast Training",
+      "field": "contactEmail",
+      "value": "admin@wcthoops.com",
+      "from": null,
+      "source": "discovered(high)",
+      "sourceUrl": "https://www.wcthoops.com/",
+      "confidence": "high"
+    },
+    {
+      "id": "b262d531-d16e-4db5-8229-87178c80045f",
+      "name": "West Coast Training",
+      "field": "phoneNumber",
+      "value": "604-445-2890",
+      "from": null,
+      "source": "discovered(high)",
+      "sourceUrl": "https://www.wcthoops.com/",
+      "confidence": "high"
+    },
+    {
+      "id": "93248741-b27a-48ab-9362-9ee428c6019c",
+      "name": "Ambush Club Basketball",
+      "field": "website",
+      "value": "https://www.facebook.com/p/Ambush-Club-Basketball-100091643561932/",
+      "from": null,
+      "source": "discovered(medium)",
+      "sourceUrl": "https://www.facebook.com/p/Ambush-Club-Basketball-100091643561932/",
+      "confidence": "medium"
+    },
+    {
+      "id": "def85412-3a87-4536-b525-a68e8b4239af",
+      "name": "Attack South Basketball Club",
+      "field": "website",
+      "value": "https://www.instagram.com/attacksouth/",
+      "from": null,
+      "source": "discovered(medium)",
+      "sourceUrl": "https://www.instagram.com/attacksouth/",
+      "confidence": "medium"
+    },
+    {
+      "id": "23ee7b79-301d-4ad5-88b0-c1d64dcc2560",
+      "name": "Blacktop Basketball Club",
+      "field": "website",
+      "value": "https://www.instagram.com/blacktopbasketball204/",
+      "from": null,
+      "source": "discovered(medium)",
+      "sourceUrl": "https://www.instagram.com/blacktopbasketball204/",
+      "confidence": "medium"
+    },
+    {
+      "id": "a25031e8-b90b-4321-ba2b-099023e98986",
+      "name": "Central Plains Basketball Club",
+      "field": "website",
+      "value": "https://www.instagram.com/centralplainsbasketballclub/",
+      "from": null,
+      "source": "discovered(high)",
+      "sourceUrl": "https://www.instagram.com/centralplainsbasketballclub/",
+      "confidence": "high"
+    },
+    {
+      "id": "16a611b3-6be5-451a-ade0-e4363d9c5e11",
+      "name": "Chiefs Basketball (IRTC Chiefs)",
+      "field": "website",
+      "value": "https://irtc.ca/community-champions-irtc-chiefs-win-the-battle-for-turtle-island/",
+      "from": null,
+      "source": "discovered(high)",
+      "sourceUrl": "https://irtc.ca/community-champions-irtc-chiefs-win-the-battle-for-turtle-island/",
+      "confidence": "high"
+    },
+    {
+      "id": "16a611b3-6be5-451a-ade0-e4363d9c5e11",
+      "name": "Chiefs Basketball (IRTC Chiefs)",
+      "field": "phoneNumber",
+      "value": "204-956-7413",
+      "from": null,
+      "source": "discovered(high)",
+      "sourceUrl": "https://irtc.ca/community-champions-irtc-chiefs-win-the-battle-for-turtle-island/",
+      "confidence": "high"
+    },
+    {
+      "id": "df374259-eb4e-45c4-8e5f-06eb978a5827",
+      "name": "DElite Basketball",
+      "field": "website",
+      "value": "https://www.instagram.com/delite_basketball/",
+      "from": null,
+      "source": "discovered(medium)",
+      "sourceUrl": "https://www.instagram.com/delite_basketball/",
+      "confidence": "medium"
+    },
+    {
+      "id": "ac5737cb-83af-40b3-a9dc-323e83ef9b42",
+      "name": "Downtown Dawgs",
+      "field": "website",
+      "value": "https://www.instagram.com/dtdawgs204/",
+      "from": null,
+      "source": "discovered(high)",
+      "sourceUrl": "https://www.instagram.com/dtdawgs204/",
+      "confidence": "high"
+    },
+    {
+      "id": "6bdfcd6d-5353-45c4-88fb-6dac5881f971",
+      "name": "Dynasty Basketball",
+      "field": "website",
+      "value": "https://www.instagram.com/dynastywpg/",
+      "from": null,
+      "source": "discovered(medium)",
+      "sourceUrl": "https://www.instagram.com/dynastywpg/",
+      "confidence": "medium"
+    },
+    {
+      "id": "1a644694-7797-4f2a-9ca0-91802a3f9b84",
+      "name": "Empire Basketball Club (Empire / Empire Elite)",
+      "field": "website",
+      "value": "https://www.instagram.com/empire.hoops/",
+      "from": null,
+      "source": "discovered(high)",
+      "sourceUrl": "https://www.instagram.com/empire.hoops/",
+      "confidence": "high"
+    },
+    {
+      "id": "1a644694-7797-4f2a-9ca0-91802a3f9b84",
+      "name": "Empire Basketball Club (Empire / Empire Elite)",
+      "field": "phoneNumber",
+      "value": "431-999-7282",
+      "from": null,
+      "source": "discovered(high)",
+      "sourceUrl": "https://www.instagram.com/empire.hoops/",
+      "confidence": "high"
+    },
+    {
+      "id": "5f615107-3d97-4973-9d14-c2f5698da3d6",
+      "name": "Mastery Basketball Club",
+      "field": "website",
+      "value": "https://www.instagram.com/masterybasketball/",
+      "from": null,
+      "source": "discovered(medium)",
+      "sourceUrl": "https://www.instagram.com/masterybasketball/",
+      "confidence": "medium"
+    },
+    {
+      "id": "90b8396b-4b15-4903-b38c-fd8d94a502df",
+      "name": "Rising Star Basketball Club",
+      "field": "website",
+      "value": "https://www.instagram.com/risingstarwpg/",
+      "from": null,
+      "source": "discovered(medium)",
+      "sourceUrl": "https://www.instagram.com/risingstarwpg/",
+      "confidence": "medium"
+    },
+    {
+      "id": "b2f4bc93-8098-4fde-9647-cf14cde4b416",
+      "name": "SUMMIT Basketball",
+      "field": "website",
+      "value": "https://www.instagram.com/summit.wpg/",
+      "from": null,
+      "source": "discovered(medium)",
+      "sourceUrl": "https://www.instagram.com/summit.wpg/",
+      "confidence": "medium"
+    },
+    {
+      "id": "1081dcd1-4d23-428f-878e-9aa9efdbd758",
+      "name": "Unite Basketball",
+      "field": "website",
+      "value": "https://www.instagram.com/unitebasketball.wpg/",
+      "from": null,
+      "source": "discovered(medium)",
+      "sourceUrl": "https://www.instagram.com/unitebasketball.wpg/",
+      "confidence": "medium"
+    },
+    {
+      "id": "072f3079-d52c-4869-a334-f35656c405dd",
+      "name": "Westside Basketball Club",
+      "field": "website",
+      "value": "https://www.instagram.com/westsidebasketballmb/",
+      "from": null,
+      "source": "discovered(medium)",
+      "sourceUrl": "https://www.instagram.com/westsidebasketballmb/",
+      "confidence": "medium"
+    },
+    {
+      "id": "e82b4ee6-a52a-4b64-9f89-54f7a8317b01",
+      "name": "Winnipeg Saints",
+      "field": "website",
+      "value": "https://www.instagram.com/wpgsaints/",
+      "from": null,
+      "source": "discovered(medium)",
+      "sourceUrl": "https://www.instagram.com/wpgsaints/",
+      "confidence": "medium"
+    },
+    {
+      "id": "87ae5e52-f93a-4051-85a4-e7e34391c8b2",
+      "name": "Acadie Basketball",
+      "field": "website",
+      "value": "https://www.facebook.com/profile.php/?id=61587563879058",
+      "from": null,
+      "source": "discovered(medium)",
+      "sourceUrl": "https://www.facebook.com/profile.php/?id=61587563879058",
+      "confidence": "medium"
+    },
+    {
+      "id": "4073b383-2c6e-4146-81fa-fd0411f1e638",
+      "name": "Carleton County Elite",
+      "field": "website",
+      "value": "https://www.instagram.com/carleton_county_elite/",
+      "from": null,
+      "source": "discovered(high)",
+      "sourceUrl": "https://www.instagram.com/carleton_county_elite/",
+      "confidence": "high"
+    },
+    {
+      "id": "4073b383-2c6e-4146-81fa-fd0411f1e638",
+      "name": "Carleton County Elite",
+      "field": "contactEmail",
+      "value": "Cooperjgjones@gmail.com",
+      "from": null,
+      "source": "discovered(high)",
+      "sourceUrl": "https://www.instagram.com/carleton_county_elite/",
+      "confidence": "high"
+    },
+    {
+      "id": "bafa3449-7a67-410f-b82d-a47a83c13f76",
+      "name": "Grand Falls Minor Basketball Association",
+      "field": "website",
+      "value": "https://www.facebook.com/GrandFallsMiniBasketBall/",
+      "from": null,
+      "source": "discovered(medium)",
+      "sourceUrl": "https://www.facebook.com/GrandFallsMiniBasketBall/",
+      "confidence": "medium"
+    },
+    {
+      "id": "8a05c411-3723-4f60-a6da-97fc57d342a7",
+      "name": "Central Female Basketball",
+      "field": "website",
+      "value": "https://www.facebook.com/profile.php/?id=61556452495419",
+      "from": null,
+      "source": "discovered(low)",
+      "sourceUrl": "https://www.facebook.com/profile.php/?id=61556452495419",
+      "confidence": "low"
+    },
+    {
+      "id": "766ea9f2-c545-4c23-ad46-e4b3016343fb",
+      "name": "Central Wolves",
+      "field": "website",
+      "value": "https://www.facebook.com/groups/24588496334104700/",
+      "from": null,
+      "source": "discovered(low)",
+      "sourceUrl": "https://www.facebook.com/groups/24588496334104700/",
+      "confidence": "low"
+    },
+    {
+      "id": "a3732c51-205b-484a-87bd-5c7e9d8eb506",
+      "name": "Cumberland Hornets",
+      "field": "website",
+      "value": "https://www.facebook.com/61557382851769/",
+      "from": null,
+      "source": "discovered(medium)",
+      "sourceUrl": "https://www.facebook.com/61557382851769/",
+      "confidence": "medium"
+    },
+    {
+      "id": "3ceab719-023b-48ef-a7ee-f2df586c0a33",
+      "name": "East Preston Pacers",
+      "field": "website",
+      "value": "https://www.eastprestonrecreation.ca/ep-pacers",
+      "from": null,
+      "source": "discovered(medium)",
+      "sourceUrl": "https://www.eastprestonrecreation.ca/ep-pacers",
+      "confidence": "medium"
+    },
+    {
+      "id": "3ceab719-023b-48ef-a7ee-f2df586c0a33",
+      "name": "East Preston Pacers",
+      "field": "phoneNumber",
+      "value": "(902) 435-9894",
+      "from": null,
+      "source": "discovered(medium)",
+      "sourceUrl": "https://www.eastprestonrecreation.ca/ep-pacers",
+      "confidence": "medium"
+    },
+    {
+      "id": "49d173c8-e102-41ab-a55c-27b32c38b4a0",
+      "name": "Hantsport Minor Basketball",
+      "field": "website",
+      "value": "https://www.facebook.com/groups/190922914317900/",
+      "from": null,
+      "source": "discovered(low)",
+      "sourceUrl": "https://www.facebook.com/groups/190922914317900/",
+      "confidence": "low"
+    },
+    {
+      "id": "be5715eb-6ccd-4021-bfbf-d13bf245cf0e",
+      "name": "North Shore Basketball Association (Sonics)",
+      "field": "website",
+      "value": "https://www.facebook.com/NorthShoreSonics/",
+      "from": null,
+      "source": "discovered(medium)",
+      "sourceUrl": "https://www.facebook.com/NorthShoreSonics/",
+      "confidence": "medium"
+    },
+    {
+      "id": "53f9b95b-133e-4a78-8325-a969378a1f0e",
+      "name": "Oxford Minor Basketball Association",
+      "field": "website",
+      "value": "https://www.facebook.com/Oxford-Minor-Basketball-Association-106207711484188/",
+      "from": null,
+      "source": "discovered(medium)",
+      "sourceUrl": "https://www.facebook.com/Oxford-Minor-Basketball-Association-106207711484188/",
+      "confidence": "medium"
+    },
+    {
+      "id": "d7fd95b2-e548-4d89-8bdd-f60bbd602370",
+      "name": "1 of 1",
+      "field": "website",
+      "value": "https://1of1canadabasketball.com",
+      "from": null,
+      "source": "discovered(medium)",
+      "sourceUrl": "https://1of1canadabasketball.com",
+      "confidence": "medium"
+    },
+    {
+      "id": "d7fd95b2-e548-4d89-8bdd-f60bbd602370",
+      "name": "1 of 1",
+      "field": "contactEmail",
+      "value": "info@1of1canadabasketball.com",
+      "from": null,
+      "source": "discovered(medium)",
+      "sourceUrl": "https://1of1canadabasketball.com",
+      "confidence": "medium"
+    },
+    {
+      "id": "6e329777-ea7a-4eb4-91f4-eca1b47a5ed5",
+      "name": "17 Ignite",
+      "field": "website",
+      "value": "https://www.17basketball.com/",
+      "from": null,
+      "source": "discovered(high)",
+      "sourceUrl": "https://www.17basketball.com/",
+      "confidence": "high"
+    },
+    {
+      "id": "26b7e22c-55ab-4e2c-b06c-3422b839ff50",
+      "name": "1K Elite",
+      "field": "website",
+      "value": "https://www.instagram.com/1k.elite.bb/",
+      "from": null,
+      "source": "discovered(low)",
+      "sourceUrl": "https://www.instagram.com/1k.elite.bb/",
+      "confidence": "low"
+    },
+    {
+      "id": "1462a8c1-db66-4e82-b4d3-9cd4ef90616e",
+      "name": "2 Way Elite",
+      "field": "website",
+      "value": "https://www.instagram.com/2wayelitebasketball/",
+      "from": null,
+      "source": "discovered(high)",
+      "sourceUrl": "https://www.instagram.com/2wayelitebasketball/",
+      "confidence": "high"
+    },
+    {
+      "id": "1462a8c1-db66-4e82-b4d3-9cd4ef90616e",
+      "name": "2 Way Elite",
+      "field": "contactEmail",
+      "value": "2WAYELITEBASKETBALL@GMAIL.COM",
+      "from": null,
+      "source": "discovered(high)",
+      "sourceUrl": "https://www.instagram.com/2wayelitebasketball/",
+      "confidence": "high"
+    },
+    {
+      "id": "1462a8c1-db66-4e82-b4d3-9cd4ef90616e",
+      "name": "2 Way Elite",
+      "field": "phoneNumber",
+      "value": "289-387-1337",
+      "from": null,
+      "source": "discovered(high)",
+      "sourceUrl": "https://www.instagram.com/2wayelitebasketball/",
+      "confidence": "high"
+    },
+    {
+      "id": "fc567caa-0416-4bac-b360-1d2f85bb70e8",
+      "name": "506 Elite Jr Academy",
+      "field": "website",
+      "value": "https://506elite.com/",
+      "from": null,
+      "source": "discovered(medium)",
+      "sourceUrl": "https://506elite.com/basketball-programs/elite-academy/",
+      "confidence": "medium"
+    },
+    {
+      "id": "fc567caa-0416-4bac-b360-1d2f85bb70e8",
+      "name": "506 Elite Jr Academy",
+      "field": "contactEmail",
+      "value": "506elite@gmail.com",
+      "from": null,
+      "source": "discovered(medium)",
+      "sourceUrl": "https://506elite.com/basketball-programs/elite-academy/",
+      "confidence": "medium"
+    },
+    {
+      "id": "fc567caa-0416-4bac-b360-1d2f85bb70e8",
+      "name": "506 Elite Jr Academy",
+      "field": "phoneNumber",
+      "value": "506-378-2880",
+      "from": null,
+      "source": "discovered(medium)",
+      "sourceUrl": "https://506elite.com/basketball-programs/elite-academy/",
+      "confidence": "medium"
+    },
+    {
+      "id": "3da111d3-fa5c-4a93-9153-acad5c13b8f0",
+      "name": "Advantage Titans",
+      "field": "phoneNumber",
+      "value": "416-900-5611",
+      "from": null,
+      "source": "discovered(high)",
+      "sourceUrl": "https://advantagetitans.com/",
+      "confidence": "high"
+    },
+    {
+      "id": "ef3e1cc0-52da-4f36-b889-619c6b932c94",
+      "name": "AET Basketball",
+      "field": "website",
+      "value": "https://www.aetbasketball.com/",
+      "from": null,
+      "source": "discovered(high)",
+      "sourceUrl": "https://www.aetbasketball.com/",
+      "confidence": "high"
+    },
+    {
+      "id": "ef3e1cc0-52da-4f36-b889-619c6b932c94",
+      "name": "AET Basketball",
+      "field": "contactEmail",
+      "value": "aetbasketball@gmail.com",
+      "from": null,
+      "source": "discovered(high)",
+      "sourceUrl": "https://www.aetbasketball.com/",
+      "confidence": "high"
+    },
+    {
+      "id": "ef3e1cc0-52da-4f36-b889-619c6b932c94",
+      "name": "AET Basketball",
+      "field": "phoneNumber",
+      "value": "289-221-2335",
+      "from": null,
+      "source": "discovered(high)",
+      "sourceUrl": "https://www.aetbasketball.com/",
+      "confidence": "high"
+    },
+    {
+      "id": "08439f3f-c4a6-40aa-923b-ab4e8eb9d950",
+      "name": "Ashbury College",
+      "field": "website",
+      "value": "https://www.ashbury.ca/",
+      "from": null,
+      "source": "discovered(high)",
+      "sourceUrl": "https://fan.hudl.com/can/on/ottawa/organization/28830/ashbury-college-high-school",
+      "confidence": "high"
+    },
+    {
+      "id": "c0ccc308-5a84-41e9-9880-a9c594920d9d",
+      "name": "Blessed Sacrament CYO (Yellow Jackets)",
+      "field": "phoneNumber",
+      "value": "905-389-7834",
+      "from": null,
+      "source": "discovered(high)",
+      "sourceUrl": "https://www.instagram.com/bsyjbasketball/",
+      "confidence": "high"
+    },
+    {
+      "id": "25cf7830-ed04-41a7-be40-54400a20774a",
+      "name": "Bounce Elite",
+      "field": "contactEmail",
+      "value": "bounceeliteniagara@gmail.com",
+      "from": null,
+      "source": "discovered(high)",
+      "sourceUrl": "https://sites.google.com/view/bounceeliteniagara/home",
+      "confidence": "high"
+    },
+    {
+      "id": "e256eb2a-1e5b-4969-9ad4-54bd49f34928",
+      "name": "Breakthrough",
+      "field": "website",
+      "value": "https://breakthroughathletics.ca/",
+      "from": null,
+      "source": "discovered(medium)",
+      "sourceUrl": "https://breakthroughathletics.ca/",
+      "confidence": "medium"
+    },
+    {
+      "id": "b31b35ee-0b59-4797-bda1-7b342b7497b8",
+      "name": "Brian Owusu Academy",
+      "field": "website",
+      "value": "https://www.brianowusuacademy.com/",
+      "from": null,
+      "source": "discovered(high)",
+      "sourceUrl": "https://www.instagram.com/brianowusuacademy/",
+      "confidence": "high"
+    },
+    {
+      "id": "b31b35ee-0b59-4797-bda1-7b342b7497b8",
+      "name": "Brian Owusu Academy",
+      "field": "contactEmail",
+      "value": "brianowusuacademy@gmail.com",
+      "from": null,
+      "source": "discovered(high)",
+      "sourceUrl": "https://www.instagram.com/brianowusuacademy/",
+      "confidence": "high"
+    },
+    {
+      "id": "b4db2b9c-94cb-436c-8312-4151fa116703",
+      "name": "Alonzolutions Basketball (A'z Basketball)",
+      "field": "contactEmail",
+      "value": "alonzolutions.basketball@gmail.com",
+      "from": null,
+      "source": "discovered(high)",
+      "sourceUrl": "https://www.facebook.com/Alonzolutions/about",
+      "confidence": "high"
+    },
+    {
+      "id": "04550070-4397-4394-afed-eba19dcd5ce2",
+      "name": "Apex Athlete Development (Apex Basketball)",
+      "field": "contactEmail",
+      "value": "apexathletedevelopment@gmail.com",
+      "from": null,
+      "source": "discovered(high)",
+      "sourceUrl": "https://albertacorporations.com/apex-athlete-development-inc",
+      "confidence": "high"
+    },
+    {
+      "id": "554b0c4d-9499-4d2e-911c-9f591397295c",
+      "name": "Lloydminster Filipino-Canadian Basketball Association (LFCBA)",
+      "field": "website",
+      "value": "https://www.facebook.com/groups/1393616070923014/",
+      "from": null,
+      "source": "discovered(high)",
+      "sourceUrl": "https://www.lloydminster.ca/recreation-culture-community/clubs-and-community-groups/",
+      "confidence": "high"
+    },
+    {
+      "id": "554b0c4d-9499-4d2e-911c-9f591397295c",
+      "name": "Lloydminster Filipino-Canadian Basketball Association (LFCBA)",
+      "field": "contactEmail",
+      "value": "Dowsan.antonio1@gmail.com",
+      "from": null,
+      "source": "discovered(high)",
+      "sourceUrl": "https://www.lloydminster.ca/recreation-culture-community/clubs-and-community-groups/",
+      "confidence": "high"
+    },
+    {
+      "id": "cddbd4b4-aeb5-4c74-8d77-a62020e47adf",
+      "name": "Magrath Rockets / Pandas",
+      "field": "contactEmail",
+      "value": "stratekristine@gmail.com",
+      "from": null,
+      "source": "discovered(medium)",
+      "sourceUrl": "https://www.aybc.ca/2020-club-members-1/magrath-deep-south-pandas",
+      "confidence": "medium"
+    },
+    {
+      "id": "e5124388-6c3b-436a-90d4-733441307d4a",
+      "name": "Magrath youth basketball (Magrath Rockets / Magrath Pandas)",
+      "field": "contactEmail",
+      "value": "stratekristine@gmail.com",
+      "from": null,
+      "source": "discovered(medium)",
+      "sourceUrl": "https://www.aybc.ca/2020-club-members-1/magrath-deep-south-pandas",
+      "confidence": "medium"
+    },
+    {
+      "id": "e5124388-6c3b-436a-90d4-733441307d4a",
+      "name": "Magrath youth basketball (Magrath Rockets / Magrath Pandas)",
+      "field": "phoneNumber",
+      "value": "403-758-6007",
+      "from": null,
+      "source": "discovered(medium)",
+      "sourceUrl": "https://www.aybc.ca/2020-club-members-1/magrath-deep-south-pandas",
+      "confidence": "medium"
+    },
+    {
+      "id": "e2a369e7-36ae-42dc-bf03-53fca26b8e42",
+      "name": "Northern Hoops Selects Club Basketball",
+      "field": "website",
+      "value": "https://www.facebook.com/people/Northern-Hoops-Selects-Club-Basketball/100069888248740/",
+      "from": null,
+      "source": "discovered(medium)",
+      "sourceUrl": "http://eyba.ca/content/clubs",
+      "confidence": "medium"
+    },
+    {
+      "id": "b21aeaea-e547-4272-9e97-8af4b7982940",
+      "name": "Northside Hoops",
+      "field": "website",
+      "value": "https://www.abbasketball.ca/content/northside-hoops",
+      "from": null,
+      "source": "discovered(medium)",
+      "sourceUrl": "https://www.abbasketball.ca/content/northside-hoops",
+      "confidence": "medium"
+    },
+    {
+      "id": "b21aeaea-e547-4272-9e97-8af4b7982940",
+      "name": "Northside Hoops",
+      "field": "contactEmail",
+      "value": "info@basketballalberta.ca",
+      "from": null,
+      "source": "discovered(medium)",
+      "sourceUrl": "https://www.abbasketball.ca/content/northside-hoops",
+      "confidence": "medium"
+    },
+    {
+      "id": "b21aeaea-e547-4272-9e97-8af4b7982940",
+      "name": "Northside Hoops",
+      "field": "phoneNumber",
+      "value": "780-427-9044",
+      "from": null,
+      "source": "discovered(medium)",
+      "sourceUrl": "https://www.abbasketball.ca/content/northside-hoops",
+      "confidence": "medium"
+    },
+    {
+      "id": "5f36da05-218f-4503-9adc-fda2043db018",
+      "name": "Panther Athletic Club (PAC)",
+      "field": "website",
+      "value": "https://www.instagram.com/pac_basketball/",
+      "from": null,
+      "source": "discovered(medium)",
+      "sourceUrl": "https://www.instagram.com/pac_basketball/",
+      "confidence": "medium"
+    },
+    {
+      "id": "645987da-b788-4dd2-8998-810178494375",
+      "name": "Pivot Basketball",
+      "field": "website",
+      "value": "https://pivotbasketball.ca",
+      "from": null,
+      "source": "discovered(medium)",
+      "sourceUrl": "http://pivotbasketball.ca/content/about-pivot",
+      "confidence": "medium"
+    },
+    {
+      "id": "645987da-b788-4dd2-8998-810178494375",
+      "name": "Pivot Basketball",
+      "field": "phoneNumber",
+      "value": "403-948-8804",
+      "from": null,
+      "source": "discovered(medium)",
+      "sourceUrl": "http://pivotbasketball.ca/content/about-pivot",
+      "confidence": "medium"
+    },
+    {
+      "id": "e35ab2ee-c673-46df-93ca-a8b447b8aa8a",
+      "name": "Raymond Basketball",
+      "field": "contactEmail",
+      "value": "recreation@raymond.ca",
+      "from": null,
+      "source": "discovered(medium)",
+      "sourceUrl": "https://raymondrecreation.ca/",
+      "confidence": "medium"
+    },
+    {
+      "id": "9362c39c-794c-4e20-b868-ef98feb74cdb",
+      "name": "Rockets Basketball (Edmonton club)",
+      "field": "website",
+      "value": "http://eyba.ca/content/clubs",
+      "from": null,
+      "source": "discovered(medium)",
+      "sourceUrl": "http://eyba.ca/content/clubs",
+      "confidence": "medium"
+    },
+    {
+      "id": "9362c39c-794c-4e20-b868-ef98feb74cdb",
+      "name": "Rockets Basketball (Edmonton club)",
+      "field": "contactEmail",
+      "value": "info@edmontonyouthbasketball.com",
+      "from": null,
+      "source": "discovered(medium)",
+      "sourceUrl": "http://eyba.ca/content/clubs",
+      "confidence": "medium"
+    },
+    {
+      "id": "bef7d8c8-4ba1-4cb8-845e-db7d5d642b73",
+      "name": "Rustlers Girls Basketball",
+      "field": "website",
+      "value": "http://rustlersyouthbasketball.ca/",
+      "from": null,
+      "source": "discovered(medium)",
+      "sourceUrl": "https://www.gorustlers.ca/information/RYB_-_Rustlers_Youth_Basketball",
+      "confidence": "medium"
+    },
+    {
+      "id": "c9d4d308-e03a-48ad-89eb-2445fc2554c8",
+      "name": "Taber Basketball",
+      "field": "website",
+      "value": "https://www.taber.ca/",
+      "from": null,
+      "source": "discovered(medium)",
+      "sourceUrl": "https://www.taber.ca/town-services/recreation/auditorium/public-programs",
+      "confidence": "medium"
+    },
+    {
+      "id": "c9d4d308-e03a-48ad-89eb-2445fc2554c8",
+      "name": "Taber Basketball",
+      "field": "phoneNumber",
+      "value": "403-223-5544",
+      "from": null,
+      "source": "discovered(medium)",
+      "sourceUrl": "https://www.taber.ca/town-services/recreation/auditorium/public-programs",
+      "confidence": "medium"
+    },
+    {
+      "id": "bbd45a99-7d67-427a-934e-fd4ed3e4a0a7",
+      "name": "Titans Basketball (YYC)",
+      "field": "website",
+      "value": "https://tsa1.ca/",
+      "from": null,
+      "source": "discovered(medium)",
+      "sourceUrl": "https://tsa1.ca/",
+      "confidence": "medium"
+    },
+    {
+      "id": "c8d8a16f-9686-424a-bfcc-aae0507be98a",
+      "name": "Windy City Basketball Club",
+      "field": "website",
+      "value": "https://windycitybasketballclub.com/",
+      "from": null,
+      "source": "discovered(high)",
+      "sourceUrl": "https://windycitybasketballclub.com/",
+      "confidence": "high"
+    },
+    {
+      "id": "1513a540-59b9-4066-a79f-c76989705963",
+      "name": "AFG (All For Girls) Basketball",
+      "field": "website",
+      "value": "https://www.instagram.com/afg.basketball/",
+      "from": null,
+      "source": "discovered(high)",
+      "sourceUrl": "https://www.instagram.com/afg.basketball/",
+      "confidence": "high"
+    },
+    {
+      "id": "63f3dde5-3345-4f80-97f7-1a21566f1602",
+      "name": "Arrowsmith Community Recreation Association (ACRA), youth basketball",
+      "field": "website",
+      "value": "https://arrowsmithrecreation.ca/",
+      "from": null,
+      "source": "discovered(high)",
+      "sourceUrl": "https://arrowsmithrecreation.ca/about",
+      "confidence": "high"
+    },
+    {
+      "id": "63f3dde5-3345-4f80-97f7-1a21566f1602",
+      "name": "Arrowsmith Community Recreation Association (ACRA), youth basketball",
+      "field": "contactEmail",
+      "value": "stephenson@live.ca",
+      "from": null,
+      "source": "discovered(high)",
+      "sourceUrl": "https://arrowsmithrecreation.ca/about",
+      "confidence": "high"
+    },
+    {
+      "id": "63f3dde5-3345-4f80-97f7-1a21566f1602",
+      "name": "Arrowsmith Community Recreation Association (ACRA), youth basketball",
+      "field": "phoneNumber",
+      "value": "250-927-3985",
+      "from": null,
+      "source": "discovered(high)",
+      "sourceUrl": "https://arrowsmithrecreation.ca/about",
+      "confidence": "high"
+    },
+    {
+      "id": "3326fcc7-0591-41d7-adad-5c93a9065f3e",
+      "name": "Brothers Keeper Prep",
+      "field": "website",
+      "value": "https://www.facebook.com/brotherskeeperbasketballto/",
+      "from": null,
+      "source": "discovered(medium)",
+      "sourceUrl": "https://www.facebook.com/brotherskeeperbasketballto/",
+      "confidence": "medium"
+    },
+    {
+      "id": "6d66528b-d40d-4fce-96ff-6aaac12c1e7b",
+      "name": "Burlington Hoops Academy",
+      "field": "contactEmail",
+      "value": "hoopsacademy5019@gmail.com",
+      "from": null,
+      "source": "discovered(high)",
+      "sourceUrl": "https://www.instagram.com/burlingtonhoopsacademy/",
+      "confidence": "high"
+    },
+    {
+      "id": "21a8419c-59c0-4331-8c54-1ff9998749fa",
+      "name": "Cambridge International Academy",
+      "field": "website",
+      "value": "https://www.cciaedu.com/",
+      "from": null,
+      "source": "discovered(high)",
+      "sourceUrl": "https://www.cciaedu.com/admission",
+      "confidence": "high"
+    },
+    {
+      "id": "4e7d60ae-79f9-46ae-b0d8-1ca55f0d663b",
+      "name": "City of Elliot Lake Youth Basketball (Collins Hall)",
+      "field": "phoneNumber",
+      "value": "705-848-2287",
+      "from": null,
+      "source": "discovered(high)",
+      "sourceUrl": "https://www.elliotlaketoday.com/local-news/registration-opens-for-youth-basketball-at-collins-hall-11197141",
+      "confidence": "high"
+    },
+    {
+      "id": "1fffaee0-c2c8-48c7-a368-851b9deffc0e",
+      "name": "Clippers",
+      "field": "website",
+      "value": "https://www.countyclippers.ca",
+      "from": null,
+      "source": "discovered(medium)",
+      "sourceUrl": "https://www.instagram.com/countyclippers/",
+      "confidence": "medium"
+    },
+    {
+      "id": "1fffaee0-c2c8-48c7-a368-851b9deffc0e",
+      "name": "Clippers",
+      "field": "contactEmail",
+      "value": "info@countyclippers.ca",
+      "from": null,
+      "source": "discovered(medium)",
+      "sourceUrl": "https://www.instagram.com/countyclippers/",
+      "confidence": "medium"
+    },
+    {
+      "id": "2fddc66a-8f49-4792-9953-9b5258dfcb02",
+      "name": "DFam United",
+      "field": "website",
+      "value": "https://www.instagram.com/dfamunited/",
+      "from": null,
+      "source": "discovered(medium)",
+      "sourceUrl": "https://www.instagram.com/dfamunited/",
+      "confidence": "medium"
+    },
+    {
+      "id": "77049651-7bcc-4a57-99f0-1abda7317610",
+      "name": "DHO Prep",
+      "field": "contactEmail",
+      "value": "Dhoprepcanada@gmail.com",
+      "from": null,
+      "source": "discovered(medium)",
+      "sourceUrl": "https://www.instagram.com/dhoprepbasketball/",
+      "confidence": "medium"
+    },
+    {
+      "id": "957bd9c7-9158-4048-b230-6e5e2a83db0e",
+      "name": "DKH Basketball",
+      "field": "website",
+      "value": "https://dkhbasketball.ca/",
+      "from": null,
+      "source": "discovered(high)",
+      "sourceUrl": "https://dkhbasketball.ca/",
+      "confidence": "high"
+    },
+    {
+      "id": "09dc9c4f-9712-4496-b5ad-789e4ea3e73f",
+      "name": "Dynamite",
+      "field": "website",
+      "value": "https://dorchesterdynamite.ca/",
+      "from": null,
+      "source": "discovered(high)",
+      "sourceUrl": "https://dorchesterdynamite.ca/",
+      "confidence": "high"
+    },
+    {
+      "id": "09dc9c4f-9712-4496-b5ad-789e4ea3e73f",
+      "name": "Dynamite",
+      "field": "contactEmail",
+      "value": "dorchesterbasketball@hotmail.com",
+      "from": null,
+      "source": "discovered(high)",
+      "sourceUrl": "https://dorchesterdynamite.ca/",
+      "confidence": "high"
+    },
+    {
+      "id": "86f6d5aa-b716-4609-9ca9-762c7e78903c",
+      "name": "Eastern Earthquakes",
+      "field": "website",
+      "value": "https://www.easternbasketball.ca/",
+      "from": null,
+      "source": "discovered(high)",
+      "sourceUrl": "https://www.instagram.com/easternearthquakes/",
+      "confidence": "high"
+    },
+    {
+      "id": "86f6d5aa-b716-4609-9ca9-762c7e78903c",
+      "name": "Eastern Earthquakes",
+      "field": "contactEmail",
+      "value": "info@easternbasketball.ca",
+      "from": null,
+      "source": "discovered(high)",
+      "sourceUrl": "https://www.instagram.com/easternearthquakes/",
+      "confidence": "high"
+    },
+    {
+      "id": "86f6d5aa-b716-4609-9ca9-762c7e78903c",
+      "name": "Eastern Earthquakes",
+      "field": "phoneNumber",
+      "value": "905-924-3137",
+      "from": null,
+      "source": "discovered(high)",
+      "sourceUrl": "https://www.instagram.com/easternearthquakes/",
+      "confidence": "high"
+    },
+    {
+      "id": "4f02d66d-bbdd-400e-b4e2-f9a5b3ee9c98",
+      "name": "Greenbank Basketball",
+      "field": "website",
+      "value": "https://www.leaguelineup.com/teams_basketball.asp?url=greenbankbasketballclub",
+      "from": null,
+      "source": "discovered(medium)",
+      "sourceUrl": "https://www.leaguelineup.com/teams_basketball.asp?url=greenbankbasketballclub",
+      "confidence": "medium"
+    },
+    {
+      "id": "62d00262-7393-4fd0-874f-ea08c1d4a001",
+      "name": "HQ Prep",
+      "field": "website",
+      "value": "https://www.hqcanada.net/",
+      "from": null,
+      "source": "discovered(medium)",
+      "sourceUrl": "https://www.hqcanada.net/about-1",
+      "confidence": "medium"
+    },
+    {
+      "id": "62d00262-7393-4fd0-874f-ea08c1d4a001",
+      "name": "HQ Prep",
+      "field": "contactEmail",
+      "value": "HQelitecanada1@gmail.com",
+      "from": null,
+      "source": "discovered(medium)",
+      "sourceUrl": "https://www.hqcanada.net/about-1",
+      "confidence": "medium"
+    },
+    {
+      "id": "09b01fae-a08c-45e9-99cb-e777667d5c4a",
+      "name": "KIBC",
+      "field": "website",
+      "value": "https://www.kingstonimpact.ca/",
+      "from": null,
+      "source": "discovered(high)",
+      "sourceUrl": "https://www.kingstonimpact.ca/",
+      "confidence": "high"
+    },
+    {
+      "id": "c5744200-ed4b-4688-af44-a76972a80523",
+      "name": "London Wheelchair Basketball Association",
+      "field": "website",
+      "value": "facebook.com/LondonWheelchairBasketball",
+      "from": null,
+      "source": "discovered(medium)",
+      "sourceUrl": "https://parasportontario.ca/clubs/london-wheelchair-basketball-association",
+      "confidence": "medium"
+    },
+    {
+      "id": "c5744200-ed4b-4688-af44-a76972a80523",
+      "name": "London Wheelchair Basketball Association",
+      "field": "phoneNumber",
+      "value": "519-851-7859",
+      "from": null,
+      "source": "discovered(medium)",
+      "sourceUrl": "https://parasportontario.ca/clubs/london-wheelchair-basketball-association",
+      "confidence": "medium"
+    },
+    {
+      "id": "e8f557c6-d2a5-4ebf-9e08-77cf4bc8b0af",
+      "name": "Markham Gators",
+      "field": "website",
+      "value": "gatorsbasketballacademy.com",
+      "from": null,
+      "source": "discovered(high)",
+      "sourceUrl": "https://www.gatorsbasketballacademy.com/contactus",
+      "confidence": "high"
+    },
+    {
+      "id": "e8f557c6-d2a5-4ebf-9e08-77cf4bc8b0af",
+      "name": "Markham Gators",
+      "field": "contactEmail",
+      "value": "markhamgatorsdevelopment@gmail.com",
+      "from": null,
+      "source": "discovered(high)",
+      "sourceUrl": "https://www.gatorsbasketballacademy.com/contactus",
+      "confidence": "high"
+    },
+    {
+      "id": "e8f557c6-d2a5-4ebf-9e08-77cf4bc8b0af",
+      "name": "Markham Gators",
+      "field": "phoneNumber",
+      "value": "647-283-1873",
+      "from": null,
+      "source": "discovered(high)",
+      "sourceUrl": "https://www.gatorsbasketballacademy.com/contactus",
+      "confidence": "high"
+    },
+    {
+      "id": "38e23fc1-72c1-4798-b522-fd3131a51c54",
+      "name": "Midnight Basketball (Toronto)",
+      "field": "website",
+      "value": "torontohousing.ca/programs-and-tenant-engagement/youth-programs/midnight-basketball",
+      "from": null,
+      "source": "discovered(high)",
+      "sourceUrl": "https://torontohousing.ca/programs-and-tenant-engagement/youth-programs/midnight-basketball",
+      "confidence": "high"
+    },
+    {
+      "id": "38e23fc1-72c1-4798-b522-fd3131a51c54",
+      "name": "Midnight Basketball (Toronto)",
+      "field": "contactEmail",
+      "value": "ActiveLiving@torontohousing.ca",
+      "from": null,
+      "source": "discovered(high)",
+      "sourceUrl": "https://torontohousing.ca/programs-and-tenant-engagement/youth-programs/midnight-basketball",
+      "confidence": "high"
+    },
+    {
+      "id": "38e23fc1-72c1-4798-b522-fd3131a51c54",
+      "name": "Midnight Basketball (Toronto)",
+      "field": "phoneNumber",
+      "value": "416-981-5500",
+      "from": null,
+      "source": "discovered(high)",
+      "sourceUrl": "https://torontohousing.ca/programs-and-tenant-engagement/youth-programs/midnight-basketball",
+      "confidence": "high"
+    },
+    {
+      "id": "32cd4ef0-818f-46d9-80fb-233bba3b0c1c",
+      "name": "Mississauga Community Services – Huron Park Community Centre (basketball programs)",
+      "field": "website",
+      "value": "mississauga.ca/recreation-and-sports/locations/huron-park-recreation-centre/",
+      "from": null,
+      "source": "discovered(high)",
+      "sourceUrl": "https://www.mississauga.ca/recreation-and-sports/locations/huron-park-recreation-centre/",
+      "confidence": "high"
+    },
+    {
+      "id": "32cd4ef0-818f-46d9-80fb-233bba3b0c1c",
+      "name": "Mississauga Community Services – Huron Park Community Centre (basketball programs)",
+      "field": "phoneNumber",
+      "value": "905-615-4820",
+      "from": null,
+      "source": "discovered(high)",
+      "sourceUrl": "https://www.mississauga.ca/recreation-and-sports/locations/huron-park-recreation-centre/",
+      "confidence": "high"
+    },
+    {
+      "id": "e294bc18-493f-4ae7-b8d7-ed30c0832365",
+      "name": "Mississauga Knights",
+      "field": "phoneNumber",
+      "value": "416-729-0211",
+      "from": null,
+      "source": "discovered(medium)",
+      "sourceUrl": "https://www.sportsengine.com/org/mississauga-knights-youth-basketball-nybl",
+      "confidence": "medium"
+    },
+    {
+      "id": "43366ee3-772c-4507-90b1-1bb6f76d2a5f",
+      "name": "Mississauga Monarchs - D & Hemeng",
+      "field": "website",
+      "value": "monarchsbasketball.ca",
+      "from": null,
+      "source": "discovered(medium)",
+      "sourceUrl": "https://monarchsbasketball.ca/mississauga/",
+      "confidence": "medium"
+    },
+    {
+      "id": "43366ee3-772c-4507-90b1-1bb6f76d2a5f",
+      "name": "Mississauga Monarchs - D & Hemeng",
+      "field": "contactEmail",
+      "value": "info@monarchsbasketball.ca",
+      "from": null,
+      "source": "discovered(medium)",
+      "sourceUrl": "https://monarchsbasketball.ca/mississauga/",
+      "confidence": "medium"
+    },
+    {
+      "id": "43366ee3-772c-4507-90b1-1bb6f76d2a5f",
+      "name": "Mississauga Monarchs - D & Hemeng",
+      "field": "phoneNumber",
+      "value": "905-502-0050",
+      "from": null,
+      "source": "discovered(medium)",
+      "sourceUrl": "https://monarchsbasketball.ca/mississauga/",
+      "confidence": "medium"
+    },
+    {
+      "id": "f96eabf9-5776-48ad-91e7-75f0d0eddfec",
+      "name": "Mississauga Youth Athletics Association",
+      "field": "website",
+      "value": "facebook.com/myaabasketball",
+      "from": null,
+      "source": "discovered(medium)",
+      "sourceUrl": "https://www.facebook.com/myaabasketball/",
+      "confidence": "medium"
+    },
+    {
+      "id": "3ef16c6f-f319-43f4-8746-a1ffaf935d67",
+      "name": "Monstarz Elite",
+      "field": "website",
+      "value": "instagram.com/peelelite_monstars",
+      "from": null,
+      "source": "discovered(medium)",
+      "sourceUrl": "https://www.peel-elite-basketball-monstars.com/contact",
+      "confidence": "medium"
+    },
+    {
+      "id": "3ef16c6f-f319-43f4-8746-a1ffaf935d67",
+      "name": "Monstarz Elite",
+      "field": "contactEmail",
+      "value": "peelelite.basketball@gmail.com",
+      "from": null,
+      "source": "discovered(medium)",
+      "sourceUrl": "https://www.peel-elite-basketball-monstars.com/contact",
+      "confidence": "medium"
+    },
+    {
+      "id": "3ef16c6f-f319-43f4-8746-a1ffaf935d67",
+      "name": "Monstarz Elite",
+      "field": "phoneNumber",
+      "value": "647-914-6871",
+      "from": null,
+      "source": "discovered(medium)",
+      "sourceUrl": "https://www.peel-elite-basketball-monstars.com/contact",
+      "confidence": "medium"
+    },
+    {
+      "id": "af7f111c-c724-43bd-a351-a3c5a3b8aa5d",
+      "name": "Niagara Falls Basketball Association (formerly Niagara Falls Red Raiders)",
+      "field": "website",
+      "value": "nfba.ca",
+      "from": null,
+      "source": "discovered(medium)",
+      "sourceUrl": "https://esportsdesk.com/leagues/contact.cfm?clientid=5489&leagueid=27808",
+      "confidence": "medium"
+    },
+    {
+      "id": "1960fcc8-c3da-4034-80c0-eef39ef64a1d",
+      "name": "Niagara Rangers",
+      "field": "phoneNumber",
+      "value": "902-316-3099",
+      "from": null,
+      "source": "discovered(low)",
+      "sourceUrl": "https://www.sportsengine.com/org/niagara-rangers-basketball",
+      "confidence": "low"
+    },
+    {
+      "id": "0e23b1c2-c5eb-4b97-87c6-4b9e3aeaa939",
+      "name": "No Limits Youth Organization (Basketball)",
+      "field": "contactEmail",
+      "value": "info@nolimitsyouth.ca",
+      "from": null,
+      "source": "discovered(high)",
+      "sourceUrl": "https://nolimitsyouth.ca/about/",
+      "confidence": "high"
+    },
+    {
+      "id": "0e23b1c2-c5eb-4b97-87c6-4b9e3aeaa939",
+      "name": "No Limits Youth Organization (Basketball)",
+      "field": "phoneNumber",
+      "value": "613-922-3613",
+      "from": null,
+      "source": "discovered(high)",
+      "sourceUrl": "https://nolimitsyouth.ca/about/",
+      "confidence": "high"
+    },
+    {
+      "id": "b2bfe097-de2d-4049-8a39-bd98f6e9206e",
+      "name": "NOBAT",
+      "field": "contactEmail",
+      "value": "nobatleague@yahoo.com",
+      "from": null,
+      "source": "discovered(medium)",
+      "sourceUrl": "https://www.instagram.com/nobat.canada/",
+      "confidence": "medium"
+    },
+    {
+      "id": "b2bfe097-de2d-4049-8a39-bd98f6e9206e",
+      "name": "NOBAT",
+      "field": "phoneNumber",
+      "value": "+1 647-936-9445",
+      "from": null,
+      "source": "discovered(medium)",
+      "sourceUrl": "https://www.instagram.com/nobat.canada/",
+      "confidence": "medium"
+    },
+    {
+      "id": "5af65f57-8929-4d3b-87c6-d96fe524f28f",
+      "name": "North Toronto Basketball + Scarborough Blues (joint 'GTA' JUEL/JUEL franchise)",
+      "field": "website",
+      "value": "ntbasketball.com",
+      "from": null,
+      "source": "discovered(high)",
+      "sourceUrl": "https://ntbasketball.com/news-events/gta-juel-and-juel-prep-franchise/",
+      "confidence": "high"
+    },
+    {
+      "id": "5af65f57-8929-4d3b-87c6-d96fe524f28f",
+      "name": "North Toronto Basketball + Scarborough Blues (joint 'GTA' JUEL/JUEL franchise)",
+      "field": "contactEmail",
+      "value": "NTBARegistrar@bell.net",
+      "from": null,
+      "source": "discovered(high)",
+      "sourceUrl": "https://ntbasketball.com/news-events/gta-juel-and-juel-prep-franchise/",
+      "confidence": "high"
+    },
+    {
+      "id": "b0a5cbbe-d609-4189-8aa8-9bf8325c5d47",
+      "name": "Oakville Anchors",
+      "field": "website",
+      "value": "anchorsportsv2.squarespace.com",
+      "from": null,
+      "source": "discovered(medium)",
+      "sourceUrl": "https://anchorsportsv2.squarespace.com/",
+      "confidence": "medium"
+    },
+    {
+      "id": "b0a5cbbe-d609-4189-8aa8-9bf8325c5d47",
+      "name": "Oakville Anchors",
+      "field": "contactEmail",
+      "value": "anchorsports17@gmail.com",
+      "from": null,
+      "source": "discovered(medium)",
+      "sourceUrl": "https://anchorsportsv2.squarespace.com/",
+      "confidence": "medium"
+    },
+    {
+      "id": "b0a5cbbe-d609-4189-8aa8-9bf8325c5d47",
+      "name": "Oakville Anchors",
+      "field": "phoneNumber",
+      "value": "(647) 700-7150",
+      "from": null,
+      "source": "discovered(medium)",
+      "sourceUrl": "https://anchorsportsv2.squarespace.com/",
+      "confidence": "medium"
+    },
+    {
+      "id": "775f0a91-e4fb-4965-9aab-f0c5a597f632",
+      "name": "Orillia Lakers",
+      "field": "website",
+      "value": "orillialakers.com",
+      "from": null,
+      "source": "discovered(medium)",
+      "sourceUrl": "https://www.facebook.com/orillialakersyouthbasketball/",
+      "confidence": "medium"
+    },
+    {
+      "id": "302bf9bb-1949-43eb-a032-10151e472316",
+      "name": "Overcomers",
+      "field": "website",
+      "value": "bfgs.ca",
+      "from": null,
+      "source": "discovered(high)",
+      "sourceUrl": "https://www.basketball.ca/en/development/verified",
+      "confidence": "high"
+    },
+    {
+      "id": "4d2dfcde-3ec5-4b34-a1b1-9d68968e1f18",
+      "name": "Red Rush BK",
+      "field": "website",
+      "value": "https://montrealcommunitycares.com/red-rush-program/",
+      "from": null,
+      "source": "discovered(medium)",
+      "sourceUrl": "https://montrealcommunitycares.com/red-rush-program/",
+      "confidence": "medium"
+    },
+    {
+      "id": "9e924cac-a9d5-4938-85a5-a7ad5686988b",
+      "name": "Remix (Remix Elite / Remix / Remix Onyx / Remix Gold)",
+      "field": "website",
+      "value": "https://remixsportsacademy.com/",
+      "from": null,
+      "source": "discovered(high)",
+      "sourceUrl": "https://remixsportsacademy.com/",
+      "confidence": "high"
+    },
+    {
+      "id": "9e924cac-a9d5-4938-85a5-a7ad5686988b",
+      "name": "Remix (Remix Elite / Remix / Remix Onyx / Remix Gold)",
+      "field": "phoneNumber",
+      "value": "+1 647-228-8856",
+      "from": null,
+      "source": "discovered(high)",
+      "sourceUrl": "https://remixsportsacademy.com/",
+      "confidence": "high"
+    },
+    {
+      "id": "ad47f25e-ed6e-449f-9feb-b2b183161209",
+      "name": "Richmond Hill Ascend Prep",
+      "field": "website",
+      "value": "https://www.instagram.com/ascend_prep/",
+      "from": null,
+      "source": "discovered(medium)",
+      "sourceUrl": "https://www.instagram.com/ascend_prep/",
+      "confidence": "medium"
+    },
+    {
+      "id": "418ef829-b6a7-4aac-a2af-9382d6edc28f",
+      "name": "Rise Up Elite",
+      "field": "website",
+      "value": "https://www.facebook.com/p/Rise-Up-Elite-Travel-Basketball-61551589612089/",
+      "from": null,
+      "source": "discovered(medium)",
+      "sourceUrl": "https://www.facebook.com/p/Rise-Up-Elite-Travel-Basketball-61551589612089/",
+      "confidence": "medium"
+    },
+    {
+      "id": "d5a95f7b-fc40-49c5-a550-97639eca6a51",
+      "name": "Riverside Falcons",
+      "field": "phoneNumber",
+      "value": "(519) 965-2407",
+      "from": null,
+      "source": "discovered(medium)",
+      "sourceUrl": "https://www.sportsengine.com/org/riverside-basketball-association-r1772",
+      "confidence": "medium"
+    },
+    {
+      "id": "15eaaced-ffef-4dbb-9547-0a55a7a02565",
+      "name": "Royal Crown Academic School",
+      "field": "website",
+      "value": "https://www.royalcrownschool.com/",
+      "from": null,
+      "source": "discovered(high)",
+      "sourceUrl": "https://www.royalcrownschool.com/",
+      "confidence": "high"
+    },
+    {
+      "id": "b1a7bff9-2d02-424b-ab8f-c6156df5cef3",
+      "name": "Shelbourne Shock",
+      "field": "website",
+      "value": "https://www.instagram.com/shockselite/",
+      "from": null,
+      "source": "discovered(medium)",
+      "sourceUrl": "https://www.facebook.com/p/Shelburne-Shocks-Basketball-100069514512438/",
+      "confidence": "medium"
+    },
+    {
+      "id": "42e0a21d-a00a-410f-a2e5-d64aa899addc",
+      "name": "St Judes",
+      "field": "website",
+      "value": "https://www.stjudesacademy.com/",
+      "from": null,
+      "source": "discovered(medium)",
+      "sourceUrl": "https://www.sjaprep.com/middle-school-high-performance-program",
+      "confidence": "medium"
+    },
+    {
+      "id": "05dc8a45-2992-4f2a-a12d-302428f1ac4c",
+      "name": "St Michael's College",
+      "field": "website",
+      "value": "https://stmichaelscollegeschool.com/",
+      "from": null,
+      "source": "discovered(high)",
+      "sourceUrl": "https://stmichaelscollegeschool.com/programmes/athletics/",
+      "confidence": "high"
+    },
+    {
+      "id": "05dc8a45-2992-4f2a-a12d-302428f1ac4c",
+      "name": "St Michael's College",
+      "field": "contactEmail",
+      "value": "info@smcsmail.com",
+      "from": null,
+      "source": "discovered(high)",
+      "sourceUrl": "https://stmichaelscollegeschool.com/programmes/athletics/",
+      "confidence": "high"
+    },
+    {
+      "id": "05dc8a45-2992-4f2a-a12d-302428f1ac4c",
+      "name": "St Michael's College",
+      "field": "phoneNumber",
+      "value": "416-653-3180",
+      "from": null,
+      "source": "discovered(high)",
+      "sourceUrl": "https://stmichaelscollegeschool.com/programmes/athletics/",
+      "confidence": "high"
+    },
+    {
+      "id": "463b4aea-b4c9-438c-a4db-9fc7fc7ac8e1",
+      "name": "St. Jude's Prep",
+      "field": "website",
+      "value": "https://www.stjudesacademy.com/",
+      "from": null,
+      "source": "discovered(medium)",
+      "sourceUrl": "https://www.sjaprep.com/middle-school-high-performance-program",
+      "confidence": "medium"
+    },
+    {
+      "id": "c5cc1556-a90e-41a8-8f27-8046be152b05",
+      "name": "Ste Cecile Academy (Windsor)",
+      "field": "website",
+      "value": "https://www.academiestececile.ca/",
+      "from": null,
+      "source": "discovered(high)",
+      "sourceUrl": "https://www.academiestececile.ca/",
+      "confidence": "high"
+    },
+    {
+      "id": "465a15cd-f0cb-4e16-9d59-0e505619ea8e",
+      "name": "Stoney Creek Basketball",
+      "field": "contactEmail",
+      "value": "stoneycreekstorm@gmail.com",
+      "from": null,
+      "source": "discovered(medium)",
+      "sourceUrl": "http://stoneycreekstorm.com/",
+      "confidence": "medium"
+    },
+    {
+      "id": "f406435d-697f-400d-973d-4e4e6d951488",
+      "name": "Tall Pines Academy",
+      "field": "website",
+      "value": "https://www.tallpinesschool.com/",
+      "from": null,
+      "source": "discovered(high)",
+      "sourceUrl": "https://www.tallpinesschool.com/",
+      "confidence": "high"
+    },
+    {
+      "id": "eff33fe0-9f54-4b50-9df0-7a3a901e0346",
+      "name": "Team Breakdown Basketball",
+      "field": "phoneNumber",
+      "value": "(416) 800-2946",
+      "from": null,
+      "source": "discovered(high)",
+      "sourceUrl": "https://teambreakdown.ca/",
+      "confidence": "high"
+    },
+    {
+      "id": "109c3703-3123-4dbf-af6b-bf6033d8ff13",
+      "name": "Team Compass",
+      "field": "website",
+      "value": "https://www.compassbasketball.com/",
+      "from": null,
+      "source": "discovered(high)",
+      "sourceUrl": "https://www.facebook.com/compassbball/",
+      "confidence": "high"
+    },
+    {
+      "id": "ad571265-bfa2-488c-84be-6a267a36aa01",
+      "name": "Team Truth",
+      "field": "website",
+      "value": "https://teamtruth360.com/",
+      "from": null,
+      "source": "discovered(high)",
+      "sourceUrl": "https://teamtruth360.com/",
+      "confidence": "high"
+    },
+    {
+      "id": "148fec24-8278-4c5b-a4c1-4d788e7fee2b",
+      "name": "Top Notch Prep / TNP (Top Notch Stars)",
+      "field": "website",
+      "value": "https://topnotchstarsbasketball.weebly.com/",
+      "from": null,
+      "source": "discovered(high)",
+      "sourceUrl": "https://topnotchstarsbasketball.weebly.com/",
+      "confidence": "high"
+    },
+    {
+      "id": "e395b63f-2d89-48c5-8d28-a85cb1c6e4ae",
+      "name": "Top Notch Prep Academy (TNPA)",
+      "field": "website",
+      "value": "https://www.instagram.com/topnotchprepacademy/",
+      "from": null,
+      "source": "discovered(high)",
+      "sourceUrl": "https://www.instagram.com/topnotchprepacademy/",
+      "confidence": "high"
+    },
+    {
+      "id": "f496d7ac-21e1-4470-9752-24a8cbeeca33",
+      "name": "Toronto Alliance",
+      "field": "website",
+      "value": "https://www.instagram.com/torontoalliance/",
+      "from": null,
+      "source": "discovered(medium)",
+      "sourceUrl": "https://www.instagram.com/torontoalliance/",
+      "confidence": "medium"
+    },
+    {
+      "id": "f179b4c9-6554-4836-abd4-48bcaaaf6250",
+      "name": "Toronto Phantoms",
+      "field": "website",
+      "value": "https://www.instagram.com/toronto.phantoms/",
+      "from": null,
+      "source": "discovered(medium)",
+      "sourceUrl": "https://basketball.exposureevents.com/250406/winter-league/teams",
+      "confidence": "medium"
+    },
+    {
+      "id": "6fffdb9b-3a4d-471e-8aee-cd8147b6d6c8",
+      "name": "Tri-City Basketball",
+      "field": "website",
+      "value": "https://www.tricityba.com/",
+      "from": null,
+      "source": "discovered(high)",
+      "sourceUrl": "https://www.instagram.com/tricityba/",
+      "confidence": "high"
+    },
+    {
+      "id": "cf89d40f-95eb-47c2-9514-083d39f941a2",
+      "name": "Uchenna Academy",
+      "field": "website",
+      "value": "https://uchennaedu.org/",
+      "from": null,
+      "source": "discovered(high)",
+      "sourceUrl": "https://uchennaedu.org/",
+      "confidence": "high"
+    },
+    {
+      "id": "cf89d40f-95eb-47c2-9514-083d39f941a2",
+      "name": "Uchenna Academy",
+      "field": "contactEmail",
+      "value": "info@uchenna.ca",
+      "from": null,
+      "source": "discovered(high)",
+      "sourceUrl": "https://uchennaedu.org/",
+      "confidence": "high"
+    },
+    {
+      "id": "cf89d40f-95eb-47c2-9514-083d39f941a2",
+      "name": "Uchenna Academy",
+      "field": "phoneNumber",
+      "value": "416-855-5572",
+      "from": null,
+      "source": "discovered(high)",
+      "sourceUrl": "https://uchennaedu.org/",
+      "confidence": "high"
+    },
+    {
+      "id": "8f478883-8802-4e42-84dd-06bec12c80e5",
+      "name": "Up North United",
+      "field": "website",
+      "value": "https://www.instagram.com/upnorthunited/",
+      "from": null,
+      "source": "discovered(high)",
+      "sourceUrl": "https://www.instagram.com/upnorthunited/",
+      "confidence": "high"
+    },
+    {
+      "id": "8f478883-8802-4e42-84dd-06bec12c80e5",
+      "name": "Up North United",
+      "field": "contactEmail",
+      "value": "upnorthunitedbasketbal@gmail.com",
+      "from": null,
+      "source": "discovered(high)",
+      "sourceUrl": "https://www.instagram.com/upnorthunited/",
+      "confidence": "high"
+    },
+    {
+      "id": "92f34527-cac1-48a7-8611-9df72ea9f7cd",
+      "name": "UPlay Canada",
+      "field": "website",
+      "value": "https://uplaycanada.com/",
+      "from": null,
+      "source": "discovered(high)",
+      "sourceUrl": "https://uplaycanada.com/",
+      "confidence": "high"
+    },
+    {
+      "id": "92f34527-cac1-48a7-8611-9df72ea9f7cd",
+      "name": "UPlay Canada",
+      "field": "phoneNumber",
+      "value": "416-272-7999",
+      "from": null,
+      "source": "discovered(high)",
+      "sourceUrl": "https://uplaycanada.com/",
+      "confidence": "high"
+    },
+    {
+      "id": "b23bdb36-a2f3-4627-84bd-1e1231bdabe7",
+      "name": "Westfield Prep / Westfield Secondary",
+      "field": "website",
+      "value": "https://westfieldeducation.ca/",
+      "from": null,
+      "source": "discovered(medium)",
+      "sourceUrl": "https://westfieldeducation.ca/",
+      "confidence": "medium"
+    },
+    {
+      "id": "66fbc2de-726b-4bae-b9b8-bc0a964f3517",
+      "name": "Whitby Saints",
+      "field": "contactEmail",
+      "value": "migzpink@gmail.com",
+      "from": null,
+      "source": "discovered(high)",
+      "sourceUrl": "https://www.instagram.com/selectbasketball/",
+      "confidence": "high"
+    },
+    {
+      "id": "68910786-7252-4716-aaf4-0b5fcec7c23c",
+      "name": "Whitby Wildcat Sports",
+      "field": "contactEmail",
+      "value": "whitbywildcatbasketball@gmail.com",
+      "from": null,
+      "source": "discovered(medium)",
+      "sourceUrl": "https://www.whitbywildcatsports.ca/",
+      "confidence": "medium"
+    },
+    {
+      "id": "e2a3d47b-b471-4809-8841-ce20037c829b",
+      "name": "Whitby Wildcats",
+      "field": "contactEmail",
+      "value": "whitbywildcatbasketball@gmail.com",
+      "from": null,
+      "source": "discovered(medium)",
+      "sourceUrl": "https://www.facebook.com/whitbywildcatbasketball/",
+      "confidence": "medium"
+    },
+    {
+      "id": "c7236756-cfe0-4065-9f77-f4450e5383c2",
+      "name": "William Academy",
+      "field": "website",
+      "value": "https://williamacademyathletics.ca/",
+      "from": null,
+      "source": "discovered(high)",
+      "sourceUrl": "https://williamacademyathletics.ca/",
+      "confidence": "high"
+    },
+    {
+      "id": "e476a142-8c03-4f67-80ee-0487ff45bd50",
+      "name": "Windsor St. Clair (WSC JUEL)",
+      "field": "website",
+      "value": "juel.ca",
+      "from": null,
+      "source": "discovered(high)",
+      "sourceUrl": "https://www.instagram.com/windsorstclair/",
+      "confidence": "high"
+    },
+    {
+      "id": "c9236ba5-9b6b-4fa4-9781-3c579b72a26f",
+      "name": "Morell Wildcats Minor Basketball Association",
+      "field": "phoneNumber",
+      "value": "902-368-4986",
+      "from": null,
+      "source": "discovered(low)",
+      "sourceUrl": "https://www.sportsengine.com/org/morell-minor-basketball-association",
+      "confidence": "low"
+    },
+    {
+      "id": "4335d627-9252-429d-b953-18a3cffda0cf",
+      "name": "Académie Les Estacades \"5 Majeur\"",
+      "field": "website",
+      "value": "http://www.academielesestacades.ca/se-basketball",
+      "from": null,
+      "source": "discovered(high)",
+      "sourceUrl": "http://www.academielesestacades.ca/se-basketball",
+      "confidence": "high"
+    },
+    {
+      "id": "4335d627-9252-429d-b953-18a3cffda0cf",
+      "name": "Académie Les Estacades \"5 Majeur\"",
+      "field": "contactEmail",
+      "value": "patrice.deltell@yahoo.fr",
+      "from": null,
+      "source": "discovered(high)",
+      "sourceUrl": "http://www.academielesestacades.ca/se-basketball",
+      "confidence": "high"
+    },
+    {
+      "id": "dd53d550-34fa-427a-a772-906a10be9dd3",
+      "name": "AGBU basketball (Armenian General Benevolent Union)",
+      "field": "contactEmail",
+      "value": "Montreal@agbu.org",
+      "from": null,
+      "source": "discovered(high)",
+      "sourceUrl": "https://agbumontreal.org/directory/",
+      "confidence": "high"
+    },
+    {
+      "id": "dd53d550-34fa-427a-a772-906a10be9dd3",
+      "name": "AGBU basketball (Armenian General Benevolent Union)",
+      "field": "phoneNumber",
+      "value": "514-748-2428",
+      "from": null,
+      "source": "discovered(high)",
+      "sourceUrl": "https://agbumontreal.org/directory/",
+      "confidence": "high"
+    },
+    {
+      "id": "620199a4-718d-45f6-be95-53f1c90fee23",
+      "name": "Amazones Basketball Laval",
+      "field": "website",
+      "value": "https://www.amazonesaaa.com/",
+      "from": null,
+      "source": "discovered(medium)",
+      "sourceUrl": "https://www.amazonesaaa.com/",
+      "confidence": "medium"
+    },
+    {
+      "id": "4b4aa52e-2fcf-4550-94c7-5cfd705cad2b",
+      "name": "Arsenal Nouvelles Frontieres",
+      "field": "website",
+      "value": "https://collegenf.ca/",
+      "from": null,
+      "source": "discovered(high)",
+      "sourceUrl": "https://collegenf.ca/vie-pedagogique/programmes/sports/",
+      "confidence": "high"
+    },
+    {
+      "id": "4b4aa52e-2fcf-4550-94c7-5cfd705cad2b",
+      "name": "Arsenal Nouvelles Frontieres",
+      "field": "contactEmail",
+      "value": "info@collegenf.ca",
+      "from": null,
+      "source": "discovered(high)",
+      "sourceUrl": "https://collegenf.ca/vie-pedagogique/programmes/sports/",
+      "confidence": "high"
+    },
+    {
+      "id": "4b4aa52e-2fcf-4550-94c7-5cfd705cad2b",
+      "name": "Arsenal Nouvelles Frontieres",
+      "field": "phoneNumber",
+      "value": "819-561-8922",
+      "from": null,
+      "source": "discovered(high)",
+      "sourceUrl": "https://collegenf.ca/vie-pedagogique/programmes/sports/",
+      "confidence": "high"
+    },
+    {
+      "id": "db2875e3-7eb3-470f-b43e-07f27cd9a433",
+      "name": "Association de Basketball de Lachine",
+      "field": "website",
+      "value": "https://www.facebook.com/BasketballLachine/",
+      "from": null,
+      "source": "discovered(medium)",
+      "sourceUrl": "https://montreal.ca/en/articles/sports-and-recreational-activities-offered-organizations-lachine-23512",
+      "confidence": "medium"
+    },
+    {
+      "id": "463f6427-ce8a-4760-a2a6-7bcdcf9eb204",
+      "name": "Club basketball Les Astéries",
+      "field": "website",
+      "value": "https://www.asteriebasketball.com/en",
+      "from": null,
+      "source": "discovered(high)",
+      "sourceUrl": "https://www.asteriebasketball.com/en",
+      "confidence": "high"
+    },
+    {
+      "id": "f4244e8a-0fc2-40d4-bdc2-e9cfc28ca1a2",
+      "name": "Club de Basket-ball Jonquière",
+      "field": "website",
+      "value": "https://www.facebook.com/bleuetor/",
+      "from": null,
+      "source": "discovered(low)",
+      "sourceUrl": "https://www.facebook.com/bleuetor/",
+      "confidence": "low"
+    },
+    {
+      "id": "1b5ed306-bc57-4abd-9e2d-56cf06359328",
+      "name": "Club de basketball de Beauce",
+      "field": "website",
+      "value": "https://www.facebook.com/groups/165606103514972/",
+      "from": null,
+      "source": "discovered(low)",
+      "sourceUrl": "https://www.facebook.com/groups/165606103514972/",
+      "confidence": "low"
+    },
+    {
+      "id": "f6c1f701-5412-422a-b8d5-a6a3c6e7a353",
+      "name": "Club de Basketball M.A.D.",
+      "field": "website",
+      "value": "https://www.facebook.com/MADGirlsBasketball/",
+      "from": null,
+      "source": "discovered(low)",
+      "sourceUrl": "https://www.facebook.com/MADGirlsBasketball/",
+      "confidence": "low"
+    },
+    {
+      "id": "79d6fc6f-c04c-4d08-aca1-f3fac2f20d1d",
+      "name": "Commission loisir et sport de la Baie-James",
+      "field": "website",
+      "value": "https://lsbj.ca/",
+      "from": null,
+      "source": "discovered(medium)",
+      "sourceUrl": "https://lsbj.ca/",
+      "confidence": "medium"
+    },
+    {
+      "id": "af17548e-ffb2-483c-9ab1-03269cfc7f7b",
+      "name": "Conseil Sport Loisir de l'Estrie",
+      "field": "website",
+      "value": "https://www.csle.qc.ca/",
+      "from": null,
+      "source": "discovered(high)",
+      "sourceUrl": "https://www.csle.qc.ca/nous-joindre/",
+      "confidence": "high"
+    },
+    {
+      "id": "af17548e-ffb2-483c-9ab1-03269cfc7f7b",
+      "name": "Conseil Sport Loisir de l'Estrie",
+      "field": "contactEmail",
+      "value": "info@csle.qc.ca",
+      "from": null,
+      "source": "discovered(high)",
+      "sourceUrl": "https://www.csle.qc.ca/nous-joindre/",
+      "confidence": "high"
+    },
+    {
+      "id": "3f1fd1c5-d49f-41ba-8388-7d7ecc7f68a9",
+      "name": "Corporation régionale de loisir et de sport de Lanaudière",
+      "field": "website",
+      "value": "https://loisir-lanaudiere.qc.ca/",
+      "from": null,
+      "source": "discovered(high)",
+      "sourceUrl": "https://loisir-lanaudiere.qc.ca/devenir-membre/",
+      "confidence": "high"
+    },
+    {
+      "id": "3f1fd1c5-d49f-41ba-8388-7d7ecc7f68a9",
+      "name": "Corporation régionale de loisir et de sport de Lanaudière",
+      "field": "contactEmail",
+      "value": "info@loisir-lanaudiere.qc.ca",
+      "from": null,
+      "source": "discovered(high)",
+      "sourceUrl": "https://loisir-lanaudiere.qc.ca/devenir-membre/",
+      "confidence": "high"
+    },
+    {
+      "id": "185158a5-f380-43fb-85ba-b732beecac93",
+      "name": "Downtown Community Blues (DC Blues)",
+      "field": "website",
+      "value": "https://www.facebook.com/downtowncommunityblues/",
+      "from": null,
+      "source": "discovered(medium)",
+      "sourceUrl": "https://www.downtowncommunityblues.org/Forms/Public/Tryouts.aspx",
+      "confidence": "medium"
+    },
+    {
+      "id": "57759c3d-1fe0-4056-be80-121afd74abee",
+      "name": "Homenetmen-GAMK Montreal (Union Générale Sportive Arménienne)",
+      "field": "website",
+      "value": "homenetmenmontreal.com",
+      "from": null,
+      "source": "discovered(high)",
+      "sourceUrl": "https://www.basketball.qc.ca/fr/page/reseau_basketball_quebec/montreal.html",
+      "confidence": "high"
+    },
+    {
+      "id": "d5517407-3f96-4935-8e35-43006a6fd4ce",
+      "name": "Maison des Jeunes de LaSalle",
+      "field": "website",
+      "value": "mdjlasalle.wixsite.com/mdjlasalle",
+      "from": null,
+      "source": "discovered(medium)",
+      "sourceUrl": "https://macommunaute.ca/bottin-des-organismes/maisondesjeunesdelasalle/",
+      "confidence": "medium"
+    },
+    {
+      "id": "73be90cd-dc28-4de9-8d25-d9a7b8e8a9cd",
+      "name": "Mo-Sports",
+      "field": "website",
+      "value": "mosport.atriumti.com",
+      "from": null,
+      "source": "discovered(low)",
+      "sourceUrl": "http://mosport.atriumti.com/",
+      "confidence": "low"
+    },
+    {
+      "id": "24ff4fed-daad-4ec9-8bfb-fda4fc9ee51a",
+      "name": "RSEQ",
+      "field": "website",
+      "value": "rseq.ca",
+      "from": null,
+      "source": "discovered(high)",
+      "sourceUrl": "https://rseq.ca/lerseq/contacteznous/",
+      "confidence": "high"
+    },
+    {
+      "id": "24ff4fed-daad-4ec9-8bfb-fda4fc9ee51a",
+      "name": "RSEQ",
+      "field": "contactEmail",
+      "value": "info@rseq.ca",
+      "from": null,
+      "source": "discovered(high)",
+      "sourceUrl": "https://rseq.ca/lerseq/contacteznous/",
+      "confidence": "high"
+    },
+    {
+      "id": "24ff4fed-daad-4ec9-8bfb-fda4fc9ee51a",
+      "name": "RSEQ",
+      "field": "phoneNumber",
+      "value": "514-252-3300",
+      "from": null,
+      "source": "discovered(high)",
+      "sourceUrl": "https://rseq.ca/lerseq/contacteznous/",
+      "confidence": "high"
+    },
+    {
+      "id": "3802c852-d013-44df-a9c0-d4dd3d57d2ed",
+      "name": "RSEQCE",
+      "field": "website",
+      "value": "ce.rseq.ca",
+      "from": null,
+      "source": "discovered(high)",
+      "sourceUrl": "https://ce.rseq.ca/",
+      "confidence": "high"
+    },
+    {
+      "id": "3802c852-d013-44df-a9c0-d4dd3d57d2ed",
+      "name": "RSEQCE",
+      "field": "contactEmail",
+      "value": "info@ce.rseq.ca",
+      "from": null,
+      "source": "discovered(high)",
+      "sourceUrl": "https://ce.rseq.ca/",
+      "confidence": "high"
+    },
+    {
+      "id": "1075e80c-0c3b-4fdb-aa63-5ef4ac51aefc",
+      "name": "RSEQCN",
+      "field": "website",
+      "value": "rseqcn.ca",
+      "from": null,
+      "source": "discovered(high)",
+      "sourceUrl": "https://rseqcn.ca/nous-joindre/",
+      "confidence": "high"
+    },
+    {
+      "id": "1075e80c-0c3b-4fdb-aa63-5ef4ac51aefc",
+      "name": "RSEQCN",
+      "field": "contactEmail",
+      "value": "eboucher@cote-nord.rseq.ca",
+      "from": null,
+      "source": "discovered(high)",
+      "sourceUrl": "https://rseqcn.ca/nous-joindre/",
+      "confidence": "high"
+    },
+    {
+      "id": "11f9a4cd-e684-44aa-8c74-4f72c3288c2b",
+      "name": "RSEQEQ",
+      "field": "website",
+      "value": "rseq-eq.com",
+      "from": null,
+      "source": "discovered(high)",
+      "sourceUrl": "https://www.rseq-eq.com/",
+      "confidence": "high"
+    },
+    {
+      "id": "11f9a4cd-e684-44aa-8c74-4f72c3288c2b",
+      "name": "RSEQEQ",
+      "field": "phoneNumber",
+      "value": "581-824-2207",
+      "from": null,
+      "source": "discovered(high)",
+      "sourceUrl": "https://www.rseq-eq.com/",
+      "confidence": "high"
+    },
+    {
+      "id": "83121ec0-61cc-4907-9b92-aaa2a4491016",
+      "name": "RSEQLL",
+      "field": "website",
+      "value": "ll.rseq.ca",
+      "from": null,
+      "source": "discovered(high)",
+      "sourceUrl": "https://ll.rseq.ca/contact/",
+      "confidence": "high"
+    },
+    {
+      "id": "83121ec0-61cc-4907-9b92-aaa2a4491016",
+      "name": "RSEQLL",
+      "field": "contactEmail",
+      "value": "info@ll.rseq.ca",
+      "from": null,
+      "source": "discovered(high)",
+      "sourceUrl": "https://ll.rseq.ca/contact/",
+      "confidence": "high"
+    },
+    {
+      "id": "58d4fa1e-5906-4101-bfc3-0204f0afeb69",
+      "name": "RSEQM (Réseau du sport étudiant - Mauricie)",
+      "field": "website",
+      "value": "rseqmauricie.com",
+      "from": null,
+      "source": "discovered(high)",
+      "sourceUrl": "https://www.rseqmauricie.com/",
+      "confidence": "high"
+    },
+    {
+      "id": "58d4fa1e-5906-4101-bfc3-0204f0afeb69",
+      "name": "RSEQM (Réseau du sport étudiant - Mauricie)",
+      "field": "contactEmail",
+      "value": "info@mauricie.rseq.ca",
+      "from": null,
+      "source": "discovered(high)",
+      "sourceUrl": "https://www.rseqmauricie.com/",
+      "confidence": "high"
+    },
+    {
+      "id": "58d4fa1e-5906-4101-bfc3-0204f0afeb69",
+      "name": "RSEQM (Réseau du sport étudiant - Mauricie)",
+      "field": "phoneNumber",
+      "value": "819-693-5805",
+      "from": null,
+      "source": "discovered(high)",
+      "sourceUrl": "https://www.rseqmauricie.com/",
+      "confidence": "high"
+    },
+    {
+      "id": "7edff361-c571-4d96-9ab6-4365d4ee7b0d",
+      "name": "RSEQO (Réseau du sport étudiant - Outaouais)",
+      "field": "website",
+      "value": "rseqoutaouais.ca",
+      "from": null,
+      "source": "discovered(high)",
+      "sourceUrl": "https://www.rseqoutaouais.ca/",
+      "confidence": "high"
+    },
+    {
+      "id": "7edff361-c571-4d96-9ab6-4365d4ee7b0d",
+      "name": "RSEQO (Réseau du sport étudiant - Outaouais)",
+      "field": "contactEmail",
+      "value": "info@outaouais.rseq.ca",
+      "from": null,
+      "source": "discovered(high)",
+      "sourceUrl": "https://www.rseqoutaouais.ca/",
+      "confidence": "high"
+    },
+    {
+      "id": "18aead77-e550-4076-873a-72fe85985562",
+      "name": "RSEQQCA",
+      "field": "website",
+      "value": "rseqqca.com",
+      "from": null,
+      "source": "discovered(high)",
+      "sourceUrl": "https://rseqqca.com/apropos",
+      "confidence": "high"
+    },
+    {
+      "id": "18aead77-e550-4076-873a-72fe85985562",
+      "name": "RSEQQCA",
+      "field": "contactEmail",
+      "value": "info@qca.rseq.ca",
+      "from": null,
+      "source": "discovered(high)",
+      "sourceUrl": "https://rseqqca.com/apropos",
+      "confidence": "high"
+    },
+    {
+      "id": "08f4e6e5-cd5d-4476-a91c-25eec0175f0f",
+      "name": "Révolution",
+      "field": "website",
+      "value": "https://www.revolutionbasket.com/fr/publication.html",
+      "from": null,
+      "source": "discovered(medium)",
+      "sourceUrl": "https://www.revolutionbasket.com/fr/publication.html",
+      "confidence": "medium"
+    },
+    {
+      "id": "72f4cb34-cdd1-43d9-a9eb-562ed77ac952",
+      "name": "Sonic de St-Amable",
+      "field": "website",
+      "value": "https://www.facebook.com/61556684616162/",
+      "from": null,
+      "source": "discovered(low)",
+      "sourceUrl": "https://www.facebook.com/61556684616162/",
+      "confidence": "low"
+    },
+    {
+      "id": "b6a1db14-ff99-411b-986d-01fbb80af3a5",
+      "name": "Sports-Laval",
+      "field": "website",
+      "value": "https://www.basketlaval.ca",
+      "from": null,
+      "source": "discovered(high)",
+      "sourceUrl": "https://sportslaval.qc.ca/portfolio/basketball/",
+      "confidence": "high"
+    },
+    {
+      "id": "b6a1db14-ff99-411b-986d-01fbb80af3a5",
+      "name": "Sports-Laval",
+      "field": "contactEmail",
+      "value": "info.basketlaval@gmail.com",
+      "from": null,
+      "source": "discovered(high)",
+      "sourceUrl": "https://sportslaval.qc.ca/portfolio/basketball/",
+      "confidence": "high"
+    },
+    {
+      "id": "f5af8983-2fbf-41e9-a21f-34c92101aa4d",
+      "name": "St-Lazare Lions",
+      "field": "website",
+      "value": "https://www.ville.saint-lazare.qc.ca/en/leisure-sports-and-culture/activities/699/st-lazare-lions-basketball-club",
+      "from": null,
+      "source": "discovered(medium)",
+      "sourceUrl": "https://www.ville.saint-lazare.qc.ca/en/leisure-sports-and-culture/activities/699/st-lazare-lions-basketball-club",
+      "confidence": "medium"
+    },
+    {
+      "id": "4063c689-4af1-4352-9f1f-19a8415bbffc",
+      "name": "Team CB / CB Elite",
+      "field": "website",
+      "value": "https://www.cbelite.ca/",
+      "from": null,
+      "source": "discovered(high)",
+      "sourceUrl": "https://www.cbelite.ca/our-team",
+      "confidence": "high"
+    },
+    {
+      "id": "4063c689-4af1-4352-9f1f-19a8415bbffc",
+      "name": "Team CB / CB Elite",
+      "field": "contactEmail",
+      "value": "shawn@vidasana.ca",
+      "from": null,
+      "source": "discovered(high)",
+      "sourceUrl": "https://www.cbelite.ca/our-team",
+      "confidence": "high"
+    },
+    {
+      "id": "4063c689-4af1-4352-9f1f-19a8415bbffc",
+      "name": "Team CB / CB Elite",
+      "field": "phoneNumber",
+      "value": "514-918-9906",
+      "from": null,
+      "source": "discovered(high)",
+      "sourceUrl": "https://www.cbelite.ca/our-team",
+      "confidence": "high"
+    },
+    {
+      "id": "fc88556e-0a29-4771-a9cb-ffb5ce8c8ebc",
+      "name": "Unité régionale de loisir et sport du Centre-du-Québec",
+      "field": "website",
+      "value": "https://loisir-sport.centre-du-quebec.qc.ca/",
+      "from": null,
+      "source": "discovered(medium)",
+      "sourceUrl": "https://loisir-sport.centre-du-quebec.qc.ca/",
+      "confidence": "medium"
+    },
+    {
+      "id": "0b10320a-39cc-4ca9-8abd-b0dc996865c7",
+      "name": "Unité régionale loisir et sport Côte-Nord",
+      "field": "website",
+      "value": "https://www.urlscn.com/",
+      "from": null,
+      "source": "discovered(high)",
+      "sourceUrl": "https://www.urlscn.com/nous-joindre",
+      "confidence": "high"
+    },
+    {
+      "id": "0b10320a-39cc-4ca9-8abd-b0dc996865c7",
+      "name": "Unité régionale loisir et sport Côte-Nord",
+      "field": "contactEmail",
+      "value": "info@urlscn.qc.ca",
+      "from": null,
+      "source": "discovered(high)",
+      "sourceUrl": "https://www.urlscn.com/nous-joindre",
+      "confidence": "high"
+    },
+    {
+      "id": "95ef59b3-4b13-4e8c-8d28-643ca44d9e89",
+      "name": "École secondaire Jean-de-Brébeuf",
+      "field": "website",
+      "value": "https://brebeufbasketball.com/",
+      "from": null,
+      "source": "discovered(medium)",
+      "sourceUrl": "https://rseq.ca/sports/basketball/ligues-provinciales/division-2/benjamin/masculin/%C3%A9cole-secondaire-jean-de-br%C3%A9beuf/",
+      "confidence": "medium"
+    },
+    {
+      "id": "7ef1dff1-6122-40df-b771-5848ed2e5da8",
+      "name": "École St-Gabriel",
+      "field": "website",
+      "value": "https://st-gabriel.cssmi.qc.ca/",
+      "from": null,
+      "source": "discovered(high)",
+      "sourceUrl": "https://st-gabriel.cssmi.qc.ca/",
+      "confidence": "high"
+    },
+    {
+      "id": "7ef1dff1-6122-40df-b771-5848ed2e5da8",
+      "name": "École St-Gabriel",
+      "field": "contactEmail",
+      "value": "saint-gabriel@cssmi.qc.ca",
+      "from": null,
+      "source": "discovered(high)",
+      "sourceUrl": "https://st-gabriel.cssmi.qc.ca/",
+      "confidence": "high"
+    },
+    {
+      "id": "7ef1dff1-6122-40df-b771-5848ed2e5da8",
+      "name": "École St-Gabriel",
+      "field": "phoneNumber",
+      "value": "450-433-5445",
+      "from": null,
+      "source": "discovered(high)",
+      "sourceUrl": "https://st-gabriel.cssmi.qc.ca/",
+      "confidence": "high"
+    },
+    {
+      "id": "b4db2b9c-94cb-436c-8312-4151fa116703",
+      "name": "Alonzolutions Basketball (A'z Basketball)",
+      "field": "contactEmail",
+      "value": "alonzolutions.basketball@gmail.com",
+      "from": null,
+      "source": "discovered(high)",
+      "sourceUrl": "https://alonzolutions.ca/",
+      "confidence": "high"
+    },
+    {
+      "id": "04550070-4397-4394-afed-eba19dcd5ce2",
+      "name": "Apex Athlete Development (Apex Basketball)",
+      "field": "contactEmail",
+      "value": "apexathletedevelopment@gmail.com",
+      "from": null,
+      "source": "discovered(high)",
+      "sourceUrl": "https://www.facebook.com/apexathletedevelopmentsportscentre/",
+      "confidence": "high"
+    },
+    {
+      "id": "1f469107-eac0-4018-8f26-6dec9feb61c9",
+      "name": "Diamond Valley Club Basketball",
+      "field": "website",
+      "value": "https://oilfieldssportsassociation.com/basketball.html",
+      "from": null,
+      "source": "discovered(medium)",
+      "sourceUrl": "https://oilfieldssportsassociation.com/basketball.html",
+      "confidence": "medium"
+    },
+    {
+      "id": "f7faa228-9010-4dfc-ae88-98bff6281953",
+      "name": "Highway 11 Athletics",
+      "field": "website",
+      "value": "https://www.instagram.com/hwy11athletics/",
+      "from": null,
+      "source": "discovered(medium)",
+      "sourceUrl": "https://www.instagram.com/hwy11athletics/",
+      "confidence": "medium"
+    },
+    {
+      "id": "554b0c4d-9499-4d2e-911c-9f591397295c",
+      "name": "Lloydminster Filipino-Canadian Basketball Association (LFCBA)",
+      "field": "website",
+      "value": "https://www.facebook.com/groups/1393616070923014/",
+      "from": null,
+      "source": "discovered(medium)",
+      "sourceUrl": "https://www.facebook.com/groups/1393616070923014/",
+      "confidence": "medium"
+    },
+    {
+      "id": "554b0c4d-9499-4d2e-911c-9f591397295c",
+      "name": "Lloydminster Filipino-Canadian Basketball Association (LFCBA)",
+      "field": "contactEmail",
+      "value": "Dowsan.antonio1@gmail.com",
+      "from": null,
+      "source": "discovered(medium)",
+      "sourceUrl": "https://www.facebook.com/groups/1393616070923014/",
+      "confidence": "medium"
+    },
+    {
+      "id": "1dc3a9ea-4c75-4609-914c-6cd2dc478a1a",
+      "name": "Lloydminster Renegades",
+      "field": "website",
+      "value": "https://www.facebook.com/basketball.yll/",
+      "from": null,
+      "source": "discovered(medium)",
+      "sourceUrl": "https://www.facebook.com/basketball.yll/",
+      "confidence": "medium"
     },
     {
       "id": "b9e5cd77-9c53-4577-b00a-1443d8a44d4b",
       "name": "4th Qtr Basketball",
       "field": "website",
       "value": null,
+      "from": "4qt.ca",
       "source": "dead-site-clear"
     },
     {
@@ -468,6 +2799,7 @@
       "name": "Acadia Minor Basketball",
       "field": "website",
       "value": null,
+      "from": "https://www.acadiaminorbasketball.ca/",
       "source": "dead-site-clear"
     },
     {
@@ -475,6 +2807,7 @@
       "name": "Alberni Basketball / Port Alberni Minor Basketball Association (PAMBA)",
       "field": "website",
       "value": null,
+      "from": "https://www.albernibasketball.ca/",
       "source": "dead-site-clear"
     },
     {
@@ -482,6 +2815,7 @@
       "name": "Alonzolutions Basketball (A'z Basketball)",
       "field": "website",
       "value": null,
+      "from": "https://alonzolutions.ca/",
       "source": "dead-site-clear"
     },
     {
@@ -489,6 +2823,7 @@
       "name": "Altona Basketball Association",
       "field": "website",
       "value": null,
+      "from": "https://altonabasketball.com/",
       "source": "dead-site-clear"
     },
     {
@@ -496,6 +2831,7 @@
       "name": "Apex Athlete Development (Apex Basketball)",
       "field": "website",
       "value": null,
+      "from": "https://www.apexathletedevelopment.ca/",
       "source": "dead-site-clear"
     },
     {
@@ -503,6 +2839,7 @@
       "name": "Believe Basketball Academy",
       "field": "website",
       "value": null,
+      "from": "https://www.believebasketballacademy.com/",
       "source": "dead-site-clear"
     },
     {
@@ -510,6 +2847,7 @@
       "name": "Bounce Elite",
       "field": "website",
       "value": null,
+      "from": "http://www.bounceelite.ca/home",
       "source": "dead-site-clear"
     },
     {
@@ -517,6 +2855,7 @@
       "name": "Brodie Rec (Calgary North)",
       "field": "website",
       "value": null,
+      "from": "https://www.brodierec.com/locations/calgary-alberta",
       "source": "dead-site-clear"
     },
     {
@@ -524,6 +2863,7 @@
       "name": "Burlington Hoops Academy",
       "field": "website",
       "value": null,
+      "from": "burlingtonhoopsacademy.com (down)",
       "source": "dead-site-clear"
     },
     {
@@ -531,6 +2871,7 @@
       "name": "CIA Bounce / Nike EYBL",
       "field": "website",
       "value": null,
+      "from": "http://www.nikebounce.com/home",
       "source": "dead-site-clear"
     },
     {
@@ -538,6 +2879,7 @@
       "name": "Cadougan Elite",
       "field": "website",
       "value": null,
+      "from": "cadouganelite.com",
       "source": "dead-site-clear"
     },
     {
@@ -545,6 +2887,7 @@
       "name": "Canada Elite",
       "field": "website",
       "value": null,
+      "from": "https://www.canelite.ca/",
       "source": "dead-site-clear"
     },
     {
@@ -552,6 +2895,7 @@
       "name": "Capital X",
       "field": "website",
       "value": null,
+      "from": "https://www.capitalxbasketball.com/",
       "source": "dead-site-clear"
     },
     {
@@ -559,6 +2903,7 @@
       "name": "Charlottetown Tigers Minor Basketball Association (Charlottetown Minor Basketball Association)",
       "field": "website",
       "value": null,
+      "from": "http://tigersbasketball.ca/",
       "source": "dead-site-clear"
     },
     {
@@ -566,6 +2911,7 @@
       "name": "Conception Bay Seeds Youth Initiatives Inc. (CB Seeds Youth Basketball)",
       "field": "website",
       "value": null,
+      "from": "https://www.cbseeds.ca",
       "source": "dead-site-clear"
     },
     {
@@ -573,6 +2919,7 @@
       "name": "DK Dragons",
       "field": "website",
       "value": null,
+      "from": "https://dragonsbasketball.sportsengine-prelive.com/home",
       "source": "dead-site-clear"
     },
     {
@@ -580,6 +2927,7 @@
       "name": "Dovercourt Recreation Association",
       "field": "website",
       "value": null,
+      "from": "https://jr-nba.webflow.io/programs/dovercourt-recreation-association-fall",
       "source": "dead-site-clear"
     },
     {
@@ -587,6 +2935,7 @@
       "name": "EK Hoops Training",
       "field": "website",
       "value": null,
+      "from": "https://www.ekhoopstraining.com",
       "source": "dead-site-clear"
     },
     {
@@ -594,6 +2943,7 @@
       "name": "Excel Hoops Rep",
       "field": "website",
       "value": null,
+      "from": "https://www.excelhoops.com/",
       "source": "dead-site-clear"
     },
     {
@@ -601,6 +2951,7 @@
       "name": "FCBA Blizzards (Filipino-Canadian Basketball Association)",
       "field": "website",
       "value": null,
+      "from": "https://www.fcbablizzards.com/",
       "source": "dead-site-clear"
     },
     {
@@ -608,6 +2959,7 @@
       "name": "Fastbreak Basketball BC",
       "field": "website",
       "value": null,
+      "from": "https://www.fastbreakbasketballbc.ca",
       "source": "dead-site-clear"
     },
     {
@@ -615,6 +2967,7 @@
       "name": "Fernie Elevate Basketball",
       "field": "website",
       "value": null,
+      "from": "https://www.ferniebasketball.com/",
       "source": "dead-site-clear"
     },
     {
@@ -622,6 +2975,7 @@
       "name": "Gander Minor Basketball",
       "field": "website",
       "value": null,
+      "from": "https://ganderminorbasketball.ca",
       "source": "dead-site-clear"
     },
     {
@@ -629,6 +2983,7 @@
       "name": "Girls Play Too",
       "field": "website",
       "value": null,
+      "from": "https://www.girlsplaytoo.ca/aau",
       "source": "dead-site-clear"
     },
     {
@@ -636,6 +2991,7 @@
       "name": "Grassroots Canada",
       "field": "website",
       "value": null,
+      "from": "https://www.grassrootscanada.org/",
       "source": "dead-site-clear"
     },
     {
@@ -643,6 +2999,7 @@
       "name": "Gryphons Basketball",
       "field": "website",
       "value": null,
+      "from": "https://www.gryphonsbasketball.net",
       "source": "dead-site-clear"
     },
     {
@@ -650,6 +3007,7 @@
       "name": "Huron Lakers",
       "field": "website",
       "value": null,
+      "from": "http://huronlakers.on.ca/",
       "source": "dead-site-clear"
     },
     {
@@ -657,6 +3015,7 @@
       "name": "Ignite Canada Basketball",
       "field": "website",
       "value": null,
+      "from": "https://www.ignitecanadabasketball.com",
       "source": "dead-site-clear"
     },
     {
@@ -664,6 +3023,7 @@
       "name": "Indian Head Community Basketball Association",
       "field": "website",
       "value": null,
+      "from": "https://www.ihactivities.ca",
       "source": "dead-site-clear"
     },
     {
@@ -671,6 +3031,7 @@
       "name": "Inspire Basketball Club",
       "field": "website",
       "value": null,
+      "from": "https://www.inspirebasketballclub.com",
       "source": "dead-site-clear"
     },
     {
@@ -678,6 +3039,7 @@
       "name": "Inter-City Saints",
       "field": "website",
       "value": null,
+      "from": "https://www.intercitysaintseliteclub.com/teams/?u=INTER-CITYSAINTS&s=basketball",
       "source": "dead-site-clear"
     },
     {
@@ -685,6 +3047,7 @@
       "name": "JR Basketball Club",
       "field": "website",
       "value": null,
+      "from": "https://www.jrbasketballclub.com",
       "source": "dead-site-clear"
     },
     {
@@ -692,6 +3055,7 @@
       "name": "Junior Bison Boys Basketball Club",
       "field": "website",
       "value": null,
+      "from": "https://www.juniorbisonboys.ca/",
       "source": "dead-site-clear"
     },
     {
@@ -699,6 +3063,7 @@
       "name": "Junior Griffins Basketball (MacEwan University)",
       "field": "website",
       "value": null,
+      "from": "https://www.macewangriffins.ca/camps/jrgriffins",
       "source": "dead-site-clear"
     },
     {
@@ -706,6 +3071,7 @@
       "name": "K.T.B. Performance",
       "field": "website",
       "value": null,
+      "from": "https://www.ktbpt.com",
       "source": "dead-site-clear"
     },
     {
@@ -713,6 +3079,7 @@
       "name": "Mecca Sports Basketball",
       "field": "website",
       "value": null,
+      "from": "https://meccasports.ca",
       "source": "dead-site-clear"
     },
     {
@@ -720,6 +3087,7 @@
       "name": "Mississauga Knights",
       "field": "website",
       "value": null,
+      "from": "http://knightsbasketball.ca/",
       "source": "dead-site-clear"
     },
     {
@@ -727,6 +3095,7 @@
       "name": "Mount Pearl Minor Basketball Association (MPMBA)",
       "field": "website",
       "value": null,
+      "from": "http://mountpearlbasketball.com",
       "source": "dead-site-clear"
     },
     {
@@ -734,6 +3103,7 @@
       "name": "Niagara Rangers",
       "field": "website",
       "value": null,
+      "from": "http://www.niagararangers.com/",
       "source": "dead-site-clear"
     },
     {
@@ -741,6 +3111,7 @@
       "name": "Nova Stars Elite",
       "field": "website",
       "value": null,
+      "from": "forms.gle/iDvhsbGGs38zYVac9 (registration form)",
       "source": "dead-site-clear"
     },
     {
@@ -748,6 +3119,7 @@
       "name": "Olds College Jr. NBA Youth Basketball",
       "field": "website",
       "value": null,
+      "from": "https://gobroncos.ca/",
       "source": "dead-site-clear"
     },
     {
@@ -755,6 +3127,7 @@
       "name": "Open Court Training Academy",
       "field": "website",
       "value": null,
+      "from": "https://www.open-court.ca",
       "source": "dead-site-clear"
     },
     {
@@ -762,6 +3135,7 @@
       "name": "Peneteng Midland Basketball Association",
       "field": "website",
       "value": null,
+      "from": "https://jr-nba.webflow.io/programs/peneteng-midland-basketball-association-fall",
       "source": "dead-site-clear"
     },
     {
@@ -769,6 +3143,7 @@
       "name": "Richmond Sports Academy",
       "field": "website",
       "value": null,
+      "from": "https://www.richmondsportsacademy.com",
       "source": "dead-site-clear"
     },
     {
@@ -776,6 +3151,7 @@
       "name": "Rise Up Ball (R.U.B.)",
       "field": "website",
       "value": null,
+      "from": "https://www.riseupball.com",
       "source": "dead-site-clear"
     },
     {
@@ -783,6 +3159,7 @@
       "name": "Rookies Sports Club",
       "field": "website",
       "value": null,
+      "from": "https://www.rookiessc.ca",
       "source": "dead-site-clear"
     },
     {
@@ -790,6 +3167,7 @@
       "name": "Sevenfold Sport Basketball",
       "field": "website",
       "value": null,
+      "from": "https://www.sevenfoldbasketball.ca",
       "source": "dead-site-clear"
     },
     {
@@ -797,6 +3175,7 @@
       "name": "South Toronto Golden Eagles",
       "field": "website",
       "value": null,
+      "from": "https://www.southtorontobasketball.com/",
       "source": "dead-site-clear"
     },
     {
@@ -804,6 +3183,7 @@
       "name": "Southeast Storm Basketball (Southeast Community Storm Basketball)",
       "field": "website",
       "value": null,
+      "from": "http://www.southeaststormbasketball.com/",
       "source": "dead-site-clear"
     },
     {
@@ -811,6 +3191,7 @@
       "name": "Southern Shore Goulds Basketball (Goulds Basketball Association / Southern Shore Basketball Association)",
       "field": "website",
       "value": null,
+      "from": "gouldsbasketball.ca (registry-listed; not resolving July 2026)",
       "source": "dead-site-clear"
     },
     {
@@ -818,6 +3199,7 @@
       "name": "Southern Victoria Basketball Club (Southern Victoria Minor Basketball Association)",
       "field": "website",
       "value": null,
+      "from": "https://svba.ca/",
       "source": "dead-site-clear"
     },
     {
@@ -825,6 +3207,7 @@
       "name": "Southwest Academy Prep",
       "field": "website",
       "value": null,
+      "from": "swfacademy.com",
       "source": "dead-site-clear"
     },
     {
@@ -832,6 +3215,7 @@
       "name": "Splash Basketball",
       "field": "website",
       "value": null,
+      "from": "https://www.splashbballbc.com",
       "source": "dead-site-clear"
     },
     {
@@ -839,6 +3223,7 @@
       "name": "Squamish Youth Basketball Association (SYBA)",
       "field": "website",
       "value": null,
+      "from": "https://squamishyouthbasketball.ca/",
       "source": "dead-site-clear"
     },
     {
@@ -846,6 +3231,7 @@
       "name": "Stratford Foxes Minor Basketball Association",
       "field": "website",
       "value": null,
+      "from": "http://stratfordfoxes.ca/",
       "source": "dead-site-clear"
     },
     {
@@ -853,6 +3239,7 @@
       "name": "Team Breakdown Basketball",
       "field": "website",
       "value": null,
+      "from": "http://www.breakdownbasketball.ca/",
       "source": "dead-site-clear"
     },
     {
@@ -860,6 +3247,7 @@
       "name": "Torbay Minor Basketball",
       "field": "website",
       "value": null,
+      "from": "https://torbayminorbasketball.ca",
       "source": "dead-site-clear"
     },
     {
@@ -867,6 +3255,7 @@
       "name": "Trent Athletics Centre",
       "field": "website",
       "value": null,
+      "from": "https://jr-nba.webflow.io/programs/trent-athletics-centre-fall",
       "source": "dead-site-clear"
     },
     {
@@ -874,6 +3263,7 @@
       "name": "Triple Threat Basketball",
       "field": "website",
       "value": null,
+      "from": "http://www.triplethreatbasketball.ca",
       "source": "dead-site-clear"
     },
     {
@@ -881,6 +3271,7 @@
       "name": "Underground Basketball Club",
       "field": "website",
       "value": null,
+      "from": "undergroundbasketballclub.ca",
       "source": "dead-site-clear"
     },
     {
@@ -888,6 +3279,7 @@
       "name": "WPA Suns",
       "field": "website",
       "value": null,
+      "from": "wpasuns.com",
       "source": "dead-site-clear"
     },
     {
@@ -895,6 +3287,7 @@
       "name": "Welland Minor Basketball Association",
       "field": "website",
       "value": null,
+      "from": "http://www.wellandminorbasketball.ca/",
       "source": "dead-site-clear"
     },
     {
@@ -902,6 +3295,7 @@
       "name": "West Coast Training",
       "field": "website",
       "value": null,
+      "from": "https://www.wctraining.ca/",
       "source": "dead-site-clear"
     },
     {
@@ -909,6 +3303,7 @@
       "name": "Whistler Youth Basketball",
       "field": "website",
       "value": null,
+      "from": "https://www.whistleryouthbasketball.com/",
       "source": "dead-site-clear"
     },
     {
@@ -916,6 +3311,7 @@
       "name": "Whitby Saints",
       "field": "website",
       "value": null,
+      "from": "http://www.whitbysaints.com/",
       "source": "dead-site-clear"
     },
     {
@@ -923,6 +3319,7 @@
       "name": "Whitby Wildcat Sports",
       "field": "website",
       "value": null,
+      "from": "https://www.whitbywildcatsports.ca/",
       "source": "dead-site-clear"
     },
     {
@@ -930,6 +3327,7 @@
       "name": "Whitby Wildcats",
       "field": "website",
       "value": null,
+      "from": "https://whitbywildcatbasketball.com/",
       "source": "dead-site-clear"
     },
     {
@@ -937,6 +3335,7 @@
       "name": "Windsor Suns Elite Basketball",
       "field": "website",
       "value": null,
+      "from": "https://www.wpasuns.com/",
       "source": "dead-site-clear"
     },
     {
@@ -944,6 +3343,7 @@
       "name": "Woodstock Minor Basketball Association",
       "field": "website",
       "value": null,
+      "from": "http://www.woodstockminorbasketball.com/",
       "source": "dead-site-clear"
     },
     {
@@ -951,6 +3351,7 @@
       "name": "YMCA of Eastern Ontario Brockville",
       "field": "website",
       "value": null,
+      "from": "https://jr-nba.webflow.io/programs/ymca-of-eastern-ontario-brockville-fall",
       "source": "dead-site-clear"
     },
     {
@@ -958,6 +3359,7 @@
       "name": "YMCA of Eastern Ontario Kingston",
       "field": "website",
       "value": null,
+      "from": "https://jr-nba.webflow.io/programs/ymca-of-eastern-ontario-kingston-fall",
       "source": "dead-site-clear"
     },
     {
@@ -965,6 +3367,7 @@
       "name": "Royal Crown School",
       "field": "status",
       "value": "UNCLAIMED",
+      "from": "ACTIVE",
       "source": "seed-adoption-fix"
     },
     {
@@ -972,17 +3375,11 @@
       "name": "Against The Six Prep",
       "field": "status",
       "value": "UNCLAIMED",
+      "from": "ACTIVE",
       "source": "seed-adoption-fix"
     }
   ],
   "conflicts": [
-    {
-      "name": "416 United",
-      "field": "website",
-      "current": "416basketball.com",
-      "proposed": "https://416basketball.com",
-      "source": "edits"
-    },
     {
       "name": "Basketball World Toronto (BWT)",
       "field": "contactEmail",
@@ -1068,11 +3465,641 @@
       "source": "edits"
     },
     {
+      "name": "BC United Basketball Club",
+      "field": "phoneNumber",
+      "current": null,
+      "proposed": "812-990-0837",
+      "source": "verified-scrape REJECTED-INSANE-PHONE"
+    },
+    {
       "name": "Capital City Basketball Academy",
       "field": "phoneNumber",
       "current": null,
       "proposed": "900-900-9009",
       "source": "verified-scrape REJECTED-INSANE-PHONE"
+    },
+    {
+      "name": "Hamilton Transway Basketball",
+      "field": "phoneNumber",
+      "current": null,
+      "proposed": "810-287-0562",
+      "source": "verified-scrape REJECTED-INSANE-PHONE"
+    },
+    {
+      "name": "Legacy Athletics / ITD Panthers Basketball Club",
+      "field": "phoneNumber",
+      "current": null,
+      "proposed": "907-815-6314",
+      "source": "verified-scrape REJECTED-INSANE-PHONE"
+    },
+    {
+      "name": "Junior Bears Basketball Club (University of Alberta)",
+      "field": "phoneNumber",
+      "current": null,
+      "proposed": "326-471-3741",
+      "source": "verified-scrape REJECTED-INSANE-PHONE"
+    },
+    {
+      "name": "Markham-Stouffville Basketball Academy (MSBA STORM)",
+      "field": "phoneNumber",
+      "current": null,
+      "proposed": "254-535-2419",
+      "source": "verified-scrape REJECTED-INSANE-PHONE"
+    },
+    {
+      "name": "Next Generation Basketball",
+      "field": "phoneNumber",
+      "current": null,
+      "proposed": "906-504-1151",
+      "source": "verified-scrape REJECTED-INSANE-PHONE"
+    },
+    {
+      "name": "Northstar Basketball (Northstar Sports Foundation)",
+      "field": "phoneNumber",
+      "current": null,
+      "proposed": "643-961-3626",
+      "source": "verified-scrape REJECTED-INSANE-PHONE"
+    },
+    {
+      "name": "Roots Sports Club",
+      "field": "phoneNumber",
+      "current": null,
+      "proposed": "788-376-3113",
+      "source": "verified-scrape REJECTED-INSANE-PHONE"
+    },
+    {
+      "name": "Red Deer Minor Basketball Association (RDMBA)",
+      "field": "phoneNumber",
+      "current": null,
+      "proposed": "235-294-1176",
+      "source": "verified-scrape REJECTED-INSANE-PHONE"
+    },
+    {
+      "name": "South Delta Basketball Association (SDBA)",
+      "field": "phoneNumber",
+      "current": null,
+      "proposed": "777-655-9005",
+      "source": "verified-scrape REJECTED-INSANE-PHONE"
+    },
+    {
+      "name": "The Basketball Club",
+      "field": "phoneNumber",
+      "current": null,
+      "proposed": "201-525-4195",
+      "source": "verified-scrape REJECTED-INSANE-PHONE"
+    },
+    {
+      "name": "Gryphons Basketball",
+      "field": "website",
+      "current": "https://www.gryphonsbasketball.net",
+      "proposed": "https://www.aberdeenhall.com/files/AH-Basketball-One-Pager-062026-DIGITAL.pdf",
+      "source": "discovered(medium)"
+    },
+    {
+      "name": "Inspire Basketball Club",
+      "field": "website",
+      "current": "https://www.inspirebasketballclub.com",
+      "proposed": "https://www.instagram.com/inspire_basketball_club/",
+      "source": "discovered(medium)"
+    },
+    {
+      "name": "JR Basketball Club",
+      "field": "website",
+      "current": "https://www.jrbasketballclub.com",
+      "proposed": "https://www.jrbasketball.ca/",
+      "source": "discovered(high)"
+    },
+    {
+      "name": "Panther Hoops",
+      "field": "contactEmail",
+      "current": "info@pantherhoops.ca",
+      "proposed": "events@pantherhoops.ca",
+      "source": "discovered(medium)"
+    },
+    {
+      "name": "Panther Hoops",
+      "field": "phoneNumber",
+      "current": "(236) 428-3865",
+      "proposed": "6042020434",
+      "source": "discovered(medium)"
+    },
+    {
+      "name": "Panther Hoops",
+      "field": "contactEmail",
+      "current": "info@pantherhoops.ca",
+      "proposed": "events@pantherhoops.ca",
+      "source": "discovered(medium)"
+    },
+    {
+      "name": "Panther Hoops",
+      "field": "phoneNumber",
+      "current": "(236) 428-3865",
+      "proposed": "6042020434",
+      "source": "discovered(medium)"
+    },
+    {
+      "name": "Richmond Sports Academy",
+      "field": "website",
+      "current": "https://www.richmondsportsacademy.com",
+      "proposed": "https://www.instagram.com/richmondsportsacademy/",
+      "source": "discovered(medium)"
+    },
+    {
+      "name": "Rise Up Ball (R.U.B.)",
+      "field": "website",
+      "current": "https://www.riseupball.com",
+      "proposed": "https://www.facebook.com/riseupball/",
+      "source": "discovered(medium)"
+    },
+    {
+      "name": "Shockers Basketball Academy",
+      "field": "website",
+      "current": "https://shockersacademy.com",
+      "proposed": "https://www.instagram.com/shockersacademy/",
+      "source": "discovered(medium)"
+    },
+    {
+      "name": "Splash Basketball",
+      "field": "website",
+      "current": "https://www.splashbballbc.com",
+      "proposed": "https://www.instagram.com/splash_basket_ball/",
+      "source": "discovered(medium)"
+    },
+    {
+      "name": "West Coast Training",
+      "field": "website",
+      "current": "https://www.wctraining.ca/",
+      "proposed": "https://www.wcthoops.com/",
+      "source": "discovered(high)"
+    },
+    {
+      "name": "Attack Basketball",
+      "field": "website",
+      "current": "https://www.attackbball.ca",
+      "proposed": "https://attackbball.ca/",
+      "source": "discovered(medium)"
+    },
+    {
+      "name": "Chiefs Basketball (IRTC Chiefs)",
+      "field": "contactEmail",
+      "current": "info@chiefsbball.club",
+      "proposed": "info@irtc.ca",
+      "source": "discovered(high)"
+    },
+    {
+      "name": "Empire Basketball Club (Empire / Empire Elite)",
+      "field": "contactEmail",
+      "current": "empireelitehoops@gmail.com",
+      "proposed": "empirehoops.club@gmail.com",
+      "source": "discovered(high)"
+    },
+    {
+      "name": "Junior Bison Boys Basketball Club",
+      "field": "website",
+      "current": "https://www.juniorbisonboys.ca/",
+      "proposed": "https://umanitoba.ca/junior-bisons/junior-bisons-basketball",
+      "source": "discovered(high)"
+    },
+    {
+      "name": "PBA Winnipeg Inc. (Philippine Basketball Association of Winnipeg)",
+      "field": "website",
+      "current": "https://pbawpginc.ca/",
+      "proposed": "https://www.instagram.com/pbawpgleague/",
+      "source": "discovered(medium)"
+    },
+    {
+      "name": "Woodstock Minor Basketball Association",
+      "field": "website",
+      "current": "http://www.woodstockminorbasketball.com/",
+      "proposed": "https://www.woodstockminorbasketballassociation.com/",
+      "source": "discovered(medium)"
+    },
+    {
+      "name": "Rock Sports Group Inc. (Rock Sports Academy)",
+      "field": "website",
+      "current": "https://www.rockelite.ca",
+      "proposed": "https://rocksports.ca/",
+      "source": "discovered(high)"
+    },
+    {
+      "name": "Acadia Minor Basketball",
+      "field": "website",
+      "current": "https://www.acadiaminorbasketball.ca/",
+      "proposed": "https://www.facebook.com/groups/313223662486803/",
+      "source": "discovered(low)"
+    },
+    {
+      "name": "East Preston Pacers",
+      "field": "contactEmail",
+      "current": "prestonreccentre@gmail.com",
+      "proposed": "admin@eastprestonrecreation.com",
+      "source": "discovered(medium)"
+    },
+    {
+      "name": "Halifax Prep (Ming Athletics / Halifax Basketball Inc.)",
+      "field": "website",
+      "current": "https://halifaxprep.com/",
+      "proposed": "https://www.facebook.com/halifaxprep/",
+      "source": "discovered(low)"
+    },
+    {
+      "name": "416 United",
+      "field": "website",
+      "current": "https://416basketball.com",
+      "proposed": "https://www.instagram.com/416united/",
+      "source": "discovered(high)"
+    },
+    {
+      "name": "416 United",
+      "field": "contactEmail",
+      "current": "416basketballto@gmail.com",
+      "proposed": "416unitedbasketball@gmail.com",
+      "source": "discovered(high)"
+    },
+    {
+      "name": "Arnprior Basketball Club",
+      "field": "website",
+      "current": "https://www.valleypridebasketball.ca/",
+      "proposed": "https://valleypridebasketball.teamsnapsites.com/",
+      "source": "discovered(high)"
+    },
+    {
+      "name": "Ashbury College",
+      "field": "contactEmail",
+      "current": "admissions@ashbury.ca",
+      "proposed": "info@ashbury.ca",
+      "source": "discovered(high)"
+    },
+    {
+      "name": "Belleville Spirits",
+      "field": "website",
+      "current": "https://www.spiritsbasketball.net/",
+      "proposed": "https://bellevillespirits.com/",
+      "source": "discovered(high)"
+    },
+    {
+      "name": "Belleville Spirits",
+      "field": "contactEmail",
+      "current": "bellevillespirits@gmail.com",
+      "proposed": "bellevillespiritscomm@gmail.com",
+      "source": "discovered(high)"
+    },
+    {
+      "name": "Blessed Sacrament CYO (Yellow Jackets)",
+      "field": "contactEmail",
+      "current": "blessedscyo@gmail.com",
+      "proposed": "info@blessedsacramentbasketball.ca",
+      "source": "discovered(high)"
+    },
+    {
+      "name": "Calgary Minor Basketball Association (CMBA), league operator reference",
+      "field": "website",
+      "current": "http://www.calgarygrizzlies.ab.ca",
+      "proposed": "https://www.cmba.ab.ca",
+      "source": "discovered(high)"
+    },
+    {
+      "name": "Calgary Minor Basketball Association (CMBA), league operator reference",
+      "field": "contactEmail",
+      "current": "grizzlies@calgarygrizzlies.ab.ca",
+      "proposed": "league@cmba.ab.ca",
+      "source": "discovered(high)"
+    },
+    {
+      "name": "Calgary Minor Basketball Association (CMBA), league operator reference",
+      "field": "phoneNumber",
+      "current": "(403) 804-3396",
+      "proposed": "403-804-3396",
+      "source": "discovered(high)"
+    },
+    {
+      "name": "Magrath Rockets / Pandas",
+      "field": "phoneNumber",
+      "current": "403-758-3366",
+      "proposed": "403-758-6007",
+      "source": "discovered(medium)"
+    },
+    {
+      "name": "Titans Basketball (YYC)",
+      "field": "contactEmail",
+      "current": "titansbasketballyyc@gmail.com",
+      "proposed": "tsaelitebball@gmail.com",
+      "source": "discovered(medium)"
+    },
+    {
+      "name": "Windy City Basketball Club",
+      "field": "contactEmail",
+      "current": "windycitybasketballclub@gmail.com",
+      "proposed": "windycitybasketball@gmail.com",
+      "source": "discovered(high)"
+    },
+    {
+      "name": "Burlington Hoops Academy",
+      "field": "website",
+      "current": "burlingtonhoopsacademy.com (down)",
+      "proposed": "https://hoopsacademy.ca",
+      "source": "discovered(high)"
+    },
+    {
+      "name": "Burlington Hoops Academy",
+      "field": "phoneNumber",
+      "current": "905-582-1547",
+      "proposed": "289-775-6972",
+      "source": "discovered(high)"
+    },
+    {
+      "name": "Capital X",
+      "field": "phoneNumber",
+      "current": "6138837296",
+      "proposed": "613-883-7296",
+      "source": "discovered(high)"
+    },
+    {
+      "name": "CIA Bounce / Nike EYBL",
+      "field": "website",
+      "current": "http://www.nikebounce.com/home",
+      "proposed": "https://x.com/bouncettcaaa",
+      "source": "discovered(medium)"
+    },
+    {
+      "name": "Durham Rising Suns",
+      "field": "website",
+      "current": "https://www.durhamrisingsuns.com/",
+      "proposed": "https://drisingsuns.com/",
+      "source": "discovered(high)"
+    },
+    {
+      "name": "Durham Rising Suns",
+      "field": "contactEmail",
+      "current": "info@durhamrisingsuns.com",
+      "proposed": "info@drisingsuns.com",
+      "source": "discovered(high)"
+    },
+    {
+      "name": "Flower City Falcons",
+      "field": "contactEmail",
+      "current": "flowercityfalcons@gmail.com",
+      "proposed": "Flowercityfalcons@gmail.com",
+      "source": "discovered(medium)"
+    },
+    {
+      "name": "Flower City Falcons",
+      "field": "phoneNumber",
+      "current": "6478022577",
+      "proposed": "647-802-2577",
+      "source": "discovered(medium)"
+    },
+    {
+      "name": "Huron Lakers",
+      "field": "website",
+      "current": "http://huronlakers.on.ca/",
+      "proposed": "https://huronlakers.com/",
+      "source": "discovered(high)"
+    },
+    {
+      "name": "Inter-City Saints",
+      "field": "website",
+      "current": "https://www.intercitysaintseliteclub.com/teams/?u=INTER-CITYSAINTS&s=basketball",
+      "proposed": "https://www.intercitysaints.com/",
+      "source": "discovered(high)"
+    },
+    {
+      "name": "Kitchener Waterloo Basketball Association",
+      "field": "contactEmail",
+      "current": "kwgirlsbball@gmail.com",
+      "proposed": "sknibb.kwyba@gmail.com",
+      "source": "discovered(medium)"
+    },
+    {
+      "name": "Lakeshore Minor Basketball Association",
+      "field": "website",
+      "current": "http://www.lakeshorebasketball.ca/site/",
+      "proposed": "lmba.powerupsports.com",
+      "source": "discovered(high)"
+    },
+    {
+      "name": "Naismith Basketball Association",
+      "field": "website",
+      "current": "http://www.naismithbasketball.ca/",
+      "proposed": "facebook.com/NaismithBasketballAssociation",
+      "source": "discovered(medium)"
+    },
+    {
+      "name": "Niagara Falls Red Raiders",
+      "field": "website",
+      "current": "http://www.nfredraiders.com/",
+      "proposed": "nfba.ca",
+      "source": "discovered(medium)"
+    },
+    {
+      "name": "No Limits Youth Organization (Basketball)",
+      "field": "website",
+      "current": "https://nolimitsyouth.ca/",
+      "proposed": "nolimitsyouth.ca",
+      "source": "discovered(high)"
+    },
+    {
+      "name": "Royal Crown Academic School",
+      "field": "phoneNumber",
+      "current": "416-519-0476",
+      "proposed": "+1 416-519-0476",
+      "source": "discovered(high)"
+    },
+    {
+      "name": "South Toronto Golden Eagles",
+      "field": "phoneNumber",
+      "current": "647-986-0023",
+      "proposed": "(647) 986-0023",
+      "source": "discovered(medium)"
+    },
+    {
+      "name": "Southwest Academy Prep",
+      "field": "website",
+      "current": "swfacademy.com",
+      "proposed": "https://www.southwestacademy.ca/",
+      "source": "discovered(high)"
+    },
+    {
+      "name": "St. Thomas Shock",
+      "field": "website",
+      "current": "http://www.shockbasketball.com/index.html",
+      "proposed": "https://www.shockbasketball.ca/",
+      "source": "discovered(high)"
+    },
+    {
+      "name": "St. Thomas Shock",
+      "field": "contactEmail",
+      "current": "amandakoning@aol.com",
+      "proposed": "sttshockbasketball@gmail.com",
+      "source": "discovered(high)"
+    },
+    {
+      "name": "Tall Pines Academy",
+      "field": "phoneNumber",
+      "current": "905-458-6770",
+      "proposed": "(905) 458-6770",
+      "source": "discovered(high)"
+    },
+    {
+      "name": "Team Breakdown Basketball",
+      "field": "website",
+      "current": "http://www.breakdownbasketball.ca/",
+      "proposed": "https://teambreakdown.ca/",
+      "source": "discovered(high)"
+    },
+    {
+      "name": "Valhalla Youth Basketball Association",
+      "field": "contactEmail",
+      "current": "basketballvalhalla@gmail.com",
+      "proposed": "westlake.andrew44@gmail.com",
+      "source": "discovered(high)"
+    },
+    {
+      "name": "Valhalla Youth Basketball Association",
+      "field": "phoneNumber",
+      "current": "519-336-0813",
+      "proposed": "519-490-1872",
+      "source": "discovered(high)"
+    },
+    {
+      "name": "Waterloo Wolverines",
+      "field": "website",
+      "current": "https://waterloowolverines.com",
+      "proposed": "https://www.facebook.com/waterloowolverinesbball/",
+      "source": "discovered(medium)"
+    },
+    {
+      "name": "Welland Minor Basketball Association",
+      "field": "website",
+      "current": "http://www.wellandminorbasketball.ca/",
+      "proposed": "https://www.teampages.com/teams/1770768-Welland-Minor-Basketball-Association-basketball-team-website",
+      "source": "discovered(low)"
+    },
+    {
+      "name": "Windsor St. Clair (WSC JUEL)",
+      "field": "phoneNumber",
+      "current": "5199811008",
+      "proposed": "519-981-1008",
+      "source": "discovered(high)"
+    },
+    {
+      "name": "Charlottetown Tigers Minor Basketball Association (Charlottetown Minor Basketball Association)",
+      "field": "contactEmail",
+      "current": "tigersbasketball.ca@gmail.com",
+      "proposed": "shayne@connollygroup.ca",
+      "source": "discovered(medium)"
+    },
+    {
+      "name": "Club basketball Les Astéries",
+      "field": "phoneNumber",
+      "current": "819-460-8080",
+      "proposed": "819-998-9023",
+      "source": "discovered(high)"
+    },
+    {
+      "name": "Commission loisir et sport de la Baie-James",
+      "field": "phoneNumber",
+      "current": "(418) 745-3968",
+      "proposed": "819-739-2273",
+      "source": "discovered(medium)"
+    },
+    {
+      "name": "Conseil Sport Loisir de l'Estrie",
+      "field": "phoneNumber",
+      "current": "(819) 864-0864",
+      "proposed": "819-864-0864",
+      "source": "discovered(high)"
+    },
+    {
+      "name": "Corporation régionale de loisir et de sport de Lanaudière",
+      "field": "phoneNumber",
+      "current": "1-866-588-4443",
+      "proposed": "450-588-4443",
+      "source": "discovered(high)"
+    },
+    {
+      "name": "Passion Basketball Academy",
+      "field": "website",
+      "current": "https://passionbasketball.com/",
+      "proposed": "passionbasketball.ca",
+      "source": "discovered(high)"
+    },
+    {
+      "name": "RSEQCN",
+      "field": "phoneNumber",
+      "current": "418-968-3731",
+      "proposed": "418-964-2883",
+      "source": "discovered(high)"
+    },
+    {
+      "name": "RSEQLL",
+      "field": "phoneNumber",
+      "current": "450-419-8786",
+      "proposed": "450-231-6628",
+      "source": "discovered(high)"
+    },
+    {
+      "name": "RSEQO (Réseau du sport étudiant - Outaouais)",
+      "field": "phoneNumber",
+      "current": "(819) 643-6663",
+      "proposed": "819-643-6663",
+      "source": "discovered(high)"
+    },
+    {
+      "name": "RSEQQCA",
+      "field": "phoneNumber",
+      "current": "(418) 657-7678",
+      "proposed": "418-657-7678",
+      "source": "discovered(high)"
+    },
+    {
+      "name": "Sports-Laval",
+      "field": "phoneNumber",
+      "current": "(450) 664-1917",
+      "proposed": "579-218-0117",
+      "source": "discovered(high)"
+    },
+    {
+      "name": "Unité régionale de loisir et sport du Centre-du-Québec",
+      "field": "phoneNumber",
+      "current": "(819) 478-1483",
+      "proposed": "819-478-1483",
+      "source": "discovered(medium)"
+    },
+    {
+      "name": "Unité régionale loisir et sport Côte-Nord",
+      "field": "phoneNumber",
+      "current": "(418) 589-5774",
+      "proposed": "418-296-5774",
+      "source": "discovered(high)"
+    },
+    {
+      "name": "Martensville Basketball (City of Martensville Recreation / Martensville Thunder)",
+      "field": "contactEmail",
+      "current": "areddekopp@martensville.ca",
+      "proposed": "angieskates@hotmail.com",
+      "source": "discovered(medium)"
+    },
+    {
+      "name": "Diamond Valley Club Basketball",
+      "field": "contactEmail",
+      "current": "diamondvalleyclubbasketball@gmail.com",
+      "proposed": "oilfieldsbasketball@gmail.com",
+      "source": "discovered(medium)"
+    },
+    {
+      "name": "Eastview Basketball Association",
+      "field": "contactEmail",
+      "current": "eatviewbb@hotmail.com",
+      "proposed": "eastviewbb@hotmail.com",
+      "source": "discovered(high)"
+    },
+    {
+      "name": "Eastview Basketball Association",
+      "field": "phoneNumber",
+      "current": "403-561-7431",
+      "proposed": "403-702-0020",
+      "source": "discovered(high)"
     }
   ],
   "misses": [
@@ -1191,6 +4218,90 @@
     {
       "source": "verified",
       "club": "Momentum Sports Group"
+    },
+    {
+      "source": "discovered-ambiguous",
+      "club": "Alpha Elite"
+    },
+    {
+      "source": "discovered-ambiguous",
+      "club": "Brampton City Prep (BCP)"
+    },
+    {
+      "source": "discovered",
+      "club": "CALI Prep Academy"
+    },
+    {
+      "source": "discovered-ambiguous",
+      "club": "City Above Elite"
+    },
+    {
+      "source": "discovered-ambiguous",
+      "club": "Dynamic Basketball (DBDA, probable)"
+    },
+    {
+      "source": "discovered-ambiguous",
+      "club": "Lead2Greatness"
+    },
+    {
+      "source": "discovered-ambiguous",
+      "club": "Norwood Stars"
+    },
+    {
+      "source": "discovered-ambiguous",
+      "club": "Project Excellence"
+    },
+    {
+      "source": "discovered",
+      "club": "Toronto Top Tier"
+    },
+    {
+      "source": "discovered-ambiguous",
+      "club": "UEWB (Unite Everyone With Basketball)"
+    },
+    {
+      "source": "discovered",
+      "club": "Victory Prep (Brampton)"
+    },
+    {
+      "source": "discovered",
+      "club": "Collège Durocher"
+    },
+    {
+      "source": "discovered-ambiguous",
+      "club": "Dropoff Elite"
+    },
+    {
+      "source": "discovered",
+      "club": "Fusion Elite"
+    },
+    {
+      "source": "discovered",
+      "club": "Gilas Montreal Basketball"
+    },
+    {
+      "source": "discovered",
+      "club": "Institut de developpement sportif de Quebec"
+    },
+    {
+      "source": "discovered",
+      "club": "Loisir et sport Monteregie"
+    },
+    {
+      "source": "discovered",
+      "club": "Phenix"
+    },
+    {
+      "source": "discovered",
+      "club": "RSEQ Monteregie"
+    },
+    {
+      "source": "discovered-ambiguous",
+      "club": "SSF Blizzard (Séminaire Saint-François)"
+    },
+    {
+      "source": "discovered",
+      "club": "Calgary Minor Basketball Association"
     },
     {
       "source": "dead",
