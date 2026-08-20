@@ -511,3 +511,12 @@ standings/leaders JS aggregation (fine at current season size).
 - `stripe listen` must run for webhook flows (binary in e50fff6b scratchpad).
 - prisma generate is flaky under Rosetta — retry loop w/ CHECKPOINT_DISABLE=1
   (see MEMORY.md gotcha). Never `next build` over a running dev server.
+
+## Assets directory on the admin dashboard (owner idea, 2026-08-20, not scoped)
+
+One place in Dashboard > Admin listing everything outward-facing we have built,
+so a link can be found without asking for it: the pitch decks
+(`/deck/leagues`, `/deck/nph` — see [[pitch-decks]]), the demo directory, the ad
+creatives under `scripts/marketing/creatives`, the Instagram caption doc, and
+the screenshot sets. Nothing designed yet; the ask is discoverability, not a
+new CMS.
