@@ -109,12 +109,6 @@ const SOURCE_MEANING: Record<string, string> = {
   "seed-adoption-fix": "A seeded demo record was matched onto this club.",
 }
 
-const CONFIDENCE_TONE: Record<string, BadgeTone> = {
-  high: "court",
-  medium: "gold",
-  low: "warning",
-}
-
 /** Only said out loud where the value really can be wrong. */
 function checkHint(row: EnrichmentRow): string | null {
   const kind = sourceKind(row.source).key
@@ -158,8 +152,11 @@ export function MachineEditsQueue({
   /** One source kind at a time, so the developer-sheet rows and the AI-search
    *  rows can each be reviewed as their own pass. null = everything. */
   const [sourceFilter, setSourceFilter] = useState<string | null>(null)
+  const [query, setQuery] = useState("")
   /** The one row asking "are you sure" right now. */
   const [confirming, setConfirming] = useState<string | null>(null)
+  /** The "keep everything shown" button asking "are you sure". */
+  const [bulkConfirming, setBulkConfirming] = useState(false)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -228,11 +225,27 @@ export function MachineEditsQueue({
   }, [legend, sourceFilter])
 
   const visibleClubs = useMemo(() => {
-    if (!sourceFilter) return clubs
-    return clubs
+    const q = query.trim().toLowerCase()
+    let list = clubs
+    if (q) {
+      list = list.filter(
+        (g) =>
+          g.club.name.toLowerCase().includes(q) ||
+          g.club.slug.toLowerCase().includes(q) ||
+          (g.club.city ?? "").toLowerCase().includes(q)
+      )
+    }
+    if (!sourceFilter) return list
+    return list
       .map((g) => ({ ...g, rows: g.rows.filter((r) => sourceKind(r.source).key === sourceFilter) }))
       .filter((g) => g.rows.length > 0)
-  }, [clubs, sourceFilter])
+  }, [clubs, sourceFilter, query])
+
+  /** Everything pending in the current view, for the one-click sweep. */
+  const shownPendingIds = useMemo(
+    () => visibleClubs.flatMap((g) => g.rows.filter((r) => !r.reviewedAt).map((r) => r.id)),
+    [visibleClubs]
+  )
 
   return (
     <div>
@@ -248,10 +261,11 @@ export function MachineEditsQueue({
       <Card size="sm" className="mb-4">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <p className="text-ink-600 max-w-2xl text-sm leading-6">
-            Every value an automated run wrote to a club waits here, including what came in
-            from the developer&apos;s sheets. Each line says what was changed, where it was
-            fetched from and when. Keep it, or put the old value back. Click a chip below to
-            review one kind of run at a time.
+            Each line below is one value a script wrote to a club. Look at it, then either{" "}
+            <span className="text-ink-900 font-semibold">Keep</span> it or{" "}
+            <span className="text-ink-900 font-semibold">Put back</span> the old value.
+            Every click saves itself right away: there is no save button and nothing else to
+            submit.
           </p>
           <div className="border-ink-200 bg-ink-50 inline-flex shrink-0 rounded-full border p-1">
             {[
@@ -261,7 +275,7 @@ export function MachineEditsQueue({
               <button
                 key={String(t.key)}
                 onClick={() => setShowAll(t.key)}
-                className={`rounded-full px-3 py-1 text-xs font-semibold transition ${
+                className={`cursor-pointer rounded-full px-3 py-1 text-xs font-semibold transition ${
                   showAll === t.key
                     ? "shadow-soft text-ink-900 bg-white"
                     : "text-ink-500 hover:text-ink-800"
@@ -273,51 +287,90 @@ export function MachineEditsQueue({
           </div>
         </div>
 
-        {legend.length > 0 && (
-          <div className="border-ink-100 mt-3 grid gap-x-8 gap-y-2 border-t pt-3 sm:grid-cols-2">
-            {legend.map(([key, meta]) => {
-              const active = sourceFilter === key
-              const dimmed = sourceFilter !== null && !active
-              return (
-                <div key={key} className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    aria-pressed={active}
-                    onClick={() => setSourceFilter(active ? null : key)}
-                    className={`min-w-[190px] shrink-0 cursor-pointer rounded-full text-left transition ${
-                      dimmed ? "opacity-40 hover:opacity-70" : ""
-                    }`}
-                  >
-                    <Badge
-                      tone={meta.tone}
-                      className={`whitespace-nowrap ${active ? "ring-ink-400 ring-2 ring-offset-1" : ""}`}
-                    >
-                      {meta.label} · {meta.count}
-                    </Badge>
-                  </button>
-                  <span className="text-ink-500 text-xs leading-5">
-                    {SOURCE_MEANING[key] ?? "Written by an automated run."}
-                  </span>
-                </div>
-              )
-            })}
-          </div>
-        )}
-
-        {sourceFilter && (
-          <div className="mt-3 flex items-center gap-2">
-            <span className="text-ink-600 text-xs">
-              Showing only: {legend.find(([key]) => key === sourceFilter)?.[1].label}
-            </span>
-            <button
-              type="button"
-              onClick={() => setSourceFilter(null)}
-              className="text-play-600 cursor-pointer text-xs underline"
+        <div className="border-ink-100 mt-3 flex flex-wrap items-center gap-2 border-t pt-3">
+          <input
+            type="search"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Find a club by name or city"
+            className="border-ink-200 text-ink-900 placeholder:text-ink-400 focus:border-ink-400 min-w-[220px] flex-1 rounded-lg border bg-white px-3 py-2 text-sm outline-none"
+          />
+          <label className="flex items-center gap-2">
+            <span className="text-ink-500 text-xs font-semibold">Show</span>
+            <select
+              value={sourceFilter ?? ""}
+              onChange={(e) => setSourceFilter(e.target.value || null)}
+              className="border-ink-200 text-ink-900 cursor-pointer rounded-lg border bg-white px-3 py-2 text-sm outline-none"
             >
-              show every run
-            </button>
-          </div>
-        )}
+              <option value="">
+                Every run ({legend.reduce((n, [, m]) => n + m.count, 0)})
+              </option>
+              {legend.map(([key, meta]) => (
+                <option key={key} value={key}>
+                  {meta.label} ({meta.count})
+                </option>
+              ))}
+            </select>
+          </label>
+          {shownPendingIds.length > 1 &&
+            (bulkConfirming ? (
+              <span className="flex items-center gap-1.5">
+                <span className="text-ink-600 text-xs">
+                  Keep all {shownPendingIds.length} edits shown?
+                </span>
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  tone="court"
+                  disabled={busy}
+                  onClick={() => {
+                    setBulkConfirming(false)
+                    void act({ action: "approve", ids: shownPendingIds }, (r) =>
+                      `Kept ${r.count} ${r.count === 1 ? "edit" : "edits"}`
+                    )
+                  }}
+                >
+                  Yes, keep them
+                </Button>
+                <Button size="sm" variant="subtle" onClick={() => setBulkConfirming(false)}>
+                  Cancel
+                </Button>
+              </span>
+            ) : (
+              <Button
+                size="sm"
+                variant="secondary"
+                tone="ink"
+                disabled={busy}
+                onClick={() => setBulkConfirming(true)}
+              >
+                Keep all shown ({shownPendingIds.length})
+              </Button>
+            ))}
+        </div>
+
+        <p className="text-ink-500 mt-2 text-xs leading-5">
+          {sourceFilter
+            ? (SOURCE_MEANING[sourceFilter] ?? "Written by an automated run.") + " "
+            : ""}
+          Showing {visibleClubs.length} {visibleClubs.length === 1 ? "club" : "clubs"} ·{" "}
+          {shownPendingIds.length} still to check
+          {sourceFilter || query ? (
+            <>
+              {" · "}
+              <button
+                type="button"
+                onClick={() => {
+                  setSourceFilter(null)
+                  setQuery("")
+                }}
+                className="text-play-600 cursor-pointer underline"
+              >
+                clear filters
+              </button>
+            </>
+          ) : null}
+        </p>
       </Card>
 
       {loading && (
@@ -330,14 +383,31 @@ export function MachineEditsQueue({
         <Card size="sm">
           <div className="bg-ink-50/70 rounded-xl px-4 py-10 text-center">
             <p className="text-ink-900 text-sm font-semibold">
-              {clubs.length > 0 ? "Nothing from that run in view." : "The queue is clear."}
+              {clubs.length === 0
+                ? "The queue is clear."
+                : query.trim()
+                  ? `No club matching "${query.trim()}" here.`
+                  : "Nothing from that run in view."}
             </p>
             <p className="text-ink-500 mt-1 text-sm">
-              {clubs.length > 0
-                ? "Pick another chip, or show every run."
-                : showAll
-                  ? "No script has written to a club yet."
-                  : "Every machine edit has been looked at."}
+              {clubs.length === 0 ? (
+                showAll ? (
+                  "No script has written to a club yet."
+                ) : (
+                  "Every machine edit has been looked at."
+                )
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setQuery("")
+                    setSourceFilter(null)
+                  }}
+                  className="text-play-600 cursor-pointer underline"
+                >
+                  Clear the search and filters
+                </button>
+              )}
             </p>
           </div>
         </Card>
@@ -399,7 +469,7 @@ export function MachineEditsQueue({
                       )
                     }
                   >
-                    Looks right for all {pendingIds.length}
+                    Keep all {pendingIds.length}
                   </Button>
                 )}
               </div>
@@ -422,14 +492,6 @@ export function MachineEditsQueue({
                             {fieldLabel(row.field)}
                           </span>
                           <Badge tone={kind.tone}>{kind.label}</Badge>
-                          {row.source.includes("backfilled") && (
-                            <Badge tone="neutral">flagged after the fact</Badge>
-                          )}
-                          {row.confidence && (
-                            <Badge tone={CONFIDENCE_TONE[row.confidence] ?? "neutral"}>
-                              {row.confidence} confidence
-                            </Badge>
-                          )}
                           {row.reverted && <Badge tone="danger">put back</Badge>}
                           {row.reviewedAt && !row.reverted && <Badge tone="court">kept</Badge>}
                         </div>
@@ -453,6 +515,8 @@ export function MachineEditsQueue({
                         <div className="text-ink-500 mt-1 flex flex-wrap items-center gap-x-2 text-xs">
                           <span>
                             {shortDate(row.appliedAt)} by {row.appliedBy}
+                            {row.confidence ? `, ${row.confidence} confidence` : ""}
+                            {row.source.includes("backfilled") ? ", flagged after the fact" : ""}
                           </span>
                           {row.sourceUrl && (
                             <>
@@ -502,14 +566,14 @@ export function MachineEditsQueue({
                                 )
                               }
                             >
-                              Yes, revert
+                              Yes, put it back
                             </Button>
                             <Button
                               size="sm"
                               variant="subtle"
                               onClick={() => setConfirming(null)}
                             >
-                              Keep it
+                              Cancel
                             </Button>
                           </>
                         ) : (
@@ -526,7 +590,7 @@ export function MachineEditsQueue({
                                   )
                                 }
                               >
-                                Looks right
+                                Keep
                               </Button>
                             )}
                             {!row.reverted && (
@@ -541,7 +605,7 @@ export function MachineEditsQueue({
                                 }
                                 onClick={() => setConfirming(row.id)}
                               >
-                                Revert
+                                Put back
                               </Button>
                             )}
                           </>
