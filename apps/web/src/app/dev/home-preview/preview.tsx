@@ -311,9 +311,46 @@ type ClaimHit = {
 }
 
 /**
+ * The visitor's likely province, inferred from the browser timezone: no
+ * permission prompt, no geo service, wrong at worst by a neighbouring
+ * province (owner 2026-08-19: suggestions should feel local). City-level
+ * would need a geo-IP provider; this is the honest free tier of "around
+ * that city". Unknown timezones return "" and the API falls back to a
+ * national pool.
+ */
+function provinceFromTimezone(): string {
+  const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || ""
+  const MAP: Record<string, string> = {
+    "America/St_Johns": "NL",
+    "America/Halifax": "NS",
+    "America/Glace_Bay": "NS",
+    "America/Moncton": "NB",
+    "America/Toronto": "ON",
+    "America/Nipigon": "ON",
+    "America/Thunder_Bay": "ON",
+    "America/Winnipeg": "MB",
+    "America/Regina": "SK",
+    "America/Swift_Current": "SK",
+    "America/Edmonton": "AB",
+    "America/Yellowknife": "NT",
+    "America/Whitehorse": "YT",
+    "America/Dawson": "YT",
+    "America/Vancouver": "BC",
+    "America/Creston": "BC",
+    "America/Fort_Nelson": "BC",
+    "America/Iqaluit": "NU",
+  }
+  return MAP[tz] ?? ""
+}
+
+/**
  * The claim search is real (owner 2026-08-17): results come from the public
  * clubs API and each unclaimed row links straight into the claim flow for
  * that club. No detour through the directory or a details page.
+ *
+ * The three pre-typed suggestions rotate per load (shuffle=1) and prefer the
+ * visitor's own province (owner 2026-08-19) — the API refalls to national
+ * when the province has too few unclaimed listings.
  */
 function ClaimSearch() {
   const [q, setQ] = useState("")
@@ -324,11 +361,19 @@ function ClaimSearch() {
     const query = q.trim()
     const handle = window.setTimeout(async () => {
       try {
-        const res = await fetch(
-          `/api/clubs/public?limit=${query ? 6 : 3}${query ? `&q=${encodeURIComponent(query)}` : "&unclaimed=1"}`
-        )
+        const prov = query ? "" : provinceFromTimezone()
+        const url = query
+          ? `/api/clubs/public?limit=6&q=${encodeURIComponent(query)}`
+          : `/api/clubs/public?limit=3&unclaimed=1&shuffle=1${prov ? `&province=${prov}` : ""}`
+        let res = await fetch(url)
         if (!res.ok) return
-        const data = await res.json()
+        let data = await res.json()
+        // Thin province (fewer than 3 unclaimed listings): go national.
+        if (!query && prov && (data.clubs ?? []).length < 3) {
+          res = await fetch(`/api/clubs/public?limit=3&unclaimed=1&shuffle=1`)
+          if (!res.ok) return
+          data = await res.json()
+        }
         setHits(data.clubs ?? [])
         setSearched(!!query)
       } catch {

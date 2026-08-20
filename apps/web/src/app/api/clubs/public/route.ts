@@ -34,11 +34,24 @@ export async function GET(request: NextRequest) {
       where.status = "UNCLAIMED"
     }
 
+    // Region-aware suggestions (owner 2026-08-19): the landing passes the
+    // visitor's likely province (inferred client-side from the timezone) so
+    // the three suggested clubs feel local. Additive param; absent = national.
+    const province = (request.nextUrl.searchParams.get("province") || "").trim().toUpperCase()
+    if (province && /^[A-Z]{2}$/.test(province)) {
+      where.state = { equals: province, mode: "insensitive" }
+    }
+
     if (q.length >= 2) {
       where.name = { contains: q, mode: "insensitive" }
     }
 
-    const clubs = (
+    // shuffle=1 (owner 2026-08-19): the claim box was showing the same three
+    // biggest unclaimed clubs to every visitor. With shuffle, the API draws a
+    // wider pool and samples it, so the suggestions rotate per load.
+    const shuffle = request.nextUrl.searchParams.get("shuffle") === "1"
+
+    let clubs = (
       await prisma.tenant.findMany({
         where,
         select: {
@@ -54,14 +67,24 @@ export async function GET(request: NextRequest) {
           _count: { select: { teams: true, tryouts: true } },
         },
         orderBy: { teams: { _count: "desc" } },
-        // Overfetch a little before the test-world filter so a capped
-        // `limit` doesn't come back short.
-        take: limit + 10,
+        // Overfetch before the test-world filter so a capped `limit` doesn't
+        // come back short; much wider when shuffling so the sample has range.
+        take: shuffle ? Math.max(limit * 20, 60) : limit + 10,
       })
-    ).filter((c: any) => !isTestWorldSlug(c.slug)).slice(0, limit)
+    ).filter((c: any) => !isTestWorldSlug(c.slug))
+
+    // Fisher-Yates on the pool, then cut. Only the suggestion path shuffles;
+    // typed searches keep their size ordering.
+    if (shuffle) {
+      for (let i = clubs.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1))
+        ;[clubs[i], clubs[j]] = [clubs[j], clubs[i]]
+      }
+    }
+    const picked = clubs.slice(0, limit)
 
     return NextResponse.json({
-      clubs: clubs.map((c: any) => ({
+      clubs: picked.map((c: any) => ({
         id: c.id,
         slug: c.slug,
         name: c.name,
