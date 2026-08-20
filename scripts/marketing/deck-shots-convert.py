@@ -23,6 +23,7 @@ from __future__ import annotations
 import os
 import sys
 import glob
+import re
 from PIL import Image
 
 REPO = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -61,6 +62,23 @@ def convert(src_dir: str, out_dir: str) -> tuple[int, int, str]:
     return len(pngs), total, dims
 
 
+def stamp_version() -> str:
+    """Bump the cache-busting stamp the deck appends to every shot URL.
+
+    Filenames are stable across re-shoots, so without this a browser that has
+    already seen the deck keeps showing the previous pictures out of memory
+    cache and the re-shoot looks like it did nothing at all."""
+    from datetime import datetime
+
+    version = datetime.now().strftime("%Y%m%d-%H%M")
+    path = os.path.join(REPO, "apps", "web", "src", "app", "deck", "_deck", "shots-version.ts")
+    with open(path) as fh:
+        src = fh.read()
+    with open(path, "w") as fh:
+        fh.write(re.sub(r'SHOTS_VERSION = "[^"]*"', f'SHOTS_VERSION = "{version}"', src))
+    return version
+
+
 def main() -> None:
     wanted = sys.argv[1:] or [s[0] for s in SETS]
     for label, out_dir in SETS:
@@ -73,6 +91,7 @@ def main() -> None:
         n, total, dims = convert(src, out_dir)
         ratio = eval(dims.replace("x", "/"))  # noqa: S307 - our own string
         print(f"{label:8s} {n} files  {dims} (ratio {ratio:.2f})  {total/1024:.0f}KB  -> {out_dir}")
+    print(f"\nshots version -> {stamp_version()}  (browser cache-buster bumped)")
     print(
         "\nIf the frame count changed, update SHOTS in\n"
         "  apps/web/src/app/deck/_deck/league-deck.tsx\n"

@@ -7,6 +7,7 @@ import { DemoPlayer } from "@/components/demo-directory/player"
 import { makeGameDayStory } from "@/components/demo-directory/stories/game-day-story"
 import type { DemoScript } from "@/components/demo-directory/types"
 import type { DeckBrand } from "./registry"
+import { SHOTS_VERSION } from "./shots-version"
 
 /**
  * The league pitch deck (owner 2026-08-20).
@@ -169,7 +170,7 @@ function Shot({ shot, base, active }: { shot: ShotDef; base: string; active: boo
       {shot.frames.map((file, i) => (
         <img
           key={file}
-          src={`${base}/${file}`}
+          src={`${base}/${file}?v=${SHOTS_VERSION}`}
           width={shot.w}
           height={shot.h}
           alt={i === 0 ? shot.alt : ""}
