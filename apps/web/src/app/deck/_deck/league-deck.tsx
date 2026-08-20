@@ -187,13 +187,13 @@ function ShotSlide({
 }
 
 const SHOTS = {
-  overview: { file: "overview.webp", w: 1900, h: 1224, alt: "The season console showing clubs entered, teams approved, what is waiting, and the season checklist" },
-  plan: { file: "plan.webp", w: 1900, h: 636, alt: "The five step season planner: teams, your buildings, your calendar, publish, schedule" },
-  schedule: { file: "schedule.webp", w: 1900, h: 1224, alt: "The scheduling tab with a check confirming every team has its full game count" },
-  playoffs: { file: "playoffs.webp", w: 1900, h: 1003, alt: "The playoff plan, checked against championship weekend" },
-  referees: { file: "referees.webp", w: 1900, h: 1224, alt: "Booking a referee for a session day and the league referee pool" },
-  waivers: { file: "waivers.webp", w: 1900, h: 1224, alt: "The waiver signing grid for the season" },
-  hub: { file: "hub.webp", w: 1900, h: 1224, alt: "The public league page with scores, schedule and scoring leaders" },
+  overview: { file: "overview.webp", w: 2000, h: 1032, alt: "The season console showing clubs entered, teams approved, what is waiting, and the season checklist" },
+  plan: { file: "plan.webp", w: 2000, h: 1032, alt: "The five step season planner: teams, your buildings, your calendar, publish, schedule" },
+  schedule: { file: "schedule.webp", w: 2000, h: 1032, alt: "The scheduling tab with a check confirming every team has its full game count" },
+  playoffs: { file: "playoffs.webp", w: 2000, h: 1032, alt: "The playoff plan, checked against championship weekend" },
+  referees: { file: "referees.webp", w: 2000, h: 1032, alt: "Booking a referee for a session day and the league referee pool" },
+  waivers: { file: "waivers.webp", w: 2000, h: 1032, alt: "The waiver signing grid for the season" },
+  hub: { file: "hub.webp", w: 2000, h: 1032, alt: "The public league page with scores, schedule and scoring leaders" },
 } satisfies Record<string, ShotDef>
 
 /* ── a team's Saturday, drawn ──────────────────────────────────────────────
