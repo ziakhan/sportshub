@@ -24,6 +24,57 @@ export const metadata: Metadata = {
 
 const DIR = path.resolve(process.cwd(), "..", "..", "scripts", "marketing", "creatives")
 
+/**
+ * The launch captions, parsed from the doc rather than duplicated here.
+ * docs/marketing/instagram-launch-captions-2026-08.md is where they are
+ * written and edited; this only reads it, so the gallery can never drift from
+ * the copy that actually ships.
+ *
+ * Shape it expects, per post:
+ *   ## 3 · Five apps and a spreadsheet
+ *   `s1-pain-pills` · **Ask: reply** ...
+ *   > caption line
+ *   > caption line
+ *   >
+ *   > the ask
+ */
+const CAPTIONS_DOC = path.resolve(
+  process.cwd(), "..", "..", "docs", "marketing", "instagram-launch-captions-2026-08.md"
+)
+
+function loadCaptions(): Record<string, { post: string; title: string; caption: string }> {
+  let raw: string
+  try {
+    raw = readFileSync(CAPTIONS_DOC, "utf8")
+  } catch {
+    return {}
+  }
+  const out: Record<string, { post: string; title: string; caption: string }> = {}
+  const blocks = raw.split(/^## /m).slice(1)
+  for (const block of blocks) {
+    const head = block.split("\n", 1)[0]
+    const m = head.match(/^(\d+)\s+·\s+(.+)$/)
+    if (!m) continue
+    const slug = block.match(/`([a-z0-9-]+)`/)?.[1]
+    if (!slug) continue
+    /* Quoted lines are the caption; blank quote lines separate the ask. */
+    const quoted = block
+      .split("\n")
+      .filter((l) => l.startsWith(">"))
+      .map((l) => l.replace(/^>\s?/, "").trimEnd())
+    if (quoted.length === 0) continue
+    /* Rewrap: the doc hard-wraps for readability, a caption must not. */
+    const text = quoted
+      .join("\n")
+      .split(/\n\s*\n/)
+      .map((para) => para.split("\n").join(" ").replace(/\s+/g, " ").trim())
+      .filter(Boolean)
+      .join("\n\n")
+    out[slug] = { post: m[1], title: m[2].trim(), caption: text }
+  }
+  return out
+}
+
 /** Who a creative is aimed at. Filenames cannot carry this, so it is curated. */
 const AUDIENCE: Record<string, Audience> = {
   "s1-pain-pills": "clubs",
@@ -91,6 +142,7 @@ export default function CreativesPage() {
     .sort()
 
   const names = files.map((f) => f.replace(/\.html$/, ""))
+  const captions = loadCaptions()
 
   const creatives: CreativeEntry[] = names.map((name) => {
     const kind = kindOf(name)
@@ -104,6 +156,9 @@ export default function CreativesPage() {
       twin,
       /* The two teasers and everything authored in the 08-19 batch. */
       isNew: /^s(7|8|9|1[0-9]|20)-/.test(name),
+      caption: captions[name]?.caption,
+      postNo: captions[name]?.post,
+      postTitle: captions[name]?.title,
     }
   })
 

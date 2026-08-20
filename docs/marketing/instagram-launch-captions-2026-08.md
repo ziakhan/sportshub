@@ -134,7 +134,8 @@ Swap the city tag to match the post. Add `#basketballleague` on 7,
 ## 9 · Still taking bookings in your DMs
 `s23-trainer-bookings` · **Ask: reply** · add `#basketballtrainer`
 
-> Half trainer, half receptionist. 15 DMs to book one session.
+> Every trainer we know runs their business out of their DMs. 15 of them to
+> book one session.
 > Put your real availability on a page and let them pick a time.
 >
 > How many DMs to book a session?

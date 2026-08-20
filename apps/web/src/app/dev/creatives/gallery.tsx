@@ -15,6 +15,10 @@ export interface CreativeEntry {
   /** The matching static or video of the same idea, if there is one. */
   twin?: string
   isNew?: boolean
+  /** From the captions doc, when this creative is one of the launch posts. */
+  caption?: string
+  postNo?: string
+  postTitle?: string
 }
 
 /** Design sizes from _brand.css. The hash switches the creative's own engine. */
@@ -227,7 +231,17 @@ export function CreativeGallery({ creatives }: { creatives: CreativeEntry[] }) {
                     ) : null}
                   </div>
 
-                  <p className="mt-1.5 truncate text-[15px] font-semibold">{c.name}</p>
+                  <p className="mt-1.5 truncate text-[15px] font-semibold">
+                    {c.postNo ? (
+                      <span className="mr-1.5 rounded bg-white/15 px-1.5 py-0.5 text-[12px] font-bold text-white/80">
+                        Post {c.postNo}
+                      </span>
+                    ) : null}
+                    {c.postTitle ?? c.name}
+                  </p>
+                  {c.postTitle ? (
+                    <p className="truncate text-[12px] text-white/35">{c.name}</p>
+                  ) : null}
 
                   {c.twin ? (
                     <p className="mt-0.5 truncate text-[12px] text-white/40">
@@ -278,6 +292,7 @@ export function CreativeGallery({ creatives }: { creatives: CreativeEntry[] }) {
                       </button>
                     ) : null}
                   </div>
+                  {c.caption ? <CaptionBox caption={c.caption} /> : null}
                 </figcaption>
               </figure>
             )
@@ -294,6 +309,31 @@ export function CreativeGallery({ creatives }: { creatives: CreativeEntry[] }) {
           </code>
         </p>
       </main>
+    </div>
+  )
+}
+
+/** The caption that ships with this creative, ready to copy in one press. */
+function CaptionBox({ caption }: { caption: string }) {
+  const [copied, setCopied] = useState(false)
+  return (
+    <div className="mt-2.5 rounded-lg bg-white/[0.06] p-3 ring-1 ring-white/10">
+      <p className="whitespace-pre-line text-[12.5px] leading-relaxed text-white/70">
+        {caption}
+      </p>
+      <button
+        type="button"
+        onClick={() => {
+          void navigator.clipboard.writeText(caption)
+          setCopied(true)
+          window.setTimeout(() => setCopied(false), 1600)
+        }}
+        className={`mt-2 cursor-pointer rounded-md px-2.5 py-1 text-[12px] font-bold transition-colors ${
+          copied ? "bg-court-600 text-white" : "bg-white/10 text-white/70 hover:bg-white/20 hover:text-white"
+        }`}
+      >
+        {copied ? "Copied" : "Copy caption"}
+      </button>
     </div>
   )
 }
