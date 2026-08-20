@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { Badge, Button, Card, type BadgeTone } from "@/components/ui"
+import { ClubQuickView } from "./club-quick-view"
 
 /**
  * Machine edits queue (client half of the club review console).
@@ -109,6 +110,15 @@ const SOURCE_MEANING: Record<string, string> = {
   "seed-adoption-fix": "A seeded demo record was matched onto this club.",
 }
 
+/** Values that can be checked with one click open as links, old and new both:
+ *  a dead-site clear is only checkable by visiting the OLD address. */
+function valueHref(field: string, value: string): string | null {
+  if (field === "website") return /^https?:\/\//i.test(value) ? value : `https://${value}`
+  if (field === "contactEmail") return `mailto:${value}`
+  if (field === "phoneNumber") return `tel:${value.replace(/[^\d+]/g, "")}`
+  return null
+}
+
 /** Only said out loud where the value really can be wrong. */
 function checkHint(row: EnrichmentRow): string | null {
   const kind = sourceKind(row.source).key
@@ -156,6 +166,8 @@ export function MachineEditsQueue({
   const [confirming, setConfirming] = useState<string | null>(null)
   /** The "keep everything shown" button asking "are you sure". */
   const [bulkConfirming, setBulkConfirming] = useState(false)
+  /** The club open in the quick-view dialog, so review never loses its place. */
+  const [quickViewId, setQuickViewId] = useState<string | null>(null)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -246,8 +258,21 @@ export function MachineEditsQueue({
     [visibleClubs]
   )
 
+  const quickViewGroup = quickViewId ? clubs.find((g) => g.club.id === quickViewId) : null
+
   return (
     <div>
+      {quickViewId && (
+        <ClubQuickView
+          clubId={quickViewId}
+          rows={quickViewGroup?.rows ?? []}
+          busy={busy}
+          onQueueAction={act}
+          onOpenFull={onOpenClub}
+          onChanged={() => void load()}
+          onClose={() => setQuickViewId(null)}
+        />
+      )}
       {notice && (
         <div className="mb-3 rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
           {notice}
@@ -466,26 +491,14 @@ export function MachineEditsQueue({
                       Keep all {pendingIds.length}
                     </Button>
                   )}
-                  {onOpenClub && (
-                    <Button
-                      size="sm"
-                      variant="secondary"
-                      tone="ink"
-                      onClick={() =>
-                        onOpenClub({ id: group.club.id, name: group.club.name })
-                      }
-                    >
-                      Edit club
-                    </Button>
-                  )}
-                  <a
-                    href={`/club/${group.club.slug}`}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="text-ink-400 hover:text-ink-600 px-1 text-xs underline"
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    tone="ink"
+                    onClick={() => setQuickViewId(group.club.id)}
                   >
-                    public page
-                  </a>
+                    Open club
+                  </Button>
                 </div>
               </div>
 
@@ -517,6 +530,20 @@ export function MachineEditsQueue({
                       const byline = `${shortDate(row.appliedAt)} by ${row.appliedBy}${
                         row.confidence ? `, ${row.confidence} confidence` : ""
                       }${row.source.includes("backfilled") ? ", flagged after the fact" : ""}`
+                      const fromHref = row.fromValue ? valueHref(row.field, row.fromValue) : null
+                      const toHref = row.toValue ? valueHref(row.field, row.toValue) : null
+                      const isCoord = row.field === "latitude" || row.field === "longitude"
+                      const lat = isCoord
+                        ? row.field === "latitude"
+                          ? row.toValue
+                          : group.rows.find((x) => x.field === "latitude")?.toValue
+                        : null
+                      const lng = isCoord
+                        ? row.field === "longitude"
+                          ? row.toValue
+                          : group.rows.find((x) => x.field === "longitude")?.toValue
+                        : null
+                      const mapHref = lat && lng ? `https://www.google.com/maps?q=${lat},${lng}` : null
                       return (
                         <tr
                           key={row.id}
@@ -531,12 +558,24 @@ export function MachineEditsQueue({
                           </td>
                           <td className="py-2.5 pr-3 align-middle">
                             {row.fromValue ? (
-                              <div
-                                className="text-ink-400 truncate line-through"
-                                title={row.fromValue}
-                              >
-                                {row.fromValue}
-                              </div>
+                              fromHref ? (
+                                <a
+                                  href={fromHref}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="text-ink-400 hover:text-ink-600 block truncate line-through underline decoration-ink-200 underline-offset-2"
+                                  title={`${row.fromValue} (opens the old address)`}
+                                >
+                                  {row.fromValue}
+                                </a>
+                              ) : (
+                                <div
+                                  className="text-ink-400 truncate line-through"
+                                  title={row.fromValue}
+                                >
+                                  {row.fromValue}
+                                </div>
+                              )
                             ) : (
                               <span className="text-ink-400 italic">empty</span>
                             )}
@@ -544,14 +583,37 @@ export function MachineEditsQueue({
                           <td className="py-2.5 pr-3 align-middle">
                             <div className="flex min-w-0 items-center gap-1.5">
                               {row.toValue ? (
-                                <span
-                                  className="text-ink-900 min-w-0 truncate font-medium"
-                                  title={row.toValue}
-                                >
-                                  {row.toValue}
-                                </span>
+                                toHref ? (
+                                  <a
+                                    href={toHref}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="text-ink-900 decoration-ink-300 hover:decoration-ink-600 min-w-0 truncate font-medium underline underline-offset-2"
+                                    title={row.toValue}
+                                  >
+                                    {row.toValue}
+                                  </a>
+                                ) : (
+                                  <span
+                                    className="text-ink-900 min-w-0 truncate font-medium"
+                                    title={row.toValue}
+                                  >
+                                    {row.toValue}
+                                  </span>
+                                )
                               ) : (
                                 <span className="text-ink-500 italic">cleared</span>
+                              )}
+                              {mapHref && (
+                                <a
+                                  href={mapHref}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="text-play-600 shrink-0 text-xs underline"
+                                  title="Opens this pin on a map"
+                                >
+                                  map
+                                </a>
                               )}
                               {hint && (
                                 <span title={hint} className="shrink-0 cursor-help text-amber-500">

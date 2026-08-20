@@ -104,24 +104,30 @@ export const GET = withAuth<NextRequest>(async (request, _ctx, session) => {
     return apiError(400, `Unknown issue filter: ${issue}`, "BAD_FILTER")
   }
 
-  const where: any = {
-    // Merged-away rows are hidden unless explicitly asked for — otherwise every
-    // list would carry the duplicates an admin has already resolved.
-    ...(issue === "merged" ? {} : { mergedIntoId: null }),
-    ...ISSUE_FILTERS[issue],
-    ...(province ? { state: province } : {}),
-    ...(region ? { region } : {}),
-    ...(q
-      ? {
-          OR: [
-            { name: { contains: q, mode: "insensitive" } },
-            { city: { contains: q, mode: "insensitive" } },
-            { slug: { contains: q, mode: "insensitive" } },
-            { contactEmail: { contains: q, mode: "insensitive" } },
-          ],
-        }
-      : {}),
-  }
+  // The quick-view dialog asks for exactly one club by id; every list filter
+  // steps aside so the club is found even when merged or filtered out.
+  const id = (sp.get("id") ?? "").trim()
+
+  const where: any = id
+    ? { id }
+    : {
+        // Merged-away rows are hidden unless explicitly asked for — otherwise every
+        // list would carry the duplicates an admin has already resolved.
+        ...(issue === "merged" ? {} : { mergedIntoId: null }),
+        ...ISSUE_FILTERS[issue],
+        ...(province ? { state: province } : {}),
+        ...(region ? { region } : {}),
+        ...(q
+          ? {
+              OR: [
+                { name: { contains: q, mode: "insensitive" } },
+                { city: { contains: q, mode: "insensitive" } },
+                { slug: { contains: q, mode: "insensitive" } },
+                { contactEmail: { contains: q, mode: "insensitive" } },
+              ],
+            }
+          : {}),
+      }
 
   const [clubs, total, counts, provinces, regions] = await Promise.all([
     prisma.tenant.findMany({
@@ -132,6 +138,9 @@ export const GET = withAuth<NextRequest>(async (request, _ctx, session) => {
         website: true, latitude: true, longitude: true, geoPrecision: true,
         dataSources: true, dataNotes: true, mergedIntoId: true, isDemo: true,
         reviewedAt: true, createdAt: true,
+        // The quick-view dialog shows the whole record, not just list columns.
+        shortName: true, description: true, address: true, postalCode: true,
+        geoSource: true, searchAliases: true,
         _count: { select: { teams: true, clubClaims: true } },
       },
       orderBy: [{ name: "asc" }],
