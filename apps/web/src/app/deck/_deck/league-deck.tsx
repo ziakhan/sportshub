@@ -6,6 +6,7 @@ import { cn } from "@/components/ui/cn"
 import { DemoPlayer } from "@/components/demo-directory/player"
 import { makeGameDayStory } from "@/components/demo-directory/stories/game-day-story"
 import type { DemoScript } from "@/components/demo-directory/types"
+import type { DeckBrand } from "./registry"
 
 /**
  * The league pitch deck (owner 2026-08-20).
@@ -42,15 +43,6 @@ import type { DemoScript } from "@/components/demo-directory/types"
  * ⚠️ `DemoPlayer`'s `autoStart` is initial state only, so the live slide mounts
  * the player only while it is showing, keyed on a visit counter so it replays.
  */
-
-export interface DeckBrand {
-  /** Folder under /public holding this variant's screenshots. */
-  shots: string
-  /** League name the embedded game-day demo should show. */
-  league: string
-  /** Shown under the title, e.g. "Prepared for North Pole Hoops". */
-  addressedTo?: string
-}
 
 /* ── the scale ─────────────────────────────────────────────────────────── */
 
@@ -277,10 +269,27 @@ const SLIDES: SlideDef[] = [
           Clubs register their own teams. You set the rules: your game guarantee, your tiebreakers,
           your playoff format. Everything after that runs inside them.
         </Lead>
-        {brand.addressedTo ? (
-          <p className={cn("mt-9 font-mono uppercase tracking-[0.16em] text-white/70", "text-[clamp(0.8rem,1.05vw,1rem)]")}>
-            {brand.addressedTo}
-          </p>
+        {brand.recipient ? (
+          /* The addressee lockup. Our wordmark stays the primary mark at the
+             top; theirs sits down here under a rule, which reads as "made for
+             you" rather than as a partnership that does not exist yet.
+             `self-start` because this is a flex column and it would otherwise
+             stretch the rule across the whole slide. */
+          <div className="mt-10 flex w-fit flex-wrap items-center gap-x-5 gap-y-3 self-start border-t border-white/15 pt-6">
+            <span className={cn("font-mono uppercase tracking-[0.16em] text-white/60", "text-[clamp(0.72rem,0.9vw,0.85rem)]")}>
+              Prepared for
+            </span>
+            {brand.logo ? (
+              <img
+                src={brand.logo}
+                alt={brand.recipient}
+                className="h-9 w-auto object-contain sm:h-11"
+              />
+            ) : null}
+            <span className="font-display text-[clamp(1.05rem,1.7vw,1.5rem)] font-bold tracking-[-0.02em]">
+              {brand.recipient}
+            </span>
+          </div>
         ) : (
           <p className={cn("mt-9 font-mono uppercase tracking-[0.16em] text-white/70", "text-[clamp(0.8rem,1.05vw,1rem)]")}>
             Use the arrow keys, or tap the sides

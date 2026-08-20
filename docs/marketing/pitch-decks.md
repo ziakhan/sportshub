@@ -11,10 +11,29 @@ slide plays the real demo.
 
 ## The links
 
-| URL | Send it to | Never send it to |
-|---|---|---|
-| `sportshubone.com/deck/leagues` | Any league | |
-| `sportshubone.com/deck/nph` | North Pole Hoops | Anyone else |
+| URL | Send it to |
+|---|---|
+| `sportshubone.com/deck/leagues` | Anyone. Names nobody. |
+| `sportshubone.com/deck/coalition` | The Coalition League |
+| `sportshubone.com/deck/hoopcity` | HoopCity Basketball |
+| `sportshubone.com/deck/nph` | **North Pole Hoops only.** Never anyone else. |
+
+## Adding a league
+
+One row in `apps/web/src/app/deck/_deck/registry.ts`:
+
+```ts
+coalition: { ...NEUTRAL, recipient: "The Coalition League" },
+```
+
+Live at `/deck/coalition` on the next deploy. To add their logo beside the name
+on the title slide, drop a file in `public/deck/logos/` and add
+`logo: "/deck/logos/coalition.png"`. Without a logo it shows the name alone,
+which is the current state for all of them.
+
+**Do not fork the deck to add a recipient.** Every slide lives in one file, so a
+wording change lands on every league at once. A fork is how two versions of the
+same pitch start telling different stories.
 
 `/deck/leagues` is the general cut. **NPH is not named anywhere in it**, in the
 copy, in the screenshots, or in the embedded demo. `/deck/nph` is the same
