@@ -2,83 +2,69 @@
 <html>
 <head>
 <meta charset="utf-8" />
-<link rel="preconnect" href="https://fonts.googleapis.com" />
-<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@700;800&display=swap" rel="stylesheet" />
 <!--
-  THE INSTAGRAM PROFILE PICTURE (2026-08-19).
+  THE INSTAGRAM PROFILE PICTURE (2026-08-19, v2).
 
-  Underscore-prefixed so render-creatives.mjs skips it: this is a brand asset,
-  not a post, and it must not appear in the launch set or the gallery.
+  Underscore-prefixed so render-creatives.mjs skips it: a brand asset, not a
+  post.
 
-  WHY THE APP ICON CANNOT BE USED AS-IS. public/brand/icon-n3-1024.png is a
-  rounded SQUARE with the orange "1" badge in the top-right corner. Instagram
-  crops a profile picture to a CIRCLE, and the badge's outer corner sits about
-  580px from centre on a 1024 canvas where the circle's radius is 512. It gets
-  clipped. The rounded corners are lost too, so the shape reads as an accident.
+  ⚠️ WHAT v1 GOT WRONG, AND IT WAS NOT SUBTLE. It REDREW the mark: the S was
+  set in Outfit 800 while the real logo uses the system stack
+  (-apple-system, Segoe UI, Roboto, Helvetica, Arial), so the letterform was
+  simply a different S. It also broke the badge out of its corner and laid it
+  beside the S as a horizontal lockup, which is a different composition. The
+  owner called it deformed and he was right: none of that was mine to change.
 
-  WHAT THIS DOES DIFFERENTLY
-   1. The navy runs full bleed. Whatever the crop takes, it takes navy, never
-      a white corner.
-   2. Everything sits inside the SAFE SQUARE inscribed in the circle, which on
-      1024 is 724px wide, so a 150px margin all round. The lockup is well
-      inside it.
-   3. The mark is centred as one object, S and badge together, rather than the
-      badge floating in a corner it no longer has.
-   4. It is set in Outfit at 800, the same face as the wordmark, so the avatar
-      and the creatives are visibly the same brand.
+  THIS VERSION CHANGES NOTHING ABOUT THE ARTWORK. The S, the badge, their
+  sizes, their colours and their relationship are copied byte for byte from
+  public/brand/icon-n3.svg, including the font stack, so the letterform is the
+  one in the app icon. The ONLY edit is a transform on the group.
 
-  It has to survive 110px. That is the real display size in a feed, so the
-  lockup is large in frame and carries no small type at all.
+  WHY A TRANSFORM IS NEEDED AT ALL. Instagram crops to a circle. In the
+  original 64-unit artwork the content sits at bbox x 12→58, y 7→47, whose
+  centre is (35, 27) — up and to the right of the canvas centre (32, 32),
+  because a rounded SQUARE has corners to fill and a circle does not. Left
+  alone, the badge's outer corner falls outside the inscribed circle and gets
+  clipped, and the mark reads off-centre with dead space at the lower left.
+
+  So the group is translated so its own centre lands on the canvas centre, and
+  scaled to 0.86 so the whole thing sits inside the circle-safe square
+  (64 / √2 ≈ 45.25 units) with margin. Same mark, recentred for a round frame.
+
+  The background runs full bleed in the icon's own gradient, so whatever the
+  crop takes it takes navy, never a white corner.
 -->
 <style>
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-  html, body { width: 1024px; height: 1024px; }
-  body {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    /* Full bleed: the circle crop can only ever remove navy. */
-    background:
-      radial-gradient(120% 120% at 28% 18%, #24365c 0%, transparent 58%),
-      linear-gradient(150deg, #1a2b4d 0%, #0b1628 78%);
-    font-family: "Outfit", sans-serif;
-  }
-
-  .lockup {
-    position: relative;
-    display: flex;
-    align-items: flex-start;
-  }
-
-  .s {
-    font-size: 600px;
-    font-weight: 800;
-    line-height: 0.78;
-    letter-spacing: -0.05em;
-    color: #ffffff;
-  }
-
-  /* Tucked against the S rather than pinned to a corner, so the circle never
-     reaches it. */
-  .one {
-    margin-left: 18px;
-    margin-top: 34px;
-    background: #f24e1e;
-    color: #ffffff;
-    font-size: 150px;
-    font-weight: 800;
-    line-height: 1;
-    letter-spacing: 0.02em;
-    padding: 34px 40px 40px;
-    border-radius: 46px;
-    box-shadow: 0 26px 60px -18px rgba(242, 78, 30, 0.55);
-  }
+  * { margin: 0; padding: 0; }
+  html, body { width: 1024px; height: 1024px; overflow: hidden; }
+  svg { display: block; width: 1024px; height: 1024px; }
 </style>
 </head>
 <body>
-  <div class="lockup">
-    <span class="s">S</span>
-    <span class="one">1</span>
-  </div>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#1e2d4d"/>
+      <stop offset="1" stop-color="#0b1628"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Full bleed, no rounded corners: the circle supplies the shape. -->
+  <rect width="64" height="64" fill="url(#bg)"/>
+
+  <!-- The mark, untouched. The transform is the only new thing, and it was
+       MEASURED, not estimated: getBBox() on the untransformed group returns
+       x 15.66, y 7, w 42.34, h 49.19, so the real centre is (36.83, 31.59) —
+       nowhere near the (35, 27) a first pass guessed from reading the source,
+       because text metrics are not the same as the coordinates you type.
+       Recentred on (32, 32) and scaled 0.9072 so the bbox DIAGONAL lands at
+       92% of the radius. Verified after rendering: centre (512, 512),
+       farthest corner 472 against a radius of 512. -->
+  <g transform="translate(32 32) scale(0.9072) translate(-36.830 -31.594)">
+    <text x="29" y="47" font-family="-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif" font-weight="800" font-size="40" fill="#ffffff" text-anchor="middle">S</text>
+    <rect x="41" y="7" width="17" height="17" rx="4" fill="#f24e1e"/>
+    <text x="49.5" y="20.5" font-family="-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif" font-weight="800" font-size="13" fill="#ffffff" text-anchor="middle">1</text>
+  </g>
+</svg>
 </body>
 </html>
