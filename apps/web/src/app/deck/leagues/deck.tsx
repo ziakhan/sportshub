@@ -14,27 +14,56 @@ import type { DemoScript } from "@/components/demo-directory/types"
  * tap to advance, a contents overlay to jump. It is sent as a link to a named
  * commissioner, so it opens on the title slide and never autoplays itself.
  *
- * TWO RULES THAT SHAPED IT
+ * ── THE TYPE SCALE IS THE WHOLE DESIGN ───────────────────────────────────
  *
- * 1. NO LEAGUE SIZE IS PRINTED ANYWHERE (owner ruling). An earlier deck showed
- *    "146 teams / 725 games" as proof the scheduler scales. A commissioner
- *    running several thousand games reads that as a ceiling, not a floor. The
- *    stat row therefore carries the time and the zeros and no denominator.
+ * The first cut of this deck was built on page typography: 13px card bodies,
+ * 14px leads, and six-card grids. The owner's note was "staring you in the
+ * face, not having to squint", and the ui-ux-pro-max consult for a projected
+ * deck says the same thing in its own words: pattern "Minimal Single Column",
+ * large type (32px+), 48px+ section gaps, THREE bullets maximum, and
+ * "text-heavy pages" listed as an anti-pattern.
  *
- * 2. THE LIVE GAME IS PLAYED, NOT DESCRIBED. Slide `live` mounts the real
- *    game-day demo, the same split-stage script the public demo directory
- *    runs, trimmed to the two chapters that show both sides at once: the table
- *    tapping a play in and the father's phone receiving it.
+ * So `T` below is the one modular scale every slide draws from, sized for
+ * someone reading a laptop across a desk rather than a phone in their hand.
+ * Two standing rules that follow from it:
  *
- *    ⚠️ `DemoPlayer`'s `autoStart` is initial state only, so flipping the prop
- *    on an already-mounted player does nothing. The player is therefore mounted
- *    only while its slide is active and keyed on the visit count, which forces
- *    a fresh mount (and a fresh play) every time the viewer lands on it.
+ *   1. THREE CARDS MAXIMUM on any slide. If a fourth wants in, it belongs on
+ *      its own slide or it is not important enough to say. Fairness and money
+ *      each carried six; both are cut to three.
+ *   2. A SLIDE WITH A SCREENSHOT CARRIES NO CARDS. A headline, one line, and
+ *      the image at the biggest size the viewport allows. Cards under a
+ *      screenshot shrink the only thing on the slide worth looking at.
+ *
+ * ── TWO OTHER RULES ──────────────────────────────────────────────────────
+ *
+ * NO LEAGUE SIZE IS PRINTED ANYWHERE (owner ruling). An earlier deck showed
+ * "146 teams / 725 games" as proof the scheduler scales. A commissioner
+ * running several thousand games reads that as a ceiling, not a floor.
+ *
+ * THE LIVE GAME IS PLAYED, NOT DESCRIBED. Slide `live` mounts the real
+ * game-day demo, the same split-stage script the public demo directory runs.
  */
 
-/* Screenshots are real captures of the league console, written to
-   public/deck by the capture pass. Dimensions are declared so the slide never
-   reflows while one decodes. */
+/* ── the scale ─────────────────────────────────────────────────────────── */
+
+const T = {
+  eyebrow: "text-[clamp(0.72rem,0.95vw,0.88rem)] tracking-[0.2em]",
+  h1: "text-[clamp(2.5rem,6.2vw,5rem)] leading-[1.02] tracking-[-0.035em]",
+  h2: "text-[clamp(1.9rem,4.4vw,3.5rem)] leading-[1.06] tracking-[-0.032em]",
+  lead: "text-[clamp(1.05rem,1.85vw,1.55rem)] leading-[1.45]",
+  cardTitle: "text-[clamp(1.02rem,1.5vw,1.35rem)] leading-[1.2] tracking-[-0.018em]",
+  cardBody: "text-[clamp(1rem,1.25vw,1.18rem)] leading-[1.5]",
+  statN: "text-[clamp(2.6rem,6vw,4.6rem)] leading-none tracking-[-0.04em]",
+  statL: "text-[clamp(0.78rem,0.9vw,0.9rem)] tracking-[0.14em]",
+  bar: "text-[clamp(0.75rem,0.9vw,0.85rem)]",
+} as const
+
+/* 48px+ between a slide's blocks, per the consult. */
+const BLOCK = "mt-7 sm:mt-9 lg:mt-12"
+const CARDS = "grid gap-3 sm:gap-4 lg:gap-5 sm:grid-cols-3"
+
+/* ── assets ────────────────────────────────────────────────────────────── */
+
 type Shot = { src: string; w: number; h: number; alt: string }
 
 const SHOTS = {
@@ -72,8 +101,7 @@ const SHOTS = {
   },
 } satisfies Record<string, Shot>
 
-/** Play a subset of a script's chapters. Mirrors the helper in the demo
- *  directory's runner; each half must open on a beat that sets its own stage. */
+/** Play a subset of a script's chapters. */
 function chaptersOf(script: DemoScript, ids: string[]): DemoScript {
   return {
     ...script,
@@ -82,28 +110,25 @@ function chaptersOf(script: DemoScript, ids: string[]): DemoScript {
   }
 }
 
-/* Both surfaces on screen together, stopping at the whistle: "buzzer" and
- * "story" are the sign-off and the recap, which the deck covers elsewhere.
- *
- * ⚠️ "tipoff" is in the cut and must stay. `chaptersOf` drops beats entirely
- * rather than replaying their patches, and the console state is accumulated
- * from them. Cutting to ["scoring", "family"] alone left the table sitting on
- * the game-day checklist while the caption read "Two taps a play", because the
- * beats that walk it through roll call and the starting fives had been removed.
- * A chapter cut is only safe when its opening beat sets its own stage. */
+/* ⚠️ "tipoff" is in the cut and must stay. `chaptersOf` drops beats rather than
+ * replaying their patches, and console state accumulates from them. Cutting to
+ * ["scoring", "family"] left the table on the game-day checklist while the
+ * caption read "Two taps a play". A chapter cut is only safe when its opening
+ * beat sets its own stage. */
 const LIVE_CUT = chaptersOf(gameDayStory, ["tipoff", "scoring", "family"])
 
-/* ── slide primitives ──────────────────────────────────────────────────── */
+/* ── primitives ────────────────────────────────────────────────────────── */
 
 function Eyebrow({ children, dark = true }: { children: ReactNode; dark?: boolean }) {
   return (
     <p
       className={cn(
-        "mb-4 flex items-center gap-2.5 font-mono text-[11px] font-semibold uppercase tracking-[0.18em]",
+        "mb-4 flex items-center gap-3 font-mono font-semibold uppercase sm:mb-5",
+        T.eyebrow,
         dark ? "text-[#f24e1e]" : "text-[#c2410c]",
       )}
     >
-      <span className={cn("h-[3px] w-6 rounded-sm", dark ? "bg-[#f24e1e]" : "bg-[#c2410c]")} />
+      <span className={cn("h-[3px] w-7 rounded-sm", dark ? "bg-[#f24e1e]" : "bg-[#c2410c]")} />
       {children}
     </p>
   )
@@ -111,25 +136,16 @@ function Eyebrow({ children, dark = true }: { children: ReactNode; dark?: boolea
 
 function H({ children, className }: { children: ReactNode; className?: string }) {
   return (
-    <h2
-      className={cn(
-        "font-display max-w-[20ch] text-balance text-[clamp(1.6rem,3.4vw,2.7rem)] font-extrabold leading-[1.06] tracking-[-0.03em]",
-        className,
-      )}
-    >
+    <h2 className={cn("font-display max-w-[18ch] text-balance font-extrabold", T.h2, className)}>
       {children}
     </h2>
   )
 }
 
+/** Line length capped at ~60ch: the consult's 65-75 character rule. */
 function Lead({ children, dark = true }: { children: ReactNode; dark?: boolean }) {
   return (
-    <p
-      className={cn(
-        "mt-2 max-w-[60ch] text-[clamp(0.9rem,1.35vw,1.13rem)] leading-[1.45] sm:mt-3 sm:leading-[1.5]",
-        dark ? "text-white/70" : "text-[#4a5468]",
-      )}
-    >
+    <p className={cn("mt-4 max-w-[52ch]", T.lead, dark ? "text-white/72" : "text-[#46506a]")}>
       {children}
     </p>
   )
@@ -142,27 +158,20 @@ function Card({
   return (
     <div
       className={cn(
-        "rounded-2xl border p-3 sm:p-5",
+        "rounded-2xl border p-5 sm:p-6 lg:p-7",
         dark ? "border-white/12 bg-[#16253f]" : "border-[#dde3ee] bg-white shadow-sm",
       )}
     >
-      <span className={cn("mb-3 block h-2 w-2 rounded-sm", dot)} />
-      <b className="block text-[clamp(0.92rem,1.15vw,1.02rem)] font-bold leading-tight tracking-[-0.015em]">
-        {title}
-      </b>
-      <span
-        className={cn(
-          "mt-1.5 block text-[clamp(0.82rem,1vw,0.93rem)] leading-[1.5]",
-          dark ? "text-white/65" : "text-[#4a5468]",
-        )}
-      >
+      <span className={cn("mb-4 block h-2.5 w-2.5 rounded-sm", dot)} />
+      <b className={cn("block font-bold", T.cardTitle)}>{title}</b>
+      <span className={cn("mt-2.5 block", T.cardBody, dark ? "text-white/62" : "text-[#4a5468]")}>
         {body}
       </span>
     </div>
   )
 }
 
-/** A screenshot in browser chrome. `contain` keeps the whole shot on screen. */
+/** A screenshot in browser chrome, given every pixel the slide can spare. */
 function Browser({ shot, url, dark = true }: { shot: Shot; url: string; dark?: boolean }) {
   return (
     <div
@@ -175,24 +184,22 @@ function Browser({ shot, url, dark = true }: { shot: Shot; url: string; dark?: b
     >
       <div
         className={cn(
-          "flex shrink-0 items-center gap-1.5 border-b px-3 py-2",
+          "flex shrink-0 items-center gap-2 border-b px-4 py-2.5",
           dark ? "border-white/12 bg-[#12203a]" : "border-[#dde3ee] bg-[#eef1f7]",
         )}
       >
         {[0, 1, 2].map((i) => (
-          <span key={i} className={cn("h-2 w-2 rounded-full", dark ? "bg-white/20" : "bg-[#c3cbdb]")} />
+          <span key={i} className={cn("h-2.5 w-2.5 rounded-full", dark ? "bg-white/20" : "bg-[#c3cbdb]")} />
         ))}
         <span
           className={cn(
-            "ml-2 truncate rounded px-2.5 py-0.5 font-mono text-[10px]",
+            "ml-2 truncate rounded px-3 py-1 font-mono text-[clamp(0.7rem,0.85vw,0.82rem)]",
             dark ? "bg-white/5 text-white/45" : "bg-white text-[#79839a]",
           )}
         >
           {url}
         </span>
       </div>
-      {/* object-contain + object-top: the whole capture stays on the slide at
-          any viewport instead of being cropped to fit a fixed box. */}
       <img
         src={shot.src}
         width={shot.w}
@@ -204,28 +211,46 @@ function Browser({ shot, url, dark = true }: { shot: Shot; url: string; dark?: b
   )
 }
 
+/** Headline, one line, and the image as big as the slide allows. No cards. */
+function ShotSlide({
+  eyebrow, title, lead, shot, url, dark = false,
+}: { eyebrow: string; title: ReactNode; lead: string; shot: Shot; url: string; dark?: boolean }) {
+  return (
+    <div className="flex h-full min-h-0 flex-col">
+      <div className="shrink-0">
+        <Eyebrow dark={dark}>{eyebrow}</Eyebrow>
+        <H>{title}</H>
+        <p className={cn("mt-3 max-w-[62ch]", T.lead, dark ? "text-white/72" : "text-[#46506a]")}>
+          {lead}
+        </p>
+      </div>
+      <div className="mt-5 flex min-h-0 flex-1 flex-col sm:mt-7">
+        <Browser shot={shot} url={url} dark={dark} />
+      </div>
+    </div>
+  )
+}
+
 function Stat({ n, label, gold = false }: { n: string; label: string; gold?: boolean }) {
   return (
     <div>
       <div
         className={cn(
-          "font-display text-[clamp(1.9rem,4.2vw,3.1rem)] font-extrabold leading-none tracking-[-0.04em] tabular-nums",
+          "font-display font-extrabold tabular-nums",
+          T.statN,
           gold ? "text-[#f6b73c]" : "text-[#f24e1e]",
         )}
       >
         {n}
       </div>
-      <div className="mt-2 font-mono text-[10px] font-semibold uppercase tracking-[0.14em] text-white/45">
+      <div className={cn("mt-3 font-mono font-semibold uppercase text-white/45", T.statL)}>
         {label}
       </div>
     </div>
   )
 }
 
-const GRID_2 = "mt-4 grid gap-2 sm:mt-5 sm:grid-cols-2 sm:gap-3"
-const GRID_3 = "mt-4 grid gap-2 sm:mt-5 sm:grid-cols-2 sm:gap-3 lg:grid-cols-3"
-
-/* ── the slides ────────────────────────────────────────────────────────── */
+/* ── slides ────────────────────────────────────────────────────────────── */
 
 type SlideDef = {
   id: string
@@ -243,20 +268,19 @@ const SLIDES: SlideDef[] = [
         <img
           src="/brand/wordmark-one-reverse.svg"
           alt="SportsHub One"
-          className="mb-8 h-8 w-auto sm:h-10"
+          className="mb-10 h-9 w-auto sm:h-12"
         />
         <Eyebrow>For league operators</Eyebrow>
-        <h1 className="font-display text-balance text-[clamp(2.1rem,5.6vw,4.2rem)] font-extrabold leading-[1.02] tracking-[-0.035em]">
+        <h1 className={cn("font-display text-balance font-extrabold", T.h1)}>
           Run the whole season
           <br />
           <span className="text-[#f24e1e]">in one place.</span>
         </h1>
         <Lead>
           Registration, divisions, the schedule, game day, standings, playoffs, referees, waivers
-          and fees. One console for the league. One calendar for every family. One public page the
-          whole city can read without an account.
+          and fees. One console for the league. One calendar for every family.
         </Lead>
-        <p className="mt-8 font-mono text-[11px] uppercase tracking-[0.16em] text-white/40">
+        <p className={cn("mt-10 font-mono uppercase text-white/40", T.eyebrow)}>
           Use the arrow keys, or tap the sides
         </p>
       </div>
@@ -268,16 +292,15 @@ const SLIDES: SlideDef[] = [
     render: () => (
       <div className="flex h-full flex-col justify-center">
         <Eyebrow>Why we built it</Eyebrow>
-        <H>
+        <H className="max-w-[20ch]">
           Nobody is fighting the sport.
           <br />
           They are fighting <span className="text-[#f24e1e]">the admin.</span>
         </H>
-        <div className={GRID_2}>
-          <Card title="The schedule goes out late" body="Gyms get confirmed in pieces, so the calendar lands weeks after families have already booked their lives around nothing." />
-          <Card title="Then it changes" body="One flooded gym on a Saturday morning turns into forty phone calls and a reprinted sheet nobody reads." />
-          <Card title="Everything gets re-typed" body="The same players, the same contacts, entered again into every form the league sends out." />
-          <Card title="Parents dig" body="Game time, gym address, jersey colour. Buried somewhere in a three-hundred-message group chat." />
+        <div className={cn(CARDS, BLOCK)}>
+          <Card title="The schedule goes out late" body="Gyms get confirmed in pieces, so the calendar lands weeks after families booked their lives around nothing." />
+          <Card title="Then it changes" body="One flooded gym on a Saturday turns into forty phone calls and a reprinted sheet nobody reads." />
+          <Card title="Parents dig" body="Game time, gym address, jersey colour. Buried in a three-hundred-message group chat." />
         </div>
       </div>
     ),
@@ -289,29 +312,14 @@ const SLIDES: SlideDef[] = [
       <div className="flex h-full flex-col justify-center">
         <Eyebrow>The spine</Eyebrow>
         <H>The season, end to end.</H>
-        <Lead>
-          The console walks the league through every step and keeps a checklist of what is done and
-          what still needs you.
-        </Lead>
-        <div className="mt-6 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
-          {[
-            ["Plan", "gyms booked early"],
-            ["Register", "clubs enter teams"],
-            ["Approve", "one queue, fees attach"],
-            ["Divisions", "drag and drop"],
-            ["Schedule", "a season in seconds"],
-            ["Publish", "locked before tip-off"],
-            ["Play", "live scoring, sign-off"],
-            ["Standings", "update themselves"],
-            ["Playoffs", "brackets from results"],
-            ["Renew", "next season, one click"],
-          ].map(([t, s], i) => (
-            <div key={t} className="rounded-xl border border-white/12 bg-[#16253f] p-3">
-              <div className="font-mono text-[10px] font-semibold tracking-[0.1em] text-[#f24e1e]">
+        <div className={cn("grid grid-cols-2 gap-2.5 sm:grid-cols-5 sm:gap-3.5", BLOCK)}>
+          {["Plan", "Register", "Approve", "Divisions", "Schedule",
+            "Publish", "Play", "Standings", "Playoffs", "Renew"].map((t, i) => (
+            <div key={t} className="rounded-xl border border-white/12 bg-[#16253f] px-4 py-4 sm:px-5 sm:py-5">
+              <div className="font-mono text-[clamp(0.7rem,0.85vw,0.8rem)] font-semibold tracking-[0.12em] text-[#f24e1e]">
                 {String(i + 1).padStart(2, "0")}
               </div>
-              <b className="mt-1.5 block text-[0.95rem] font-bold tracking-[-0.01em]">{t}</b>
-              <em className="mt-0.5 block text-[0.8rem] not-italic leading-snug text-white/45">{s}</em>
+              <b className={cn("mt-2 block font-bold", T.cardTitle)}>{t}</b>
             </div>
           ))}
         </div>
@@ -323,22 +331,13 @@ const SLIDES: SlideDef[] = [
     chapter: "Intake",
     light: true,
     render: () => (
-      <div className="flex h-full min-h-0 flex-col">
-        <div className="shrink-0">
-          <Eyebrow dark={false}>The league console</Eyebrow>
-          <H>
-            One queue, <span className="text-[#c2410c]">not an inbox.</span>
-          </H>
-          <Lead dark={false}>
-            Clubs apply to your season and register their own teams under that entry. Your
-            application questions travel with it, your fees attach at entry, and a checklist tells
-            you what is still waiting.
-          </Lead>
-        </div>
-        <div className="mt-4 flex min-h-0 flex-1 flex-col">
-          <Browser shot={SHOTS.overview} url="sportshubone.com/manage/leagues/summer-2026" dark={false} />
-        </div>
-      </div>
+      <ShotSlide
+        eyebrow="The league console"
+        title={<>One queue, <span className="text-[#c2410c]">not an inbox.</span></>}
+        lead="Clubs apply to your season and register their own teams. Your questions travel with the entry, your fees attach to it, and a checklist tells you what is still waiting."
+        shot={SHOTS.overview}
+        url="sportshubone.com/manage/leagues/summer-2026"
+      />
     ),
   },
   {
@@ -346,23 +345,13 @@ const SLIDES: SlideDef[] = [
     chapter: "Planning",
     light: true,
     render: () => (
-      <div className="flex h-full min-h-0 flex-col">
-        <div className="shrink-0">
-          <Eyebrow dark={false}>Pre-season planning</Eyebrow>
-          <H>
-            Plan the season <span className="text-[#c2410c]">before it exists.</span>
-          </H>
-        </div>
-        <div className="mt-4 flex min-h-0 flex-1 flex-col">
-          <Browser shot={SHOTS.plan} url="/seasons/summer-2026/plan" dark={false} />
-        </div>
-        <div className={cn(GRID_2, "shrink-0 lg:grid-cols-4")}>
-          <Card dark={false} tone="play" title="Your buildings on a board" body="Home gyms and rented gyms on a drag-and-drop season calendar." />
-          <Card dark={false} tone="play" title="Fits or it does not, live" body="Every weekend shows games needed against slots booked." />
-          <Card dark={false} tone="play" title="What you still need to book" body="The exact court hours you are short, totalled month by month." />
-          <Card dark={false} tone="play" title="Plan B without risk" body="Several plans side by side. Drafts never touch the live season." />
-        </div>
-      </div>
+      <ShotSlide
+        eyebrow="Pre-season planning"
+        title={<>Plan the season <span className="text-[#c2410c]">before it exists.</span></>}
+        lead="Book gyms early and see exactly what fits. Every weekend shows games needed against slots booked, and it tells you the court hours you are still short."
+        shot={SHOTS.plan}
+        url="/seasons/summer-2026/plan"
+      />
     ),
   },
   {
@@ -372,17 +361,16 @@ const SLIDES: SlideDef[] = [
       <div className="flex h-full min-h-0 flex-col">
         <div className="shrink-0">
           <Eyebrow>Scheduling</Eyebrow>
-          <H className="max-w-[26ch]">
+          <H className="max-w-[24ch]">
             A full season, scheduled in about <span className="text-[#f24e1e]">fifteen seconds.</span>
           </H>
-          <div className="mt-4 flex flex-wrap gap-x-10 gap-y-4">
+          <div className="mt-6 flex flex-wrap gap-x-12 gap-y-5 sm:mt-8">
             <Stat n="~15s" label="To build a season" />
             <Stat n="0" label="Double-booked courts" gold />
             <Stat n="0" label="Back-to-back games" gold />
-            <Stat n="0" label="Repeat weekend matchups" gold />
           </div>
         </div>
-        <div className="mt-4 flex min-h-0 flex-1 flex-col">
+        <div className="mt-6 flex min-h-0 flex-1 flex-col sm:mt-8">
           <Browser shot={SHOTS.schedule} url="/seasons/summer-2026/schedule" />
         </div>
       </div>
@@ -398,17 +386,13 @@ const SLIDES: SlideDef[] = [
           Fair to every kid, <span className="text-[#f24e1e]">by the numbers.</span>
         </H>
         <Lead>
-          The scheduler keeps a running tally of what each team has been asked to put up with, and
-          it costs itself more every time it loads one more thing onto a team that has already had a
-          rough run. Misery never stacks on the same families.
+          The scheduler tracks what each team has been asked to put up with, and charges itself more
+          every time it loads one more thing onto a team that has already had a rough run.
         </Lead>
-        <div className={GRID_3}>
-          <Card tone="green" title="Never back to back" body="No team plays two games in a row. Not once, across the whole season." />
-          <Card tone="green" title="No all-day waits" body="A short breather between games is fine. Long dead gaps count against the schedule." />
-          <Card tone="green" title="Early and late, shared" body="First tip-offs and last finishes spread evenly instead of landing on the same team." />
-          <Card tone="green" title="One building per grade" body="A grade lives in one gym per weekend, all its divisions together, so a family learns one drive." />
-          <Card tone="green" title="No two-gym days" body="A team never bounces between buildings in a day. Carpools and siblings arrive together." />
-          <Card tone="green" title="No repeat weekends" body="The same two teams never meet twice inside one weekend." />
+        <div className={cn(CARDS, BLOCK)}>
+          <Card tone="green" title="Never back to back" body="No team plays two games in a row. Not once, all season." />
+          <Card tone="green" title="One gym per grade" body="A grade stays in one building, all its divisions together, so a family learns one drive." />
+          <Card tone="green" title="Early and late, shared" body="First tip-offs and last finishes spread evenly instead of landing on the same team every week." />
         </div>
       </div>
     ),
@@ -419,16 +403,15 @@ const SLIDES: SlideDef[] = [
     render: () => (
       <div className="flex h-full flex-col justify-center">
         <Eyebrow>Change management</Eyebrow>
-        <H>
+        <H className="max-w-[22ch]">
           Schedules change.
           <br />
           <span className="text-[#f24e1e]">Phone trees are optional now.</span>
         </H>
-        <div className={GRID_2}>
-          <Card tone="play" title="Move, cancel, reschedule" body="One change in the console. Every affected family is notified and every synced calendar corrects itself." />
-          <Card tone="play" title="Late teams and early exits" body="A team joins in week three or drops out, and the schedule adapts with minimal churn. Most games do not move." />
-          <Card tone="play" title="Travelling teams, handled" body="A far team asks for early Sunday games. You see what granting it costs everyone else, then decide." />
-          <Card tone="play" title="Before publishing, changes are free" body="More teams than planned? Update and regenerate. Families only ever see the published version." />
+        <div className={cn(CARDS, BLOCK)}>
+          <Card tone="play" title="One edit, everyone told" body="Move or cancel a game. Every affected family is notified and every synced calendar corrects itself." />
+          <Card tone="play" title="A team drops out" body="The schedule adapts with minimal churn. Most games do not move, and every team stays whole." />
+          <Card tone="play" title="Requests you can price" body="A travelling team asks for early Sunday games. You see what it costs everyone else, then decide." />
         </div>
       </div>
     ),
@@ -440,22 +423,20 @@ const SLIDES: SlideDef[] = [
     render: ({ active, visits }) => (
       <div className="flex h-full min-h-0 flex-col">
         {/* The player carries its own transport row and caption bar, so this
-            slide's header is deliberately the tightest in the deck: a single
-            line under the title. Anything more and the caption bar clips. */}
-        <div className="shrink-0">
-          <Eyebrow dark={false}>Game day, both sides at once</Eyebrow>
-          <h2 className="font-display text-balance text-[clamp(1.4rem,2.8vw,2.2rem)] font-extrabold leading-[1.06] tracking-[-0.03em]">
+            slide's header is the tightest in the deck. Anything more clips. */}
+        <div className="shrink-0 [&>p]:mb-2 sm:[&>p]:mb-5">
+          <span className="hidden sm:block">
+            <Eyebrow dark={false}>Game day, both sides at once</Eyebrow>
+          </span>
+          <h2 className="font-display text-balance text-[clamp(1.25rem,3.2vw,2.5rem)] font-extrabold leading-[1.05] tracking-[-0.03em]">
             The table taps it in.{" "}
             <span className="text-[#c2410c]">His phone already knows.</span>
           </h2>
-          <p className="mt-1.5 text-[clamp(0.85rem,1.15vw,1rem)] leading-snug text-[#4a5468]">
-            On the left, the scorer&apos;s table. On the right, a father forty minutes away.
-          </p>
         </div>
-        <div className="mt-2.5 flex min-h-0 flex-1 flex-col">
+        <div className="mt-3 flex min-h-0 flex-1 flex-col">
           {/* Mounted only while this slide is showing: the player autoplays on
               mount, and `autoStart` cannot be flipped after the fact. The key
-              forces a fresh run each time the viewer comes back to the slide. */}
+              forces a fresh run each time the viewer returns to the slide. */}
           {active ? (
             <DemoPlayer
               key={`live-${visits}`}
@@ -475,43 +456,27 @@ const SLIDES: SlideDef[] = [
     chapter: "Standings",
     light: true,
     render: () => (
-      <div className="flex h-full min-h-0 flex-col">
-        <div className="shrink-0">
-          <Eyebrow dark={false}>Standings</Eyebrow>
-          <H>
-            Standings <span className="text-[#c2410c]">nobody has to compute.</span>
-          </H>
-          <Lead dark={false}>
-            Wins, losses and points flow straight from signed-off scoresheets, with your tiebreakers
-            applied. The weekend ends and the tables are already right.
-          </Lead>
-        </div>
-        <div className="mt-4 flex min-h-0 flex-1 flex-col">
-          <Browser shot={SHOTS.standings} url="/seasons/summer-2026/standings" dark={false} />
-        </div>
-      </div>
+      <ShotSlide
+        eyebrow="Standings"
+        title={<>Standings <span className="text-[#c2410c]">nobody has to compute.</span></>}
+        lead="Wins, losses and points flow straight from signed-off scoresheets, with your tiebreakers applied. The weekend ends and the tables are already right."
+        shot={SHOTS.standings}
+        url="/seasons/summer-2026/standings"
+      />
     ),
   },
   {
     id: "playoffs",
     chapter: "Playoffs",
     render: () => (
-      <div className="flex h-full min-h-0 flex-col">
-        <div className="shrink-0">
-          <Eyebrow>Playoffs</Eyebrow>
-          <H className="max-w-[24ch]">
-            Brackets that respect <span className="text-[#f24e1e]">how you built the season.</span>
-          </H>
-        </div>
-        <div className="mt-4 flex min-h-0 flex-1 flex-col">
-          <Browser shot={SHOTS.playoffs} url="/seasons/summer-2026/playoffs" />
-        </div>
-        <div className={cn(GRID_3, "shrink-0")}>
-          <Card title="Seeded from real results" body="The moment the regular season closes, from games the table actually signed off." />
-          <Card title="Nobody's season ends at 9am" body="Consolation rounds guarantee every team more than one playoff game." />
-          <Card title="Scheduled before it is seeded" body="The bracket sits on real weekends in real gyms early. Team names fill in as results land." />
-        </div>
-      </div>
+      <ShotSlide
+        dark
+        eyebrow="Playoffs"
+        title={<>Brackets seeded by <span className="text-[#f24e1e]">what actually happened.</span></>}
+        lead="The bracket sits on real weekends in real gyms before it is seeded, and team names fill in as results land. Consolation rounds mean nobody's season ends at 9am."
+        shot={SHOTS.playoffs}
+        url="/seasons/summer-2026/playoffs"
+      />
     ),
   },
   {
@@ -519,21 +484,13 @@ const SLIDES: SlideDef[] = [
     chapter: "Referees",
     light: true,
     render: () => (
-      <div className="flex h-full min-h-0 flex-col">
-        <div className="shrink-0">
-          <Eyebrow dark={false}>Referees</Eyebrow>
-          <H>
-            A referee pool, <span className="text-[#c2410c]">not a group text.</span>
-          </H>
-          <Lead dark={false}>
-            Referees mark their own availability, so you see the real pool. Broadcast a shift to
-            everyone or target one person you trust, and the first accept wins it.
-          </Lead>
-        </div>
-        <div className="mt-4 flex min-h-0 flex-1 flex-col">
-          <Browser shot={SHOTS.referees} url="/seasons/summer-2026/referees" dark={false} />
-        </div>
-      </div>
+      <ShotSlide
+        eyebrow="Referees"
+        title={<>A referee pool, <span className="text-[#c2410c]">not a group text.</span></>}
+        lead="Referees mark their own availability. Broadcast a shift to the pool or target one person you trust, and the first accept wins it."
+        shot={SHOTS.referees}
+        url="/seasons/summer-2026/referees"
+      />
     ),
   },
   {
@@ -541,22 +498,13 @@ const SLIDES: SlideDef[] = [
     chapter: "Waivers",
     light: true,
     render: () => (
-      <div className="flex h-full min-h-0 flex-col">
-        <div className="shrink-0">
-          <Eyebrow dark={false}>Waivers</Eyebrow>
-          <H>
-            Signed <span className="text-[#c2410c]">before the first whistle.</span>
-          </H>
-          <Lead dark={false}>
-            Your documents, whatever your league requires. Ontario&apos;s Rowan&apos;s Law
-            concussion acknowledgement is included. On approval they email every rostered parent,
-            and reminders chase the rest.
-          </Lead>
-        </div>
-        <div className="mt-4 flex min-h-0 flex-1 flex-col">
-          <Browser shot={SHOTS.waivers} url="/seasons/summer-2026/waivers" dark={false} />
-        </div>
-      </div>
+      <ShotSlide
+        eyebrow="Waivers"
+        title={<>Signed <span className="text-[#c2410c]">before the first whistle.</span></>}
+        lead="On approval they email every rostered parent, reminders chase the rest, and a missing signature has nowhere to hide. Rowan's Law is included."
+        shot={SHOTS.waivers}
+        url="/seasons/summer-2026/waivers"
+      />
     ),
   },
   {
@@ -568,12 +516,9 @@ const SLIDES: SlideDef[] = [
         <H>
           Fees you can <span className="text-[#f24e1e]">actually track.</span>
         </H>
-        <div className={GRID_2}>
-          <Card tone="play" title="Obligations per club" body="Every team fee owed, by club, with status at a glance. Waives and refunds live in the ledger, not in someone's memory." />
-          <Card tone="play" title="E-transfer and card" body="Record and reconcile e-transfers, or take cards through Stripe. This is Canada, so both." />
-          <Card tone="play" title="Reports that export" body="Transactions, revenue per program, aging on what is overdue, and CSV for QuickBooks or Xero." />
-          <Card tone="play" title="Reach everyone in one click" body="The whole league, one club, one grade or one team. Payment and waiver reminders send themselves." />
-          <Card tone="gold" title="Know your league by the numbers" body="Registration funnel, schedule health, court hours booked against used, and division parity with re-tiering evidence for next season." />
+        <div className={cn(CARDS, BLOCK)}>
+          <Card tone="play" title="Owed, by club" body="Every team fee with its status at a glance. E-transfers reconciled beside cards, because this is Canada." />
+          <Card tone="play" title="Exports to the bookkeeper" body="Transactions, revenue per program, aging on what is overdue, and CSV for QuickBooks or Xero." />
           <Card tone="gold" title="A fairness report card" body="Every team's early games, late games and waits, straight from the scheduler. Show it to the club that complains." />
         </div>
       </div>
@@ -583,22 +528,14 @@ const SLIDES: SlideDef[] = [
     id: "hub",
     chapter: "Public page",
     render: () => (
-      <div className="flex h-full min-h-0 flex-col">
-        <div className="shrink-0">
-          <Eyebrow>The public hub</Eyebrow>
-          <H>
-            Your league&apos;s <span className="text-[#f24e1e]">front door.</span>
-          </H>
-          <Lead>
-            A branded page families, grandparents and recruiters read without making an account.
-            Live scores, standings, leaders, news as cards, and next season taking registrations
-            while this one is still running.
-          </Lead>
-        </div>
-        <div className="mt-4 flex min-h-0 flex-1 flex-col">
-          <Browser shot={SHOTS.hub} url="sportshubone.com/league/summer-2026" />
-        </div>
-      </div>
+      <ShotSlide
+        dark
+        eyebrow="The public hub"
+        title={<>Your league&apos;s <span className="text-[#f24e1e]">front door.</span></>}
+        lead="A branded page families, grandparents and recruiters read without making an account. Live scores, standings and leaders, always current with the published season."
+        shot={SHOTS.hub}
+        url="sportshubone.com/league/summer-2026"
+      />
     ),
   },
   {
@@ -611,26 +548,22 @@ const SLIDES: SlideDef[] = [
         <H>
           Everyone sees <span className="text-[#c2410c]">their slice</span> of the same season.
         </H>
-        <Lead dark={false}>
-          One data source underneath all of it. When the league moves a game, the club sees it, the
-          coach sees it, and every family&apos;s calendar corrects itself. The website and the apps
-          never disagree, because there is nothing to keep in sync.
-        </Lead>
-        <div className="mt-5 grid grid-cols-2 gap-px overflow-hidden rounded-2xl border border-[#dde3ee] bg-[#dde3ee] lg:grid-cols-4">
+        <p className={cn("mt-4 max-w-[62ch]", T.lead, "text-[#46506a]")}>
+          One data source underneath. Move a game and the club, the coach and every family&apos;s
+          calendar all correct themselves.
+        </p>
+        <div className={cn("grid grid-cols-2 gap-2.5 sm:grid-cols-3 sm:gap-4", BLOCK)}>
           {[
-            ["Clubs", "A real home page", "Branded club site on its own address, teams and staff, tryouts, camps, registration and fees."],
-            ["Coaches", "Their team, nothing else", "Roster, team chat, RSVPs, practices, and the scoring console at the table. Not your books."],
-            ["Parents", "One calendar", "Every kid's games and practices in one place, one tap to RSVP, waivers signed and fees paid online."],
-            ["Players", "A page of their own", "Season stats that build game by game. The kind of page a senior actually sends to a recruiter."],
-            ["Referees", "Availability and shifts", "Set when they can work, accept offers, carry their own calendar, sign the scoresheet."],
-            ["Trainers", "Their own listing", "Public profile, bookings and payments, instead of running a business out of Instagram DMs."],
-            ["Scorekeepers", "A game-scoped login", "For the volunteer at the table. That one game, and nothing else in the system."],
-            ["The public", "No account at all", "Scores, standings, club pages and recaps are open. Grandparents welcome."],
-          ].map(([role, title, body]) => (
-            <div key={role} className="bg-white p-4">
-              <div className="font-mono text-[10px] uppercase tracking-[0.15em] text-[#4f46e5]">{role}</div>
-              <b className="mt-2 block text-[0.98rem] font-bold tracking-[-0.015em] text-[#0f1728]">{title}</b>
-              <span className="mt-1 block text-[0.85rem] leading-[1.5] text-[#4a5468]">{body}</span>
+            ["Clubs", "A branded club site, teams, tryouts and fees."],
+            ["Coaches", "Roster, chat, RSVPs, and the console at the table."],
+            ["Families", "One calendar, one place to pay, one place to sign."],
+            ["Players", "A page of season stats a senior can send a recruiter."],
+            ["Referees", "Availability, shifts, and the scoresheet signature."],
+            ["The public", "Scores and standings with no account at all."],
+          ].map(([role, body]) => (
+            <div key={role} className="rounded-2xl border border-[#dde3ee] bg-white p-5 shadow-sm sm:p-6">
+              <div className={cn("font-mono font-semibold uppercase text-[#4f46e5]", T.statL)}>{role}</div>
+              <span className={cn("mt-2.5 block text-[#3d4657]", T.cardBody)}>{body}</span>
             </div>
           ))}
         </div>
@@ -647,41 +580,36 @@ const SLIDES: SlideDef[] = [
           See it working, <span className="text-[#f24e1e]">right now.</span>
         </H>
         <Lead>
-          Every one of these is a click-through walkthrough of the real product. No login, no form,
-          nothing to install.
+          Click-through walkthroughs of the real product. No login, no form, nothing to install.
         </Lead>
-        <div className={GRID_3}>
+        <div className={cn(CARDS, BLOCK)}>
           {[
-            ["season-planned-to-published", "A season, planned to published", "Gyms, divisions, generate, publish. The whole build in one pass."],
-            ["schedule-change", "A game moves on Friday night", "One edit, and the notification that keeps a family off the road."],
-            ["team-drops-out", "A team drops out in week three", "Repairing a live season without moving everything."],
-            ["standings-to-playoffs", "Standings into playoff brackets", "Seeding from real results onto booked weekends."],
-            ["the-referees", "Booking the referee pool", "Availability, a broadcast shift, first accept wins."],
-            ["money-picture", "Where the money is", "What each club owes, what landed, what exports."],
+            ["season-planned-to-published", "A season, planned to published", "Gyms, divisions, generate, publish."],
+            ["schedule-change", "A game moves on Friday night", "One edit, and the family stays off the road."],
+            ["standings-to-playoffs", "Standings into brackets", "Seeding from real results onto booked weekends."],
           ].map(([slug, title, body]) => (
             <a
               key={slug}
               href={`https://sportshubone.com/demos/${slug}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="group rounded-2xl border border-white/12 bg-[#16253f] p-3 transition sm:p-4 hover:-translate-y-0.5 hover:border-[#f24e1e] hover:bg-[#1a2b48]"
+              className="group cursor-pointer rounded-2xl border border-white/12 bg-[#16253f] p-5 transition duration-200 hover:-translate-y-0.5 hover:border-[#f24e1e] hover:bg-[#1a2b48] sm:p-6 lg:p-7"
             >
-              <div className="flex items-center justify-between gap-3">
-                <b className="text-[0.95rem] font-bold leading-tight tracking-[-0.012em]">{title}</b>
-                <svg viewBox="0 0 24 24" className="h-3.5 w-3.5 shrink-0 stroke-[#f24e1e] opacity-50 transition group-hover:translate-x-0.5 group-hover:opacity-100" fill="none" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <div className="flex items-start justify-between gap-3">
+                <b className={cn("font-bold", T.cardTitle)}>{title}</b>
+                <svg viewBox="0 0 24 24" className="mt-1 h-4 w-4 shrink-0 stroke-[#f24e1e] opacity-50 transition duration-200 group-hover:translate-x-0.5 group-hover:opacity-100" fill="none" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                   <path d="M5 12h14M13 6l6 6-6 6" />
                 </svg>
               </div>
-              <span className="mt-1.5 block text-[0.85rem] leading-[1.5] text-white/50">{body}</span>
+              <span className={cn("mt-2.5 block text-white/62", T.cardBody)}>{body}</span>
             </a>
           ))}
         </div>
-        <p className="mt-5 text-[0.95rem] text-white/60">
-          More at{" "}
+        <p className={cn("mt-7 text-white/60", T.lead)}>
+          All of them at{" "}
           <a href="https://sportshubone.com/demos" target="_blank" rel="noopener noreferrer" className="font-semibold text-[#f24e1e]">
             sportshubone.com/demos
           </a>
-          , including the club and family side.
         </p>
       </div>
     ),
@@ -692,31 +620,30 @@ const SLIDES: SlideDef[] = [
     render: () => (
       <div className="flex h-full flex-col justify-center">
         <Eyebrow>What we are asking for</Eyebrow>
-        <h2 className="font-display max-w-[18ch] text-balance text-[clamp(1.9rem,4.4vw,3.3rem)] font-extrabold leading-[1.05] tracking-[-0.03em]">
+        <h2 className={cn("font-display max-w-[16ch] text-balance font-extrabold", T.h2)}>
           One league. One season.
           <br />
           <span className="text-[#f24e1e]">Run live, with us on the hook.</span>
         </h2>
         <Lead>
-          We are Canadian, we are built for basketball, and we would rather earn a league than pitch
-          one. Give us a season and we will do the setup, the migration and the hand-holding. You
-          tell us what is wrong with it while it runs.
+          We will do the setup, the migration and the hand-holding. You tell us what is wrong with
+          it while it runs.
         </Lead>
-        <div className="mt-7 flex flex-wrap gap-3">
+        <div className={cn("flex flex-wrap gap-4", BLOCK)}>
           <a
             href="https://sportshubone.com/demos"
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 rounded-full bg-[#f24e1e] px-6 py-3.5 text-[0.95rem] font-bold text-white transition hover:-translate-y-0.5 hover:bg-[#ff6136]"
+            className="inline-flex cursor-pointer items-center gap-2.5 rounded-full bg-[#f24e1e] px-8 py-4 text-[clamp(1rem,1.25vw,1.18rem)] font-bold text-white transition duration-200 hover:-translate-y-0.5 hover:bg-[#ff6136]"
           >
             Watch a demo
-            <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
               <path d="M5 12h14M13 6l6 6-6 6" />
             </svg>
           </a>
           <Link
             href="/"
-            className="inline-flex items-center rounded-full border border-white/25 px-6 py-3.5 text-[0.95rem] font-bold transition hover:border-white/60"
+            className="inline-flex cursor-pointer items-center rounded-full border border-white/25 px-8 py-4 text-[clamp(1rem,1.25vw,1.18rem)] font-bold transition duration-200 hover:border-white/60"
           >
             sportshubone.com
           </Link>
@@ -731,7 +658,7 @@ const SLIDES: SlideDef[] = [
 export function LeagueDeck() {
   const [i, setI] = useState(0)
   const [menu, setMenu] = useState(false)
-  /* Bumped every time a slide is entered, so a remounted demo replays. */
+  /* Bumped on every slide entry, so a remounted demo replays. */
   const [visits, setVisits] = useState(0)
   const touch = useRef<{ x: number; y: number } | null>(null)
 
@@ -781,7 +708,6 @@ export function LeagueDeck() {
         if (Math.abs(dx) > 56 && Math.abs(dx) > Math.abs(t.clientY - s.y)) go(dx < 0 ? i + 1 : i - 1)
       }}
     >
-      {/* progress */}
       <div className={cn("absolute inset-x-0 top-0 z-30 h-[3px]", light ? "bg-black/8" : "bg-white/10")}>
         <div
           className="h-full bg-gradient-to-r from-[#7c74f5] to-[#f24e1e] transition-[width] duration-300"
@@ -789,60 +715,61 @@ export function LeagueDeck() {
         />
       </div>
 
-      {/* the slide */}
       <div className="relative min-h-0 flex-1">
         {SLIDES.map((s, n) => (
           <section
             key={s.id}
             aria-hidden={n !== i}
             className={cn(
-              "absolute inset-0 overflow-y-auto px-5 pb-4 pt-9 sm:px-10 sm:pt-12 lg:px-16",
-              n === i ? "z-10 opacity-100" : "pointer-events-none z-0 opacity-0",
-              n === i && "motion-safe:animate-[deckIn_.42s_cubic-bezier(.2,.7,.2,1)]",
+              "absolute inset-0 overflow-y-auto px-6 pb-5 pt-10 sm:px-12 sm:pt-14 lg:px-20",
+              "motion-safe:transition-[opacity,transform] motion-safe:duration-300 motion-safe:ease-out",
+              n === i
+                ? "z-10 translate-y-0 opacity-100"
+                : "pointer-events-none z-0 translate-y-2 opacity-0",
             )}
           >
-            <div className="mx-auto h-full w-full max-w-[1180px]">
+            <div className="mx-auto h-full w-full max-w-[1280px]">
               {s.render({ active: n === i, visits })}
             </div>
           </section>
         ))}
       </div>
 
-      {/* tap zones, behind the bar so buttons still work */}
+      {/* tap zones, clear of the bar so its buttons still work */}
       <button
         type="button"
         aria-label="Previous slide"
         onClick={() => go(i - 1)}
-        className="absolute left-0 top-0 z-20 h-[calc(100%-56px)] w-[9%] cursor-w-resize opacity-0"
+        className="absolute left-0 top-0 z-20 h-[calc(100%-60px)] w-[8%] cursor-w-resize opacity-0"
       />
       <button
         type="button"
         aria-label="Next slide"
         onClick={() => go(i + 1)}
-        className="absolute right-0 top-0 z-20 h-[calc(100%-56px)] w-[9%] cursor-e-resize opacity-0"
+        className="absolute right-0 top-0 z-20 h-[calc(100%-60px)] w-[8%] cursor-e-resize opacity-0"
       />
 
-      {/* bottom bar */}
       <div
         className={cn(
-          "relative z-30 flex h-14 shrink-0 items-center gap-3 border-t px-4 sm:px-6",
+          "relative z-30 flex h-[60px] shrink-0 items-center gap-3 border-t px-4 sm:px-7",
           light ? "border-[#dde3ee] bg-white/85" : "border-white/12 bg-[#0b1628]/90",
         )}
       >
-        <span className="h-2.5 w-2.5 shrink-0 rounded-sm bg-[#f24e1e]" />
+        <span className="h-3 w-3 shrink-0 rounded-sm bg-[#f24e1e]" />
         <span
           className={cn(
-            "min-w-0 flex-1 truncate font-mono text-[11px] font-semibold uppercase tracking-[0.13em]",
+            "min-w-0 flex-1 truncate font-mono font-semibold uppercase tracking-[0.13em]",
+            T.bar,
             light ? "text-[#79839a]" : "text-white/45",
           )}
         >
           {slide.chapter}
         </span>
-        <span className={cn("shrink-0 font-mono text-[12px] tabular-nums", light ? "text-[#79839a]" : "text-white/45")}>
+        <span className={cn("shrink-0 font-mono tabular-nums", T.bar, light ? "text-[#79839a]" : "text-white/45")}>
           {i + 1} / {SLIDES.length}
         </span>
         {[
-          { label: "Contents", onClick: () => setMenu(true) },
+          { label: "Contents", onClick: () => setMenu(true), disabled: false },
           { label: "Back", onClick: () => go(i - 1), disabled: i === 0 },
           { label: "Next", onClick: () => go(i + 1), disabled: i === SLIDES.length - 1 },
         ].map((b) => (
@@ -852,7 +779,8 @@ export function LeagueDeck() {
             onClick={b.onClick}
             disabled={b.disabled}
             className={cn(
-              "shrink-0 rounded-lg border px-3 py-1.5 text-[13px] font-bold transition disabled:cursor-not-allowed disabled:opacity-35",
+              "shrink-0 cursor-pointer rounded-lg border px-4 py-2 font-bold transition duration-200 disabled:cursor-not-allowed disabled:opacity-35",
+              T.bar,
               b.label === "Contents" && "hidden sm:block",
               light
                 ? "border-[#dde3ee] text-[#0f1728] enabled:hover:border-[#c2410c] enabled:hover:text-[#c2410c]"
@@ -864,35 +792,34 @@ export function LeagueDeck() {
         ))}
       </div>
 
-      {/* contents */}
       {menu ? (
-        <div className="absolute inset-0 z-40 overflow-y-auto bg-[#0b1628]/98 px-6 py-14 text-white sm:px-14">
+        <div className="absolute inset-0 z-40 overflow-y-auto bg-[#0b1628]/98 px-7 py-14 text-white sm:px-16">
           <div className="mx-auto max-w-[1000px]">
-            <div className="mb-8 flex items-baseline justify-between gap-4">
-              <h2 className="font-display text-3xl font-extrabold tracking-[-0.03em]">Contents</h2>
+            <div className="mb-9 flex items-baseline justify-between gap-4">
+              <h2 className={cn("font-display font-extrabold", T.h2)}>Contents</h2>
               <button
                 type="button"
                 onClick={() => setMenu(false)}
-                className="rounded-lg border border-white/15 px-3.5 py-1.5 text-[13px] font-bold transition hover:border-[#f24e1e] hover:text-[#f24e1e]"
+                className={cn("cursor-pointer rounded-lg border border-white/15 px-4 py-2 font-bold transition duration-200 hover:border-[#f24e1e] hover:text-[#f24e1e]", T.bar)}
               >
                 Close
               </button>
             </div>
-            <ul className="grid gap-1 sm:grid-cols-2">
+            <ul className="grid gap-1.5 sm:grid-cols-2">
               {SLIDES.map((s, n) => (
                 <li key={s.id}>
                   <button
                     type="button"
                     onClick={() => { go(n); setMenu(false) }}
                     className={cn(
-                      "flex w-full items-baseline gap-3 rounded-lg px-3 py-2 text-left transition hover:bg-white/8",
+                      "flex w-full cursor-pointer items-baseline gap-4 rounded-lg px-4 py-2.5 text-left transition duration-200 hover:bg-white/8",
                       n === i && "bg-white/10",
                     )}
                   >
-                    <span className="w-6 shrink-0 font-mono text-[11px] tabular-nums text-white/35">
+                    <span className="w-7 shrink-0 font-mono text-[0.85rem] tabular-nums text-white/35">
                       {String(n + 1).padStart(2, "0")}
                     </span>
-                    <span className="text-[15px] font-semibold">{s.chapter}</span>
+                    <span className="text-[clamp(1rem,1.3vw,1.2rem)] font-semibold">{s.chapter}</span>
                   </button>
                 </li>
               ))}
@@ -901,12 +828,6 @@ export function LeagueDeck() {
         </div>
       ) : null}
 
-      <style jsx global>{`
-        @keyframes deckIn {
-          from { opacity: 0; transform: translateY(10px); }
-          to { opacity: 1; transform: none; }
-        }
-      `}</style>
     </div>
   )
 }
