@@ -1,0 +1,84 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@700;800&display=swap" rel="stylesheet" />
+<!--
+  THE INSTAGRAM PROFILE PICTURE (2026-08-19).
+
+  Underscore-prefixed so render-creatives.mjs skips it: this is a brand asset,
+  not a post, and it must not appear in the launch set or the gallery.
+
+  WHY THE APP ICON CANNOT BE USED AS-IS. public/brand/icon-n3-1024.png is a
+  rounded SQUARE with the orange "1" badge in the top-right corner. Instagram
+  crops a profile picture to a CIRCLE, and the badge's outer corner sits about
+  580px from centre on a 1024 canvas where the circle's radius is 512. It gets
+  clipped. The rounded corners are lost too, so the shape reads as an accident.
+
+  WHAT THIS DOES DIFFERENTLY
+   1. The navy runs full bleed. Whatever the crop takes, it takes navy, never
+      a white corner.
+   2. Everything sits inside the SAFE SQUARE inscribed in the circle, which on
+      1024 is 724px wide, so a 150px margin all round. The lockup is well
+      inside it.
+   3. The mark is centred as one object, S and badge together, rather than the
+      badge floating in a corner it no longer has.
+   4. It is set in Outfit at 800, the same face as the wordmark, so the avatar
+      and the creatives are visibly the same brand.
+
+  It has to survive 110px. That is the real display size in a feed, so the
+  lockup is large in frame and carries no small type at all.
+-->
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 1024px; height: 1024px; }
+  body {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    /* Full bleed: the circle crop can only ever remove navy. */
+    background:
+      radial-gradient(120% 120% at 28% 18%, #24365c 0%, transparent 58%),
+      linear-gradient(150deg, #1a2b4d 0%, #0b1628 78%);
+    font-family: "Outfit", sans-serif;
+  }
+
+  .lockup {
+    position: relative;
+    display: flex;
+    align-items: flex-start;
+  }
+
+  .s {
+    font-size: 600px;
+    font-weight: 800;
+    line-height: 0.78;
+    letter-spacing: -0.05em;
+    color: #ffffff;
+  }
+
+  /* Tucked against the S rather than pinned to a corner, so the circle never
+     reaches it. */
+  .one {
+    margin-left: 18px;
+    margin-top: 34px;
+    background: #f24e1e;
+    color: #ffffff;
+    font-size: 150px;
+    font-weight: 800;
+    line-height: 1;
+    letter-spacing: 0.02em;
+    padding: 34px 40px 40px;
+    border-radius: 46px;
+    box-shadow: 0 26px 60px -18px rgba(242, 78, 30, 0.55);
+  }
+</style>
+</head>
+<body>
+  <div class="lockup">
+    <span class="s">S</span>
+    <span class="one">1</span>
+  </div>
+</body>
+</html>
