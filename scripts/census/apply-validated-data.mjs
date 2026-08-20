@@ -132,6 +132,22 @@ for (const v of verified) {
   if (v.kind === "phone") fill(t, "phoneNumber", v.value, "verified-scrape")
 }
 
+/* 2b. Discovery-sweep findings (--discovered): probe/MX-verified rows from
+   ingest-discovery.mjs, fill-only, suspects excluded, socials become the
+   website only when the club has nothing at all. */
+if (process.argv.includes("--discovered")) {
+  const disc = parseCsv(readFileSync(ROOT + "docs/research/validation/discovered-verified.csv", "utf8"))
+  for (const d of disc) {
+    const t = findOne(d.club)
+    if (!t) { misses.push({ source: "discovered", club: d.club }); continue }
+    if (t === "ambiguous") { misses.push({ source: "discovered-ambiguous", club: d.club }); continue }
+    if (suspects.has(norm(d.club))) continue
+    if (d.website) fill(t, "website", d.website, `discovered(${d.confidence})`)
+    if (d.email) fill(t, "contactEmail", d.email, `discovered(${d.confidence})`)
+    if (d.phone) fill(t, "phoneNumber", d.phone, `discovered(${d.confidence})`)
+  }
+}
+
 /* 3. Confirmed-dead websites: clear them (the deliberate blank) */
 for (const d of dead) {
   const t = findOne(d.club)
