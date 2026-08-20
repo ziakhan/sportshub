@@ -93,10 +93,10 @@ function fieldLabel(field: string) {
  *  developer's sheets say so on the chip, not just in the raw source string. */
 function sourceKind(source: string): { key: string; tone: BadgeTone; label: string } {
   if (source.startsWith("discovered")) return { key: "discovered", tone: "play", label: "AI search" }
-  if (source.startsWith("verified")) return { key: "verified-scrape", tone: "court", label: "developer sheet, re-checked" }
+  if (source.startsWith("verified")) return { key: "verified-scrape", tone: "court", label: "re-checked" }
   if (source.startsWith("edits")) return { key: "edits", tone: "gold", label: "developer sheet" }
-  if (source.startsWith("dead-site")) return { key: "dead-site-clear", tone: "hoop", label: "dead site cleared" }
-  if (source.startsWith("seed-adoption")) return { key: "seed-adoption-fix", tone: "neutral", label: "seed adoption fix" }
+  if (source.startsWith("dead-site")) return { key: "dead-site-clear", tone: "hoop", label: "dead site" }
+  if (source.startsWith("seed-adoption")) return { key: "seed-adoption-fix", tone: "neutral", label: "seed fix" }
   return { key: source, tone: "neutral", label: source }
 }
 
@@ -132,16 +132,15 @@ function shortDate(iso: string) {
   })
 }
 
-/** Long values (a description, a note) get cut so a row stays one glance. */
-function clip(value: string, max = 140) {
-  return value.length > max ? `${value.slice(0, max)}…` : value
-}
 
 export function MachineEditsQueue({
   onPendingChange,
+  onOpenClub,
 }: {
   /** Keeps the tab badge in the console honest after every action. */
   onPendingChange?: (pending: number) => void
+  /** Jumps to the Clubs tab with this club searched and its edit form open. */
+  onOpenClub?: (club: { id: string; name: string }) => void
 }) {
   const [data, setData] = useState<Payload | null>(null)
   const [loading, setLoading] = useState(true)
@@ -428,17 +427,12 @@ export function MachineEditsQueue({
           const waiting = sourceFilter ? pendingIds.length : group.pending
           return (
             <Card key={group.club.id} size="sm">
-              <div className="border-ink-100 flex flex-wrap items-start justify-between gap-3 border-b pb-3">
+              <div className="flex flex-wrap items-center justify-between gap-3 pb-2">
                 <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-2">
-                    <a
-                      href={`/club/${group.club.slug}`}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="text-ink-950 text-base font-semibold hover:underline"
-                    >
+                    <span className="text-ink-950 text-base font-semibold">
                       {group.club.name}
-                    </a>
+                    </span>
                     {group.club.mergedIntoId ? (
                       <Badge tone="neutral">merged</Badge>
                     ) : group.club.publishedAt ? (
@@ -448,173 +442,235 @@ export function MachineEditsQueue({
                     )}
                   </div>
                   <div className="text-ink-500 mt-0.5 text-xs">
-                    {group.club.slug}
-                    {group.club.city && ` · ${group.club.city}`}
+                    {group.club.city && `${group.club.city}`}
                     {group.club.state && `, ${group.club.state}`}
-                    {" · "}
+                    {(group.club.city || group.club.state) && " · "}
                     {waiting > 0
                       ? `${waiting} waiting`
                       : `${group.rows.length} already looked at`}
                   </div>
                 </div>
-                {pendingIds.length > 1 && (
-                  <Button
-                    size="sm"
-                    variant="secondary"
-                    tone="ink"
-                    disabled={busy}
-                    onClick={() =>
-                      act({ action: "approve", ids: pendingIds }, (r) =>
-                        `Kept ${r.count} ${r.count === 1 ? "edit" : "edits"} on ${group.club.name}`
-                      )
-                    }
+                <div className="flex shrink-0 flex-wrap items-center gap-1.5">
+                  {pendingIds.length > 0 && (
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      tone="court"
+                      disabled={busy}
+                      onClick={() =>
+                        act({ action: "approve", ids: pendingIds }, (r) =>
+                          `Kept ${r.count} ${r.count === 1 ? "edit" : "edits"} on ${group.club.name}`
+                        )
+                      }
+                    >
+                      Keep all {pendingIds.length}
+                    </Button>
+                  )}
+                  {onOpenClub && (
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      tone="ink"
+                      onClick={() =>
+                        onOpenClub({ id: group.club.id, name: group.club.name })
+                      }
+                    >
+                      Edit club
+                    </Button>
+                  )}
+                  <a
+                    href={`/club/${group.club.slug}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-ink-400 hover:text-ink-600 px-1 text-xs underline"
                   >
-                    Keep all {pendingIds.length}
-                  </Button>
-                )}
+                    public page
+                  </a>
+                </div>
               </div>
 
-              <ul className="divide-ink-100 divide-y">
-                {group.rows.map((row) => {
-                  const kind = sourceKind(row.source)
-                  const hint = row.reviewedAt ? null : checkHint(row)
-                  const isConfirming = confirming === row.id
-                  return (
-                    <li
-                      key={row.id}
-                      className={`flex flex-wrap items-start justify-between gap-3 py-3 ${
-                        row.reviewedAt ? "opacity-70" : ""
-                      }`}
-                    >
-                      <div className="min-w-0 flex-1">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <span className="text-ink-900 text-sm font-semibold">
-                            {fieldLabel(row.field)}
-                          </span>
-                          <Badge tone={kind.tone}>{kind.label}</Badge>
-                          {row.reverted && <Badge tone="danger">put back</Badge>}
-                          {row.reviewedAt && !row.reverted && <Badge tone="court">kept</Badge>}
-                        </div>
-
-                        <div className="mt-1.5 flex flex-wrap items-baseline gap-2 text-sm">
-                          {row.fromValue ? (
-                            <span className="text-ink-400 break-all line-through">
-                              {clip(row.fromValue)}
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[760px] table-fixed text-sm">
+                  <colgroup>
+                    <col className="w-24" />
+                    <col />
+                    <col />
+                    <col className="w-44" />
+                    <col className="w-44" />
+                  </colgroup>
+                  <thead>
+                    <tr className="text-ink-400 text-left text-[11px] uppercase tracking-wide">
+                      <th className="border-ink-100 border-b py-1.5 pr-3 font-semibold">Field</th>
+                      <th className="border-ink-100 border-b py-1.5 pr-3 font-semibold">Was</th>
+                      <th className="border-ink-100 border-b py-1.5 pr-3 font-semibold">Now</th>
+                      <th className="border-ink-100 border-b py-1.5 pr-3 font-semibold">Run</th>
+                      <th className="border-ink-100 border-b py-1.5 font-semibold">
+                        <span className="sr-only">Actions</span>
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {group.rows.map((row) => {
+                      const kind = sourceKind(row.source)
+                      const hint = row.reviewedAt ? null : checkHint(row)
+                      const isConfirming = confirming === row.id
+                      const byline = `${shortDate(row.appliedAt)} by ${row.appliedBy}${
+                        row.confidence ? `, ${row.confidence} confidence` : ""
+                      }${row.source.includes("backfilled") ? ", flagged after the fact" : ""}`
+                      return (
+                        <tr
+                          key={row.id}
+                          className={`border-ink-100 border-b last:border-b-0 ${
+                            row.reviewedAt ? "opacity-60" : ""
+                          }`}
+                        >
+                          <td className="py-2.5 pr-3 align-middle">
+                            <span className="text-ink-900 font-semibold">
+                              {fieldLabel(row.field)}
                             </span>
-                          ) : (
-                            <span className="text-ink-400 italic">was empty</span>
-                          )}
-                          <span className="text-ink-300" aria-hidden>
-                            →
-                          </span>
-                          <span className="text-ink-900 break-all font-medium">
-                            {row.toValue ? clip(row.toValue) : <span className="italic">cleared</span>}
-                          </span>
-                        </div>
-
-                        <div className="text-ink-500 mt-1 flex flex-wrap items-center gap-x-2 text-xs">
-                          <span>
-                            {shortDate(row.appliedAt)} by {row.appliedBy}
-                            {row.confidence ? `, ${row.confidence} confidence` : ""}
-                            {row.source.includes("backfilled") ? ", flagged after the fact" : ""}
-                          </span>
-                          {row.sourceUrl && (
-                            <>
-                              <span aria-hidden>·</span>
-                              <a
-                                href={row.sourceUrl}
-                                target="_blank"
-                                rel="noreferrer"
-                                className="text-play-600 underline"
+                          </td>
+                          <td className="py-2.5 pr-3 align-middle">
+                            {row.fromValue ? (
+                              <div
+                                className="text-ink-400 truncate line-through"
+                                title={row.fromValue}
                               >
-                                view source
-                              </a>
-                            </>
-                          )}
-                          {row.reviewedAt && (
-                            <>
-                              <span aria-hidden>·</span>
-                              <span>
-                                {row.reverted ? "put back" : "kept"} {shortDate(row.reviewedAt)}
-                                {row.reviewedBy ? ` by ${row.reviewedBy}` : ""}
+                                {row.fromValue}
+                              </div>
+                            ) : (
+                              <span className="text-ink-400 italic">empty</span>
+                            )}
+                          </td>
+                          <td className="py-2.5 pr-3 align-middle">
+                            <div className="flex min-w-0 items-center gap-1.5">
+                              {row.toValue ? (
+                                <span
+                                  className="text-ink-900 min-w-0 truncate font-medium"
+                                  title={row.toValue}
+                                >
+                                  {row.toValue}
+                                </span>
+                              ) : (
+                                <span className="text-ink-500 italic">cleared</span>
+                              )}
+                              {hint && (
+                                <span title={hint} className="shrink-0 cursor-help text-amber-500">
+                                  <svg
+                                    viewBox="0 0 24 24"
+                                    className="h-3.5 w-3.5"
+                                    fill="currentColor"
+                                    aria-hidden
+                                  >
+                                    <path d="M12 2 1 21h22L12 2Zm1 14h-2v2h2v-2Zm0-7h-2v5h2V9Z" />
+                                  </svg>
+                                  <span className="sr-only">{hint}</span>
+                                </span>
+                              )}
+                            </div>
+                          </td>
+                          <td className="py-2.5 pr-3 align-middle">
+                            <div className="flex min-w-0 items-center gap-1.5">
+                              <span title={byline} className="min-w-0 truncate">
+                                <Badge tone={kind.tone} className="whitespace-nowrap">
+                                  {kind.label}
+                                </Badge>
                               </span>
-                            </>
-                          )}
-                        </div>
-
-                        {hint && (
-                          <p className="mt-2 rounded-lg bg-amber-50 px-2.5 py-1.5 text-xs leading-5 text-amber-800">
-                            {hint}
-                          </p>
-                        )}
-                      </div>
-
-                      <div className="flex shrink-0 items-center gap-1.5">
-                        {isConfirming ? (
-                          <>
-                            <span className="text-ink-600 mr-1 text-xs">
-                              Put the old value back?
-                            </span>
-                            <Button
-                              size="sm"
-                              variant="secondary"
-                              tone="hoop"
-                              disabled={busy}
-                              onClick={() =>
-                                act({ action: "revert", id: row.id }, () =>
-                                  `${fieldLabel(row.field)} on ${group.club.name} is back to what it was`
-                                )
-                              }
-                            >
-                              Yes, put it back
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="subtle"
-                              onClick={() => setConfirming(null)}
-                            >
-                              Cancel
-                            </Button>
-                          </>
-                        ) : (
-                          <>
-                            {!row.reviewedAt && (
-                              <Button
-                                size="sm"
-                                variant="secondary"
-                                tone="court"
-                                disabled={busy}
-                                onClick={() =>
-                                  act({ action: "approve", ids: [row.id] }, () =>
-                                    `Kept the ${fieldLabel(row.field).toLowerCase()} on ${group.club.name}`
-                                  )
-                                }
-                              >
-                                Keep
-                              </Button>
-                            )}
-                            {!row.reverted && (
-                              <Button
-                                size="sm"
-                                variant="subtle"
-                                disabled={busy || !row.revertable}
-                                title={
-                                  row.revertable
-                                    ? undefined
-                                    : "This field has to be changed by hand in Club review"
-                                }
-                                onClick={() => setConfirming(row.id)}
-                              >
-                                Put back
-                              </Button>
-                            )}
-                          </>
-                        )}
-                      </div>
-                    </li>
-                  )
-                })}
-              </ul>
+                              {row.sourceUrl && (
+                                <a
+                                  href={row.sourceUrl}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="text-play-600 shrink-0 text-xs underline"
+                                >
+                                  source
+                                </a>
+                              )}
+                            </div>
+                          </td>
+                          <td className="py-2.5 align-middle">
+                            <div className="flex items-center justify-end gap-1.5">
+                              {row.reviewedAt && !isConfirming ? (
+                                <>
+                                  <span
+                                    className={`text-xs ${row.reverted ? "text-amber-700" : "text-emerald-700"}`}
+                                    title={row.reviewedBy ? `by ${row.reviewedBy}` : undefined}
+                                  >
+                                    {row.reverted ? "put back" : "kept"}{" "}
+                                    {shortDate(row.reviewedAt)}
+                                  </span>
+                                  {!row.reverted && row.revertable && (
+                                    <Button
+                                      size="sm"
+                                      variant="subtle"
+                                      disabled={busy}
+                                      onClick={() => setConfirming(row.id)}
+                                    >
+                                      Put back
+                                    </Button>
+                                  )}
+                                </>
+                              ) : isConfirming ? (
+                                <>
+                                  <span className="text-ink-600 text-xs">Put back?</span>
+                                  <Button
+                                    size="sm"
+                                    variant="secondary"
+                                    tone="hoop"
+                                    disabled={busy}
+                                    onClick={() =>
+                                      act({ action: "revert", id: row.id }, () =>
+                                        `${fieldLabel(row.field)} on ${group.club.name} is back to what it was`
+                                      )
+                                    }
+                                  >
+                                    Yes
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="subtle"
+                                    onClick={() => setConfirming(null)}
+                                  >
+                                    Cancel
+                                  </Button>
+                                </>
+                              ) : (
+                                <>
+                                  <Button
+                                    size="sm"
+                                    variant="secondary"
+                                    tone="court"
+                                    disabled={busy}
+                                    onClick={() =>
+                                      act({ action: "approve", ids: [row.id] }, () =>
+                                        `Kept the ${fieldLabel(row.field).toLowerCase()} on ${group.club.name}`
+                                      )
+                                    }
+                                  >
+                                    Keep
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="subtle"
+                                    disabled={busy || !row.revertable}
+                                    title={
+                                      row.revertable
+                                        ? undefined
+                                        : "This field has to be changed by hand from Edit club"
+                                    }
+                                    onClick={() => setConfirming(row.id)}
+                                  >
+                                    Put back
+                                  </Button>
+                                </>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              </div>
             </Card>
           )
         })}

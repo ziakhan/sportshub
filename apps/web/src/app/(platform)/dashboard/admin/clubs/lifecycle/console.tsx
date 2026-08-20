@@ -193,6 +193,28 @@ export function ClubLifecycleConsole() {
     )
   }
 
+  /** "Edit club" in the machine-edits queue: land on the Clubs tab with this
+   *  club searched, and pop its edit form open once the list has it. */
+  const [pendingExpandId, setPendingExpandId] = useState<string | null>(null)
+  const openClubFromQueue = useCallback((club: { id: string; name: string }) => {
+    setView("clubs")
+    setIssue("all")
+    setProvince("")
+    setRegion("")
+    setQ(club.name)
+    setPendingExpandId(club.id)
+    window.scrollTo({ top: 0 })
+  }, [])
+  useEffect(() => {
+    if (!pendingExpandId || !data) return
+    const c = data.clubs.find((x) => x.id === pendingExpandId)
+    if (c) {
+      startEdit(c)
+      setPendingExpandId(null)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data, pendingExpandId])
+
   function saveEdit(c: Club) {
     // Send only what actually changed, so an untouched field is never cleared.
     const fields: Record<string, string> = {}
@@ -246,7 +268,9 @@ export function ClubLifecycleConsole() {
         ))}
       </div>
 
-      {view === "machine" && <MachineEditsQueue onPendingChange={setMachinePending} />}
+      {view === "machine" && (
+        <MachineEditsQueue onPendingChange={setMachinePending} onOpenClub={openClubFromQueue} />
+      )}
 
       {view === "clubs" && (
       <>
