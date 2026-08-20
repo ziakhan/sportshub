@@ -129,7 +129,10 @@ function Line({ head, rest, dark = true }: { head: string; rest: string; dark?: 
   )
 }
 
-type ShotDef = { file: string; w: number; h: number; alt: string }
+type ShotDef = { file: string; w: number; h: number; alt: string; fit?: "cover" | "contain" }
+/* cover fills the slide and crops from the bottom, which is right for a tall
+   page capture. A wide, short crop has to be `contain`: cropping it to fill a
+   taller box eats its own left and right edges. */
 
 /**
  * A screenshot, and nothing around it.
@@ -152,7 +155,8 @@ function Shot({ shot, base, dark = true }: { shot: ShotDef; base: string; dark?:
       height={shot.h}
       alt={shot.alt}
       className={cn(
-        "min-h-0 w-full flex-1 rounded-xl object-cover object-top",
+        "min-h-0 w-full flex-1 rounded-xl object-top",
+        shot.fit === "contain" ? "object-contain" : "object-cover",
         dark
           ? "shadow-[0_36px_80px_-40px_rgba(0,0,0,0.9)]"
           : "shadow-[0_30px_70px_-42px_rgba(15,23,40,0.5)]",
@@ -186,7 +190,7 @@ function ShotSlide({
 
 const SHOTS = {
   overview: { file: "overview.webp", w: 1900, h: 1224, alt: "The season console showing clubs entered, teams approved, what is waiting, and the season checklist" },
-  plan: { file: "plan.webp", w: 1900, h: 636, alt: "The five step season planner: teams, your buildings, your calendar, publish, schedule" },
+  plan: { file: "plan.webp", w: 1900, h: 636, fit: "contain", alt: "The five step season planner: teams, your buildings, your calendar, publish, schedule" },
   schedule: { file: "schedule.webp", w: 1900, h: 1224, alt: "The scheduling tab with a check confirming every team has its full game count" },
   playoffs: { file: "playoffs.webp", w: 1900, h: 1003, alt: "The playoff plan, checked against championship weekend" },
   referees: { file: "referees.webp", w: 1900, h: 1224, alt: "Booking a referee for a session day and the league referee pool" },
