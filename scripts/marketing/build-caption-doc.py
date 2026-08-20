@@ -1,24 +1,33 @@
 """
-Builds the shareable Word document for the Instagram launch: every post with
-its creative, its caption and its hashtags, in posting order.
+Builds the shareable reference sheet for the Instagram launch: every post as a
+row, thumbnail beside its caption, so the team can scan and edit copy.
 
-    python3 scripts/marketing/build-caption-doc.py [outPath]
+    python3 scripts/marketing/build-caption-doc.py [outPath] [shotsDir]
+
+NOT a deck. An earlier version gave each post a full page with a large image,
+which is the wrong artefact: the owner already holds the high-res exports for
+posting, so the document only has to say which caption goes with which card.
+Thumbnails are downscaled to ~460px before embedding, which keeps the file
+small enough to sit in a shared doc without fighting it.
 
 Single source of truth is docs/marketing/instagram-launch-captions-2026-08.md,
-which is parsed here rather than retyped, so the document cannot drift from
-the copy that ships. Images come from a render of the creatives, so run
+parsed here rather than retyped, so the document cannot drift from the copy
+that ships. Images come from a render of the creatives, so run
 render-creatives.mjs first if any card has changed.
 
-Google Docs imports .docx with images intact, which is why this is a .docx
-rather than a PDF: the team can edit the captions in the shared doc.
+.docx rather than PDF: Google Docs imports it with images intact, so captions
+stay editable in the shared copy.
 """
+import io
 import re
 import sys
 from pathlib import Path
 
 from docx import Document
+from docx.enum.table import WD_TABLE_ALIGNMENT
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.shared import Inches, Pt, RGBColor
+from PIL import Image
 
 REPO = Path(__file__).resolve().parents[2]
 DOC = REPO / "docs/marketing/instagram-launch-captions-2026-08.md"
@@ -35,9 +44,11 @@ NAVY = RGBColor(0x0B, 0x16, 0x28)
 GREY = RGBColor(0x74, 0x74, 0x86)
 ORANGE = RGBColor(0xF2, 0x4E, 0x1E)
 
+THUMB_PX = 460          # embedded pixel width; display width is set separately
+THUMB_IN = Inches(1.55)  # on the page
+
 
 def parse():
-    """Pull post number, title, creative slug, ask type and caption per post."""
     raw = DOC.read_text()
     posts = []
     for block in re.split(r"^## ", raw, flags=re.M)[1:]:
@@ -50,87 +61,89 @@ def parse():
             continue
         ask = re.search(r"\*\*Ask: (\w+)\*\*", block)
         quoted = [l[2:].rstrip() if l.startswith("> ") else "" for l in block.split("\n") if l.startswith(">")]
-        # The doc hard-wraps for reading; a caption must not.
-        paras = [
-            " ".join(p.split())
-            for p in "\n".join(quoted).split("\n\n")
-            if p.strip()
-        ]
+        paras = [" ".join(p.split()) for p in "\n".join(quoted).split("\n\n") if p.strip()]
         posts.append({
-            "no": m.group(1),
-            "title": m.group(2).strip(),
-            "slug": slug.group(1),
-            "ask": (ask.group(1) if ask else "reply"),
-            "paras": paras,
+            "no": m.group(1), "title": m.group(2).strip(), "slug": slug.group(1),
+            "ask": (ask.group(1) if ask else "reply"), "paras": paras,
         })
     return sorted(posts, key=lambda p: int(p["no"]))
+
+
+def thumb(path: Path) -> io.BytesIO:
+    """Downscale before embedding. python-docx stores the bytes you give it,
+    so setting a small display width on a 1080px PNG still ships 1080px."""
+    im = Image.open(path).convert("RGB")
+    im.thumbnail((THUMB_PX, THUMB_PX * 4), Image.LANCZOS)
+    buf = io.BytesIO()
+    im.save(buf, format="JPEG", quality=82, optimize=True)
+    buf.seek(0)
+    return buf
 
 
 def main():
     posts = parse()
     d = Document()
-
     for s in d.sections:
-        s.top_margin = s.bottom_margin = Inches(0.7)
-        s.left_margin = s.right_margin = Inches(0.9)
+        s.top_margin = s.bottom_margin = Inches(0.6)
+        s.left_margin = s.right_margin = Inches(0.7)
 
-    t = d.add_heading("SportsHub One — Instagram launch", level=0)
-    t.runs[0].font.color.rgb = NAVY
-    sub = d.add_paragraph()
-    r = sub.add_run(f"{len(posts)} posts, in order. Creative, caption and hashtags for each.")
-    r.font.size = Pt(11)
-    r.font.color.rgb = GREY
-
-    note = d.add_paragraph()
-    r = note.add_run(
-        "One ask per post. “Reply” posts ask a question to earn comments; “convert” "
-        "posts ask for the click. Post the seed together to fill the grid, then space "
-        "the rest out. Captions are editable here; the images are final exports at "
-        "1080×1350 (feed 4:5)."
+    h = d.add_heading("SportsHub One — Instagram launch", level=0)
+    h.runs[0].font.color.rgb = NAVY
+    p = d.add_paragraph()
+    r = p.add_run(
+        f"{len(posts)} posts in order. Thumbnails are for reference only; post from the "
+        "full-size exports. One ask per post: “reply” asks a question to earn comments, "
+        "“convert” asks for the click."
     )
     r.font.size = Pt(9.5)
     r.font.color.rgb = GREY
 
+    table = d.add_table(rows=0, cols=2)
+    table.alignment = WD_TABLE_ALIGNMENT.CENTER
     missing = []
-    for p in posts:
-        d.add_page_break()
 
-        h = d.add_heading(f"Post {p['no']} — {p['title']}", level=1)
-        h.runs[0].font.color.rgb = NAVY
+    for post in posts:
+        row = table.add_row()
+        left, right = row.cells
+        left.width = Inches(1.7)
+        right.width = Inches(5.4)
 
-        meta = d.add_paragraph()
-        r = meta.add_run(f"{p['slug']}   ·   ask: {p['ask']}")
-        r.font.size = Pt(9)
+        img = SHOTS / f"{post['slug']}-portrait.png"
+        cell_p = left.paragraphs[0]
+        cell_p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        if img.exists():
+            cell_p.add_run().add_picture(thumb(img), width=THUMB_IN)
+        else:
+            missing.append(post["slug"])
+            cell_p.add_run(f"[no render: {post['slug']}]").font.size = Pt(8)
+
+        head_p = right.paragraphs[0]
+        run = head_p.add_run(f"Post {post['no']} — {post['title']}")
+        run.bold = True
+        run.font.size = Pt(12)
+        run.font.color.rgb = NAVY
+
+        meta = right.add_paragraph()
+        r = meta.add_run(f"{post['slug']}  ·  ask: {post['ask']}")
+        r.font.size = Pt(8)
         r.font.color.rgb = GREY
 
-        img = SHOTS / f"{p['slug']}-portrait.png"
-        if img.exists():
-            pic = d.add_paragraph()
-            pic.alignment = WD_ALIGN_PARAGRAPH.CENTER
-            pic.add_run().add_picture(str(img), width=Inches(3.6))
-        else:
-            missing.append(p["slug"])
-            d.add_paragraph(f"[missing render: {img.name}]")
-
-        cap = d.add_heading("Caption", level=2)
-        cap.runs[0].font.color.rgb = ORANGE
-        for i, para in enumerate(p["paras"]):
-            para_el = d.add_paragraph()
-            run = para_el.add_run(para)
-            run.font.size = Pt(11.5)
-            # The last paragraph is the ask; give it weight so it is obvious.
-            if i == len(p["paras"]) - 1 and len(p["paras"]) > 1:
+        for i, para in enumerate(post["paras"]):
+            el = right.add_paragraph()
+            run = el.add_run(para)
+            run.font.size = Pt(10.5)
+            if i == len(post["paras"]) - 1 and len(post["paras"]) > 1:
                 run.bold = True
+                run.font.color.rgb = ORANGE
 
-        tags = d.add_paragraph()
-        r = tags.add_run(BASE_TAGS + (" " + EXTRA_TAGS[p["no"]] if p["no"] in EXTRA_TAGS else ""))
-        r.font.size = Pt(10)
+        tags = right.add_paragraph()
+        r = tags.add_run(BASE_TAGS + (" " + EXTRA_TAGS[post["no"]] if post["no"] in EXTRA_TAGS else ""))
+        r.font.size = Pt(8.5)
         r.font.color.rgb = GREY
 
     OUT.parent.mkdir(parents=True, exist_ok=True)
     d.save(OUT)
-    size = OUT.stat().st_size / 1_048_576
-    print(f"wrote {OUT}  ({len(posts)} posts, {size:.1f} MB)")
+    print(f"wrote {OUT}  ({len(posts)} posts, {OUT.stat().st_size/1024:.0f} KB)")
     if missing:
         print("MISSING RENDERS:", ", ".join(missing))
 
