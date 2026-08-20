@@ -619,6 +619,48 @@ const SLIDES: SlideDef[] = [
     ),
   },
   {
+    id: "clubs",
+    chapter: "For clubs",
+    light: true,
+    render: () => (
+      <div className="flex h-full flex-col justify-center">
+        <Eyebrow dark={false}>The club side</Eyebrow>
+        <H className="max-w-[24ch]">
+          The teams that enter your league <span className="text-[#c2410c]">are built here.</span>
+        </H>
+        <div className={cn(CARDS, BLOCK)}>
+          <Card dark={false} tone="play" title="Their own page, their own teams" body="A branded club site on its own address. Staff invited by email, each one seeing their team and not the club's books." />
+          <Card dark={false} tone="play" title="Tryout to roster, one pipeline" body="Post the tryout, check players in on a phone, send offers with deposits and instalments. The family accepts, signs and pays in one sitting." />
+          <Card dark={false} tone="play" title="Nothing gets re-typed into your season" body="The roster they already built is the roster that enters your league. That is why your intake is clean." />
+        </div>
+      </div>
+    ),
+  },
+  {
+    id: "families",
+    chapter: "For families",
+    light: true,
+    render: () => (
+      <div className="flex h-full flex-col justify-center">
+        <Eyebrow dark={false}>The family side</Eyebrow>
+        <H className="max-w-[24ch]">
+          One calendar, <span className="text-[#c2410c]">whatever else is going on.</span>
+        </H>
+        <div className={cn(CARDS, BLOCK)}>
+          <Card dark={false} tone="green" title="Every kid, every game and practice" body="All of it in one place, one tap to RSVP. Move a game and it corrects itself on their phone." />
+          <Card dark={false} tone="green" title="One place to pay, one place to sign" body="Fees, instalments and waivers, without a single form arriving as an email attachment." />
+          <Card dark={false} tone="green" title="They see the game they could not get to" body="The live score while it happens, the recap after, and their own kid's stats page building game by game." />
+        </div>
+        {/* The sweep line for the remaining roles. Three cards plus this runs
+            37px over on a 390px screen, and the cards carry the argument. */}
+        <p className={cn("mt-5 hidden max-w-[74ch] sm:block", T.lead, "text-[#46506a]")}>
+          Coaches get their team and the console at the table, referees get their shifts and the
+          signature, trainers get their own listing, and the public needs no account at all.
+        </p>
+      </div>
+    ),
+  },
+  {
     id: "summary",
     chapter: "Before and after",
     render: () => (
@@ -815,11 +857,32 @@ export function LeagueDeck({ brand }: { brand: DeckBrand }) {
         if (Math.abs(dx) > 56 && Math.abs(dx) > Math.abs(t.clientY - s.y)) go(dx < 0 ? i + 1 : i - 1)
       }}
     >
-      <div className={cn("absolute inset-x-0 top-0 z-30 h-[3px]", light ? "bg-black/8" : "bg-white/10")}>
-        <div
-          className="h-full bg-gradient-to-r from-[#7c74f5] to-[#f24e1e] transition-[width] duration-300"
-          style={{ width: `${((i + 1) / SLIDES.length) * 100}%` }}
-        />
+      {/* One segment per slide: it says where you are, how much is left, and
+          every segment is a jump. A plain filling bar told you none of that. */}
+      <div className="absolute inset-x-0 top-0 z-30 flex gap-[2px] px-2 pt-2">
+        {SLIDES.map((s, n) => (
+          <button
+            key={s.id}
+            type="button"
+            onClick={() => go(n)}
+            title={`${n + 1}. ${s.chapter}`}
+            aria-label={`Go to slide ${n + 1}, ${s.chapter}`}
+            aria-current={n === i ? "true" : undefined}
+            className="group h-4 flex-1 cursor-pointer pt-0"
+          >
+            <span
+              className={cn(
+                "block h-[3px] w-full rounded-full transition-colors duration-200",
+                n === i
+                  ? "bg-[#f24e1e]"
+                  : n < i
+                    ? light ? "bg-[#c2410c]/45" : "bg-[#f24e1e]/45"
+                    : light ? "bg-black/12" : "bg-white/15",
+                n !== i && "group-hover:bg-[#f24e1e]/70",
+              )}
+            />
+          </button>
+        ))}
       </div>
 
       <div className="relative min-h-0 flex-1">
@@ -840,10 +903,40 @@ export function LeagueDeck({ brand }: { brand: DeckBrand }) {
         ))}
       </div>
 
-      <button type="button" aria-label="Previous slide" onClick={() => go(i - 1)}
-        className="absolute left-0 top-0 z-20 h-[calc(100%-60px)] w-[8%] cursor-w-resize opacity-0" />
-      <button type="button" aria-label="Next slide" onClick={() => go(i + 1)}
-        className="absolute right-0 top-0 z-20 h-[calc(100%-60px)] w-[8%] cursor-e-resize opacity-0" />
+      {/* The whole edge stays clickable, but it now SHOWS a chevron. An
+          invisible hit zone is only discoverable by accident, and this is not
+          PowerPoint: nobody arrives knowing the controls. Hidden below sm,
+          where the thumb swipes and the bar has Back/Next. */}
+      {([["prev", i - 1, i === 0], ["next", i + 1, i === SLIDES.length - 1]] as const).map(
+        ([dir, target, disabled]) => (
+          <button
+            key={dir}
+            type="button"
+            aria-label={dir === "prev" ? "Previous slide" : "Next slide"}
+            onClick={() => go(target)}
+            disabled={disabled}
+            className={cn(
+              "absolute top-0 z-20 hidden h-[calc(100%-60px)] w-[8%] items-center justify-center sm:flex",
+              "disabled:pointer-events-none disabled:opacity-0",
+              dir === "prev" ? "left-0 cursor-w-resize" : "right-0 cursor-e-resize",
+            )}
+          >
+            <span
+              className={cn(
+                "flex h-12 w-12 items-center justify-center rounded-full border backdrop-blur-sm transition duration-200",
+                light
+                  ? "border-black/10 bg-white/70 text-[#0f1728] hover:border-[#c2410c] hover:bg-white"
+                  : "border-white/15 bg-white/8 text-white hover:border-[#f24e1e] hover:bg-white/15",
+                "opacity-45 group-hover:opacity-100 hover:opacity-100",
+              )}
+            >
+              <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d={dir === "prev" ? "M15 6l-6 6 6 6" : "M9 6l6 6-6 6"} />
+              </svg>
+            </span>
+          </button>
+        ),
+      )}
 
       <div
         className={cn(
