@@ -28,6 +28,9 @@ from PIL import Image
 
 REPO = Path(__file__).resolve().parents[3]
 SRC = REPO / "apps/web/public/brand/icon-n3-1024.png"
+# The horizontal lockup, for the wordmark variant. "reverse" is the one drawn
+# for dark grounds: white Sports, periwinkle Hub, orange ONE.
+SRC_WORDMARK = REPO / "apps/web/public/brand/wordmark-one-reverse.png"
 OUT = Path(sys.argv[1]) if len(sys.argv) > 1 else REPO / "apps/web/public/brand"
 
 SIZE = 1024
@@ -65,9 +68,14 @@ def lift_mark(img: Image.Image) -> Image.Image:
 
 
 def main():
-    src = Image.open(SRC)
-    mark = lift_mark(src)
-    box = mark.getbbox()  # bbox of non-transparent pixels
+    wordmark = "--wordmark" in sys.argv
+    if wordmark:
+        # Already transparent around the type, so nothing to lift off.
+        mark = Image.open(SRC_WORDMARK).convert("RGBA")
+        box = mark.getbbox()
+    else:
+        mark = lift_mark(Image.open(SRC))
+        box = mark.getbbox()
     mark = mark.crop(box)
     w, h = mark.size
 
@@ -84,7 +92,8 @@ def main():
     canvas = canvas.convert("RGB")
 
     OUT.mkdir(parents=True, exist_ok=True)
-    full = OUT / "instagram-avatar-1024.png"
+    stem = "instagram-avatar-wordmark" if wordmark else "instagram-avatar"
+    full = OUT / f"{stem}-1024.png"
     canvas.save(full)
 
     # Proof: the circle crop Instagram will apply, and the sizes it shows.
@@ -93,14 +102,14 @@ def main():
     ImageDraw.Draw(mask).ellipse((0, 0, SIZE, SIZE), fill=255)
     circ = Image.new("RGB", (SIZE, SIZE), (233, 236, 242))
     circ.paste(canvas, mask=mask)
-    circ.save(OUT / "instagram-avatar-circle-preview.png")
+    circ.save(OUT / f"{stem}-circle-preview.png")
 
     strip = Image.new("RGB", (560, 190), (255, 255, 255))
     x = 30
     for px in (110, 56, 32):
         strip.paste(circ.resize((px, px), Image.LANCZOS), (x, 95 - px // 2))
         x += px + 45
-    strip.save(OUT / "instagram-avatar-sizes.png")
+    strip.save(OUT / f"{stem}-sizes.png")
 
     cx, cy = pos[0] + new[0] / 2, pos[1] + new[1] / 2
     corners = [(pos[0], pos[1]), (pos[0] + new[0], pos[1]),
