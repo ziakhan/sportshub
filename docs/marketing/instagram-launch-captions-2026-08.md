@@ -48,7 +48,7 @@ Swap the city tag to match the post. Add `#basketballleague` on 7,
 ## 1 · Launching this fall
 `s21-launching-this-fall` · **Ask: convert** · the only one that opens on its CTA
 
-> Register at sportshubone.com for early access.
+> Get early access at sportshubone.com.
 >
 > We spent two seasons in gyms wishing this existed. It's nearly here.
 
