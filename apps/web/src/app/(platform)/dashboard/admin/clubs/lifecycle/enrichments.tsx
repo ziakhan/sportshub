@@ -289,16 +289,11 @@ export function MachineEditsQueue({
     [visibleClubs]
   )
 
-  const quickViewGroup = quickViewId ? clubs.find((g) => g.club.id === quickViewId) : null
-
   return (
     <div>
       {quickViewId && (
         <ClubQuickView
           clubId={quickViewId}
-          rows={quickViewGroup?.rows ?? []}
-          busy={busy}
-          onQueueAction={act}
           onOpenFull={onOpenClub}
           onChanged={() => void load()}
           onClose={() => setQuickViewId(null)}
@@ -640,7 +635,7 @@ export function MachineEditsQueue({
                                   href={fromHref}
                                   target="_blank"
                                   rel="noreferrer"
-                                  className="text-ink-400 hover:text-ink-600 block truncate line-through underline decoration-ink-200 underline-offset-2"
+                                  className="text-ink-400 hover:text-ink-600 block cursor-pointer truncate line-through"
                                   title={`${row.fromValue} (opens the old address)`}
                                 >
                                   {row.fromValue}

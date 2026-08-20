@@ -31,11 +31,34 @@ const ISSUE_FILTERS = {
   all: {},
   unpublished: { publishedAt: null },
   "no-contact": { contactEmail: null, phoneNumber: null },
+  "no-email": { OR: [{ contactEmail: null }, { contactEmail: "" }] },
+  "no-phone": { OR: [{ phoneNumber: null }, { phoneNumber: "" }] },
   "no-location": { latitude: null },
   "no-city": { OR: [{ city: null }, { city: "" }] },
   "no-website": { website: null },
   merged: { mergedIntoId: { not: null } },
 } as const
+
+/** SQL twin of lib/clubs/completeness.ts — the same nine slots, so the score
+ *  a filter selects by is the score the list displays. Change them together. */
+const SCORE_SQL = `(
+  (CASE WHEN website IS NOT NULL AND website <> '' THEN 1 ELSE 0 END) +
+  (CASE WHEN "contactEmail" IS NOT NULL AND "contactEmail" <> '' THEN 1 ELSE 0 END) +
+  (CASE WHEN "phoneNumber" IS NOT NULL AND "phoneNumber" <> '' THEN 1 ELSE 0 END) +
+  (CASE WHEN city IS NOT NULL AND city <> '' THEN 1 ELSE 0 END) +
+  (CASE WHEN state IS NOT NULL AND state <> '' THEN 1 ELSE 0 END) +
+  (CASE WHEN region IS NOT NULL AND region <> '' THEN 1 ELSE 0 END) +
+  (CASE WHEN address IS NOT NULL AND address <> '' THEN 1 ELSE 0 END) +
+  (CASE WHEN latitude IS NOT NULL AND longitude IS NOT NULL THEN 1 ELSE 0 END) +
+  (CASE WHEN description IS NOT NULL AND description <> '' THEN 1 ELSE 0 END)
+)`
+
+const SCORE_BUCKETS: Record<string, { min: number; max: number }> = {
+  full: { min: 9, max: 9 },
+  high: { min: 7, max: 8 },
+  mid: { min: 4, max: 6 },
+  low: { min: 0, max: 3 },
+}
 
 type IssueKey = keyof typeof ISSUE_FILTERS
 
@@ -108,9 +131,38 @@ export const GET = withAuth<NextRequest>(async (request, _ctx, session) => {
   // steps aside so the club is found even when merged or filtered out.
   const id = (sp.get("id") ?? "").trim()
 
+  // Completion-bucket filter (owner 2026-08-20): resolved to an id list via
+  // the SQL score, then joined into the normal where so it stacks with
+  // province, region, issue and search filters.
+  const scoreBucket = (sp.get("score") ?? "").trim()
+  let scoreIds: string[] | null = null
+  {
+    const b = SCORE_BUCKETS[scoreBucket]
+    if (b) {
+      const params: string[] = []
+      let scoreWhere = `"mergedIntoId" IS NULL`
+      const provinceParam = (sp.get("province") ?? "").trim()
+      const regionParam = (sp.get("region") ?? "").trim()
+      if (provinceParam) {
+        params.push(provinceParam)
+        scoreWhere += ` AND state ILIKE $${params.length}`
+      }
+      if (regionParam) {
+        params.push(regionParam)
+        scoreWhere += ` AND region ILIKE $${params.length}`
+      }
+      const rows = await prisma.$queryRawUnsafe<{ id: string }[]>(
+        `SELECT id FROM "Tenant" WHERE ${scoreWhere} AND ${SCORE_SQL} BETWEEN ${b.min} AND ${b.max}`,
+        ...params
+      )
+      scoreIds = rows.map((r) => r.id)
+    }
+  }
+
   const where: any = id
     ? { id }
     : {
+        ...(scoreIds ? { id: { in: scoreIds } } : {}),
         // Merged-away rows are hidden unless explicitly asked for — otherwise every
         // list would carry the duplicates an admin has already resolved.
         ...(issue === "merged" ? {} : { mergedIntoId: null }),
@@ -183,12 +235,36 @@ export const GET = withAuth<NextRequest>(async (request, _ctx, session) => {
     }),
   ])
 
+  // Completion analytics: how many clubs sit in each score bucket, under the
+  // same base filters the issue counts use, so the numbers line up.
+  const scoreParams: string[] = []
+  let scoreCountWhere = `"mergedIntoId" IS NULL`
+  if (province) {
+    scoreParams.push(province)
+    scoreCountWhere += ` AND state ILIKE $${scoreParams.length}`
+  }
+  if (region) {
+    scoreParams.push(region)
+    scoreCountWhere += ` AND region ILIKE $${scoreParams.length}`
+  }
+  const scoreRows = await prisma.$queryRawUnsafe<{ score: number; n: number }[]>(
+    `SELECT ${SCORE_SQL} AS score, count(*)::int AS n FROM "Tenant" WHERE ${scoreCountWhere} GROUP BY 1`,
+    ...scoreParams
+  )
+  const scores: Record<string, number> = { full: 0, high: 0, mid: 0, low: 0 }
+  for (const r of scoreRows) {
+    for (const [k, b] of Object.entries(SCORE_BUCKETS)) {
+      if (r.score >= b.min && r.score <= b.max) scores[k] += r.n
+    }
+  }
+
   return NextResponse.json({
     clubs,
     total,
     page,
     totalPages: Math.max(1, Math.ceil(total / PAGE_SIZE)),
     counts,
+    scores,
     provinces: provinces.map((p) => ({ code: p.state, count: p._count.state })),
     regions: regions.map((r) => ({ region: r.region, count: r._count.region })),
   })

@@ -160,6 +160,46 @@ export const GET = withAuth<NextRequest>(async (request, _ctx, session) => {
     return NextResponse.json({ pendingRows, pendingClubs: pendingClubGroups.length })
   }
 
+  // The quick-view dialog asks for one club's rows, reviewed included, so the
+  // record and its machine-edit history load from either console tab.
+  const tenantId = (sp.get("tenantId") ?? "").trim()
+  if (tenantId) {
+    const tenantRows = await prisma.tenantEnrichment.findMany({
+      where: { tenantId },
+      orderBy: [{ appliedAt: "desc" }, { field: "asc" }],
+    })
+    const ids = [...new Set(tenantRows.map((r) => r.reviewedById).filter(Boolean))] as string[]
+    const users = ids.length
+      ? await prisma.user.findMany({
+          where: { id: { in: ids } },
+          select: { id: true, firstName: true, lastName: true, email: true },
+        })
+      : []
+    const names = new Map(
+      users.map((u) => [
+        u.id,
+        [u.firstName, u.lastName].filter(Boolean).join(" ").trim() || u.email,
+      ])
+    )
+    return NextResponse.json({
+      rows: tenantRows.map((r) => ({
+        id: r.id,
+        field: r.field,
+        fromValue: r.fromValue,
+        toValue: r.toValue,
+        source: r.source,
+        sourceUrl: r.sourceUrl,
+        confidence: r.confidence,
+        appliedAt: r.appliedAt,
+        appliedBy: r.appliedBy,
+        reviewedAt: r.reviewedAt,
+        reviewedBy: r.reviewedById ? (names.get(r.reviewedById) ?? "an admin") : null,
+        reverted: r.reverted,
+        revertable: r.field in REVERTABLE,
+      })),
+    })
+  }
+
   const rows = await prisma.tenantEnrichment.findMany({
     where: { ...(includeReviewed ? {} : { reviewedAt: null }), ...tenantFilter },
     // Field breaks the tie so a pair written in the same run (latitude and

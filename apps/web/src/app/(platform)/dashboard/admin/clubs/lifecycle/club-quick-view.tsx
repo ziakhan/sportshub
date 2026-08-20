@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { createPortal } from "react-dom"
 import { Badge, Button } from "@/components/ui"
+import { completeness } from "@/lib/clubs/completeness"
 
 /**
  * Club quick view (owner 2026-08-20): a dialog over the machine-edits queue so
@@ -59,19 +60,6 @@ interface FullClub {
   _count: { teams: number; clubClaims: number }
 }
 
-/** The record slots that count toward "how complete is this club". */
-const COMPLETENESS: { key: string; label: string; filled: (c: FullClub) => boolean }[] = [
-  { key: "website", label: "Website", filled: (c) => !!c.website },
-  { key: "contactEmail", label: "Email", filled: (c) => !!c.contactEmail },
-  { key: "phoneNumber", label: "Phone", filled: (c) => !!c.phoneNumber },
-  { key: "city", label: "City", filled: (c) => !!c.city },
-  { key: "state", label: "Province", filled: (c) => !!c.state },
-  { key: "region", label: "Region", filled: (c) => !!c.region },
-  { key: "address", label: "Address", filled: (c) => !!c.address },
-  { key: "location", label: "Map pin", filled: (c) => c.latitude != null && c.longitude != null },
-  { key: "description", label: "Description", filled: (c) => !!c.description },
-]
-
 const EDIT_FIELDS: { key: string; label: string; placeholder?: string }[] = [
   { key: "name", label: "Name" },
   { key: "city", label: "City" },
@@ -120,44 +108,45 @@ const fieldLabel = (f: string) =>
 
 export function ClubQuickView({
   clubId,
-  rows,
-  busy,
-  onQueueAction,
   onOpenFull,
   onChanged,
   onClose,
 }: {
   clubId: string
-  /** This club's machine-edit rows, straight from the queue's live data. */
-  rows: QueueRow[]
-  busy: boolean
-  /** The queue's act(): approve/revert with the same payloads and refresh. */
-  onQueueAction: (body: unknown, describe: (r: unknown & { count?: number }) => string) => Promise<void>
   /** Optional escape hatch to the full Clubs tab (merge tools live there). */
   onOpenFull?: (club: { id: string; name: string }) => void
-  /** Fired after a save or publish so the queue refreshes its club headers. */
+  /** Fired after any change here so the list behind can refresh. */
   onChanged?: () => void
   onClose: () => void
 }) {
   const [club, setClub] = useState<FullClub | null>(null)
+  const [rows, setRows] = useState<QueueRow[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState<Record<string, string>>({})
   const [saving, setSaving] = useState(false)
+  const [busy, setBusy] = useState(false)
   const [confirmingRow, setConfirmingRow] = useState<string | null>(null)
 
   const load = useCallback(async () => {
     setLoading(true)
     setError(null)
     try {
-      const res = await fetch(`/api/admin/clubs/lifecycle?id=${encodeURIComponent(clubId)}`)
-      const json = await res.json()
-      if (!res.ok) throw new Error(json.error ?? "Failed to load the club")
-      const c = (json.clubs ?? [])[0] ?? null
+      const [clubRes, rowsRes] = await Promise.all([
+        fetch(`/api/admin/clubs/lifecycle?id=${encodeURIComponent(clubId)}`),
+        fetch(`/api/admin/clubs/enrichments?tenantId=${encodeURIComponent(clubId)}`),
+      ])
+      const clubJson = await clubRes.json()
+      if (!clubRes.ok) throw new Error(clubJson.error ?? "Failed to load the club")
+      const c = (clubJson.clubs ?? [])[0] ?? null
       if (!c) throw new Error("This club could not be found")
       setClub(c)
+      if (rowsRes.ok) {
+        const rowsJson = await rowsRes.json()
+        setRows(rowsJson.rows ?? [])
+      }
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to load the club")
     } finally {
@@ -168,6 +157,29 @@ export function ClubQuickView({
   useEffect(() => {
     void load()
   }, [load])
+
+  /** Keep or put back one of this club's machine edits, right in the dialog. */
+  async function queueAct(body: unknown, message: string) {
+    setBusy(true)
+    setError(null)
+    try {
+      const res = await fetch("/api/admin/clubs/enrichments", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      })
+      const json = await res.json()
+      if (!res.ok) throw new Error(json.error ?? "Action failed")
+      setNotice(message)
+      setConfirmingRow(null)
+      await load()
+      onChanged?.()
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Action failed")
+    } finally {
+      setBusy(false)
+    }
+  }
 
   // Escape closes; the page behind must not scroll while the dialog is up.
   useEffect(() => {
@@ -194,8 +206,7 @@ export function ClubQuickView({
   }, [rows])
 
   const pendingRows = rows.filter((r) => !r.reviewedAt)
-  const filled = club ? COMPLETENESS.filter((f) => f.filled(club)) : []
-  const missing = club ? COMPLETENESS.filter((f) => !f.filled(club)) : []
+  const score = club ? completeness(club) : null
 
   function startEditing() {
     if (!club) return
@@ -395,24 +406,26 @@ export function ClubQuickView({
           {club && !editing && (
             <>
               {/* completeness */}
-              <div className="bg-ink-50/70 mb-4 rounded-xl px-3.5 py-2.5">
-                <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-                  <span className="text-ink-900 text-sm font-semibold">
-                    {filled.length} of {COMPLETENESS.length} fields filled
-                  </span>
-                  <span className="bg-ink-200 h-1.5 w-32 overflow-hidden rounded-full">
-                    <span
-                      className="bg-court-500 block h-full rounded-full"
-                      style={{ width: `${Math.round((filled.length / COMPLETENESS.length) * 100)}%` }}
-                    />
-                  </span>
-                  {missing.length > 0 && (
-                    <span className="text-ink-500 text-xs">
-                      missing: {missing.map((m) => m.label.toLowerCase()).join(", ")}
+              {score && (
+                <div className="bg-ink-50/70 mb-4 rounded-xl px-3.5 py-2.5">
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                    <span className="text-ink-900 text-sm font-semibold">
+                      {score.filled} of {score.total} fields filled
                     </span>
-                  )}
+                    <span className="bg-ink-200 h-1.5 w-32 overflow-hidden rounded-full">
+                      <span
+                        className="bg-court-500 block h-full rounded-full"
+                        style={{ width: `${Math.round((score.filled / score.total) * 100)}%` }}
+                      />
+                    </span>
+                    {score.missing.length > 0 && (
+                      <span className="text-ink-500 text-xs">
+                        missing: {score.missing.map((m) => m.toLowerCase()).join(", ")}
+                      </span>
+                    )}
+                  </div>
                 </div>
-              </div>
+              )}
 
               {/* the record, every value interactive */}
               <div className="divide-ink-100 divide-y">
@@ -525,10 +538,12 @@ export function ClubQuickView({
                               variant="secondary"
                               tone="hoop"
                               disabled={busy}
-                              onClick={() => {
-                                setConfirmingRow(null)
-                                void onQueueAction({ action: "revert", id: r.id }, () => `${r.field} is back to what it was`)
-                              }}
+                              onClick={() =>
+                                void queueAct(
+                                  { action: "revert", id: r.id },
+                                  `${fieldLabel(r.field)} is back to what it was`
+                                )
+                              }
                             >
                               Yes
                             </Button>
@@ -544,7 +559,10 @@ export function ClubQuickView({
                               tone="court"
                               disabled={busy}
                               onClick={() =>
-                                void onQueueAction({ action: "approve", ids: [r.id] }, () => `Kept the ${r.field}`)
+                                void queueAct(
+                                  { action: "approve", ids: [r.id] },
+                                  `Kept the ${fieldLabel(r.field).toLowerCase()}`
+                                )
                               }
                             >
                               Keep

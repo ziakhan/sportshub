@@ -2,8 +2,10 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { Badge, BrandListbox, Button, Card, SectionHeader } from "@/components/ui"
+import { completeness, SCORE_BUCKETS } from "@/lib/clubs/completeness"
 import { MergeDialog } from "./merge-dialog"
 import { MachineEditsQueue } from "./enrichments"
+import { ClubQuickView } from "./club-quick-view"
 
 /**
  * Club review console (client half).
@@ -25,6 +27,8 @@ interface Club {
   contactEmail: string | null
   phoneNumber: string | null
   website: string | null
+  address: string | null
+  description: string | null
   latitude: number | null
   longitude: number | null
   geoPrecision: string | null
@@ -42,6 +46,7 @@ interface Payload {
   page: number
   totalPages: number
   counts: Record<string, number>
+  scores: Record<string, number>
   provinces: Array<{ code: string | null; count: number }>
   regions: Array<{ region: string | null; count: number }>
 }
@@ -50,11 +55,21 @@ const ISSUES: Array<{ key: string; label: string }> = [
   { key: "all", label: "All" },
   { key: "unpublished", label: "Unpublished" },
   { key: "no-contact", label: "No contact" },
+  { key: "no-email", label: "No email" },
+  { key: "no-phone", label: "No phone" },
   { key: "no-location", label: "No coordinates" },
   { key: "no-city", label: "No city" },
   { key: "no-website", label: "No website" },
   { key: "merged", label: "Merged away" },
 ]
+
+/** Pill tone by how complete a record is: green settled, gold close, red thin. */
+function scoreTone(filled: number): "court" | "gold" | "warning" | "hoop" {
+  if (filled >= 9) return "court"
+  if (filled >= 7) return "gold"
+  if (filled >= 4) return "warning"
+  return "hoop"
+}
 
 const EDITABLE: Array<{ key: keyof Club; label: string; type?: string }> = [
   { key: "name", label: "Name" },
@@ -83,9 +98,12 @@ export function ClubLifecycleConsole() {
 
   const [q, setQ] = useState("")
   const [issue, setIssue] = useState("all")
+  const [score, setScore] = useState("")
   const [province, setProvince] = useState("")
   const [region, setRegion] = useState("")
   const [page, setPage] = useState(1)
+  /** The club open in the quick-view dialog (same one the queue uses). */
+  const [quickViewId, setQuickViewId] = useState<string | null>(null)
 
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [expanded, setExpanded] = useState<string | null>(null)
@@ -105,6 +123,7 @@ export function ClubLifecycleConsole() {
       const p = new URLSearchParams()
       if (q.trim()) p.set("q", q.trim())
       if (issue !== "all") p.set("issue", issue)
+      if (score) p.set("score", score)
       if (province) p.set("province", province)
       if (region) p.set("region", region)
       p.set("page", String(page))
@@ -116,7 +135,7 @@ export function ClubLifecycleConsole() {
     } finally {
       setLoading(false)
     }
-  }, [q, issue, province, region, page])
+  }, [q, issue, score, province, region, page])
 
   useEffect(() => {
     const t = setTimeout(load, q ? 300 : 0)
@@ -131,7 +150,7 @@ export function ClubLifecycleConsole() {
   }, [])
 
   // Any filter change invalidates the current page number.
-  useEffect(() => setPage(1), [q, issue, province, region])
+  useEffect(() => setPage(1), [q, issue, score, province, region])
 
   async function act(body: unknown, describe: (r: any) => string) {
     setBusy(true)
@@ -284,12 +303,12 @@ export function ClubLifecycleConsole() {
       )}
 
       {/* Data-quality queue */}
-      <div className="mb-4 flex flex-wrap gap-2">
+      <div className="mb-2 flex flex-wrap gap-2">
         {ISSUES.map((t) => (
           <button
             key={t.key}
             onClick={() => setIssue(t.key)}
-            className={`rounded-full px-3 py-1.5 text-sm transition ${
+            className={`cursor-pointer rounded-full px-3 py-1.5 text-sm transition ${
               issue === t.key
                 ? "bg-ink-900 text-white"
                 : "bg-ink-100 text-ink-700 hover:bg-ink-200"
@@ -301,6 +320,38 @@ export function ClubLifecycleConsole() {
             )}
           </button>
         ))}
+      </div>
+
+      {/* Completion analytics: the whole census in four buckets, each a filter. */}
+      <div className="mb-4 flex flex-wrap items-center gap-2">
+        <span className="text-ink-500 text-xs font-semibold uppercase tracking-wide">
+          Completeness
+        </span>
+        {SCORE_BUCKETS.map((b) => (
+          <button
+            key={b.key}
+            onClick={() => setScore(score === b.key ? "" : b.key)}
+            className={`cursor-pointer rounded-full px-3 py-1.5 text-sm transition ${
+              score === b.key
+                ? "bg-court-700 text-white"
+                : "bg-court-50 text-court-800 hover:bg-court-100"
+            }`}
+            title={`${b.min === b.max ? b.min : `${b.min} to ${b.max}`} of 9 fields filled`}
+          >
+            {b.label}
+            {data?.scores?.[b.key] !== undefined && (
+              <span className="ml-1.5 opacity-70">{data.scores[b.key].toLocaleString()}</span>
+            )}
+          </button>
+        ))}
+        {score && (
+          <button
+            onClick={() => setScore("")}
+            className="text-play-600 cursor-pointer text-xs underline"
+          >
+            clear
+          </button>
+        )}
       </div>
 
       <Card size="sm" className="mb-4">
@@ -369,6 +420,14 @@ export function ClubLifecycleConsole() {
 
       </Card>
 
+      {quickViewId && (
+        <ClubQuickView
+          clubId={quickViewId}
+          onChanged={() => void load()}
+          onClose={() => setQuickViewId(null)}
+        />
+      )}
+
       {merging && mergePair && (
         <MergeDialog
           clubs={mergePair}
@@ -401,6 +460,7 @@ export function ClubLifecycleConsole() {
               <th className="min-w-[170px] px-3 py-2">Location</th>
               <th className="min-w-[200px] px-3 py-2">Contact</th>
               <th className="px-3 py-2">Geo</th>
+              <th className="px-3 py-2">Complete</th>
               <th className="px-3 py-2">State</th>
               <th className="px-3 py-2" />
             </tr>
@@ -408,14 +468,14 @@ export function ClubLifecycleConsole() {
           <tbody>
             {loading && (
               <tr>
-                <td colSpan={7} className="px-3 py-8 text-center text-ink-500">
+                <td colSpan={8} className="px-3 py-8 text-center text-ink-500">
                   Loading…
                 </td>
               </tr>
             )}
             {!loading && clubs.length === 0 && (
               <tr>
-                <td colSpan={7} className="px-3 py-8 text-center text-ink-500">
+                <td colSpan={8} className="px-3 py-8 text-center text-ink-500">
                   No clubs match these filters.
                 </td>
               </tr>
@@ -469,6 +529,24 @@ export function ClubLifecycleConsole() {
                     )}
                   </td>
                   <td className="px-3 py-2">
+                    {(() => {
+                      const s = completeness(c)
+                      return (
+                        <span
+                          title={
+                            s.missing.length
+                              ? `Missing: ${s.missing.join(", ")}`
+                              : "Everything filled"
+                          }
+                        >
+                          <Badge tone={scoreTone(s.filled)}>
+                            {s.filled}/{s.total}
+                          </Badge>
+                        </span>
+                      )
+                    })()}
+                  </td>
+                  <td className="px-3 py-2">
                     {c.mergedIntoId ? (
                       <Badge tone="neutral">merged</Badge>
                     ) : c.publishedAt ? (
@@ -479,6 +557,9 @@ export function ClubLifecycleConsole() {
                   </td>
                   <td className="px-3 py-2 text-right whitespace-nowrap">
                     <div className="flex justify-end gap-1">
+                        <Button size="sm" variant="subtle" onClick={() => setQuickViewId(c.id)}>
+                          Open
+                        </Button>
                         <Button size="sm" variant="subtle" onClick={() => startEdit(c)}>
                           {expanded === c.id ? "Close" : "Edit"}
                         </Button>
@@ -527,7 +608,7 @@ export function ClubLifecycleConsole() {
 
                 {expanded === c.id && (
                   <tr key={`${c.id}-edit`} className="border-t border-ink-100 bg-ink-50/40">
-                    <td colSpan={7} className="px-3 py-3">
+                    <td colSpan={8} className="px-3 py-3">
                       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
                         {EDITABLE.map((f) => (
                           <label key={f.key as string} className="text-xs text-ink-600">
