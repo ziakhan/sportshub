@@ -458,6 +458,9 @@ const SLIDES: SlideDef[] = [
               roleTone="referee"
               autoStart
               reserveBelow={128}
+              /* The public end card offers "Get notified at launch" and "All
+                 demos", both of which navigate the viewer out of the deck. */
+              endMode="replay"
             />
           ) : null}
         </div>

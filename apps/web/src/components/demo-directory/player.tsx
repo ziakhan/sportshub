@@ -96,6 +96,7 @@ export function DemoPlayer({
   className,
   autoStart = false,
   reserveBelow,
+  endMode = "invite",
 }: {
   script: DemoScript
   /** Who is acting, shown on the caption chip. */
@@ -111,6 +112,16 @@ export function DemoPlayer({
    * chrome costs and can hand back the difference as scale.
    */
   reserveBelow?: number
+  /**
+   * What the closing card offers.
+   *
+   * "invite" is the public demo directory: the soft ask plus links onward.
+   * "replay" is for a demo embedded inside something you must not navigate
+   * away from, like a pitch deck, where "Get notified at launch" and "All
+   * demos" would walk the viewer out of the presentation. It offers only a
+   * replay, so the slide never looks like it died either.
+   */
+  endMode?: "invite" | "replay"
 }) {
   const { beats, chapters } = script
   const reduced = usePrefersReducedMotion()
@@ -804,30 +815,46 @@ export function DemoPlayer({
         <div className="border-ink-200 mt-3 flex flex-wrap items-center gap-3 rounded-2xl border bg-white px-4 py-3">
           <p className="text-ink-700 text-[15px] font-semibold">That is the whole story.</p>
           <div className="ml-auto flex flex-wrap items-center gap-2">
-            {/* The soft ask (owner 2026-08-17): demos stay open, and the person
-                who just watched one gets one calm invitation, never a gate. */}
-            <Link
-              href="/#notify"
-              className={cn(TRANSPORT, "bg-gold-500 text-ink-950 hover:bg-gold-400")}
-            >
-              Get notified at launch
-            </Link>
-            <button
-              type="button"
-              onClick={restart}
-              className={cn(TRANSPORT, "bg-ink-900 text-white hover:bg-ink-800")}
-            >
-              <svg viewBox="0 0 24 24" className="h-3.5 w-3.5 fill-current" aria-hidden="true">
-                <path d="M8 5v14l11-7z" />
-              </svg>
-              Watch again
-            </button>
-            <Link
-              href="/demos"
-              className={cn(TRANSPORT, "border-ink-200 text-ink-700 border bg-white hover:bg-ink-50")}
-            >
-              All demos
-            </Link>
+            {endMode === "replay" ? (
+              <button
+                type="button"
+                onClick={restart}
+                className={cn(TRANSPORT, "bg-ink-900 text-white hover:bg-ink-800")}
+              >
+                <svg viewBox="0 0 24 24" className="h-3.5 w-3.5 fill-current" aria-hidden="true">
+                  <path d="M8 5v14l11-7z" />
+                </svg>
+                Watch again
+              </button>
+            ) : (
+              <>
+                {/* The soft ask (owner 2026-08-17): demos stay open, and the
+                    person who just watched one gets one calm invitation,
+                    never a gate. */}
+                <Link
+                  href="/#notify"
+                  className={cn(TRANSPORT, "bg-gold-500 text-ink-950 hover:bg-gold-400")}
+                >
+                  Get notified at launch
+                </Link>
+                <button
+                  type="button"
+                  onClick={restart}
+                  className={cn(TRANSPORT, "bg-ink-900 text-white hover:bg-ink-800")}
+                >
+                  <svg viewBox="0 0 24 24" className="h-3.5 w-3.5 fill-current" aria-hidden="true">
+                    <path d="M8 5v14l11-7z" />
+                  </svg>
+                  Watch again
+                </button>
+                <Link
+                  href="/demos"
+                  className={cn(TRANSPORT, "border-ink-200 text-ink-700 border bg-white hover:bg-ink-50")}
+                >
+                  All demos
+                </Link>
+              </>
+            )}
           </div>
         </div>
       )}
