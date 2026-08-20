@@ -119,9 +119,16 @@ export function DemoPlayer({
    * "replay" is for a demo embedded inside something you must not navigate
    * away from, like a pitch deck, where "Get notified at launch" and "All
    * demos" would walk the viewer out of the presentation. It offers only a
-   * replay, so the slide never looks like it died either.
+   * replay.
+   *
+   * "loop" renders NO closing card and starts over by itself. That is what a
+   * deck slide wants: the closing card is 70px tall and appears at the moment
+   * the transport row disappears, so inside a fixed-height slide it lands just
+   * under the bottom edge and the whole thing reads as frozen. Reserving room
+   * for it all game would shrink the stage for two seconds of payoff.
+   * Reduced-motion viewers get the replay card instead of an endless loop.
    */
-  endMode?: "invite" | "replay"
+  endMode?: "invite" | "replay" | "loop"
 }) {
   const { beats, chapters } = script
   const reduced = usePrefersReducedMotion()
@@ -264,6 +271,14 @@ export function DemoPlayer({
     setIndex(0)
     setPlaying(!reduced)
   }, [reduced])
+
+  /* A looping player never rests on the closing card; it pauses a beat so the
+     last frame registers, then starts again. */
+  useEffect(() => {
+    if (!done || endMode !== "loop" || reduced) return
+    const t = window.setTimeout(() => restart(), 1600)
+    return () => window.clearTimeout(t)
+  }, [done, endMode, reduced, restart])
 
   const [flash, setFlash] = useState<"pause" | "play" | null>(null)
   const flashTimer = useRef<number | null>(null)
@@ -811,11 +826,11 @@ export function DemoPlayer({
       {/* End of story. The transport lives at the top of the player now; the
           only thing that ever renders down here is the closing card, where the
           stage has gone quiet and attention is free for one calm invitation. */}
-      {done && (
+      {done && !(endMode === "loop" && !reduced) && (
         <div className="border-ink-200 mt-3 flex flex-wrap items-center gap-3 rounded-2xl border bg-white px-4 py-3">
           <p className="text-ink-700 text-[15px] font-semibold">That is the whole story.</p>
           <div className="ml-auto flex flex-wrap items-center gap-2">
-            {endMode === "replay" ? (
+            {endMode === "replay" || endMode === "loop" ? (
               <button
                 type="button"
                 onClick={restart}
