@@ -55,7 +55,7 @@ export interface DeckBrand {
 /* ── the scale ─────────────────────────────────────────────────────────── */
 
 const T = {
-  eyebrow: "text-[clamp(0.72rem,0.95vw,0.88rem)] tracking-[0.2em]",
+  eyebrow: "text-[clamp(0.8rem,1.05vw,1rem)] tracking-[0.16em]",
   h1: "text-[clamp(2.5rem,6.2vw,5rem)] leading-[1.02] tracking-[-0.035em]",
   h2: "text-[clamp(1.9rem,4.4vw,3.5rem)] leading-[1.06] tracking-[-0.032em]",
   lead: "text-[clamp(1.05rem,1.85vw,1.55rem)] leading-[1.45]",
@@ -75,12 +75,11 @@ function Eyebrow({ children, dark = true }: { children: ReactNode; dark?: boolea
   return (
     <p
       className={cn(
-        "mb-4 flex items-center gap-3 font-mono font-semibold uppercase sm:mb-5",
+        "mb-5 w-fit self-start rounded-full px-4 py-1.5 font-mono font-bold uppercase text-white sm:mb-6 sm:px-5 sm:py-2",
         T.eyebrow,
-        dark ? "text-[#f24e1e]" : "text-[#c2410c]",
+        dark ? "bg-[#f24e1e]" : "bg-[#c2410c]",
       )}
     >
-      <span className={cn("h-[3px] w-7 rounded-sm", dark ? "bg-[#f24e1e]" : "bg-[#c2410c]")} />
       {children}
     </p>
   )
@@ -273,9 +272,11 @@ const SLIDES: SlideDef[] = [
           your playoff format. Everything after that runs inside them.
         </Lead>
         {brand.addressedTo ? (
-          <p className={cn("mt-9 font-mono uppercase text-white/45", T.eyebrow)}>{brand.addressedTo}</p>
+          <p className={cn("mt-9 font-mono uppercase tracking-[0.16em] text-white/45", "text-[clamp(0.8rem,1.05vw,1rem)]")}>
+            {brand.addressedTo}
+          </p>
         ) : (
-          <p className={cn("mt-9 font-mono uppercase text-white/40", T.eyebrow)}>
+          <p className={cn("mt-9 font-mono uppercase tracking-[0.16em] text-white/40", "text-[clamp(0.8rem,1.05vw,1rem)]")}>
             Use the arrow keys, or tap the sides
           </p>
         )}
@@ -598,7 +599,7 @@ const SLIDES: SlideDef[] = [
             ["Referees", "Availability, shifts, and the scoresheet signature."],
             ["The public", "Scores and standings with no account at all."],
           ].map(([role, body]) => (
-            <div key={role} className="rounded-2xl border border-[#dde3ee] bg-white p-5 shadow-sm sm:p-6">
+            <div key={role} className="rounded-2xl border border-[#dde3ee] bg-white p-4 shadow-sm sm:p-6">
               <div className={cn("font-mono font-semibold uppercase text-[#4f46e5]", T.statL)}>{role}</div>
               <span className={cn("mt-2.5 block text-[#3d4657]", T.cardBody)}>{body}</span>
             </div>
@@ -614,27 +615,32 @@ const SLIDES: SlideDef[] = [
       <div className="flex h-full flex-col justify-center">
         <Eyebrow>The whole thing, in one place</Eyebrow>
         <H>What actually changes.</H>
-        <div className={cn("grid gap-4 sm:grid-cols-2 sm:gap-6", BLOCK)}>
-          <div className="rounded-2xl border border-white/10 bg-[#101d33] p-5 sm:p-7">
+        <p className={cn("mt-3 max-w-[74ch] text-[clamp(0.92rem,1.5vw,1.35rem)] leading-[1.45] text-white/72 sm:mt-4")}>
+          It starts a level below you. Families register with their club on the same platform, the
+          club builds its roster there, and that roster is what enters your league. Nobody re-types
+          anything, and the names on your scoresheet are the names the parents typed themselves.
+        </p>
+        <div className={cn("grid gap-3 sm:grid-cols-2 sm:gap-6", BLOCK)}>
+          <div className="rounded-2xl border border-white/10 bg-[#101d33] p-4 sm:p-7">
             <div className={cn("mb-4 font-mono font-semibold uppercase text-white/40", T.statL)}>Today</div>
-            <ul className="flex flex-col gap-2.5">
+            <ul className="flex flex-col gap-2 sm:gap-2.5">
               {["Team entries chased by email", "Rosters in a spreadsheet", "The schedule built by hand",
                 "Changes by phone call", "Scores typed up on Sunday night", "Waivers chased one parent at a time",
-                "A website somebody has to update"].map((t) => (
-                <li key={t} className={cn("flex gap-3 text-white/45", T.cardBody)}>
+                "A website somebody has to update"].map((t, idx) => (
+                <li key={t} className={cn(idx >= 5 ? "hidden sm:flex" : "flex", "gap-3 text-white/45", T.cardBody)}>
                   <span className="mt-[0.55em] h-px w-3 shrink-0 bg-white/25" />
                   {t}
                 </li>
               ))}
             </ul>
           </div>
-          <div className="rounded-2xl border border-[#f24e1e]/35 bg-[#1a2b48] p-5 sm:p-7">
+          <div className="rounded-2xl border border-[#f24e1e]/35 bg-[#1a2b48] p-4 sm:p-7">
             <div className={cn("mb-4 font-mono font-semibold uppercase text-[#f24e1e]", T.statL)}>On SportsHub</div>
-            <ul className="flex flex-col gap-2.5">
+            <ul className="flex flex-col gap-2 sm:gap-2.5">
               {["Clubs enter their own teams", "Rosters locked and versioned", "The schedule built in minutes",
                 "One change, everyone told", "Standings right at the buzzer", "Waivers collected and chased for you",
-                "A website that writes itself"].map((t) => (
-                <li key={t} className={cn("flex gap-3", T.cardBody)}>
+                "A website that writes itself"].map((t, idx) => (
+                <li key={t} className={cn(idx >= 5 ? "hidden sm:flex" : "flex", "gap-3", T.cardBody)}>
                   <svg viewBox="0 0 16 16" className="mt-[0.3em] h-4 w-4 shrink-0 stroke-[#16a34a]" fill="none" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                     <path d="M3 8.5l3.2 3.2L13 5" />
                   </svg>
