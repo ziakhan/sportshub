@@ -78,6 +78,9 @@ const PUBLIC_PAGE_PREFIXES = [
   "/venues",
   // Public trainer program pages (batch-backlog §5 — training sessions)
   "/training",
+  // Full-screen pitch decks sent as a link to a named prospect (owner
+  // 2026-08-20). Chrome-free, noindex, one per audience: /deck/leagues.
+  "/deck",
 ] as const
 
 /** API namespaces where anonymous READ access is intended (GET/HEAD only). */
