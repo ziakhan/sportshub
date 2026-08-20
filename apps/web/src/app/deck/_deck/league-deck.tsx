@@ -202,7 +202,6 @@ const SHOTS = {
   overview: { file: "overview.webp", w: 1900, h: 1224, alt: "The season console showing clubs entered, teams approved, what is waiting, and the season checklist" },
   plan: { file: "plan.webp", w: 1900, h: 636, alt: "The five step season planner: teams, your buildings, your calendar, publish, schedule" },
   schedule: { file: "schedule.webp", w: 1900, h: 1224, alt: "The scheduling tab with a check confirming every team has its full game count" },
-  standings: { file: "standings.webp", w: 1900, h: 1224, alt: "Standings built from finalized games" },
   playoffs: { file: "playoffs.webp", w: 1900, h: 1003, alt: "The playoff plan, checked against championship weekend" },
   referees: { file: "referees.webp", w: 1900, h: 1224, alt: "Booking a referee for a session day and the league referee pool" },
   waivers: { file: "waivers.webp", w: 1900, h: 1224, alt: "The waiver signing grid for the season" },
@@ -308,41 +307,6 @@ const SLIDES: SlideDef[] = [
     ),
   },
   {
-    id: "spine",
-    chapter: "The spine",
-    render: () => (
-      <div className="flex h-full flex-col justify-center">
-        <Eyebrow>The spine</Eyebrow>
-        <H>The season, end to end.</H>
-        <div className={cn("grid grid-cols-2 gap-2.5 sm:grid-cols-5 sm:gap-3", BLOCK)}>
-          {[
-            ["Plan", "Gyms booked early", "What you still need"],
-            ["Register", "Clubs enter teams", "Your questions attached"],
-            ["Approve", "One queue", "Fees attach at entry"],
-            ["Divisions", "Drag and drop", "Split or merge any time"],
-            ["Schedule", "Minutes, not weeks", "Preview before it commits"],
-            ["Publish", "Locked before tip-off", "Families told once"],
-            ["Play", "Scored from a phone", "Referee signs off"],
-            ["Standings", "Your tiebreakers", "No Monday spreadsheet"],
-            ["Playoffs", "Seeded from results", "Everyone plays twice"],
-            ["Renew", "One click", "Teams keep their history"],
-          ].map(([t, a, b], i) => (
-            <div key={t} className="rounded-xl border border-white/12 bg-[#16253f] px-4 py-3.5 sm:px-4 sm:py-4">
-              <div className="font-mono text-[clamp(0.68rem,0.8vw,0.78rem)] font-semibold tracking-[0.12em] text-[#f24e1e]">
-                {String(i + 1).padStart(2, "0")}
-              </div>
-              <b className="mt-1.5 block text-[clamp(0.98rem,1.25vw,1.15rem)] font-bold leading-tight tracking-[-0.015em]">{t}</b>
-              <span className="mt-2 block text-[clamp(0.85rem,1vw,0.95rem)] leading-snug text-white/55">{a}</span>
-              {/* ten boxes times two details does not fit a 390px screen; the
-                  second line is the one that can go. */}
-              <span className="mt-1 hidden text-[clamp(0.85rem,1vw,0.95rem)] leading-snug text-white/55 sm:block">{b}</span>
-            </div>
-          ))}
-        </div>
-      </div>
-    ),
-  },
-  {
     id: "dashboard",
     chapter: "The console",
     light: true,
@@ -382,10 +346,10 @@ const SLIDES: SlideDef[] = [
           <H className="max-w-[26ch]">
             Weeks of planning, <span className="text-[#f24e1e]">then minutes to build it.</span>
           </H>
-          <p className={cn("mt-3 max-w-[64ch]", T.lead, "text-white/72")}>
-            It only uses the gyms, courts and hours you actually have. Every team gets the games you
-            promised. You read the whole season before anything commits, and what you read is what
-            commits.
+          <p className={cn("mt-3 max-w-[66ch]", T.lead, "text-white/72")}>
+            Build your divisions on a drag-and-drop board once you know who actually turned up, then
+            generate. It only uses the gyms, courts and hours you have, every team gets the games you
+            promised, and you read the whole season before anything commits.
           </p>
         </div>
         <div className="mt-5 flex min-h-0 flex-1 flex-col sm:mt-7">
@@ -470,21 +434,6 @@ const SLIDES: SlideDef[] = [
     ),
   },
   {
-    id: "standings",
-    chapter: "Standings",
-    light: true,
-    render: ({ brand }) => (
-      <ShotSlide
-        base={brand.shots}
-        eyebrow="Standings"
-        title={<>Standings <span className="text-[#c2410c]">nobody has to work out.</span></>}
-        lead="Wins, losses and points come straight from the scoresheets the referee signed, in the tiebreaker order you set. The weekend ends and the tables are already right."
-        shot={SHOTS.standings}
-        url="/seasons/summer-2026/standings"
-      />
-    ),
-  },
-  {
     id: "playoffs",
     chapter: "Playoffs",
     render: ({ brand }) => (
@@ -493,7 +442,7 @@ const SLIDES: SlideDef[] = [
         base={brand.shots}
         eyebrow="Playoffs"
         title={<>Brackets built from <span className="text-[#f24e1e]">what actually happened.</span></>}
-        lead="The bracket sits on real weekends in real gyms before it is seeded, and team names fill in as results land. Consolation rounds mean nobody's season ends at 9am."
+        lead="Standings build themselves from the scoresheets the referee signed, in your tiebreaker order. The bracket sits on real weekends in real gyms before it is seeded, and team names fill in as results land. Nobody's season ends at 9am."
         shot={SHOTS.playoffs}
         url="/seasons/summer-2026/playoffs"
       />
@@ -555,7 +504,7 @@ const SLIDES: SlideDef[] = [
         base={brand.shots}
         eyebrow="Your league's website"
         title={<>It writes itself <span className="text-[#f24e1e]">while you run the league.</span></>}
-        lead="Every game that gets scored updates the scores, the standings and the leaders, then posts a recap naming the top performers. Your logo, your colours, your news. Next season takes registrations while this one is still playing, and nobody needs an account to read any of it."
+        lead="Every game that gets scored updates the scores, the standings and the leaders, then posts a recap naming the top performers. Your logo, your colours, your news. Next season opens for registration while this one is still playing, teams carry their history forward, and nobody needs an account to read any of it."
         shot={SHOTS.hub}
         url="sportshubone.com/league/summer-2026"
       />
@@ -583,38 +532,6 @@ const SLIDES: SlideDef[] = [
           None of it is anybody&apos;s job to write down. It is a by-product of running the season
           here.
         </p>
-      </div>
-    ),
-  },
-  {
-    id: "everyone",
-    chapter: "Everyone else",
-    light: true,
-    render: () => (
-      <div className="flex h-full flex-col justify-center">
-        <Eyebrow dark={false}>One season, every seat in the gym</Eyebrow>
-        <H>
-          Everyone sees <span className="text-[#c2410c]">their own part</span> of the same season.
-        </H>
-        <p className={cn("mt-4 max-w-[62ch]", T.lead, "text-[#46506a]")}>
-          Move a game and the club, the coach and every family&apos;s calendar all update. There is
-          nothing to keep in sync.
-        </p>
-        <div className={cn("grid grid-cols-2 gap-2.5 sm:grid-cols-3 sm:gap-4", BLOCK)}>
-          {[
-            ["Clubs", "Their own page, teams, tryouts and fees."],
-            ["Coaches", "Roster, chat, RSVPs, and the console at the table."],
-            ["Families", "One calendar, one place to pay, one place to sign."],
-            ["Players", "A page of season stats a senior can send a recruiter."],
-            ["Referees", "Availability, shifts, and the scoresheet signature."],
-            ["The public", "Scores and standings with no account at all."],
-          ].map(([role, body]) => (
-            <div key={role} className="rounded-2xl border border-[#dde3ee] bg-white p-4 shadow-sm sm:p-6">
-              <div className={cn("font-mono font-semibold uppercase text-[#4f46e5]", T.statL)}>{role}</div>
-              <span className={cn("mt-2.5 block text-[#3d4657]", T.cardBody)}>{body}</span>
-            </div>
-          ))}
-        </div>
       </div>
     ),
   },
