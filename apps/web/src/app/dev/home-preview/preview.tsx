@@ -427,7 +427,15 @@ function ClaimSearch() {
         ))}
         {hits.length === 0 && searched && (
           <li className="px-2 py-3 text-[14px] text-ink-500">
-            No listing matched. Leave your email or phone and we&apos;ll help you get set up.
+            No listing matched. Email us from your club&apos;s address at{" "}
+            <a
+              href="mailto:support@sportshubone.com?subject=Add%20my%20club"
+              className="font-semibold text-play-700 underline underline-offset-2"
+            >
+              support@sportshubone.com
+            </a>{" "}
+            with your club&apos;s name, city and website, and we&apos;ll set it up and
+            hand you the keys.
           </li>
         )}
         {!searched && <li className="px-2 py-3 text-[13px] text-ink-400">and 1,322 more</li>}
