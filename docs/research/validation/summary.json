@@ -1,0 +1,35 @@
+{
+  "generated": "2026-08-20",
+  "corpus": 1516,
+  "websites": {
+    "probed": 1117,
+    "live": 869,
+    "parked": 0,
+    "social": 103,
+    "dead_now": 145
+  },
+  "emails": {
+    "total": 1063,
+    "unique_domains": 485,
+    "mx_deliverable": 1036
+  },
+  "kai_dead_list": {
+    "claimed": 96,
+    "confirmed_dead": 79,
+    "disputed": 17
+  },
+  "kai_verified_contacts": {
+    "claimed": 76,
+    "confirmed": 0,
+    "source_gone": 76,
+    "not_on_page": 0,
+    "unverifiable": 0
+  },
+  "edits_sheet_rows": 51,
+  "clearance": {
+    "needs-work": 731,
+    "AUTO-READY": 297,
+    "ready-with-review": 376,
+    "WRONG-OWNER-SUSPECT": 112
+  }
+}
