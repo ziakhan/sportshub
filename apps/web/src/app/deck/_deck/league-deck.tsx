@@ -75,9 +75,12 @@ function Eyebrow({ children, dark = true }: { children: ReactNode; dark?: boolea
   return (
     <p
       className={cn(
-        "mb-5 w-fit self-start rounded-full px-4 py-1.5 font-mono font-bold uppercase text-white sm:mb-6 sm:px-5 sm:py-2",
+        "mb-5 w-fit self-start rounded-full px-4 py-1.5 font-mono font-bold uppercase sm:mb-6 sm:px-5 sm:py-2",
         T.eyebrow,
-        dark ? "bg-[#f24e1e]" : "bg-[#c2410c]",
+        /* White on #f24e1e is only 3.57:1. Navy ink on it is 5.02:1, and white
+           on the darker #c2410c is 5.18:1, so each ground gets the pairing
+           that actually passes rather than the one that looks tidier in code. */
+        dark ? "bg-[#f24e1e] text-[#0b1628]" : "bg-[#c2410c] text-white",
       )}
     >
       {children}
@@ -158,7 +161,7 @@ function Browser({ shot, url, base, dark = true }: { shot: Shot; url: string; ba
         <span
           className={cn(
             "ml-2 truncate rounded px-3 py-1 font-mono text-[clamp(0.7rem,0.85vw,0.82rem)]",
-            dark ? "bg-white/5 text-white/45" : "bg-white text-[#79839a]",
+            dark ? "bg-white/5 text-white/70" : "bg-white text-[#5d6679]",
           )}
         >
           {url}
@@ -215,7 +218,7 @@ const SHOTS = {
 function WeekendShapes() {
   const Row = ({ label, blocks, good }: { label: string; blocks: [number, number][]; good: boolean }) => (
     <div className="flex items-center gap-3 sm:gap-5">
-      <span className={cn("w-[8.5rem] shrink-0 text-right font-semibold sm:w-[11rem]", T.cardBody, good ? "text-[#0f1728]" : "text-[#9aa3b5]")}>
+      <span className={cn("w-[8.5rem] shrink-0 text-right font-semibold sm:w-[11rem]", T.cardBody, good ? "text-[#0f1728]" : "text-[#5d6679]")}>
         {label}
       </span>
       <svg viewBox="0 0 340 24" className="h-6 min-w-0 flex-1" role="img" aria-label={label}>
@@ -224,7 +227,7 @@ function WeekendShapes() {
           <rect key={i} x={x} y="0" width={w} height="24" rx="5" fill={good ? "#16a34a" : "#d1d5e0"} />
         ))}
       </svg>
-      <span className={cn("w-16 shrink-0 font-mono", T.statL, good ? "text-[#16a34a]" : "text-[#9aa3b5]")}>
+      <span className={cn("w-16 shrink-0 font-mono", T.statL, good ? "text-[#166534]" : "text-[#5d6679]")}>
         {good ? "GOOD" : "NO"}
       </span>
     </div>
@@ -271,11 +274,11 @@ const SLIDES: SlideDef[] = [
           your playoff format. Everything after that runs inside them.
         </Lead>
         {brand.addressedTo ? (
-          <p className={cn("mt-9 font-mono uppercase tracking-[0.16em] text-white/45", "text-[clamp(0.8rem,1.05vw,1rem)]")}>
+          <p className={cn("mt-9 font-mono uppercase tracking-[0.16em] text-white/70", "text-[clamp(0.8rem,1.05vw,1rem)]")}>
             {brand.addressedTo}
           </p>
         ) : (
-          <p className={cn("mt-9 font-mono uppercase tracking-[0.16em] text-white/40", "text-[clamp(0.8rem,1.05vw,1rem)]")}>
+          <p className={cn("mt-9 font-mono uppercase tracking-[0.16em] text-white/70", "text-[clamp(0.8rem,1.05vw,1rem)]")}>
             Use the arrow keys, or tap the sides
           </p>
         )}
@@ -591,20 +594,20 @@ const SLIDES: SlideDef[] = [
         </p>
         <div className={cn("grid gap-3 sm:grid-cols-2 sm:gap-6", BLOCK)}>
           <div className="rounded-2xl border border-white/10 bg-[#101d33] p-4 sm:p-7">
-            <div className={cn("mb-4 font-mono font-semibold uppercase text-white/40", T.statL)}>Today</div>
+            <div className={cn("mb-4 font-mono font-semibold uppercase text-white/70", T.statL)}>Today</div>
             <ul className="flex flex-col gap-2 sm:gap-2.5">
               {["Team entries chased by email", "Rosters in a spreadsheet", "The schedule built by hand",
                 "Changes by phone call", "Scores typed up on Sunday night", "Waivers chased one parent at a time",
                 "A website somebody has to update"].map((t, idx) => (
                 <li key={t} className={cn(idx >= 5 ? "hidden sm:flex" : "flex", "gap-3 text-white/45", T.cardBody)}>
-                  <span className="mt-[0.55em] h-px w-3 shrink-0 bg-white/25" />
+                  <span className="mt-[0.55em] h-px w-3 shrink-0 bg-white/45" />
                   {t}
                 </li>
               ))}
             </ul>
           </div>
           <div className="rounded-2xl border border-[#f24e1e]/35 bg-[#1a2b48] p-4 sm:p-7">
-            <div className={cn("mb-4 font-mono font-semibold uppercase text-[#f24e1e]", T.statL)}>On SportsHub</div>
+            <div className={cn("mb-4 font-mono font-semibold uppercase text-[#ff8a5f]", T.statL)}>On SportsHub</div>
             <ul className="flex flex-col gap-2 sm:gap-2.5">
               {["Clubs enter their own teams", "Rosters locked and versioned", "The schedule built in minutes",
                 "One change, everyone told", "Standings right at the buzzer", "Waivers collected and chased for you",
