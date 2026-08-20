@@ -139,31 +139,31 @@ function Line({ head, rest, dark = true }: { head: string; rest: string; dark?: 
 
 type Shot = { file: string; w: number; h: number; alt: string }
 
+/**
+ * The window chrome is ALWAYS light, whatever the slide behind it is doing.
+ *
+ * It used to follow the slide, so the same console screenshot sat in white
+ * chrome on one slide and navy chrome on the next, which read as a terminal
+ * window rather than a browser and made two slides look like a different
+ * product. The screenshot inside is a light UI; a light frame belongs around
+ * it. Only the shadow follows the ground, because a shadow tuned for white
+ * disappears on navy.
+ */
 function Browser({ shot, url, base, dark = true }: { shot: Shot; url: string; base: string; dark?: boolean }) {
   return (
     <div
       className={cn(
-        "flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border",
+        "flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-[#dde3ee] bg-white",
         dark
-          ? "border-white/12 bg-[#0d1a2e] shadow-[0_30px_70px_-40px_rgba(0,0,0,0.85)]"
-          : "border-[#dde3ee] bg-white shadow-[0_30px_70px_-42px_rgba(15,23,40,0.5)]",
+          ? "shadow-[0_36px_80px_-40px_rgba(0,0,0,0.9)]"
+          : "shadow-[0_30px_70px_-42px_rgba(15,23,40,0.5)]",
       )}
     >
-      <div
-        className={cn(
-          "flex shrink-0 items-center gap-2 border-b px-4 py-2.5",
-          dark ? "border-white/12 bg-[#12203a]" : "border-[#dde3ee] bg-[#eef1f7]",
-        )}
-      >
+      <div className="flex shrink-0 items-center gap-2 border-b border-[#dde3ee] bg-[#eef1f7] px-4 py-2.5">
         {[0, 1, 2].map((i) => (
-          <span key={i} className={cn("h-2.5 w-2.5 rounded-full", dark ? "bg-white/20" : "bg-[#c3cbdb]")} />
+          <span key={i} className="h-2.5 w-2.5 rounded-full bg-[#c3cbdb]" />
         ))}
-        <span
-          className={cn(
-            "ml-2 truncate rounded px-3 py-1 font-mono text-[clamp(0.7rem,0.85vw,0.82rem)]",
-            dark ? "bg-white/5 text-white/70" : "bg-white text-[#5d6679]",
-          )}
-        >
+        <span className="ml-2 truncate rounded bg-white px-3 py-1 font-mono text-[clamp(0.7rem,0.85vw,0.82rem)] text-[#5d6679]">
           {url}
         </span>
       </div>
@@ -172,7 +172,11 @@ function Browser({ shot, url, base, dark = true }: { shot: Shot; url: string; ba
         width={shot.w}
         height={shot.h}
         alt={shot.alt}
-        className="min-h-0 w-full flex-1 object-contain object-top"
+        /* cover, not contain: contain letterboxes the shot inside the frame
+           and leaves white bars down both sides whenever the copy above is
+           tall. A browser window shows the top of a page and cuts off the
+           rest, which is exactly what cover + object-top does. */
+        className="min-h-0 w-full flex-1 object-cover object-top"
       />
     </div>
   )
@@ -507,7 +511,7 @@ const SLIDES: SlideDef[] = [
         base={brand.shots}
         eyebrow="Your league's website"
         title={<>It writes itself <span className="text-[#f24e1e]">while you run the league.</span></>}
-        lead="Every game that gets scored updates the scores, the standings and the leaders, then posts a recap naming the top performers. Your logo, your colours, your news. Next season opens for registration while this one is still playing, teams carry their history forward, and nobody needs an account to read any of it."
+        lead="Every game that gets scored updates the scores, the standings and the leaders, then posts a recap naming the top performers. Your logo, your colours, your news. Next season opens while this one is still playing, teams carry their history forward, and nobody needs an account."
         shot={SHOTS.hub}
         url="sportshubone.com/league/summer-2026"
       />
