@@ -86,3 +86,4 @@ sessions/
 scripts/research/__pycache__/
 **/__pycache__/
 *.pyc
+.deck-shots/

@@ -70,14 +70,37 @@ A club deck at `/deck/clubs` is the obvious next one and the route prefix is
 already public. Reuse `league-deck.tsx`'s primitives and its type scale rather
 than starting fresh.
 
-## Re-capturing the neutral screenshots
+## Re-capturing the screenshots
 
-They come from the same seeded season as the NPH set. The league, its
-organisation and the stored recap bodies are renamed in the **local** database,
-the screens are captured with Playwright, and everything is restored afterwards.
-Recap text matters: the league name is written into the body of each post, so
-renaming only the league leaves "NPH" sitting in the news cards on the public
-hub screenshot.
+```bash
+npm run deck:shots              # both sets, ~3 min
+npm run deck:shots -- --nph     # just the NPH set
+```
+
+That is the whole job: it signs in, walks every screen, takes the wide content
+band plus a scrolled detail frame where the slide needs one, renames the world
+for the neutral set and puts it back, then writes WebP into
+`apps/web/public/deck` and `apps/web/public/deck/neutral`.
+
+To add or change a screen, edit the `SHOTS` list at the top of
+`scripts/marketing/deck-shots.mjs`. One row per picture. If the number of
+frames changes, update `SHOTS` in `league-deck.tsx` so `frames` matches.
+
+The dev server must be running and the demo world seeded.
+
+### Why it looks the way it does
+
+Captures clip to `<main>`, so the sidebar and top bar never appear: they carry
+no argument and shrinking them into a slide is what made text render at 7.6px.
+The band is cropped to about 2.24:1 because the slide's picture box is about
+2.7:1, so a taller crop is height-bound in it and wastes the width. At 2.24:1
+the product renders on the slide at roughly 1.09, slightly larger than life.
+
+The neutral set is a rename, not a second world. The league, its organisation
+**and the stored recap bodies** carry the league name, so renaming only the
+league leaves "NPH" in the news cards on the public hub shot. The rename is
+reverted in a `finally` block and the script fails loudly if anything is left
+behind.
 
 ## Copy rules these are built to
 
