@@ -25,7 +25,7 @@ for a reply, three ask for the click. Early on you need reach before
 conversion means anything, and comments are what buy reach.
 
 **Specific questions beat generic ones.** "Can you relate?" earns a like.
-"How many are you running?" earns a number in the comments, and a comment is
+"How many are you using?" earns a number in the comments, and a comment is
 worth far more than a like.
 
 **The engagement posts do not repeat the link.** The bio carries it
@@ -70,7 +70,7 @@ Swap the city tag to match the post. Add `#basketballleague` on 7,
 > [your opener]
 > So we built the one that replaces them.
 >
-> How many are you running?
+> How many are you using?
 
 ---
 

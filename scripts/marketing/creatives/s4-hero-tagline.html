@@ -17,17 +17,35 @@
   }
   .tag { font-family: var(--display); font-size: 46px; font-weight: 700; color: var(--ink-950); }
   .tag em { font-style: normal; color: var(--hoop-500); }
+
+  /* The ask and the destination belong together. Two lines inside one pill
+     keeps it a single object, and the brand footer below drops its domain so
+     the card never says sportshubone.com twice. */
+  .cta {
+    flex-direction: column;
+    gap: 4px;
+    line-height: 1.1;
+    padding: 18px 46px 16px;
+    text-align: center;
+  }
+  .cta .go { font-size: 34px; font-weight: 800; }
+  .cta .url {
+    font-family: var(--body);
+    font-size: 23px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    color: rgba(24, 24, 27, 0.62);
+  }
 </style>
 </head>
 <body>
 <div class="stage light">
   <h1>Youth basketball.<br /><span class="all">All of it.</span> <span class="onebox">One</span> app.</h1>
   <p class="tag">Your season <em>runs itself</em>.</p>
-  <span class="cta">Register for early access</span>
+  <span class="cta"><span class="go">Register for early access</span><span class="url">sportshubone.com</span></span>
 
   <div class="footer-brand">
     <span class="wm"><span class="s">Sports</span><span class="h">Hub</span><span class="one">ONE</span></span>
-    <span class="domain">sportshubone.com</span>
   </div>
 </div>
 <script>const m = location.hash.replace("#", ""); if (m) document.body.classList.add(m);</script>

@@ -124,6 +124,25 @@
     margin-top: 26px;
     letter-spacing: 0.02em;
   }
+
+  /* The ask and the destination belong together. Two lines inside one pill
+     keeps it a single object, and the brand footer below drops its domain so
+     the card never says sportshubone.com twice. */
+  .cta {
+    flex-direction: column;
+    gap: 4px;
+    line-height: 1.1;
+    padding: 18px 46px 16px;
+    text-align: center;
+  }
+  .cta .go { font-size: 34px; font-weight: 800; }
+  .cta .url {
+    font-family: var(--body);
+    font-size: 23px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    color: rgba(24, 24, 27, 0.62);
+  }
 </style>
 </head>
 <body>
@@ -158,7 +177,7 @@
     <span>Scorekeepers</span>
   </div>
 
-  <span class="cta">Register for early access</span>
+  <span class="cta"><span class="go">Register for early access</span><span class="url">sportshubone.com</span></span>
 
   <p class="note">Basketball first. More sports to follow.</p>
 </div>
