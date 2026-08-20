@@ -71,16 +71,6 @@ function scoreTone(filled: number): "court" | "gold" | "warning" | "hoop" {
   return "hoop"
 }
 
-const EDITABLE: Array<{ key: keyof Club; label: string; type?: string }> = [
-  { key: "name", label: "Name" },
-  { key: "city", label: "City" },
-  { key: "state", label: "Province" },
-  { key: "region", label: "Region" },
-  { key: "contactEmail", label: "Email", type: "email" },
-  { key: "phoneNumber", label: "Phone" },
-  { key: "website", label: "Website", type: "url" },
-]
-
 /** The two halves of the console: the clubs themselves, and what scripts did to them. */
 const VIEWS: Array<{ key: "clubs" | "machine"; label: string }> = [
   { key: "clubs", label: "Clubs" },
@@ -106,8 +96,6 @@ export function ClubLifecycleConsole() {
   const [quickViewId, setQuickViewId] = useState<string | null>(null)
 
   const [selected, setSelected] = useState<Set<string>>(new Set())
-  const [expanded, setExpanded] = useState<string | null>(null)
-  const [draft, setDraft] = useState<Record<string, string>>({})
   const [busy, setBusy] = useState(false)
   // Merging is driven by the same tick-boxes as publishing: select exactly two
   // rows and press Merge. There is deliberately no per-row merge button - one
@@ -165,7 +153,6 @@ export function ClubLifecycleConsole() {
       if (!res.ok) throw new Error(json.error ?? "Action failed")
       setNotice(describe(json))
       setSelected(new Set())
-      setExpanded(null)
       setMerging(false)
       setSelected(new Set())
       await load()
@@ -205,49 +192,16 @@ export function ClubLifecycleConsole() {
     [data?.regions]
   )
 
-  function startEdit(c: Club) {
-    setExpanded(expanded === c.id ? null : c.id)
-    setDraft(
-      Object.fromEntries(EDITABLE.map((f) => [f.key, (c[f.key] as string | null) ?? ""]))
-    )
-  }
-
-  /** "Edit club" in the machine-edits queue: land on the Clubs tab with this
-   *  club searched, and pop its edit form open once the list has it. */
-  const [pendingExpandId, setPendingExpandId] = useState<string | null>(null)
+  /** "Open in Clubs tab" from the machine-edits queue: land here with the
+   *  club searched. All editing lives in the quick-view dialog now. */
   const openClubFromQueue = useCallback((club: { id: string; name: string }) => {
     setView("clubs")
     setIssue("all")
     setProvince("")
     setRegion("")
     setQ(club.name)
-    setPendingExpandId(club.id)
     window.scrollTo({ top: 0 })
   }, [])
-  useEffect(() => {
-    if (!pendingExpandId || !data) return
-    const c = data.clubs.find((x) => x.id === pendingExpandId)
-    if (c) {
-      startEdit(c)
-      setPendingExpandId(null)
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [data, pendingExpandId])
-
-  function saveEdit(c: Club) {
-    // Send only what actually changed, so an untouched field is never cleared.
-    const fields: Record<string, string> = {}
-    for (const f of EDITABLE) {
-      const now = draft[f.key as string] ?? ""
-      const was = (c[f.key] as string | null) ?? ""
-      if (now !== was) fields[f.key as string] = now
-    }
-    if (!Object.keys(fields).length) {
-      setExpanded(null)
-      return
-    }
-    void act({ action: "edit", id: c.id, fields }, () => `Saved ${c.name}`)
-  }
 
   return (
     <div className="mx-auto max-w-[1400px] px-4 py-6">
@@ -481,7 +435,6 @@ export function ClubLifecycleConsole() {
               </tr>
             )}
             {clubs.map((c) => (
-              <>
                 <tr key={c.id} className="border-t border-ink-100 align-top hover:bg-ink-50/60">
                   <td className="px-3 py-2">
                     <input
@@ -557,11 +510,8 @@ export function ClubLifecycleConsole() {
                   </td>
                   <td className="px-3 py-2 text-right whitespace-nowrap">
                     <div className="flex justify-end gap-1">
-                        <Button size="sm" variant="subtle" onClick={() => setQuickViewId(c.id)}>
+                        <Button size="sm" variant="secondary" tone="ink" onClick={() => setQuickViewId(c.id)}>
                           Open
-                        </Button>
-                        <Button size="sm" variant="subtle" onClick={() => startEdit(c)}>
-                          {expanded === c.id ? "Close" : "Edit"}
                         </Button>
                         {c.mergedIntoId && (
                           <Button
@@ -605,51 +555,6 @@ export function ClubLifecycleConsole() {
                     </div>
                   </td>
                 </tr>
-
-                {expanded === c.id && (
-                  <tr key={`${c.id}-edit`} className="border-t border-ink-100 bg-ink-50/40">
-                    <td colSpan={8} className="px-3 py-3">
-                      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                        {EDITABLE.map((f) => (
-                          <label key={f.key as string} className="text-xs text-ink-600">
-                            {f.label}
-                            <input
-                              type={f.type ?? "text"}
-                              value={draft[f.key as string] ?? ""}
-                              onChange={(e) =>
-                                setDraft({ ...draft, [f.key as string]: e.target.value })
-                              }
-                              className="mt-1 w-full rounded-lg border border-ink-200 px-2 py-1.5 text-sm text-ink-900"
-                            />
-                          </label>
-                        ))}
-                      </div>
-                      {(c.dataSources || c.dataNotes) && (
-                        <p className="mt-3 text-xs text-ink-500">
-                          {c.dataSources && <>sources: {c.dataSources}. </>}
-                          {c.dataNotes}
-                        </p>
-                      )}
-                      <div className="mt-3 flex gap-2">
-                        <Button size="sm" disabled={busy} onClick={() => saveEdit(c)}>
-                          Save
-                        </Button>
-                        <Button size="sm" variant="subtle" onClick={() => setExpanded(null)}>
-                          Cancel
-                        </Button>
-                        <a
-                          href={`/club/${c.slug}`}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="self-center text-xs text-ink-500 underline"
-                        >
-                          view public page
-                        </a>
-                      </div>
-                    </td>
-                  </tr>
-                )}
-              </>
             ))}
           </tbody>
         </table>

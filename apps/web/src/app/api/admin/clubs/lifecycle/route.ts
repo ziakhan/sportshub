@@ -131,57 +131,51 @@ export const GET = withAuth<NextRequest>(async (request, _ctx, session) => {
   // steps aside so the club is found even when merged or filtered out.
   const id = (sp.get("id") ?? "").trim()
 
-  // Completion-bucket filter (owner 2026-08-20): resolved to an id list via
-  // the SQL score, then joined into the normal where so it stacks with
-  // province, region, issue and search filters.
+  // Completion scores: one raw pass over the census (SQL twin of
+  // lib/clubs/completeness), reused by the filter and the bucket counts.
   const scoreBucket = (sp.get("score") ?? "").trim()
-  let scoreIds: string[] | null = null
-  {
-    const b = SCORE_BUCKETS[scoreBucket]
-    if (b) {
-      const params: string[] = []
-      let scoreWhere = `"mergedIntoId" IS NULL`
-      const provinceParam = (sp.get("province") ?? "").trim()
-      const regionParam = (sp.get("region") ?? "").trim()
-      if (provinceParam) {
-        params.push(provinceParam)
-        scoreWhere += ` AND state ILIKE $${params.length}`
-      }
-      if (regionParam) {
-        params.push(regionParam)
-        scoreWhere += ` AND region ILIKE $${params.length}`
-      }
-      const rows = await prisma.$queryRawUnsafe<{ id: string }[]>(
-        `SELECT id FROM "Tenant" WHERE ${scoreWhere} AND ${SCORE_SQL} BETWEEN ${b.min} AND ${b.max}`,
-        ...params
-      )
-      scoreIds = rows.map((r) => r.id)
-    }
+  const scoreRows = await prisma.$queryRawUnsafe<{ id: string; score: number }[]>(
+    `SELECT id, ${SCORE_SQL} AS score FROM "Tenant"`
+  )
+  const scoreOf = new Map(scoreRows.map((r) => [r.id, r.score]))
+  const activeBucket = SCORE_BUCKETS[scoreBucket]
+  const bucketIds = activeBucket
+    ? scoreRows
+        .filter((r) => r.score >= activeBucket.min && r.score <= activeBucket.max)
+        .map((r) => r.id)
+    : null
+
+  // Faceted filters (owner 2026-08-20): every dimension stacks with every
+  // other, and every count is taken under all the OTHER active dimensions, so
+  // a number always says what clicking it would actually show. Merged-away
+  // rows stay hidden unless the merged chip itself is active.
+  const DIMS: Record<string, object | null> = {
+    merged: issue === "merged" ? { mergedIntoId: { not: null } } : { mergedIntoId: null },
+    issue: issue !== "all" && issue !== "merged" ? (ISSUE_FILTERS[issue] as object) : null,
+    score: bucketIds ? { id: { in: bucketIds } } : null,
+    province: province ? { state: { equals: province, mode: "insensitive" } } : null,
+    region: region ? { region: { equals: region, mode: "insensitive" } } : null,
+    q: q
+      ? {
+          OR: [
+            { name: { contains: q, mode: "insensitive" } },
+            { city: { contains: q, mode: "insensitive" } },
+            { slug: { contains: q, mode: "insensitive" } },
+            { contactEmail: { contains: q, mode: "insensitive" } },
+          ],
+        }
+      : null,
   }
+  const compose = (...exclude: string[]) =>
+    ({
+      AND: Object.entries(DIMS)
+        .filter(([k, v]) => v && !exclude.includes(k))
+        .map(([, v]) => v),
+    }) as any
 
-  const where: any = id
-    ? { id }
-    : {
-        ...(scoreIds ? { id: { in: scoreIds } } : {}),
-        // Merged-away rows are hidden unless explicitly asked for — otherwise every
-        // list would carry the duplicates an admin has already resolved.
-        ...(issue === "merged" ? {} : { mergedIntoId: null }),
-        ...ISSUE_FILTERS[issue],
-        ...(province ? { state: province } : {}),
-        ...(region ? { region } : {}),
-        ...(q
-          ? {
-              OR: [
-                { name: { contains: q, mode: "insensitive" } },
-                { city: { contains: q, mode: "insensitive" } },
-                { slug: { contains: q, mode: "insensitive" } },
-                { contactEmail: { contains: q, mode: "insensitive" } },
-              ],
-            }
-          : {}),
-      }
+  const where: any = id ? { id } : compose()
 
-  const [clubs, total, counts, provinces, regions] = await Promise.all([
+  const [clubs, total, counts, scores, provinces, regions] = await Promise.all([
     prisma.tenant.findMany({
       where,
       select: {
@@ -200,63 +194,56 @@ export const GET = withAuth<NextRequest>(async (request, _ctx, session) => {
       take: PAGE_SIZE,
     }),
     prisma.tenant.count({ where }),
-    // Counts for the queue tabs, each over the same non-issue filters so the
-    // numbers agree with what clicking the tab actually shows.
+    // Issue chips: each counted under everything active except the issue
+    // dimension itself, so picking one re-counts all the others.
     (async () => {
-      const base = {
-        mergedIntoId: null,
-        ...(province ? { state: province } : {}),
-        ...(region ? { region } : {}),
-      }
       const entries = await Promise.all(
         (Object.keys(ISSUE_FILTERS) as IssueKey[]).map(async (k) => [
           k,
           await prisma.tenant.count({
-            where: (k === "merged"
-              ? { mergedIntoId: { not: null } }
-              : { ...base, ...ISSUE_FILTERS[k] }) as any,
+            where: {
+              AND: [
+                compose("issue", "merged"),
+                k === "merged"
+                  ? { mergedIntoId: { not: null } }
+                  : { mergedIntoId: null, ...(ISSUE_FILTERS[k] as object) },
+              ],
+            } as any,
           }),
         ])
       )
       return Object.fromEntries(entries) as Record<IssueKey, number>
     })(),
+    // Completion buckets: the ids that survive every other filter, scored in
+    // memory off the raw pass above.
+    (async () => {
+      const survivors = await prisma.tenant.findMany({
+        where: compose("score"),
+        select: { id: true },
+      })
+      const tallied: Record<string, number> = { full: 0, high: 0, mid: 0, low: 0 }
+      for (const { id: tid } of survivors) {
+        const s = scoreOf.get(tid) ?? 0
+        for (const [k, b] of Object.entries(SCORE_BUCKETS)) {
+          if (s >= b.min && s <= b.max) tallied[k] += 1
+        }
+      }
+      return tallied
+    })(),
     prisma.tenant.groupBy({
       by: ["state"],
-      where: { mergedIntoId: null, state: { not: null } },
+      where: { AND: [compose("province"), { state: { not: null } }] } as any,
       _count: { state: true },
       orderBy: { _count: { state: "desc" } },
     }),
     prisma.tenant.groupBy({
       by: ["region"],
-      where: { mergedIntoId: null, region: { not: null } },
+      where: { AND: [compose("region"), { region: { not: null } }] } as any,
       _count: { region: true },
       orderBy: { _count: { region: "desc" } },
       take: 40,
     }),
   ])
-
-  // Completion analytics: how many clubs sit in each score bucket, under the
-  // same base filters the issue counts use, so the numbers line up.
-  const scoreParams: string[] = []
-  let scoreCountWhere = `"mergedIntoId" IS NULL`
-  if (province) {
-    scoreParams.push(province)
-    scoreCountWhere += ` AND state ILIKE $${scoreParams.length}`
-  }
-  if (region) {
-    scoreParams.push(region)
-    scoreCountWhere += ` AND region ILIKE $${scoreParams.length}`
-  }
-  const scoreRows = await prisma.$queryRawUnsafe<{ score: number; n: number }[]>(
-    `SELECT ${SCORE_SQL} AS score, count(*)::int AS n FROM "Tenant" WHERE ${scoreCountWhere} GROUP BY 1`,
-    ...scoreParams
-  )
-  const scores: Record<string, number> = { full: 0, high: 0, mid: 0, low: 0 }
-  for (const r of scoreRows) {
-    for (const [k, b] of Object.entries(SCORE_BUCKETS)) {
-      if (r.score >= b.min && r.score <= b.max) scores[k] += r.n
-    }
-  }
 
   return NextResponse.json({
     clubs,
