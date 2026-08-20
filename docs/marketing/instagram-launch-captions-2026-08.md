@@ -28,6 +28,11 @@ conversion means anything, and comments are what buy reach.
 "How many are you using?" earns a number in the comments, and a comment is
 worth far more than a like.
 
+**Say it the way the card says it.** Post 9 read "messages" in the caption
+while its creative said DMs. Same meaning, but DMs is the word the audience
+actually uses, and a caption that paraphrases its own image makes the two feel
+like different posts.
+
 **The engagement posts do not repeat the link.** The bio carries it
 permanently and every creative already ends on `sportshubone.com` in its
 footer, so the domain is on screen either way. Saying it in the caption too
@@ -65,9 +70,10 @@ Swap the city tag to match the post. Add `#basketballleague` on 7,
 ---
 
 ## 3 · Five apps and a spreadsheet
-`s1-pain-pills` · **Ask: reply** · ⚠️ owner is rewriting the opening line
+`s1-pain-pills` · **Ask: reply**
 
-> [your opener]
+> Ask any club how many tools their season runs on. Then watch them count on
+> their fingers.
 > So we built the one that replaces them.
 >
 > How many are you using?
@@ -128,11 +134,11 @@ Swap the city tag to match the post. Add `#basketballleague` on 7,
 ## 9 · Still taking bookings in your DMs
 `s23-trainer-bookings` · **Ask: reply** · add `#basketballtrainer`
 
-> Every trainer we talk to runs their business out of their DMs. Fifteen
-> messages to sell one hour.
+> Every trainer we talk to runs their business out of their DMs. Fifteen of
+> them to sell one hour.
 > Put your real availability on a page and let them pick a time.
 >
-> How many messages to book one hour?
+> How many DMs to book one hour?
 
 ---
 
