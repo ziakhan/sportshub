@@ -92,6 +92,39 @@ The neutral deck still must not name NPH. Two options, in order:
    answer: it makes the rich data reproducible and keeps production untouched.
 2. Fall back to the local seeded world for neutral, accepting it is smaller.
 
+## ⚠️ AND THE SEED THAT BUILT PRODUCTION IS GONE
+
+The obvious next question is "where is the seed that made the box, run it
+locally". It does not exist. Verified:
+
+| | Season label | Team entries |
+|---|---|---|
+| `seed-nph-demo.ts` as it stands today | `"2026-27"` | ~4 |
+| local database (after running it) | `"2026-27"` | 4 |
+| **the box** | **`"Fall/Winter 2026-27"`** | **147** |
+
+Different label, different scale. The box's world was built by an EARLIER
+version of the seeder that has since been rewritten, or grown by hand in the
+product. Nothing in this repo reproduces it.
+
+**This is a risk well beyond the deck.** The richest demo world we have exists
+only in the box's database and cannot be rebuilt from source. Losing that
+database loses the 147-team Fall/Winter season, the 782-game completed twin and
+the three populated plans.
+
+**Recommended, in order:**
+
+1. **Export it.** Dump those two seasons (league, season, divisions, venues,
+   sessions, team submissions, rosters, plans, games) to a fixture file
+   committed to the repo, and write a `seed-from-fixture.ts` that restores it.
+   That makes it reproducible, reviewable, and safe to lose.
+2. Import that fixture locally. Then screenshots, demos and the pitch world all
+   run against the real thing without touching production.
+3. Only after that, revisit the deck slides.
+
+Doing 1 and 2 first also removes every reason to drive the planner wizard from
+Playwright, because the finished plans arrive with the data.
+
 ## The strategy that will work
 
 **Seed the finished state directly into the database. Do not drive the wizard.**
