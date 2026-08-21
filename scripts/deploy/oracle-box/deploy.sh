@@ -7,8 +7,21 @@ APP_DIR="/opt/sportshub"
 ENV_DIR="/etc/sportshub"
 APP_USER="sportshub"
 
+# This script lives inside the checkout it is about to rewrite, and bash reads
+# a script as it runs. Re-exec from a copy so a pull can never swap the file
+# out from under the running shell.
+if [ "${DEPLOY_REEXEC:-}" != "1" ]; then
+  TMP="$(mktemp /tmp/deploy.XXXXXX.sh)"
+  cp "$0" "$TMP"
+  chmod +x "$TMP"
+  DEPLOY_REEXEC=1 exec "$TMP" "$@"
+fi
+trap 'rm -f "$0"' EXIT
+
 echo "==> Pulling latest"
-sudo -u "$APP_USER" bash -c "cd $APP_DIR && git pull --ff-only"
+# Explicit remote and branch: never inherit whatever tracking config happens to
+# be set on the box.
+sudo -u "$APP_USER" bash -c "cd $APP_DIR && git pull --ff-only origin master"
 
 echo "==> Installing deps"
 sudo -u "$APP_USER" bash -c "cd $APP_DIR && npm install"
