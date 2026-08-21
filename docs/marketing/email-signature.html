@@ -5,85 +5,74 @@
   then paste into Gmail > Settings > General > Signature. Paste the RENDERED
   page, never the source, or Gmail will show the markup as text.
 
-  WHY IT IS BUILT LIKE THIS:
+  THE DESIGN (Swiss Modernism 2.0, per the ui-ux-pro-max consult): a strict
+  grid, mathematical spacing on an 8px base unit, asymmetric balance, high
+  contrast, minimal decoration and a SINGLE accent colour. Applied here as a
+  wide masthead rather than a square block: wordmark, a full-width hairline,
+  then two tight lines of type. It reads about three times wider than it is
+  tall, which is what keeps it feeling like a signature and not a business
+  card.
+
+  The single accent is the energy orange, used only on the separator dots.
+  The blue in the wordmark belongs to the logo and is not a second accent.
+
+  WHY THE MARKUP LOOKS LIKE THIS:
 
   · Tables and inline styles only. Gmail strips <style> blocks, and flexbox
-    and grid do not exist in most mail clients, so structure has to live on
-    the element itself.
-  · The padding lives on a wrapper TD, not on the table. Padding set on a
-    <table> is ignored by Outlook and clipped the text against the border.
-  · A system font stack. Web fonts do not load in most clients, and the
-    fallback is unpredictable mid-signature.
-  · The mark is icon-n3-180.png, the navy tile, because it carries its own
-    background and so reads on any ground. The wordmark PNG is ink on
-    transparent and would disappear in dark mode.
-  · Images are the SHIPPED PNGs from sportshubone.com. Never the SVGs: their
+    and grid do not exist in most mail clients.
+  · Padding lives on a wrapper TD, never on the <table>. Outlook ignores
+    padding set on a table, which clipped the text against the border.
+  · A system font stack. Web fonts do not load in most clients.
+  · The image is wordmark-one-color.png, the SHIPPED PNG. Never the SVG: its
     text is set in a system stack that resolves differently per machine and
-    moves the ONE badge off the mark (see the logo spec).
-  · width and height are on the <img> so clients that block images still
-    reserve the space instead of collapsing the layout.
-  · The card is painted white on purpose. The name and company are ink
-    #10142a, which is right on white and near invisible on a dark ground, and
+    moves the ONE badge off the mark. That bug already shipped once on the
+    deck (see the logo spec).
+  · 723x204 scaled to 168x47, so it stays crisp on retina.
+  · width and height are on the <img> so clients that block images reserve
+    the space instead of collapsing the layout.
+  · The card is painted white on purpose. The wordmark is ink on transparent
+    and the type is ink #10142a, both of which vanish on a dark ground, and
     clients disagree about re-colouring signature text in dark mode. Painting
-    it makes the result the same everywhere. To go transparent instead,
-    remove bgcolor and the background-color, border and border-radius below,
-    and accept that dark-mode readers may struggle.
+    it makes every client agree. To go transparent, remove bgcolor and the
+    background-color, border and border-radius below, and accept that
+    dark-mode readers will struggle.
 -->
 <table cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;">
   <tr>
-    <td bgcolor="#ffffff" style="background-color:#ffffff;border:1px solid #e2e8f0;border-radius:12px;padding:18px 22px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+    <td bgcolor="#ffffff" style="background-color:#ffffff;border:1px solid #e2e8f0;border-radius:14px;padding:24px 28px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
 
       <table cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;">
+
+        <!-- Masthead. The wordmark carries the company name, so it is never repeated in type. -->
         <tr>
-          <!-- The mark, shipped at 180px and shown at 56px so it stays crisp on retina. -->
-          <td valign="top" style="padding:0 18px 0 0;">
+          <td style="padding:0 0 16px 0;">
             <a href="https://sportshubone.com" style="text-decoration:none;">
-              <img src="https://sportshubone.com/brand/icon-n3-180.png"
-                   width="56" height="56" alt="SportsHub One"
-                   style="display:block;width:56px;height:56px;border:0;outline:none;text-decoration:none;border-radius:12px;" />
+              <img src="https://sportshubone.com/brand/wordmark-one-color.png"
+                   width="168" height="47" alt="SportsHub One"
+                   style="display:block;width:168px;height:47px;border:0;outline:none;text-decoration:none;" />
             </a>
           </td>
+        </tr>
 
-          <!-- The rule. A bordered empty cell, because a 1px <div> is not reliable in Outlook. -->
-          <td style="width:1px;background-color:#e2e8f0;font-size:0;line-height:0;">&nbsp;</td>
+        <!-- The rule. A TD with a background, because a 1px <div> is not reliable in Outlook. -->
+        <tr>
+          <td style="height:1px;background-color:#e2e8f0;font-size:0;line-height:0;">&nbsp;</td>
+        </tr>
 
-          <td valign="top" style="padding:0 0 0 18px;">
-            <table cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;">
-              <tr>
-                <td style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:16px;line-height:20px;font-weight:700;color:#10142a;letter-spacing:-0.01em;padding:0 0 2px 0;">
-                  Zia Khan
-                </td>
-              </tr>
-              <tr>
-                <td style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:13px;line-height:18px;font-weight:600;color:#4f46e5;padding:0 0 1px 0;">
-                  Founder and CEO
-                </td>
-              </tr>
-              <tr>
-                <td style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:13px;line-height:18px;font-weight:600;color:#10142a;padding:0 0 10px 0;">
-                  SportsHub One
-                </td>
-              </tr>
-
-              <!-- The energy box as a short accent rule: the one place the orange appears. -->
-              <tr>
-                <td style="font-size:0;line-height:0;padding:0 0 10px 0;">
-                  <table cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;">
-                    <tr><td style="width:24px;height:2px;background-color:#f24e1e;font-size:0;line-height:0;">&nbsp;</td></tr>
-                  </table>
-                </td>
-              </tr>
-
-              <tr>
-                <td style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:12px;line-height:19px;color:#475569;white-space:nowrap;">
-                  <a href="tel:+10000000000" style="color:#475569;text-decoration:none;">+1 (000) 000-0000</a><br />
-                  <a href="mailto:you@sportshubone.com" style="color:#475569;text-decoration:none;">you@sportshubone.com</a><br />
-                  <a href="https://sportshubone.com" style="color:#4f46e5;text-decoration:none;font-weight:600;">sportshubone.com</a>
-                </td>
-              </tr>
-            </table>
+        <!-- Name and role on one line: the asymmetric balance Swiss asks for, and it widens the block. -->
+        <tr>
+          <td style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:15px;line-height:20px;color:#10142a;padding:16px 0 4px 0;white-space:nowrap;">
+            <span style="font-weight:700;letter-spacing:-0.01em;">Zia Khan</span><span style="color:#f24e1e;font-weight:700;">&nbsp;&middot;&nbsp;</span><span style="font-weight:500;color:#475569;">Founder and CEO</span>
           </td>
         </tr>
+
+        <!-- Contacts on one line, so the card stays wide and short. -->
+        <tr>
+          <td style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:12px;line-height:18px;color:#475569;white-space:nowrap;">
+            <a href="tel:+10000000000" style="color:#475569;text-decoration:none;">+1 (000) 000-0000</a><span style="color:#f24e1e;font-weight:700;">&nbsp;&middot;&nbsp;</span><a href="mailto:you@sportshubone.com" style="color:#475569;text-decoration:none;">you@sportshubone.com</a><span style="color:#f24e1e;font-weight:700;">&nbsp;&middot;&nbsp;</span><a href="https://sportshubone.com" style="color:#4f46e5;text-decoration:none;font-weight:600;">sportshubone.com</a>
+          </td>
+        </tr>
+
       </table>
 
     </td>
