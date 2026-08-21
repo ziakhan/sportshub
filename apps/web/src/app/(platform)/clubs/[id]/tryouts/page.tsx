@@ -9,6 +9,7 @@ import { isClubAdmin, coachedTeamIds } from "@/lib/authz/team-scope"
 import { PublishButton } from "./publish-button"
 import { DeleteButton } from "./delete-button"
 import { TryoutsFilter } from "./tryouts-filter"
+import { TryoutEventsPanel } from "./events-panel"
 
 interface TryoutListItem {
   id: string
@@ -124,6 +125,14 @@ export default async function ClubTryoutsPage({
           Create Tryout
         </Button>
       </div>
+
+      {/* Club-level tryout events and the age-group pools they fill sit above
+          the single team-posted tryouts, which stay the simple case. */}
+      <TryoutEventsPanel clubId={params.id} canEdit={admin} />
+
+      <h3 className="font-condensed text-ink-950 mb-4 text-lg font-bold uppercase tracking-wide">
+        Team tryouts
+      </h3>
 
       {tryouts.length === 0 ? (
         <div className="reveal border-ink-300 shadow-soft rounded-3xl border border-dashed bg-white p-12 text-center">
