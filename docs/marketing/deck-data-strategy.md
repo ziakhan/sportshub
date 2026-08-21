@@ -92,38 +92,43 @@ The neutral deck still must not name NPH. Two options, in order:
    answer: it makes the rich data reproducible and keeps production untouched.
 2. Fall back to the local seeded world for neutral, accepting it is smaller.
 
-## ⚠️ AND THE SEED THAT BUILT PRODUCTION IS GONE
+## THE SEEDER EXISTS. I CLAIMED IT DID NOT. I WAS WRONG.
 
-The obvious next question is "where is the seed that made the box, run it
-locally". It does not exist. Verified:
+I told the owner the seed that built production had been rewritten away and
+could not be reproduced. He said it must exist and suggested git history. It
+does exist, and it is in the working tree.
 
-| | Season label | Team entries |
-|---|---|---|
-| `seed-nph-demo.ts` as it stands today | `"2026-27"` | ~4 |
-| local database (after running it) | `"2026-27"` | 4 |
-| **the box** | **`"Fall/Winter 2026-27"`** | **147** |
+**`scripts/seed-journey.ts`** builds every real 2025-26 NPH team entry from
+**`scripts/data/nph-census.ts`** (1,289 lines of NPH's own standings data)
+across Showcase League, D1, NPA and WNPA, into a season labelled
+**`"Fall/Winter 2026-27"`**, with real venue names and fictional players
+(owner ruling: real players are minors).
 
-Different label, different scale. The box's world was built by an EARLIER
-version of the seeder that has since been rewritten, or grown by hand in the
-product. Nothing in this repo reproduces it.
+Its own header describes the stages:
 
-**This is a risk well beyond the deck.** The richest demo world we have exists
-only in the box's database and cannot be rebuilt from source. Losing that
-database loses the 147-team Fall/Winter season, the 782-game completed twin and
-the three populated plans.
+```
+1  Registration in flight — Showcase League mid-registration (~25 of 146 submitted)
+2  Everyone's in         — every remaining census team submitted (PENDING)
+3  Ready to schedule     — all approved, fees settled, league FINALIZED,
+                           the two gyms attached at full strength, far-team
+                           requests and a pending withdrawal seeded. Zero games.
+4  Game day              — not implemented
+```
 
-**Recommended, in order:**
+That is production's world. **146 teams, matching the box's 147.**
 
-1. **Export it.** Dump those two seasons (league, season, divisions, venues,
-   sessions, team submissions, rosters, plans, games) to a fixture file
-   committed to the repo, and write a `seed-from-fixture.ts` that restores it.
-   That makes it reproducible, reviewable, and safe to lose.
-2. Import that fixture locally. Then screenshots, demos and the pitch world all
-   run against the real thing without touching production.
-3. Only after that, revisit the deck slides.
+Registered as scenario `nph-pitch-journey` in `scripts/demo-scenarios.ts` and
+driven from **Dashboard > Admin > Demos**, where the fast-forward buttons move
+between stages. Fast-forward is ADDITIVE, so live demo actions survive.
 
-Doing 1 and 2 first also removes every reason to drive the planner wizard from
-Playwright, because the finished plans arrive with the data.
+**How I got this wrong twice:** I only ever queried the local database, saw a
+4-team stub from `seed-nph-demo.ts`, and concluded first that the data did not
+exist and then that the seeder was gone. I never grepped the scripts directory
+for the season label, and never looked at git history. Both checks take seconds.
+
+### So the plan is not "write a new seeder"
+
+It is: run the one that exists, at stage 3 or 4, and capture from that.
 
 ## The strategy that will work
 
