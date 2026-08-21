@@ -231,8 +231,8 @@ const SHOTS = {
     alt: "Booking a referee for a session day, and the league referee pool",
   },
   waivers: {
-    frames: ["waivers.webp", "waivers-2.webp"], w: 1900, h: 848,
-    alt: "The waiver signing status, team by team",
+    frames: ["waivers.webp", "waivers-2.webp", "waivers-3.webp"], w: 1900, h: 848,
+    alt: "The waiver signing status, team by team, and one team opened to its players",
   },
   hub: {
     frames: ["hub.webp"], w: 1900, h: 861,

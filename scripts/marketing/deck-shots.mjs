@@ -72,16 +72,28 @@ const NEUTRAL = {
 /**
  * One entry per picture on a slide.
  *
- * `detail` is text to scroll to for a second frame; the slide crossfades
- * between the two. Add a screen by adding a row: nothing else needs editing.
+ * `frames` are EXTRA frames beyond the first, in order. Each is either
+ * `{ scrollTo }` to bring a region into view or `{ click }` to open something
+ * first. The slide crossfades between all of them. Add a screen by adding a
+ * row here; nothing else needs editing.
  */
 const SHOTS = [
-  { name: "overview", url: (c) => `${c.console}?tab=overview`, detail: "Season checklist" },
+  { name: "overview", url: (c) => `${c.console}?tab=overview`, frames: [{ scrollTo: "Season checklist" }] },
   { name: "plan", url: (c) => `${c.season}/plan` },
-  { name: "schedule", url: (c) => `${c.console}?tab=schedule`, detail: "Team check" },
+  { name: "schedule", url: (c) => `${c.console}?tab=schedule`, frames: [{ scrollTo: "Team check" }] },
   { name: "playoffs", url: (c) => `${c.console}?tab=playoffs` },
-  { name: "referees", url: (c) => `${c.console}?tab=referees`, detail: "League referee pool" },
-  { name: "waivers", url: (c) => `${c.season}/waivers`, detail: "Toronto Lords" },
+  { name: "referees", url: (c) => `${c.console}?tab=referees`, frames: [{ scrollTo: "League referee pool" }] },
+  {
+    name: "waivers",
+    url: (c) => `${c.season}/waivers`,
+    frames: [
+      { scrollTo: "Toronto Lords" },
+      /* Expanding a team turns the row from a count into the actual list of
+         parents, signed against outstanding. That is the frame that shows the
+         product doing something rather than reporting a number. */
+      { click: "Toronto Lords Grade 9" },
+    ],
+  },
   { name: "hub", url: (c) => `${c.base}/league/${SEASON}`, full: true },
 ]
 
@@ -133,7 +145,17 @@ async function captureSet(outDir) {
       await page.waitForTimeout(2500)
       await page.screenshot({ path: path.join(outDir, `${shot.name}.png`), clip: await band(page, shot.full) })
       let note = ""
-      if (shot.detail) {
+      for (const [idx, frame] of (shot.frames ?? []).entries()) {
+        const suffix = `-${idx + 2}`
+        if (frame.click) {
+          const target = page.getByText(frame.click, { exact: false }).first()
+          if (!(await target.count())) throw new Error(`click target not found on ${shot.name}: "${frame.click}"`)
+          await target.click()
+          await page.waitForTimeout(1200)
+          await page.screenshot({ path: path.join(outDir, `${shot.name}${suffix}.png`), clip: await band(page, shot.full) })
+          note += ` +click`
+          continue
+        }
         const moved = await page.evaluate((needle) => {
           const walk = document.createTreeWalker(document.body, NodeFilter.SHOW_ELEMENT)
           let el = null
@@ -150,11 +172,11 @@ async function captureSet(outDir) {
           if (top <= 0) return 0
           scrollBy(0, top)
           return Math.round(top)
-        }, shot.detail)
-        if (moved < 0) throw new Error(`detail text not found on ${shot.name}: "${shot.detail}"`)
+        }, frame.scrollTo)
+        if (moved < 0) throw new Error(`scroll target not found on ${shot.name}: "${frame.scrollTo}"`)
         await page.waitForTimeout(900)
-        await page.screenshot({ path: path.join(outDir, `${shot.name}-2.png`), clip: await band(page, shot.full) })
-        note = ` +detail(${moved}px)`
+        await page.screenshot({ path: path.join(outDir, `${shot.name}${suffix}.png`), clip: await band(page, shot.full) })
+        note += ` +scroll(${moved}px)`
       }
       console.log(`  ${res?.status()} ${shot.name}${note}`)
     }
