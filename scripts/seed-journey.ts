@@ -12,9 +12,12 @@
  *      two gyms the league has attached at full strength (Playground 3 = the
  *      home gym, Six Park 6 = pool, 10:00-22:00 — owner 2026-08-02: the demo
  *      starts correct, no editing), Haber in the pool on no weekend for the
- *      owner to switch on, far-team requests + a pending withdrawal seeded.
- *      Zero games.
- *   4  Game day — (wave 4, not yet implemented).
+ *      owner to switch on, EVERY GRADE PLACED in a booked building weekend by
+ *      weekend (unitVenues — the column the planner board draws its coloured
+ *      grade boxes from, and the deck's slide 4 photographs), far-team
+ *      requests + a pending withdrawal seeded. Zero games.
+ *   4  Game day — completed games with stats and standings, referees
+ *      assigned, one game queued live for scoring.
  */
 import bcrypt from "bcryptjs"
 import { prisma } from "@youthbasketballhub/db"
@@ -451,7 +454,8 @@ export async function seedJourneyStage1() {
 
   // Division rows per league from the census
   const mkDivisions = async (seasonId: string, league: NphCensusEntry["league"]) => {
-    const names = [...new Set(entries.filter((e) => e.league === league).map((e) => divisionName(e)))]
+    const forLeague = entries.filter((e) => e.league === league)
+    const names = [...new Set(forLeague.map((e) => divisionName(e)))]
     const map = new Map<string, string>()
     for (const name of names.sort()) {
       const div = await p.division.create({
@@ -460,6 +464,19 @@ export async function seedJourneyStage1() {
           name,
           ageGroup: /Grade (\d+)/.exec(name)?.[0] ?? name,
           gender: /girls/i.test(name) ? "FEMALE" : "MALE",
+          /**
+           * THE OPERATOR'S ESTIMATE — and the ONLY number the planner runs on
+           * (owner ruling 2026-08-02: registration counts deliberately do not
+           * drive planning until real scheduling). A null here leaves the
+           * grade with teams: 0 and included: false, so the board excludes
+           * every grade, every weekend reads 0 games and the calendar draws as
+           * an empty grid. That is what made the deck's planning slide
+           * photograph blank.
+           *
+           * The census count is exactly what NPH would have typed on step 1,
+           * so the estimate and the eventual registration agree.
+           */
+          expectedTeams: forLeague.filter((e) => divisionName(e) === name).length,
         },
         select: { id: true },
       })
@@ -790,6 +807,89 @@ export async function applyNjcDefaults(seasonId: string): Promise<NjcDefaultsRep
 }
 
 // ═════════════════════════ STAGE 3 ═════════════════════════════════════
+/**
+ * WHICH BUILDING EACH GRADE PLAYS IN, weekend by weekend.
+ *
+ * The sessions have carried their grade tracks since stage 1 (unitKeys). This
+ * is the other half of the same calendar: SeasonSession.unitVenues, the column
+ * the planner board draws its coloured grade boxes from and the one
+ * ensureImportedPlan() snapshots into the season's reference plan. Leave it
+ * null and the board renders its structure with every cell saying "No gym on
+ * this date yet" — which is exactly how the deck's slide 4 photographed empty.
+ *
+ * The rule is the one an operator uses, not a hand-tuned map:
+ *   · only buildings actually booked on that weekend are candidates, so the six
+ *     weekends the NJC/NSC circuits hold Six Park place everything in the
+ *     Playground on their own;
+ *   · the grade with the most teams is placed first;
+ *   · each grade lands in whichever building has the most room left PER COURT,
+ *     which keeps Grade 10's 42 teams out of the three-court gym.
+ *
+ * Deterministic: gyms are ordered by courts then id, and grade ties break on
+ * the unit key, so a reseed places every grade in the same building.
+ */
+async function placeGradesInGyms(seasonId: string) {
+  const grouped = await p.teamSubmission.groupBy({
+    by: ["divisionId"],
+    where: { seasonId, status: "APPROVED" },
+    _count: { _all: true },
+  })
+  const teamsIn = new Map<string, number>()
+  for (const g of grouped) if (g.divisionId) teamsIn.set(g.divisionId, g._count._all)
+
+  const seasonVenues = await p.seasonVenue.findMany({
+    where: { seasonId },
+    select: { venueId: true, courtsAvailable: true },
+  })
+  const courtsAt = new Map<string, number>()
+  for (const sv of seasonVenues) courtsAt.set(sv.venueId, Math.max(1, sv.courtsAvailable ?? 1))
+
+  const sessions = await p.seasonSession.findMany({
+    where: { seasonId, phase: "REGULAR" },
+    select: {
+      id: true,
+      unitKeys: true,
+      days: { select: { dayVenues: { select: { venueId: true } } } },
+    },
+  })
+
+  let placements = 0
+  let weekends = 0
+  for (const s of sessions) {
+    const units: string[] = (s.unitKeys ?? []).filter((k: string) => k.startsWith("division:"))
+    if (units.length === 0) continue
+
+    // Only what is BOOKED on this weekend — after the NJC/NSC releases.
+    const gyms = [
+      ...new Set<string>(
+        s.days.flatMap((d: any) => d.dayVenues.map((dv: any) => dv.venueId as string))
+      ),
+    ].sort((a, b) => (courtsAt.get(b) ?? 1) - (courtsAt.get(a) ?? 1) || (a < b ? -1 : 1))
+    if (gyms.length === 0) continue
+
+    const load = new Map<string, number>(gyms.map((id) => [id, 0]))
+    const ordered = [...units].sort((a, b) => {
+      const ta = teamsIn.get(a.slice(9)) ?? 0
+      const tb = teamsIn.get(b.slice(9)) ?? 0
+      return tb - ta || (a < b ? -1 : 1)
+    })
+
+    const unitVenues: Record<string, string> = {}
+    for (const key of ordered) {
+      const teams = teamsIn.get(key.slice(9)) ?? 0
+      const best = gyms.reduce((a, b) =>
+        (load.get(b)! + teams) / courtsAt.get(b)! < (load.get(a)! + teams) / courtsAt.get(a)! ? b : a
+      )
+      unitVenues[key] = best
+      load.set(best, load.get(best)! + teams)
+      placements++
+    }
+    await p.seasonSession.update({ where: { id: s.id }, data: { unitVenues } })
+    weekends++
+  }
+  return { placements, weekends }
+}
+
 export async function seedJourneyStage3() {
   const season = await journeySeason(SL_LEAGUE)
 
@@ -871,6 +971,13 @@ export async function seedJourneyStage3() {
     })`
   )
 
+  // Now that the weekends know which buildings they actually have, place each
+  // grade in one of them. This is what the planner board photographs.
+  const board = await placeGradesInGyms(season.id)
+  console.log(
+    `✓ grades placed in buildings: ${board.placements} across ${board.weekends} weekends`
+  )
+
   // League finalized — schedule creation is the live act.
   await p.season.update({ where: { id: season.id }, data: { status: "FINALIZED" } })
 
@@ -926,7 +1033,7 @@ export async function seedJourneyStage3() {
 
   await writeDemoState("nph-pitch-journey", 3)
   console.log(
-    `✓ journey stage 3: ${updated.count} approvals finalized · Playground (home) + Six Park (pool) full strength 10:00-22:00 · Haber in the pool on no weekend · requests + withdrawal staged`
+    `✓ journey stage 3: ${updated.count} approvals finalized · Playground (home) + Six Park (pool) full strength 10:00-22:00 · Haber in the pool on no weekend · ${board.placements} grade placements on ${board.weekends} weekends · requests + withdrawal staged`
   )
 }
 
@@ -1024,18 +1131,27 @@ export async function seedJourneyStage4() {
         for (let i = 0; i < roster.length; i++) {
           const share = i === roster.length - 1 ? remaining : Math.min(remaining, Math.floor(rnd() * 16))
           remaining -= share
-          await p.playerStat.create({
-            data: {
-              gameId: g.id,
-              playerId: roster[i].playerId,
-              teamId,
-              points: share,
-              rebounds: Math.floor(rnd() * 8),
-              assists: Math.floor(rnd() * 6),
-              steals: Math.floor(rnd() * 3),
-              blocks: Math.floor(rnd() * 2),
-            },
-          }).catch(() => {})
+          // PlayerStat is keyed (gameId, playerId) and holds NO teamId — the
+          // team comes from the player's roster row. Passing one made every
+          // insert throw into the swallowed catch below, which is how this
+          // stage reported "games with stats" while writing none.
+          await p.playerStat
+            .create({
+              data: {
+                gameId: g.id,
+                playerId: roster[i].playerId,
+                points: share,
+                rebounds: Math.floor(rnd() * 8),
+                assists: Math.floor(rnd() * 6),
+                steals: Math.floor(rnd() * 3),
+                blocks: Math.floor(rnd() * 2),
+              },
+            })
+            // A re-run hits the (gameId, playerId) unique and that is fine;
+            // anything else is a real fault and must not be swallowed again.
+            .catch((e: any) => {
+              if (e?.code !== "P2002") throw e
+            })
           if (remaining <= 0 && i < roster.length - 1) remaining = 0
         }
       }
@@ -1060,7 +1176,18 @@ export async function seedJourneyStage4() {
       select: { id: true },
     })
     await p.userRole.create({ data: { userId: ref.id, role: "Referee" } })
-    await p.refereeProfile.create({ data: { userId: ref.id, pin: "1234" } }).catch(() => {})
+    // Same shape the everyday seeder uses: PIN 1234 is hashed into
+    // signoffPinHash (there is no `pin` column), and standardFee is required.
+    await p.refereeProfile.create({
+      data: {
+        userId: ref.id,
+        certificationLevel: "Level 2",
+        availableRegions: ["Ontario"],
+        standardFee: 45,
+        gamesRefereed: 38,
+        signoffPinHash: await bcrypt.hash("1234", 10),
+      },
+    })
   }
   const upcoming = games.filter((g: any) => !completeDates.includes(new Date(g.scheduledAt).toISOString().slice(0, 10)))
   const slate = upcoming.slice(0, 6)
