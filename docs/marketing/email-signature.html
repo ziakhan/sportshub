@@ -1,49 +1,78 @@
+<meta name="color-scheme" content="light only" />
+<meta name="supported-color-schemes" content="light" />
+<style>
+  /* THIS CHROME IS NOT PART OF THE SIGNATURE. It exists so the page is
+     definitively light before anything is copied. Copying from a browser in
+     dark mode drags the dark page background into the clipboard, which is
+     where the black background behind the pasted signature came from. */
+  :root { color-scheme: light only; }
+  html, body { background: #ffffff !important; color: #10142a; margin: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; padding: 40px; }
+  .note { max-width: 620px; font-size: 14px; line-height: 21px; color: #475569; }
+  .note h1 { font-size: 17px; color: #10142a; margin: 0 0 10px; }
+  .note ol { padding-left: 18px; margin: 10px 0 0; }
+  .note code { background: #f1f5f9; padding: 1px 5px; border-radius: 4px; font-size: 13px; }
+  #copy { margin: 22px 0 30px; background: #4f46e5; color: #fff; border: 0; border-radius: 8px;
+          padding: 11px 20px; font-size: 14px; font-weight: 600; cursor: pointer; font-family: inherit; }
+  #copy:hover { background: #4338ca; }
+  #copy:active { background: #3730a3; }
+  #done { margin-left: 12px; font-size: 13px; color: #15803d; font-weight: 600; visibility: hidden; }
+  hr.sep { border: 0; border-top: 1px solid #e2e8f0; margin: 0 0 30px; }
+</style>
+
+<div class="note">
+  <h1>SportsHub One email signature</h1>
+  <p>Click the button. It copies the signature itself with all of its styling,
+  and nothing of this page. Do not use Cmd+A, which is what drags the page
+  background in and gives you a black block behind it.</p>
+  <ol>
+    <li>Click <strong>Copy signature</strong>.</li>
+    <li>Gmail &rarr; Settings &rarr; See all settings &rarr; General &rarr; Signature.</li>
+    <li>Click into the signature box and paste (Cmd+V).</li>
+    <li>Set <strong>Signature defaults</strong> below it, tick
+        <em>&ldquo;Insert this signature before quoted text&hellip; and remove the &lsquo;--&rsquo; line&rdquo;</em>,
+        then <strong>Save Changes</strong> at the bottom of the page.</li>
+    <li>Replace <code>+1 (000) 000-0000</code> and <code>you@sportshubone.com</code>, including their links.</li>
+  </ol>
+  <p>Never paste it through a plain-text editor. Plain text has no styling to
+  keep, so the fonts and colours are gone before Gmail ever sees them.</p>
+</div>
+
+<button id="copy" type="button">Copy signature</button><span id="done">Copied</span>
+
+<hr class="sep" />
+
 <!--
-  SportsHub One email signature.
+  ===================== THE SIGNATURE STARTS HERE =====================
 
-  HOW TO USE: open this file in a browser, select all (Cmd+A), copy (Cmd+C),
-  then paste into Gmail > Settings > General > Signature. Paste the RENDERED
-  page, never the source, or Gmail will show the markup as text.
+  Swiss Modernism 2.0 per the ui-ux-pro-max consult: strict grid, spacing on
+  an 8px base unit, asymmetric balance, high contrast, minimal decoration and
+  a SINGLE accent. The accent is the energy orange on the separator dots; the
+  blue belongs to the wordmark and is not a second accent.
 
-  THE DESIGN (Swiss Modernism 2.0, per the ui-ux-pro-max consult): a strict
-  grid, mathematical spacing on an 8px base unit, asymmetric balance, high
-  contrast, minimal decoration and a SINGLE accent colour. Applied here as a
-  wide masthead rather than a square block: wordmark, a full-width hairline,
-  then two tight lines of type. It reads about three times wider than it is
-  tall, which is what keeps it feeling like a signature and not a business
-  card.
-
-  The single accent is the energy orange, used only on the separator dots.
-  The blue in the wordmark belongs to the logo and is not a second accent.
-
-  WHY THE MARKUP LOOKS LIKE THIS:
+  TYPE SIZES are set against Gmail's own compose text, which renders about
+  13px. A signature smaller than the message reads as an afterthought, so the
+  contact line matches at 13px, the role sits one step up at 14px, and the
+  name anchors at 16px.
 
   · Tables and inline styles only. Gmail strips <style> blocks, and flexbox
     and grid do not exist in most mail clients.
   · Padding lives on a wrapper TD, never on the <table>. Outlook ignores
     padding set on a table, which clipped the text against the border.
   · A system font stack. Web fonts do not load in most clients.
-  · The image is wordmark-one-color.png, the SHIPPED PNG. Never the SVG: its
-    text is set in a system stack that resolves differently per machine and
-    moves the ONE badge off the mark. That bug already shipped once on the
-    deck (see the logo spec).
-  · 723x204 scaled to 168x47, so it stays crisp on retina.
-  · width and height are on the <img> so clients that block images reserve
-    the space instead of collapsing the layout.
+  · The image is wordmark-one-color.png, the SHIPPED PNG at 723x204 scaled to
+    168x47. Never the SVG: its text is set in a system stack that resolves
+    differently per machine and moves the ONE badge off the mark.
   · The card is painted white on purpose. The wordmark is ink on transparent
-    and the type is ink #10142a, both of which vanish on a dark ground, and
-    clients disagree about re-colouring signature text in dark mode. Painting
-    it makes every client agree. To go transparent, remove bgcolor and the
-    background-color, border and border-radius below, and accept that
-    dark-mode readers will struggle.
+    and the type is ink, both of which vanish on a dark ground, and clients
+    disagree about re-colouring signature text in dark mode.
 -->
-<table cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;">
+<table id="sig" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;">
   <tr>
     <td bgcolor="#ffffff" style="background-color:#ffffff;border:1px solid #e2e8f0;border-radius:14px;padding:24px 28px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
 
       <table cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;">
 
-        <!-- Masthead. The wordmark carries the company name, so it is never repeated in type. -->
         <tr>
           <td style="padding:0 0 16px 0;">
             <a href="https://sportshubone.com" style="text-decoration:none;">
@@ -54,21 +83,18 @@
           </td>
         </tr>
 
-        <!-- The rule. A TD with a background, because a 1px <div> is not reliable in Outlook. -->
         <tr>
           <td style="height:1px;background-color:#e2e8f0;font-size:0;line-height:0;">&nbsp;</td>
         </tr>
 
-        <!-- Name and role on one line: the asymmetric balance Swiss asks for, and it widens the block. -->
         <tr>
-          <td style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:15px;line-height:20px;color:#10142a;padding:16px 0 4px 0;white-space:nowrap;">
-            <span style="font-weight:700;letter-spacing:-0.01em;">Zia Khan</span><span style="color:#f24e1e;font-weight:700;">&nbsp;&middot;&nbsp;</span><span style="font-weight:500;color:#475569;">Founder and CEO</span>
+          <td style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:16px;line-height:22px;color:#10142a;padding:16px 0 4px 0;white-space:nowrap;">
+            <span style="font-weight:700;letter-spacing:-0.01em;">Zia Khan</span><span style="color:#f24e1e;font-weight:700;">&nbsp;&middot;&nbsp;</span><span style="font-size:14px;font-weight:500;color:#475569;">Founder and CEO</span>
           </td>
         </tr>
 
-        <!-- Contacts on one line, so the card stays wide and short. -->
         <tr>
-          <td style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:12px;line-height:18px;color:#475569;white-space:nowrap;">
+          <td style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:13px;line-height:20px;color:#475569;white-space:nowrap;">
             <a href="tel:+10000000000" style="color:#475569;text-decoration:none;">+1 (000) 000-0000</a><span style="color:#f24e1e;font-weight:700;">&nbsp;&middot;&nbsp;</span><a href="mailto:you@sportshubone.com" style="color:#475569;text-decoration:none;">you@sportshubone.com</a><span style="color:#f24e1e;font-weight:700;">&nbsp;&middot;&nbsp;</span><a href="https://sportshubone.com" style="color:#4f46e5;text-decoration:none;font-weight:600;">sportshubone.com</a>
           </td>
         </tr>
@@ -78,3 +104,26 @@
     </td>
   </tr>
 </table>
+<!-- ====================== THE SIGNATURE ENDS HERE ====================== -->
+
+<script>
+  /* Selects the signature table and nothing else, then copies. execCommand is
+     used rather than the async clipboard API because it works from file://
+     in every browser and preserves rich HTML, which is the whole point. */
+  document.getElementById("copy").addEventListener("click", function () {
+    var sig = document.getElementById("sig")
+    var range = document.createRange()
+    range.selectNode(sig)
+    var sel = window.getSelection()
+    sel.removeAllRanges()
+    sel.addRange(range)
+    var ok = false
+    try { ok = document.execCommand("copy") } catch (e) { ok = false }
+    sel.removeAllRanges()
+    var done = document.getElementById("done")
+    done.textContent = ok ? "Copied" : "Copy failed, select the card by hand"
+    done.style.color = ok ? "#15803d" : "#b91c1c"
+    done.style.visibility = "visible"
+    setTimeout(function () { done.style.visibility = "hidden" }, 2600)
+  })
+</script>
