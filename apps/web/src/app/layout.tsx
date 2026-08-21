@@ -1,3 +1,4 @@
+import { EnvBanner } from "@/components/env-banner"
 import type { Metadata } from "next"
 import Script from "next/script"
 import { Outfit, Work_Sans, Barlow_Condensed, Barlow } from "next/font/google"
@@ -41,12 +42,17 @@ export async function generateMetadata(): Promise<Metadata> {
   // their own — thin-shell club pages set noindex themselves, which is the
   // same outcome either way.
   const indexingEnabled = await isSeoIndexingEnabled()
+  const envPrefix = process.env.NEXT_PUBLIC_ENV_LABEL
+    ? `[${process.env.NEXT_PUBLIC_ENV_LABEL.toUpperCase()}] `
+    : ""
   return {
     metadataBase: new URL(siteUrl()),
     title: {
-      default: SITE_NAME,
+      // The env label is set on staging only, so a staging tab never looks
+      // like the real site in a crowded browser window.
+      default: envPrefix + SITE_NAME,
       // Detail pages set their own title; this suffixes index/browse pages.
-      template: `%s | ${SITE_NAME}`,
+      template: `${envPrefix}%s | ${SITE_NAME}`,
     },
     description: SITE_DESCRIPTION,
     ...(indexingEnabled ? {} : { robots: { index: false, follow: false } }),
@@ -75,6 +81,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         className={`${outfit.variable} ${workSans.variable} ${barlowCondensed.variable} ${barlow.variable} font-body`}
       >
         <JsonLd data={siteGraph()} />
+        <EnvBanner />
         <AuthProvider>{children}</AuthProvider>
         {/* GA4 — inert until NEXT_PUBLIC_GA_ID is set (build-time env).
             Ads signals/personalization disabled: youth-sports audience
