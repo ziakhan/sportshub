@@ -1,14 +1,33 @@
 # Youth Basketball Hub - Project Context
 
 ## ⛔ PRODUCTION DEPLOY POLICY — NO EXCEPTIONS
-**Git pushes are ALLOWED for everyone. Production DEPLOYS require the owner's (Zia's) explicit approval, given in the current session for the specific deploy.**
-- Committing and pushing to GitHub (`git push origin ...`) deploys NOTHING and never needs approval — Vercel CI/CD was disconnected 2026-07-24 (`vercel.json` `git.deploymentEnabled:false`), so GitHub is a plain code mirror. QA docs, bug reports, fixes, and work-in-progress branches: push freely.
+**Git pushes are ALLOWED for everyone. Production DEPLOYS require the owner's (Zia's) WRITTEN consent, given in the current session for that specific deploy** (owner, 2026-08-21: "You will not deploy anything to production without a written consent"). Verbal-equivalent inference, "they'd obviously want this", and a previous deploy's approval are all insufficient. If the owner has not typed it in this session for this change, it does not ship.
+- Committing and pushing to GitHub (`git push origin ...`) deploys NOTHING and never needs approval — Vercel CI/CD was disconnected 2026-07-24 (`vercel.json` `git.deploymentEnabled:false`). ⚠️ But GitHub is NOT an inert mirror: the box's `master` tracks `origin/master`, so a push to master is the delivery step a production deploy pulls from. Push feature branches freely; pushing to **master** is loading the gun.
 - What DOES need the owner's explicit go-ahead, every time:
   - Running the box deploy script (`ssh sh 'sudo /opt/sportshub/scripts/deploy/oracle-box/deploy.sh'`) — that is the production deploy.
   - EAS OTA publishes and app-store builds/submits.
-  - Any schema push, SQL, or seed against the box DB or Neon (local DB is always fine).
+  - Any schema push, SQL, or seed against the PRODUCTION box DB or Neon (local DB and the STAGING DB are always fine).
   - Re-enabling Vercel git deployments.
 - Blanket approval does not carry over between sessions or tasks; ask each time.
+- 🚨 **The shared-branch trap (real incident, 2026-08-21):** sessions share one working tree and one branch. A peer session pushed its own work to master and deployed; every commit this session had made on that branch went with it, and `deploy.sh`'s `prisma db push` wrote an unapproved schema to the production database. **Never state that work is "local only" without checking** `git merge-base --is-ancestor <sha> origin/master`. Prefer a per-session git worktree.
+
+## 🖥️ STAGING AND PRODUCTION LIVE ON THE SAME BOX — NEVER CONFUSE THEM
+**(owner, 2026-08-21 — PERMANENT.)** Full map + audit: `docs/environments.md`.
+
+| | Production | Staging |
+|---|---|---|
+| Domain | **sportshubone.com** | **ysportshub.com** |
+| Path | `/opt/sportshub` | `/opt/sportshub-staging` |
+| Web / sidecar port | 3000 / 8080 | 3100 / 8180 |
+| Database | `youthbasketballhub` | `youthbasketballhub_staging` |
+| Env file | `/etc/sportshub/web.env` | `/etc/sportshub/web-staging.env` |
+| Services | `sportshub-web`, `sportshub-sidecar` | `sportshub-web-staging`, `sportshub-sidecar-staging` |
+| Deploy script | `deploy.sh` (**written consent**) | `deploy-staging.sh <branch>` (free) |
+
+- **Before ANY box command, say which environment it targets and prove it** (path, port, or database name in the command itself). A command without an environment named is a bug.
+- Staging is the sandbox: manipulate data freely, break it, re-clone it. Production carries real clubs and real families.
+- Staging sends NO real email (Mailpit only), NO SMS, NO analytics, and no cron touches it. Never add production credentials to `web-staging.env`; never add `NEXT_PUBLIC_ENV_LABEL` to production.
+- ysportshub.com used to be a second window onto production. It is NOT any more. Old instructions saying "test on ysportshub to check production" are wrong.
 
 ## 💸 SUBAGENT MODEL TIERING — NO UNTIERED FAN-OUTS
 **Never launch Agent/Workflow subagents that silently inherit the session model.** (2026-07-14: one untiered 64-agent research run consumed ~70% of the owner's Max 20x weekly usage.)

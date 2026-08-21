@@ -65,6 +65,21 @@ sudo systemctl start sportshub-web-staging; sudo rm -f /tmp/p.dump
 ```
 **The uploads line is not optional.** A clone brings production's uploads path with it, and without the reset staging would write test images into production's folder.
 
+## Isolation audit, 2026-08-21
+
+Run against the live box, evidence not assumption. **Verified separate:** filesystem trees (no crossing symlinks) · databases (`youthbasketballhub` 89MB vs `youthbasketballhub_staging` 52MB, each env file pointing at its own) · ports and processes · every service's working directory and env file · **every secret value distinct** (NEXTAUTH, AUTH_TOKEN, SIDECAR_SHARED, CRON, DATABASE_URL) · email (production to OCI, staging to Mailpit on loopback) · crons (all three name `127.0.0.1:3000`, production only) · Caddy routes and the two separate uploads snippets · uploads directories per database · git checkouts and branches · the nightly backup (names `youthbasketballhub` explicitly, 14 dailies kept; staging is deliberately not backed up).
+
+**Absent from staging on purpose, re-verified by exact count:** `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `NEXT_PUBLIC_GA_ID`, `STRIPE_SECRET_KEY`.
+
+### One real leak, found and fixed
+Both sidecars created a BullMQ queue named `push` on the **same Redis database**, so staging's worker was eligible to consume production's push-notification jobs (a real family's notification silently swallowed by staging) and the reverse. Staging now runs on Redis db1 (`redis://127.0.0.1:6379/1`); production stays on db0. Verified after the change: db0 production keys, db1 staging keys.
+
+### Couplings that remain, ranked
+1. **One Postgres role.** Both connect as `sportshub`, so the separation is configuration, not permission: an env file pointing at the wrong database would simply work. Fix when convenient: a `sportshub_staging` role owning the staging database (do it by recreating and re-cloning; never `REASSIGN OWNED`, which also touches shared objects like database ownership).
+2. **One Linux user.** Both services run as `sportshub`, and `/etc/sportshub/web.env` is `root:sportshub 640`, so a staging process can read production's secrets. Fix: a dedicated staging user.
+3. **Scripts inside the staging tree that hardcode production paths** (`deploy.sh`, `setup.sh`, `reseed-demo.sh`). Both deploy scripts now refuse to run from the wrong tree; the others are still landmines, so always check `APP_DIR` before running anything from `scripts/deploy/`.
+4. **CPU, Postgres server process, Caddy config, the box itself.** Inherent to one machine; containers would remove the first three.
+
 ## What the two still share
 
 Honest list, because "isolated" has limits on one box:

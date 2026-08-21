@@ -3,6 +3,18 @@
 # Run on the box: bash /opt/sportshub/scripts/deploy/oracle-box/deploy.sh
 set -euo pipefail
 
+# This script deploys PRODUCTION, wherever it is launched from: APP_DIR is
+# absolute. A copy of it also sits inside the staging checkout, so refuse to
+# run from there rather than surprise someone (CLAUDE.md: never confuse the
+# two environments).
+case "$(cd "$(dirname "$0")" 2>/dev/null && pwd)" in
+  *sportshub-staging*)
+    echo "REFUSING: this is the PRODUCTION deploy script, launched from the staging tree."
+    echo "For staging use: /opt/sportshub-staging/scripts/deploy/oracle-box/deploy-staging.sh"
+    exit 1
+    ;;
+esac
+
 APP_DIR="/opt/sportshub"
 ENV_DIR="/etc/sportshub"
 APP_USER="sportshub"

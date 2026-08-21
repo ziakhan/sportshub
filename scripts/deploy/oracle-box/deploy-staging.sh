@@ -8,6 +8,15 @@
 # what I am testing". Pass a branch name to move staging onto it.
 set -euo pipefail
 
+# Mirror guard: this script only ever touches staging, so refuse to run from
+# the production tree where someone clearly meant deploy.sh.
+case "$(cd "$(dirname "$0")" 2>/dev/null && pwd)" in
+  */opt/sportshub/*|/opt/sportshub/*)
+    echo "REFUSING: this is the STAGING deploy script, launched from the production tree."
+    exit 1
+    ;;
+esac
+
 APP_DIR="/opt/sportshub-staging"
 ENV_FILE="/etc/sportshub/web-staging.env"
 APP_USER="sportshub"
