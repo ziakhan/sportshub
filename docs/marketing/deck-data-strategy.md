@@ -140,12 +140,23 @@ Two honest options, in order of preference:
 2. Write `season.playoffPlan` directly, the same way the plan JSON above is
    written, and skip the generator for demo purposes.
 
-## "Why not just use production?"
+## "Why not just use production?" — I was WRONG about this
 
-Production runs the same seeded demo world. The missing data is missing there
-too, so capturing from the box would produce the same empty board. The
-environment was never the problem; the data is. (The box was genuinely
-undeployed for part of the day, which was a separate real problem and is fixed.)
+I told the owner production ran the same seeded demo world and had the same gap.
+**That was false, and I never checked.** I queried local repeatedly and assumed
+the box mirrored it.
+
+The truth, verified:
+
+| | Fall/Winter 2026-27 season | Populated plans |
+|---|---|---|
+| **local** | absent (only NPH Summer, 22 teams) | 1 plan, empty |
+| **the box** | 147 teams, 10 divisions + a 782-game twin | 3 plans with 40 to 62 placements |
+
+So production was the answer the entire time, and the owner said so before I
+checked. The lesson is the same one as the rest of this file: **verify the
+environment you are asserting about.** A single query against the box would have
+saved most of a day.
 
 ## What already works and should not be rebuilt
 
