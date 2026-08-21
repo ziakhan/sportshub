@@ -280,7 +280,7 @@ const SLIDES: SlideDef[] = [
     id: "title",
     chapter: "Open",
     render: ({ brand }) => (
-      <div className="flex h-full flex-col justify-center">
+      <div className="flex h-full flex-col [justify-content:safe_center]">
         {/* The PNG, never the SVG. wordmark-one-reverse.svg sets "SportsHub"
             and the ONE badge as live <text> in a SYSTEM font stack, so the
             badge lands in a different place on every machine. The PNG is the
@@ -338,7 +338,7 @@ const SLIDES: SlideDef[] = [
     id: "gauntlet",
     chapter: "The problem",
     render: () => (
-      <div className="flex h-full flex-col justify-center">
+      <div className="flex h-full flex-col [justify-content:safe_center]">
         <Eyebrow>Why we built it</Eyebrow>
         <H className="max-w-[24ch]">
           Everything between registration
@@ -414,7 +414,7 @@ const SLIDES: SlideDef[] = [
     chapter: "A fair schedule",
     light: true,
     render: () => (
-      <div className="flex h-full flex-col justify-center">
+      <div className="flex h-full flex-col [justify-content:safe_center]">
         <Eyebrow dark={false}>A fair schedule</Eyebrow>
         <H>
           Fair to <span className="text-[#c2410c]">every team.</span>
@@ -434,7 +434,7 @@ const SLIDES: SlideDef[] = [
     id: "changes",
     chapter: "Changes",
     render: () => (
-      <div className="flex h-full flex-col justify-center">
+      <div className="flex h-full flex-col [justify-content:safe_center]">
         <Eyebrow>When things change</Eyebrow>
         <H className="max-w-[22ch]">
           Schedules change.
@@ -533,7 +533,7 @@ const SLIDES: SlideDef[] = [
     id: "money",
     chapter: "Money",
     render: () => (
-      <div className="flex h-full flex-col justify-center">
+      <div className="flex h-full flex-col [justify-content:safe_center]">
         <Eyebrow>Money</Eyebrow>
         <H>
           Every fee, <span className="text-[#f24e1e]">and who still owes it.</span>
@@ -569,7 +569,7 @@ const SLIDES: SlideDef[] = [
        make money off this data is a promise nobody has agreed to make. It
        states what exists and how detailed it is, and stops there. */
     render: () => (
-      <div className="flex h-full flex-col justify-center">
+      <div className="flex h-full flex-col [justify-content:safe_center]">
         <Eyebrow>What you can see</Eyebrow>
         <H className="max-w-[22ch]">
           Every weekend <span className="text-[#f24e1e]">leaves a number behind.</span>
@@ -591,7 +591,7 @@ const SLIDES: SlideDef[] = [
     chapter: "For clubs",
     light: true,
     render: () => (
-      <div className="flex h-full flex-col justify-center">
+      <div className="flex h-full flex-col [justify-content:safe_center]">
         <Eyebrow dark={false}>The club side</Eyebrow>
         <H className="max-w-[24ch]">
           The teams that enter your league <span className="text-[#c2410c]">are built here.</span>
@@ -609,7 +609,7 @@ const SLIDES: SlideDef[] = [
     chapter: "For families",
     light: true,
     render: () => (
-      <div className="flex h-full flex-col justify-center">
+      <div className="flex h-full flex-col [justify-content:safe_center]">
         <Eyebrow dark={false}>The family side</Eyebrow>
         <H className="max-w-[24ch]">
           One calendar, <span className="text-[#c2410c]">whatever else is going on.</span>
@@ -632,7 +632,7 @@ const SLIDES: SlideDef[] = [
     id: "summary",
     chapter: "Before and after",
     render: () => (
-      <div className="flex h-full flex-col justify-center">
+      <div className="flex h-full flex-col [justify-content:safe_center]">
         <Eyebrow>The whole thing, in one place</Eyebrow>
         <H>What actually changes.</H>
         <p className={cn("mt-3 max-w-[74ch] text-[clamp(0.92rem,1.5vw,1.35rem)] leading-[1.45] text-white/72 sm:mt-4")}>
@@ -677,7 +677,7 @@ const SLIDES: SlideDef[] = [
     id: "see",
     chapter: "See it working",
     render: () => (
-      <div className="flex h-full flex-col justify-center">
+      <div className="flex h-full flex-col [justify-content:safe_center]">
         <Eyebrow>Not slides</Eyebrow>
         <H>
           See it working, <span className="text-[#f24e1e]">right now.</span>
@@ -719,7 +719,7 @@ const SLIDES: SlideDef[] = [
     id: "close",
     chapter: "The ask",
     render: () => (
-      <div className="flex h-full flex-col justify-center">
+      <div className="flex h-full flex-col [justify-content:safe_center]">
         <Eyebrow>What we are asking for</Eyebrow>
         <h2 className={cn("font-display max-w-[16ch] text-balance font-extrabold", T.h2)}>
           One league. One season.
