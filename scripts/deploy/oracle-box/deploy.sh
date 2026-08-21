@@ -39,4 +39,4 @@ sudo systemctl restart sportshub-sidecar sportshub-web
 sleep 3
 curl -fsS http://127.0.0.1:8080/healthz >/dev/null && echo "sidecar OK"
 curl -fsS -o /dev/null -w "web: %{http_code}\n" http://127.0.0.1:3000/
-echo "Deployed $(cd $APP_DIR && git rev-parse --short HEAD)"
+echo "Deployed $(sudo -u $APP_USER git -C $APP_DIR rev-parse --short HEAD)"

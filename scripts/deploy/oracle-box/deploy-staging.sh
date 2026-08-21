@@ -51,4 +51,4 @@ curl -fsS -m 15 -o /dev/null -w "staging web: %{http_code}\n" http://127.0.0.1:3
 # Production is a different stack entirely; report it so a staging deploy can
 # never quietly coincide with a production problem.
 curl -fsS -m 15 -o /dev/null -w "production web (untouched): %{http_code}\n" http://127.0.0.1:3000/
-echo "Staging now at $(cd $APP_DIR && git rev-parse --short HEAD) on $(cd $APP_DIR && git rev-parse --abbrev-ref HEAD)"
+echo "Staging now at $(sudo -u $APP_USER git -C $APP_DIR rev-parse --short HEAD) on $(sudo -u $APP_USER git -C $APP_DIR rev-parse --abbrev-ref HEAD)"
