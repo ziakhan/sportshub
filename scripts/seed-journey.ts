@@ -971,6 +971,65 @@ export async function seedJourneyStage3() {
     })`
   )
 
+  /**
+   * THE BACKUP GYM, ON THE WEEKENDS THE MAIN ONE IS GONE.
+   *
+   * Six Park is released on the six weekends the NJC/NSC circuits hold it,
+   * which leaves those dates with nothing but the Playground's three courts —
+   * 48 slots against grades that need far more. The board drew them red, and
+   * four red weekends is not a plan a league would ever publish. It is also
+   * not the story: the owner's own scheduling demo shows ONE weekend under
+   * pressure and then the fix (docs/roadmap/season-story-numbers.md, the
+   * 2026-08-16 deltas — "no ambush; the tension lives on the board").
+   *
+   * So the league does what a league does when its building is taken: it books
+   * the backup. Haber joins exactly the weekends Six Park left, and nothing
+   * else — it stays off every other date, which is what makes it visibly a
+   * rental rather than a third home.
+   */
+  const haber = await p.venue.findFirst({
+    where: { name: "Haber Recreation Centre" },
+    select: { id: true },
+  })
+  let haberWeekends = 0
+  if (haber && njc.detached.length > 0) {
+    const haberCourts = await p.court.findMany({
+      where: { venueId: haber.id },
+      orderBy: { displayOrder: "asc" },
+      take: 6,
+      select: { id: true },
+    })
+    for (const sat of njc.detached) {
+      const satDate = new Date(`${sat}T00:00:00Z`)
+      const monday = new Date(satDate.getTime() + days(2))
+      const dayRows = await p.seasonSessionDay.findMany({
+        where: { session: { seasonId: season.id }, date: { gte: satDate, lt: monday } },
+        select: { id: true, dayVenues: { select: { venueId: true } } },
+      })
+      for (const day of dayRows) {
+        if (day.dayVenues.some((dv: any) => dv.venueId === haber.id)) continue
+        const dayVenue = await p.seasonSessionDayVenue.create({
+          data: {
+            dayId: day.id,
+            venueId: haber.id,
+            startTime: "10:00",
+            endTime: "22:00",
+            bookingStatus: "confirmed",
+          },
+          select: { id: true },
+        })
+        let order = 0
+        for (const c of haberCourts) {
+          await p.seasonSessionDayVenueCourt.create({
+            data: { dayVenueId: dayVenue.id, courtId: c.id, order: order++ },
+          })
+        }
+      }
+      haberWeekends++
+    }
+    console.log(`✓ Haber booked on the ${haberWeekends} weekends Six Park was released`)
+  }
+
   // Now that the weekends know which buildings they actually have, place each
   // grade in one of them. This is what the planner board photographs.
   const board = await placeGradesInGyms(season.id)
@@ -1033,7 +1092,7 @@ export async function seedJourneyStage3() {
 
   await writeDemoState("nph-pitch-journey", 3)
   console.log(
-    `✓ journey stage 3: ${updated.count} approvals finalized · Playground (home) + Six Park (pool) full strength 10:00-22:00 · Haber in the pool on no weekend · ${board.placements} grade placements on ${board.weekends} weekends · requests + withdrawal staged`
+    `✓ journey stage 3: ${updated.count} approvals finalized · Playground (home) + Six Park (pool) full strength 10:00-22:00 · Haber booked on ${haberWeekends} released weekends · ${board.placements} grade placements on ${board.weekends} weekends · requests + withdrawal staged`
   )
 }
 
@@ -1070,35 +1129,45 @@ export async function seedJourneyStage4() {
         data: { dayVenueId: dv.id, courtId: court6.id, order: 5 },
       })
     }
-    const { loadSchedulerInput } = await import("../apps/web/src/lib/scheduler/load")
-    const { generateSchedule } = await import("../apps/web/src/lib/scheduler/generate")
-    const { input } = await loadSchedulerInput(season.id)
-    if (!input) throw new Error("stage 4: cannot load scheduler input")
-    const result = generateSchedule(input)
-    for (const g of result.games) {
-      await p.game.create({
-        data: {
-          seasonId: season.id,
-          sessionId: g.sessionId,
-          dayVenueId: g.dayVenueId,
-          homeTeamId: g.homeTeamId,
-          awayTeamId: g.awayTeamId,
-          venueId: g.venueId,
-          courtId: g.courtId,
-          scheduledAt: new Date(g.scheduledAt),
-          duration: g.duration,
-          status: "SCHEDULED",
-          phase: "REGULAR",
-          publishedAt: new Date(),
-        },
-      })
+    /**
+     * THE SAME SOLVER THE OWNER'S OWN BUTTON RUNS. "Generate" on the plan
+     * wizard is api/seasons/[id]/plans/[planId]/generate, and it calls
+     * solveSeasonV2 + applyProposal — the v2 engine with the burden ledger,
+     * which spreads a team's games, keeps them out of back-to-backs and off
+     * five-hour waits, and fills every team's game count.
+     *
+     * This used to call the v1 generateSchedule, and the difference is the
+     * whole fairness table: v1 left 23 teams under the 10-game guarantee and
+     * handed out back-to-backs, so the seeded world scored far worse than
+     * anything the owner produces by hand. A demo world must be at least as
+     * good as the product, never worse.
+     */
+    const { solveSeasonV2, applyProposal } = await import("../apps/web/src/lib/scheduler-v2")
+    const solved = await solveSeasonV2(season.id)
+    if (solved.errors.length > 0) {
+      throw new Error(`stage 4: solver refused — ${solved.errors.join(" · ")}`)
     }
+    const blocks = solved.findings.filter((f: any) => f.severity === "BLOCK")
+    if (blocks.length > 0 || !solved.proposal) {
+      throw new Error(
+        `stage 4: solver blocked — ${blocks.map((b: any) => b.message).join(" · ") || "no proposal"}`
+      )
+    }
+    await applyProposal(season.id, solved.proposal)
+    // Seeded games are the live demo world, not drafts.
+    await p.game.updateMany({
+      where: { seasonId: season.id, phase: "REGULAR", publishedAt: null },
+      data: { publishedAt: new Date() },
+    })
     games = await p.game.findMany({
       where: { seasonId: season.id, phase: "REGULAR" },
       select: { id: true, homeTeamId: true, awayTeamId: true, scheduledAt: true },
       orderBy: { scheduledAt: "asc" },
     })
-    console.log(`  · committed ${games.length} games (Court 6 added + schedule generated)`)
+    console.log(
+      `  · committed ${games.length} games via scheduler-v2 (Court 6 added) · ` +
+        `back-to-backs ${solved.proposal.stats.backToBacks ?? "?"}`
+    )
   }
 
   // Complete the first two weekends with scores + player stat lines.
