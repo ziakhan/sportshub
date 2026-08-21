@@ -79,7 +79,58 @@ const NEUTRAL = {
  */
 const SHOTS = [
   { name: "overview", url: (c) => `${c.console}?tab=overview`, frames: [{ scrollTo: "Season checklist" }] },
-  { name: "plan", url: (c) => `${c.season}/plan` },
+  {
+    name: "plan",
+    /* Slide 4 needs the planner WORKING, which needs the seeded planning
+       season (npx tsx scripts/demo/seed-deck-states.ts). Four preconditions
+       have to be met before the board draws at all, and they are met here in
+       order: a plan exists, weekends are switched on in step 2, and step 3 is
+       told to draw. Skipped with a warning if the season is missing, rather
+       than silently shooting the read-only shell that was there before. */
+    custom: async ({ page, shoot, planning, base }) => {
+      if (!planning) {
+        console.log("  SKIPPED plan: no planning season. Run scripts/demo/seed-deck-states.ts")
+        return false
+      }
+      const root = `${base}/manage/leagues/${LEAGUE}/seasons/${planning}/plan`
+      await page.goto(root, { waitUntil: "networkidle", timeout: 60000 })
+      await page.waitForTimeout(2800)
+      const start = page.getByRole("button", { name: /start a new plan/i }).first()
+      if (await start.count()) {
+        await start.click()
+        await page.waitForTimeout(2500)
+        const field = page.locator('input[type="text"]').first()
+        if ((await field.count()) && (await field.isVisible().catch(() => false))) {
+          await field.fill("Fall 2026")
+          const ok = page.getByRole("button", { name: /create|save|start|continue/i }).first()
+          if (await ok.count()) { await ok.click(); await page.waitForTimeout(2500) }
+        }
+      }
+      await page.waitForTimeout(1500)
+      await shoot("plan")                                   // 1. who is coming
+
+      await page.goto(`${root}?step=2`, { waitUntil: "networkidle", timeout: 60000 })
+      await page.waitForTimeout(3000)
+      /* Chips render their date AND their state, so the text is "4–5off". */
+      const chips = page.locator("button").filter({ hasText: /^\d{1,2}\s*[–—-]\s*\d{1,2}\s*(on|off)$/i })
+      const count = await chips.count()
+      for (let i = 0; i < Math.min(count, 12); i++) {
+        await chips.nth(i).click({ timeout: 3000 }).catch(() => {})
+        await page.waitForTimeout(160)
+      }
+      await page.waitForTimeout(2200)
+      await shoot("plan-2")                                 // 2. gyms and weekends
+
+      await page.goto(`${root}?step=3`, { waitUntil: "networkidle", timeout: 60000 })
+      await page.waitForTimeout(3500)
+      const draw = page.getByRole("button", { name: /draw the calendar/i }).first()
+      if (await draw.count()) { await draw.click(); await page.waitForTimeout(6000) }
+      await page.evaluate(() => scrollBy(0, 360))
+      await page.waitForTimeout(1200)
+      await shoot("plan-3")                                 // 3. the board
+      return true
+    },
+  },
   { name: "schedule", url: (c) => `${c.console}?tab=schedule`, frames: [{ scrollTo: "Team check" }] },
   { name: "playoffs", url: (c) => `${c.console}?tab=playoffs` },
   { name: "referees", url: (c) => `${c.console}?tab=referees`, frames: [{ scrollTo: "League referee pool" }] },
@@ -96,6 +147,17 @@ const SHOTS = [
   },
   { name: "hub", url: (c) => `${c.base}/league/${SEASON}`, full: true },
 ]
+
+/** The planning season is rebuilt by seed-deck-states.ts on every run, so its
+ *  id changes. Look it up by label rather than pinning an id that goes stale. */
+async function planningSeasonId(prisma) {
+  const s = await prisma.season.findFirst({
+    where: { leagueId: LEAGUE, label: { contains: "(planning)" } },
+    orderBy: { createdAt: "desc" },
+    select: { id: true, label: true },
+  })
+  return s?.id ?? null
+}
 
 const ctx = {
   base: BASE,
@@ -134,13 +196,20 @@ const band = (page, full) =>
     return { x: Math.round(r.x), y: top, width: Math.round(r.width), height: Math.min(560, innerHeight - top) }
   }, full)
 
-async function captureSet(outDir) {
+async function captureSet(outDir, planning) {
   fs.mkdirSync(outDir, { recursive: true })
   const browser = await chromium.launch()
   try {
     const page = await browser.newPage({ viewport: { width: 1280, height: 720 }, deviceScaleFactor: 2 })
     if (!(await signIn(page))) throw new Error("login failed")
+    const shoot = async (name) =>
+      page.screenshot({ path: path.join(outDir, `${name}.png`), clip: await band(page, false) })
     for (const shot of SHOTS) {
+      if (shot.custom) {
+        const ok = await shot.custom({ page, shoot, planning, base: BASE })
+        if (ok) console.log(`  200 ${shot.name} (scripted)`)
+        continue
+      }
       const res = await page.goto(shot.url(ctx), { waitUntil: "networkidle", timeout: 45000 })
       await page.waitForTimeout(2500)
       await page.screenshot({ path: path.join(outDir, `${shot.name}.png`), clip: await band(page, shot.full) })
@@ -240,12 +309,15 @@ async function restore(prisma, snapshotPath) {
 
 const only = process.argv.includes("--nph") ? "nph" : process.argv.includes("--neutral") ? "neutral" : "both"
 
+const lookup = new PrismaClient()
+const planning = await planningSeasonId(lookup).finally(() => lookup.$disconnect())
 console.log(`deck shots -> ${RAW} (${only})`)
+console.log(planning ? `planning season: ${planning}` : "planning season: MISSING (slide 4 will be skipped)")
 fs.mkdirSync(RAW, { recursive: true })
 
 if (only !== "neutral") {
   console.log("NPH set:")
-  await captureSet(path.join(RAW, "nph"))
+  await captureSet(path.join(RAW, "nph"), planning)
 }
 
 if (only !== "nph") {
@@ -254,7 +326,7 @@ if (only !== "nph") {
   try {
     console.log("neutral set:")
     await renameForNeutral(prisma, snapshot)
-    await captureSet(path.join(RAW, "neutral"))
+    await captureSet(path.join(RAW, "neutral"), planning)
   } finally {
     /* The demo world must come back even if a capture threw. */
     await restore(prisma, snapshot)

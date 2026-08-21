@@ -215,8 +215,8 @@ const SHOTS = {
     alt: "The season console: clubs entered, teams approved, what is waiting, and the season checklist",
   },
   plan: {
-    frames: ["plan.webp"], w: 1900, h: 848,
-    alt: "The five step season planner: teams, your buildings, your calendar, publish, schedule",
+    frames: ["plan.webp", "plan-2.webp", "plan-3.webp"], w: 1900, h: 848,
+    alt: "The season planner: who is coming, then the gyms and weekends, then the calendar board with each grade on a weekend",
   },
   schedule: {
     frames: ["schedule.webp", "schedule-2.webp"], w: 1900, h: 848,
@@ -383,7 +383,7 @@ const SLIDES: SlideDef[] = [
         active={active}
         eyebrow="Pre-season planning"
         title={<>Book the gyms <span className="text-[#c2410c]">before you know the teams.</span></>}
-        lead="Estimate each grade with last season's count beside it, drop in the dates and gyms you think you can get, and it tells you whether that fits or how many more court hours you need."
+        lead="Estimate each grade with last season's count beside it. Pick the gyms and the weekends you think you can get. It draws the calendar, tells you whether it fits, and every grade can be dragged to another weekend."
         shot={SHOTS.plan}
       />
     ),
