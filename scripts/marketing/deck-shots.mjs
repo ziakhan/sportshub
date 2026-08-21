@@ -98,15 +98,27 @@ const SHOTS = [
       const start = page.getByRole("button", { name: /start a new plan/i }).first()
       if (await start.count()) {
         await start.click()
-        await page.waitForTimeout(2500)
-        const field = page.locator('input[type="text"]').first()
-        if ((await field.count()) && (await field.isVisible().catch(() => false))) {
-          await field.fill("Fall 2026")
-          const ok = page.getByRole("button", { name: /create|save|start|continue/i }).first()
-          if (await ok.count()) { await ok.click(); await page.waitForTimeout(2500) }
+        await page.waitForTimeout(2000)
+        /* The dialog prefills a name. Match "Create plan" EXACTLY: a loose
+           /create|save|start/ matched a different control on the page, the
+           dialog stayed open, and every later frame then read "No plan open"
+           and photographed an empty planner. */
+        const field = page.locator('input[type="text"]:visible').first()
+        if (await field.count()) await field.fill("Fall 2026")
+        const create = page.getByRole("button", { name: /^\s*Create plan\s*$/i }).first()
+        if (await create.count()) {
+          await create.click()
+          await page.waitForTimeout(4000)
         }
       }
+      /* Refuse to shoot an empty planner: that is exactly the failure this
+         whole seeder exists to remove. */
+      const open = await page.evaluate(() => !/No plan open|Choose a plan in step 1/i.test(document.querySelector("main")?.innerText ?? ""))
+      if (!open) throw new Error("plan did not open; the planner would have been photographed empty")
       await page.waitForTimeout(1500)
+      /* Past the header, onto the grade rows and their counts. */
+      await bringToTop(page, "How many teams do you expect")
+      await page.waitForTimeout(700)
       await shoot("plan")                                   // 1. who is coming
 
       await page.goto(`${root}?step=2`, { waitUntil: "networkidle", timeout: 60000 })
@@ -119,13 +131,19 @@ const SHOTS = [
         await page.waitForTimeout(160)
       }
       await page.waitForTimeout(2200)
+      await bringToTop(page, "When would you like to run sessions")
+      await page.waitForTimeout(700)
       await shoot("plan-2")                                 // 2. gyms and weekends
 
       await page.goto(`${root}?step=3`, { waitUntil: "networkidle", timeout: 60000 })
       await page.waitForTimeout(3500)
       const draw = page.getByRole("button", { name: /draw the calendar/i }).first()
       if (await draw.count()) { await draw.click(); await page.waitForTimeout(6000) }
-      await page.evaluate(() => scrollBy(0, 360))
+      /* The Redraw menu can be left hanging open over the board. */
+      await page.keyboard.press("Escape").catch(() => {})
+      await page.mouse.click(5, 5).catch(() => {})
+      await page.waitForTimeout(600)
+      await bringToTop(page, "YOUR GYMS")
       await page.waitForTimeout(1200)
       await shoot("plan-3")                                 // 3. the board
       return true
@@ -184,6 +202,27 @@ async function signIn(page) {
     await page.waitForTimeout(500)
   }
   return false
+}
+
+/** Scroll so `needle` sits just under the top of the content band.
+ *
+ *  Without this every planner frame showed the page header and the step rail
+ *  and then ran out of band before the actual content: the grade rows, the gym
+ *  list, the weekend picker were all below the fold. The chrome is identical on
+ *  all three steps, so the frames looked like three copies of nothing. */
+async function bringToTop(page, needle) {
+  return page.evaluate((text) => {
+    const walk = document.createTreeWalker(document.body, NodeFilter.SHOW_ELEMENT)
+    let el = null
+    while (walk.nextNode()) {
+      const n = walk.currentNode
+      if (n.children.length === 0 && (n.textContent || "").trim().toLowerCase().includes(text.toLowerCase())) { el = n; break }
+    }
+    if (!el) return -1
+    const top = el.getBoundingClientRect().top - document.querySelector("main").getBoundingClientRect().top - 90
+    if (top > 0) scrollBy(0, top)
+    return Math.round(Math.max(0, top))
+  }, needle)
 }
 
 /** The content band: <main> minus the furniture, capped so the crop stays wide. */

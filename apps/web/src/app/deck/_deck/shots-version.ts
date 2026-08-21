@@ -7,4 +7,4 @@
  *
  * Do not edit by hand.
  */
-export const SHOTS_VERSION = "20260820-2047"
+export const SHOTS_VERSION = "20260820-2116"
