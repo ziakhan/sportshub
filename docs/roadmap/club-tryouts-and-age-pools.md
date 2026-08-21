@@ -41,3 +41,4 @@ Real clubs announce one tryout event covering several age groups (the Instagram 
 
 - **Private per-coach notes on pool players.** Every coach keeps their own notes; never visible to other coaches (first-choice/second-choice politics are coordinated humanly, not in the product). To be designed properly later.
 - **Player evaluation system.** Owner has a separate plan for evaluating players; do not improvise one into the pool console.
+  → **Planning session held 2026-08-21: [[tryout-evaluation-design]]**, with the research behind it in [[tryout-evaluation-2026-08]]. Visibility became a club setting rather than a platform rule (owner), and the private-notes ruling above survives as the default with a per-item override no club setting can override.
