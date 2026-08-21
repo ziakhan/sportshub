@@ -47,6 +47,51 @@ Those come from dragging, or from a fill action that was never triggered.
 Driving a multi-step wizard from Playwright to produce demo data is fragile and
 it silently half-succeeds, which is worse than failing.
 
+## ⚠️ THE REAL DATA IS ON THE BOX. STOP SEEDING.
+
+The owner built this himself, in the product, and it has been on production the
+whole time. Verified 2026-08-20 by querying the box:
+
+| Season | League | Content |
+|---|---|---|
+| `f4c3599c-0f12-4d4e-9d35-4117d9f47b29` | NPH Showcase League / Fall/Winter 2026-27 [REGISTRATION] | **147 teams**, 10 divisions, 20 sessions, 3 venues |
+| `b320ed7f-a6d7-498c-b0c4-6f4ef0eae21e` | NPH Showcase League, End of Season / Fall/Winter 2026-27 (completed) | **782 games**, 145 teams, 22 divisions |
+
+League ids: `0386577c-0d3e-4b37-b1c0-a67d7d671079` (registration) and
+`2c79bf58-093a-494a-891f-8b4b27253698` (completed).
+
+**And the plans are POPULATED**, which is the thing every local seed lacked:
+
+| Plan | Season | Grades placed | Gym assignments |
+|---|---|---|---|
+| "NPH plan" | b320ed7f | **57** | **62** |
+| "Kais Plan" | f4c3599c | **44** | **44** |
+| "New 2" | f4c3599c | **40** | **40** |
+| "NPH plan" | f4c3599c | 35 | 0 |
+| "Zia's plan" | f4c3599c | 0 | 0 |
+
+`owner-nph@sportshub.demo` is LeagueOwner on both, so the existing capture
+credentials already work against production.
+
+### Rules for capturing from the box
+
+1. **Read-only. Never run the neutral rename against production** — it writes to
+   the league, the organisation and every recap body. That pass is local-only.
+2. **Never create a plan on production.** The current `plan` capture presses
+   "Start a new plan", which would write into the owner's real league. Point it
+   at an EXISTING populated plan instead (`?plan=<id>`, or pick it from the plan
+   selector), ideally "Kais Plan" or "New 2".
+3. Capture with `DECK_BASE=https://sportshubone.com`, `DECK_LEAGUE=...`,
+   `DECK_SEASON=...`, and `--nph` only.
+
+### What this means for the neutral set
+
+The neutral deck still must not name NPH. Two options, in order:
+
+1. Copy that season down to local, rename it there, capture locally. Best
+   answer: it makes the rich data reproducible and keeps production untouched.
+2. Fall back to the local seeded world for neutral, accepting it is smaller.
+
 ## The strategy that will work
 
 **Seed the finished state directly into the database. Do not drive the wizard.**
