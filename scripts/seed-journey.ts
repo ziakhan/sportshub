@@ -23,6 +23,7 @@ import bcrypt from "bcryptjs"
 import { prisma } from "@youthbasketballhub/db"
 import { NPH_CENSUS, type NphCensusEntry } from "./data/nph-census"
 import { EMAIL_DOMAIN, JOURNEY_SLUG_PREFIX, MARKER, PASSWORD } from "./demo-shared"
+import { WAIVER_TEMPLATES } from "../apps/web/src/lib/waivers/templates"
 
 const p = prisma as any
 const days = (n: number) => n * 24 * 3600_000
@@ -890,6 +891,240 @@ async function placeGradesInGyms(seasonId: string) {
   return { placements, weekends }
 }
 
+/**
+ * WAIVERS AND THE REFEREE DESK, so the console's own screens are not empty in
+ * the world the deck is shot from.
+ *
+ * Both are copied from the everyday demo world rather than reinvented: the
+ * same two documents (the club-facing registration T&C and the parent-facing
+ * Rowan's Law template out of lib/waivers/templates), the same signed/emailed
+ * mix, and the same four referees. Nothing here writes new user-facing copy —
+ * an approved slide must keep saying exactly what it said.
+ */
+const JOURNEY_REFS: Array<[string, string, string]> = [
+  ["Mike", "Ferreira", "ref-mike"],
+  ["Sarah", "Whitlock", "ref-sarah"],
+  ["James", "Okonkwo", "ref-james"],
+  ["Priya", "Raman", "ref-priya"],
+]
+
+const TC_BODY = [
+  "A 50% non-refundable deposit is required to secure your team's spot in the league.",
+  "Full payment is due no later than two (2) weeks prior to the season tip-off.",
+  "No refunds will be issued for deposits or league registration fees.",
+  "Forfeiting a scheduled game will result in a $500 service fee.",
+  "Schedule changes are not permitted once published, except for emergencies.",
+  "Once registered, teams are fully committed to the league season and are expected to be organized and ready to compete professionally.",
+].join("\n\n")
+
+const SIGNATURE_PNG =
+  "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=="
+
+/** A guardian for a player, derived from the player's id so a reseed produces
+ *  the same person. The signing grid prints the NAME THAT SIGNED, so it has to
+ *  read like a parent — sharing the child's surname, never the child's own
+ *  name with a label bolted on. */
+const guardianHash = (id: string): number => {
+  let h = 7
+  for (const c of id) h = (h * 31 + c.charCodeAt(0)) % 100003
+  return h
+}
+const guardianName = (playerId: string, lastName: string): string =>
+  `${ADULT_NAMES[guardianHash(playerId) % ADULT_NAMES.length]} ${lastName}`
+const guardianEmail = (playerId: string, lastName: string): string =>
+  `parent-${lastName.toLowerCase().replace(/[^a-z]/g, "")}-${(guardianHash(playerId) % 900) + 100}@${EMAIL_DOMAIN}`
+
+async function seedWaiversAndReferees(seasonId: string, leagueId: string, leagueName: string) {
+  const existing = await p.waiverDocument.count({ where: { leagueId } })
+  if (existing === 0) {
+    await p.waiverDocument.create({
+      data: {
+        leagueId,
+        title: "NPH League Registration Terms & Conditions",
+        body: TC_BODY,
+        required: true,
+        audience: "CLUB_OFFICIAL",
+      },
+    })
+  }
+  const rowans = WAIVER_TEMPLATES.find((t) => t.key === "concussion-code-on")!
+  const rowansBody = rowans.body(leagueName)
+  let doc = await p.waiverDocument.findFirst({
+    where: { leagueId, title: rowans.title },
+    select: { id: true },
+  })
+  if (!doc) {
+    doc = await p.waiverDocument.create({
+      data: {
+        leagueId,
+        title: rowans.title,
+        body: rowansBody,
+        type: rowans.type,
+        province: rowans.province,
+        annualRenewal: rowans.annualRenewal,
+        required: true,
+      },
+      select: { id: true },
+    })
+  }
+
+  // A believable mix per team: most signed, a few still out. The grid has to
+  // show green AND waiting, which is the whole point of the slide.
+  const subs = await p.teamSubmission.findMany({
+    where: { seasonId, status: "APPROVED" },
+    select: { teamId: true },
+  })
+  const now = new Date()
+  let requests = 0
+  let signed = 0
+  for (const [i, sub] of subs.entries()) {
+    const roster = await p.teamPlayer.findMany({
+      where: { teamId: sub.teamId, status: "ACTIVE" },
+      select: { playerId: true, player: { select: { firstName: true, lastName: true, parentId: true } } },
+      orderBy: { playerId: "asc" },
+    })
+    if (roster.length === 0) continue
+    // 5 of 9 up to all 9, so no two teams read the same.
+    const through = Math.min(roster.length, 5 + (i % 5))
+    for (const [j, r] of roster.entries()) {
+      const sentAt = new Date(now.getTime() - days(4))
+      const signs = j < through
+      const already = await p.waiverSignRequest.findFirst({
+        where: { waiverId: doc.id, playerId: r.playerId, seasonId },
+        select: { id: true },
+      })
+      if (already) continue
+      await p.waiverSignRequest.create({
+        data: {
+          waiverId: doc.id,
+          playerId: r.playerId,
+          seasonId,
+          emailedTo: guardianEmail(r.playerId, r.player.lastName),
+          tokenHash: `journey-${doc.id.slice(0, 8)}-${r.playerId}`,
+          expiresAt: new Date(now.getTime() + days(30)),
+          consumedAt: signs ? new Date(sentAt.getTime() + days(1)) : null,
+          createdAt: sentAt,
+        },
+      })
+      requests++
+      if (signs) {
+        await p.waiverSignature.create({
+          data: {
+            waiverId: doc.id,
+            playerId: r.playerId,
+            seasonId,
+            waiverVersion: 1,
+            bodySnapshot: rowansBody,
+            signerName: guardianName(r.playerId, r.player.lastName),
+            relationship: "Parent/Guardian",
+            signatureData: SIGNATURE_PNG,
+            signedAt: new Date(sentAt.getTime() + days(1)),
+            validUntil: new Date(sentAt.getTime() + days(366)),
+          },
+        })
+        signed++
+      }
+    }
+  }
+
+  // The referee desk: a pool, so the Referees tab is not an empty shelf.
+  const passwordHash = await bcrypt.hash(PASSWORD, 10)
+  const pinHash = await bcrypt.hash("1234", 10)
+  const refIds: string[] = []
+  let pooled = 0
+  for (const [first, last, key] of JOURNEY_REFS) {
+    const email = `${key}@${EMAIL_DOMAIN}`
+    let ref = await p.user.findFirst({ where: { email }, select: { id: true } })
+    if (!ref) {
+      ref = await p.user.create({
+        data: {
+          email,
+          passwordHash,
+          firstName: first,
+          lastName: last,
+          phoneNumber: "416-555-0142",
+          onboardedAt: new Date(),
+          city: "Toronto",
+          state: "ON",
+        },
+        select: { id: true },
+      })
+    }
+    const hasRole = await p.userRole.findFirst({
+      where: { userId: ref.id, role: "Referee", gameId: null },
+      select: { id: true },
+    })
+    if (!hasRole) await p.userRole.create({ data: { userId: ref.id, role: "Referee" } })
+    const hasProfile = await p.refereeProfile.findUnique({ where: { userId: ref.id }, select: { id: true } })
+    if (!hasProfile) {
+      await p.refereeProfile.create({
+        data: {
+          userId: ref.id,
+          certificationLevel: `Level ${2 + (pooled % 2)}`,
+          availableRegions: ["Ontario"],
+          standardFee: 45,
+          gamesRefereed: 20 + pooled * 9,
+          signoffPinHash: pinHash,
+        },
+      })
+    }
+    const inPool = await p.leagueReferee.findFirst({
+      where: { leagueId, userId: ref.id },
+      select: { id: true },
+    })
+    if (!inPool) await p.leagueReferee.create({ data: { leagueId, userId: ref.id } })
+    refIds.push(ref.id)
+    pooled++
+  }
+
+  /**
+   * ONE SHIFT ON OFFER, still pending — the "league broadcasts a Saturday,
+   * first to accept takes it" beat. Without it the Referees tab shows an
+   * empty Offers panel, which is the one thing that screen should never say
+   * on a pitch. Two of the four have declared they can work it; the other two
+   * are silent, which is what makes the broadcast worth sending.
+   */
+  const league = await p.league.findUnique({ where: { id: leagueId }, select: { ownerId: true } })
+  const satDay = await p.seasonSessionDay.findFirst({
+    where: { session: { seasonId, phase: "REGULAR" } },
+    orderBy: { date: "desc" },
+    select: { id: true, date: true },
+  })
+  let offers = 0
+  if (satDay && league) {
+    const existing = await p.refereeSessionRequest.findFirst({
+      where: { leagueId, sessionDayId: satDay.id },
+      select: { id: true },
+    })
+    if (!existing) {
+      const dayISO = new Date(satDay.date).toISOString().slice(0, 10)
+      for (const refId of refIds.slice(0, 2)) {
+        await p.refereeAvailability.create({
+          data: {
+            userId: refId,
+            date: new Date(`${dayISO}T00:00:00.000Z`),
+            startTime: "09:00",
+            endTime: "18:00",
+          },
+        })
+      }
+      await p.refereeSessionRequest.create({
+        data: {
+          leagueId,
+          sessionDayId: satDay.id,
+          startTime: "09:00",
+          endTime: "15:00",
+          message: "Final regular-season Saturday, two courts running all morning.",
+          offeredRatePerGame: 45,
+          createdById: league.ownerId,
+        },
+      })
+      offers = 1
+    }
+  }
+  return { requests, signed, pooled, offers }
+}
+
 export async function seedJourneyStage3() {
   const season = await journeySeason(SL_LEAGUE)
 
@@ -1089,6 +1324,11 @@ export async function seedJourneyStage3() {
       },
     })
   }
+
+  const desk = await seedWaiversAndReferees(season.id, season.leagueId, SL_LEAGUE)
+  console.log(
+    `✓ waivers: ${desk.signed} signed of ${desk.requests} requested · referee pool ${desk.pooled} · ${desk.offers} shift on offer`
+  )
 
   await writeDemoState("nph-pitch-journey", 3)
   console.log(

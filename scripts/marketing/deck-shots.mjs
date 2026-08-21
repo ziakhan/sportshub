@@ -55,8 +55,13 @@ const { PrismaClient } = fromRoot("@prisma/client")
 const BASE = process.env.DECK_BASE ?? "http://localhost:3000"
 /** Comma-separated shot names to re-shoot; unset means every screen. */
 const ONLY_SHOTS = process.env.DECK_ONLY?.split(",").map((s) => s.trim()).filter(Boolean) ?? null
-const LEAGUE = process.env.DECK_LEAGUE ?? "a6b08fb8-0a65-486e-ad9d-26f069a120ea"
-const SEASON = process.env.DECK_SEASON ?? "75f3bdac-8bac-4a2c-8a14-a9d1d79f7c4e"
+/* THE WHOLE DECK IS SHOT IN ONE WORLD (owner, 2026-08-21). Half the slides used
+   to come from the everyday demo league and half from the journey world, so the
+   overview read "22 teams approved" and the board two slides later placed 146.
+   Resolved by NAME, because every reseed mints new ids and a pinned id goes
+   stale in silence. DECK_LEAGUE / DECK_SEASON still override. */
+let LEAGUE = process.env.DECK_LEAGUE ?? ""
+let SEASON = process.env.DECK_SEASON ?? "" 
 const LOGIN = process.env.DECK_LOGIN ?? "owner-nph@sportshub.demo"
 const PASSWORD = process.env.DECK_PASSWORD ?? "TestPass123!"
 const RAW = process.env.DECK_RAW ?? path.join(REPO, ".deck-shots")
@@ -255,7 +260,9 @@ const SHOTS = [
       /* Expanding a team turns the row from a count into the actual list of
          parents, signed against outstanding. That is the frame that shows the
          product doing something rather than reporting a number. */
-      { click: "Toronto Lords Grade 9" },
+      /* The row label is the club, and this world has no grade suffix on it.
+         Same club, same beat: expand one team, show signed against outstanding. */
+      { click: "Toronto Lords" },
     ],
   },
   { name: "hub", url: (c) => `${c.base}/league/${SEASON}`, full: true },
@@ -307,10 +314,11 @@ async function planningSeason(prisma) {
   return season ? { leagueId: season.leagueId, seasonId: season.id } : null
 }
 
-const ctx = {
-  base: BASE,
-  console: `${BASE}/manage/leagues/${LEAGUE}/seasons/${SEASON}/manage`,
-  season: `${BASE}/manage/leagues/${LEAGUE}/seasons/${SEASON}`,
+const ctx = { base: BASE, console: "", season: "" }
+/** Called once the world is resolved; every shot row reads these. */
+function bindCtx() {
+  ctx.console = `${BASE}/manage/leagues/${LEAGUE}/seasons/${SEASON}/manage`
+  ctx.season = `${BASE}/manage/leagues/${LEAGUE}/seasons/${SEASON}`
 }
 
 async function signIn(page) {
@@ -542,8 +550,26 @@ const only = process.argv.includes("--nph") ? "nph" : process.argv.includes("--n
 
 const lookup = new PrismaClient()
 const planning = await planningSeason(lookup)
-const twin = await endSeason(lookup).finally(() => lookup.$disconnect())
+const twin = await endSeason(lookup)
+if (!LEAGUE || !SEASON) {
+  const main = await lookup.season.findFirst({
+    where: { label: PLAN_SEASON_LABEL, league: { name: PLAN_LEAGUE_NAME } },
+    orderBy: { createdAt: "desc" },
+    select: { id: true, leagueId: true },
+  })
+  if (!main) {
+    await lookup.$disconnect()
+    throw new Error(
+      `no season "${PLAN_SEASON_LABEL}" on "${PLAN_LEAGUE_NAME}". Load nph-pitch-journey stage 4 from Dashboard > Admin > Demos.`
+    )
+  }
+  LEAGUE = main.leagueId
+  SEASON = main.id
+}
+await lookup.$disconnect()
+bindCtx()
 console.log(`deck shots -> ${RAW} (${only})`)
+console.log(`console world: league ${LEAGUE} season ${SEASON}`)
 console.log(
   planning
     ? `planner world: league ${planning.leagueId} season ${planning.seasonId}`
