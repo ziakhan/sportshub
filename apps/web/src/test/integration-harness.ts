@@ -71,6 +71,9 @@ import { getServerSession } from "next-auth"
  *        obligation rail: C1 amount/offer binding, H1 recoverable charge, C2
  *        waive/cancel void + cron guard, H2 teamless online pay, H3 refund
  *        idempotency/race, universal kill switch)
+ *   1153 live streaming placement (two rigs, two courts: remap on move,
+ *        take-over guard, window states, league toggle, MANUAL + COMPLETED
+ *        rows surviving the assigner)
  */
 
 export function actAs(userId: string | null): void {

@@ -1475,6 +1475,12 @@ model League {
   perks     String[] @default([])
   perksNote String?  @db.Text
 
+  // Live streaming consent gate (docs/roadmap/live-streaming-plan.md,
+  // "Privacy flag"). Filming minors is a bigger consent surface than photos,
+  // so nothing streams until the league says yes: OFF means no playback
+  // state on any surface, ever, whatever the cameras are doing.
+  streamingEnabled Boolean @default(false)
+
   seasons            Season[]
   staff              UserRole[]
   reviews            Review[]
@@ -2393,6 +2399,9 @@ model Game {
   scorekeepers UserRole[]
   postTags     PostTag[]
   stories      Story[]
+  /// Which camera channel shows this game (live-streaming-plan.md). At most
+  /// one — the row is also the future VOD index (game X = channel Y, T1→T2).
+  stream       GameStream?
 
   finalizedAt DateTime?
 
@@ -2557,6 +2566,9 @@ model Venue {
   houseLeagues         HouseLeague[]
   teamEvents           TeamEvent[]
   trainingSessions     TrainingSession[]
+  /// Camera rigs placed at the BUILDING rather than a numbered court —
+  /// single-court gyms and court-less games (live-streaming-plan.md).
+  streamChannels       StreamChannel[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -2576,6 +2588,8 @@ model Court {
 
   dayVenueCourts SeasonSessionDayVenueCourt[]
   games          Game[]
+  /// Camera rigs currently sitting at this court (docs/roadmap/live-streaming-plan.md).
+  streamChannels StreamChannel[]
 
   createdAt DateTime @default(now())
 
@@ -4763,4 +4777,74 @@ model TeamReleaseRequest {
 
   @@index([tenantId, status])
   @@index([holdingTeamId])
+}
+
+// ============================================
+// LIVE STREAMING (docs/roadmap/live-streaming-plan.md)
+// ============================================
+
+// Three layers, one human touch: a CHANNEL is a physical camera rig with
+// permanent URLs (never changes), a PLACEMENT is where that rig sits right
+// now (a human moves it and a human confirms by looking at the picture), and
+// the GAME MAPPING is derived from placement + the schedule (nobody manages
+// it). The v1 mistake was welding placement to the channel with a permanent
+// court binding — with fewer cameras than courts, placement is dynamic.
+
+enum StreamChannelStatus {
+  ACTIVE
+  DISABLED
+}
+
+enum StreamAssignSource {
+  AUTO
+  MANUAL
+}
+
+model StreamChannel {
+  id          String              @id @default(uuid())
+  name        String // "Camera A" — matches the sticker on the rig
+  ingestUrl   String // rtmp://ingest.vendor.com/live  (FIXED)
+  streamKey   String // per-channel secret             (FIXED)
+  playbackUrl String // https://cdn.../a/index.m3u8    (FIXED)
+  status      StreamChannelStatus @default(ACTIVE)
+
+  // Placement — where the rig sits RIGHT NOW (day-of, human-set). A channel
+  // places at ONE spot at a time: a numbered court, or the building itself
+  // for single-court gyms and court-less games. Never both.
+  currentCourtId String?
+  currentCourt   Court?    @relation(fields: [currentCourtId], references: [id])
+  currentVenueId String? // single-court venues / court-less games
+  currentVenue   Venue?    @relation(fields: [currentVenueId], references: [id])
+  placedAt       DateTime?
+  placedById     String? // who confirmed (scorekeeper/admin) — audit
+
+  provider       String?
+  notes          String?
+  lastSeenLiveAt DateTime? // stamped by the health probe
+
+  gameStreams GameStream[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([currentCourtId])
+  @@index([currentVenueId])
+}
+
+// Materialized rather than derived at read time: manual overrides need a
+// home, the game page query is one join, and the rows are the future VOD
+// index (game X = channel Y from T1→T2 → clip the channel archive).
+model GameStream {
+  id        String             @id @default(uuid())
+  gameId    String             @unique
+  game      Game               @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  channelId String
+  channel   StreamChannel      @relation(fields: [channelId], references: [id])
+  source    StreamAssignSource @default(AUTO) // MANUAL survives assigner re-runs
+  startedAt DateTime? // manual go-live override
+  endedAt   DateTime? // manual cut (OT ran long, etc.)
+  createdAt DateTime           @default(now())
+  updatedAt DateTime           @updatedAt
+
+  @@index([channelId])
 }

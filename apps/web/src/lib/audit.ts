@@ -70,6 +70,16 @@ export type AuditAction =
   | "TRYOUT_POOL_RELEASE_REQUEST"
   | "TRYOUT_POOL_RELEASE_RESOLVE"
   | "TRYOUT_TEAM_FINALIZED"
+  // Live streaming (docs/roadmap/live-streaming-plan.md, phase 1). Placement
+  // is the one human touch in the whole system and it points a camera at
+  // children, so every move is on the record: who put which rig on which
+  // court, who took a rig off somebody else's live game, and every manual
+  // per-game override of the automatic mapping.
+  | "STREAM_CHANNEL_CREATE"
+  | "STREAM_CHANNEL_UPDATE"
+  | "STREAM_CHANNEL_PLACE"
+  | "STREAM_TAKEOVER"
+  | "STREAM_MANUAL_MAP"
   // Money routes (security audit M1, 2026-08-21): every refund, waive, offline
   // cash record and payment-config change leaves who/when/what/amount.
   | "PAYMENT_REFUND"
