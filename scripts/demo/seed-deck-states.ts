@@ -158,6 +158,87 @@ async function main() {
     entries++
   }
 
+  /* ── the playoff twin needs a second championship weekend ───────────────
+     seed-nph-endseason.ts books ONE. The generator then refuses with
+     "27 games fit the total court time but not the round structure (rounds
+     need rest and sequence)": a bracket is not a pile of games, it needs rest
+     between rounds and an order to play them in. A second weekend gives it
+     room, which is also what a real league would book. */
+  const twinLeague = await (prisma as any).league.findFirst({
+    where: { name: { contains: "End of Season" } },
+    select: { id: true },
+  })
+  if (twinLeague) {
+    const twin = await (prisma as any).season.findFirst({
+      where: { leagueId: twinLeague.id },
+      orderBy: { createdAt: "desc" },
+      select: { id: true },
+    })
+    const playoffs = twin
+      ? await (prisma as any).seasonSession.findMany({
+          where: { seasonId: twin.id, phase: "PLAYOFF" },
+          include: { days: { include: { dayVenues: { include: { courts: true } } } } },
+        })
+      : []
+    const WANT = 3
+    if (playoffs.length && playoffs.length < WANT) {
+      const src0 = playoffs[0]
+      for (let extraIdx = playoffs.length; extraIdx < WANT; extraIdx++) {
+      const extra = await (prisma as any).seasonSession.create({
+        data: {
+          seasonId: twin.id,
+          label: `${src0.label ?? "Championship"} ${extraIdx + 1}`,
+          phase: "PLAYOFF",
+          targetGamesPerTeam: src0.targetGamesPerTeam,
+          unitKeys: src0.unitKeys ?? [],
+        },
+      })
+      for (const d of src0.days) {
+        const shifted = new Date(d.date)
+        shifted.setDate(shifted.getDate() + 7 * extraIdx)
+        const day = await (prisma as any).seasonSessionDay.create({
+          data: { sessionId: extra.id, date: shifted },
+        })
+        for (const dv of d.dayVenues) {
+          const madeDv = await (prisma as any).seasonSessionDayVenue.create({
+            data: {
+              dayId: day.id,
+              venueId: dv.venueId,
+              startTime: dv.startTime,
+              endTime: dv.endTime,
+              bookingStatus: dv.bookingStatus,
+            },
+          })
+          for (const c of dv.courts) {
+            await (prisma as any).seasonSessionDayVenueCourt.create({
+              data: { dayVenueId: madeDv.id, courtId: c.courtId, order: c.order },
+            })
+          }
+        }
+      }
+      console.log(`  twin: added playoff weekend ${extraIdx + 1} (${extra.id})`)
+      }
+      /* Even with the weekends, one championship bracket of 14 teams needs more
+         rounds than a weekend can sequence. Per-division pooling is the
+         product's own answer to that, offered right on the playoffs tab, and it
+         is what makes the bracket generate. */
+      await (prisma as any).season.update({
+        where: { id: twin.id },
+        data: {
+          playoffConfig: {
+            "Grade 10": { pooling: "DIVISION" },
+            "Grade 9": { pooling: "DIVISION" },
+          },
+        },
+      })
+      console.log("  twin: per-division pooling set for Grade 9 and Grade 10")
+    } else if (playoffs.length >= WANT) {
+      console.log(`  twin: ${playoffs.length} playoff weekends already, left alone`)
+    }
+  } else {
+    console.log("  twin not found; run seed-nph-endseason.ts for the playoff bracket")
+  }
+
   console.log(`\nplanning season ${season.id}`)
   console.log(`  ${src.seasonVenues.length} venues · ${weekends} weekends · ${entries} approved entries · ${divMap.size} divisions`)
   console.log(`  URL: /manage/leagues/${src.leagueId}/seasons/${season.id}/plan`)
