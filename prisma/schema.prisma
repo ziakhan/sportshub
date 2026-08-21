@@ -353,6 +353,10 @@ model Tenant {
   staff                 UserRole[]
   clubSeasonEntries     ClubSeasonEntry[]
   tryouts               Tryout[]
+  tryoutEvents          TryoutEvent[]
+  tryoutPoolMembers     TryoutPoolMember[]
+  teamReleaseRequests   TeamReleaseRequest[]
+  offers                Offer[]
   practices             Practice[]
   venues                Venue[]
   announcements         Announcement[]
@@ -544,6 +548,9 @@ model Team {
   offers            Offer[]
   offerTemplates    OfferTemplate[]
   tryouts           Tryout[]
+  poolAssignments   TryoutPoolMember[]
+  releaseHolds      TeamReleaseRequest[] @relation("ReleaseHoldingTeam")
+  releaseAsks       TeamReleaseRequest[] @relation("ReleaseRequestingTeam")
   tournamentEntries TournamentTeam[]
   playerInvitations PlayerInvitation[]
   postTags          PostTag[]
@@ -1002,6 +1009,7 @@ model Player {
   stats                       PlayerStat[]
   playoffEligibilityOverrides PlayoffEligibilityOverride[]
   offers                      Offer[]
+  tryoutPoolMemberships       TryoutPoolMember[]
   familyInvitations           FamilyInvitation[]
   claimInvitations            FamilyInvitation[]           @relation("FamilyInvitationClaimTargets")
   familyLinkCodes             FamilyLinkCode[]             @relation("FamilyLinkCodePlayers")
@@ -1108,6 +1116,10 @@ model Tryout {
   tenantId String
   tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
+  // Club tryout event this row is a session of (null = standalone tryout).
+  eventId String?
+  event   TryoutEvent? @relation(fields: [eventId], references: [id], onDelete: SetNull)
+
   teamId String?
   team   Team?   @relation(fields: [teamId], references: [id], onDelete: SetNull)
 
@@ -1171,7 +1183,8 @@ model TryoutSignup {
   checkedInAt DateTime?
 
   // Relationships
-  offers Offer[]
+  offers     Offer[]
+  poolMember TryoutPoolMember?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -1238,9 +1251,19 @@ model OfferTemplate {
 }
 
 model Offer {
-  id     String @id @default(uuid())
-  teamId String
-  team   Team   @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  id String @id @default(uuid())
+
+  // Nullable since club tryout events (2026-08-20): an age-group program
+  // offer carries no team; the team arrives at assignment time. tenantId is
+  // authoritative either way.
+  teamId String?
+  team   Team?   @relation(fields: [teamId], references: [id], onDelete: Cascade)
+
+  tenantId String?
+  tenant   Tenant? @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  // The age-group program a teamless offer belongs to, e.g. "U13".
+  ageGroup String?
 
   playerId String
   player   Player @relation(fields: [playerId], references: [id], onDelete: Cascade)
@@ -4623,4 +4646,110 @@ model LaunchSignup {
   updatedAt DateTime @updatedAt
 
   @@index([kind])
+}
+
+// ── Club tryout events + age-group pools ─────────────────────────────────────
+// Spec: docs/roadmap/club-tryouts-and-age-pools.md (owner rulings 2026-08-20).
+// An event is the club-level umbrella; each SESSION is a Tryout row (per age
+// group, per time, per gym) so every existing signup/check-in/payment flow
+// keeps working. Assignment is orthogonal to offer state.
+
+model TryoutEvent {
+  id       String @id @default(uuid())
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  title       String
+  description String? @db.Text
+  // The season the event feeds; pool membership keys on it, e.g. "2026-27".
+  seasonLabel String
+
+  isPublished Boolean @default(false)
+
+  // Session capacity is the club's own gym planning, never public. A club that
+  // WANTS the crowd shown opts in here; otherwise the public read omits the
+  // count entirely rather than publishing a zero.
+  showSignupCount Boolean @default(false)
+
+  sessions Tryout[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tenantId])
+}
+
+model TryoutPoolMember {
+  id       String @id @default(uuid())
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  seasonLabel String
+  ageGroup    String
+
+  playerId String
+  player   Player @relation(fields: [playerId], references: [id], onDelete: Cascade)
+
+  // Where they came from, when machine-known (a session signup).
+  signupId String?       @unique
+  signup   TryoutSignup? @relation(fields: [signupId], references: [id], onDelete: SetNull)
+
+  // Assignment is orthogonal to offer state (owner 2026-08-20): a member can
+  // be placed on a team before, after, or without an offer. Cross-team
+  // visibility of an assigned member is name + team, nothing else.
+  teamId       String?
+  team         Team?     @relation(fields: [teamId], references: [id], onDelete: SetNull)
+  assignedAt   DateTime?
+  assignedById String?
+
+  releaseRequests TeamReleaseRequest[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([tenantId, seasonLabel, ageGroup, playerId])
+  @@index([tenantId, seasonLabel, ageGroup])
+  @@index([teamId])
+}
+
+enum ReleaseRequestKind {
+  RELEASE_TO_POOL
+  TRANSFER
+}
+
+enum ReleaseRequestStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+  CANCELLED
+}
+
+// The free-market handshake: a team asks the holding team to let a player go
+// (back to the pool, or across to them). The platform imposes no authority
+// policy — accept/decline is between the two staffs.
+model TeamReleaseRequest {
+  id       String @id @default(uuid())
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  poolMemberId String
+  poolMember   TryoutPoolMember @relation(fields: [poolMemberId], references: [id], onDelete: Cascade)
+
+  kind   ReleaseRequestKind
+  status ReleaseRequestStatus @default(PENDING)
+
+  holdingTeamId    String
+  holdingTeam      Team    @relation("ReleaseHoldingTeam", fields: [holdingTeamId], references: [id], onDelete: Cascade)
+  requestingTeamId String?
+  requestingTeam   Team?   @relation("ReleaseRequestingTeam", fields: [requestingTeamId], references: [id], onDelete: Cascade)
+
+  requestedById String
+  message       String?
+  resolvedById  String?
+  resolvedAt    DateTime?
+
+  createdAt DateTime @default(now())
+
+  @@index([tenantId, status])
+  @@index([holdingTeamId])
 }

@@ -60,6 +60,16 @@ export type AuditAction =
   // G2 (owner decision): cross-club recruiting offers are allowed on purpose,
   // but every one leaves a trail.
   | "OFFER_CROSS_CLUB_RECRUIT"
+  // Tryout pool (owner rulings 2026-08-20). Assignment is a free market with
+  // no authority policy, so the trail is what tells a club who moved whom.
+  | "TRYOUT_POOL_SYNC"
+  | "TRYOUT_POOL_ADD"
+  | "TRYOUT_POOL_OFFERS_SENT"
+  | "TRYOUT_POOL_ASSIGN"
+  | "TRYOUT_POOL_UNASSIGN"
+  | "TRYOUT_POOL_RELEASE_REQUEST"
+  | "TRYOUT_POOL_RELEASE_RESOLVE"
+  | "TRYOUT_TEAM_FINALIZED"
 
 interface AuditEntry {
   /** The REAL actor (for impersonation events: the admin, not the target). */

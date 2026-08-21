@@ -138,6 +138,9 @@ export type NotificationType =
   | "program_assigned"
   // A submitted league-roster player left the club team (owner 2026-08-12)
   | "roster_player_departed"
+  // Tryout pool (owner ruling 2026-08-20): families hear at team finalization,
+  // never on the internal assignment shuffle before it.
+  | "team_roster_final"
 
 export interface NotificationInput {
   userId: string

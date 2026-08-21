@@ -2,10 +2,15 @@ import { NextRequest, NextResponse } from "next/server"
 import { getSessionUserId } from "@/lib/auth-helpers"
 import { prisma } from "@youthbasketballhub/db"
 import { z } from "zod"
-import { acceptOffer, declineOffer, OfferResponseError } from "@/lib/offers/respond-to-offer"
+import {
+  acceptOffer,
+  declineOffer,
+  offerScope,
+  OfferResponseError,
+} from "@/lib/offers/respond-to-offer"
 import { resolveChargeContext } from "@/lib/payments/installments"
 import { getOutstandingRequiredWaivers, waiversRequiredResponse } from "@/lib/waivers/inline"
-import { canActOnTeam } from "@/lib/authz/team-scope"
+import { canActOnTeam, isClubStaff } from "@/lib/authz/team-scope"
 import { gateMinorPayment } from "@/lib/family/money-gate"
 
 export const dynamic = "force-dynamic"
@@ -16,12 +21,12 @@ export const dynamic = "force-dynamic"
  * auto-charge it. Best-effort default-setting (never blocks acceptance).
  */
 async function verifyDepositPaid(
-  offer: { team: { tenantId: string; tenant: { currency: string } } },
+  scope: { tenantId: string; currency: string },
   paymentIntentId: string
 ): Promise<boolean> {
   const ctx = await resolveChargeContext(
-    { tenantId: offer.team.tenantId },
-    offer.team.tenant.currency
+    { tenantId: scope.tenantId },
+    scope.currency
   ).catch(() => null)
   if (!ctx) return false
   const intent = await ctx.stripe.paymentIntents
@@ -81,6 +86,8 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
             tenant: { select: { id: true, name: true } },
           },
         },
+        // Authoritative club for a teamless age-group offer (tryout pool).
+        tenant: { select: { id: true, name: true } },
         player: {
           select: {
             id: true,
@@ -112,10 +119,17 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
     const isParent =
       offer.player.parentId === sessionInfo.userId ||
       (offer.player as any).userId === sessionInfo.userId
-    const isClubStaff =
-      !isParent && (await canActOnTeam(sessionInfo.userId, offer.team.tenant.id, offer.teamId))
+    // A teamless age-group offer belongs to the club, not to one bench, so it
+    // is readable by any club staff rather than by one team's circle.
+    const offerTenantId = (offer as any).tenant?.id ?? offer.team?.tenant.id ?? null
+    const staffCanSee =
+      !isParent &&
+      !!offerTenantId &&
+      (offer.teamId
+        ? await canActOnTeam(sessionInfo.userId, offerTenantId, offer.teamId)
+        : await isClubStaff(sessionInfo.userId, offerTenantId))
 
-    if (!isParent && !isClubStaff) {
+    if (!isParent && !staffCanSee) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 })
     }
 
@@ -158,6 +172,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
         team: {
           select: { id: true, name: true, tenantId: true, tenant: { select: { name: true, currency: true } } },
         },
+        tenant: { select: { name: true, currency: true } },
         options: {
           orderBy: { sortOrder: "asc" },
           include: { installmentTerms: { orderBy: { sequence: "asc" } } },
@@ -168,6 +183,10 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
     if (!offer) {
       return NextResponse.json({ error: "Offer not found" }, { status: 404 })
     }
+
+    // Club, currency and display label for either shape of offer — a team
+    // offer, or an age-group program offer from the tryout pool.
+    const scope = offerScope(offer as any)
 
     // The guardian responds, or the player themself. A 13-17 self-owned
     // player is caught by the money gate below the moment there is a fee.
@@ -208,10 +227,10 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
       if (feeToPay > 0) {
         const gate = await gateMinorPayment({
           userId,
-          what: `${offer.team.name} (${offer.team.tenant.name})`,
+          what: `${scope.label} (${scope.clubName})`,
           deepLink: "/offers",
           amount: feeToPay,
-          currency: offer.team.tenant.currency ?? "CAD",
+          currency: scope.currency ?? "CAD",
         })
         if (!gate.allowed) return gate.response
       }
@@ -223,7 +242,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
     // collects signatures via /api/waivers/sign-inline, and retries.
     if (data.action === "accept") {
       const outstandingWaivers = await getOutstandingRequiredWaivers({
-        tenantId: offer.team.tenantId,
+        tenantId: scope.tenantId,
         playerId: offer.player.id,
       })
       if (outstandingWaivers.length > 0) {
@@ -276,8 +295,8 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
     // confirmed PaymentIntent. Offline clubs / free offers accept without one.
     if (data.action === "accept") {
       const online = !!(await resolveChargeContext(
-        { tenantId: offer.team.tenantId },
-        offer.team.tenant.currency
+        { tenantId: scope.tenantId },
+        scope.currency
       ).catch(() => null))
       if (online && Number((offer as any).seasonFee) > 0 && !data.depositPaymentIntentId) {
         return NextResponse.json(
@@ -286,7 +305,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
         )
       }
       if (data.depositPaymentIntentId) {
-        const ok = await verifyDepositPaid(offer as any, data.depositPaymentIntentId)
+        const ok = await verifyDepositPaid(scope, data.depositPaymentIntentId)
         if (!ok) {
           return NextResponse.json(
             { error: "Deposit payment not completed", code: "DEPOSIT_NOT_PAID" },
@@ -298,10 +317,13 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
 
     if (data.action === "accept") {
       const result = await acceptOffer(offer as any, data)
+      const playerName = `${offer.player.firstName} ${offer.player.lastName}`
       return NextResponse.json({
         success: true,
         status: result.status,
-        message: "Offer accepted! The player has been added to the team.",
+        message: scope.teamless
+          ? `Offer accepted. ${playerName} has a spot in the ${offer.ageGroup ?? "club"} program.`
+          : "Offer accepted! The player has been added to the team.",
       })
     } else {
       const result = await declineOffer(offer as any)

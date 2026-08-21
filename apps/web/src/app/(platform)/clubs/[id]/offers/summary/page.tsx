@@ -81,7 +81,12 @@ async function getAcceptedOffers(tenantId: string): Promise<AcceptedOffer[]> {
     },
     orderBy: [{ team: { name: "asc" } }, { respondedAt: "asc" }],
   })
-  return raw.map((o: (typeof raw)[number]) => ({ ...o, seasonFee: Number(o.seasonFee) }))
+  // Offer.team is nullable since club tryout events (an age-group offer carries
+  // no team). The order sheet is a per-team document, so teamless offers sit it
+  // out until someone assigns the player.
+  return raw
+    .filter((o): o is (typeof raw)[number] & { team: { id: string; name: string } } => !!o.team)
+    .map((o) => ({ ...o, seasonFee: Number(o.seasonFee) }))
 }
 
 /** playerId+teamId -> assigned jersey number, from the roster (assigned at finalize). */

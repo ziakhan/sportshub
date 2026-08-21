@@ -17,6 +17,8 @@ Real clubs announce one tryout event covering several age groups (the Instagram 
 7. **Cross-team privacy line.** Browsing the pool: unassigned players fully visible to club staff; an assigned player shows name + "assigned to Team X" — and that is the entirety of what crosses team lines. Assigned players stay listed with the tag.
 8. **Families are notified at team finalization**, not on every assignment shuffle. Internal moves are silent; the finalized team announces.
 9. Money at offer, jersey at assignment — commitments never attach at the tryout stage.
+10. **Marketplace rendering** (2026-08-20): one public card per age group per time per place, grouped under the event name (eyebrow + club-page section). Different times or venues are NEVER combined on one card; every card carries start, end, location. The planner manages everything in one place; only the public rendering fans out.
+11. **Capacity and signup counts** (2026-08-20): per-age-group capacity is meaningless for tryouts (clubs flex team count to turnout). Sessions may carry an optional gym capacity for the club's own planning; it never renders publicly. Public signup counts are hidden by default with a per-event opt-in toggle; the club dashboard always shows real counts.
 
 ## Model sketch
 

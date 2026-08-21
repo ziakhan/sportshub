@@ -163,7 +163,16 @@ export const offerPackageSchema = z.object({
 })
 
 export interface CreateOfferInput {
-  teamId: string
+  /** Null for an age-group program offer from the tryout pool. */
+  teamId: string | null
+  /**
+   * The club. Required when teamless; stamped alongside a team offer too, so
+   * every new row carries its own club rather than inferring it through the
+   * team (additive — existing rows keep working through the team relation).
+   */
+  tenantId?: string | null
+  /** The age-group program a teamless offer belongs to, e.g. "U13". */
+  ageGroup?: string | null
   playerId: string
   tryoutSignupId?: string | null
   templateId?: string | null
@@ -179,23 +188,40 @@ export interface CreateOfferInput {
   /** For the parent notification. */
   player: { parentId: string; firstName: string; lastName: string }
   clubName: string
-  teamName: string
+  /** Absent for an age-group program offer, which names the program instead. */
+  teamName?: string | null
 }
 
 /**
  * Create the offer, flip the tryout signup to OFFERED, and notify the parent.
  * Pass the transaction client — the duplicate-pending guard runs inside it.
  * Throws OfferCreationError(DUPLICATE_PENDING_OFFER) when the player already
- * has a pending offer on this team.
+ * has a live offer for the same team, or for the same age-group program.
  */
 export async function createOfferForPlayer(tx: any, input: CreateOfferInput) {
-  const existing = await tx.offer.findFirst({
-    where: { teamId: input.teamId, playerId: input.playerId, status: "PENDING" },
-    select: { id: true },
-  })
+  // A team offer collides on the team. A pool offer has no team, so it
+  // collides on (club, age group) — and an ACCEPTED one counts too: the
+  // family already bought that spot.
+  const existing = input.teamId
+    ? await tx.offer.findFirst({
+        where: { teamId: input.teamId, playerId: input.playerId, status: "PENDING" },
+        select: { id: true },
+      })
+    : await tx.offer.findFirst({
+        where: {
+          teamId: null,
+          tenantId: input.tenantId,
+          ageGroup: input.ageGroup,
+          playerId: input.playerId,
+          status: { in: ["PENDING", "ACCEPTED"] },
+        },
+        select: { id: true },
+      })
   if (existing) {
     throw new OfferCreationError(
-      "A pending offer already exists for this player on this team",
+      input.teamId
+        ? "A pending offer already exists for this player on this team"
+        : "This player already has a live offer for that age group",
       "DUPLICATE_PENDING_OFFER"
     )
   }
@@ -203,6 +229,8 @@ export async function createOfferForPlayer(tx: any, input: CreateOfferInput) {
   const offer = await tx.offer.create({
     data: {
       teamId: input.teamId,
+      tenantId: input.tenantId || null,
+      ageGroup: input.ageGroup || null,
       playerId: input.playerId,
       tryoutSignupId: input.tryoutSignupId || null,
       templateId: input.templateId || null,
@@ -259,11 +287,12 @@ export async function createOfferForPlayer(tx: any, input: CreateOfferInput) {
     })
   }
 
+  const joining = input.teamName ?? `the ${input.ageGroup ?? "club"} program`
   await notify(tx, {
     userId: input.player.parentId,
     type: "offer_received",
-    title: "New Team Offer",
-    message: `${input.clubName} has sent an offer for ${input.player.firstName} ${input.player.lastName} to join ${input.teamName}.`,
+    title: input.teamName ? "New Team Offer" : "New Program Offer",
+    message: `${input.clubName} has sent an offer for ${input.player.firstName} ${input.player.lastName} to join ${joining}.`,
     link: `/offers`,
     referenceId: offer.id,
     referenceType: "Offer",

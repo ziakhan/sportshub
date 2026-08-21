@@ -156,6 +156,8 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
     const offer = await prisma.$transaction(async (tx: any) => {
       const created = await createOfferForPlayer(tx, {
         teamId: invitation.teamId,
+        // Additive (2026-08-20): the club is now stamped on every new offer.
+        tenantId: invitation.tenantId,
         playerId: player.id,
         templateId,
         terms,

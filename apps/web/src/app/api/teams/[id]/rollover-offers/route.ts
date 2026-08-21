@@ -119,6 +119,8 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
         await prisma.$transaction(async (tx: any) => {
           await createOfferForPlayer(tx, {
             teamId: team.id,
+            // Additive (2026-08-20): the club is now stamped on every new offer.
+            tenantId: team.tenantId,
             playerId: player.id,
             templateId,
             terms,

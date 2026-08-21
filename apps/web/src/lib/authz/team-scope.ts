@@ -32,6 +32,29 @@ export async function isClubAdmin(userId: string, tenantId: string): Promise<boo
   return !!role
 }
 
+/**
+ * Any staff role at the club, team-scoped or not. For CLUB-level work that no
+ * single bench owns: the tryout pool (owner ruling 2026-08-20, assignment is a
+ * free market inside the club) and the teamless age-group offers it sends.
+ * Never use this where a team exists — team scoping still applies there.
+ */
+export async function isClubStaff(userId: string, tenantId: string): Promise<boolean> {
+  const role = await prisma.userRole.findFirst({
+    where: {
+      userId,
+      OR: [
+        {
+          tenantId,
+          role: { in: ["ClubOwner", "ClubManager", "Trainer", "Staff", "TeamManager"] as any },
+        },
+        { role: "PlatformAdmin" as any },
+      ],
+    },
+    select: { id: true },
+  })
+  return !!role
+}
+
 /** Teams at this tenant where the user holds a team-scoped Staff/TeamManager role. */
 export async function coachedTeamIds(userId: string, tenantId: string): Promise<string[]> {
   const roles = await prisma.userRole.findMany({

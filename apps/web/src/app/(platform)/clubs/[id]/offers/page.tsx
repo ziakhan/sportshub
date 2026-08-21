@@ -65,8 +65,12 @@ async function getClubOffers(tenantId: string): Promise<ClubOffer[]> {
     // Newest 500 — offers accumulate every season (gap-audit P1 #18)
     take: 500,
   })
-  // Convert Decimal to Number for serialization
-  return raw.map((o: (typeof raw)[number]) => ({ ...o, seasonFee: Number(o.seasonFee) }))
+  // Convert Decimal to Number for serialization. Offer.team is nullable since
+  // club tryout events (an age-group offer carries no team); this console is
+  // the per-team pipeline, and the query above already asks for team offers.
+  return raw
+    .filter((o): o is (typeof raw)[number] & { team: { id: string; name: string } } => !!o.team)
+    .map((o) => ({ ...o, seasonFee: Number(o.seasonFee) }))
 }
 
 async function getClubTeams(tenantId: string): Promise<{ id: string; name: string }[]> {

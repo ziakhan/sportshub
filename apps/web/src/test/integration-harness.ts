@@ -63,6 +63,8 @@ import { getServerSession } from "next-auth"
  *        rename vs imported-content 409, activate write-through, delete rules)
  *   1149 family linking wave 2 (claim-check bit, email-free auto-claim,
  *        link codes both directions + redeem, parent-side add-check)
+ *   1150 club tryout events + age-group pools (combined gym sessions, pool
+ *        sync, teamless offers, assignment market, release handshake)
  */
 
 export function actAs(userId: string | null): void {
