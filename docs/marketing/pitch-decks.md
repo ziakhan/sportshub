@@ -13,10 +13,10 @@ slide plays the real demo.
 
 | URL | Send it to |
 |---|---|
-| `sportshubone.com/deck/leagues` | Anyone. Names nobody. |
-| `sportshubone.com/deck/coalition` | The Coalition League |
-| `sportshubone.com/deck/hoopcity` | HoopCity Basketball |
-| `sportshubone.com/deck/nph` | **North Pole Hoops only.** Never anyone else. |
+| `sportshubone.com/deck/leagues-92057948e3` | Anyone. Names nobody. |
+| `sportshubone.com/deck/coalition-67acde08df` | The Coalition League |
+| `sportshubone.com/deck/hoopcity-137861a86b` | HoopCity Basketball |
+| `sportshubone.com/deck/nph-78f51df659` | **North Pole Hoops only.** Never anyone else. |
 
 ## Adding a league
 
@@ -26,7 +26,7 @@ One row in `apps/web/src/app/deck/_deck/registry.ts`:
 coalition: { ...NEUTRAL, recipient: "The Coalition League" },
 ```
 
-Live at `/deck/coalition` on the next deploy. To add their logo beside the name
+Live at `/deck/coalition-67acde08df` on the next deploy. To add their logo beside the name
 on the title slide, drop a file in `public/deck/logos/` and add
 `logo: "/deck/logos/coalition.png"`. Without a logo it shows the name alone,
 which is the current state for all of them.
@@ -37,7 +37,7 @@ same pitch start telling different stories.
 
 Every deck is the same nineteen slides from one file. Only three things vary:
 which screenshot set, what the embedded demo calls its league, and the name on
-the title slide. **NPH is named nowhere except `/deck/nph`**, verified by
+the title slide. **NPH is named nowhere except `/deck/nph-78f51df659`**, verified by
 scanning the rendered text of every slide.
 
 All of them are `robots: noindex`. They are for sending, not for finding.

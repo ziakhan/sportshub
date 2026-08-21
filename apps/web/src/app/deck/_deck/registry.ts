@@ -32,19 +32,35 @@ export interface DeckBrand {
 
 const NEUTRAL = { shots: "/deck/neutral", league: "Parkview Summer League" } as const
 
+/**
+ * THE SLUG CARRIES A SECRET (owner 2026-08-21). Every link is sent to one named
+ * prospect, and the decks are not the same: NPH's is built from NPH's own clubs
+ * and team names. A readable slug meant anyone holding one link could reach
+ * every other by typing — read a competitor's deck, or learn who else is being
+ * pitched. The token is what makes a link private; nothing else here does.
+ *
+ * ADDING A LEAGUE IS STILL ONE ROW. Generate the token, never hand-type it:
+ *
+ *     node -e "console.log(require('crypto').randomBytes(5).toString('hex'))"
+ *
+ * The prefix is there so a link is recognisable to US at a glance. It is not
+ * the secret and it does not have to be a real name. Unknown slugs 404 and
+ * every deck is noindex, so a link is only as private as who you send it to.
+ * Rotate a token by editing the key: the old URL dies immediately.
+ */
 export const DECKS: Record<string, DeckBrand> = {
   /** The unaddressed cut. Send it to anyone; it names nobody. */
-  leagues: { ...NEUTRAL },
+  "leagues-92057948e3": { ...NEUTRAL },
 
   /** North Pole Hoops: their own screenshots and their own league in the demo. */
-  nph: {
+  "nph-78f51df659": {
     shots: "/deck",
     league: "NPH Summer League",
     recipient: "North Pole Hoops",
   },
 
-  coalition: { ...NEUTRAL, recipient: "The Coalition League" },
-  hoopcity: { ...NEUTRAL, recipient: "HoopCity Basketball" },
+  "coalition-67acde08df": { ...NEUTRAL, recipient: "The Coalition League" },
+  "hoopcity-137861a86b": { ...NEUTRAL, recipient: "HoopCity Basketball" },
 }
 
 export function getDeck(slug: string): DeckBrand | null {

@@ -28,7 +28,7 @@ the planner wizard from automation to create data.
 
 ## What the owner asked for
 
-Four slide changes on the league deck at `/deck/leagues` and `/deck/nph`:
+Four slide changes on the league deck at `/deck/leagues-92057948e3` and `/deck/nph-78f51df659`:
 
 | # | Slide | Wanted | State |
 |---|---|---|---|

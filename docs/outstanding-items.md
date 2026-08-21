@@ -516,7 +516,7 @@ standings/leaders JS aggregation (fine at current season size).
 
 One place in Dashboard > Admin listing everything outward-facing we have built,
 so a link can be found without asking for it: the pitch decks
-(`/deck/leagues`, `/deck/nph` — see [[pitch-decks]]), the demo directory, the ad
+(`/deck/leagues-92057948e3`, `/deck/nph-78f51df659` — see [[pitch-decks]]), the demo directory, the ad
 creatives under `scripts/marketing/creatives`, the Instagram caption doc, and
 the screenshot sets. Nothing designed yet; the ask is discoverability, not a
 new CMS.
