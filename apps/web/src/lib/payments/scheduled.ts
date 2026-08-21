@@ -2,6 +2,7 @@ import { prisma } from "@youthbasketballhub/db"
 import { appBaseUrl, formatMoney, sendEmail } from "@/lib/email"
 import { notify } from "@/lib/notifications"
 import { resolveChargeContext } from "./installments"
+import { paymentsEnabled } from "./kill-switch"
 
 /**
  * Scheduled payment jobs (payments v2 Stages E–F), run by Vercel Cron.
@@ -26,13 +27,27 @@ export async function chargeDueInstallments(now = new Date()): Promise<{
   attempted: number
   finalized: number
   failed: number
+  skipped?: boolean
 }> {
+  // Universal kill switch (owner 2026-08-21): pause the whole run while
+  // payments are off — no invoice gets finalized, so no card gets charged.
+  if (!(await paymentsEnabled())) {
+    return { attempted: 0, finalized: 0, failed: 0, skipped: true }
+  }
+
   const due = await (prisma as any).payment.findMany({
     where: {
       method: "STRIPE",
       status: "PENDING",
       stripeInvoiceId: { not: null },
       dueDate: { lte: now },
+      // Only finalize installments whose obligation is still live and owed. A
+      // waived/cancelled/paid obligation must never charge its card again
+      // (audit C2); rows with no obligation (legacy) still charge.
+      OR: [
+        { obligationId: null },
+        { obligation: { status: { in: ["PENDING", "PARTIALLY_PAID"] } } },
+      ],
     },
     select: { id: true, stripeInvoiceId: true, tenantId: true, currency: true },
     take: 500,

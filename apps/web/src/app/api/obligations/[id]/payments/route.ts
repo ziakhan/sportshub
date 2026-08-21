@@ -5,6 +5,9 @@ import { z } from "zod"
 import { ObligationError, recordOfflinePayment } from "@/lib/payments/obligations"
 import { merchantAccess } from "@/lib/payments/authz"
 import { getPaymentConfig, offlineAvailable } from "@/lib/payments/config"
+import { assertPaymentsEnabled, PaymentsDisabledError } from "@/lib/payments/kill-switch"
+import { auditSafe } from "@/lib/audit"
+import { actorRoleAtTenant } from "@/lib/authz/team-scope"
 
 export const dynamic = "force-dynamic"
 
@@ -24,6 +27,11 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
     const sessionInfo = await getSessionUserId()
     if (!sessionInfo) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     const userId = sessionInfo.userId
+
+    // Universal kill switch (owner 2026-08-21): the switch is universal, so
+    // while payments are paused even offline cash bookkeeping is refused —
+    // remove this one line to let clubs keep recording already-owed cash.
+    await assertPaymentsEnabled()
 
     const obligation = await prisma.paymentObligation.findUnique({
       where: { id: params.id },
@@ -75,11 +83,30 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
       })
     )
 
+    // Audit the money movement (M1): who recorded what cash, when.
+    await auditSafe({
+      actorId: userId,
+      actorRole: sessionInfo.isPlatformAdmin
+        ? "PlatformAdmin"
+        : obligation.payeeTenantId
+          ? await actorRoleAtTenant(userId, obligation.payeeTenantId)
+          : "LeagueManager",
+      action: "OFFLINE_PAYMENT_RECORD",
+      resource: "Payment",
+      resourceId: payment.id,
+      tenantId: obligation.payeeTenantId,
+      metadata: { amount: data.amount, method: data.method, obligationId: params.id },
+      request,
+    })
+
     return NextResponse.json(
       { success: true, id: payment.id, status: payment.status },
       { status: 201 }
     )
   } catch (error) {
+    if (error instanceof PaymentsDisabledError) {
+      return NextResponse.json({ error: error.message, code: error.code }, { status: 503 })
+    }
     if (error instanceof z.ZodError) {
       return NextResponse.json({ error: "Validation error", details: error.errors }, { status: 400 })
     }

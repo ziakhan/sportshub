@@ -12,6 +12,7 @@
 import { prisma } from "@youthbasketballhub/db"
 import { notify } from "@/lib/notifications"
 import { appBaseUrl, escapeHtml, formatMoney, sendEmail, transactionalFooter } from "@/lib/email"
+import { resolveChargeContext, voidInvoice } from "@/lib/payments/installments"
 
 export class ObligationError extends Error {
   constructor(
@@ -309,6 +310,55 @@ export async function recordOfflinePayment(db: any, input: RecordOfflinePaymentI
   return payment
 }
 
+/**
+ * Stop scheduled auto-charges when an obligation is closed by decision: mark
+ * its still-PENDING Stripe installment Payments CANCELLED, and void their
+ * Stripe invoices so the card can never be hit (security audit C2, 2026-08-21).
+ * The DB cancel is written via `db` (atomic with the close where the caller
+ * passes a tx); the invoice void is external I/O run best-effort AFTER, since
+ * Stripe must never hold a money transaction open. `chargeDueInstallments`
+ * guards on obligation status too, so a void hiccup still cannot charge.
+ */
+async function stopScheduledCharges(
+  db: any,
+  obligation: {
+    payeeTenantId: string | null
+    payeeLeagueId: string | null
+    currency: string
+    payments: Array<{ id: string; status: string; method: string; stripeInvoiceId: string | null }>
+  },
+  reason: string
+): Promise<void> {
+  const pending = obligation.payments.filter(
+    (p) => p.status === "PENDING" && p.method === "STRIPE" && p.stripeInvoiceId
+  )
+  if (pending.length === 0) return
+  await db.payment.updateMany({
+    where: { id: { in: pending.map((p) => p.id) } },
+    data: { status: "CANCELLED", note: reason },
+  })
+
+  const merchant = obligation.payeeTenantId
+    ? { tenantId: obligation.payeeTenantId }
+    : obligation.payeeLeagueId
+      ? { leagueId: obligation.payeeLeagueId }
+      : null
+  if (!merchant) return
+  try {
+    const ctx = await resolveChargeContext(merchant, obligation.currency)
+    if (!ctx) return
+    for (const p of pending) {
+      try {
+        await voidInvoice(ctx, p.stripeInvoiceId!)
+      } catch (e) {
+        console.error("voidInvoice failed:", p.stripeInvoiceId, e)
+      }
+    }
+  } catch (e) {
+    console.error("stopScheduledCharges context failed:", e)
+  }
+}
+
 /** Waive what remains owed (financial aid, comp, goodwill). Paid amounts stay. */
 export async function waiveObligation(
   db: any,
@@ -316,6 +366,7 @@ export async function waiveObligation(
 ) {
   const obligation = await db.paymentObligation.findUniqueOrThrow({
     where: { id: input.obligationId },
+    include: { payments: true },
   })
   if (["PAID", "WAIVED", "CANCELLED"].includes(obligation.status)) {
     throw new ObligationError(
@@ -327,6 +378,9 @@ export async function waiveObligation(
     where: { id: input.obligationId },
     data: { status: "WAIVED", waivedAt: new Date(), waivedReason: input.reason ?? null },
   })
+  // A waived fee must stop charging the card: cancel the PENDING installments
+  // and void their invoices (audit C2).
+  await stopScheduledCharges(db, obligation, "obligation waived")
   await syncReferenceStatus(db, updated)
 
   // Tell the payer — a waived fee is good news that used to arrive silently.
@@ -356,10 +410,14 @@ export async function cancelObligationIfUnpaid(db: any, referenceType: string, r
   })
   if (!obligation) return null
   if (obligation.status !== "PENDING" || paidTotal(obligation.payments) > 0) return obligation
-  return db.paymentObligation.update({
+  const cancelled = await db.paymentObligation.update({
     where: { id: obligation.id },
     data: { status: "CANCELLED" },
   })
+  // A cancelled signup must stop charging the card too: kill any pre-created
+  // installment invoices sitting against it (audit C2).
+  await stopScheduledCharges(db, obligation, "obligation cancelled")
+  return cancelled
 }
 
 /**

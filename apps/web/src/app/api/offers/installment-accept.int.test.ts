@@ -114,6 +114,29 @@ afterAll(async () => {
 
 describe("installment accept (integration)", () => {
   it("accepts with a plan, records the deposit, and schedules the installments", async () => {
+    // pay-intent writes the PENDING deposit row that accept now verifies and
+    // links (audit C1/H1, 2026-08-21). Seed it exactly as pay-intent would so
+    // the accept has a real, amount-bound charge to consume.
+    const tenant = await prisma.tenant.findUniqueOrThrow({
+      where: { id: world.clubs[0].tenantId },
+      select: { currency: true },
+    })
+    await prisma.payment.create({
+      data: {
+        payerId: parentId,
+        tenantId: world.clubs[0].tenantId,
+        amount: 750,
+        currency: tenant.currency,
+        status: "PENDING",
+        method: "STRIPE",
+        stripePaymentIntentId: "pi_deposit_test",
+        installmentNumber: 1,
+        relatedOfferId: offerId,
+        paymentType: "SEASON_FEE",
+        description: "Deposit for New Player",
+      },
+    })
+
     actAs(parentId)
     const res = await accept({
       action: "accept",

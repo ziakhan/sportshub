@@ -67,6 +67,10 @@ import { getServerSession } from "next-auth"
  *        sync, teamless offers, assignment market, release handshake)
  *   1151 club tryouts owner scenario (30 kids, two grades one floor:
  *        assign-then-accept and accept-then-assign both roster exactly once)
+ *   1152 payments security (offer-accept rail records money like the
+ *        obligation rail: C1 amount/offer binding, H1 recoverable charge, C2
+ *        waive/cancel void + cron guard, H2 teamless online pay, H3 refund
+ *        idempotency/race, universal kill switch)
  */
 
 export function actAs(userId: string | null): void {

@@ -216,6 +216,28 @@ export async function createInstallmentInvoice(
 }
 
 /**
+ * Terminate a scheduled installment's Stripe invoice so it can NEVER charge —
+ * used when the obligation behind it is waived or cancelled (security audit C2,
+ * 2026-08-21). A draft invoice never charged, so it is deleted; a finalized
+ * (open) or uncollectible one is voided; a paid or already-void one is left
+ * alone. The caller has already marked the Payment row CANCELLED and the cron
+ * guards on obligation status, so this is the belt to those two suspenders.
+ */
+export async function voidInvoice(ctx: ChargeContext, invoiceId: string): Promise<void> {
+  const opts = ctx.direct ? ({ stripeAccount: ctx.account } as any) : undefined
+  const invoice = await ctx.stripe.invoices.retrieve(invoiceId, opts)
+  const status = (invoice as any).status
+  if (status === "draft") {
+    // A draft never charged — Stripe forbids voiding it, so delete it outright.
+    await ctx.stripe.invoices.del(invoiceId, opts)
+  } else if (status === "open" || status === "uncollectible") {
+    // Finalized and unpaid (maybe mid-dunning) → void so Stripe stops charging.
+    await ctx.stripe.invoices.voidInvoice(invoiceId, opts)
+  }
+  // paid / void / null → terminal already; nothing to do.
+}
+
+/**
  * On accept with an INSTALLMENTS plan: write a Payment row per installment
  * (PENDING, dated) and pre-create its invoice. Deposit is a separate,
  * already-charged Payment (see accept route). Called inside the accept txn's

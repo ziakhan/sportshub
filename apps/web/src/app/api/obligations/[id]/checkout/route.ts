@@ -5,6 +5,7 @@ import { z } from "zod"
 import { getPaymentConfig, platformFeeFor } from "@/lib/payments/config"
 import { referenceToPaymentType, remainingAmount } from "@/lib/payments/obligations"
 import { getStripe, StripeNotConfiguredError } from "@/lib/payments/stripe"
+import { assertPaymentsEnabled, PaymentsDisabledError } from "@/lib/payments/kill-switch"
 import { gateMinorPayment } from "@/lib/family/money-gate"
 
 export const dynamic = "force-dynamic"
@@ -33,6 +34,9 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
     const sessionInfo = await getSessionUserId()
     if (!sessionInfo) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     const userId = sessionInfo.userId
+
+    // Universal kill switch: no new charge may start while payments are paused.
+    await assertPaymentsEnabled()
 
     const obligation = await prisma.paymentObligation.findUnique({
       where: { id: params.id },
@@ -198,6 +202,9 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
 
     return NextResponse.json({ clientSecret: intent.client_secret, paymentId: payment.id, amount })
   } catch (error) {
+    if (error instanceof PaymentsDisabledError) {
+      return NextResponse.json({ error: error.message, code: error.code }, { status: 503 })
+    }
     if (error instanceof z.ZodError) {
       return NextResponse.json({ error: "Validation error", details: error.errors }, { status: 400 })
     }

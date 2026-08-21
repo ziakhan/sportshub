@@ -3,6 +3,8 @@ import { getSessionUserId } from "@/lib/auth-helpers"
 import { prisma } from "@youthbasketballhub/db"
 import { getPaymentConfig } from "@/lib/payments/config"
 import { getStripe, StripeNotConfiguredError } from "@/lib/payments/stripe"
+import { assertPaymentsEnabled, PaymentsDisabledError } from "@/lib/payments/kill-switch"
+import { auditSafe } from "@/lib/audit"
 import { appBaseUrl } from "@/lib/email"
 
 export const dynamic = "force-dynamic"
@@ -29,6 +31,10 @@ export async function POST(_request: NextRequest, { params }: { params: { id: st
   try {
     const sessionInfo = await getSessionUserId()
     if (!sessionInfo) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+
+    // Universal kill switch: no online onboarding may start while payments are
+    // paused (a new connected account is a new charge rail).
+    await assertPaymentsEnabled()
 
     const league = await prisma.league.findUnique({
       where: { id: params.id },
@@ -71,8 +77,23 @@ export async function POST(_request: NextRequest, { params }: { params: { id: st
       refresh_url: `${baseUrl}/manage/leagues/${params.id}/payments?connect=refresh`,
       return_url: `${baseUrl}/manage/leagues/${params.id}/payments?connect=return`,
     })
+
+    // Audit the payment-config change (M1): who started/continued Connect.
+    await auditSafe({
+      actorId: sessionInfo.userId,
+      actorRole: sessionInfo.isPlatformAdmin ? "PlatformAdmin" : "LeagueManager",
+      action: "PAYMENT_CONFIG_CHANGE",
+      resource: "PaymentConfig",
+      resourceId: params.id,
+      metadata: { change: "connect_onboarding", leagueId: params.id, accountId },
+      request: _request,
+    })
+
     return NextResponse.json({ url: link.url, accountId })
   } catch (error) {
+    if (error instanceof PaymentsDisabledError) {
+      return NextResponse.json({ error: error.message, code: error.code }, { status: 503 })
+    }
     if (error instanceof StripeNotConfiguredError) {
       return NextResponse.json({ error: error.message, code: error.code }, { status: 503 })
     }

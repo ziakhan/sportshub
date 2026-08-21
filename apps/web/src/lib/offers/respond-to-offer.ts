@@ -1,6 +1,6 @@
 import { prisma } from "@youthbasketballhub/db"
 import { notify } from "@/lib/notifications"
-import { ensureObligation } from "@/lib/payments/obligations"
+import { ensureObligation, recomputeObligationStatus } from "@/lib/payments/obligations"
 import { scheduleInstallments } from "@/lib/payments/installments"
 import { appBaseUrl, escapeHtml, formatMoney, sendEmail, transactionalFooter } from "@/lib/email"
 import { upsertImpliedConsent } from "@/lib/comms/consent"
@@ -272,32 +272,40 @@ export async function acceptOffer(offer: OfferForResponse, data: AcceptOfferInpu
       currency: scope.currency,
     })
 
-    // The deposit/full payment the family just made on-session (Stage C).
+    // The deposit/full payment the family made on-session (Stage C). pay-intent
+    // already wrote a PENDING Payment row for the confirmed intent, and the
+    // route re-verified its amount/owner/currency against this plan. We only
+    // LINK that row to the new obligation and mark it settled here — never mint
+    // a second row, and the client's plan never decides the amount (audit
+    // C1/H1, 2026-08-21). Linking happens AFTER the roster-cap gate above, so a
+    // TEAM_FULL accept never records money against a debt. The re-checks
+    // (relatedOfferId, unconsumed) are belt-and-suspenders on the route gate.
     let onSessionPayment: { id: string } | null = null
     if (data.depositPaymentIntentId && obligation) {
-      const depositAmount =
-        plan === "INSTALLMENTS" && chosen
-          ? Number(chosen.depositAmount ?? 0)
-          : Number(offer.seasonFee)
-      onSessionPayment = await tx.payment.create({
-        data: {
-          obligationId: obligation.id,
-          payerId: offer.player.parentId,
-          tenantId: scope.tenantId,
-          amount: depositAmount,
-          currency: scope.currency,
-          status: "SUCCEEDED",
-          method: "STRIPE",
-          stripePaymentIntentId: data.depositPaymentIntentId,
-          installmentNumber: 1,
-          relatedOfferId: offer.id,
-          paymentType: "SEASON_FEE",
-          description:
-            plan === "INSTALLMENTS"
-              ? `Deposit for ${scope.label}`
-              : `Season fee for ${scope.label}`,
-        },
+      const existing = await tx.payment.findUnique({
+        where: { stripePaymentIntentId: data.depositPaymentIntentId },
+        select: { id: true, relatedOfferId: true, obligationId: true },
       })
+      if (existing && existing.relatedOfferId === offer.id && existing.obligationId == null) {
+        onSessionPayment = await tx.payment.update({
+          where: { id: existing.id },
+          data: {
+            obligationId: obligation.id,
+            status: "SUCCEEDED",
+            installmentNumber: 1,
+            paymentType: "SEASON_FEE",
+            description:
+              plan === "INSTALLMENTS"
+                ? `Deposit for ${scope.label}`
+                : `Season fee for ${scope.label}`,
+          },
+          select: { id: true },
+        })
+        // Derive the obligation status from its payments (the engine's rule):
+        // a full on-session payment settles it, a deposit takes it to
+        // partially paid. The webhook is idempotent against this.
+        await recomputeObligationStatus(tx, obligation.id)
+      }
     }
 
     await notifyClubOfResponse(tx, offer, updated.id, true, joinedTeam?.name)

@@ -70,6 +70,12 @@ export type AuditAction =
   | "TRYOUT_POOL_RELEASE_REQUEST"
   | "TRYOUT_POOL_RELEASE_RESOLVE"
   | "TRYOUT_TEAM_FINALIZED"
+  // Money routes (security audit M1, 2026-08-21): every refund, waive, offline
+  // cash record and payment-config change leaves who/when/what/amount.
+  | "PAYMENT_REFUND"
+  | "OBLIGATION_WAIVE"
+  | "OFFLINE_PAYMENT_RECORD"
+  | "PAYMENT_CONFIG_CHANGE"
 
 interface AuditEntry {
   /** The REAL actor (for impersonation events: the admin, not the target). */

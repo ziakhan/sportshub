@@ -3,6 +3,7 @@ import { getSessionUserId } from "@/lib/auth-helpers"
 import { prisma } from "@youthbasketballhub/db"
 import { z } from "zod"
 import { getPaymentConfig, getPlatformPaymentPolicy } from "@/lib/payments/config"
+import { auditSafe } from "@/lib/audit"
 
 export const dynamic = "force-dynamic"
 
@@ -70,6 +71,18 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
       create: { leagueId: params.id, ...data },
       update: data,
     })
+
+    // Audit the payment-config change (M1): who changed which fields.
+    await auditSafe({
+      actorId: sessionInfo.userId,
+      actorRole: sessionInfo.isPlatformAdmin ? "PlatformAdmin" : "LeagueManager",
+      action: "PAYMENT_CONFIG_CHANGE",
+      resource: "PaymentConfig",
+      resourceId: params.id,
+      changes: { ...data, leagueId: params.id } as Record<string, unknown>,
+      request,
+    })
+
     return NextResponse.json(await configPayload(params.id))
   } catch (error) {
     if (error instanceof z.ZodError) {

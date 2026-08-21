@@ -8,7 +8,9 @@ import {
   customerForCharges,
   resolveChargeContext,
 } from "@/lib/payments/installments"
+import { offerScope, OfferResponseError } from "@/lib/offers/respond-to-offer"
 import { gateMinorPayment } from "@/lib/family/money-gate"
+import { assertPaymentsEnabled, PaymentsDisabledError } from "@/lib/payments/kill-switch"
 
 export const dynamic = "force-dynamic"
 
@@ -24,14 +26,21 @@ const schema = z.object({
  * POST /api/offers/[id]/pay-intent — Stage C. The amount the family must pay
  * to ACCEPT: the full fee (FULL) or the deposit (INSTALLMENTS). Online →
  * returns a PaymentIntent client secret (card saved off_session so the plan
- * can auto-charge later). Offline club → { offline: true } (deposit recorded
- * by the club). The card is only charged when the family confirms; the offer
- * flips ACCEPTED via PATCH /api/offers/[id] once the intent succeeds.
+ * can auto-charge later) AND writes a PENDING Payment row for that intent, so
+ * the charge is a recorded, refundable thing the moment the card is hit —
+ * never a bare intent bound to nothing (security audit C1/H1, 2026-08-21).
+ * Offline club → { offline: true } (deposit recorded by the club). The card is
+ * only charged when the family confirms; the offer flips ACCEPTED via PATCH
+ * /api/offers/[id] once the intent succeeds and the recorded amount is
+ * re-verified against the plan being accepted.
  */
 export async function POST(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     const auth = await getSessionUserId()
     if (!auth) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+
+    // Universal kill switch: no new charge may start while payments are paused.
+    await assertPaymentsEnabled()
 
     const body = schema.parse(await request.json().catch(() => ({})))
 
@@ -40,10 +49,17 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
       select: {
         id: true,
         status: true,
+        teamId: true,
+        tenantId: true,
+        ageGroup: true,
         seasonFee: true,
         expiresAt: true,
         player: { select: { parentId: true, userId: true } },
         team: { select: { name: true, tenantId: true, tenant: { select: { name: true, currency: true } } } },
+        // Authoritative club for a teamless age-group offer (tryout pool). H2:
+        // the online pay path used to dereference offer.team.* and 500 for a
+        // teamless offer — offerScope resolves club + currency for both shapes.
+        tenant: { select: { name: true, currency: true } },
         options: {
           select: {
             id: true,
@@ -59,14 +75,19 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
     if (offer.player.parentId !== auth.userId && offer.player.userId !== auth.userId) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 })
     }
+
+    // Club, currency and display label for either shape of offer (team or a
+    // teamless age-group program from the tryout pool).
+    const scope = offerScope(offer)
+
     // The money gate (owner 2026-08-12): a 13-17 self-owned player never gets
-    // a client secret back. The ask goes to their guardian instead.
+    // a client secret back. The ask goes to their guardian instead (202).
     const gate = await gateMinorPayment({
       userId: auth.userId,
-      what: `${offer.team.name} (${offer.team.tenant.name})`,
+      what: `${scope.label} (${scope.clubName})`,
       deepLink: "/offers",
       amount: Number(offer.seasonFee ?? 0),
-      currency: offer.team.tenant.currency,
+      currency: scope.currency,
     })
     if (!gate.allowed) return gate.response
     if (offer.status !== "PENDING") {
@@ -91,6 +112,8 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
     if (body.paymentPlan === "INSTALLMENTS" && !(option?.allowInstallments)) {
       return NextResponse.json({ error: "This package has no payment plan" }, { status: 400 })
     }
+    // The amount is decided SERVER-side, from the offer + chosen option — the
+    // client's paymentPlan only selects deposit-vs-full, never the number.
     const amountDue =
       body.paymentPlan === "INSTALLMENTS" ? Number(option?.depositAmount ?? 0) : fee
     if (amountDue <= 0) {
@@ -98,23 +121,21 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
       return NextResponse.json({ amountDue: 0, noCharge: true })
     }
 
-    const currency = offer.team.tenant.currency
-    const ctx = await resolveChargeContext({ tenantId: offer.team.tenantId }, currency).catch(
-      () => null
-    )
+    const currency = scope.currency
+    const ctx = await resolveChargeContext({ tenantId: scope.tenantId }, currency).catch(() => null)
     if (!ctx) {
       // Offline club: the deposit/fee is recorded by the club, not charged here
       return NextResponse.json({ offline: true, amountDue })
     }
 
     const customerId = await customerForCharges(auth.userId, ctx)
-    const { params: connectParams, requestOptions } = connectChargeParams(ctx, amountDue)
+    const { params: connectParams, requestOptions, feeCents } = connectChargeParams(ctx, amountDue)
 
     const base: any = {
       amount: Math.round(amountDue * 100),
       currency: currency.toLowerCase(),
       customer: customerId,
-      description: `${offer.team.name} — ${body.paymentPlan === "INSTALLMENTS" ? "deposit" : "season fee"}`,
+      description: `${scope.label}: ${body.paymentPlan === "INSTALLMENTS" ? "deposit" : "season fee"}`,
       // Save the card so installments can auto-charge off_session later
       setup_future_usage: "off_session",
       metadata: { offerId: offer.id, kind: "offer-accept" },
@@ -123,41 +144,69 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
 
     // A card already on file → create + confirm now (user is present). No
     // Elements, no re-entry. 3-D Secure surfaces as requires_action.
-    if (body.paymentMethodId) {
-      const intent = await ctx.stripe.paymentIntents.create(
-        {
-          ...base,
-          payment_method_types: ["card"], // explicit card, no redirect flows
-          payment_method: body.paymentMethodId,
-          confirm: true,
-          off_session: false,
-          error_on_requires_action: false,
-        },
-        requestOptions as any
-      )
-      return NextResponse.json({
-        status: intent.status, // succeeded | requires_action | …
-        clientSecret: intent.client_secret,
-        amountDue,
-        paymentIntentId: intent.id,
-      })
-    }
+    const intent = body.paymentMethodId
+      ? await ctx.stripe.paymentIntents.create(
+          {
+            ...base,
+            payment_method_types: ["card"], // explicit card, no redirect flows
+            payment_method: body.paymentMethodId,
+            confirm: true,
+            off_session: false,
+            error_on_requires_action: false,
+          },
+          requestOptions as any
+        )
+      : // No saved card → return a secret the client confirms via Elements
+        await ctx.stripe.paymentIntents.create(
+          {
+            ...base,
+            automatic_payment_methods: { enabled: true, allow_redirects: "never" },
+          },
+          requestOptions as any
+        )
 
-    // No saved card → return a secret the client confirms via Elements
-    const intent = await ctx.stripe.paymentIntents.create(
-      {
-        ...base,
-        automatic_payment_methods: { enabled: true, allow_redirects: "never" },
+    // Record the charge as a PENDING Payment row bound to THIS offer and this
+    // intent (audit C1/H1). accept verifies + consumes exactly this row; the
+    // payment_intent.succeeded webhook flips it SUCCEEDED independently. If the
+    // family walks away from the accept sheet, this row is what makes the money
+    // visible on /payments and refundable — never a silent charge.
+    const payment = await prisma.payment.create({
+      data: {
+        payerId: offer.player.parentId,
+        tenantId: scope.tenantId,
+        amount: amountDue,
+        currency,
+        status: "PENDING",
+        method: "STRIPE",
+        stripePaymentIntentId: intent.id,
+        stripeAccountId: ctx.direct ? ctx.account : null,
+        stripeDestinationAccountId: ctx.direct ? null : ctx.account,
+        platformFee: feeCents > 0 ? feeCents / 100 : null,
+        installmentNumber: 1,
+        relatedOfferId: offer.id,
+        paymentType: "SEASON_FEE",
+        description:
+          body.paymentPlan === "INSTALLMENTS"
+            ? `Deposit for ${scope.label}`
+            : `Season fee for ${scope.label}`,
       },
-      requestOptions as any
-    )
+      select: { id: true },
+    })
+
     return NextResponse.json({
-      status: intent.status,
+      status: intent.status, // succeeded | requires_action | requires_payment_method | …
       clientSecret: intent.client_secret,
       amountDue,
       paymentIntentId: intent.id,
+      paymentId: payment.id,
     })
   } catch (error) {
+    if (error instanceof PaymentsDisabledError) {
+      return NextResponse.json({ error: error.message, code: error.code }, { status: 503 })
+    }
+    if (error instanceof OfferResponseError) {
+      return NextResponse.json({ error: error.message, code: error.code }, { status: 400 })
+    }
     if (error instanceof StripeNotConfiguredError) {
       return NextResponse.json({ offline: true, code: "STRIPE_DISABLED" })
     }

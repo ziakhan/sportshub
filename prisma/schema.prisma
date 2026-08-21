@@ -2820,6 +2820,10 @@ enum PaymentStatus {
   FAILED
   REFUNDED
   DISPUTED
+  // A scheduled installment whose obligation was waived/cancelled before it
+  // charged (audit C2, 2026-08-21). Never counts toward paid totals, and the
+  // cron skips it — the Stripe invoice behind it is voided alongside.
+  CANCELLED
 }
 
 enum PaymentType {
@@ -4073,6 +4077,13 @@ model PlatformSettings {
   // pop-up + Demo drawer render, persona sessions may start. OFF = the
   // demo era disappears; data stays, unlisted. Flip on real-launch day.
   demoModeEnabled Boolean @default(false)
+
+  // Universal payments kill switch (owner ask 2026-08-21). When false, NO new
+  // charge or online onboarding may start anywhere on the platform — checkout,
+  // offer deposits, offline recording, refunds and Connect onboarding all
+  // answer 503, and the installment cron skips its run. Existing money is
+  // untouched; this only stops NEW money movement. Flip back to true to resume.
+  paymentsEnabled Boolean @default(true)
 
   // Platform-wide payment policy — the defaults every merchant inherits.
   // Per-merchant PaymentConfig rows override field-by-field (null = inherit).

@@ -15,24 +15,85 @@ import { gateMinorPayment } from "@/lib/family/money-gate"
 
 export const dynamic = "force-dynamic"
 
+type DepositVerifyResult = { ok: true } | { ok: false; code: string; message: string }
+
 /**
- * The deposit/full PaymentIntent must have succeeded before we accept. Also
- * pins the card as the customer's default so scheduled installments
- * auto-charge it. Best-effort default-setting (never blocks acceptance).
+ * The deposit/full charge must be a RECORDED Payment row that belongs to THIS
+ * offer and matches what this plan is supposed to cost — never a bare intent id
+ * bound to nothing (security audit C1/H1, 2026-08-21). pay-intent wrote the row
+ * (PENDING) when the card was charged; here we assert it is real, ours, the
+ * right amount and currency, and not already consumed by another accept.
+ *
+ * Also pins the card as the customer's default so scheduled installments
+ * auto-charge it (best-effort, never blocks acceptance). The row itself is
+ * flipped SUCCEEDED and linked to the obligation inside acceptOffer's
+ * transaction, AFTER the roster-cap / waiver gates — so money is never applied
+ * to a debt for an accept that then fails.
  */
 async function verifyDepositPaid(
+  offer: { id: string },
   scope: { tenantId: string; currency: string },
+  expectedAmount: number,
   paymentIntentId: string
-): Promise<boolean> {
-  const ctx = await resolveChargeContext(
-    { tenantId: scope.tenantId },
-    scope.currency
-  ).catch(() => null)
-  if (!ctx) return false
+): Promise<DepositVerifyResult> {
+  const payment = await prisma.payment.findUnique({
+    where: { stripePaymentIntentId: paymentIntentId },
+    select: {
+      relatedOfferId: true,
+      obligationId: true,
+      amount: true,
+      currency: true,
+      status: true,
+    },
+  })
+  // No row → the charge was never recorded (forged/unknown intent id).
+  if (!payment) {
+    return { ok: false, code: "DEPOSIT_NOT_PAID", message: "Deposit payment not found" }
+  }
+  if (payment.relatedOfferId !== offer.id) {
+    return { ok: false, code: "WRONG_OFFER", message: "This payment belongs to a different offer" }
+  }
+  // Already applied to an accepted offer (or refunded/failed) → cannot reuse.
+  if (payment.obligationId) {
+    return {
+      ok: false,
+      code: "DEPOSIT_ALREADY_USED",
+      message: "This payment was already applied to an accepted offer",
+    }
+  }
+  if (payment.status === "REFUNDED" || payment.status === "FAILED") {
+    return { ok: false, code: "DEPOSIT_NOT_PAID", message: "Deposit payment not completed" }
+  }
+  // The client's chosen plan never decides the number: the recorded amount must
+  // equal what the server expects for the plan being accepted (deposit for
+  // INSTALLMENTS, full fee for FULL).
+  if (Math.abs(Number(payment.amount) - expectedAmount) > 0.001) {
+    return {
+      ok: false,
+      code: "DEPOSIT_AMOUNT_MISMATCH",
+      message: "The amount paid does not match the plan being accepted",
+    }
+  }
+  if (payment.currency !== scope.currency) {
+    return {
+      ok: false,
+      code: "DEPOSIT_CURRENCY_MISMATCH",
+      message: "The payment currency does not match this club",
+    }
+  }
+
+  // Confirm the card actually cleared at Stripe (a PENDING row alone is not
+  // proof), and pin it as default for the installment plan.
+  const ctx = await resolveChargeContext({ tenantId: scope.tenantId }, scope.currency).catch(
+    () => null
+  )
+  if (!ctx) return { ok: false, code: "DEPOSIT_NOT_PAID", message: "Deposit payment not completed" }
   const intent = await ctx.stripe.paymentIntents
     .retrieve(paymentIntentId, ctx.direct ? ({ stripeAccount: ctx.account } as any) : undefined)
     .catch(() => null)
-  if (!intent || intent.status !== "succeeded") return false
+  if (!intent || intent.status !== "succeeded") {
+    return { ok: false, code: "DEPOSIT_NOT_PAID", message: "Deposit payment not completed" }
+  }
   const pm = intent.payment_method as string | null
   if (pm && intent.customer) {
     await ctx.stripe.customers
@@ -43,7 +104,7 @@ async function verifyDepositPaid(
       )
       .catch(() => {})
   }
-  return true
+  return { ok: true }
 }
 
 const respondSchema = z.object({
@@ -305,12 +366,26 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
         )
       }
       if (data.depositPaymentIntentId) {
-        const ok = await verifyDepositPaid(scope, data.depositPaymentIntentId)
-        if (!ok) {
-          return NextResponse.json(
-            { error: "Deposit payment not completed", code: "DEPOSIT_NOT_PAID" },
-            { status: 400 }
-          )
+        // What THIS plan is supposed to cost, computed server-side: the deposit
+        // for INSTALLMENTS, the full (already option-snapshotted) fee for FULL.
+        // The recorded charge must equal this — the client's paymentPlan can
+        // select which, never dictate the number (audit C1).
+        const plan = data.paymentPlan ?? "FULL"
+        const chosenOption = data.optionId
+          ? offerOptions.find((o) => o.id === data.optionId)
+          : offerOptions[0]
+        const expectedAmount =
+          plan === "INSTALLMENTS"
+            ? Number(chosenOption?.depositAmount ?? 0)
+            : Number((offer as any).seasonFee)
+        const check = await verifyDepositPaid(
+          offer as any,
+          scope,
+          expectedAmount,
+          data.depositPaymentIntentId
+        )
+        if (!check.ok) {
+          return NextResponse.json({ error: check.message, code: check.code }, { status: 400 })
         }
       }
     }

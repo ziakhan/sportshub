@@ -264,7 +264,11 @@ describe("direct charge lifecycle", () => {
 
     const call = fakeStripe.refunds.create.mock.calls[0]
     expect(call[0]).toEqual({ payment_intent: intentId, amount: 4000 })
-    expect(call[1]).toEqual({ stripeAccount: "acct_test_1" })
+    // Deterministic idempotency key (audit H3) rides alongside the account.
+    expect(call[1]).toEqual({
+      idempotencyKey: `refund_${paymentId}_4000`,
+      stripeAccount: "acct_test_1",
+    })
 
     const obligation = await prisma.paymentObligation.findUnique({ where: { id: obligationId } })
     expect(obligation!.status).toBe("PENDING") // the 40 came back off the books

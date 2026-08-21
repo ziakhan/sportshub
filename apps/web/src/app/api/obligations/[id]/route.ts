@@ -4,6 +4,8 @@ import { prisma } from "@youthbasketballhub/db"
 import { z } from "zod"
 import { ObligationError, waiveObligation } from "@/lib/payments/obligations"
 import { merchantAccess } from "@/lib/payments/authz"
+import { auditSafe } from "@/lib/audit"
+import { actorRoleAtTenant } from "@/lib/authz/team-scope"
 
 export const dynamic = "force-dynamic"
 
@@ -44,6 +46,23 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
       obligationId: params.id,
       reason: data.reason,
     })
+
+    // Audit the decision to forgive money (M1): who waived what, when, why.
+    await auditSafe({
+      actorId: userId,
+      actorRole: sessionInfo.isPlatformAdmin
+        ? "PlatformAdmin"
+        : obligation.payeeTenantId
+          ? await actorRoleAtTenant(userId, obligation.payeeTenantId)
+          : "LeagueManager",
+      action: "OBLIGATION_WAIVE",
+      resource: "PaymentObligation",
+      resourceId: params.id,
+      tenantId: obligation.payeeTenantId,
+      metadata: { reason: data.reason ?? null },
+      request,
+    })
+
     return NextResponse.json({ status: updated.status })
   } catch (error) {
     if (error instanceof z.ZodError) {

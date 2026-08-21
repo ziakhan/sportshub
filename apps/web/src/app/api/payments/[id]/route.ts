@@ -9,6 +9,9 @@ import {
 } from "@/lib/payments/obligations"
 import { merchantAccess } from "@/lib/payments/authz"
 import { getStripe, StripeNotConfiguredError } from "@/lib/payments/stripe"
+import { assertPaymentsEnabled, PaymentsDisabledError } from "@/lib/payments/kill-switch"
+import { auditSafe } from "@/lib/audit"
+import { actorRoleAtTenant } from "@/lib/authz/team-scope"
 import { notify } from "@/lib/notifications"
 import { appBaseUrl, escapeHtml, formatMoney, sendEmail, transactionalFooter } from "@/lib/email"
 
@@ -29,6 +32,9 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
     const sessionInfo = await getSessionUserId()
     if (!sessionInfo) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     const userId = sessionInfo.userId
+
+    // Universal kill switch: no refund may start while payments are paused.
+    await assertPaymentsEnabled()
 
     const payment = await prisma.payment.findUnique({
       where: { id: params.id },
@@ -84,30 +90,82 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
           { status: 400 }
         )
       }
+
+      // Single-shot guard against a double-clicked / raced refund (audit H3):
+      // claim the refund by stamping refundedAt, but only while it is still
+      // null and the payment SUCCEEDED. Two concurrent refunds both reach here;
+      // exactly one claim updates a row, the other gets count 0 and is refused
+      // BEFORE any money leaves Stripe.
+      const claim = await prisma.payment.updateMany({
+        where: { id: payment.id, refundedAt: null, status: "SUCCEEDED" },
+        data: { refundedAt: new Date() },
+      })
+      if (claim.count === 0) {
+        return NextResponse.json(
+          { error: "Payment is not refundable", code: "ALREADY_REFUNDED" },
+          { status: 400 }
+        )
+      }
+
       const stripe = getStripe()
-      await stripe.refunds.create(
-        {
-          payment_intent: payment.stripePaymentIntentId!,
-          amount: Math.round(amount * 100),
-          // Destination charges (PLATFORM_COLLECT): pull the club's share
-          // back from their account and return our fee, proportionally —
-          // otherwise the platform balance eats the whole refund.
-          ...(payment.stripeDestinationAccountId
-            ? { reverse_transfer: true, refund_application_fee: true }
-            : {}),
-        },
-        payment.stripeAccountId ? ({ stripeAccount: payment.stripeAccountId } as any) : undefined
-      )
+      try {
+        await stripe.refunds.create(
+          {
+            payment_intent: payment.stripePaymentIntentId!,
+            amount: Math.round(amount * 100),
+            // Destination charges (PLATFORM_COLLECT): pull the club's share
+            // back from their account and return our fee, proportionally —
+            // otherwise the platform balance eats the whole refund.
+            ...(payment.stripeDestinationAccountId
+              ? { reverse_transfer: true, refund_application_fee: true }
+              : {}),
+          },
+          {
+            // Deterministic key so a retry of the SAME refund is a no-op at
+            // Stripe, never a second refund (audit H3).
+            idempotencyKey: `refund_${payment.id}_${Math.round(amount * 100)}`,
+            ...(payment.stripeAccountId ? { stripeAccount: payment.stripeAccountId } : {}),
+          } as any
+        )
+      } catch (e) {
+        // Refund failed → release the claim so a legitimate retry can refund.
+        await prisma.payment
+          .update({ where: { id: payment.id }, data: { refundedAt: null } })
+          .catch(() => {})
+        throw e
+      }
       const fully = amount >= Number(payment.amount)
       const updated = await prisma.payment.update({
         where: { id: payment.id },
         data: {
           refundAmount: amount,
-          refundedAt: new Date(),
           status: fully ? "REFUNDED" : "SUCCEEDED",
         },
       })
       if (payment.obligationId) await recomputeObligationStatus(prisma, payment.obligationId)
+
+      // Audit the money movement (M1): who refunded what, when.
+      const auditTenantId = payment.tenantId ?? payment.obligation?.payeeTenantId ?? null
+      await auditSafe({
+        actorId: userId,
+        actorRole: sessionInfo.isPlatformAdmin
+          ? "PlatformAdmin"
+          : auditTenantId
+            ? await actorRoleAtTenant(userId, auditTenantId)
+            : "LeagueManager",
+        action: "PAYMENT_REFUND",
+        resource: "Payment",
+        resourceId: payment.id,
+        tenantId: auditTenantId,
+        metadata: {
+          amount,
+          currency: payment.currency,
+          method: "STRIPE",
+          fully,
+          paymentIntentId: payment.stripePaymentIntentId,
+        },
+        request,
+      })
 
       // Payer notice — best-effort, the refund already succeeded. The
       // charge.refunded webhook skips its own notice when refundAmount is
@@ -170,11 +228,35 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
       })
     )
 
+    // Audit the money movement (M1): who refunded what, when.
+    const auditTenantId = payment.tenantId ?? payment.obligation?.payeeTenantId ?? null
+    await auditSafe({
+      actorId: userId,
+      actorRole: sessionInfo.isPlatformAdmin
+        ? "PlatformAdmin"
+        : auditTenantId
+          ? await actorRoleAtTenant(userId, auditTenantId)
+          : "LeagueManager",
+      action: "PAYMENT_REFUND",
+      resource: "Payment",
+      resourceId: params.id,
+      tenantId: auditTenantId,
+      metadata: {
+        amount: Number(updated.refundAmount),
+        currency: payment.currency,
+        method: payment.method,
+      },
+      request,
+    })
+
     return NextResponse.json({
       status: updated.status,
       refundAmount: Number(updated.refundAmount),
     })
   } catch (error) {
+    if (error instanceof PaymentsDisabledError) {
+      return NextResponse.json({ error: error.message, code: error.code }, { status: 503 })
+    }
     if (error instanceof z.ZodError) {
       return NextResponse.json({ error: "Validation error", details: error.errors }, { status: 400 })
     }

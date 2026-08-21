@@ -195,7 +195,9 @@ describe("platform default → PLATFORM_COLLECT destination charges", () => {
       reverse_transfer: true,
       refund_application_fee: true,
     })
-    expect(call[1]).toBeUndefined() // platform account, not the connected one
+    // Platform account (no stripeAccount), but the deterministic idempotency
+    // key (audit H3) still rides in the request options.
+    expect(call[1]).toEqual({ idempotencyKey: `refund_${paymentId}_4000` })
 
     const obligation = await prisma.paymentObligation.findUnique({ where: { id: obligationId } })
     expect(obligation!.status).toBe("PENDING")
