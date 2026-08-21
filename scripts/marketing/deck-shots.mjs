@@ -181,8 +181,71 @@ const SHOTS = [
       return true
     },
   },
-  { name: "schedule", url: (c) => `${c.console}?tab=schedule`, frames: [{ scrollTo: "Team check" }] },
-  { name: "playoffs", url: (c) => `${c.console}?tab=playoffs` },
+  {
+    name: "schedule",
+    /* Slide 5. The third frame the owner asked for is the BURDEN table — it
+       exists and always has: "Fairness by team" on the schedule tab, worst
+       first by burden, one row per team with back-to-backs, long waits, early
+       starts, late endings and the rest. It needs a scored season, so this is
+       shot on the completed twin rather than the mid-season world. */
+    custom: async ({ page, shoot, twin, base }) => {
+      if (!twin) {
+        console.log("  SKIPPED schedule: no completed twin. Run scripts/demo/seed-nph-endseason.ts")
+        return false
+      }
+      const url = `${base}/manage/leagues/${twin.leagueId}/seasons/${twin.seasonId}/manage?tab=schedule`
+      await page.goto(url, { waitUntil: "networkidle", timeout: 90000 })
+      await page.waitForTimeout(7000)
+      await bringToTop(page, "TEAM CHECK")
+      await page.waitForTimeout(800)
+      await shoot("schedule")                               // 1. team check
+
+      const ok = await page.evaluate(() => !!document.querySelector('[data-testid="fairness-summary"]'))
+      if (!ok) throw new Error("no fairness table on the schedule tab; refusing to ship slide 5 without it")
+      await bringToTop(page, "FAIRNESS BY TEAM")
+      await page.waitForTimeout(900)
+      const rows = await page.evaluate(
+        () => document.querySelector('[data-testid="fairness-summary"]')?.querySelectorAll("tbody tr").length ?? 0
+      )
+      if (rows === 0) throw new Error("fairness table drew no rows")
+      console.log(`    fairness: ${rows} team rows`)
+      await shoot("schedule-2")                             // 2. the burden table
+      return true
+    },
+  },
+  {
+    name: "playoffs",
+    /* Slide 9, ending on a drawn bracket. Playoffs only generate on the
+       COMPLETED twin: seeds resolve from finished standings, so the bracket
+       carries real club names instead of placeholders. */
+    custom: async ({ page, shoot, twin, base }) => {
+      if (!twin) {
+        console.log("  SKIPPED playoffs: no completed twin. Run scripts/demo/seed-nph-endseason.ts")
+        return false
+      }
+      const url = `${base}/manage/leagues/${twin.leagueId}/seasons/${twin.seasonId}/manage?tab=playoffs`
+      await page.goto(url, { waitUntil: "networkidle", timeout: 90000 })
+      await page.waitForTimeout(8000)
+      await bringToTop(page, "PLAYOFF PLAN")
+      await page.waitForTimeout(800)
+      await shoot("playoffs")                               // 1. the plan, in plain sentences
+
+      const drawn = await page.evaluate(() => {
+        const t = document.querySelector("main")?.innerText ?? ""
+        return /Quarterfinal|Semifinal|Round of \d+/i.test(t)
+      })
+      if (!drawn) {
+        throw new Error("no bracket rounds on the playoffs tab; generate the plan first")
+      }
+      for (const [needle, name] of [["Quarterfinal", "playoffs-2"], ["Semifinal", "playoffs-3"]]) {
+        const moved = await bringToTop(page, needle)
+        if (moved < 0) continue
+        await page.waitForTimeout(900)
+        await shoot(name)                                   // 2-3. the drawn bracket
+      }
+      return true
+    },
+  },
   { name: "referees", url: (c) => `${c.console}?tab=referees`, frames: [{ scrollTo: "League referee pool" }] },
   {
     name: "waivers",
@@ -210,6 +273,27 @@ const SHOTS = [
  */
 const PLAN_LEAGUE_NAME = process.env.DECK_PLAN_LEAGUE_NAME ?? "NPH Showcase League"
 const PLAN_SEASON_LABEL = process.env.DECK_PLAN_SEASON_LABEL ?? "Fall/Winter 2026-27"
+
+/**
+ * THE COMPLETED TWIN, where slides 5 and 9 are shot. Standings only resolve
+ * and the playoff generator only names real teams once every regular-season
+ * game is scored, which is exactly what scripts/demo/seed-nph-endseason.ts
+ * builds. Generating playoffs against the mid-season Showcase season fails —
+ * that is not a configuration problem, it is the wrong world.
+ */
+const TWIN_LEAGUE_NAME = process.env.DECK_TWIN_LEAGUE_NAME ?? "NPH Showcase League — End of Season"
+
+async function endSeason(prisma) {
+  if (process.env.DECK_TWIN_LEAGUE && process.env.DECK_TWIN_SEASON) {
+    return { leagueId: process.env.DECK_TWIN_LEAGUE, seasonId: process.env.DECK_TWIN_SEASON }
+  }
+  const season = await prisma.season.findFirst({
+    where: { league: { name: TWIN_LEAGUE_NAME } },
+    orderBy: { createdAt: "desc" },
+    select: { id: true, leagueId: true },
+  })
+  return season ? { leagueId: season.leagueId, seasonId: season.id } : null
+}
 
 async function planningSeason(prisma) {
   if (process.env.DECK_PLAN_LEAGUE && process.env.DECK_PLAN_SEASON) {
@@ -281,7 +365,7 @@ const band = (page, full) =>
     return { x: Math.round(r.x), y: top, width: Math.round(r.width), height: Math.min(560, innerHeight - top) }
   }, full)
 
-async function captureSet(outDir, planning) {
+async function captureSet(outDir, planning, twin) {
   fs.mkdirSync(outDir, { recursive: true })
   const browser = await chromium.launch()
   try {
@@ -295,7 +379,7 @@ async function captureSet(outDir, planning) {
          untouched, so fixing one slide never costs a re-shoot of the rest. */
       if (ONLY_SHOTS && !ONLY_SHOTS.includes(shot.name)) continue
       if (shot.custom) {
-        const ok = await shot.custom({ page, shoot, planning, base: BASE })
+        const ok = await shot.custom({ page, shoot, planning, twin, base: BASE })
         if (ok) console.log(`  200 ${shot.name} (scripted)`)
         continue
       }
@@ -343,114 +427,136 @@ async function captureSet(outDir, planning) {
   }
 }
 
-async function renameForNeutral(prisma, snapshotPath, planning) {
-  /* THE PLAN'S OWN NAME CARRIES THE BRAND. The imported reference plan is
-     called "NPH plan" (IMPORTED_PLAN_NAME), and it is printed on all three
-     planner frames — "Working in NPH plan", "NPH plan is on the board", and
-     the plan picker. Renaming only the league leaves it sitting there. */
+/**
+ * THE NEUTRAL SET IS A RENAME, NOT A SECOND WORLD, and the rename has to cover
+ * everything a frame can print:
+ *
+ *  · every LEAGUE being shot — DECK_LEAGUE, the journey world behind slide 4,
+ *    and its completed twin behind slides 5 and 9. All three carry "NPH".
+ *  · the ORGANISATION each of them hangs off.
+ *  · the PLAN's own name. The imported reference plan is called "NPH plan" and
+ *    it is printed on all three planner frames.
+ *  · the stored RECAP BODIES, which carry the league name in their text.
+ *
+ * Everything is snapshotted first and put back in a finally block. If this is
+ * killed mid-run, run it again: it re-snapshots and re-restores.
+ */
+async function renameForNeutral(prisma, snapshotPath, planning, twin) {
+  const leagueIds = [...new Set([LEAGUE, planning?.leagueId, twin?.leagueId].filter(Boolean))]
+  const leagues = []
+  for (const id of leagueIds) {
+    const row = await prisma.league.findUnique({
+      where: { id },
+      select: { id: true, name: true, tagline: true, description: true, organizationId: true },
+    })
+    if (row) leagues.push(row)
+  }
+  /* A league id that no longer resolves means DECK_LEAGUE is stale — every
+     reseed mints new ids. Survivable on a filtered run; on a full run it would
+     ship NPH-branded slides to the neutral deck, so it stops here. */
+  if (leagues.length < leagueIds.length && !ONLY_SHOTS) {
+    throw new Error(
+      `neutral rename: only ${leagues.length} of ${leagueIds.length} leagues resolved. Set DECK_LEAGUE to a league this world holds.`
+    )
+  }
+
   const plans = planning
     ? await prisma.seasonPlan.findMany({
         where: { seasonId: planning.seasonId, name: { contains: "NPH" } },
         select: { id: true, name: true },
       })
     : []
-  for (const pl of plans) {
-    await prisma.seasonPlan.update({
-      where: { id: pl.id },
-      data: { name: pl.name.split("NPH").join("Parkview") },
-    })
-  }
-
-  const league = await prisma.league.findUnique({
-    where: { id: LEAGUE },
-    select: { name: true, tagline: true, description: true, organizationId: true },
-  })
-  /* A missing league means DECK_LEAGUE is stale — every reseed mints new ids.
-     On a filtered run that is survivable (the planner frames never show the
-     league name); on a full run it would silently ship NPH-branded slides to
-     the neutral deck, so it stops here. */
-  if (!league) {
-    if (!ONLY_SHOTS) {
-      throw new Error(
-        `neutral rename: no league ${LEAGUE}. Set DECK_LEAGUE to the league this world actually holds.`
-      )
-    }
-    console.log(`  league ${LEAGUE} not found — renamed ${plans.length} plan(s) only (filtered run)`)
-    fs.writeFileSync(snapshotPath, JSON.stringify({ league: null, org: null, posts: [], plans }))
-    return
-  }
-  const org = league.organizationId
-    ? await prisma.organization.findUnique({ where: { id: league.organizationId }, select: { name: true } })
-    : null
-  /* Recap bodies carry the league name in their text. Rename only the league
-     and "NPH" is still sitting in the news cards on the public hub shot. */
   const posts = await prisma.post.findMany({
     where: { OR: [{ body: { contains: "NPH" } }, { title: { contains: "NPH" } }] },
     select: { id: true, title: true, body: true },
   })
-  fs.writeFileSync(snapshotPath, JSON.stringify({ league, org, posts, plans }))
+  const orgIds = [...new Set(leagues.map((l) => l.organizationId).filter(Boolean))]
+  const orgs = []
+  for (const id of orgIds) {
+    const o = await prisma.organization.findUnique({ where: { id }, select: { id: true, name: true } })
+    if (o) orgs.push(o)
+  }
 
-  await prisma.league.update({
-    where: { id: LEAGUE },
-    data: { name: NEUTRAL.league, tagline: NEUTRAL.tagline, description: NEUTRAL.description },
-  })
-  if (league.organizationId) {
-    await prisma.organization.update({ where: { id: league.organizationId }, data: { name: NEUTRAL.org } })
+  fs.writeFileSync(snapshotPath, JSON.stringify({ leagues, orgs, posts, plans }))
+
+  const swap = (t) =>
+    t?.split("NPH Showcase League").join(NEUTRAL.league).split("NPH Summer League").join(NEUTRAL.league).split("NPH").join("Parkview") ?? t
+
+  for (const lg of leagues) {
+    // A twin keeps its own suffix ("— End of Season"), so the frames still
+    // read as the season that finished, just without the brand on it.
+    await prisma.league.update({
+      where: { id: lg.id },
+      data: { name: swap(lg.name), tagline: NEUTRAL.tagline, description: NEUTRAL.description },
+    })
   }
-  const swap = (s) =>
-    s?.split("NPH Summer League").join(NEUTRAL.league).split("NPH").join("Parkview") ?? s
-  for (const p of posts) {
-    await prisma.post.update({ where: { id: p.id }, data: { title: swap(p.title), body: swap(p.body) } })
+  for (const o of orgs) {
+    await prisma.organization.update({ where: { id: o.id }, data: { name: NEUTRAL.org } })
   }
-  console.log(`  renamed (${posts.length} posts, ${plans.length} plan(s) patched)`)
+  for (const pl of plans) {
+    await prisma.seasonPlan.update({ where: { id: pl.id }, data: { name: swap(pl.name) } })
+  }
+  for (const post of posts) {
+    await prisma.post.update({ where: { id: post.id }, data: { title: swap(post.title), body: swap(post.body) } })
+  }
+  console.log(
+    `  renamed ${leagues.length} league(s), ${orgs.length} org(s), ${plans.length} plan(s), ${posts.length} post(s)`
+  )
 }
 
 async function restore(prisma, snapshotPath) {
   if (!fs.existsSync(snapshotPath)) return
-  const { league, org, posts, plans } = JSON.parse(fs.readFileSync(snapshotPath, "utf8"))
+  const { leagues, orgs, posts, plans } = JSON.parse(fs.readFileSync(snapshotPath, "utf8"))
+  for (const lg of leagues ?? []) {
+    await prisma.league.update({
+      where: { id: lg.id },
+      data: { name: lg.name, tagline: lg.tagline, description: lg.description },
+    })
+  }
+  for (const o of orgs ?? []) {
+    await prisma.organization.update({ where: { id: o.id }, data: { name: o.name } })
+  }
   for (const pl of plans ?? []) {
     await prisma.seasonPlan.update({ where: { id: pl.id }, data: { name: pl.name } })
   }
-  if (!league) {
-    console.log(`  restored: ${(plans ?? []).length} plan name(s)`)
-    fs.rmSync(snapshotPath)
-    return
+  for (const post of posts ?? []) {
+    await prisma.post.update({ where: { id: post.id }, data: { title: post.title, body: post.body } })
   }
-  await prisma.league.update({
-    where: { id: LEAGUE },
-    data: { name: league.name, tagline: league.tagline, description: league.description },
-  })
-  if (league.organizationId) {
-    await prisma.organization.update({ where: { id: league.organizationId }, data: { name: org.name } })
-  }
-  for (const p of posts) {
-    await prisma.post.update({ where: { id: p.id }, data: { title: p.title, body: p.body } })
-  }
-  const after = await prisma.league.findUnique({ where: { id: LEAGUE }, select: { name: true } })
+  /* The demo world must come back whole. Anything still wearing the neutral
+     name is a half-restore, and that is worth failing loudly over. */
   const stray =
+    (await prisma.league.count({ where: { name: { contains: "Parkview" } } })) +
+    (await prisma.organization.count({ where: { name: { contains: "Parkview" } } })) +
+    (await prisma.seasonPlan.count({ where: { name: { contains: "Parkview" } } })) +
     (await prisma.post.count({
       where: { OR: [{ body: { contains: "Parkview" } }, { title: { contains: "Parkview" } }] },
-    })) + (await prisma.seasonPlan.count({ where: { name: { contains: "Parkview" } } }))
-  console.log(`  restored: ${after.name} | stray renamed posts: ${stray}`)
-  if (stray > 0) throw new Error("restore incomplete: renamed posts remain")
+    }))
+  console.log(
+    `  restored ${(leagues ?? []).length} league(s), ${(orgs ?? []).length} org(s), ${(plans ?? []).length} plan(s), ${(posts ?? []).length} post(s) · stray: ${stray}`
+  )
+  if (stray > 0) throw new Error("restore incomplete: renamed rows remain")
   fs.rmSync(snapshotPath)
 }
 
 const only = process.argv.includes("--nph") ? "nph" : process.argv.includes("--neutral") ? "neutral" : "both"
 
 const lookup = new PrismaClient()
-const planning = await planningSeason(lookup).finally(() => lookup.$disconnect())
+const planning = await planningSeason(lookup)
+const twin = await endSeason(lookup).finally(() => lookup.$disconnect())
 console.log(`deck shots -> ${RAW} (${only})`)
 console.log(
   planning
     ? `planner world: league ${planning.leagueId} season ${planning.seasonId}`
     : `planner world: MISSING (${PLAN_LEAGUE_NAME} / ${PLAN_SEASON_LABEL}) — slide 4 will be skipped`
 )
+console.log(
+  twin ? `completed twin: league ${twin.leagueId} season ${twin.seasonId}` : `completed twin: MISSING (${TWIN_LEAGUE_NAME}) — slides 5 and 9 will be skipped`
+)
 fs.mkdirSync(RAW, { recursive: true })
 
 if (only !== "neutral") {
   console.log("NPH set:")
-  await captureSet(path.join(RAW, "nph"), planning)
+  await captureSet(path.join(RAW, "nph"), planning, twin)
 }
 
 if (only !== "nph") {
@@ -458,8 +564,8 @@ if (only !== "nph") {
   const snapshot = path.join(RAW, "rename-snapshot.json")
   try {
     console.log("neutral set:")
-    await renameForNeutral(prisma, snapshot, planning)
-    await captureSet(path.join(RAW, "neutral"), planning)
+    await renameForNeutral(prisma, snapshot, planning, twin)
+    await captureSet(path.join(RAW, "neutral"), planning, twin)
   } finally {
     /* The demo world must come back even if a capture threw. */
     await restore(prisma, snapshot)

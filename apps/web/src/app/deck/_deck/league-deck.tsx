@@ -220,11 +220,11 @@ const SHOTS = {
   },
   schedule: {
     frames: ["schedule.webp", "schedule-2.webp"], w: 1900, h: 848,
-    alt: "The scheduling tab, and the team check confirming every team has its full game count",
+    alt: "The scheduling tab with every team checked, then the burden table: one row per team with back-to-backs, long waits, early starts and late endings",
   },
   playoffs: {
-    frames: ["playoffs.webp"], w: 1900, h: 848,
-    alt: "The playoff plan, checked against championship weekend",
+    frames: ["playoffs.webp", "playoffs-2.webp", "playoffs-3.webp"], w: 1900, h: 848,
+    alt: "The playoff plan in plain sentences, then the drawn bracket with seeds, tip times and the winners still to come",
   },
   referees: {
     frames: ["referees.webp", "referees-2.webp"], w: 1900, h: 848,
