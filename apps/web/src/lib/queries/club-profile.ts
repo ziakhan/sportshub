@@ -3,6 +3,7 @@ import { todayUtcDateFloor } from "@/lib/calendar/timezone"
 import { formatTrainingSchedule } from "@/lib/training"
 import { resolveCoverUrl } from "@/lib/queries/content"
 import { PUBLISHED_GAME } from "@/lib/games/visibility"
+import { listPublishedTryoutEvents, type PublicTryoutEvent } from "@/lib/queries/tryout-events"
 
 /**
  * Public club profile — ONE source for the web /club/[slug] page's data
@@ -76,6 +77,16 @@ export interface ClubProfileData {
   }
   teams: ClubProfileTeam[]
   tryouts: any[]
+  /**
+   * Club tryout EVENTS (docs/roadmap/club-tryouts-and-age-pools, ruling 10) —
+   * additive 2026-08-20, straight from lib/queries/tryout-events. Each event's
+   * sessions are also present in `tryouts` above (they are Tryout rows), so a
+   * surface that renders both must skip the session ids it already showed
+   * under an event. `tryouts` is left unfiltered on purpose: fielded native
+   * bundles read it and have no event UI yet, and losing rows there would be a
+   * subtractive change (parity law).
+   */
+  tryoutEvents: PublicTryoutEvent[]
   houseLeagues: any[]
   camps: any[]
   tournaments: any[]
@@ -363,10 +374,11 @@ export async function getClubProfile(
 
   const tryoutsWithFee = tryouts.map((t: any) => ({ ...t, fee: Number(t.fee) }))
   const teamIds = teams.map((t: any) => t.id)
-  const [{ recentGames, upcomingGames }, news, oneOnOne] = await Promise.all([
+  const [{ recentGames, upcomingGames }, news, oneOnOne, tryoutEvents] = await Promise.all([
     getGames(teamIds),
     getClubNews(tenant.id, teamIds),
     getOneOnOne(tenant.id, userId),
+    listPublishedTryoutEvents(tenant.id),
   ])
 
   const branding: any = tenant.branding
@@ -411,6 +423,7 @@ export async function getClubProfile(
     },
     teams,
     tryouts: tryoutsWithFee,
+    tryoutEvents,
     houseLeagues,
     camps,
     tournaments,

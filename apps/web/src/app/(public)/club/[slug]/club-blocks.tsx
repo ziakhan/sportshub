@@ -6,6 +6,8 @@ import { formatCurrency } from "@/lib/countries"
 import { ReviewForm, FlagReviewButton, type OwnReview } from "./review-form"
 import { PUBLIC_REVIEWS } from "@/lib/public-flags"
 import { OneOnOneBooking } from "@/components/training/one-on-one-booking"
+import { TryoutSessionCard, alongsideAgeGroups } from "@/components/tryouts/tryout-session-cards"
+import type { PublicTryoutEvent, PublicTryoutSession } from "@/lib/queries/tryout-events"
 
 export interface ClubPageData {
   club: any
@@ -16,6 +18,8 @@ export interface ClubPageData {
   accent: string
   teams: any[]
   tryouts: any[]
+  /** Club tryout events, each rendered as its own group of session cards. */
+  tryoutEvents?: PublicTryoutEvent[]
   houseLeagues: any[]
   camps: any[]
   tournaments: any[]
@@ -58,6 +62,49 @@ const BRAND_CHIP = "bg-[var(--brand-soft)] text-[color:var(--brand-ink)]"
 const BRAND_LINE_HOVER = "hover:border-[color:var(--brand-line)]"
 const BRAND_INK_HOVER = "hover:text-[color:var(--brand-ink)]"
 
+// ─── Club tryout events (ruling 10) ─────────────────────────────────────────
+// An event's sessions ARE Tryout rows, so they arrive twice from getClubProfile:
+// once inside `tryoutEvents` and once flat in `tryouts`. The flat list is left
+// intact for the native bundles that read it and have no event UI yet, so the
+// web page dedupes here instead: a session shown under its event never also
+// appears as a standalone program row.
+
+export interface TryoutEventGroup {
+  event: PublicTryoutEvent
+  /** Only the sessions still ahead — a finished event drops off the page. */
+  sessions: PublicTryoutSession[]
+}
+
+export function upcomingTryoutEvents(d: ClubPageData): TryoutEventGroup[] {
+  const now = Date.now()
+  return (d.tryoutEvents ?? [])
+    .map((event) => ({
+      event,
+      sessions: event.sessions.filter((s) => new Date(s.scheduledAt).getTime() >= now),
+    }))
+    .filter((g) => g.sessions.length > 0)
+}
+
+/** Tryouts that belong to no event, the simple team-posted case. */
+function standaloneTryouts(d: ClubPageData): any[] {
+  const inEvents = new Set(
+    (d.tryoutEvents ?? []).flatMap((e) => e.sessions.map((s) => s.id))
+  )
+  return (d.tryouts ?? []).filter((t: any) => !inEvents.has(t.id))
+}
+
+/** Everything a family can join right now, events counted by session. */
+export function publicProgramCount(d: ClubPageData): number {
+  return (
+    standaloneTryouts(d).length +
+    upcomingTryoutEvents(d).reduce((n, g) => n + g.sessions.length, 0) +
+    d.houseLeagues.length +
+    d.camps.length +
+    d.tournaments.length +
+    d.trainingSessions.length
+  )
+}
+
 export function hasBlockContent(key: string, d: ClubPageData): boolean {
   switch (key) {
     case "about":
@@ -65,14 +112,7 @@ export function hasBlockContent(key: string, d: ClubPageData): boolean {
     case "announcements":
       return d.announcements.length > 0
     case "programs":
-      return (
-        d.tryouts.length +
-          d.houseLeagues.length +
-          d.camps.length +
-          d.tournaments.length +
-          d.trainingSessions.length >
-          0 || !!d.oneOnOne
-      )
+      return publicProgramCount(d) > 0 || !!d.oneOnOne
         case "teams":
       return d.teams.length > 0
     case "schedule":
@@ -256,13 +296,54 @@ function AnnouncementsBlock({ d, variant }: { d: ClubPageData; variant: Variant 
   )
 }
 
+function TryoutEventGroupCard({ group, d }: { group: TryoutEventGroup; d: ClubPageData }) {
+  const { event, sessions } = group
+  const alongside = alongsideAgeGroups(sessions)
+  return (
+    <div className={`${BRAND_LINE} rounded-[22px] border bg-white p-4 sm:p-5`}>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="min-w-0">
+          <span
+            className={`${BRAND_CHIP} inline-block rounded-full px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wide`}
+          >
+            {event.seasonLabel} tryouts
+          </span>
+          <h3 className="font-display text-ink-950 mt-1.5 text-xl font-black leading-tight">
+            {event.title}
+          </h3>
+          <p className="text-ink-500 mt-0.5 text-sm">
+            {sessions.length} session{sessions.length === 1 ? "" : "s"} ·{" "}
+            {event.ageGroups.join(", ")}
+          </p>
+        </div>
+        <Link
+          href={`/tryout-event/${event.id}`}
+          className={`brand-focus text-ink-500 ${BRAND_INK_HOVER} inline-flex min-h-[44px] shrink-0 cursor-pointer items-center gap-0.5 text-[11px] font-semibold uppercase tracking-wide transition-colors duration-200`}
+        >
+          Event details
+          <IconArrow />
+        </Link>
+      </div>
+      {/* Ruling 10: one card per session, never a merged time or gym. */}
+      <div className="mt-4 grid gap-3 sm:grid-cols-2">
+        {sessions.map((s) => (
+          <TryoutSessionCard
+            key={s.id}
+            session={s}
+            currency={d.currency}
+            signedIn={d.signedIn}
+            alongside={alongside[s.id] ?? []}
+          />
+        ))}
+      </div>
+    </div>
+  )
+}
+
 function ProgramsBlock({ d }: { d: ClubPageData }) {
-  const count =
-    d.tryouts.length +
-    d.houseLeagues.length +
-    d.camps.length +
-    d.tournaments.length +
-    d.trainingSessions.length
+  const eventGroups = upcomingTryoutEvents(d)
+  const flatTryouts = standaloneTryouts(d)
+  const count = publicProgramCount(d)
   if (count === 0 && !d.oneOnOne) {
     return (
       <div className={`${BRAND_SOFT} ${BRAND_LINE} overflow-hidden rounded-[28px] border p-6 sm:p-7`}>
@@ -277,8 +358,15 @@ function ProgramsBlock({ d }: { d: ClubPageData }) {
   return (
     <div className={`${BRAND_SOFT} ${BRAND_LINE} overflow-hidden rounded-[28px] border p-6 sm:p-7`}>
       <BlockHeader title="Open programs" count={count} />
+      {eventGroups.length > 0 && (
+        <div className="mb-4 space-y-4">
+          {eventGroups.map((g) => (
+            <TryoutEventGroupCard key={g.event.id} group={g} d={d} />
+          ))}
+        </div>
+      )}
       <div className="grid gap-3 sm:grid-cols-2">
-        {d.tryouts.map((t: any) => (
+        {flatTryouts.map((t: any) => (
           <ProgramRow
             key={`t-${t.id}`}
             href={`/tryout/${t.id}`}
@@ -794,7 +882,7 @@ function Field({ icon, children }: { icon: ReactNode; children: ReactNode }) {
 function StatsBlock({ d }: { d: ClubPageData }) {
   const stats = [
     { value: d.teams.length, label: "Teams", cls: BRAND_INK },
-    { value: d.tryouts.length + d.houseLeagues.length + d.camps.length + d.tournaments.length + d.trainingSessions.length, label: "Programs", cls: "text-court-600" },
+    { value: publicProgramCount(d), label: "Programs", cls: "text-court-600" },
     { value: d.staffCount, label: "Staff", cls: "text-ink-700" },
   ]
   return (
@@ -919,7 +1007,8 @@ function IconGlobe() {
 /** How many programs a family could actually join right now. Drives the CTA. */
 function openProgramCount(d: ClubPageData): number {
   return (
-    (d.tryouts?.length ?? 0) +
+    standaloneTryouts(d).length +
+    upcomingTryoutEvents(d).reduce((n, g) => n + g.sessions.length, 0) +
     (d.camps?.length ?? 0) +
     (d.houseLeagues?.length ?? 0) +
     (d.trainingSessions?.length ?? 0)

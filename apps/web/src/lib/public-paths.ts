@@ -27,6 +27,10 @@ const PUBLIC_PAGE_PREFIXES = [
   "/marketplace",
   "/club",
   "/tryout",
+  // Club tryout EVENT pages (docs/roadmap/club-tryouts-and-age-pools, 2026-08-20).
+  // "/tryout" above does not cover this: the prefix match is segment-aware, so
+  // /tryout-event/<id> is a separate front door and needs its own entry.
+  "/tryout-event",
   "/house-league",
   "/camp",
   "/tournament",
@@ -94,6 +98,11 @@ const PUBLIC_API_READ_PREFIXES = [
   "/api/house-leagues",
   "/api/camps",
   "/api/tryouts",
+  // Tryout event share cards (GET /api/tryout-events/[id]/card) — Instagram,
+  // mail clients and every share sheet fetch the poster with no session. The
+  // renderer reads only the public query module, and this namespace holds
+  // nothing else; a future non-card route here must guard itself.
+  "/api/tryout-events",
   "/api/leagues",
   "/api/seasons",
   "/api/venues",

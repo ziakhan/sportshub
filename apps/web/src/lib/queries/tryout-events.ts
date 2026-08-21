@@ -22,7 +22,33 @@ import { ACTIVE_SIGNUPS } from "@/lib/registration/capacity"
  *    only when the event carries showSignupCount; otherwise the field is
  *    ABSENT, never a zero that reads as "nobody is coming".
  *  - Names. Signups are counted, never listed.
+ *
+ * The `club` block (added 2026-08-20 for the public event page and the
+ * Instagram poster) carries only fields the club's own public page already
+ * prints for anonymous visitors — the same set getClubProfile() returns:
+ * identity, place, website, currency and the branding trio. Nothing
+ * operational, no contact rows, no counts. Both consumers read the club from
+ * HERE rather than re-querying the tenant, so a poster can never say something
+ * the page does not.
  */
+
+export interface PublicTryoutEventClub {
+  id: string
+  slug: string
+  name: string
+  /** TenantStatus — drives "neutral by default, brand by choice" (brand.ts). */
+  status: string
+  currency: string
+  city: string | null
+  state: string | null
+  website: string | null
+  branding: {
+    primaryColor: string | null
+    logoUrl: string | null
+    /** Same JSON the club page's "Follow us" block renders. */
+    socials: unknown
+  } | null
+}
 
 export interface PublicTryoutSession {
   id: string
@@ -42,6 +68,8 @@ export interface PublicTryoutSession {
 export interface PublicTryoutEvent {
   id: string
   tenantId: string
+  /** The club that runs the event, in its public form. */
+  club: PublicTryoutEventClub
   title: string
   description: string | null
   seasonLabel: string
@@ -52,6 +80,31 @@ export interface PublicTryoutEvent {
   sessionCount: number
   sessions: PublicTryoutSession[]
 }
+
+/** The club as its own public page shows it, and nothing more. */
+const PUBLIC_CLUB_SELECT = {
+  id: true,
+  slug: true,
+  name: true,
+  status: true,
+  currency: true,
+  city: true,
+  state: true,
+  website: true,
+  branding: { select: { primaryColor: true, logoUrl: true, socials: true } },
+} as const
+
+/**
+ * A club with no public page has no public tryouts either: an unreviewed
+ * census import and a club merged into another are both unreachable at
+ * /club/[slug], so their events must be unreachable too (same gate as
+ * getClubProfile).
+ */
+const PUBLIC_TENANT_WHERE = {
+  publishedAt: { not: null },
+  mergedIntoId: null,
+  status: { in: ["ACTIVE", "UNCLAIMED"] },
+} as const
 
 const PUBLIC_SESSION_SELECT = {
   id: true,
@@ -84,9 +137,27 @@ function shapeEvent(row: any): PublicTryoutEvent {
   const sessions: PublicTryoutSession[] = (row.sessions ?? []).map((s: any) =>
     shapeSession(s, row.showSignupCount === true)
   )
+  const t = row.tenant ?? {}
   return {
     id: row.id,
     tenantId: row.tenantId,
+    club: {
+      id: t.id ?? row.tenantId,
+      slug: t.slug ?? "",
+      name: t.name ?? "",
+      status: String(t.status ?? "ACTIVE"),
+      currency: t.currency ?? "CAD",
+      city: t.city ?? null,
+      state: t.state ?? null,
+      website: t.website ?? null,
+      branding: t.branding
+        ? {
+            primaryColor: t.branding.primaryColor ?? null,
+            logoUrl: t.branding.logoUrl ?? null,
+            socials: t.branding.socials ?? null,
+          }
+        : null,
+    },
     title: row.title,
     description: row.description ?? null,
     seasonLabel: row.seasonLabel,
@@ -101,10 +172,11 @@ function shapeEvent(row: any): PublicTryoutEvent {
 export const listPublishedTryoutEvents = cache(
   async (tenantId: string): Promise<PublicTryoutEvent[]> => {
     const events = await (prisma as any).tryoutEvent.findMany({
-      where: { tenantId, isPublished: true },
+      where: { tenantId, isPublished: true, tenant: PUBLIC_TENANT_WHERE },
       select: {
         id: true,
         tenantId: true,
+        tenant: { select: PUBLIC_CLUB_SELECT },
         title: true,
         description: true,
         seasonLabel: true,
@@ -132,10 +204,11 @@ export const listPublishedTryoutEvents = cache(
 export const getTryoutEventPublic = cache(
   async (eventId: string): Promise<PublicTryoutEvent | null> => {
     const event = await (prisma as any).tryoutEvent.findFirst({
-      where: { id: eventId, isPublished: true },
+      where: { id: eventId, isPublished: true, tenant: PUBLIC_TENANT_WHERE },
       select: {
         id: true,
         tenantId: true,
+        tenant: { select: PUBLIC_CLUB_SELECT },
         title: true,
         description: true,
         seasonLabel: true,

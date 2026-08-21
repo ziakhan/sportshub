@@ -11,7 +11,7 @@ import { resolveLayout, zoneBlocks } from "@/lib/club-page/blocks"
 import { brandStyle, chosenBrandColor, NEUTRAL_BRAND } from "@/lib/club-page/brand"
 import { resolveTheme, themeStyle } from "@/lib/club-page/theme"
 import clubTheme from "./club-theme.module.css"
-import { ClubBlock, hasBlockContent, type ClubPageData } from "./club-blocks"
+import { ClubBlock, hasBlockContent, publicProgramCount, type ClubPageData } from "./club-blocks"
 import { ClubSubNav } from "./club-subnav"
 import { JsonLd, clubJsonLd } from "@/lib/seo/jsonld"
 import { trackPublicView } from "@/lib/seo/track"
@@ -77,6 +77,7 @@ export default async function ClubProfilePage({ params }: { params: { slug: stri
     club,
     teams,
     tryouts,
+    tryoutEvents,
     houseLeagues,
     camps,
     tournaments,
@@ -144,6 +145,9 @@ export default async function ClubProfilePage({ params }: { params: { slug: stri
     staff: (profile as any).staff ?? [],
     venues: (profile as any).venues ?? [],
     tryouts,
+    // Club tryout events (ruling 10, 2026-08-20). The Programs block groups
+    // these into per-session cards and drops the duplicates out of `tryouts`.
+    tryoutEvents,
     houseLeagues,
     camps,
     tournaments,
@@ -175,8 +179,9 @@ export default async function ClubProfilePage({ params }: { params: { slug: stri
 
   const subtitle = [club.city, club.state, club.country].filter(Boolean).join(", ")
   const nextGame = upcomingGames[0]
-  const programCount =
-    tryouts.length + houseLeagues.length + camps.length + tournaments.length + trainingSessions.length
+  // One counter for the hero, the At-a-glance rail and the Programs header:
+  // event sessions counted once, never twice through the flat tryouts list.
+  const programCount = publicProgramCount(data)
 
   // Quick-stats strip under the hero.
   const heroStats: Array<{ value: string; label: string }> = [
