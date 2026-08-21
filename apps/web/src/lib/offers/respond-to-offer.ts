@@ -20,6 +20,12 @@ import { addAcceptedPlayerToTeam } from "@/lib/teams/roster-entry"
  *    and nothing else. The jersey arrives later, at assignment.
  * `offerScope` is the one place that resolves club, currency and display
  * label for either shape.
+ *
+ * The teamless shape has two endings, because assignment and offer state are
+ * orthogonal: the club may pick a kid off the pool board BEFORE the family
+ * says yes. When that already happened, acceptance is the missing half and the
+ * roster spot is written here — the same rule as `rosterOnAssignment`, read
+ * from the other end. Without an assignment it stays money only.
  */
 
 export interface OfferOptionTerms {
@@ -142,7 +148,9 @@ async function notifyClubOfResponse(
   tx: any,
   offer: OfferForResponse,
   offerId: string,
-  accepted: boolean
+  accepted: boolean,
+  /** The team the accept landed them on, when the club had already picked them. */
+  joinedTeamName?: string | null
 ): Promise<void> {
   const scope = offerScope(offer)
   const clubOwner = await tx.userRole.findFirst({
@@ -154,7 +162,7 @@ async function notifyClubOfResponse(
   })
   if (!clubOwner) return
   const playerName = `${offer.player.firstName} ${offer.player.lastName}`
-  const joining = scope.teamless ? `the ${scope.label}` : scope.label
+  const joining = joinedTeamName ?? (scope.teamless ? `the ${scope.label}` : scope.label)
   await notify(tx, {
     userId: clubOwner.userId,
     type: accepted ? "offer_accepted" : "offer_declined",
@@ -212,9 +220,8 @@ export async function acceptOffer(offer: OfferForResponse, data: AcceptOfferInpu
       },
     })
 
-    // Roster formation belongs to the team offer only. A pool offer accepted
-    // here buys a spot in the age-group program; the roster row is written
-    // when a coach assigns the player to a team.
+    // A team offer forms its roster spot here, as it always has.
+    let joinedTeam: { id: string; name: string } | null = null
     if (offer.teamId) {
       await addAcceptedPlayerToTeam(tx, {
         teamId: offer.teamId,
@@ -223,6 +230,32 @@ export async function acceptOffer(offer: OfferForResponse, data: AcceptOfferInpu
         shoeSize: data.shoeSize,
         tracksuitSize: data.tracksuitSize,
       })
+    } else {
+      // A pool offer buys a spot in the age-group program. If a coach already
+      // claimed this kid off the pool board, the team half of the deal is
+      // settled and only the money was outstanding — so the roster spot lands
+      // now. Nothing to claim yet means money only: the spot follows the
+      // assignment, whichever of the two arrives second.
+      const held = await tx.tryoutPoolMember.findFirst({
+        where: {
+          tenantId: scope.tenantId,
+          playerId: offer.playerId,
+          teamId: { not: null },
+          ...(offer.ageGroup ? { ageGroup: offer.ageGroup } : {}),
+        },
+        select: { team: { select: { id: true, name: true } } },
+        orderBy: { assignedAt: "desc" },
+      })
+      if (held?.team) {
+        await addAcceptedPlayerToTeam(tx, {
+          teamId: held.team.id,
+          playerId: offer.playerId,
+          uniformSize: data.uniformSize,
+          shoeSize: data.shoeSize,
+          tracksuitSize: data.tracksuitSize,
+        })
+        joinedTeam = held.team
+      }
     }
 
     // Accepting creates the season-fee debt (flagship family→club flow).
@@ -267,13 +300,19 @@ export async function acceptOffer(offer: OfferForResponse, data: AcceptOfferInpu
       })
     }
 
-    await notifyClubOfResponse(tx, offer, updated.id, true)
+    await notifyClubOfResponse(tx, offer, updated.id, true, joinedTeam?.name)
     return {
       updated,
+      joinedTeam,
       obligationId: obligation?.id ?? null,
       paymentId: onSessionPayment?.id ?? null,
     }
   })
+
+  // What the family actually joined: the team the club had already picked them
+  // for, or the age-group program they are still pooled in.
+  const joinedLabel = result.joinedTeam?.name ?? scope.label
+  const joinedPreposition = scope.teamless && !result.joinedTeam ? "in" : "on"
 
   // Installment invoices are external Stripe calls → after the DB commit.
   if (
@@ -327,7 +366,7 @@ export async function acceptOffer(offer: OfferForResponse, data: AcceptOfferInpu
         userId: offer.player.parentId,
         type: "payment_receipt",
         title: "Payment received",
-        message: `${isDeposit ? "Deposit" : "Season fee"} for ${playerName} (${scope.label}): ${money} paid. Thank you!`,
+        message: `${isDeposit ? "Deposit" : "Season fee"} for ${playerName} (${joinedLabel}): ${money} paid. Thank you!`,
         link: "/payments",
         referenceId: result.paymentId,
         referenceType: "Payment",
@@ -348,7 +387,7 @@ export async function acceptOffer(offer: OfferForResponse, data: AcceptOfferInpu
             <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
               <h2>Payment received</h2>
               ${parent.firstName ? `<p>Hi ${escapeHtml(parent.firstName)},</p>` : ""}
-              <p>We received your ${isDeposit ? "deposit" : "season fee payment"} of <strong>${money}</strong> for <strong>${escapeHtml(playerName)}</strong> ${scope.teamless ? "in" : "on"} <strong>${escapeHtml(scope.label)}</strong> at <strong>${escapeHtml(clubName)}</strong>.</p>
+              <p>We received your ${isDeposit ? "deposit" : "season fee payment"} of <strong>${money}</strong> for <strong>${escapeHtml(playerName)}</strong> ${joinedPreposition} <strong>${escapeHtml(joinedLabel)}</strong> at <strong>${escapeHtml(clubName)}</strong>.</p>
               ${
                 isDeposit
                   ? "<p>The remaining balance will be charged to your card per the installment schedule.</p>"
@@ -368,7 +407,9 @@ export async function acceptOffer(offer: OfferForResponse, data: AcceptOfferInpu
     }
   }
 
-  return result.updated
+  // `joinedTeam` rides along so callers can say where the kid landed; the
+  // offer row's own fields are untouched, so `result.status` still reads.
+  return { ...result.updated, joinedTeam: result.joinedTeam }
 }
 
 /** Decline: offer -> DECLINED, club notified — one transaction. */

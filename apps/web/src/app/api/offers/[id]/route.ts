@@ -322,7 +322,9 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
         success: true,
         status: result.status,
         message: scope.teamless
-          ? `Offer accepted. ${playerName} has a spot in the ${offer.ageGroup ?? "club"} program.`
+          ? (result as { joinedTeam?: { name: string } | null }).joinedTeam
+            ? `Offer accepted. ${playerName} joins ${(result as { joinedTeam?: { name: string } | null }).joinedTeam!.name}.`
+            : `Offer accepted. ${playerName} has a spot in the ${offer.ageGroup ?? "club"} program.`
           : "Offer accepted! The player has been added to the team.",
       })
     } else {

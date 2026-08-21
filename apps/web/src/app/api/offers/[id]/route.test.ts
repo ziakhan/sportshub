@@ -156,6 +156,7 @@ describe("PATCH /api/offers/[id]", () => {
       },
       update: {
         status: "ACTIVE",
+        leftAt: null,
         uniformSize: "YM",
         shoeSize: null,
         tracksuitSize: null,

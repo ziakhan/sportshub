@@ -65,6 +65,8 @@ import { getServerSession } from "next-auth"
  *        link codes both directions + redeem, parent-side add-check)
  *   1150 club tryout events + age-group pools (combined gym sessions, pool
  *        sync, teamless offers, assignment market, release handshake)
+ *   1151 club tryouts owner scenario (30 kids, two grades one floor:
+ *        assign-then-accept and accept-then-assign both roster exactly once)
  */
 
 export function actAs(userId: string | null): void {

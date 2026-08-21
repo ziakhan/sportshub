@@ -64,6 +64,9 @@ beforeAll(async () => {
     clubs: [{ teams: [{ ageGroup: "U11" }, { ageGroup: "U13" }] }],
   })
   const club = world.clubs[0]
+  // The public read requires a published tenant (PUBLIC_TENANT_WHERE); the
+  // test-worlds club builder leaves publishedAt null.
+  await prisma.tenant.update({ where: { id: club.tenantId }, data: { publishedAt: new Date() } })
   tenantId = club.tenantId
   ownerId = club.owner.id
   teamU11 = { id: club.teams[0].id, name: club.teams[0].name }

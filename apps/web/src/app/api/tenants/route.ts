@@ -67,6 +67,11 @@ export async function POST(request: NextRequest) {
       data: {
         name: validatedData.name,
         slug: validatedData.slug,
+        // A club that creates itself means to exist in public. Without this
+        // stamp every publishedAt-gated surface (profile, directory, sitemap,
+        // mobile browse, tryout event pages, posters) 404s on it — only the
+        // census importer's review queue wants unpublished rows.
+        publishedAt: new Date(),
         description: validatedData.description,
         timezone: validatedData.timezone,
         phoneNumber: validatedData.phoneNumber,
