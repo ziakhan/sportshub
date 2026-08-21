@@ -84,14 +84,15 @@ Security audit 2026-08-21 (read-only, full findings in the session record): the 
 | G1 | Obligations, Stripe flow, webhooks, platform policy | ✅ | 4 suites + invoice-webhooks |
 | G2 | Withdrawals (roster/league, not payouts) | ✅ | withdrawals.int.test.ts |
 | G3 | **Family at volume**: two kids, three programs, mixed offline/online clubs, installments + one-shot, a refund — the family ledger stays truthful | ❌ | |
-| G4 | **Deposit cannot buy the season** (amount/currency/offer/payer binding on accept) | 🔧 | fixing 2026-08-21 |
-| G5 | **A forgiven or settled fee never charges the card again** (void invoices, cron status guard) | 🔧 | fixing 2026-08-21 |
-| G6 | **A charge always leaves a recoverable record** (no money without a Payment row) | 🔧 | fixing 2026-08-21 |
-| G7 | **Teamless age-group offers are payable online** and the minor gate routes rather than crashes | 🔧 | our own regression, fixing |
-| G8 | **Refund is idempotent under a double click** | 🔧 | fixing 2026-08-21 |
-| G9 | **The universal payments kill switch**: off means no charge, no onboarding, no cron collection; on resumes | 🔧 | owner ask, building |
-| G10 | Money routes leave an audit trail (waive, refund, offline record, payout-destination change) | 🔧 | building |
+| G4 | **Deposit cannot buy the season** (amount/currency/offer/payer binding on accept) | ✅ | payments-security.scenario.int.test.ts #1-2 (d056506) |
+| G5 | **A forgiven or settled fee never charges the card again** (void invoices, cron status guard) | ✅ | scenario #3 |
+| G6 | **A charge always leaves a recoverable record** (no money without a Payment row) | ✅ | scenario #4 |
+| G7 | **Teamless age-group offers are payable online** and the minor gate routes rather than crashes | ✅ | scenario #5 |
+| G8 | **Refund is idempotent under a double click** | ✅ | scenario #6 |
+| G9 | **The universal payments kill switch**: off means no charge, no onboarding, no cron collection; on resumes | ✅ | scenario #7; `PlatformSettings.paymentsEnabled`, needs an admin UI toggle (currently DB-level) |
+| G10 | Money routes leave an audit trail (waive, refund, offline record, payout-destination change) | ✅ | shipped d056506 |
 | G11 | Real Stripe test-mode E2E through the actual payment sheet, covering the OFFER rail (the existing verify-stripe-live.ts covers only the obligation rail) | ❌ | needs test keys + `stripe listen` |
+| G13 | pay-intent double-click on the saved-card branch mints a second intent (pre-existing; now at least visible/refundable) | ❌ | follow-up, deliberately out of the audit's scope |
 | G12 | Selective free: a family or program pays the club nothing, minted as $0 rather than waived after the fact | ❌ | owner ask, needs a discount/exemption model |
 
 ## H. Tier 2 — browser journeys (one per domain, in priority order)
