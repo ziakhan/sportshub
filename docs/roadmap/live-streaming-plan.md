@@ -5,7 +5,22 @@ tags: [theme/streaming, type/plan, status/proposed]
 
 # Live streaming per game — architecture plan (v2)
 
-> **Status: PROPOSED (2026-07-20, v2 after owner review). Nothing built yet.** Owner
+> **Status: PHASE 1 BACKEND BUILT 2026-08-21 (commit 0637741, local + staging only, not on production).**
+> Built: schema (StreamChannel, GameStream, League.streamingEnabled), the shared viewer query
+> module, placement + assigner with the take-over guard, admin channel CRUD, placement API
+> (PlatformAdmin or the court's scorekeeper), and the public per-game stream endpoint.
+> 12 scenario tests green. NOT built yet: every UI surface (scorekeeper confirm-by-picture
+> strip, game-page player, Streams ops dashboard) and phases 2-3.
+>
+> Rulings made during the build, owner to confirm: a finished game reads as **ended** even
+> inside its clock window (otherwise the earlier game's page plays the next game's picture);
+> placement is court XOR venue; viewer policy defaults to **SIGNED_IN** via `STREAM_VIEWER_POLICY`
+> in `lib/queries/game-stream.ts`; flipping it to PUBLIC also needs an entry in `lib/public-paths.ts`.
+>
+> Open, needs an owner ruling: **a game with no season can never stream**, because the league
+> consent flag is reached through `game.season.league` — one-off games have no consent path.
+>
+> Original plan below, unchanged. Owner
 > requirements: stream 5–7 parallel games via a small pool of cameras with fixed endpoints;
 > "Watch Live" on the public game page; **fewer cameras than courts** (cameras move between
 > venues — economics matter); and **deliberate human intervention** because people will put
