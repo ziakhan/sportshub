@@ -8,9 +8,21 @@ tags: [theme/streaming, type/plan, status/proposed]
 > **Status: PHASE 1 BACKEND BUILT 2026-08-21 (commit 0637741, local + staging only, not on production).**
 > Built: schema (StreamChannel, GameStream, League.streamingEnabled), the shared viewer query
 > module, placement + assigner with the take-over guard, admin channel CRUD, placement API
-> (PlatformAdmin or the court's scorekeeper), and the public per-game stream endpoint.
-> 12 scenario tests green. NOT built yet: every UI surface (scorekeeper confirm-by-picture
-> strip, game-page player, Streams ops dashboard) and phases 2-3.
+> (PlatformAdmin or the court's scorekeeper), the public per-game stream endpoint, and
+> **all three web UI surfaces** (commit 478b2c5): HLS player + preview tile, the game-page
+> dock in four states, LIVE badges on four public surfaces via one batched lookup, the
+> scorekeeper confirm-by-picture strip with its own secret-free candidates endpoint, and the
+> Streams ops wall with the phase-2 signal probe brought forward.
+>
+> **NOT built:** native (iOS/Android) playback — the mobile app carries no video dependency,
+> so parity is an open gap, not an oversight. No health cron (deploy-time work; the route it
+> should live at is named in `lib/streaming/health.ts`). No manual go-live/end UI and no
+> per-game manual override UI (`mapGameManually()` is library-only). No stale-channel
+> alerting beyond the on-page red state. Phase 3 (VOD, score overlay, consent capture, paid
+> access) untouched.
+>
+> **Held local by owner instruction (2026-08-21): nothing ships to production OR staging
+> until the feature is complete and the owner has reviewed it.**
 >
 > Rulings made during the build, owner to confirm: a finished game reads as **ended** even
 > inside its clock window (otherwise the earlier game's page plays the next game's picture);
