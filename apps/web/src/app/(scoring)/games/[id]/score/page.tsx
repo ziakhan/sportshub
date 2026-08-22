@@ -2,6 +2,7 @@ import { prisma } from "@youthbasketballhub/db"
 import { getSessionUserId } from "@/lib/auth-helpers"
 import { ScoringConsole } from "@/components/scoring/scoring-console"
 import { PreGameChecklist } from "@/components/scoring/pre-game-checklist"
+import { ScorekeeperStreamStrip } from "@/components/streaming/scorekeeper-stream-strip"
 
 /**
  * The scorer's-table console. Server shell only — the console bootstraps
@@ -30,6 +31,13 @@ export default async function ScoreGamePage({ params }: { params: { id: string }
   return (
     <>
       <PreGameChecklist gameId={params.id} />
+      {/* The camera strip (live-streaming plan, "The human interaction"). It
+          sits ABOVE the console rather than inside it: the console is a
+          2,000-line offline-queue machine, and a five-second once-a-day
+          confirmation has no business living in it. The strip fetches its own
+          candidates, renders nothing at all when there is no camera to talk
+          about, and is dismissible for the session. */}
+      <ScorekeeperStreamStrip gameId={params.id} />
       <ScoringConsole gameId={params.id} canCorrect={canCorrect} />
     </>
   )

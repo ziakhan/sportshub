@@ -19,7 +19,37 @@ interface ScoreCardProps {
   /** Venue/court line, e.g. "Maple Gym · Court 2". */
   venue?: string
   highlightsHref?: string
+  /**
+   * There is a camera on this game right now (live-streaming plan, "Schedule
+   * rows / game cards"). Callers pass the answer from ONE batched
+   * `getStreamingGameIds()` lookup — never a per-card query.
+   */
+  streaming?: boolean
   className?: string
+}
+
+/** A lens, so the mark reads as "picture", not just another status colour. */
+function LensGlyph() {
+  return (
+    <svg viewBox="0 0 24 24" className="h-3 w-3" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+      <path d="M2 7.5A2.5 2.5 0 0 1 4.5 5h8A2.5 2.5 0 0 1 15 7.5v9a2.5 2.5 0 0 1-2.5 2.5h-8A2.5 2.5 0 0 1 2 16.5Z" />
+      <path d="m15 10.5 6-3.6v10.2l-6-3.6" strokeLinejoin="round" />
+    </svg>
+  )
+}
+
+/**
+ * The streaming mark. It lives in the card's top-right slot rather than beside
+ * the status badge on purpose: a LIVE game would otherwise carry two chips
+ * both reading "Live", and a SCHEDULED game whose camera is already hot needs
+ * to keep saying "Upcoming" about the GAME while saying the picture is on.
+ */
+function WatchLiveBadge() {
+  return (
+    <Badge tone="live" dot icon={<LensGlyph />}>
+      Watch live
+    </Badge>
+  )
 }
 
 function StatusBadge({ status }: { status: GameStatus }) {
@@ -76,17 +106,23 @@ function TeamRow({ side, decided, won }: { side: Side; decided: boolean; won: bo
 }
 
 /** A single game row — upcoming (date/venue) or played (scores + highlights). */
-export function ScoreCard({ status, home, away, dateLabel, venue, highlightsHref, className }: ScoreCardProps) {
+export function ScoreCard({ status, home, away, dateLabel, venue, highlightsHref, streaming, className }: ScoreCardProps) {
   const decided = status === "FINAL" || status === "DEFAULTED"
   const homeWon = decided && (home.score ?? 0) > (away.score ?? 0)
   const awayWon = decided && (away.score ?? 0) > (home.score ?? 0)
 
   return (
     <div className={cn("border-ink-100 rounded-2xl border bg-white p-4", className)}>
-      <div className="mb-3 flex items-center justify-between">
+      <div className="mb-3 flex items-center justify-between gap-2">
         <StatusBadge status={status} />
-        {dateLabel && !decided && status !== "LIVE" && (
-          <span className="text-ink-600 text-[13px] font-medium">{dateLabel}</span>
+        {streaming ? (
+          <WatchLiveBadge />
+        ) : (
+          dateLabel &&
+          !decided &&
+          status !== "LIVE" && (
+            <span className="text-ink-600 text-[13px] font-medium">{dateLabel}</span>
+          )
         )}
       </div>
       <div className="space-y-2">

@@ -200,3 +200,63 @@ export async function getGameStreamForViewer(
     now
   )
 }
+
+/**
+ * Which of these games are showing a picture right now — ONE query for a whole
+ * page of cards (plan: "Schedule rows / game cards: red ● LIVE badge").
+ *
+ * A scoreboard renders 20-40 cards. Asking getGameStreamForViewer per card
+ * would be 40 round trips for a badge, so every list surface calls this once
+ * with the ids it already has and looks each card up in the returned Set.
+ *
+ * Same gates as the single read, in the same order — league opt-in, viewer
+ * policy, channel status, window — because a badge that appears for a game the
+ * viewer cannot open is a worse lie than no badge. No playbackUrl is selected:
+ * a badge needs to know THAT there is a picture, never where it lives.
+ */
+export async function getStreamingGameIds(
+  gameIds: string[],
+  viewer: StreamViewer | null,
+  now: Date = new Date()
+): Promise<Set<string>> {
+  if (gameIds.length === 0 || !viewerMayWatch(viewer)) return new Set()
+
+  const rows = await prisma.gameStream.findMany({
+    where: { gameId: { in: gameIds } },
+    select: {
+      gameId: true,
+      startedAt: true,
+      endedAt: true,
+      channel: { select: { status: true } },
+      game: {
+        select: {
+          scheduledAt: true,
+          duration: true,
+          status: true,
+          season: { select: { league: { select: { streamingEnabled: true } } } },
+        },
+      },
+    },
+  })
+
+  const live = new Set<string>()
+  for (const row of rows) {
+    if (!row.game.season?.league?.streamingEnabled) continue
+    const open = isStreamWindowOpen(
+      {
+        startedAt: row.startedAt,
+        endedAt: row.endedAt,
+        scheduledAt: row.game.scheduledAt,
+        duration: row.game.duration,
+        gameStatus: row.game.status,
+        channelStatus: row.channel.status,
+        // The window question never touches the URL; keeping it out of this
+        // path is the point (see the header rule).
+        playbackUrl: "",
+      },
+      now
+    )
+    if (open) live.add(row.gameId)
+  }
+  return live
+}

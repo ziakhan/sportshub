@@ -211,7 +211,7 @@ export default async function HomePage() {
       )}
       {!participantView && (
         <>
-          <ScoreboardStrip games={scoreboard} />
+          <ScoreboardStrip games={scoreboard} viewerId={userId} />
           {!userId && demoOn && (
             <div className="container mx-auto px-4 sm:px-6">
               <HintBalloon hintKey="home-scores">

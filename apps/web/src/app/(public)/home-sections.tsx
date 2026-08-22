@@ -6,6 +6,7 @@ import type { FeedItem, HighlightItem, ScoreboardGame } from "@/lib/queries/cont
 import type { SeasonLeaders } from "@/lib/queries/season-stats"
 import type { YourTeamCard } from "@/lib/queries/home"
 import { playerDisplayName } from "@/lib/privacy/names"
+import { getStreamingGameIds } from "@/lib/queries/game-stream"
 
 /**
  * Homepage content sections (plan §3). All density-graceful: each section
@@ -13,8 +14,21 @@ import { playerDisplayName } from "@/lib/privacy/names"
  * acquisition-focused homepage below.
  */
 
-export function ScoreboardStrip({ games }: { games: ScoreboardGame[] }) {
+export async function ScoreboardStrip({
+  games,
+  viewerId = null,
+}: {
+  games: ScoreboardGame[]
+  /** Signed-in viewer, for the streaming badge's policy check. */
+  viewerId?: string | null
+}) {
   if (games.length === 0) return null
+  // ONE batched lookup for the whole strip (live-streaming plan, "Schedule
+  // rows / game cards") — never a query per card.
+  const streamingIds = await getStreamingGameIds(
+    games.map((g) => g.id),
+    { userId: viewerId }
+  )
   return (
     <section className="border-ink-100 border-b bg-white py-5">
       <div className="container mx-auto px-4 sm:px-6">
@@ -31,6 +45,7 @@ export function ScoreboardStrip({ games }: { games: ScoreboardGame[] }) {
                 status={g.status}
                 home={{ name: g.home.name, score: g.home.score }}
                 away={{ name: g.away.name, score: g.away.score }}
+                streaming={streamingIds.has(g.id)}
                 dateLabel={format(new Date(g.dateISO), "EEE · h:mm a")}
                 venue={[g.leagueName, g.venue].filter(Boolean).join(" · ") || undefined}
                 className="hover:border-play-200 h-full transition-colors"

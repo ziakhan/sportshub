@@ -27,6 +27,7 @@
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.0",
     "date-fns": "^3.0.6",
+    "hls.js": "^1.7.1",
     "jose": "^5.9.6",
     "next": "^14.0.4",
     "next-auth": "^4.24.13",

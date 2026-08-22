@@ -5,6 +5,7 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@youthbasketballhub/db"
 import { getTeamPublicData } from "@/lib/queries/season-stats"
+import { getStreamingGameIds } from "@/lib/queries/game-stream"
 import { getViewerScope, isParticipant } from "@/lib/privacy/participants"
 import { getChatMembership, getUnreadChatCounts } from "@/lib/teams/chat-access"
 import { isTeamMember } from "@/lib/authz/team-scope"
@@ -90,6 +91,12 @@ export default async function PublicTeamPage({ params }: { params: { id: string 
   const upcoming = games
     .filter((g: any) => g.status === "SCHEDULED" && new Date(g.scheduledAt) >= new Date())
     .reverse() // query is desc; upcoming reads better ascending
+  // ONE batched lookup for the whole schedule grid (live-streaming plan,
+  // "Schedule rows / game cards").
+  const streamingIds = await getStreamingGameIds(
+    [...completed, ...upcoming].map((g: any) => g.id),
+    { userId: viewerId }
+  )
 
   const rosterNames = new Map<string, string>(
     team.players.map((tp: any) => [tp.player.id, playerDisplayName(tp.player, participant)])
@@ -231,6 +238,7 @@ export default async function PublicTeamPage({ params }: { params: { id: string 
                   <Link key={g.id} href={`/live/${g.id}`} className="block">
                     <ScoreCard
                       status="SCHEDULED"
+                      streaming={streamingIds.has(g.id)}
                       home={{ name: g.homeTeam.name}}
                       away={{ name: g.awayTeam.name}}
                       dateLabel={format(new Date(g.scheduledAt), "EEE MMM d · h:mm a")}
@@ -243,6 +251,7 @@ export default async function PublicTeamPage({ params }: { params: { id: string 
                   <Link key={g.id} href={`/live/${g.id}`} className="block">
                     <ScoreCard
                       status={g.status === "LIVE" ? "LIVE" : "FINAL"}
+                      streaming={streamingIds.has(g.id)}
                       home={{
                         name: g.homeTeam.name,
                         score: g.homeScore,

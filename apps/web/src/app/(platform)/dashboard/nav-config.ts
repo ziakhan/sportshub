@@ -208,6 +208,9 @@ export function buildNavSections({
         { label: "Club review", href: "/dashboard/admin/clubs/lifecycle", icon: "club" },
         { label: "Leagues", href: "/manage/leagues", icon: "star" },
         { label: "Claims", href: "/dashboard/admin/claims", icon: "clipboard" },
+        // The camera fleet: signal, placement, and what each rig is showing
+        // (docs/roadmap/live-streaming-plan.md, "Surfaces" 5).
+        { label: "Streams", href: "/dashboard/admin/streams", icon: "play" },
         { label: "Payments", href: "/dashboard/admin/payments", icon: "card" },
         { label: "Audit Trail", href: "/dashboard/admin/audit", icon: "clipboard" },
         { label: "Demos", href: "/dashboard/admin/demos", icon: "star" },

@@ -9,6 +9,7 @@ import { getPublicSeason } from "@/lib/queries/season"
 import { getSeasonStandings } from "@/lib/queries/standings"
 import { getSeasonLeaders } from "@/lib/queries/season-stats"
 import { resolveCoverUrl } from "@/lib/queries/content"
+import { getStreamingGameIds } from "@/lib/queries/game-stream"
 import { getViewerScope, isParticipant } from "@/lib/privacy/participants"
 import { playerDisplayName } from "@/lib/privacy/names"
 import {
@@ -152,6 +153,13 @@ export default async function PublicLeagueHubPage({ params }: { params: { id: st
             .then((f: any) => !!f)
         : false,
     ])
+
+  // ONE batched lookup for every card in this section (live-streaming plan,
+  // "Schedule rows / game cards").
+  const streamingIds = await getStreamingGameIds(
+    [...liveGames, ...recentGames, ...upcomingGames].map((g: any) => g.id),
+    { userId: viewerId }
+  )
 
   const posts = rawPosts.map((p: any) => ({ ...p, coverUrl: resolveCoverUrl(p.tags, p.media) }))
 
@@ -415,6 +423,7 @@ export default async function PublicLeagueHubPage({ params }: { params: { id: st
                   <Link key={g.id} href={`/live/${g.id}`} className="block">
                     <ScoreCard
                       status="LIVE"
+                      streaming={streamingIds.has(g.id)}
                       home={{ name: g.homeTeam.name, score: g.homeScore }}
                       away={{ name: g.awayTeam.name, score: g.awayScore }}
                       venue={g.venue?.name}
@@ -426,6 +435,7 @@ export default async function PublicLeagueHubPage({ params }: { params: { id: st
                   <Link key={g.id} href={`/live/${g.id}`} className="block">
                     <ScoreCard
                       status="SCHEDULED"
+                      streaming={streamingIds.has(g.id)}
                       home={{ name: g.homeTeam.name}}
                       away={{ name: g.awayTeam.name}}
                       dateLabel={format(new Date(g.scheduledAt), "EEE MMM d · h:mm a")}
@@ -438,6 +448,7 @@ export default async function PublicLeagueHubPage({ params }: { params: { id: st
                   <Link key={g.id} href={`/live/${g.id}`} className="block">
                     <ScoreCard
                       status="FINAL"
+                      streaming={streamingIds.has(g.id)}
                       home={{ name: g.homeTeam.name, score: g.homeScore }}
                       away={{ name: g.awayTeam.name, score: g.awayScore }}
                       venue={g.venue?.name}

@@ -4,6 +4,7 @@ import { getServerSession } from "next-auth"
 import { prisma } from "@youthbasketballhub/db"
 import { authOptions } from "@/lib/auth"
 import { getYourGameTeamIds, pickYourGames } from "@/lib/queries/scores"
+import { getStreamingGameIds } from "@/lib/queries/game-stream"
 import { Badge, PageBand, ScoreCard } from "@/components/ui"
 import { RealtimeRefresh } from "@/components/realtime-refresh"
 import { PUBLISHED_GAME } from "@/lib/games/visibility"
@@ -30,11 +31,12 @@ const gameSelect = {
   season: { select: { id: true, label: true, league: { select: { name: true } } } },
 }
 
-function GameCard({ g }: { g: any }) {
+function GameCard({ g, streaming }: { g: any; streaming?: boolean }) {
   const status = g.status === "LIVE" ? "LIVE" : g.status === "COMPLETED" ? "FINAL" : "SCHEDULED"
   const card = (
     <ScoreCard
       status={status as any}
+      streaming={streaming}
       home={{ name: g.homeTeam.name, score: g.homeScore }}
       away={{ name: g.awayTeam.name, score: g.awayScore }}
       dateLabel={status === "SCHEDULED" ? format(new Date(g.scheduledAt), "h:mm a") : undefined}
@@ -50,7 +52,15 @@ function GameCard({ g }: { g: any }) {
   )
 }
 
-function DayGroups({ games, order }: { games: any[]; order: "asc" | "desc" }) {
+function DayGroups({
+  games,
+  order,
+  streamingIds,
+}: {
+  games: any[]
+  order: "asc" | "desc"
+  streamingIds: Set<string>
+}) {
   const days: Array<{ date: Date; games: any[] }> = []
   const sorted = [...games].sort((a, b) =>
     order === "asc"
@@ -73,7 +83,7 @@ function DayGroups({ games, order }: { games: any[]; order: "asc" | "desc" }) {
           </h3>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
             {day.games.map((g) => (
-              <GameCard key={g.id} g={g} />
+              <GameCard key={g.id} g={g} streaming={streamingIds.has(g.id)} />
             ))}
           </div>
         </div>
@@ -135,6 +145,12 @@ export default async function ScoresPage({
   const all = [...live, ...upcoming, ...finals]
   const myGames = pickYourGames(all, myTeamIds)
   const myGameIds = new Set(myGames.map((g: any) => g.id))
+  // ONE lookup for every card on the page (live-streaming plan, "Schedule
+  // rows / game cards"). Never per-card: this page renders up to 72 of them.
+  const streamingIds = await getStreamingGameIds(
+    all.map((g: any) => g.id),
+    { userId: viewerId }
+  )
   const notMine = (list: any[]) => list.filter((g) => !myGameIds.has(g.id))
 
   return (
@@ -203,7 +219,7 @@ export default async function ScoresPage({
               </p>
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
                 {myGames.slice(0, 6).map((g: any) => (
-                  <GameCard key={g.id} g={g} />
+                  <GameCard key={g.id} g={g} streaming={streamingIds.has(g.id)} />
                 ))}
               </div>
             </section>
@@ -219,7 +235,7 @@ export default async function ScoresPage({
               </div>
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
                 {notMine(live).map((g: any) => (
-                  <GameCard key={g.id} g={g} />
+                  <GameCard key={g.id} g={g} streaming={streamingIds.has(g.id)} />
                 ))}
               </div>
             </section>
@@ -228,14 +244,14 @@ export default async function ScoresPage({
           {notMine(upcoming).length > 0 && (
             <section>
               <h2 className="text-ink-950 mb-4 text-xl font-bold">Upcoming</h2>
-              <DayGroups games={notMine(upcoming)} order="asc" />
+              <DayGroups games={notMine(upcoming)} order="asc" streamingIds={streamingIds} />
             </section>
           )}
 
           {notMine(finals).length > 0 && (
             <section>
               <h2 className="text-ink-950 mb-4 text-xl font-bold">Recent results</h2>
-              <DayGroups games={notMine(finals)} order="desc" />
+              <DayGroups games={notMine(finals)} order="desc" streamingIds={streamingIds} />
             </section>
           )}
         </div>

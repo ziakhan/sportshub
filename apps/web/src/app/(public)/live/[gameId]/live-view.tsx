@@ -7,6 +7,7 @@ import { useRealtime } from "@/lib/realtime/use-realtime"
 import { FlashNum } from "@/components/scoring/flash-num"
 import { ShareCardDialog } from "@/components/social/share-card-dialog"
 import { BOTTOM_TABS_FLOAT_OFFSET } from "@/components/nav/bottom-tabs-space"
+import { GameStreamDock, type GameStreamStateWire } from "@/components/streaming/game-stream-dock"
 import { buildModel } from "./components/model"
 import { ScoreHero } from "./components/score-hero"
 import { GameTab } from "./components/game-tab"
@@ -40,6 +41,10 @@ export function LiveView({ gameId }: { gameId: string }) {
   // Which of the viewer's players the share dialog is open for (P4)
   const [shareFor, setShareFor] = useState<string | null>(null)
   const [tab, setTab] = useState<Tab>("game")
+  // Live streaming: one of {none, upcoming, live, ended} from the shared query
+  // module. Refreshed by the SAME poll below — a stream that goes live between
+  // two ticks lights up on the next one, and the page keeps exactly one timer.
+  const [stream, setStream] = useState<GameStreamStateWire | null>(null)
   const [playFilter, setPlayFilter] = useState<PlayFilter>("all")
   /** Box score shows ONE team at a time behind a switcher, every viewport. */
   const [boxSide, setBoxSide] = useState<"home" | "away">("home")
@@ -112,6 +117,19 @@ export function LiveView({ gameId }: { gameId: string }) {
         setError(false)
       } catch {
         if (!stop) setError(true)
+      }
+
+      // The stream state rides this same tick — no second timer loop. It is
+      // deliberately outside the try above: a camera that stops answering must
+      // never make the SCORE page say "Couldn't load this game".
+      try {
+        const res = await fetch(`/api/games/${gameId}/stream`)
+        if (res.ok) {
+          const next: GameStreamStateWire = await res.json()
+          if (!stop) setStream(next)
+        }
+      } catch {
+        // Leave the last known state on screen.
       }
     }
     pollRef.current = poll
@@ -202,6 +220,19 @@ export function LiveView({ gameId }: { gameId: string }) {
           </span>
           <Crest size="h-6 w-6 text-[10px]" text={monogram(game.awayTeamName)} />
         </button>
+      )}
+
+      {/* The picture leads: with a camera on this court the page becomes the
+          single game centre (plan, "Surfaces" #1). `none` renders nothing at
+          all — no empty frame, no reserved gap — so the thousands of games
+          nobody films look exactly as they did before. */}
+      {stream && stream.state !== "none" && (
+        <div className={SHELL}>
+          <GameStreamDock
+            state={stream}
+            matchup={`${game.homeTeamName} vs ${game.awayTeamName}`}
+          />
+        </div>
       )}
 
       <ScoreHero model={model} heroRef={heroRef} clockDisplay={clockDisplay} />
