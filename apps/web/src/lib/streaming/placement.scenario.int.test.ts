@@ -16,6 +16,7 @@ import {
   StreamPlacementError,
   type StreamTakeoverConflict,
 } from "./placement"
+import { probeChannels } from "./health"
 import { GET as streamGet } from "@/app/api/games/[id]/stream/route"
 import { GET as channelsGet, POST as channelsPost } from "@/app/api/admin/streams/channels/route"
 import { POST as placementPost } from "@/app/api/admin/streams/placement/route"
@@ -622,5 +623,54 @@ describe("live streaming: two rigs, two courts, one evening (integration)", () =
 
     await prisma.gameStream.deleteMany({ where: { channelId: cameraC } })
     await prisma.streamChannel.delete({ where: { id: cameraC } })
+  })
+
+  it("stamps a live probe and lets an idle one leave that stamp exactly where it was", async () => {
+    // The message-per-status mapping is unit-tested in health.test.ts. What
+    // needs a database is the ONE-WAY STAMP: a camera that goes idle must not
+    // lose the record of the last time it had a picture, because "no picture
+    // for 4 seconds" and "no picture since this morning" are different
+    // problems and only the stamp tells them apart.
+    const manifest = "#EXTM3U\n#EXT-X-VERSION:3\n#EXT-X-TARGETDURATION:4\nseg-1.ts\n"
+    const answer = (status: number, body: string | null) =>
+      vi.stubGlobal(
+        "fetch",
+        vi.fn(async (_url: unknown, init?: { method?: string }) => {
+          const head = (init?.method ?? "GET").toUpperCase() === "HEAD"
+          return new Response(head || status === 204 ? null : body, { status })
+        })
+      )
+
+    try {
+      answer(200, manifest)
+      const [seen] = await probeChannels({ channelIds: [cameraA] })
+      expect(seen).toMatchObject({ id: cameraA, live: true, state: "live", detail: null })
+      expect(seen.lastSeenLiveAt).not.toBeNull()
+
+      // The camera stops. Cloudflare answers 204 for a live input nobody is
+      // broadcasting to, which is a normal state and not a broken address.
+      answer(204, null)
+      const [idle] = await probeChannels({ channelIds: [cameraA] })
+      expect(idle).toMatchObject({
+        live: false,
+        state: "idle",
+        detail: "No broadcast arriving. Start the camera pointed at this stream key.",
+      })
+      expect(idle.lastSeenLiveAt).toBe(seen.lastSeenLiveAt)
+      const row = await prisma.streamChannel.findUnique({
+        where: { id: cameraA },
+        select: { lastSeenLiveAt: true },
+      })
+      expect(row?.lastSeenLiveAt?.toISOString()).toBe(seen.lastSeenLiveAt)
+
+      // And a genuinely wrong address is still called out as one.
+      answer(404, "NotFound: failed to fetch")
+      const [gone] = await probeChannels({ channelIds: [cameraA] })
+      expect(gone).toMatchObject({ live: false, state: "fault" })
+      expect(gone.detail).toContain("Nothing is published at that address")
+      expect(gone.lastSeenLiveAt).toBe(seen.lastSeenLiveAt)
+    } finally {
+      vi.unstubAllGlobals()
+    }
   })
 })

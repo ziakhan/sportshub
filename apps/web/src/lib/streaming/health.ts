@@ -21,6 +21,23 @@ import { prisma } from "@youthbasketballhub/db"
  * not erase the fact that the rig was fine 20 seconds ago. Staleness is a
  * reading of the timestamp (isSignalFresh below), not a stored flag.
  *
+ * ── THREE READINGS, NOT TWO (owner, 2026-08-21) ───────────────────────────
+ * "Not live" is two completely different sentences and this probe used to say
+ * the wrong one. Cloudflare answers a live input that exists but has no
+ * broadcast arriving with HTTP 204 and an empty body, and reading that as "not
+ * an HLS manifest" sent the owner hunting for a broken URL when the only thing
+ * missing was somebody pressing Go Live on the camera. So:
+ *
+ *   live   a manifest is being written right now
+ *   idle   the address answered and there is simply no broadcast on it
+ *          (204, any empty 2xx, or a playlist closed with #EXT-X-ENDLIST)
+ *   fault  we could not get a picture AND cannot say the address is fine
+ *          (404/410, 401/403, junk instead of a manifest, unreachable)
+ *
+ * Idle is a NORMAL state: a camera in a locked gym at 3pm is idle and nobody
+ * needs to be told. The surfaces decide how loudly to say it — the console
+ * only shouts when a channel is not live WITH a game in its window.
+ *
  * ── SECRETS ───────────────────────────────────────────────────────────────
  * Only `playbackUrl` is ever fetched. ingestUrl/streamKey are what a camera
  * pushes WITH; this module has no reason to touch them and does not select
@@ -51,11 +68,24 @@ export function isSignalFresh(lastSeenLiveAt: Date | string | null, now: Date = 
   return now.getTime() - seen.getTime() <= SIGNAL_FRESH_MS
 }
 
+/**
+ * What one probe saw. `idle` is not a failure: see the header note.
+ */
+export type SignalState = "live" | "idle" | "fault"
+
+export interface ProbeVerdict {
+  state: SignalState
+  /** Why it is not live, in words an operator can act on. Null when live. */
+  detail: string | null
+}
+
 export interface ChannelHealth {
   id: string
   name: string
   /** The manifest answered and looks like a running live playlist. */
   live: boolean
+  /** live / idle / fault. `live === (state === "live")`, always. */
+  state: SignalState
   /** When this probe ran (not when the channel was last alive). */
   checkedAt: string
   /** Last time ANY probe saw a picture, after this one's stamp. */
@@ -71,19 +101,75 @@ export interface ProbeableChannel {
   playbackUrl: string
 }
 
+/* ── the sentences ─────────────────────────────────────────────────────────
+ * One place, because every one of them is read by a person standing in a gym
+ * deciding what to go and touch. Plain words, no vendor jargon, and each one
+ * names the next action where there is one.
+ */
+
+/** 204, or any 2xx that carries nothing. The address is fine; nobody is on it. */
+const IDLE_DETAIL = "No broadcast arriving. Start the camera pointed at this stream key."
+
+/** A playlist that closed itself. The rig WAS pushing and has stopped. */
+const ENDED_DETAIL = "The last broadcast ended, so nothing is arriving on this address now."
+
+/** 200 with a body that is not a playlist: someone pasted the wrong address. */
+const NOT_A_MANIFEST_DETAIL =
+  "That address answered with something that is not an HLS manifest, so the playback URL is pointing at the wrong thing."
+
+/**
+ * 404/410. Verified 2026-08-21 against Cloudflare's edge: an unknown input UID
+ * under a real customer code answers `404 NotFound: failed to fetch`, and an
+ * unknown customer code answers a plain `404 not found`. A self-hosted origin
+ * (MediaMTX) 404s the same way while its camera is simply off, so this sentence
+ * carries both readings rather than picking one.
+ */
+const NOTHING_PUBLISHED_DETAIL =
+  "Nothing is published at that address. Either the camera has never gone live on it, or the playback URL is wrong."
+
+/**
+ * 401/403. NOT verified against a real idle Cloudflare input (no live input was
+ * reachable from this machine), so the wording stays honest about both readings
+ * instead of asserting one. It is only ever reached when the ranged GET refuses
+ * too — a HEAD-only 403 falls through, because plenty of origins allow GET and
+ * refuse HEAD, and calling a working camera broken is the worse mistake.
+ */
+function refusedDetail(status: number): string {
+  return `The stream host refused the request (${status}). That address may need a signed token, or the camera may not have gone live on it yet.`
+}
+
 /**
  * What the manifest body says. A 200 alone is not proof of a picture: some
  * origins keep serving the last playlist after the encoder quits, and that
  * playlist carries #EXT-X-ENDLIST, which is the vendor saying "this is over".
+ *
+ * An EMPTY 2xx body is the same statement as a 204 and is read as idle, not as
+ * a malformed manifest.
  */
-function readManifest(body: string): { ok: boolean; detail: string | null } {
-  if (!body.includes("#EXTM3U")) {
-    return { ok: false, detail: "That URL answered, but it is not an HLS manifest" }
+function readManifest(body: string): ProbeVerdict {
+  const text = body.trim()
+  if (text === "") return { state: "idle", detail: IDLE_DETAIL }
+  if (!text.includes("#EXTM3U")) return { state: "fault", detail: NOT_A_MANIFEST_DETAIL }
+  if (text.includes("#EXT-X-ENDLIST")) return { state: "idle", detail: ENDED_DETAIL }
+  return { state: "live", detail: null }
+}
+
+/**
+ * What an HTTP status alone settles. `null` means "this status does not settle
+ * it" — keep going and let the ranged GET's body decide.
+ */
+function readStatus(status: number, from: "head" | "get"): ProbeVerdict | null {
+  // The whole defect: an idle live input, not a broken address.
+  if (status === 204) return { state: "idle", detail: IDLE_DETAIL }
+  if (status === 404 || status === 410) return { state: "fault", detail: NOTHING_PUBLISHED_DETAIL }
+  // A refusal is only believed when the GET says it too (see refusedDetail).
+  if (status === 401 || status === 403) {
+    return from === "get" ? { state: "fault", detail: refusedDetail(status) } : null
   }
-  if (body.includes("#EXT-X-ENDLIST")) {
-    return { ok: false, detail: "The manifest is closed, so the rig has stopped pushing" }
-  }
-  return { ok: true, detail: null }
+  // Origins that only implement GET. The GET answers the question.
+  if (status === 405 || status === 501) return null
+  if (status >= 200 && status < 300) return null
+  return { state: "fault", detail: `The playback URL answered ${status}` }
 }
 
 /**
@@ -97,17 +183,15 @@ function readManifest(body: string): { ok: boolean; detail: string | null } {
  *
  * Never throws: a probe failure is a reading, not an error.
  */
-export async function probeChannel(
-  channel: ProbeableChannel
-): Promise<{ live: boolean; detail: string | null }> {
+export async function probeChannel(channel: ProbeableChannel): Promise<ProbeVerdict> {
   let url: URL
   try {
     url = new URL(channel.playbackUrl)
   } catch {
-    return { live: false, detail: "The playback URL is not a valid address" }
+    return { state: "fault", detail: "The playback URL is not a valid address" }
   }
   if (url.protocol !== "http:" && url.protocol !== "https:") {
-    return { live: false, detail: "The playback URL is not http or https" }
+    return { state: "fault", detail: "The playback URL is not http or https" }
   }
 
   const headers = { "cache-control": "no-cache" }
@@ -119,15 +203,10 @@ export async function probeChannel(
       cache: "no-store",
       signal: AbortSignal.timeout(PROBE_TIMEOUT_MS),
     })
-    // 404/410 is the normal shape of "nothing is being published right now".
-    if (head.status === 404 || head.status === 410) {
-      return { live: false, detail: "No manifest at that URL right now" }
-    }
-    if (!head.ok && head.status !== 405 && head.status !== 501) {
-      return { live: false, detail: `The playback URL answered ${head.status}` }
-    }
+    const settled = readStatus(head.status, "head")
+    if (settled) return settled
   } catch (error) {
-    return { live: false, detail: describeFetchError(error) }
+    return { state: "fault", detail: describeFetchError(error) }
   }
 
   try {
@@ -137,14 +216,15 @@ export async function probeChannel(
       cache: "no-store",
       signal: AbortSignal.timeout(PROBE_TIMEOUT_MS),
     })
+    const settled = readStatus(res.status, "get")
+    if (settled) return settled
     if (!res.ok && res.status !== 206) {
-      return { live: false, detail: `The playback URL answered ${res.status}` }
+      return { state: "fault", detail: `The playback URL answered ${res.status}` }
     }
     const body = (await res.text()).slice(0, PROBE_BYTES)
-    const verdict = readManifest(body)
-    return { live: verdict.ok, detail: verdict.detail }
+    return readManifest(body)
   } catch (error) {
-    return { live: false, detail: describeFetchError(error) }
+    return { state: "fault", detail: describeFetchError(error) }
   }
 }
 
@@ -189,7 +269,8 @@ export async function probeChannels(
     const batch = channels.slice(i, i + PROBE_CONCURRENCY)
     const probed = await Promise.all(
       batch.map(async (channel) => {
-        const { live, detail } = await probeChannel(channel)
+        const { state, detail } = await probeChannel(channel)
+        const live = state === "live"
         let lastSeenLiveAt = channel.lastSeenLiveAt
         if (live) {
           // One-way: only a success writes. See the header note.
@@ -210,6 +291,7 @@ export async function probeChannels(
           id: channel.id,
           name: channel.name,
           live,
+          state,
           checkedAt: now.toISOString(),
           lastSeenLiveAt: lastSeenLiveAt ? lastSeenLiveAt.toISOString() : null,
           detail,
