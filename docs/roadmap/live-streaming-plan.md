@@ -69,6 +69,12 @@ mistake someone else's gym for the court they are sitting at. The wrong-camera-o
 error self-corrects at the first game of the day, before families ever see a wrong stream.
 
 Guard rails:
+- **The picker only offers cameras that could be in the room**: a rig with no placement at
+  all, or one already placed in THIS building (at any of its courts, or at the building
+  itself). `canScoreGame()` admits team managers and assistant coaches of either team, so an
+  unscoped list would hand a few hundred people a playable link into every gym we film —
+  including cameras filming leagues that never turned streaming on. Enforced in
+  `api/games/[id]/stream/candidates`.
 - A channel places at one court at a time. Claiming a channel that is currently mapped to
   another court's in-window game gets a hard warning ("Camera B is showing Court 2's live
   game at Central Gym — take it anyway?") and the take-over is audit-logged.
@@ -112,6 +118,10 @@ Three things learned the hard way, all of which will matter on game day:
    no manifest ever appears. $5 buys 1,000 minutes, and deleting a recording
    releases the space immediately, so a nightly cleanup keeps it permanently at
    the base tier. New channels must therefore default to recording ON.
+   *Done in code:* the provider default is `automatic`, and every live input we
+   create carries `deleteRecordingAfterDays: 30` — Cloudflare's own minimum, since
+   1 and 7 are both refused. That caps the worst case structurally rather than
+   depending on a cron; the nightly delete job is still what keeps storage near zero.
 2. **Stopping the stream in the XbotGo app does NOT drop the broadcast.** The clock
    stops and the UI says stopped while packets keep flowing; only force-quitting the
    app ends it. A rig left like this keeps costing delivery and storage and keeps a
@@ -262,6 +272,153 @@ Streaming kids is a bigger consent surface than photos. Recommend: league-level
 `streamingEnabled` toggle (default OFF) + per-league visibility (public / signed-in /
 members) + a consent line in season registration. Related: [[player-profile-privacy]],
 [[privacy-pipeda-casl]].
+
+## Viewer discovery at scale (proposed)
+
+Owner's question: with many cameras across many venues, how does a viewer find the right
+stream — all cameras, per venue, or something else?
+
+**Recommendation: none of those. The unit of discovery is the GAME, never the camera, and
+in the ordinary case there is no picker at all.** The mapping layer already answers the
+question the picker would ask, so the right design is to keep spending that answer rather
+than hand it back to a parent as a choice.
+
+This is also what the category does. Of the platforms that have a real consumer app —
+NFHS Network, GameChanger, Veo Live, Hudl TV — every one of them discovers by
+follow-a-team plus a push notification, with a browsable schedule as the fallback and a
+shared link as the shortcut. Only LiveBarn makes people pick a venue and then a camera,
+and it gets away with it because its buyer is a hockey parent who already drives to that
+rink every week and there is no schedule in the product to bind to. We have the schedule.
+Making a parent translate "my daughter's game" into "Court 3 at Central Gym" would be
+throwing away the only thing we have that LiveBarn does not.
+
+**The three layers, and where a picker is earned.**
+
+1. **Find the game — existing surfaces, unchanged.** Team page, `/scores`, league page,
+   and the link a coach texts. The `Watch live` badge on a game card is already the
+   affordance; nothing new is needed for a parent who knows whose game they want, which
+   is nearly everyone. The single addition worth building is a **"Live now" rail pinned
+   to the top of `/scores`**, holding only games that have a picture right now. On a
+   Saturday with 200 games the board is long, and someone who came to *watch* rather than
+   to check a score needs the watchable subset in one place. This is NFHS's board pattern
+   and it is the correct one at our scale.
+2. **Watch the game — `/live/[gameId]`, unchanged, no picker.** This is the 95% path and
+   it must stay a page with one video on it.
+3. **Pick only where a genuine choice exists**, which is exactly two places:
+   - **A building someone wants to browse.** Not a parent — a tournament spectator, a
+     club director, a scout watching "whatever is on at Central Gym". Serve them with a
+     **venue live page** (`/venues/[id]/live`) listing today's games *at that building
+     that have a picture*, labelled by court and matchup. It is a list of GAMES with
+     court labels, not a list of cameras. Reached from the venue page only; never linked
+     from a game page.
+   - **More than one angle on one game.** Not possible today: `GameStream.gameId` is
+     unique, so a game can hold exactly one channel. If multi-angle is ever wanted it is a
+     schema change first (composite key, or a segment table), and only then a small
+     segmented control **on the dock** — "Main / Baseline" — defaulting to the primary
+     angle. It is never a page of its own.
+
+**Where a picker must never appear: any public surface, as a list of cameras.** A viewer
+is never shown the fleet, never shown a camera name, and never shown a court that is not
+already the court of a game they were looking at. "Camera B" is an operator word; families
+see a game, a court and a time. Beyond the vocabulary, a public camera list is a live
+window into every gym we film, which is the failure mode the privacy section exists to
+prevent.
+
+**Rules any discovery surface must obey.**
+
+- **One live rendition per screen, ever.** Delivery is billed per viewer-minute, so an
+  eight-tile "what's on now" wall costs eight times a game and buys nothing a parent
+  wanted. Discovery surfaces use a poster frame or the court motif plus a red dot —
+  click-to-play, `preload="none"`, torn down off screen. Live tiles belong to the two
+  operator surfaces (the ops wall and the scorekeeper's confirm strip) and nowhere else.
+- **The notification is the real discovery mechanism.** The highest-value thing to build
+  here is not a picker but "your team is live now" reaching the people who follow that
+  team. Every mature product in the category leans on this, and it removes the browse
+  problem instead of solving it.
+- **Deep-link every state.** If a picker ever holds a choice, that choice lives in the URL
+  (`?angle=`), so a shared link lands where the sender was.
+- **Say which one is selected in words, not colour alone**, and give an empty venue live
+  page the next kick-off time rather than a blank panel.
+
+**Decision this asks of the owner:** whether the venue live page is public or signed-in.
+Recommend it inherits `STREAM_VIEWER_POLICY` exactly and lists only leagues with
+`streamingEnabled`, so there is one gate in the product and not two.
+
+## Security review findings (2026-08-22) — READ BEFORE PRODUCTION
+
+Adversarial review after the first real camera worked. Ranked. The first three are
+open and block a production launch.
+
+### CRITICAL, open
+
+**S1. Playback URLs are public, permanent and unauthenticated.** Channels are created
+with `requireSignedURLs: false` and `allowedOrigins` unset, and the URL never rotates.
+Consequences: `STREAM_VIEWER_POLICY = "SIGNED_IN"` gates the PAGE, not the video; the
+league consent toggle stops our site rendering a stream while the camera keeps serving
+to any URL holder; a game that has ended goes dark on our page while the rig keeps
+broadcasting. One leak is permanent and fleet-wide.
+*Precedent, same jurisdiction:* LiveBarn's always-on arena cameras in Waterloo,
+Kitchener and Cambridge livestreamed children at day camps for ~3 months in July 2025
+because a schedule was not turned off. Ontario's IPC opened an investigation; Waterloo
+pulled its cameras. Our combination of permanent public URLs, a camera that keeps
+pushing after the app says stopped (field note 2), and a picker that hands those URLs
+to hundreds of coaches (S2) is the same failure shape.
+*Fix:* Cloudflare signed URLs (`requireSignedURLs` + a short-TTL token endpoint, ~1 day
+of work, costs us the fixed-URL-forever property). `allowedOrigins` is the cheap partial
+step. **Owner decision required.**
+
+**S2. The scorekeeper candidates endpoint leaks the whole fleet** and routes around
+league consent: it returned every ACTIVE channel with its playbackUrl to anyone
+`canScoreGame` admits (team managers, assistant coaches), including cameras filming
+leagues with `streamingEnabled = false`. *Fixed 2026-08-22:* scoped to unplaced cameras
+plus cameras at this game's own venue.
+
+**S3. A newly provisioned Cloudflare camera could never show a picture** — recording
+defaulted to "off", which on Cloudflare means the ingest connects but no manifest is
+ever produced. *Fixed 2026-08-22:* default is "automatic".
+
+### HIGH, open
+
+- **Consecutive games on one court both read live for up to 45 minutes.** The window is
+  `scheduledAt + duration + 30min` and knows nothing about the next game on the same
+  channel, so the earlier game's page plays the later game's picture. Fix: close a
+  mapping when the next game on that channel opens.
+- **The assigner has no caller.** `runAssigner()` is referenced only by tests; the plan
+  requires it on schedule change and nightly. Without it a rescheduled game keeps a
+  stale mapping and its warnings are discarded.
+- **Take-over guard only protects games that are live right now**, so an upcoming game
+  can be silently un-mapped, and `force` is honoured for non-admins.
+- **A camera cannot move mid-game.** `GameStream.gameId` is unique, so one game holds
+  one channel forever; multi-angle and accurate VOD windows both need a schema change.
+
+### COST
+
+- Storage would reach ~$1,800/month by the end of a 20-week season with nothing
+  deleting. *Mitigated 2026-08-22* by setting `deleteRecordingAfterDays` at creation
+  (Cloudflare's floor is 30 days); a nightly delete job is still wanted to keep storage
+  near zero.
+- **Cloudflare bills delivered MINUTES, not bytes**, so a 240p preview tile costs the
+  same as 1080p. The only lever is fewer tile-minutes: the ops wall autoplaying ~9 tiles
+  costs ~$0.54/hour, and a tab left open over a weekend costs ~$26. Recommendation:
+  poster frame plus signal chip, play on demand.
+
+### Monitoring, better than what we built
+
+Cloudflare exposes `live_input.connected` / `disconnected` / `errored` webhooks, the last
+carrying `ERR_STORAGE_QUOTA_EXHAUSTED` and `ERR_MISSING_SUBSCRIPTION` — literally the two
+failures that cost us an evening. Prefer webhooks with our manifest probe demoted to a
+slow reconciliation backstop. Forgotten-camera detection has no vendor feature: our own
+schedule is the source of truth (still connected N minutes past the last scheduled game
+→ alert, then auto-disable via Cloudflare's Feb-2026 disable-live-input endpoint).
+
+### Latency and the spoiler problem
+
+Do NOT enable LL-HLS: it does not fix the spoiler (a 3s lead still spoils), it trades away
+the buffer that absorbs gym wifi, and Cloudflare's own docs say the custom-player path is
+not production ready. Cloudflare Stream Live also appears not to emit
+`EXT-X-PROGRAM-DATE-TIME`, so precise sync is unavailable; the realistic fix is a
+fixed-offset delayed scoreboard, held per viewer so someone checking scores without video
+still gets them instantly.
 
 ## Phases
 
