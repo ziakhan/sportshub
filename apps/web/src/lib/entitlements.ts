@@ -18,21 +18,25 @@ export async function hasFamilyPass(_userId: string | null): Promise<boolean> {
  * New gated surfaces should call this from day one so enforcement is a
  * policy change here, not a refactor.
  */
-export type TenantFeatureFlag = "tournaments" | "reviews" | "chat" | "analytics"
+export type TenantFeatureFlag = "tournaments" | "reviews" | "chat" | "analytics" | "evaluations"
 
 const ENFORCE_FEATURE_GATES = false
 
-const FLAG_COLUMN: Record<TenantFeatureFlag, "enableTournaments" | "enableReviews" | "enableChat" | "enableAnalytics"> = {
+const FLAG_COLUMN: Record<
+  TenantFeatureFlag,
+  "enableTournaments" | "enableReviews" | "enableChat" | "enableAnalytics" | "enableEvaluations"
+> = {
   tournaments: "enableTournaments",
   reviews: "enableReviews",
   chat: "enableChat",
   analytics: "enableAnalytics",
+  evaluations: "enableEvaluations",
 }
 
 export async function hasFeature(tenantId: string, flag: TenantFeatureFlag): Promise<boolean> {
   if (!ENFORCE_FEATURE_GATES) return true
   const { prisma } = await import("@youthbasketballhub/db")
   const features = await (prisma as any).tenantFeatures.findUnique({ where: { tenantId } })
-  if (!features) return flag === "reviews" // schema defaults: only reviews on
+  if (!features) return flag === "reviews" || flag === "evaluations" // schema defaults: only reviews on
   return Boolean(features[FLAG_COLUMN[flag]])
 }

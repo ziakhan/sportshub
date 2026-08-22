@@ -102,6 +102,8 @@ model User {
   submissionRequestsMade    TeamSubmissionRequest[]   @relation("SubmissionRequestsMade")
   submissionRequestsDecided TeamSubmissionRequest[]   @relation("SubmissionRequestsDecided")
   waiverSignatures          WaiverSignature[]         @relation("WaiverSigner")
+  evaluationRatings         EvaluationRating[]        @relation("EvaluationRatings")
+  evaluationNotes           EvaluationNote[]          @relation("EvaluationNotes")
   messageReactions          MessageReaction[]         @relation("MessageReactions")
   chatMutes                 ChatMute[]                @relation("ChatMutes")
   postReactions             PostReaction[]            @relation("PostReactions")
@@ -399,6 +401,8 @@ model Tenant {
   @@index([region])
   @@index([latitude, longitude])
   @@index([mergedIntoId])
+  evaluationTemplates EvaluationTemplate[]
+  evaluationSessions  EvaluationSession[]
 }
 
 /// One row per FIELD an automated pipeline wrote onto a Tenant (owner
@@ -506,6 +510,10 @@ model TenantFeatures {
   enableReviews     Boolean @default(true)
   enableChat        Boolean @default(false)
   enableAnalytics   Boolean @default(false)
+  // Tryout evaluation. Gated from day one so it can be sold at pricing
+  // launch without a code change; ENFORCE_FEATURE_GATES in lib/entitlements
+  // is globally false today, so this ships on.
+  enableEvaluations Boolean @default(true)
 
   maxTeams  Int @default(10)
   maxStaff  Int @default(5)
@@ -2568,7 +2576,10 @@ model Venue {
   trainingSessions     TrainingSession[]
   /// Camera rigs placed at the BUILDING rather than a numbered court —
   /// single-court gyms and court-less games (live-streaming-plan.md).
-  streamChannels       StreamChannel[]
+  streamChannels       StreamChannel[] @relation("StreamChannelPlacement")
+  /// Camera rigs TAGGED to this building ("usually at"). A finding aid for the
+  /// scorekeeper's picker, never a restriction on where a rig may be placed.
+  homeStreamChannels   StreamChannel[] @relation("StreamChannelHomeVenue")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -2589,7 +2600,7 @@ model Court {
   dayVenueCourts SeasonSessionDayVenueCourt[]
   games          Game[]
   /// Camera rigs currently sitting at this court (docs/roadmap/live-streaming-plan.md).
-  streamChannels StreamChannel[]
+  streamChannels StreamChannel[] @relation("StreamChannelPlacement")
 
   createdAt DateTime @default(now())
 
@@ -4702,6 +4713,7 @@ model TryoutEvent {
   updatedAt DateTime @updatedAt
 
   @@index([tenantId])
+  evaluationSessions EvaluationSession[]
 }
 
 model TryoutPoolMember {
@@ -4735,6 +4747,9 @@ model TryoutPoolMember {
   @@unique([tenantId, seasonLabel, ageGroup, playerId])
   @@index([tenantId, seasonLabel, ageGroup])
   @@index([teamId])
+  evaluationRatings     EvaluationRating[]
+  evaluationMeasurements EvaluationMeasurement[]
+  evaluationNotes       EvaluationNote[]
 }
 
 enum ReleaseRequestKind {
@@ -4821,11 +4836,28 @@ model StreamChannel {
   // places at ONE spot at a time: a numbered court, or the building itself
   // for single-court gyms and court-less games. Never both.
   currentCourtId String?
-  currentCourt   Court?    @relation(fields: [currentCourtId], references: [id])
+  currentCourt   Court?    @relation("StreamChannelPlacement", fields: [currentCourtId], references: [id])
   currentVenueId String? // single-court venues / court-less games
-  currentVenue   Venue?    @relation(fields: [currentVenueId], references: [id])
+  currentVenue   Venue?    @relation("StreamChannelPlacement", fields: [currentVenueId], references: [id])
   placedAt       DateTime?
   placedById     String? // who confirmed (scorekeeper/admin) — audit
+
+  // "Usually at" — a TAG FOR FINDING THE RIG, NEVER A RESTRICTION.
+  //
+  // At 100+ cameras a scorekeeper cannot scan the whole fleet, so the picker
+  // opens on the cameras tagged to their building. That is the entire purpose
+  // of this column. A camera tagged to Building A can still be PLACED at
+  // Building B and nothing anywhere refuses it, because rigs get carried
+  // around: the tag says where this one normally lives, not where it is
+  // allowed to be. Placement (above) is the only field that says where it is.
+  //
+  // ONE tag, deliberately. The owner raised multiple tags per rig (a camera
+  // shared by two gyms); it is not built, because a single tag is enough to
+  // sort a fleet into buildings and "show all" already covers the rest. If it
+  // is ever wanted this column becomes a join table and every read below has
+  // to move from a scalar to a list.
+  homeVenueId String?
+  homeVenue   Venue?  @relation("StreamChannelHomeVenue", fields: [homeVenueId], references: [id])
 
   // Which provider this channel came from: "cloudflare" when we created the
   // live input ourselves through their API, otherwise free text the operator
@@ -4847,6 +4879,7 @@ model StreamChannel {
 
   @@index([currentCourtId])
   @@index([currentVenueId])
+  @@index([homeVenueId])
 }
 
 // Materialized rather than derived at read time: manual overrides need a
@@ -4865,4 +4898,203 @@ model GameStream {
   updatedAt DateTime           @updatedAt
 
   @@index([channelId])
+}
+
+// ============================================
+// TRYOUT EVALUATION
+// (docs/roadmap/tryout-evaluation-design.md)
+// ============================================
+
+/// One platform template is inherited by every club (owner 2026-08-21).
+/// `tenantId` null = THE platform default. A club row is a thin overlay that
+/// only carries its own additions and its enable/weight overrides, so the base
+/// stays comparable across clubs and across years — which is the whole basis
+/// of checking a September rating against February's real stat line later.
+model EvaluationTemplate {
+  id       String  @id @default(uuid())
+  tenantId String?
+  tenant   Tenant? @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  name  String
+  sport String @default("BASKETBALL")
+
+  categories  EvaluationCategory[]
+  measurables EvaluationMeasurable[]
+  sessions    EvaluationSession[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tenantId])
+}
+
+/// A judged 1-5 category. `anchors` holds the observable description of each
+/// score: without them evaluators do not score the same thing and averaging
+/// their numbers produces confident noise.
+model EvaluationCategory {
+  id         String             @id @default(uuid())
+  templateId String
+  template   EvaluationTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+
+  key      String
+  label    String
+  hint     String? @db.Text
+  /// { "1": "...", "2": "...", ... } — what each score LOOKS like.
+  anchors  Json
+  weight   Float   @default(1)
+  sortOrder Int    @default(0)
+  /// Base categories cannot be deleted by a club, only disabled or reweighted.
+  isBase   Boolean @default(true)
+  enabled  Boolean @default(true)
+
+  ratings EvaluationRating[]
+
+  @@unique([templateId, key])
+  @@index([templateId])
+}
+
+/// Objective, timed or counted. No rubric needed and no evaluator bias, which
+/// makes these the only layer trustworthy without anchoring.
+model EvaluationMeasurable {
+  id         String             @id @default(uuid())
+  templateId String
+  template   EvaluationTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+
+  key            String
+  label          String
+  unit           String
+  higherIsBetter Boolean @default(true)
+  sortOrder      Int     @default(0)
+  enabled        Boolean @default(true)
+
+  measurements EvaluationMeasurement[]
+
+  @@unique([templateId, key])
+  @@index([templateId])
+}
+
+enum EvaluationStatus {
+  DRAFT
+  OPEN
+  CLOSED
+}
+
+/// PRIVATE: an evaluator sees only their own. AGGREGATE: everyone sees the
+/// consolidated report but not who gave what. OPEN: everything, attributed.
+/// The club chooses; the platform takes no position (owner 2026-08-21).
+enum EvaluationVisibility {
+  PRIVATE
+  AGGREGATE
+  OPEN
+}
+
+/// Opened and closed EXPLICITLY by the director rather than derived from the
+/// clock: a derived window is a timezone bug and tryouts run late. CLOSED
+/// freezes the report, which is what makes it defensible to a parent.
+model EvaluationSession {
+  id       String @id @default(uuid())
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  eventId String
+  event   TryoutEvent @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  templateId String
+  template   EvaluationTemplate @relation(fields: [templateId], references: [id])
+
+  seasonLabel String
+  status      EvaluationStatus     @default(DRAFT)
+  visibility  EvaluationVisibility @default(PRIVATE)
+
+  openedAt DateTime?
+  closedAt DateTime?
+
+  ratings      EvaluationRating[]
+  measurements EvaluationMeasurement[]
+  notes        EvaluationNote[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tenantId, seasonLabel])
+  @@index([eventId])
+}
+
+/// The atom: one evaluator, one player, one category. Every raw score is kept
+/// forever and averages are computed on read, so the working is always
+/// inspectable and a single outlier stays visible instead of being absorbed.
+model EvaluationRating {
+  id        String            @id @default(uuid())
+  sessionId String
+  session   EvaluationSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  poolMemberId String
+  poolMember   TryoutPoolMember @relation(fields: [poolMemberId], references: [id], onDelete: Cascade)
+
+  categoryId String
+  category   EvaluationCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  evaluatorId String
+  evaluator   User   @relation("EvaluationRatings", fields: [evaluatorId], references: [id], onDelete: Cascade)
+
+  score Int
+  /// The author's own escape hatch: still counts in the aggregate, but the
+  /// attribution never surfaces to peers whatever the club setting says.
+  isPrivate Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([sessionId, poolMemberId, categoryId, evaluatorId])
+  @@index([sessionId, poolMemberId])
+  @@index([sessionId, evaluatorId])
+}
+
+model EvaluationMeasurement {
+  id        String            @id @default(uuid())
+  sessionId String
+  session   EvaluationSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  poolMemberId String
+  poolMember   TryoutPoolMember @relation(fields: [poolMemberId], references: [id], onDelete: Cascade)
+
+  measurableId String
+  measurable   EvaluationMeasurable @relation(fields: [measurableId], references: [id], onDelete: Cascade)
+
+  value        Float
+  recordedById String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([sessionId, poolMemberId, measurableId])
+  @@index([sessionId, poolMemberId])
+}
+
+enum EvaluationNoteAudience {
+  PRIVATE
+  TEAM_STAFF
+  CLUB
+}
+
+/// Private by default and widened only by an explicit act, per the binding
+/// ruling in club-tryouts-and-age-pools. Notes never merge and never average.
+model EvaluationNote {
+  id        String            @id @default(uuid())
+  sessionId String
+  session   EvaluationSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  poolMemberId String
+  poolMember   TryoutPoolMember @relation(fields: [poolMemberId], references: [id], onDelete: Cascade)
+
+  authorId String
+  author   User   @relation("EvaluationNotes", fields: [authorId], references: [id], onDelete: Cascade)
+
+  body     String                 @db.Text
+  audience EvaluationNoteAudience @default(PRIVATE)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([sessionId, poolMemberId])
 }
