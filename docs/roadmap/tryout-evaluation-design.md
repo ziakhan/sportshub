@@ -180,7 +180,58 @@ working is always inspectable.
 
 ---
 
-## 7. Still open
+## 7. Owner decisions, 2026-08-21 evening
+
+Taken verbatim from the owner and binding unless he says otherwise.
+
+1. **One platform template, inherited by every club.** Comprehensive enough
+   that most clubs never touch it.
+2. **Clubs may ADD to it.** "The original template should be inherited by
+   every club" and clubs add the extra things they measure. Additions are
+   club-specific and marked as such.
+3. **Any club staff may evaluate.** Explicitly NOT restricted to the coaches
+   of that team or age group: *"coaches coach multiple groups and they come
+   for evaluation anyway for different age groups. They don't have to be
+   coaches on that team to evaluate them."* Participation is not gated.
+4. **The report is tied to the tryout.**
+5. **Club owner and manager see everything.**
+6. **The feature must be gateable** for pricing, free or paid to be decided.
+
+## 8. Answers to the owner's open questions
+
+**"Do we need to allow them to customize?"**
+Base categories are inherited and **cannot be deleted**, because the base is
+what stays comparable across clubs and across years, and that comparability is
+what makes the calibration loop in §5 of the research possible at all. A club
+may **disable** a base category it does not test, **reweight** it, and **add**
+its own. Deleting is the only thing forbidden.
+
+**"Who decides whether an evaluation takes place?"**
+The club, per tryout event, **default OFF**. Whoever can already edit the
+tryout event turns it on. Nothing changes for a club that only wants
+attendance, which is all that existed before.
+
+**"Is there a certain state or not?"**
+Yes, and it is needed. An `EvaluationSession` per tryout session:
+**DRAFT → OPEN → CLOSED**. The director opens it explicitly rather than the
+platform deriving it from the clock, because a derived window is a timezone
+bug waiting to happen and a tryout runs late. Coaches submit only while OPEN.
+**CLOSED freezes the report**, which is what makes it defensible to a parent.
+
+**"Paid or free?"**
+Use the mechanism that already exists. Add `"evaluations"` to
+`TenantFeatureFlag` in `lib/entitlements.ts` and an `enableEvaluations`
+column on `TenantFeatures`. `ENFORCE_FEATURE_GATES` is globally `false`
+today, so it ships free now and becomes sellable the day pricing launches
+**with no code change**. Same pattern as tournaments, reviews, chat and
+analytics.
+
+**"Who enables it, who uses it?"**
+Enable: club owner, manager, or staff who can edit the event. Use: any staff
+role scoped to the tenant, per decision 3. See: per §1 visibility, with owner
+and manager always seeing everything.
+
+## 9. Still open
 
 - Does a family ever see any of this? Strong retention feature, real support
   burden.
