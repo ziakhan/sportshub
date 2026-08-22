@@ -18,6 +18,7 @@ import {
 } from "./placement"
 import { probeChannels } from "./health"
 import { GET as streamGet } from "@/app/api/games/[id]/stream/route"
+import { GET as candidatesGet } from "@/app/api/games/[id]/stream/candidates/route"
 import { GET as channelsGet, POST as channelsPost } from "@/app/api/admin/streams/channels/route"
 import { POST as placementPost } from "@/app/api/admin/streams/placement/route"
 
@@ -60,6 +61,13 @@ const KEY_A = "sk-camera-a-do-not-leak"
 const PLAY_A = "https://cdn.stream-test.local/a/index.m3u8"
 const KEY_B = "sk-camera-b-do-not-leak"
 const PLAY_B = "https://cdn.stream-test.local/b/index.m3u8"
+/** The rig in the OTHER building. Nothing here may ever hand these out. */
+const KEY_FAR = "sk-camera-far-do-not-leak"
+const PLAY_FAR = "https://cdn.stream-test.local/far/index.m3u8"
+
+/** Made by the candidates test, torn down whether or not it gets that far. */
+let farVenueId: string | null = null
+let farChannelIds: string[] = []
 
 /** Today in the app timezone — every clock in this suite hangs off this. */
 const TODAY = dateInTz(new Date())
@@ -216,8 +224,12 @@ afterAll(async () => {
   // GameStream.channelId is a required FK, so the rows go before the rigs;
   // destroyWorld's game delete would cascade them anyway, but the channels
   // themselves are outside its namespace.
-  await prisma.gameStream.deleteMany({ where: { channelId: { in: [cameraA, cameraB] } } })
-  await prisma.streamChannel.deleteMany({ where: { id: { in: [cameraA, cameraB] } } })
+  const rigs = [cameraA, cameraB, ...farChannelIds]
+  await prisma.gameStream.deleteMany({ where: { channelId: { in: rigs } } })
+  await prisma.streamChannel.deleteMany({ where: { id: { in: rigs } } })
+  // The second building is outside the world's namespace, so it is ours to
+  // remove. Its courts go with it (onDelete: Cascade).
+  if (farVenueId) await prisma.venue.delete({ where: { id: farVenueId } }).catch(() => {})
   await destroyWorld(world.ctx)
 })
 
@@ -623,6 +635,106 @@ describe("live streaming: two rigs, two courts, one evening (integration)", () =
 
     await prisma.gameStream.deleteMany({ where: { channelId: cameraC } })
     await prisma.streamChannel.delete({ where: { id: cameraC } })
+  })
+
+  it("offers the scorekeeper only cameras that could be in the room, never the whole fleet", async () => {
+    // canScoreGame() admits team managers and assistant coaches of either
+    // team, so this list reaches a few hundred people on a Saturday and every
+    // entry carries a playbackUrl that needs no further sign-in. An unscoped
+    // list would therefore be a permanent window into every gym we film,
+    // including leagues that never turned streaming on. Scope is the fix: a
+    // camera you cannot physically see is a camera you are never offered.
+    const farVenue = await prisma.venue.create({
+      data: {
+        name: world.ctx.name("Far Gym"),
+        address: "1 Elsewhere Road",
+        city: "Ottawa",
+        state: "ON",
+      },
+      select: { id: true },
+    })
+    farVenueId = farVenue.id
+    const farCourt = await prisma.court.create({
+      data: { venueId: farVenue.id, name: "Court 1" },
+      select: { id: true },
+    })
+
+    const far = await prisma.streamChannel.create({
+      data: {
+        name: world.ctx.name("Camera Far"),
+        ingestUrl: "rtmp://ingest.stream-test.local/live",
+        streamKey: KEY_FAR,
+        playbackUrl: PLAY_FAR,
+        currentCourtId: farCourt.id,
+      },
+      select: { id: true },
+    })
+    // Out of its bag, pointed at nothing yet: this one is offerable anywhere,
+    // because it might be the rig standing beside the scorer's table.
+    const spare = await prisma.streamChannel.create({
+      data: {
+        name: world.ctx.name("Camera Spare"),
+        playbackUrl: "https://cdn.stream-test.local/spare/index.m3u8",
+      },
+      select: { id: true },
+    })
+    farChannelIds = [far.id, spare.id]
+
+    const ask = async () => {
+      const res = await candidatesGet(
+        new NextRequest(`http://localhost:3000/api/games/${g1a}/stream/candidates`),
+        { params: { id: g1a } }
+      )
+      expect(res.status).toBe(200)
+      return res.json()
+    }
+
+    actAs(scorekeeperId)
+    const body = await ask()
+    const ids: string[] = body.channels.map((c: any) => c.id)
+
+    // In this building: the rig on this floor, and the rig on Court 2.
+    expect(ids).toContain(cameraA)
+    expect(ids).toContain(cameraB)
+    // Unplaced, so it could be anywhere, including here.
+    expect(ids).toContain(spare.id)
+    // Another building. The scorekeeper cannot see it, so tapping it could
+    // only ever be a mistake or a look at somebody else's gym.
+    expect(ids).not.toContain(far.id)
+
+    // The confirm-by-picture flag still says which one is on THIS floor.
+    expect(body.channels.find((c: any) => c.id === cameraA).placedAtThisCourt).toBe(true)
+    expect(body.channels.find((c: any) => c.id === cameraB).placedAtThisCourt).toBe(false)
+
+    // Nothing here is a push credential, and the far rig leaks nothing at all.
+    const asText = JSON.stringify(body)
+    expect(asText).not.toContain("ingestUrl")
+    expect(asText).not.toContain("streamKey")
+    expect(asText).not.toContain(KEY_A)
+    expect(asText).not.toContain(KEY_FAR)
+    expect(asText).not.toContain(PLAY_FAR)
+
+    // Placement is court XOR venue, so the building form has to be read too:
+    // a rig placed at THIS building shows up, and one placed at the far
+    // building stays hidden.
+    await prisma.streamChannel.update({
+      where: { id: spare.id },
+      data: { currentVenueId: venueId },
+    })
+    await prisma.streamChannel.update({
+      where: { id: far.id },
+      data: { currentCourtId: null, currentVenueId: farVenue.id },
+    })
+    const again = await ask()
+    const againIds: string[] = again.channels.map((c: any) => c.id)
+    expect(againIds).toContain(spare.id)
+    expect(againIds).not.toContain(far.id)
+    expect(JSON.stringify(again)).not.toContain(PLAY_FAR)
+
+    await prisma.streamChannel.deleteMany({ where: { id: { in: farChannelIds } } })
+    farChannelIds = []
+    await prisma.venue.delete({ where: { id: farVenue.id } })
+    farVenueId = null
   })
 
   it("stamps a live probe and lets an idle one leave that stamp exactly where it was", async () => {

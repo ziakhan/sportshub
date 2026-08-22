@@ -5,6 +5,7 @@ import { buildWorld, destroyWorld, type BuiltWorld } from "@youthbasketballhub/t
 import { actAs, jsonRequest } from "@/test/integration-harness"
 import { POST as channelsPost } from "@/app/api/admin/streams/channels/route"
 import { GET as providersGet } from "@/app/api/admin/streams/providers/route"
+import { cloudflareStreamProvider } from "./cloudflare"
 
 vi.mock("next-auth", () => ({ getServerSession: vi.fn(), default: vi.fn() }))
 
@@ -179,7 +180,13 @@ describe("stream channel provisioning (integration)", () => {
     expect(calls[0].url).toBe(
       `https://api.cloudflare.com/client/v4/accounts/${ACCOUNT_ID}/stream/live_inputs`
     )
-    expect(calls[0].body).toEqual({ meta: { name }, recording: { mode: "off" } })
+    expect(calls[0].body).toEqual({
+      meta: { name },
+      // Recording is what makes a Cloudflare live input playable at all, and
+      // the retention ceiling goes on at creation so storage cannot run away.
+      recording: { mode: "automatic" },
+      deleteRecordingAfterDays: 30,
+    })
     expect(calls[0].auth).toBe(`Bearer ${TOKEN}`)
 
     // What we kept. The playback URL is BUILT — Cloudflare returns no .m3u8
@@ -253,23 +260,13 @@ describe("stream channel provisioning (integration)", () => {
     expect((await channelsFor()).length).toBe(before)
   })
 
-  it("passes the recording choice through, and defaults it to off", async () => {
+  it("defaults recording ON, because a Cloudflare channel with it off never shows a picture", async () => {
     const { calls } = fakeCloudflare(() => okResponse(liveInputResponse()))
     actAs(adminId)
 
-    await channelsPost(
-      jsonRequest("/api/admin/streams/channels", {
-        mode: "provision",
-        provider: "cloudflare",
-        name: world.ctx.name("Camera Recorded"),
-        recording: "automatic",
-      }) as any,
-      {}
-    )
-    expect(calls[0].body.recording).toEqual({ mode: "automatic" })
-
-    // Storage is billed for as long as a recording exists, so the absence of
-    // a choice is never read as "yes".
+    // No choice made. Cloudflare serves live playback out of the recording
+    // pipeline, so "off" here would create a camera that connects and never
+    // produces a manifest — a dead channel by default.
     await channelsPost(
       jsonRequest("/api/admin/streams/channels", {
         mode: "provision",
@@ -278,7 +275,51 @@ describe("stream channel provisioning (integration)", () => {
       }) as any,
       {}
     )
+    expect(calls[0].body.recording).toEqual({ mode: "automatic" })
+
+    // Off is still a choice a person can make deliberately.
+    await channelsPost(
+      jsonRequest("/api/admin/streams/channels", {
+        mode: "provision",
+        provider: "cloudflare",
+        name: world.ctx.name("Camera Unrecorded"),
+        recording: "off",
+      }) as any,
+      {}
+    )
     expect(calls[1].body.recording).toEqual({ mode: "off" })
+  })
+
+  it("caps retention at creation, at Cloudflare's own minimum", async () => {
+    // Storage is billed until something deletes it, and the thing that deletes
+    // it must not be a cron nobody wrote. 30 is their floor: 1 and 7 are
+    // refused, 30 to 1096 accepted (tested against a real account 2026-08-22).
+    const { calls } = fakeCloudflare(() => okResponse(liveInputResponse()))
+    actAs(adminId)
+
+    await channelsPost(
+      jsonRequest("/api/admin/streams/channels", {
+        mode: "provision",
+        provider: "cloudflare",
+        name: world.ctx.name("Camera Retention"),
+      }) as any,
+      {}
+    )
+    expect(calls[0].body.deleteRecordingAfterDays).toBe(30)
+
+    // Even a caller asking for something the vendor would refuse lands inside
+    // the accepted range rather than losing the ceiling altogether.
+    const { calls: direct } = fakeCloudflare(() => okResponse(liveInputResponse()))
+    await cloudflareStreamProvider.createChannel("Camera Floor", {
+      deleteRecordingAfterDays: 1,
+    })
+    expect(direct[0].body.deleteRecordingAfterDays).toBe(30)
+
+    const { calls: ceiling } = fakeCloudflare(() => okResponse(liveInputResponse()))
+    await cloudflareStreamProvider.createChannel("Camera Ceiling", {
+      deleteRecordingAfterDays: 5000,
+    })
+    expect(ceiling[0].body.deleteRecordingAfterDays).toBe(1096)
   })
 
   it("creates NOTHING when the provider refuses, and repeats Cloudflare's own words", async () => {

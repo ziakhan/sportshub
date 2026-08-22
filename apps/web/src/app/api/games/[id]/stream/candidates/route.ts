@@ -28,6 +28,23 @@ export const dynamic = "force-dynamic"
  * PlatformAdmin, or anyone canScoreGame() already trusts with this game. If
  * you may run the scoreboard, you may say which camera is pointing at the
  * floor you are sitting beside.
+ *
+ * THE LIST IS SCOPED TO THIS BUILDING, and that is a security rule, not a
+ * convenience. canScoreGame() admits team managers and assistant coaches of
+ * either team, so an unscoped list would hand a few hundred people the whole
+ * camera fleet, each entry carrying a playbackUrl that needs no further
+ * authentication — a permanent window into somebody else's gym, including
+ * cameras filming leagues that never turned streaming on. So a channel is
+ * offered only when it is
+ *
+ *   (a) unplaced — sitting in a bag, pointed at nothing, or
+ *   (b) already placed in THIS game's building (at any of its courts, or at
+ *       the building itself).
+ *
+ * The scorekeeper cannot see a camera in another building, so tapping one
+ * could only ever be a mistake or a look at a stream they were never meant to
+ * have. Picking by picture only works on pictures of rooms you are standing
+ * in.
  */
 
 export const GET = withAuth<NextRequest>(async (_request, { params }, session) => {
@@ -71,6 +88,13 @@ export const GET = withAuth<NextRequest>(async (_request, { params }, session) =
       ? { courtId: null, venueId: game.venueId }
       : { courtId: null, venueId: null }
 
+  /**
+   * The building this game is played in, whichever way its location is
+   * recorded. A court always belongs to a venue, so a game that names a court
+   * has a building too.
+   */
+  const venueScopeId = game.venueId ?? game.court?.venue?.id ?? null
+
   // A game with nowhere to put a camera, or a league that has not opted in,
   // gets an empty list rather than a grid of tiles that cannot be tapped.
   const placeable = !!(target.courtId || target.venueId)
@@ -79,7 +103,20 @@ export const GET = withAuth<NextRequest>(async (_request, { params }, session) =
   const channels =
     placeable && consented
       ? await prisma.streamChannel.findMany({
-          where: { status: "ACTIVE" },
+          where: {
+            status: "ACTIVE",
+            // See the header: unplaced, or already in this building. Never
+            // the fleet.
+            OR: [
+              { currentCourtId: null, currentVenueId: null },
+              ...(venueScopeId
+                ? [
+                    { currentVenueId: venueScopeId },
+                    { currentCourt: { venueId: venueScopeId } },
+                  ]
+                : []),
+            ],
+          },
           select: {
             id: true,
             name: true,

@@ -16,16 +16,46 @@ export interface ProvisionedChannel {
   playbackUrl: string
 }
 
+/**
+ * Recording is ON by default because on Cloudflare it is not optional in
+ * practice: live playback is served out of the recording pipeline, so a live
+ * input with recording off connects happily and never produces a manifest.
+ * Proven with a real rig on 2026-08-22 (live-streaming-plan.md, "Field notes
+ * from the first real camera"), and their low-latency HLS requires it too.
+ * "off" is still a choice a person can make, it is simply not the default,
+ * because the default has to be the setting that shows a picture.
+ */
+export const DEFAULT_RECORDING_MODE = "automatic" as const
+
+/**
+ * How long the vendor keeps each recording before deleting it by itself.
+ *
+ * 30 is not a preference, it is Cloudflare's floor: their API refuses 1 and
+ * refuses 7 (tested 2026-08-22), and accepts 30 through 1096. Setting it at
+ * creation is what makes cleanup structural — a channel provisioned today
+ * cannot grow storage forever even if nobody ever writes the nightly delete
+ * job. A nightly job is still the right way to keep storage near zero; this
+ * only caps the worst case.
+ */
+export const DEFAULT_DELETE_RECORDING_AFTER_DAYS = 30
+
+/** Cloudflare's accepted range for `deleteRecordingAfterDays`. */
+export const MIN_DELETE_RECORDING_AFTER_DAYS = 30
+export const MAX_DELETE_RECORDING_AFTER_DAYS = 1096
+
 export interface CreateChannelOptions {
   /**
    * Whether the vendor keeps a recording of everything this channel pushes.
-   *
-   * Defaults to "off" everywhere, deliberately: recordings are billed for
-   * storage for as long as they exist, and the owner has not decided whether
-   * we want them (live-streaming-plan.md, open decision #4). Turning this on
-   * is a spending decision, so it is never the default.
+   * Defaults to DEFAULT_RECORDING_MODE ("automatic") — see the note there for
+   * why "off" cannot be the default on Cloudflare.
    */
   recording?: "off" | "automatic"
+  /**
+   * Days the vendor keeps a recording before deleting it on its own. Optional;
+   * providers that have no such setting ignore it. Defaults to
+   * DEFAULT_DELETE_RECORDING_AFTER_DAYS.
+   */
+  deleteRecordingAfterDays?: number
 }
 
 export interface StreamProvider {

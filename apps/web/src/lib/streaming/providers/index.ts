@@ -28,7 +28,13 @@ import { StreamProviderError, type StreamProvider } from "./types"
  */
 
 export type { ProvisionedChannel, CreateChannelOptions, StreamProvider } from "./types"
-export { StreamProviderError } from "./types"
+export {
+  StreamProviderError,
+  DEFAULT_RECORDING_MODE,
+  DEFAULT_DELETE_RECORDING_AFTER_DAYS,
+  MIN_DELETE_RECORDING_AFTER_DAYS,
+  MAX_DELETE_RECORDING_AFTER_DAYS,
+} from "./types"
 
 export const MANUAL_PROVIDER_ID = "manual"
 

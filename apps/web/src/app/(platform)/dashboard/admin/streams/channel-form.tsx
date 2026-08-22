@@ -37,7 +37,12 @@ export interface ChannelDraft {
   streamKey: string
   playbackUrl: string
   notes: string
-  /** Cloudflare mode only. Off unless a person deliberately turns it on. */
+  /**
+   * Cloudflare mode only, and ON by default: Cloudflare serves the live
+   * picture out of its recording pipeline, so a channel created with this off
+   * connects and never shows anything (proven with a real rig, 2026-08-22).
+   * A person can still turn it off, and the form says plainly what that costs.
+   */
   recording: "off" | "automatic"
 }
 
@@ -200,7 +205,8 @@ export function ChannelFormDialog({
     streamKey: "",
     playbackUrl: channel?.playbackUrl ?? "",
     notes: channel?.notes ?? "",
-    recording: "off",
+    // On, because off is the setting where nobody ever sees a picture.
+    recording: "automatic",
   })
   const [errors, setErrors] = useState<Errors>({})
 
@@ -311,15 +317,31 @@ export function ChannelFormDialog({
               />
               <span className="min-w-0">
                 <span className="text-ink-800 block text-sm font-semibold">
-                  Keep a recording of every game this camera streams
+                  Record every game this camera streams
                 </span>
                 <span className="text-ink-600 mt-0.5 block text-xs leading-5">
-                  Leave this off and nothing is kept, so the picture is live only. Turn it on and
-                  Cloudflare stores every stream and charges for that storage every month until
-                  someone deletes it.
+                  Keep this on. Cloudflare plays the live picture out of its recording, so
+                  recording is what makes the camera watchable at all. Each recording is kept for
+                  30 days and Cloudflare bills for that storage while it exists.
                 </span>
               </span>
             </label>
+
+            {/* Off is still a person's choice, so it is offered. It is also the
+                setting where the camera connects and nobody ever sees anything,
+                so it never passes without saying so. */}
+            {draft.recording === "off" && (
+              <p
+                role="alert"
+                className="border-gold-100 bg-gold-50 text-ink-800 mt-2.5 rounded-lg border px-2.5 py-2 text-[11px] leading-5"
+              >
+                <strong className="text-ink-950 block">
+                  With recording off, this camera will show no picture.
+                </strong>
+                Cloudflare accepts the broadcast and never produces a stream to play, so nobody
+                can watch it. Only leave this off for a camera that is not meant to be watched.
+              </p>
+            )}
           </div>
         ) : (
           <>

@@ -257,7 +257,8 @@ export function StreamsConsole() {
         const body: Record<string, unknown> = provisioning
           ? {
               // The provider fills in all three addresses; the operator gave
-              // us a name and a spending decision.
+              // us a name and the recording choice (on by default, because on
+              // Cloudflare that is what makes the picture exist at all).
               mode: "provision",
               provider: "cloudflare",
               name: draft.name.trim(),

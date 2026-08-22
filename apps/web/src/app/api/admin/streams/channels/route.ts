@@ -3,7 +3,11 @@ import { z } from "zod"
 import { prisma } from "@youthbasketballhub/db"
 import { withAuth, requirePlatformAdmin, apiError } from "@/lib/api/handler"
 import { auditSafe } from "@/lib/audit"
-import { getProvider, StreamProviderError } from "@/lib/streaming/providers"
+import {
+  DEFAULT_RECORDING_MODE,
+  getProvider,
+  StreamProviderError,
+} from "@/lib/streaming/providers"
 
 export const dynamic = "force-dynamic"
 
@@ -92,7 +96,12 @@ const provisionSchema = z.object({
   mode: z.literal("provision"),
   provider: z.string().trim().min(1).max(80),
   name: z.string().trim().min(1).max(80),
-  /** Off by default: recordings are stored and billed until deleted. */
+  /**
+   * On by default. Cloudflare serves live playback out of the recording
+   * pipeline, so a channel created with this off never shows a picture at all
+   * (proven with a real rig, 2026-08-22). The provider caps how long each
+   * recording is kept, so "on" does not mean "grows forever".
+   */
   recording: z.enum(["off", "automatic"]).optional(),
   notes: optionalText(2000),
 })
@@ -136,7 +145,9 @@ export const POST = withAuth<NextRequest>(async (request, _ctx, session) => {
     // refusal leaves no half-made camera behind for someone to wonder about.
     let created
     try {
-      created = await provider.createChannel(input.name, { recording: input.recording ?? "off" })
+      created = await provider.createChannel(input.name, {
+        recording: input.recording ?? DEFAULT_RECORDING_MODE,
+      })
     } catch (error) {
       if (error instanceof StreamProviderError) {
         return apiError(error.status, error.message, error.code)

@@ -1,4 +1,8 @@
 import {
+  DEFAULT_DELETE_RECORDING_AFTER_DAYS,
+  DEFAULT_RECORDING_MODE,
+  MAX_DELETE_RECORDING_AFTER_DAYS,
+  MIN_DELETE_RECORDING_AFTER_DAYS,
   StreamProviderError,
   type CreateChannelOptions,
   type ProvisionedChannel,
@@ -44,6 +48,17 @@ import {
  *
  * `webRTC.url` (publish) carries a push secret in its path. It is never
  * stored, never logged, and only its hostname is ever read.
+ *
+ * TWO THINGS A REAL CAMERA TAUGHT US (2026-08-22, live-streaming-plan.md
+ * "Field notes from the first real camera"):
+ *
+ *  1. RECORDING IS NOT OPTIONAL HERE. Cloudflare serves live playback out of
+ *     the recording pipeline, so a live input created with `recording.mode`
+ *     off accepts the broadcast and never produces a manifest. Nobody ever
+ *     sees a picture. That is why the default is "automatic".
+ *  2. RECORDINGS ARE BILLED UNTIL SOMEONE DELETES THEM, so every input we
+ *     create carries `deleteRecordingAfterDays`. Their minimum is 30 (1 and
+ *     7 are refused), and we ask for the minimum.
  */
 
 const API_BASE = "https://api.cloudflare.com/client/v4"
@@ -205,10 +220,36 @@ export const cloudflareStreamProvider: StreamProvider = {
       )
     }
 
-    const recording = options.recording ?? "off"
+    const recording = options.recording ?? DEFAULT_RECORDING_MODE
+
+    /**
+     * WHY 30 AND NOT 1: 30 is Cloudflare's own floor for this field. Asking
+     * for 1 or 7 is refused outright (both tested with a real account on
+     * 2026-08-22); the accepted range is 30 to 1096. So 30 is the tightest
+     * automatic cleanup the vendor will agree to, and setting it AT CREATION
+     * is what makes cleanup structural: every channel provisioned from here
+     * has a ceiling on its stored minutes whether or not anyone ever writes
+     * the nightly delete job. It caps the worst case; it does not replace the
+     * nightly job, which is what keeps storage near zero.
+     *
+     * The field is top-level on the live input, not inside `recording` — see
+     * the response shape at the top of this file.
+     */
+    const deleteAfterDays = Math.min(
+      MAX_DELETE_RECORDING_AFTER_DAYS,
+      Math.max(
+        MIN_DELETE_RECORDING_AFTER_DAYS,
+        Math.round(options.deleteRecordingAfterDays ?? DEFAULT_DELETE_RECORDING_AFTER_DAYS)
+      )
+    )
+
     const body = await callCloudflare<CloudflareLiveInput>("/stream/live_inputs", {
       method: "POST",
-      body: { meta: { name }, recording: { mode: recording } },
+      body: {
+        meta: { name },
+        recording: { mode: recording },
+        deleteRecordingAfterDays: deleteAfterDays,
+      },
     })
 
     const input = body.result
