@@ -21,6 +21,9 @@ export const dynamic = "force-dynamic"
  *       id: string,
  *       name: string,
  *       live: boolean,            // this probe saw a running manifest
+ *       state: "live"|"idle"|"fault",  // idle = the address answered, nobody
+ *                                 // is broadcasting on it. A normal state,
+ *                                 // and NOT the same as a fault.
  *       checkedAt: string,
  *       lastSeenLiveAt: string|null,
  *       detail: string|null       // why not live, in operator words
