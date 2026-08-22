@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { useRouter } from "next/navigation"
 import { format } from "date-fns"
 import { Badge, Button, Card, PanelHeader } from "@/components/ui"
 
@@ -28,8 +29,10 @@ interface EventRow {
 }
 
 export function TryoutEventsPanel({ clubId, canEdit }: { clubId: string; canEdit: boolean }) {
+  const router = useRouter()
   const [events, setEvents] = useState<EventRow[] | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [starting, setStarting] = useState<string | null>(null)
 
   useEffect(() => {
     let live = true
@@ -44,6 +47,25 @@ export function TryoutEventsPanel({ clubId, canEdit }: { clubId: string; canEdit
       live = false
     }
   }, [clubId])
+
+  /** Turn evaluation on for this event (idempotent) and go to the floor. */
+  const startEvaluating = async (eventId: string) => {
+    setStarting(eventId)
+    try {
+      const res = await fetch(`/api/clubs/${clubId}/evaluation`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ eventId }),
+      })
+      const json = await res.json().catch(() => null)
+      if (res.ok && json?.sessionId) {
+        router.push(`/clubs/${clubId}/tryouts/evaluate/${json.sessionId}`)
+        return
+      }
+    } finally {
+      setStarting(null)
+    }
+  }
 
   return (
     <Card className="reveal mb-8">
@@ -146,6 +168,17 @@ export function TryoutEventsPanel({ clubId, canEdit }: { clubId: string; canEdit
                   size="sm"
                 >
                   Its pools
+                </Button>
+                {/* Evaluation is off until a club admin turns it on, so this
+                    posts first and then lands on the scoring screen. Nothing
+                    changes for a club that only ever wanted attendance. */}
+                <Button
+                  onClick={() => startEvaluating(event.id)}
+                  variant="subtle"
+                  size="sm"
+                  disabled={starting === event.id}
+                >
+                  {starting === event.id ? "Opening…" : "Evaluate"}
                 </Button>
               </div>
             </div>
