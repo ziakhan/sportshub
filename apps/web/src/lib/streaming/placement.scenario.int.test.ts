@@ -69,6 +69,10 @@ const PLAY_FAR = "https://cdn.stream-test.local/far/index.m3u8"
 let farVenueId: string | null = null
 let farChannelIds: string[] = []
 
+/** Same, for the scope test, which needs its own second building. */
+let scopeVenueId: string | null = null
+let scopeChannelIds: string[] = []
+
 /** Today in the app timezone — every clock in this suite hangs off this. */
 const TODAY = dateInTz(new Date())
 const at = (hour: number, minute = 0) =>
@@ -224,12 +228,13 @@ afterAll(async () => {
   // GameStream.channelId is a required FK, so the rows go before the rigs;
   // destroyWorld's game delete would cascade them anyway, but the channels
   // themselves are outside its namespace.
-  const rigs = [cameraA, cameraB, ...farChannelIds]
+  const rigs = [cameraA, cameraB, ...farChannelIds, ...scopeChannelIds]
   await prisma.gameStream.deleteMany({ where: { channelId: { in: rigs } } })
   await prisma.streamChannel.deleteMany({ where: { id: { in: rigs } } })
   // The second building is outside the world's namespace, so it is ours to
   // remove. Its courts go with it (onDelete: Cascade).
   if (farVenueId) await prisma.venue.delete({ where: { id: farVenueId } }).catch(() => {})
+  if (scopeVenueId) await prisma.venue.delete({ where: { id: scopeVenueId } }).catch(() => {})
   await destroyWorld(world.ctx)
 })
 
@@ -293,6 +298,83 @@ describe("live streaming: two rigs, two courts, one evening (integration)", () =
     await placeChannel({ channelId: cameraB, courtId: court2, actorId: adminId, now: QUIET() })
     expect(await streamRow(g1a)).toMatchObject({ channelId: cameraA })
     expect(await streamRow(g2a)).toMatchObject({ channelId: cameraB })
+  })
+
+  it("lets ONE camera stand at a court: placing a second one moves the first off it", async () => {
+    // The owner's defect, 2026-08-22. Placement used to accumulate — the
+    // staging database held two rigs both claiming Court 1 — and a camera is
+    // one physical object on one floor, so that is a state that cannot exist
+    // in the world. The person at the table is looking at the floor and we are
+    // not, so their answer wins and the other rig is simply moved off.
+    await placeChannel({ channelId: cameraA, courtId: court1, actorId: adminId, now: QUIET() })
+    expect(await streamRow(g1a)).toMatchObject({ channelId: cameraA, source: "AUTO" })
+
+    const takenOver = await placeChannel({
+      channelId: cameraB,
+      courtId: court1,
+      actorId: scorekeeperId,
+      actorRole: "Scorekeeper",
+      now: QUIET(),
+    })
+
+    // The rig that was standing here is standing nowhere now, with every
+    // trace of its placement cleared — not just the court id.
+    const displacedA = await prisma.streamChannel.findUnique({ where: { id: cameraA } })
+    expect(displacedA?.currentCourtId).toBeNull()
+    expect(displacedA?.currentVenueId).toBeNull()
+    expect(displacedA?.placedAt).toBeNull()
+    expect(displacedA?.placedById).toBeNull()
+
+    // THE INVARIANT, asked of the database directly.
+    const atCourt1 = await prisma.streamChannel.findMany({
+      where: { currentCourtId: court1 },
+      select: { id: true },
+    })
+    expect(atCourt1).toEqual([{ id: cameraB }])
+
+    // Its games went with the camera that is actually pointing at them, and
+    // the ones it let go of are named in the result so a UI can say it.
+    expect(takenOver.mapped.sort()).toEqual([g1a, g1b].sort())
+    expect(takenOver.displaced).toHaveLength(1)
+    expect(takenOver.displaced[0].channelId).toBe(cameraA)
+    expect(takenOver.displaced[0].unmapped.sort()).toEqual([g1a, g1b].sort())
+    expect(await streamRow(g1a)).toMatchObject({ channelId: cameraB, source: "AUTO" })
+    expect(await streamRow(g1b)).toMatchObject({ channelId: cameraB, source: "AUTO" })
+
+    // A rig that quietly stopped covering its games gets a name against it.
+    const trail = await prisma.auditLog.findFirst({
+      where: { action: "STREAM_CHANNEL_DISPLACE", resourceId: cameraA },
+      orderBy: { createdAt: "desc" },
+      select: { userId: true, metadata: true },
+    })
+    expect(trail?.userId).toBe(scorekeeperId)
+    expect((trail!.metadata as any).replacedById).toBe(cameraB)
+
+    // The same rule for a BUILDING placement, which is the other half of
+    // court-XOR-venue and would otherwise accumulate exactly the same way.
+    await placeChannel({ channelId: cameraA, venueId, actorId: adminId, now: QUIET() })
+    const movedIn = await placeChannel({
+      channelId: cameraB,
+      venueId,
+      actorId: adminId,
+      now: QUIET(),
+    })
+    expect(movedIn.displaced.map((d) => d.channelId)).toEqual([cameraA])
+    const atVenue = await prisma.streamChannel.findMany({
+      where: { currentVenueId: venueId },
+      select: { id: true },
+    })
+    expect(atVenue).toEqual([{ id: cameraB }])
+
+    // The assigner agrees: with one rig per spot there is nothing to warn about.
+    const converged = await runAssigner({ date: QUIET() })
+    expect(converged.warnings.filter((w) => w.code === "SHARED_PLACEMENT")).toEqual([])
+
+    // Put the evening back: A on Court 1, B on Court 2.
+    await placeChannel({ channelId: cameraA, courtId: court1, actorId: adminId, now: QUIET() })
+    await placeChannel({ channelId: cameraB, courtId: court2, actorId: adminId, now: QUIET() })
+    expect(await streamRow(g1a)).toMatchObject({ channelId: cameraA, source: "AUTO" })
+    expect(await streamRow(g2a)).toMatchObject({ channelId: cameraB, source: "AUTO" })
   })
 
   it("refuses to steal a rig that is mid-game on another court, then obeys a confirmed take-over", async () => {
@@ -622,6 +704,13 @@ describe("live streaming: two rigs, two courts, one evening (integration)", () =
     expect(claimed.mapped).toContain(g1a)
     expect(await streamRow(g1a)).toMatchObject({ channelId: cameraC, source: "AUTO" })
 
+    // Through the route as well as the library: Camera A was standing on this
+    // floor, so it has been moved off it. One floor, one camera.
+    expect(claimed.displaced.map((d: any) => d.channelId)).toEqual([cameraA])
+    expect(
+      (await prisma.streamChannel.findUnique({ where: { id: cameraA } }))?.currentCourtId
+    ).toBeNull()
+
     // Somebody with no game on that floor cannot move a camera onto it.
     actAs(outsiderId)
     const refused = await placementPost(
@@ -635,6 +724,12 @@ describe("live streaming: two rigs, two courts, one evening (integration)", () =
 
     await prisma.gameStream.deleteMany({ where: { channelId: cameraC } })
     await prisma.streamChannel.delete({ where: { id: cameraC } })
+
+    // The third rig has gone home, so put Camera A back on its floor for the
+    // rest of the suite.
+    actAs(adminId)
+    await placeChannel({ channelId: cameraA, courtId: court1, actorId: adminId, now: QUIET() })
+    expect(await streamRow(g1a)).toMatchObject({ channelId: cameraA, source: "AUTO" })
   })
 
   it("offers the scorekeeper only cameras that could be in the room, never the whole fleet", async () => {
@@ -735,6 +830,139 @@ describe("live streaming: two rigs, two courts, one evening (integration)", () =
     farChannelIds = []
     await prisma.venue.delete({ where: { id: farVenue.id } })
     farVenueId = null
+  })
+
+  it("shows the whole fleet under ?scope=all, and hands out a picture only for the room you are in", async () => {
+    // At 100-200 cameras a scorekeeper has to be able to find a rig that was
+    // carried in from another gym and whose placement row still says where it
+    // used to be. `scope=all` is that escape hatch. What it must NOT become is
+    // finding S2 again: playbackUrl needs no further sign-in and never
+    // rotates, so the fleet's addresses cannot go out to everyone
+    // canScoreGame() admits.
+    const otherVenue = await prisma.venue.create({
+      data: {
+        name: world.ctx.name("Other Gym"),
+        address: "9 Elsewhere Road",
+        city: "Kingston",
+        state: "ON",
+      },
+      select: { id: true },
+    })
+    scopeVenueId = otherVenue.id
+    const otherCourt = await prisma.court.create({
+      data: { venueId: otherVenue.id, name: "Court 1" },
+      select: { id: true },
+    })
+
+    const PLAY_AWAY = "https://cdn.stream-test.local/away/index.m3u8"
+    const PLAY_TAGGED = "https://cdn.stream-test.local/tagged/index.m3u8"
+
+    // Standing in the other building. Never gets a picture, either scope.
+    const away = await prisma.streamChannel.create({
+      data: {
+        name: world.ctx.name("Camera Away"),
+        playbackUrl: PLAY_AWAY,
+        streamKey: KEY_FAR,
+        currentCourtId: otherCourt.id,
+      },
+      select: { id: true },
+    })
+    // TAGGED to this building but standing in the other one. The tag is a
+    // finding aid, so it is LISTED by default; the tag is not presence, so it
+    // gets no address.
+    const tagged = await prisma.streamChannel.create({
+      data: {
+        name: world.ctx.name("Camera Tagged Home"),
+        playbackUrl: PLAY_TAGGED,
+        homeVenueId: venueId,
+        currentCourtId: otherCourt.id,
+      },
+      select: { id: true },
+    })
+    scopeChannelIds = [away.id, tagged.id]
+
+    const ask = async (scope?: "all") => {
+      const url = `http://localhost:3000/api/games/${g1a}/stream/candidates${
+        scope ? `?scope=${scope}` : ""
+      }`
+      const res = await candidatesGet(new NextRequest(url), { params: { id: g1a } })
+      expect(res.status).toBe(200)
+      return res.json()
+    }
+
+    actAs(scorekeeperId)
+
+    const here = await ask()
+    expect(here.scope).toBe("here")
+    const hereIds: string[] = here.channels.map((c: any) => c.id)
+    // In the room, so offered.
+    expect(hereIds).toContain(cameraA)
+    expect(hereIds).toContain(cameraB)
+    // Tagged to this building, so offered — that is what the tag is FOR.
+    expect(hereIds).toContain(tagged.id)
+    // Neither here nor tagged here.
+    expect(hereIds).not.toContain(away.id)
+    // And the tagged one is listed WITHOUT an address, because it is standing
+    // in somebody else's gym.
+    const taggedHere = here.channels.find((c: any) => c.id === tagged.id)
+    expect(taggedHere.playbackUrl).toBeNull()
+    expect(taggedHere.homeVenueId).toBe(venueId)
+    expect(taggedHere.placedElsewhere).toBe(true)
+    expect(taggedHere.placedCourtName).toBe("Court 1")
+    // The rig actually on this floor keeps its picture and its flag.
+    expect(here.channels.find((c: any) => c.id === cameraA).playbackUrl).toBe(PLAY_A)
+    expect(here.channels.find((c: any) => c.id === cameraA).placedAtThisCourt).toBe(true)
+    expect(JSON.stringify(here)).not.toContain(PLAY_TAGGED)
+    expect(JSON.stringify(here)).not.toContain(PLAY_AWAY)
+    // The count is what lets the button say "Show all N cameras". A count is
+    // not a leak.
+    expect(here.fleetCount).toBeGreaterThanOrEqual(4)
+    expect(here.building.id).toBe(venueId)
+
+    const all = await ask("all")
+    expect(all.scope).toBe("all")
+    const allIds: string[] = all.channels.map((c: any) => c.id)
+    // The whole fleet is reachable by NAME, which is the point.
+    expect(allIds).toContain(away.id)
+    expect(allIds).toContain(tagged.id)
+    expect(allIds).toContain(cameraA)
+
+    // THE RULE: an address only for cameras that are unplaced or in this
+    // building. Everything else is a name, a tag and a placement.
+    for (const channel of all.channels) {
+      const inThisBuilding =
+        channel.placedVenueId === venueId ||
+        (!channel.placedCourtId && !channel.placedVenueId)
+      expect(channel.playbackUrl === null).toBe(!inThisBuilding)
+    }
+    const asText = JSON.stringify(all)
+    expect(asText).not.toContain(PLAY_AWAY)
+    expect(asText).not.toContain(PLAY_TAGGED)
+    expect(asText).not.toContain(KEY_FAR)
+    expect(asText).not.toContain("ingestUrl")
+    expect(asText).not.toContain("streamKey")
+
+    // The far rig is still named well enough to be taken back by hand.
+    const awayRow = all.channels.find((c: any) => c.id === away.id)
+    expect(awayRow.name).toContain("Camera Away")
+    expect(awayRow.placedCourtName).toBe("Court 1")
+    expect(awayRow.placedVenueName).toContain("Other Gym")
+    expect(awayRow.placedElsewhere).toBe(true)
+
+    // Nobody who cannot score this game gets either scope.
+    actAs(outsiderId)
+    const refused = await candidatesGet(
+      new NextRequest(`http://localhost:3000/api/games/${g1a}/stream/candidates?scope=all`),
+      { params: { id: g1a } }
+    )
+    expect(refused.status).toBe(403)
+
+    actAs(scorekeeperId)
+    await prisma.streamChannel.deleteMany({ where: { id: { in: scopeChannelIds } } })
+    scopeChannelIds = []
+    await prisma.court.delete({ where: { id: otherCourt.id } })
+    await prisma.venue.delete({ where: { id: otherVenue.id } })
+    scopeVenueId = null
   })
 
   it("stamps a live probe and lets an idle one leave that stamp exactly where it was", async () => {

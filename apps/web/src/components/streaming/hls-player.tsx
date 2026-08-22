@@ -461,6 +461,16 @@ export interface StreamPreviewTileProps {
   src: string
   /** Channel name, drawn on the tile so a picture is never anonymous. */
   name?: string
+  /**
+   * True the moment a frame lands, false while the tile is dark.
+   *
+   * The camera chooser reads this to keep its live/idle wording honest. The
+   * stored `lastSeenLiveAt` stamp is only written by the health probe, which a
+   * scorekeeper never runs, so a rig broadcasting right now would otherwise sit
+   * under "no recent signal" while plainly showing a picture. A frame arriving
+   * is the strongest evidence there is, and it costs nothing extra to report.
+   */
+  onPicture?: (hasPicture: boolean) => void
   className?: string
 }
 
@@ -477,12 +487,21 @@ export interface StreamPreviewTileProps {
  *
  * Exported for reuse by the admin Streams dashboard (phase 2, other lane).
  */
-export function StreamPreviewTile({ src, name, className }: StreamPreviewTileProps) {
+export function StreamPreviewTile({ src, name, onPicture, className }: StreamPreviewTileProps) {
   const videoRef = useRef<HTMLVideoElement>(null)
   const boxRef = useRef<HTMLDivElement>(null)
   const [visible, setVisible] = useState(false)
   const [ready, setReady] = useState(false)
   const [failed, setFailed] = useState(false)
+
+  // Read through a ref so a parent that re-renders on the report does not tear
+  // the stream down and re-attach it.
+  const reportRef = useRef(onPicture)
+  reportRef.current = onPicture
+  const hasPicture = ready && !failed
+  useEffect(() => {
+    reportRef.current?.(hasPicture)
+  }, [hasPicture])
 
   const onError = useCallback(() => setFailed(true), [])
   // A picture arriving ends the failure, whichever attempt brought it.

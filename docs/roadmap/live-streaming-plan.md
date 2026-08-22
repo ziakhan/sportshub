@@ -132,6 +132,72 @@ Three things learned the hard way, all of which will matter on game day:
    score to match (recommended, free), enable low-latency HLS (beta, ~3-5s), or
    accept it. Owner decision open.
 
+## Camera selection, rebuilt (owner direction, 2026-08-22) — LOCAL ONLY
+
+After using the first build against a real camera the owner replaced the
+scorekeeper's confirm-by-picture strip. Five changes, in the order they matter.
+
+**1. Placement MOVES, it does not accumulate (a bug).** The staging database held
+two channels — "Camera Zia 2" and "Camera-Zia" — both claiming Court 1, because
+`placeChannel()` set the arriving rig's columns and said nothing to whoever was
+already standing there. A camera is one physical object on one floor, so that is
+a state that cannot exist in the world. Placing a rig now un-places every other
+channel at that court or venue **in the same transaction** and releases their
+AUTO mappings for the day. It is never refused and never warned about: the person
+placing the camera is looking at the floor and we are not. The displaced rigs come
+back in `PlaceChannelResult.displaced` and are audit-logged as
+`STREAM_CHANNEL_DISPLACE`. The assigner's `SHARED_PLACEMENT` warning stays, and
+now only fires for rows written before this fix or edited straight in the database.
+
+**2. Broadcasting is OPTIONAL and OFF by default.** The old strip opened a grid of
+live pictures and asked "is there a camera at your court?" before anyone had said
+they wanted one. Most games are not filmed, and a console that opens with an
+unanswered question about cameras teaches the scorekeeper that something is broken.
+The scoring page now carries one quiet row — "Broadcast this game" plus an "Add a
+camera" button — and a game with no camera reads as a completely normal game.
+
+**3. A separate camera-selection screen.** Full-screen on a phone, a large modal on
+desktop, titled "Choose the camera showing this court". It is built for 100-200
+rigs (Coalition scale): debounced search by name, a building filter defaulting to
+this game's building with a one-tap "Show all N cameras", rows rather than tiles
+(a row carries the building tag, the live state and the court the rig is currently
+standing at; a tile carries none of that), and **at most six pictures playing at
+once** because Cloudflare bills delivered minutes per viewer. Rows past the cap
+offer "Show picture", which swaps the oldest one out. The list renders in windows
+that grow on scroll. Rows are ordered by how near a camera is to being the answer:
+the rig on this floor, then rigs in this building, then spares tagged here, then
+spares, then everything else.
+
+**4. `StreamChannel.homeVenueId` — a TAG, never a binding.** Optional, single, set
+from the admin channel form as "Usually at". Its only job is to sort a fleet into
+buildings so the chooser can open on the right few. A camera tagged to Building A
+can still be placed at Building B and nothing anywhere refuses it, because rigs get
+carried around. Multiple tags per rig were raised and deliberately not built; that
+would make this column a join table.
+
+**5. Candidates endpoint: `?scope=all`, and the rule that survives it.** The default
+scope is unchanged plus the tag: unplaced, standing in this building, or tagged to
+this building. `?scope=all` returns the whole ACTIVE fleet, for the case the scope
+exists to handle badly — a rig carried to another gym whose placement row still says
+where it used to be.
+
+> **The security boundary moved from the SCOPE to the PICTURE.** `playbackUrl` is
+> served if and only if a camera is unplaced or standing in this building, in both
+> scopes. That includes refusing an address to a camera tagged to this building but
+> standing in another one: the tag says where a rig usually lives, the placement says
+> where it is, and only being here earns a picture. This keeps finding S2 fixed while
+> letting the fleet be searched by name. It costs the scorekeeper nothing they had —
+> confirming by picture only works on pictures of the room you are standing in — and
+> what "show all" buys them is taking a rig back by name, which needs no picture and
+> still passes the take-over guard.
+
+Files: `lib/streaming/placement.ts`, `api/games/[id]/stream/candidates/route.ts`,
+`components/streaming/camera-chooser.tsx`, `components/streaming/scorekeeper-broadcast.tsx`
+(replaces `scorekeeper-stream-strip.tsx`), `components/streaming/candidates.ts`,
+plus the admin channel form and `lib/streaming/ops.ts` for the new audit line.
+Tests: `placement.scenario.int.test.ts` gains "lets ONE camera stand at a court" and
+"shows the whole fleet under ?scope=all" (26 integration, 17 unit, all green).
+
 ## Camera hardware (researched 2026-07-20)
 
 **How the XbotGo Chameleon works — yes, it needs a phone.** The Chameleon is a motorized
@@ -386,7 +452,11 @@ keeps broadcasting after the app says stopped (field note 2), and the subject is
 league consent: it returned every ACTIVE channel with its playbackUrl to anyone
 `canScoreGame` admits (team managers, assistant coaches), including cameras filming
 leagues with `streamingEnabled = false`. *Fixed 2026-08-22:* scoped to unplaced cameras
-plus cameras at this game's own venue.
+plus cameras at this game's own venue. *Revisited the same day* when the owner asked
+for a "show all cameras" path: the fleet is now listable by name under `?scope=all`,
+but `playbackUrl` is still served only for cameras that are unplaced or standing in
+this building. See "Camera selection, rebuilt" above — the gate is the picture, not
+the list.
 
 **S3. A newly provisioned Cloudflare camera could never show a picture** — recording
 defaulted to "off", which on Cloudflare means the ingest connects but no manifest is

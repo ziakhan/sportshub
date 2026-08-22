@@ -223,6 +223,11 @@ export function StreamsConsole() {
 
         const mapped = Array.isArray(json.mapped) ? json.mapped.length : 0
         const dropped = Array.isArray(json.unmapped) ? json.unmapped.length : 0
+        // A floor holds one camera, so anything that was standing there has
+        // been moved off it. Never leave that to be discovered.
+        const displaced: string[] = Array.isArray(json.displaced)
+          ? json.displaced.map((d: { channelName: string }) => d.channelName)
+          : []
         setTakeover(null)
         setMoving(null)
         setNotice(
@@ -230,7 +235,10 @@ export function StreamsConsole() {
             (mapped
               ? `It now shows ${mapped} ${mapped === 1 ? "game" : "games"} today`
               : "No games today at that spot yet") +
-            (dropped ? `, and ${dropped} ${dropped === 1 ? "game" : "games"} it left behind went dark.` : ".")
+            (dropped ? `, and ${dropped} ${dropped === 1 ? "game" : "games"} it left behind went dark.` : ".") +
+            (displaced.length
+              ? ` ${displaced.join(" and ")} ${displaced.length === 1 ? "was" : "were"} standing there, so ${displaced.length === 1 ? "it is" : "they are"} now placed nowhere.`
+              : "")
         )
         await load()
         void checkSignal(channel.id)
@@ -253,6 +261,7 @@ export function StreamsConsole() {
       try {
         const provider = draft.provider.trim()
         const notes = draft.notes.trim()
+        const homeVenueId = draft.homeVenueId.trim()
 
         const body: Record<string, unknown> = provisioning
           ? {
@@ -264,6 +273,7 @@ export function StreamsConsole() {
               name: draft.name.trim(),
               recording: draft.recording,
               ...(notes ? { notes } : {}),
+              ...(homeVenueId ? { homeVenueId } : {}),
             }
           : {
               name: draft.name.trim(),
@@ -276,11 +286,14 @@ export function StreamsConsole() {
                     ingestUrl: draft.ingestUrl.trim() || null,
                     provider: provider || null,
                     notes: notes || null,
+                    // An emptied tag means "no building in particular".
+                    homeVenueId: homeVenueId || null,
                   }
                 : {
                     ...(draft.ingestUrl.trim() ? { ingestUrl: draft.ingestUrl.trim() } : {}),
                     ...(provider ? { provider } : {}),
                     ...(notes ? { notes } : {}),
+                    ...(homeVenueId ? { homeVenueId } : {}),
                   }),
             }
 
@@ -551,6 +564,8 @@ export function StreamsConsole() {
                       <Badge tone="danger">Take-over</Badge>
                     ) : entry.action === "STREAM_CHANNEL_PLACE" ? (
                       <Badge tone="play">Placed</Badge>
+                    ) : entry.action === "STREAM_CHANNEL_DISPLACE" ? (
+                      <Badge tone="warning">Moved off</Badge>
                     ) : (
                       <Badge tone="neutral">Camera</Badge>
                     )}
@@ -608,6 +623,7 @@ export function StreamsConsole() {
         <ChannelFormDialog
           channel={editing}
           providers={providers}
+          venues={overview?.venues ?? []}
           busy={saving}
           error={formError}
           onCancel={() => {

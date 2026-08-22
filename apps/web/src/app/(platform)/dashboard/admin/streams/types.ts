@@ -43,6 +43,12 @@ export interface Channel {
   currentVenueId: string | null
   currentCourt: { id: string; name: string; venue: { id: string; name: string } } | null
   currentVenue: { id: string; name: string } | null
+  /**
+   * "Usually at" — a TAG, so a scorekeeper can find this rig among a hundred
+   * others. It never restricts where the camera may be placed.
+   */
+  homeVenueId: string | null
+  homeVenue: { id: string; name: string } | null
   createdAt: string
   updatedAt: string
 }

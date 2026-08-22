@@ -24,6 +24,22 @@ import { isStreamWindowOpen } from "@/lib/queries/game-stream"
  *   • COMPLETED (and otherwise finished) games are never touched. Their row is
  *     the historical record of which channel showed that game — the phase-3
  *     VOD index. Re-pointing it would rewrite history.
+ *
+ * ── ONE FLOOR, ONE CAMERA (owner defect, 2026-08-22) ──────────────────────
+ * Placement used to ACCUMULATE: placing a rig at a court set that rig's
+ * columns and said nothing to whoever was already standing there, so two
+ * channels could both hold currentCourtId = Court 1 (found in the staging
+ * database: "Camera Zia 2" and "Camera-Zia" both claiming it). That is a state
+ * that cannot exist in the world. A camera is one physical object standing on
+ * one floor, and if the scorekeeper says THIS camera is showing their court,
+ * the rig that was there has been carried away or was never there at all.
+ *
+ * So a placement now MOVES: it un-places every other channel at that spot in
+ * the same transaction and releases their AUTO mappings. It is not a warning
+ * and not a conflict — the human at the table is looking at the floor and we
+ * are not, so their answer wins. The displaced rigs come back in the result
+ * and go on the audit trail, because a camera that quietly stopped covering
+ * its games needs a name against it.
  */
 
 /** Games whose mapping is settled — the assigner reads past them, never over them. */
@@ -78,6 +94,19 @@ export interface PlaceChannelInput {
   now?: Date
 }
 
+/**
+ * A rig that was standing where this one has just been placed, and is now
+ * standing nowhere. One floor holds one camera, so this is the ordinary
+ * outcome of a correction, not an error — but it is named so the UI can say it
+ * out loud and the trail can record it.
+ */
+export interface StreamDisplacedChannel {
+  channelId: string
+  channelName: string
+  /** Today's unfinished games it stopped covering when it was un-placed. */
+  unmapped: string[]
+}
+
 export interface PlaceChannelResult {
   channelId: string
   courtId: string | null
@@ -88,6 +117,8 @@ export interface PlaceChannelResult {
   unmapped: string[]
   /** Present when `force` overrode a live game on another court. */
   tookOver: StreamTakeoverConflict | null
+  /** Rigs pushed off this floor, because a floor holds one camera. */
+  displaced: StreamDisplacedChannel[]
 }
 
 /** "Today" in the app timezone, as a UTC half-open range. */
@@ -130,6 +161,10 @@ const HELD_GAME_SELECT = {
  * games at its placement become AUTO rows on it, and today's not-yet-finished
  * games it has left behind lose theirs.
  *
+ * Both target ids null means the rig is standing NOWHERE (it was just pushed
+ * off a floor by another camera). That is a real target, not a missing one: it
+ * covers no games, so every AUTO row it holds for today is released.
+ *
  * Runs inside the caller's transaction so a half-moved camera is impossible.
  */
 async function remapChannel(
@@ -139,20 +174,24 @@ async function remapChannel(
   const { dayStart, dayEnd } = dayRange(opts.now)
   const target = { courtId: opts.courtId ?? null, venueId: opts.venueId ?? null }
 
+  const nowhere = !target.courtId && !target.venueId
+
   const targetGames: Array<{
     id: string
     stream: { id: string; channelId: string; source: string } | null
-  }> = await tx.game.findMany({
-    where: {
-      scheduledAt: { gte: dayStart, lt: dayEnd },
-      // Finished games keep whatever row they finished with (VOD integrity).
-      status: { notIn: [...FINISHED_STATUSES] },
-      ...(target.courtId
-        ? { courtId: target.courtId }
-        : { venueId: target.venueId ?? "", courtId: null }),
-    },
-    select: { id: true, stream: { select: { id: true, channelId: true, source: true } } },
-  })
+  }> = nowhere
+    ? []
+    : await tx.game.findMany({
+        where: {
+          scheduledAt: { gte: dayStart, lt: dayEnd },
+          // Finished games keep whatever row they finished with (VOD integrity).
+          status: { notIn: [...FINISHED_STATUSES] },
+          ...(target.courtId
+            ? { courtId: target.courtId }
+            : { venueId: target.venueId, courtId: null }),
+        },
+        select: { id: true, stream: { select: { id: true, channelId: true, source: true } } },
+      })
   const targetIds = new Set(targetGames.map((g) => g.id))
 
   // Un-map first: the rig has physically left those courts, so their games are
@@ -202,11 +241,20 @@ async function remapChannel(
 /**
  * Put a rig at a court (or a building) and re-derive what it shows.
  *
- * Take-over guard: a channel places at ONE spot at a time, so claiming one
- * that is mid-way through another court's live game is refused unless the
- * caller confirms. The refusal carries the other game so the UI can name it
- * rather than saying "conflict". A confirmed take-over is audit-logged: it
- * means someone's families just lost their picture.
+ * Two guards, and they answer opposite questions:
+ *
+ *   TAKE-OVER  what this rig is leaving behind. A channel places at ONE spot
+ *              at a time, so claiming one that is mid-way through another
+ *              court's live game is refused unless the caller confirms. The
+ *              refusal carries the other game so the UI can name it rather
+ *              than saying "conflict".
+ *   DISPLACE   what this rig is arriving on top of. A floor holds ONE camera,
+ *              so every other channel standing here is un-placed in the same
+ *              transaction and loses its AUTO rows. This one is never refused:
+ *              the person placing the camera is looking at the floor.
+ *
+ * Both are audit-logged. A take-over means someone's families just lost their
+ * picture; a displacement means a rig quietly stopped covering its games.
  */
 export async function placeChannel(input: PlaceChannelInput): Promise<PlaceChannelResult> {
   const now = input.now ?? new Date()
@@ -299,7 +347,68 @@ export async function placeChannel(input: PlaceChannelInput): Promise<PlaceChann
     )
   }
 
+  /**
+   * Whoever is already standing here. Read outside the transaction only to
+   * know their names; the un-placing itself happens inside it.
+   */
+  const sittingHere: Array<{ id: string; name: string }> =
+    await prisma.streamChannel.findMany({
+      where: {
+        id: { not: channel.id },
+        ...(courtId ? { currentCourtId: courtId } : { currentVenueId: venueId }),
+      },
+      select: { id: true, name: true },
+    })
+
   const result = await prisma.$transaction(async (tx: Tx) => {
+    /**
+     * ONE FLOOR, ONE CAMERA. Clear the rigs that were here BEFORE the new one
+     * is written, so the moment in between is "nobody is at this court",
+     * never "two cameras are". Their AUTO rows for today go with them: a rig
+     * standing nowhere covers nothing.
+     */
+    const displaced: StreamDisplacedChannel[] = []
+    for (const other of sittingHere) {
+      await tx.streamChannel.update({
+        where: { id: other.id },
+        data: {
+          currentCourtId: null,
+          currentVenueId: null,
+          placedAt: null,
+          placedById: null,
+        },
+      })
+      const released = await remapChannel(tx, {
+        channelId: other.id,
+        courtId: null,
+        venueId: null,
+        now,
+      })
+      displaced.push({
+        channelId: other.id,
+        channelName: other.name,
+        unmapped: released.unmapped,
+      })
+      await audit(tx, {
+        actorId: input.actorId,
+        actorRole: input.actorRole ?? "Scorekeeper",
+        action: "STREAM_CHANNEL_DISPLACE",
+        resource: "StreamChannel",
+        resourceId: other.id,
+        changes: {
+          courtId: { from: courtId, to: null },
+          venueId: { from: venueId, to: null },
+        },
+        metadata: {
+          channelName: other.name,
+          replacedBy: channel.name,
+          replacedById: channel.id,
+          unmapped: released.unmapped,
+        },
+        request: input.request,
+      })
+    }
+
     await tx.streamChannel.update({
       where: { id: channel.id },
       data: {
@@ -326,6 +435,9 @@ export async function placeChannel(input: PlaceChannelInput): Promise<PlaceChann
         channelName: channel.name,
         mapped: remap.mapped,
         unmapped: remap.unmapped,
+        ...(displaced.length
+          ? { displaced: displaced.map((d) => d.channelName) }
+          : {}),
       },
       request: input.request,
     })
@@ -343,7 +455,7 @@ export async function placeChannel(input: PlaceChannelInput): Promise<PlaceChann
       })
     }
 
-    return remap
+    return { ...remap, displaced }
   })
 
   return {
@@ -353,6 +465,7 @@ export async function placeChannel(input: PlaceChannelInput): Promise<PlaceChann
     mapped: result.mapped,
     unmapped: result.unmapped,
     tookOver: conflict,
+    displaced: result.displaced,
   }
 }
 
@@ -404,6 +517,10 @@ export async function runAssigner(opts: { date?: Date } = {}): Promise<AssignerR
 
   // Two rigs pointed at one court: whichever ran last would own the games, so
   // the mapping would flap. Report it rather than pick a winner.
+  //
+  // placeChannel() can no longer CREATE this state (one floor, one camera), so
+  // reaching it means rows written before that fix or edited straight in the
+  // database. Keeping the warning is how those get found.
   const byPlacement = new Map<string, typeof channels>()
   for (const channel of channels) {
     const key = channel.currentCourtId ?? `venue:${channel.currentVenueId}`

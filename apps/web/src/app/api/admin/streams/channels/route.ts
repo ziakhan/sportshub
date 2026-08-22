@@ -58,6 +58,10 @@ const OPERATOR_SELECT = {
   currentVenueId: true,
   currentCourt: { select: { id: true, name: true, venue: { select: { id: true, name: true } } } },
   currentVenue: { select: { id: true, name: true } },
+  // "Usually at" — the tag that lets a scorekeeper find this rig among a
+  // hundred others. Never a restriction on where it may be placed.
+  homeVenueId: true,
+  homeVenue: { select: { id: true, name: true } },
   createdAt: true,
   updatedAt: true,
 } as const
@@ -90,6 +94,7 @@ const manualSchema = z.object({
   streamKey: optionalText(500),
   provider: optionalText(80),
   notes: optionalText(2000),
+  homeVenueId: optionalText(60),
 })
 
 const provisionSchema = z.object({
@@ -104,6 +109,7 @@ const provisionSchema = z.object({
    */
   recording: z.enum(["off", "automatic"]).optional(),
   notes: optionalText(2000),
+  homeVenueId: optionalText(60),
 })
 
 export const POST = withAuth<NextRequest>(async (request, _ctx, session) => {
@@ -120,6 +126,7 @@ export const POST = withAuth<NextRequest>(async (request, _ctx, session) => {
     provider: string | null
     externalId: string | null
     notes: string | null
+    homeVenueId: string | null
   }
 
   if (provisioning) {
@@ -168,6 +175,7 @@ export const POST = withAuth<NextRequest>(async (request, _ctx, session) => {
       provider: provider.id,
       externalId: created.externalId,
       notes: input.notes ?? null,
+      homeVenueId: input.homeVenueId ?? null,
     }
   } else {
     const input = manualSchema.parse(body)
@@ -179,7 +187,18 @@ export const POST = withAuth<NextRequest>(async (request, _ctx, session) => {
       provider: input.provider ?? null,
       externalId: null,
       notes: input.notes ?? null,
+      homeVenueId: input.homeVenueId ?? null,
     }
+  }
+
+  // A tag pointing at a building that does not exist would fail as a foreign
+  // key with an unreadable message, so it is checked here and simply dropped.
+  if (data.homeVenueId) {
+    const venue = await prisma.venue.findUnique({
+      where: { id: data.homeVenueId },
+      select: { id: true },
+    })
+    if (!venue) return apiError(400, "That building is not on file", "VENUE_NOT_FOUND")
   }
 
   const channel = await prisma.streamChannel.create({
@@ -227,6 +246,8 @@ const updateSchema = z.object({
   playbackUrl: z.string().trim().url().max(500).optional(),
   provider: z.string().trim().max(80).nullable().optional(),
   notes: z.string().trim().max(2000).nullable().optional(),
+  /** Explicit null un-tags the rig. It is a tag, so clearing it changes nothing about where it may go. */
+  homeVenueId: clearableText(60),
   /** DISABLED takes the channel dark everywhere at once — the kill switch. */
   status: z.enum(["ACTIVE", "DISABLED"]).optional(),
 })
@@ -234,6 +255,14 @@ const updateSchema = z.object({
 export const PATCH = withAuth<NextRequest>(async (request, _ctx, session) => {
   requirePlatformAdmin(session)
   const { id, ...fields } = updateSchema.parse(await request.json())
+
+  if (fields.homeVenueId) {
+    const venue = await prisma.venue.findUnique({
+      where: { id: fields.homeVenueId },
+      select: { id: true },
+    })
+    if (!venue) return apiError(400, "That building is not on file", "VENUE_NOT_FOUND")
+  }
 
   const before = await prisma.streamChannel.findUnique({
     where: { id },

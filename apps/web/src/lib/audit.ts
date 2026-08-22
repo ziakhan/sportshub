@@ -78,6 +78,10 @@ export type AuditAction =
   | "STREAM_CHANNEL_CREATE"
   | "STREAM_CHANNEL_UPDATE"
   | "STREAM_CHANNEL_PLACE"
+  // The other half of a placement: one floor holds one camera, so placing a
+  // rig un-places whoever was standing there. A rig that quietly stopped
+  // covering its games needs a name against it.
+  | "STREAM_CHANNEL_DISPLACE"
   | "STREAM_TAKEOVER"
   | "STREAM_MANUAL_MAP"
   // Money routes (security audit M1, 2026-08-21): every refund, waive, offline

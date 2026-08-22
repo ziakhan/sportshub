@@ -257,6 +257,13 @@ export function ChannelCard({
                 ? `${placedByName ?? "Someone"} confirmed it ${agoLabel(channel.placedAt, now)}`
                 : "Place it at a court and today's games there pick it up"}
             </div>
+            {/* The tag, said next to the placement and clearly not the same
+                thing: one is where the rig lives, the other is where it is. */}
+            <div className="text-ink-500 mt-1 text-xs">
+              {channel.homeVenue
+                ? `Usually at ${channel.homeVenue.name}`
+                : "No usual building set"}
+            </div>
           </div>
           <Button size="sm" variant="secondary" tone="play" disabled={busy || disabled} onClick={onMove}>
             {placement ? "Move" : "Place"}

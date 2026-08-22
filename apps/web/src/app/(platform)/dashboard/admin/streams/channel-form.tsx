@@ -1,9 +1,9 @@
 "use client"
 
-import { useState } from "react"
-import { Button } from "@/components/ui"
+import { useMemo, useState } from "react"
+import { BrandListbox, Button } from "@/components/ui"
 import { ErrorStrip, Modal, TextField } from "./bits"
-import type { Channel, ProviderOption } from "./types"
+import type { Channel, ProviderOption, StreamOpsVenue } from "./types"
 
 /**
  * Add or edit a camera rig.
@@ -37,6 +37,8 @@ export interface ChannelDraft {
   streamKey: string
   playbackUrl: string
   notes: string
+  /** "Usually at" — the building tag. Empty string means untagged. */
+  homeVenueId: string
   /**
    * Cloudflare mode only, and ON by default: Cloudflare serves the live
    * picture out of its recording pipeline, so a channel created with this off
@@ -176,6 +178,7 @@ function ModeCard({
 export function ChannelFormDialog({
   channel,
   providers,
+  venues,
   busy,
   error,
   onCancel,
@@ -185,6 +188,8 @@ export function ChannelFormDialog({
   channel: Channel | null
   /** What this server can actually do. Null while still loading. */
   providers: ProviderOption[] | null
+  /** Buildings the "usually at" tag can point at. */
+  venues: StreamOpsVenue[]
   busy: boolean
   error: string | null
   onCancel: () => void
@@ -205,10 +210,27 @@ export function ChannelFormDialog({
     streamKey: "",
     playbackUrl: channel?.playbackUrl ?? "",
     notes: channel?.notes ?? "",
+    homeVenueId: channel?.homeVenueId ?? "",
     // On, because off is the setting where nobody ever sees a picture.
     recording: "automatic",
   })
   const [errors, setErrors] = useState<Errors>({})
+
+  /**
+   * The rig's own tagged building is kept in the list even if it has no games
+   * this week, so editing a camera never silently drops its tag.
+   */
+  const venueOptions = useMemo(() => {
+    const options = venues.map((v) => ({
+      value: v.id,
+      label: `${v.name}${v.city ? ` (${v.city})` : ""}`,
+    }))
+    if (channel?.homeVenue && !options.some((o) => o.value === channel.homeVenue!.id)) {
+      options.push({ value: channel.homeVenue.id, label: channel.homeVenue.name })
+    }
+    options.sort((a, b) => a.label.localeCompare(b.label))
+    return [{ value: "", label: "No building in particular" }, ...options]
+  }, [venues, channel])
 
   // Fall back to Custom once we know Cloudflare is unusable, so the form is
   // never sitting on a choice that cannot be submitted. Editing is always
@@ -305,6 +327,30 @@ export function ChannelFormDialog({
           hint="Match the sticker on the tripod. Scorekeepers read this out loud."
           error={errors.name}
         />
+
+        {/* A TAG, not a binding. Worth its own explained block rather than a
+            bare select, because "usually at" beside a building name reads like
+            a restriction and it is the opposite of one. */}
+        <div className="border-ink-100 bg-ink-50/50 rounded-xl border p-3">
+          <label htmlFor="channel-home-venue" className="text-ink-700 text-xs font-semibold">
+            Usually at
+          </label>
+          <div className="mt-1.5">
+            <BrandListbox
+              id="channel-home-venue"
+              ariaLabel="Building this camera usually lives at"
+              value={draft.homeVenueId}
+              onChange={(value) => set("homeVenueId", value)}
+              options={venueOptions}
+            />
+          </div>
+          <p className="text-ink-600 mt-2 text-[11px] leading-5">
+            <strong className="text-ink-900">This only helps people find the rig.</strong> A
+            scorekeeper&apos;s camera list opens on the cameras tagged to their building, which is
+            what makes it usable once there are a hundred of them. It does not restrict anything:
+            carry this rig to another gym and it can still be placed there.
+          </p>
+        </div>
 
         {provisioning ? (
           <div className="border-ink-100 bg-ink-50/50 rounded-xl border p-3">

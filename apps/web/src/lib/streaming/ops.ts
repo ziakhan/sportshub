@@ -282,6 +282,7 @@ export async function getPlacementTargets(now: Date = new Date()): Promise<Strea
 /** The streaming actions the trail records, newest first on the dashboard. */
 const STREAM_ACTIONS = [
   "STREAM_CHANNEL_PLACE",
+  "STREAM_CHANNEL_DISPLACE",
   "STREAM_TAKEOVER",
   "STREAM_MANUAL_MAP",
   "STREAM_CHANNEL_CREATE",
@@ -400,11 +401,35 @@ export async function getStreamAudit(limit = 20): Promise<StreamOpsAuditEntry[]>
     return `${channel} was taken off the live game at ${where}${matchup}.`
   }
 
+  /**
+   * The other half of a placement: a floor holds one camera, so the rig that
+   * was standing there was pushed off it. Says who replaced it, because that
+   * is the only question a reader has when a camera stops covering its games.
+   */
+  function displace(entry: (typeof entries)[number]): string {
+    const channel = entry.metadata?.channelName ?? channelName.get(entry.resourceId) ?? "A camera"
+    const from = entry.changes?.courtId?.from
+    const fromVenue = entry.changes?.venueId?.from
+    const where =
+      (typeof from === "string" ? courtLabel.get(from) : null) ??
+      (typeof fromVenue === "string" ? venueLabel.get(fromVenue) : null) ??
+      "its court"
+    const by = entry.metadata?.replacedBy ? ` ${entry.metadata.replacedBy} is there now.` : ""
+    const dropped = Array.isArray(entry.metadata?.unmapped) ? entry.metadata.unmapped.length : 0
+    const tail = dropped
+      ? ` It stopped showing ${dropped} ${dropped === 1 ? "game" : "games"}.`
+      : ""
+    return `${channel} was moved off ${where}.${by}${tail}`
+  }
+
   return entries.map((entry) => {
     let summary: string
     switch (entry.action) {
       case "STREAM_CHANNEL_PLACE":
         summary = place(entry)
+        break
+      case "STREAM_CHANNEL_DISPLACE":
+        summary = displace(entry)
         break
       case "STREAM_TAKEOVER":
         summary = takeover(entry)
