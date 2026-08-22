@@ -23,11 +23,18 @@ export interface Channel {
   id: string
   name: string
   status: "ACTIVE" | "DISABLED"
-  /** Operator secrets. Masked in the UI until a person asks to see them. */
-  ingestUrl: string
-  streamKey: string
+  /** The one address a channel cannot work without. */
   playbackUrl: string
+  /**
+   * Operator secrets, masked in the UI until a person asks to see them — and
+   * OPTIONAL: a channel may carry only a playback URL (owner, 2026-08-21), so
+   * every reader has to handle their absence rather than print "null".
+   */
+  ingestUrl: string | null
+  streamKey: string | null
   provider: string | null
+  /** The provider's own id for this channel. Null for hand-entered ones. */
+  externalId: string | null
   notes: string | null
   lastSeenLiveAt: string | null
   placedAt: string | null
@@ -38,6 +45,22 @@ export interface Channel {
   currentVenue: { id: string; name: string } | null
   createdAt: string
   updatedAt: string
+}
+
+/**
+ * GET /api/admin/streams/providers — what this server can actually do.
+ *
+ * Declared here rather than imported from lib/streaming/providers because
+ * that module reaches for `process.env` and `fetch`, and this file is read by
+ * client components.
+ */
+export interface ProviderOption {
+  id: string
+  label: string
+  canProvision: boolean
+  configured: boolean
+  /** Plain-language "set THESE env vars". Null when nothing is missing. */
+  missing: string | null
 }
 
 /** The other court's live game, returned with a 409 TAKEOVER_REQUIRED. */

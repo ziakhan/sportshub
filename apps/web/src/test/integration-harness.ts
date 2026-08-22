@@ -74,6 +74,9 @@ import { getServerSession } from "next-auth"
  *   1153 live streaming placement (two rigs, two courts: remap on move,
  *        take-over guard, window states, league toggle, MANUAL + COMPLETED
  *        rows surviving the assigner)
+ *   1154 stream provider provisioning (Cloudflare live input created for the
+ *        operator: fake vendor at the fetch boundary, customer-code
+ *        derivation, refusal writes nothing, manual mode unchanged)
  */
 
 export function actAs(userId: string | null): void {

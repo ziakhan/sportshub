@@ -4,7 +4,8 @@ import { useState } from "react"
 import { Badge, Button, Card } from "@/components/ui"
 import { isSignalFresh } from "@/lib/streaming/health"
 import { StreamPreview } from "./preview-tile"
-import { CopyField, PinIcon, SignalIcon, agoLabel, gameTimeLabel } from "./bits"
+import { ConnectionDetails } from "./handoff"
+import { PinIcon, SignalIcon, agoLabel, gameTimeLabel } from "./bits"
 import type { Channel, ChannelHealth, StreamOpsGame, StreamOpsSchedule } from "./types"
 
 /**
@@ -256,16 +257,11 @@ export function ChannelCard({
           </svg>
         </button>
         {showConnection && (
-          <div className="mt-3 space-y-3">
-            <CopyField label="Ingest URL" value={channel.ingestUrl} />
-            <CopyField
-              label="Stream key"
-              value={channel.streamKey}
-              secret
-              hint="Anyone holding this pair can push their own picture onto a game page. Read it out only to the person setting up this rig."
-            />
-            <CopyField label="Playback URL" value={channel.playbackUrl} />
-            {channel.notes && <p className="text-ink-600 text-xs leading-5">{channel.notes}</p>}
+          <div className="mt-3">
+            {/* Same block the hand-off dialog shows right after a camera is
+                created. This is where an operator standing in a gym comes
+                back to it. */}
+            <ConnectionDetails channel={channel} />
           </div>
         )}
       </div>

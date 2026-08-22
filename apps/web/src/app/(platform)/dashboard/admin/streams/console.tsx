@@ -5,12 +5,14 @@ import { Badge, Button, Card, SectionHeader } from "@/components/ui"
 import { isSignalFresh } from "@/lib/streaming/health"
 import { ChannelCard } from "./channel-card"
 import { ChannelFormDialog, type ChannelDraft } from "./channel-form"
+import { ChannelHandoffDialog } from "./handoff"
 import { PlacementDialog, TakeoverDialog } from "./placement-dialog"
 import { ErrorStrip, NoticeStrip, PlusIcon, SignalIcon, agoLabel } from "./bits"
 import type {
   Channel,
   ChannelHealth,
   PlacementTarget,
+  ProviderOption,
   StreamOpsAuditEntry,
   StreamOpsSchedule,
   StreamOpsVenue,
@@ -94,6 +96,10 @@ export function StreamsConsole() {
   const [adding, setAdding] = useState(false)
   const [formError, setFormError] = useState<string | null>(null)
 
+  const [providers, setProviders] = useState<ProviderOption[] | null>(null)
+  /** A camera just created for us — the RTMP pair to carry to the gym. */
+  const [handoff, setHandoff] = useState<Channel | null>(null)
+
   const [now, setNow] = useState(() => new Date())
   useEffect(() => {
     const timer = setInterval(() => setNow(new Date()), TICK_MS)
@@ -159,6 +165,28 @@ export function StreamsConsole() {
     }
   }, [load, checkSignal])
 
+  /**
+   * Which providers this server can use. Read once — the answer is env vars,
+   * which cannot change without a restart. Kept off the main load path: if
+   * this fails the form simply offers Custom, which always works.
+   */
+  useEffect(() => {
+    let live = true
+    void (async () => {
+      try {
+        const res = await fetch("/api/admin/streams/providers")
+        if (!res.ok) throw new Error("providers unavailable")
+        const json = await res.json()
+        if (live) setProviders((json.providers ?? []) as ProviderOption[])
+      } catch {
+        if (live) setProviders([])
+      }
+    })()
+    return () => {
+      live = false
+    }
+  }, [])
+
   /* ── writes ────────────────────────────────────────────────────────────── */
 
   const place = useCallback(
@@ -221,24 +249,43 @@ export function StreamsConsole() {
     async (draft: ChannelDraft, channel: Channel | null) => {
       setSaving(true)
       setFormError(null)
+      const provisioning = !channel && draft.mode === "cloudflare"
       try {
         const provider = draft.provider.trim()
         const notes = draft.notes.trim()
-        const body: Record<string, unknown> = {
-          name: draft.name.trim(),
-          ingestUrl: draft.ingestUrl.trim(),
-          playbackUrl: draft.playbackUrl.trim(),
-          // Create takes these as optional-or-absent; only the edit schema
-          // accepts null, which is how an edit CLEARS one.
-          ...(channel
-            ? { provider: provider || null, notes: notes || null }
-            : {
-                ...(provider ? { provider } : {}),
-                ...(notes ? { notes } : {}),
-              }),
-        }
-        // Blank on an edit means "keep the key it already has".
-        if (draft.streamKey.trim()) body.streamKey = draft.streamKey.trim()
+
+        const body: Record<string, unknown> = provisioning
+          ? {
+              // The provider fills in all three addresses; the operator gave
+              // us a name and a spending decision.
+              mode: "provision",
+              provider: "cloudflare",
+              name: draft.name.trim(),
+              recording: draft.recording,
+              ...(notes ? { notes } : {}),
+            }
+          : {
+              name: draft.name.trim(),
+              playbackUrl: draft.playbackUrl.trim(),
+              // The ingest pair is optional now. On an edit, an emptied field
+              // means CLEAR it (the edit schema takes null); on a create, an
+              // empty one is simply not sent.
+              ...(channel
+                ? {
+                    ingestUrl: draft.ingestUrl.trim() || null,
+                    provider: provider || null,
+                    notes: notes || null,
+                  }
+                : {
+                    ...(draft.ingestUrl.trim() ? { ingestUrl: draft.ingestUrl.trim() } : {}),
+                    ...(provider ? { provider } : {}),
+                    ...(notes ? { notes } : {}),
+                  }),
+            }
+
+        // Blank on an edit means "keep the key it already has", which is why
+        // this is never sent as null from here.
+        if (!provisioning && draft.streamKey.trim()) body.streamKey = draft.streamKey.trim()
 
         const res = await fetch("/api/admin/streams/channels", {
           method: channel ? "PATCH" : "POST",
@@ -250,10 +297,19 @@ export function StreamsConsole() {
 
         setEditing(null)
         setAdding(false)
+
+        // A camera we just created hands its RTMP pair straight over: the
+        // operator's next move is typing it into a phone, and making them go
+        // hunting for it in a collapsed panel is the whole problem this
+        // feature exists to remove.
+        if (provisioning && json.channel) setHandoff(json.channel as Channel)
+
         setNotice(
           channel
             ? `${json.channel?.name ?? channel.name} saved.`
-            : `${json.channel?.name ?? draft.name.trim()} added. Place it at a court when the rig is set up.`
+            : provisioning
+              ? `${json.channel?.name ?? draft.name.trim()} was created at Cloudflare.`
+              : `${json.channel?.name ?? draft.name.trim()} added. Place it at a court when the rig is set up.`
         )
         const loaded = await load()
         const saved = json.channel?.id as string | undefined
@@ -430,9 +486,10 @@ export function StreamsConsole() {
         <Card className="text-center">
           <h2 className="font-display text-ink-950 text-lg font-bold">No cameras yet</h2>
           <p className="text-ink-600 mx-auto mt-2 max-w-md text-sm leading-6">
-            A camera here is one physical rig and the fixed addresses your streaming vendor gave it.
-            Add the first one, then place it at the court it is pointing at and today&apos;s games
-            there pick it up on their own.
+            A camera here is one physical rig and the fixed addresses it streams on. We can create
+            it for you at Cloudflare and hand you the two things to type into the camera app, or you
+            can paste in a stream you already have. Then place it at the court it is pointing at and
+            today&apos;s games there pick it up on their own.
           </p>
           <div className="mt-4">
             <Button
@@ -542,9 +599,14 @@ export function StreamsConsole() {
         />
       )}
 
+      {handoff && (
+        <ChannelHandoffDialog channel={handoff} provisioned onClose={() => setHandoff(null)} />
+      )}
+
       {(adding || editing) && (
         <ChannelFormDialog
           channel={editing}
+          providers={providers}
           busy={saving}
           error={formError}
           onCancel={() => {

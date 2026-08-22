@@ -4801,12 +4801,21 @@ enum StreamAssignSource {
 }
 
 model StreamChannel {
-  id          String              @id @default(uuid())
-  name        String // "Camera A" — matches the sticker on the rig
-  ingestUrl   String // rtmp://ingest.vendor.com/live  (FIXED)
-  streamKey   String // per-channel secret             (FIXED)
+  id   String @id @default(uuid())
+  name String // "Camera A" — matches the sticker on the rig
+
+  // The ONE field that makes a channel work: what viewers play. Everything
+  // else about a channel is convenience for whoever sets the rig up.
   playbackUrl String // https://cdn.../a/index.m3u8    (FIXED)
-  status      StreamChannelStatus @default(ACTIVE)
+
+  // The ingest pair is operator convenience, not a requirement (owner,
+  // 2026-08-21). A channel whose vendor is managed elsewhere can carry a
+  // playback URL and nothing else; every read path treats these as absent
+  // rather than empty.
+  ingestUrl String? // rtmp://ingest.vendor.com/live  (FIXED)
+  streamKey String? // per-channel secret             (FIXED)
+
+  status StreamChannelStatus @default(ACTIVE)
 
   // Placement — where the rig sits RIGHT NOW (day-of, human-set). A channel
   // places at ONE spot at a time: a numbered court, or the building itself
@@ -4818,7 +4827,16 @@ model StreamChannel {
   placedAt       DateTime?
   placedById     String? // who confirmed (scorekeeper/admin) — audit
 
-  provider       String?
+  // Which provider this channel came from: "cloudflare" when we created the
+  // live input ourselves through their API, otherwise free text the operator
+  // typed ("MediaMTX", "Castr"…) or null.
+  provider String?
+
+  // The provider's own id for this channel — Cloudflare's live input `uid`.
+  // Holding it is what lets us delete the input we created instead of
+  // orphaning it. Null for anything an operator pasted in by hand.
+  externalId String?
+
   notes          String?
   lastSeenLiveAt DateTime? // stamped by the health probe
 

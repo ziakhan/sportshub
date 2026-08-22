@@ -3,29 +3,42 @@
 import { useState } from "react"
 import { Button } from "@/components/ui"
 import { ErrorStrip, Modal, TextField } from "./bits"
-import type { Channel } from "./types"
+import type { Channel, ProviderOption } from "./types"
 
 /**
  * Add or edit a camera rig.
  *
- * A channel is set up ONCE per rig and then never changes — that is the whole
- * premise of the three-layer model, and the form says so rather than assuming
- * the operator read the plan. The two URLs and the key come from the streaming
- * vendor; nothing here generates or validates them against the vendor, so the
- * form's job is to stop the typos it can see and to be honest about the rest.
+ * A channel is set up ONCE per rig and then never changes. There are exactly
+ * two ways to make one, and the choice is the first thing on the form:
+ *
+ *   Cloudflare  we create the live input through their API and fill in all
+ *               three addresses ourselves. The operator types a name. This is
+ *               the default whenever Cloudflare is configured, because the
+ *               alternative is a person copying a secret between two browser
+ *               tabs by hand.
+ *   Custom      the operator pastes what they already have. The ONLY required
+ *               field is the playback URL — that is what viewers play and what
+ *               the signal probe reads. The RTMP pair is convenience for
+ *               whoever sets the rig up, so it is offered and never demanded
+ *               (owner ruling, 2026-08-21).
  *
  * On edit the stream key starts EMPTY. A prefilled key is a secret sitting on
  * screen for the length of an edit that was probably only renaming the rig,
  * and an empty field with "leave blank to keep it" costs nothing.
  */
 
+export type ChannelMode = "cloudflare" | "custom"
+
 export interface ChannelDraft {
+  mode: ChannelMode
   name: string
   provider: string
   ingestUrl: string
   streamKey: string
   playbackUrl: string
   notes: string
+  /** Cloudflare mode only. Off unless a person deliberately turns it on. */
+  recording: "off" | "automatic"
 }
 
 type Errors = Partial<Record<keyof ChannelDraft, string>>
@@ -33,7 +46,7 @@ type Errors = Partial<Record<keyof ChannelDraft, string>>
 /** Schemes a camera can actually push with. Anything else is a typo. */
 const INGEST_SCHEMES = ["rtmp:", "rtmps:", "srt:", "rist:", "http:", "https:"]
 
-function validate(draft: ChannelDraft, editing: boolean): Errors {
+export function validate(draft: ChannelDraft, editing: boolean): Errors {
   const errors: Errors = {}
 
   if (!draft.name.trim()) {
@@ -42,27 +55,15 @@ function validate(draft: ChannelDraft, editing: boolean): Errors {
     errors.name = "That name is too long for a camera."
   }
 
-  const ingest = draft.ingestUrl.trim()
-  if (!ingest) {
-    errors.ingestUrl = "The vendor gives you this. It is where the camera pushes."
-  } else {
-    try {
-      const url = new URL(ingest)
-      if (!INGEST_SCHEMES.includes(url.protocol)) {
-        errors.ingestUrl = "That is not an ingest address. Expect rtmp, rtmps or srt."
-      }
-    } catch {
-      errors.ingestUrl = "That is not a full address. Include the rtmp:// part."
-    }
-  }
+  if (draft.notes.length > 2000) errors.notes = "Keep the note under 2000 characters."
 
-  if (!editing && !draft.streamKey.trim()) {
-    errors.streamKey = "The vendor gives you this with the ingest URL."
-  }
+  // Cloudflare mode collects a name and a recording choice. Everything else
+  // arrives from the provider, so there is nothing here to get wrong.
+  if (draft.mode === "cloudflare" && !editing) return errors
 
   const playback = draft.playbackUrl.trim()
   if (!playback) {
-    errors.playbackUrl = "The vendor gives you this. It is what viewers play."
+    errors.playbackUrl = "This is the one address a camera cannot work without."
   } else {
     try {
       const url = new URL(playback)
@@ -74,13 +75,102 @@ function validate(draft: ChannelDraft, editing: boolean): Errors {
     }
   }
 
-  if (draft.notes.length > 2000) errors.notes = "Keep the note under 2000 characters."
+  // Optional — but a half-typed one is still a typo worth catching.
+  const ingest = draft.ingestUrl.trim()
+  if (ingest) {
+    try {
+      const url = new URL(ingest)
+      if (!INGEST_SCHEMES.includes(url.protocol)) {
+        errors.ingestUrl = "That is not an ingest address. Expect rtmp, rtmps or srt."
+      }
+    } catch {
+      errors.ingestUrl = "That is not a full address. Include the rtmp:// part."
+    }
+  }
 
   return errors
 }
 
+/**
+ * One of the two ways to add a camera.
+ *
+ * A radio card rather than a segmented control: each option carries a
+ * sentence, and one of them can be unavailable with a paragraph explaining
+ * what to do about it — neither fits in a segment. The input is a real radio
+ * so arrow keys, labels and screen readers all work; the card is its skin.
+ */
+function ModeCard({
+  checked,
+  disabled,
+  title,
+  blurb,
+  note,
+  onSelect,
+}: {
+  checked: boolean
+  disabled?: boolean
+  title: string
+  blurb: string
+  /** Shown at full contrast even when disabled — it is the way forward. */
+  note?: string | null
+  onSelect: () => void
+}) {
+  return (
+    <label className={`block ${disabled ? "cursor-not-allowed" : "cursor-pointer"}`}>
+      <input
+        type="radio"
+        name="channel-mode"
+        className="peer sr-only"
+        checked={checked}
+        disabled={disabled}
+        onChange={onSelect}
+      />
+      <div
+        className={`peer-focus-visible:ring-play-300 rounded-xl border p-3 transition peer-focus-visible:ring-2 ${
+          checked
+            ? "border-play-400 bg-play-50/60"
+            : disabled
+              ? "border-ink-200 bg-ink-50/40"
+              : "border-ink-200 hover:border-ink-300 bg-white"
+        }`}
+      >
+        <div className="flex items-start gap-2.5">
+          {/* Not colour alone: the dot fills, so the choice survives a
+              greyscale screen and a colour-blind reader. */}
+          <span
+            aria-hidden="true"
+            className={`mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full border-2 transition ${
+              checked ? "border-play-600" : disabled ? "border-ink-300" : "border-ink-300"
+            }`}
+          >
+            {checked && <span className="bg-play-600 h-2 w-2 rounded-full" />}
+          </span>
+          <div className="min-w-0">
+            <div
+              className={`text-sm font-semibold ${
+                disabled ? "text-ink-500" : checked ? "text-ink-950" : "text-ink-800"
+              }`}
+            >
+              {title}
+            </div>
+            <p className={`mt-0.5 text-xs leading-5 ${disabled ? "text-ink-500" : "text-ink-600"}`}>
+              {blurb}
+            </p>
+          </div>
+        </div>
+        {note && (
+          <p className="border-ink-200 bg-ink-50 text-ink-700 mt-2.5 rounded-lg border px-2.5 py-2 text-[11px] leading-5">
+            {note}
+          </p>
+        )}
+      </div>
+    </label>
+  )
+}
+
 export function ChannelFormDialog({
   channel,
+  providers,
   busy,
   error,
   onCancel,
@@ -88,33 +178,52 @@ export function ChannelFormDialog({
 }: {
   /** null = adding a new rig. */
   channel: Channel | null
+  /** What this server can actually do. Null while still loading. */
+  providers: ProviderOption[] | null
   busy: boolean
   error: string | null
   onCancel: () => void
   onSave: (draft: ChannelDraft) => void
 }) {
   const editing = !!channel
+
+  const cloudflare = providers?.find((p) => p.id === "cloudflare") ?? null
+  const cloudflareReady = !!cloudflare?.configured
+
   const [draft, setDraft] = useState<ChannelDraft>({
+    // Editing always edits the stored fields directly — the provider made
+    // this camera once and that is finished business.
+    mode: editing ? "custom" : "cloudflare",
     name: channel?.name ?? "",
     provider: channel?.provider ?? "",
     ingestUrl: channel?.ingestUrl ?? "",
     streamKey: "",
     playbackUrl: channel?.playbackUrl ?? "",
     notes: channel?.notes ?? "",
+    recording: "off",
   })
   const [errors, setErrors] = useState<Errors>({})
 
-  function set<K extends keyof ChannelDraft>(key: K, value: string) {
+  // Fall back to Custom once we know Cloudflare is unusable, so the form is
+  // never sitting on a choice that cannot be submitted. Editing is always
+  // Custom: the provider made this camera once, and that is finished.
+  const mode: ChannelMode =
+    draft.mode === "cloudflare" && (editing || !cloudflareReady) ? "custom" : draft.mode
+
+  function set<K extends keyof ChannelDraft>(key: K, value: ChannelDraft[K]) {
     setDraft((d) => ({ ...d, [key]: value }))
     if (errors[key]) setErrors((e) => ({ ...e, [key]: undefined }))
   }
 
   function submit() {
-    const found = validate(draft, editing)
+    const candidate = { ...draft, mode }
+    const found = validate(candidate, editing)
     setErrors(found)
     if (Object.keys(found).length > 0) return
-    onSave(draft)
+    onSave(candidate)
   }
+
+  const provisioning = mode === "cloudflare" && !editing
 
   const playbackLooksHls =
     !draft.playbackUrl.trim() || draft.playbackUrl.trim().toLowerCase().includes(".m3u8")
@@ -122,7 +231,11 @@ export function ChannelFormDialog({
   return (
     <Modal
       title={editing ? `Edit ${channel!.name}` : "Add a camera"}
-      subtitle="A rig is set up once. Its ingest and playback addresses come from the streaming vendor and stay the same for the life of the camera."
+      subtitle={
+        editing
+          ? "A rig is set up once. Its addresses stay the same for the life of the camera."
+          : "A rig is set up once, and its addresses stay the same for the life of the camera. Either we create it for you, or you paste one you already have."
+      }
       onClose={onCancel}
       width="max-w-xl"
       footer={
@@ -131,7 +244,15 @@ export function ChannelFormDialog({
             Cancel
           </Button>
           <Button onClick={submit} disabled={busy} tone="play">
-            {busy ? "Saving…" : editing ? "Save changes" : "Add camera"}
+            {busy
+              ? provisioning
+                ? "Creating it…"
+                : "Saving…"
+              : editing
+                ? "Save changes"
+                : provisioning
+                  ? "Create the camera"
+                  : "Add camera"}
           </Button>
         </>
       }
@@ -139,72 +260,134 @@ export function ChannelFormDialog({
       {error && <ErrorStrip>{error}</ErrorStrip>}
 
       <div className="space-y-4">
-        <div className="grid gap-4 sm:grid-cols-2">
-          <TextField
-            label="Camera name"
-            required
-            autoFocus={!editing}
-            value={draft.name}
-            onChange={(v) => set("name", v)}
-            placeholder="Camera A"
-            hint="Match the sticker on the tripod. Scorekeepers read this out loud."
-            error={errors.name}
-          />
-          <TextField
-            label="Vendor"
-            value={draft.provider}
-            onChange={(v) => set("provider", v)}
-            placeholder="MediaMTX, Cloudflare Stream…"
-            hint="Who runs the ingest. Free text, for your own reference."
-            error={errors.provider}
-          />
-        </div>
+        {!editing && (
+          <fieldset>
+            <legend className="text-ink-700 text-xs font-semibold">How are you adding it?</legend>
+            <div className="mt-2 space-y-2">
+              <ModeCard
+                checked={mode === "cloudflare"}
+                disabled={!cloudflareReady}
+                title="Create it for me on Cloudflare"
+                blurb="We make the camera at Cloudflare and hand you the two things to paste into the camera app. You type a name and nothing else."
+                note={
+                  providers === null
+                    ? "Checking whether Cloudflare is set up on this server…"
+                    : cloudflareReady
+                      ? null
+                      : (cloudflare?.missing ??
+                        "Cloudflare is not set up on this server yet.")
+                }
+                onSelect={() => set("mode", "cloudflare")}
+              />
+              <ModeCard
+                checked={mode === "custom"}
+                title="I already have the URLs"
+                blurb="For a camera hosted anywhere else. Paste its playback address; the RTMP pair is optional."
+                onSelect={() => set("mode", "custom")}
+              />
+            </div>
+          </fieldset>
+        )}
 
-        <div className="border-ink-100 bg-ink-50/50 rounded-xl border p-3">
-          <p className="text-ink-700 text-xs leading-5">
-            <strong className="text-ink-900">These three come from the vendor.</strong> The camera
-            pushes to the ingest address using the key; viewers play the playback address. They are
-            permanent per rig, so you should be copying them out of the vendor console, not making
-            them up.
-          </p>
+        <TextField
+          label="Camera name"
+          required
+          autoFocus={!editing}
+          value={draft.name}
+          onChange={(v) => set("name", v)}
+          placeholder="Camera A"
+          hint="Match the sticker on the tripod. Scorekeepers read this out loud."
+          error={errors.name}
+        />
 
-          <div className="mt-3 space-y-4">
-            <TextField
-              label="Ingest URL"
-              required
-              value={draft.ingestUrl}
-              onChange={(v) => set("ingestUrl", v)}
-              placeholder="rtmp://ingest.example.com/live"
-              error={errors.ingestUrl}
-            />
-            <TextField
-              label="Stream key"
-              required={!editing}
-              value={draft.streamKey}
-              onChange={(v) => set("streamKey", v)}
-              placeholder={editing ? "Leave blank to keep the current key" : "camera-a-9f2c…"}
-              hint={
-                editing
-                  ? "Blank keeps the key this rig already has."
-                  : "Treat it like a password. Anyone holding it can push a picture onto a game page."
-              }
-              error={errors.streamKey}
-            />
-            <TextField
-              label="Playback URL"
-              required
-              value={draft.playbackUrl}
-              onChange={(v) => set("playbackUrl", v)}
-              placeholder="https://cdn.example.com/camera-a/index.m3u8"
-              hint={
-                playbackLooksHls
-                  ? "The HLS manifest. The signal probe reads this address."
-                  : "That does not end in .m3u8. It will still save, but the signal probe expects an HLS manifest."
-              }
-              error={errors.playbackUrl}
-            />
+        {provisioning ? (
+          <div className="border-ink-100 bg-ink-50/50 rounded-xl border p-3">
+            <label className="flex cursor-pointer items-start gap-2.5">
+              <input
+                type="checkbox"
+                checked={draft.recording === "automatic"}
+                onChange={(e) => set("recording", e.target.checked ? "automatic" : "off")}
+                className="text-play-600 focus:ring-play-300 border-ink-300 mt-0.5 h-4 w-4 shrink-0 cursor-pointer rounded"
+              />
+              <span className="min-w-0">
+                <span className="text-ink-800 block text-sm font-semibold">
+                  Keep a recording of every game this camera streams
+                </span>
+                <span className="text-ink-600 mt-0.5 block text-xs leading-5">
+                  Leave this off and nothing is kept, so the picture is live only. Turn it on and
+                  Cloudflare stores every stream and charges for that storage every month until
+                  someone deletes it.
+                </span>
+              </span>
+            </label>
           </div>
-        </div>
+        ) : (
+          <>
+            <div className="border-ink-100 bg-ink-50/50 rounded-xl border p-3">
+              <p className="text-ink-700 text-xs leading-5">
+                <strong className="text-ink-900">The playback address is the one that matters.</strong>{" "}
+                It is what viewers play and what the signal check reads. Copy it from wherever this
+                stream is hosted.
+              </p>
+
+              <div className="mt-3">
+                <TextField
+                  label="Playback URL"
+                  required
+                  value={draft.playbackUrl}
+                  onChange={(v) => set("playbackUrl", v)}
+                  placeholder="https://cdn.example.com/camera-a/index.m3u8"
+                  hint={
+                    playbackLooksHls
+                      ? "The HLS manifest. The signal probe reads this address."
+                      : "That does not end in .m3u8. It will still save, but the signal probe expects an HLS manifest."
+                  }
+                  error={errors.playbackUrl}
+                />
+              </div>
+            </div>
+
+            <div className="border-ink-100 rounded-xl border p-3">
+              <p className="text-ink-700 text-xs leading-5">
+                <strong className="text-ink-900">Connection details, optional.</strong> Only for
+                whoever sets the rig up: this is the pair they type into the camera app. Saving them
+                here means the next person does not have to go looking. The camera works without
+                them.
+              </p>
+
+              <div className="mt-3 space-y-4">
+                <TextField
+                  label="RTMP URL"
+                  value={draft.ingestUrl}
+                  onChange={(v) => set("ingestUrl", v)}
+                  placeholder="rtmp://ingest.example.com/live"
+                  error={errors.ingestUrl}
+                />
+                <TextField
+                  label="Stream key"
+                  value={draft.streamKey}
+                  onChange={(v) => set("streamKey", v)}
+                  placeholder={editing ? "Leave blank to keep the current key" : "camera-a-9f2c…"}
+                  hint={
+                    editing
+                      ? "Blank keeps the key this rig already has."
+                      : "Treat it like a password. Anyone holding it can push a picture onto a game page."
+                  }
+                  error={errors.streamKey}
+                />
+              </div>
+            </div>
+
+            <TextField
+              label="Vendor"
+              value={draft.provider}
+              onChange={(v) => set("provider", v)}
+              placeholder="MediaMTX, Castr…"
+              hint="Who runs the ingest. Free text, for your own reference."
+              error={errors.provider}
+            />
+          </>
+        )}
 
         <TextField
           label="Notes"
