@@ -364,8 +364,23 @@ pulled its cameras. Our combination of permanent public URLs, a camera that keep
 pushing after the app says stopped (field note 2), and a picker that hands those URLs
 to hundreds of coaches (S2) is the same failure shape.
 *Fix:* Cloudflare signed URLs (`requireSignedURLs` + a short-TTL token endpoint, ~1 day
-of work, costs us the fixed-URL-forever property). `allowedOrigins` is the cheap partial
-step. **Owner decision required.**
+of work, costs us the fixed-URL-forever property: the channel row holds an input id
+instead of a URL, the health probe needs a token too, and the player must refresh on
+expiry). `allowedOrigins` is the cheap partial step.
+
+**OWNER RULING 2026-08-22: accepted risk for now, with a trigger.** While this is demo
+data and one owner-controlled camera there are no real families holding links and nothing
+to leak, so token minting would cost time for no benefit. The provider already supports
+signed URLs with expiry natively, so this is a day of work whenever it is wanted.
+**The trigger is the first real game with real children on camera** — not a date. At that
+point signed URLs go in BEFORE the camera does. Until then, treat every playbackUrl as
+public, and do not describe the signed-in policy or the league consent toggle to anyone as
+if they protect the video: they gate the page only.
+
+Threat model, for whoever picks this up: the risk is not an attacker, it is ordinary
+leakage (a link pasted into a team chat so a parent who missed it can watch, then
+forwarded). It is permanent because URLs never rotate, it is compounded by a camera that
+keeps broadcasting after the app says stopped (field note 2), and the subject is minors.
 
 **S2. The scorekeeper candidates endpoint leaks the whole fleet** and routes around
 league consent: it returned every ACTIVE channel with its playbackUrl to anyone
