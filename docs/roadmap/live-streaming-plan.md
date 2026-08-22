@@ -98,6 +98,30 @@ fixed HLS playback URL per channel, live whenever ingest is hot. Nice-to-have: L
 channel-state API, cloud recording with time-addressable archive (enables phase-3 VOD).
 Standard HLS latency (10–30s) is fine for this audience — don't pay for WebRTC latency.
 
+## Field notes from the first real camera (2026-08-22)
+
+Proven end to end with an XbotGo rig: camera to Cloudflare to our player, stable
+(40 consecutive checks, no drops), five renditions, about 15s of latency from
+two-second segments.
+
+Three things learned the hard way, all of which will matter on game day:
+
+1. **Cloudflare Stream Live requires purchased storage.** Live playback is served
+   out of the recording pipeline, so with zero storage minutes: recording on means
+   the ingest connection is refused outright, recording off means it connects but
+   no manifest ever appears. $5 buys 1,000 minutes, and deleting a recording
+   releases the space immediately, so a nightly cleanup keeps it permanently at
+   the base tier. New channels must therefore default to recording ON.
+2. **Stopping the stream in the XbotGo app does NOT drop the broadcast.** The clock
+   stops and the UI says stopped while packets keep flowing; only force-quitting the
+   app ends it. A rig left like this keeps costing delivery and storage and keeps a
+   game page showing an empty gym. Worth surfacing "streaming for 6h" on the ops
+   page so a forgotten camera stands out.
+3. **The score will outrun the picture.** Live scoring updates instantly while video
+   trails by ~15s, so every basket is spoiled before it is seen. Options: delay the
+   score to match (recommended, free), enable low-latency HLS (beta, ~3-5s), or
+   accept it. Owner decision open.
+
 ## Camera hardware (researched 2026-07-20)
 
 **How the XbotGo Chameleon works — yes, it needs a phone.** The Chameleon is a motorized
